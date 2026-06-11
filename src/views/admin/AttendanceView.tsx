@@ -19,7 +19,7 @@ import { chunkArray } from '../../lib/networkSafety';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { AppCard } from '../../components/common/AppCard';
 import { Button } from '../../components/ui';
-import { matchesVoiceParts, getSectionFromVoicePart } from '../../lib/voicePartUtils';
+import { matchesVoiceParts } from '../../lib/voicePartUtils';
 
 export default function AttendanceView() {
   const dialog = useDialog();
@@ -192,14 +192,6 @@ export default function AttendanceView() {
     [events, selectedEventId]
   );
 
-  const handleVoicePartToggle = (part: string) => {
-    setSelectedVoiceParts(prev => 
-      prev.includes(part)
-        ? prev.filter(p => p !== part)
-        : [...prev, part]
-    );
-  };
-
   const handleResetFilters = () => {
     setFilterName('');
     setSelectedVoiceParts([]);
@@ -248,42 +240,6 @@ export default function AttendanceView() {
   const absentCount = useMemo(() => items.filter(item => matchesRsvpFilter(item) && item.attendance === 'Absent').length, [items, matchesRsvpFilter]);
   const unmarkedCount = useMemo(() => items.filter(item => matchesRsvpFilter(item) && item.attendance === 'Pending').length, [items, matchesRsvpFilter]);
 
-  // Filter list specifically for counting section/part balance in cards (ignores name/part filters but respects RSVP and Attendance tabs)
-  const baseCountList = useMemo(() => {
-    return items.filter(item => {
-      if (!matchesRsvpFilter(item)) return false;
-      if (filterStatus && item.attendance !== filterStatus) return false;
-      return true;
-    });
-  }, [items, matchesRsvpFilter, filterStatus]);
-
-  const sectionCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    sections.forEach(sec => {
-      counts[sec.code] = 0;
-    });
-    baseCountList.forEach(item => {
-      if (item.voicePart) {
-        const vpDef = voiceParts.find(vp => vp.label === item.voicePart);
-        const section = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(item.voicePart);
-        if (counts[section] !== undefined) {
-          counts[section]++;
-        } else {
-          counts[section] = (counts[section] || 0) + 1;
-        }
-      }
-    });
-    return counts;
-  }, [baseCountList, sections, voiceParts]);
-
-  const partCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    voiceParts.forEach(vp => {
-      const count = baseCountList.filter(item => item.voicePart === vp.label).length;
-      counts.set(vp.label, count);
-    });
-    return counts;
-  }, [baseCountList, voiceParts]);
 
   const remainingUnmarkedProfileIds = useMemo(() => {
     return items
@@ -346,14 +302,14 @@ export default function AttendanceView() {
         actions={
           <div className="flex flex-row items-center gap-3">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Select Event</span>
+              <span className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Select Event</span>
               <select 
                 value={selectedEventId} 
                 onChange={(e) => {
                   setSelectedEventId(e.target.value);
                   handleResetFilters(); // Reset filters when changing active event
                 }}
-                className="h-10 w-full min-w-[240px] md:w-80 rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden text-slate-800"
+                className="h-10 w-full min-w-[240px] rounded-md border border-border bg-surface px-3 text-sm text-slate-800 shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden md:w-80"
               >
                 <option value="">-- Choose an Event --</option>
                 {sortedEvents.map(e => (
@@ -374,10 +330,10 @@ export default function AttendanceView() {
             
             {/* Event Summary Details Block */}
             {selectedEvent && (
-              <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary-light/30 p-5 transition-all duration-200 shadow-xs">
+              <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary-light/30 p-5 shadow-xs transition-all duration-200">
                 <div className="flex w-full cursor-pointer flex-row items-center justify-between" onClick={() => selectedEvent.details && setIsEventExpanded(!isEventExpanded)}>
                   <div className="flex flex-col gap-1">
-                    <span className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Active Event</span>
+                    <span className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Active Event</span>
                     <div className="flex flex-row items-center gap-2.5">
                       <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">{selectedEvent.title || selectedEvent.expand?.venue?.name || 'Untitled Event'}</h2>
                       <span className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary/20 text-primary-deep'}`}>
@@ -389,7 +345,7 @@ export default function AttendanceView() {
                   {selectedEvent.details && (
                     <button 
                       type="button" 
-                      className="flex items-center gap-1.5 rounded-lg bg-white/50 border border-border/40 px-3 py-1.5 text-xs font-bold text-primary-deep transition-all hover:bg-white hover:shadow-xs active:scale-95 cursor-pointer"
+                      className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border/40 bg-white/50 px-3 py-1.5 text-xs font-bold text-primary-deep transition-all hover:bg-white hover:shadow-xs active:scale-95"
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsEventExpanded(!isEventExpanded);
@@ -406,7 +362,7 @@ export default function AttendanceView() {
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-sm font-bold text-primary hover:text-primary-deep transition-colors hover:underline"
+                    className="flex items-center gap-1.5 text-sm font-bold text-primary transition-colors hover:text-primary-deep hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <svg className="size-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -428,130 +384,91 @@ export default function AttendanceView() {
 
                 {isEventExpanded && selectedEvent.details && (
                   <div className="mt-3 border-t border-primary/10 pt-3 text-sm text-text-muted">
-                    <span className="font-bold block text-[0.65rem] uppercase tracking-wider text-text-muted mb-1.5">Details / Notes</span>
-                    <p className="m-0 whitespace-pre-wrap leading-relaxed text-slate-600">{selectedEvent.details}</p>
+                    <span className="mb-1.5 block text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Details / Notes</span>
+                    <p className="m-0 leading-relaxed whitespace-pre-wrap text-slate-600">{selectedEvent.details}</p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Voice Part Attendance Balance Summary Card */}
-            {voiceParts.length > 0 && (
-              <AppCard 
-                title="Voice Part Attendance Summary"
-                actions={
-                  <span className="inline-flex items-center rounded-full bg-primary-light px-4 py-1.5 text-sm font-semibold tracking-wider text-primary-deep uppercase">
-                    {filterStatus === '' && `Expected: ${expectedCount}`}
-                    {filterStatus === 'Present' && `Present: ${presentCount}`}
-                    {filterStatus === 'Absent' && `Absent: ${absentCount}`}
-                    {filterStatus === 'Pending' && `Unmarked: ${unmarkedCount}`}
-                  </span>
-                }
-                className="gap-4"
+            {/* Attendance Status Stat Cards */}
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {/* Expected Card */}
+              <button
+                type="button"
+                onClick={() => setFilterStatus('')}
+                className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-5 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  filterStatus === ''
+                    ? 'border-blue-500 bg-blue-50/40 ring-1 ring-blue-500'
+                    : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
+                }`}
               >
-                {/* Attendance Status Buttons acting on Voice Part Counts */}
-                <div className="flex flex-row flex-wrap gap-2 border-b border-gray-200 pb-2">
-                  <button
-                    type="button"
-                    onClick={() => setFilterStatus('')}
-                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
-                      filterStatus === ''
-                        ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
-                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                    }`}
-                  >
-                    👥 Expected ({expectedCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterStatus('Present')}
-                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
-                      filterStatus === 'Present'
-                        ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
-                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                    }`}
-                  >
-                    🟢 Present ({presentCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterStatus('Absent')}
-                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
-                      filterStatus === 'Absent'
-                        ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
-                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                    }`}
-                  >
-                    🔴 Absent ({absentCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFilterStatus('Pending')}
-                    className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 cursor-pointer ${
-                      filterStatus === 'Pending'
-                        ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-300'
-                        : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                    }`}
-                  >
-                    ⏳ Unmarked ({unmarkedCount})
-                  </button>
+                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                  <span>👥 Expected</span>
+                  {filterStatus === '' && <span className="size-2 animate-pulse rounded-full bg-blue-500" />}
                 </div>
+                <div className="text-3xl font-extrabold tracking-tight text-slate-800">
+                  {expectedCount}
+                </div>
+              </button>
 
-                {/* Section Subtotals */}
-                <div
-                  className="grid gap-4 border-b border-gray-200 pb-4"
-                  // @allow-inline-style - dynamic grid columns based on section count
-                  style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
-                >
-                  {sections.map(sec => {
-                    const isSelected = selectedVoiceParts.includes(sec.code);
-                    return (
-                      <div
-                        key={sec.code}
-                        className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-colors duration-150 hover:bg-primary-light/80 ${
-                          isSelected
-                            ? 'border-primary shadow-[0_0_0_1px_var(--primary)]'
-                            : 'border-transparent'
-                        }`}
-                        onClick={() => handleVoicePartToggle(sec.code)}
-                      >
-                        <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
-                          {sec.name}
-                        </div>
-                        <div className="text-3xl leading-none font-extrabold text-primary-deep">
-                          {sectionCounts[sec.code] || 0}
-                        </div>
-                      </div>
-                    );
-                  })}
+              {/* Present Card */}
+              <button
+                type="button"
+                onClick={() => setFilterStatus('Present')}
+                className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-5 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  filterStatus === 'Present'
+                    ? 'border-emerald-500 bg-emerald-50/40 ring-1 ring-emerald-500'
+                    : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                  <span>🟢 Present</span>
+                  {filterStatus === 'Present' && <span className="size-2 animate-pulse rounded-full bg-emerald-500" />}
                 </div>
+                <div className="text-3xl font-extrabold tracking-tight text-slate-800">
+                  {presentCount}
+                </div>
+              </button>
 
-                {/* Individual Part Breakdowns */}
-                <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
-                  {voiceParts.map(vp => {
-                    const isSelected = selectedVoiceParts.includes(vp.label);
-                    const count = partCounts.get(vp.label) || 0;
-                    return (
-                      <div
-                        key={vp.label}
-                        className={`flex cursor-pointer flex-col rounded-lg border bg-white transition-colors duration-150 hover:bg-primary-light ${
-                          isSelected ? 'border-primary bg-primary-light' : 'border-gray-200'
-                        }`}
-                        onClick={() => handleVoicePartToggle(vp.label)}
-                        // @allow-inline-style - dynamic border and padding based on selection
-                        style={{
-                          borderWidth: isSelected ? '2px' : '1px',
-                          padding: isSelected ? 'calc(8px - 1px)' : '8px'
-                        }}
-                      >
-                        <div className="text-xs font-bold">{vp.label}</div>
-                        <div className="text-sm font-bold">{count}</div>
-                      </div>
-                    );
-                  })}
+              {/* Absent Card */}
+              <button
+                type="button"
+                onClick={() => setFilterStatus('Absent')}
+                className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-5 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  filterStatus === 'Absent'
+                    ? 'border-red-500 bg-red-50/40 ring-1 ring-red-500'
+                    : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                  <span>🔴 Absent</span>
+                  {filterStatus === 'Absent' && <span className="size-2 animate-pulse rounded-full bg-red-500" />}
                 </div>
-              </AppCard>
-            )}
+                <div className="text-3xl font-extrabold tracking-tight text-slate-800">
+                  {absentCount}
+                </div>
+              </button>
+
+              {/* Unmarked Card */}
+              <button
+                type="button"
+                onClick={() => setFilterStatus('Pending')}
+                className={`flex cursor-pointer flex-col gap-1 rounded-xl border p-5 text-left shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  filterStatus === 'Pending'
+                    ? 'border-slate-500 bg-slate-100/40 ring-1 ring-slate-500'
+                    : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                  <span>⏳ Unmarked</span>
+                  {filterStatus === 'Pending' && <span className="size-2 animate-pulse rounded-full bg-slate-500" />}
+                </div>
+                <div className="text-3xl font-extrabold tracking-tight text-slate-800">
+                  {unmarkedCount}
+                </div>
+              </button>
+            </div>
 
             {/* Filter and Bulk Action Toolbar */}
             {!isLoading && !error && (
@@ -612,12 +529,35 @@ export default function AttendanceView() {
                     <option value="Pending">Pending RSVP Only</option>
                   </select>
 
+                  {/* Voice Part Filter Selection */}
+                  <select
+                    value={selectedVoiceParts[0] || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedVoiceParts(val ? [val] : []);
+                    }}
+                    className="h-11 w-[230px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-base text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    aria-label="Filter by Voice Part"
+                  >
+                    <option value="">All Voice Parts / Sections</option>
+                    <optgroup label="Sections">
+                      {sections.map(sec => (
+                        <option key={sec.code} value={sec.code}>{sec.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Voice Parts">
+                      {voiceParts.map(vp => (
+                        <option key={vp.label} value={vp.label}>{vp.label}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+
                   {/* Reset Filters action */}
                   {(filterName || selectedVoiceParts.length > 0 || filterStatus !== '' || rsvpFilter !== 'Both') && (
                     <Button
                       onClick={handleResetFilters}
                       variant="secondary"
-                      className="flex h-11 items-center gap-1 whitespace-nowrap font-bold"
+                      className="flex h-11 items-center gap-1 font-bold whitespace-nowrap"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
@@ -635,7 +575,7 @@ export default function AttendanceView() {
                   {/* Refresh Button */}
                   <button
                     onClick={() => refresh()}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95 cursor-pointer"
+                    className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95"
                     title="Refresh Roster"
                     aria-label="Refresh roster"
                   >
@@ -746,7 +686,7 @@ export default function AttendanceView() {
                 <p className="mt-0 mb-6 max-w-sm text-sm font-medium text-text-muted">Try adjusting your search terms, voice parts, or attendance filters.</p>
                 <button 
                   onClick={handleResetFilters} 
-                  className="rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95 cursor-pointer"
+                  className="cursor-pointer rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95"
                 >
                   Reset All Filters
                 </button>
@@ -785,7 +725,7 @@ export default function AttendanceView() {
                         <select
                           value={selectedDeclinedProfileId}
                           onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
-                          className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-xs transition-colors focus:border-red-600 focus:ring-1 focus:ring-red-600 focus:outline-hidden md:w-64 text-slate-800"
+                          className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-xs transition-colors focus:border-red-600 focus:ring-1 focus:ring-red-600 focus:outline-hidden md:w-64"
                         >
                           <option value="">-- Select Declined Singer --</option>
                           {declinedSingers.map(s => (
