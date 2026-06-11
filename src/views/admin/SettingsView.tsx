@@ -6,6 +6,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
+import { Button } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -38,6 +39,8 @@ const ALL_SYSTEM_TIMEZONES = (() => {
     ];
   }
 })();
+
+const inputClasses = "block w-full max-w-lg rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-primary";
 
 export default function SettingsView() {
   const dialog = useDialog();
@@ -142,133 +145,147 @@ export default function SettingsView() {
     }
   };
 
-  if (isLoading) return <div className="mx-auto max-w-7xl p-6">Loading system settings...</div>;
+  if (isLoading) return <div className="mx-auto max-w-4xl p-6">Loading system settings...</div>;
 
   return (
-    <div className="mx-auto max-w-7xl flex-col p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-bold">System Settings</h1>
+    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6 pb-24">
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900">System Settings</h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Configure global metadata, timezone options, organization logos, and email queue webhooks.
+        </p>
       </div>
 
-      {message && <div className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-medium text-primary-deep">{message}</div>}
+      {message && (
+        <div className="inline-flex w-fit items-center rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary-deep">
+          {message}
+        </div>
+      )}
 
-      <AppCard title="Choir Name">
-          <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-6">
+        <AppCard title="Choir Name">
+          <div className="flex flex-col gap-2">
             <input
               id="choir-name"
               type="text"
               value={choirName}
               onChange={(event) => setChoirName(event.target.value)}
               placeholder="e.g. Downtown Community Chorale"
-              className="card w-full max-w-lg rounded-md border-border p-2 text-sm"
+              className={inputClasses}
             />
-            <p className="text-muted text-xs text-text-muted">
-            Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
-          </p>
-        </div>
-      </AppCard>
-
-      <AppCard title="Organization Logo">
-        <div className="flex flex-col gap-1">
-          {logoUrl && (
-            <div className="relative size-24 overflow-hidden rounded-full border-2 border-border">
-              <img src={logoUrl} alt="Organization logo preview" className="size-full object-cover" />
-            </div>
-          )}
-          <div className="mt-2 flex items-center gap-2">
-            <label className="btn btn-secondary cursor-pointer text-sm text-primary hover:underline">
-              {logoUrl ? 'Replace Logo' : 'Upload Logo'}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  if (file.size > 5 * 1024 * 1024) {
-                    dialog.showToast('File size must be under 5MB');
-                    return;
-                  }
-                  if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
-                  setLogoFile(file);
-                  setIsLogoRemoved(false);
-                  setLogoUrl(URL.createObjectURL(file));
-                }}
-              />
-            </label>
-            {logoUrl && (
-              <button
-                className="btn btn-ghost btn-danger"
-                onClick={() => {
-                  setLogoFile(null);
-                  setIsLogoRemoved(true);
-                  setLogoUrl(null);
-                }}
-              >
-                Remove Logo
-              </button>
-            )}
+            <p className="text-xs text-slate-500">
+              Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
+            </p>
           </div>
-          <p className="text-muted text-xs text-text-muted">
-            Displayed on public pages (auditions, ticketing, donations) and the singer dashboard. Recommended size: 400px wide or larger. Accepted formats: PNG, JPG, SVG, WebP.
-          </p>
-        </div>
-      </AppCard>
+        </AppCard>
 
-      <AppCard title="Public Homepage URL">
-        <div className="flex flex-col gap-1">
-          <input
-            id="homepage-url"
-            type="url"
-            value={homepageUrl}
-            onChange={(event) => setHomepageUrl(event.target.value)}
-            placeholder="e.g. https://www.mychoir.org"
-            className="card w-full max-w-lg rounded-md border-border p-2 text-sm"
-          />
-          <p className="text-muted text-xs text-text-muted">
-            The main public website address where applicants are redirected after submitting their audition sheet successfully.
-          </p>
-        </div>
-      </AppCard>
+        <AppCard title="Organization Logo">
+          <div className="flex items-center gap-6">
+            <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Organization logo preview" className="size-full object-contain p-2" />
+              ) : (
+                <svg className="size-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.75c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h18M10.5 3.75h3v3h-3v-3z" />
+                </svg>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <label className="inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-light px-4 font-sans text-xs font-semibold text-primary-deep transition-colors hover:bg-[#d1dfd6] active:translate-y-px">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  {logoUrl ? 'Replace Logo' : 'Upload Logo'}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        dialog.showToast('File size must be under 5MB');
+                        return;
+                      }
+                      if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
+                      setLogoFile(file);
+                      setIsLogoRemoved(false);
+                      setLogoUrl(URL.createObjectURL(file));
+                    }}
+                  />
+                </label>
+                {logoUrl && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="small"
+                    onClick={() => {
+                      setLogoFile(null);
+                      setIsLogoRemoved(true);
+                      setLogoUrl(null);
+                    }}
+                  >
+                    Remove Logo
+                  </Button>
+                )}
+              </div>
+              <p className="max-w-md text-xs text-slate-500 leading-normal">
+                Displayed on public pages and the singer dashboard. PNG, JPG, SVG, or WebP formats are supported.
+              </p>
+            </div>
+          </div>
+        </AppCard>
 
-      <AppCard title="Choir Timezone">
-        <div className="flex flex-col gap-1">
-          <select
-            id="choir-timezone"
-            value={timezone}
-            onChange={(event) => setTimezone(event.target.value)}
-            className="card w-full max-w-lg rounded-md border-border p-2 text-sm"
-            // @allow-inline-style - explicit pointer cursor and dynamic background color overrides
-            style={{
-              backgroundColor: 'var(--card-bg, #ffffff)',
-              color: 'inherit',
-              cursor: 'pointer'
-            }}
-          >
-            <optgroup label="Common Timezones">
-              {COMMON_TIMEZONES.map((tz) => (
-                <option key={`common-${tz.value}`} value={tz.value}>
-                  {tz.label} ({tz.value})
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="All System Timezones">
-              {ALL_SYSTEM_TIMEZONES.map((tz) => (
-                <option key={`all-${tz}`} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-          <p className="text-muted text-xs text-text-muted">
-            This timezone controls all event scheduling, display clocks, and email/SMS automatic reminders.
-          </p>
-        </div>
-      </AppCard>
+        <AppCard title="Public Homepage URL">
+          <div className="flex flex-col gap-2">
+            <input
+              id="homepage-url"
+              type="url"
+              value={homepageUrl}
+              onChange={(event) => setHomepageUrl(event.target.value)}
+              placeholder="e.g. https://www.mychoir.org"
+              className={inputClasses}
+            />
+            <p className="text-xs text-slate-500">
+              The main public website address where applicants are redirected after submitting their audition sheet successfully.
+            </p>
+          </div>
+        </AppCard>
 
-      {/* Attendance default sorting is configured individually per admin in their profile preferences */}
+        <AppCard title="Choir Timezone">
+          <div className="flex flex-col gap-2">
+            <select
+              id="choir-timezone"
+              value={timezone}
+              onChange={(event) => setTimezone(event.target.value)}
+              className="block w-full max-w-lg cursor-pointer rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-primary"
+            >
+              <optgroup label="Common Timezones">
+                {COMMON_TIMEZONES.map((tz) => (
+                  <option key={`common-${tz.value}`} value={tz.value}>
+                    {tz.label} ({tz.value})
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="All System Timezones">
+                {ALL_SYSTEM_TIMEZONES.map((tz) => (
+                  <option key={`all-${tz}`} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            <p className="text-xs text-slate-500">
+              This timezone controls all event scheduling, display clocks, and email/SMS automatic reminders.
+            </p>
+          </div>
+        </AppCard>
 
-      <QueueWebhookSettings />
+        <QueueWebhookSettings />
+      </div>
 
       <FloatingSaveBar 
         isDirty={isDirty} 
@@ -331,56 +348,61 @@ function QueueWebhookSettings() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (isLoading) return <div className="text-muted">Loading queue configurations...</div>;
+  if (isLoading) return <div className="text-xs text-slate-400">Loading queue configurations...</div>;
 
   return (
     <AppCard title="Email Queue Webhook">
       <div className="flex flex-col gap-4">
-        <p className="text-muted text-xs text-text-muted">
+        <p className="text-xs text-slate-500">
           PocketHost triggers this URL to process single-recipient messages sequentially in the background.
         </p>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-label" htmlFor="webhook-url">Target Webhook URL</label>
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-semibold text-slate-700" htmlFor="webhook-url">Target Webhook URL</label>
           <div className="flex items-center gap-2">
-            {/* @allow-inline-style - layout overrides */}
             <input
               id="webhook-url"
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="card w-full rounded-md border-border p-2 text-sm"
-              // @allow-inline-style - dynamic flex growth and background color overlay
-              style={{
-                flex: 1,
-                backgroundColor: 'var(--border-light, #f8fafc)',
-                color: 'var(--text-muted)'
-              }}
+              className="block w-full max-w-lg flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-500 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-primary"
             />
-            <button
+            <Button
               type="button"
               disabled={!token}
               onClick={handleCopy}
-              className="btn btn-ghost" 
-              // @allow-inline-style - explicit height matching
-              style={{ height: '40px', whiteSpace: 'nowrap' }}
+              variant="ghost"
+              size="small"
+              icon={
+                copied ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-emerald-600">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                )
+              }
             >
               {copied ? 'Copied!' : 'Copy Link'}
-            </button>
+            </Button>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="text-muted text-xs text-text-muted">
-            <strong>Status:</strong> {token ? `Active (${token.substring(0, 8)}...)` : 'Unassigned'}
+        <div className="flex items-center justify-between border-t border-slate-100 mt-2 pt-4">
+          <div className="text-xs text-slate-500">
+            <strong>Status:</strong> {token ? <span className="font-semibold text-emerald-700">Active ({token.substring(0, 8)}...)</span> : <span className="text-slate-400">Unassigned</span>}
           </div>
-          <button
+          <Button
             type="button"
             onClick={handleGenerate}
-            className="btn btn-primary"
+            variant="secondary"
+            size="small"
           >
             {token ? 'Regenerate Token' : 'Generate Token'}
-          </button>
+          </Button>
         </div>
       </div>
     </AppCard>
