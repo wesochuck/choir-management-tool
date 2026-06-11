@@ -120,40 +120,69 @@ const CheckInRow: React.FC<{
 
       {/* Attendance Action Buttons */}
       <td className="px-6 py-4 text-sm whitespace-nowrap">
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onSetAttendance(item.profileId, 'Present')}
-            className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              isPresent
-                ? 'bg-emerald-700 text-white'
-                : 'border border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
-            }`}
-          >
-            Present
-          </button>
-          <button
-            type="button"
-            onClick={() => onSetAttendance(item.profileId, 'Absent')}
-            className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              isAbsent
-                ? 'bg-red-600 text-white'
-                : 'border border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
-            }`}
-          >
-            Absent
-          </button>
-          <button
-            type="button"
-            onClick={() => onSetAttendance(item.profileId, 'Pending')}
-            className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              isPending
-                ? 'bg-slate-500 text-white'
-                : 'border border-slate-300 bg-white text-slate-500 hover:bg-slate-50'
-            }`}
-          >
-            Reset
-          </button>
+        <div className="flex items-center justify-center gap-2">
+          {isPending && (
+            <>
+              <button
+                type="button"
+                onClick={() => onSetAttendance(item.profileId, 'Absent')}
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition active:scale-95"
+              >
+                Absent
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetAttendance(item.profileId, 'Present')}
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95"
+              >
+                ✓ Present
+              </button>
+            </>
+          )}
+
+          {isPresent && (
+            <>
+              <button
+                type="button"
+                onClick={() => onSetAttendance(item.profileId, 'Absent')}
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-500 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+              >
+                Mark Absent
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetAttendance(item.profileId, 'Pending')}
+                className="cursor-pointer text-xs font-semibold text-slate-400 hover:text-slate-600 px-1.5 py-1.5 transition"
+              >
+                Reset
+              </button>
+              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+                ✓ Present
+              </span>
+            </>
+          )}
+
+          {isAbsent && (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-800 border border-red-200">
+                ✗ Absent
+              </span>
+              <button
+                type="button"
+                onClick={() => onSetAttendance(item.profileId, 'Pending')}
+                className="cursor-pointer text-xs font-semibold text-slate-400 hover:text-slate-600 px-1.5 py-1.5 transition"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetAttendance(item.profileId, 'Present')}
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-500 shadow-xs hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition"
+              >
+                Mark Present
+              </button>
+            </>
+          )}
         </div>
       </td>
     </tr>
@@ -302,7 +331,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
               <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 RSVP
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Attendance
               </th>
             </tr>

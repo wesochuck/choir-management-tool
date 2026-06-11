@@ -612,7 +612,7 @@ export default function AttendanceView() {
                     onChange={(e) =>
                       handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')
                     }
-                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[210px] rounded-lg border border-gray-200 px-3 pr-9 text-base text-gray-800 focus:ring-1 focus:outline-hidden"
+                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[210px] rounded-lg border border-gray-200 px-3 pr-9 text-sm text-gray-800 focus:ring-1 focus:outline-hidden"
                     aria-label="Sort singers"
                   >
                     <option value="lastName">Last Name</option>
@@ -626,7 +626,7 @@ export default function AttendanceView() {
                     onChange={(e) =>
                       handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')
                     }
-                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[240px] rounded-lg border border-gray-200 px-3 pr-9 text-base text-gray-800 focus:ring-1 focus:outline-hidden"
+                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[240px] rounded-lg border border-gray-200 px-3 pr-9 text-sm text-gray-800 focus:ring-1 focus:outline-hidden"
                     aria-label="RSVP Status Filter"
                   >
                     <option value="Both">Both (Attending + Pending)</option>
@@ -641,7 +641,7 @@ export default function AttendanceView() {
                       const val = e.target.value;
                       setSelectedVoiceParts(val ? [val] : []);
                     }}
-                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[230px] rounded-lg border border-gray-200 px-3 pr-9 text-base text-gray-800 focus:ring-1 focus:outline-hidden"
+                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[230px] rounded-lg border border-gray-200 px-3 pr-9 text-sm text-gray-800 focus:ring-1 focus:outline-hidden"
                     aria-label="Filter by Voice Part"
                   >
                     <option value="">All Voice Parts / Sections</option>
