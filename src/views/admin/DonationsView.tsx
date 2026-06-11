@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, Input, Select, Tabs, TabPanel, FormField, Badge } from '../../components/ui';
+import { Button, Input, Select, TabPanel, FormField, Badge } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -273,7 +273,7 @@ export default function DonationsView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-row items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Donations
@@ -282,28 +282,47 @@ export default function DonationsView() {
             Manage donations and donor levels
           </p>
         </div>
-        <div className="mt-1 flex-shrink-0">
-          {activeTab === 'history' && (
-            <Button variant="secondary" onClick={handleExportCSV}>
-              Export CSV
-            </Button>
-          )}
-          {activeTab === 'levels' && (
-            <Button variant="primary" onClick={() => openLevelModal()}>
-              Add Level
-            </Button>
-          )}
-        </div>
       </div>
 
-      <Tabs
-        tabs={[
-          { id: 'history', label: 'History' },
-          { id: 'levels', label: 'Donor Settings' },
-        ]}
-        activeTab={activeTab}
-        onTabChange={(id) => setActiveTab(id as 'history' | 'levels')}
-      />
+      <div className="border-b border-border">
+        <div className="-mb-px flex items-center justify-between">
+          <nav className="flex gap-2">
+            <button
+              className={`cursor-pointer rounded-t-lg px-5 py-2.5 text-sm font-medium ${
+                activeTab === 'history'
+                  ? 'bg-primary text-surface'
+                  : 'border border-border bg-surface text-text-muted hover:bg-slate-50'
+              }`}
+              onClick={() => setActiveTab('history')}
+            >
+              History
+            </button>
+            <button
+              className={`cursor-pointer rounded-t-lg px-5 py-2.5 text-sm font-medium ${
+                activeTab === 'levels'
+                  ? 'bg-primary text-surface'
+                  : 'border border-border bg-surface text-text-muted hover:bg-slate-50'
+              }`}
+              onClick={() => setActiveTab('levels')}
+            >
+              Donor Settings
+            </button>
+          </nav>
+
+          <div className="flex items-center gap-4">
+            {activeTab === 'history' && (
+              <Button variant="secondary" onClick={handleExportCSV}>
+                Export CSV
+              </Button>
+            )}
+            {activeTab === 'levels' && (
+              <Button variant="primary" onClick={() => openLevelModal()}>
+                Add Level
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
 
       <TabPanel tabId="history" activeTab={activeTab}>
         <div className="flex flex-col gap-6">
