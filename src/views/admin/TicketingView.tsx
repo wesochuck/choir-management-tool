@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ticketService, type TicketPurchase, type TicketBundle } from '../../services/ticketService';
 import { pb } from '../../lib/pocketbase';
 import type { Event } from '../../services/eventService';
@@ -411,13 +412,13 @@ export default function TicketingView() {
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-row items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Ticketing Dashboard
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500">
             Manage ticket sales, configure season bundles, and view check-in checklists.
           </p>
         </div>
@@ -450,7 +451,7 @@ export default function TicketingView() {
           <div className="flex items-center gap-4">
             {activeTab === 'bundles' && (
               <button onClick={handleOpenCreateModal} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
-                Create New Bundle
+                + Create New Bundle
               </button>
             )}
             {activeTab === 'willcall' && selectedEventId && (
@@ -470,7 +471,11 @@ export default function TicketingView() {
                 Performance Summary
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Choose a performance to view ticket sales, revenue, and will call activity.
+                Choose a performance to view ticket sales, revenue, and will call activity. To enable ticketing for an event, go to the{' '}
+                <Link to="/admin/events" className="text-emerald-700 hover:text-emerald-800 underline">
+                  Event Management
+                </Link>{' '}
+                page, edit the performance (must be of type Performance), and check the "Enable Online Ticket Sales" option on the Tickets tab.
               </p>
             </div>
 
@@ -693,7 +698,15 @@ export default function TicketingView() {
           {loading ? (
             <p className="text-gray-500">Loading bundles...</p>
           ) : bundles.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">No season bundles configured.</p>
+            <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+              <p className="text-gray-500">No season bundles configured.</p>
+              <button
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800"
+              >
+                + Create New Bundle
+              </button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left">

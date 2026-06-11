@@ -407,7 +407,11 @@ When using this exception, add:
 // @allow-inline-style - explanation
 ```
 
-## 17. Before Finishing
+## 17. UI Empty State Actions
+
+When displaying empty states in dashboards or lists (e.g. "No items found" or "No season bundles configured"), always include a call-to-action button (preceded by a `+` symbol for creation/addition actions, e.g. `+ Create New Bundle`) directly within the empty state container. This ensures the user does not have to hunt for primary action buttons located elsewhere on the screen.
+
+## 18. Before Finishing
 
 Before final response:
 

@@ -139,6 +139,10 @@ These foundational mandates MUST be followed by all agents working on this codeb
 - **Modal Exit Action Required:** Every modal must include a visible dismiss action button (`Cancel`, `Close`, or equivalent) in the footer/actions area; ESC key should be supported but do not rely on ESC key or backdrop click as the only exit path.
 - **Allowed Exception:** Native browser dialogs are acceptable only in narrowly scoped, temporary fallback flows where the shared dialog context is not available; prefer migrating these to `useDialog` when touched.
 
+## UI Empty State Actions
+
+- **Empty State Action Buttons:** When rendering empty states (e.g., "No items found" or "No season bundles configured"), always include a call-to-action button (preceded by a `+` symbol for creation/addition actions, e.g., `+ Create New Bundle`) directly within the empty state container. This provides a clear, immediate action path for the user instead of requiring them to search for primary buttons in the header or toolbar.
+
 ## Recurring Failure Prevention (MANDATORY)
 
 - **Infrastructure Audit:** Every new agent MUST verify that `src/lib/pocketbase.ts` contains the `afterSend` interceptor for stale token resilience. If missing, implement it immediately before proceeding with any feature work.
