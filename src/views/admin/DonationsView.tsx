@@ -271,7 +271,7 @@ export default function DonationsView() {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+    <div className="w-full flex flex-col gap-6">
       {/* Header Area */}
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
@@ -283,7 +283,7 @@ export default function DonationsView() {
       </div>
 
       {/* Tabs / Actions Navigation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-px gap-4">
+      <div className="w-full flex flex-row items-center justify-between border-b border-slate-200 pb-px">
         <div className="flex gap-6">
           <button
             type="button"
@@ -309,7 +309,7 @@ export default function DonationsView() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto pb-1.5 sm:pb-0">
+        <div className="flex items-center gap-2 pb-1.5">
           {activeTab === 'history' && (
             <Button
               variant="secondary"
@@ -416,7 +416,10 @@ export default function DonationsView() {
             </div>
           </div>
 
-          <AppCard title="Donations Register" noPadding>
+          <AppCard noPadding>
+            <div className="border-b border-slate-100 px-6 py-4">
+              <h3 className="text-lg font-bold text-slate-800">Donations Register</h3>
+            </div>
             <div className="flex flex-col gap-4 p-6">
               {/* Filter deck */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
@@ -599,8 +602,11 @@ export default function DonationsView() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Public Portal Configuration Card */}
           <div className="lg:col-span-1 flex flex-col gap-6">
-            <AppCard title="Portal Configuration">
-              <div className="flex flex-col gap-5">
+            <AppCard>
+              <div className="border-b border-slate-100 pb-3">
+                <h3 className="text-lg font-bold text-slate-800">Portal Configuration</h3>
+              </div>
+              <div className="flex flex-col gap-5 mt-2">
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Customize the heading text and detailed descriptive message shown to users on your public-facing checkout/donation webpage.
                 </p>
