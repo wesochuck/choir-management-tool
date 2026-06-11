@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useVenues } from '../../hooks/useVenues';
 import { checkVenueDependencies, type Venue } from '../../services/venueService';
 import { AppCard } from '../../components/common/AppCard';
+import { BaseModal } from '../../components/common/BaseModal';
 import { Button, Spinner, FormField, Input, EmptyState } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -93,68 +94,70 @@ export default function VenuesView() {
             Configure stage address information, row capacities and default layouts for seating charts.
           </p>
         </div>
-        {!isAdding && (
-          <div className="flex-shrink-0 mt-1">
-            <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
-          </div>
-        )}
+        <div className="flex-shrink-0 mt-1">
+          <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
+        </div>
       </div>
 
-      {isAdding && (
-        <AppCard title={editingId ? 'Edit Venue' : 'Create New Venue'}>
-          <form onSubmit={handleSave} className="flex flex-col gap-4">
-            <FormField label="Venue Name" required>
+      <BaseModal
+        isOpen={isAdding}
+        onClose={resetForm}
+        title={editingId ? 'Edit Venue' : 'Create New Venue'}
+        maxWidth="500px"
+        footer={
+          <div className="flex flex-row gap-4">
+            <Button variant="ghost" onClick={resetForm}>Cancel</Button>
+            <Button type="submit" form="venue-form" variant="primary">Save Template</Button>
+          </div>
+        }
+      >
+        <form id="venue-form" onSubmit={handleSave} className="flex flex-col gap-4">
+          <FormField label="Venue Name" required>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="e.g. Main Sanctuary"
+            />
+          </FormField>
+
+          <FormField label="Address">
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="e.g. 123 Main St, City, State"
+            />
+          </FormField>
+
+          <div className="flex flex-row items-center gap-2 py-1">
+            <input
+              type="checkbox"
+              id="isOpenSeating"
+              checked={isOpenSeating}
+              onChange={(e) => setIsOpenSeating(e.target.checked)}
+              className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
+            />
+            <label htmlFor="isOpenSeating" className="text-sm font-medium text-text cursor-pointer select-none">
+              Open Seating (No assigned seats)
+            </label>
+          </div>
+
+          {!isOpenSeating && (
+            <FormField
+              label="Row Capacities (Comma separated)"
+              required
+              helpText="Enter the number of seats for each row, starting from the front."
+            >
               <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={rowCountsStr}
+                onChange={(e) => setRowCountsStr(e.target.value)}
                 required
-                placeholder="e.g. Main Sanctuary"
+                placeholder="e.g. 12, 15, 18, 20"
               />
             </FormField>
-
-            <FormField label="Address">
-              <Input
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g. 123 Main St, City, State"
-              />
-            </FormField>
-
-            <div className="flex flex-row items-center gap-2 py-1">
-              <input
-                type="checkbox"
-                id="isOpenSeating"
-                checked={isOpenSeating}
-                onChange={(e) => setIsOpenSeating(e.target.checked)}
-                className="h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
-              />
-              <label htmlFor="isOpenSeating" className="text-sm font-medium text-text cursor-pointer select-none">
-                Open Seating (No assigned seats)
-              </label>
-            </div>
-
-            {!isOpenSeating && (
-              <FormField
-                label="Row Capacities (Comma separated)"
-                required
-                helpText="Enter the number of seats for each row, starting from the front."
-              >
-                <Input
-                  value={rowCountsStr}
-                  onChange={(e) => setRowCountsStr(e.target.value)}
-                  required
-                  placeholder="e.g. 12, 15, 18, 20"
-                />
-              </FormField>
-            )}
-
-            <div className="mt-2 flex flex-col justify-end gap-3 md:flex-row">
-              <Button variant="ghost" onClick={resetForm}>Cancel</Button>
-              <Button type="submit" variant="primary">Save Template</Button>
-            </div>
-          </form>
-        </AppCard>
-      )}
+          )}
+        </form>
+      </BaseModal>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
         {venues.map(v => (
@@ -225,7 +228,7 @@ export default function VenuesView() {
         ))}
       </div>
 
-      {venues.length === 0 && !isAdding && (
+      {venues.length === 0 && (
         <AppCard>
           <EmptyState
             icon="🏛️"

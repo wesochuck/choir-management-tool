@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
+import { Button, Input, Select, Tabs, TabPanel, FormField, Badge } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { BaseModal } from '../../components/common/BaseModal';
@@ -271,283 +272,317 @@ export default function DonationsView() {
   };
 
   return (
-    <div className="flex flex-col gap-8 py-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-row items-start justify-between gap-4">
         <div>
-          <h1 className="text-display m-0">Donations</h1>
-          <p className="text-sm text-gray-500">Manage donations and donor levels</p>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+            Donations
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Manage donations and donor levels
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="mt-1 flex-shrink-0">
           {activeTab === 'history' && (
-            <button className="btn btn-secondary" onClick={handleExportCSV}>
+            <Button variant="secondary" onClick={handleExportCSV}>
               Export CSV
-            </button>
+            </Button>
           )}
           {activeTab === 'levels' && (
-            <button className="btn btn-primary" onClick={() => openLevelModal()}>
+            <Button variant="primary" onClick={() => openLevelModal()}>
               Add Level
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
-      <div className="mb-1 flex flex-row gap-2 border-b border-gray-200 pb-1">
-        <button 
-          className={`btn px-4 py-2 font-semibold ${activeTab === 'history' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setActiveTab('history')}
-        >
-          History
-        </button>
-        <button 
-          className={`btn px-4 py-2 font-semibold ${activeTab === 'levels' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => setActiveTab('levels')}
-        >
-          Donor Settings
-        </button>
-      </div>
+      <Tabs
+        tabs={[
+          { id: 'history', label: 'History' },
+          { id: 'levels', label: 'Donor Settings' },
+        ]}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as 'history' | 'levels')}
+      />
 
-      {activeTab === 'history' && (
-        <>
-          <div className="card bg-neutral-100 p-4">
-            <div className="flex h-full items-center justify-around">
-              <div className="flex flex-col gap-1 text-center">
-                <span className="text-xs font-bold text-gray-500 uppercase">Donations</span>
-                <span className="text-headline font-bold">{filteredStats.count}</span>
-              </div>
-              <div className="flex flex-col gap-1 text-center">
-                <span className="text-xs font-bold text-gray-500 uppercase">Total Raised</span>
-                <span className="text-headline font-bold text-pink-600">
-                  ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex flex-col gap-1 text-center">
-                <span className="text-xs font-bold text-gray-500 uppercase">Average</span>
-                <span className="text-headline font-bold">
-                  ${(filteredStats.avg / 100).toFixed(2)}
-                </span>
-              </div>
+      <TabPanel tabId="history" activeTab={activeTab}>
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+              <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+                Donations
+              </p>
+              <p className="mt-2 text-3xl font-bold text-text">
+                {filteredStats.count}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+              <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+                Total Raised
+              </p>
+              <p className="mt-2 text-3xl font-bold text-pink-600">
+                ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
+              <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+                Average
+              </p>
+              <p className="mt-2 text-3xl font-bold text-text">
+                ${(filteredStats.avg / 100).toFixed(2)}
+              </p>
             </div>
           </div>
 
           <AppCard title="Donations History">
             <div className="flex flex-col gap-4">
-              <div className="flex w-full flex-row flex-wrap items-center gap-4">
-                <div className="w-full min-w-[200px] flex-1">
-                  <input 
-                    type="text" 
-                    placeholder="Search donor name or email..." 
-                    className="card h-10 w-full border border-gray-200 px-3"
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
+              <div className="flex flex-wrap items-end gap-4 rounded-lg border border-border bg-slate-50/50 p-4">
+                <div className="min-w-[200px] flex-1">
+                  <FormField label="Search">
+                    <Input 
+                      type="text" 
+                      placeholder="Search donor name or email..." 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    />
+                  </FormField>
                 </div>
-                <div className="min-w-[150px] flex-1">
-                  <input 
-                    type="date" 
-                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
-                    value={startDate}
-                    onChange={e => handleSetStartDate(e.target.value)}
-                    placeholder="View From"
-                  />
+                <div className="w-full min-w-[150px] sm:w-auto">
+                  <FormField label="From">
+                    <Input 
+                      type="date" 
+                      value={startDate}
+                      onChange={e => handleSetStartDate(e.target.value)}
+                    />
+                  </FormField>
                 </div>
-                <div className="min-w-[150px] flex-1">
-                  <input 
-                    type="date" 
-                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
-                    value={endDate}
-                    onChange={e => setEndDate(e.target.value)}
-                    placeholder="To"
-                  />
+                <div className="w-full min-w-[150px] sm:w-auto">
+                  <FormField label="To">
+                    <Input 
+                      type="date" 
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                    />
+                  </FormField>
                 </div>
-                <div className="min-w-[200px]">
-                  <select
-                    className="card h-10 w-full cursor-pointer border border-gray-200 px-3"
-                    value={sortBy}
-                    onChange={e => setSortBy(e.target.value as 'amount' | 'name' | 'date')}
-                  >
-                    <option value="date">Sort by Date</option>
-                    <option value="amount">Sort by Amount</option>
-                    <option value="name">Sort by Name</option>
-                  </select>
+                <div className="w-full min-w-[180px] sm:w-auto">
+                  <FormField label="Sort">
+                    <Select
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value as 'amount' | 'name' | 'date')}
+                    >
+                      <option value="date">Sort by Date</option>
+                      <option value="amount">Sort by Amount</option>
+                      <option value="name">Sort by Name</option>
+                    </Select>
+                  </FormField>
                 </div>
-                <button className="btn btn-ghost" onClick={handleClearFilters}>
-                  Reset
-                </button>
+                {(searchQuery || startDate || endDate) && (
+                  <Button variant="ghost" onClick={handleClearFilters} className="h-[44px]">
+                    Reset
+                  </Button>
+                )}
               </div>
+
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[600px] border-collapse text-left">
-                <thead>
-                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-                    <th className="p-3 px-4 text-left">Date</th>
-                    <th className="p-3 px-4 text-left">Donor</th>
-                    <th className="p-3 px-4 text-left">Email</th>
-                    <th className="p-3 px-4 text-right">Amount</th>
-                    <th className="p-3 px-4 text-left">Tribute</th>
-                    <th className="p-3 px-4 text-left">Status</th>
-                    <th className="p-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading ? (
-                    <tr><td colSpan={7} className="p-3 px-4 text-center">Loading...</td></tr>
-                  ) : sortedDonations.length === 0 ? (
-                    <tr><td colSpan={7} className="p-8 text-center text-gray-500">No donations found.</td></tr>
-                  ) : sortedDonations.map(d => (
-                    <tr key={d.id} className="border-b border-gray-200 text-sm">
-                      <td className="p-3 px-4">{formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
-                      <td className="p-3 px-4 font-semibold">
-                        {d.donorName}
-                        {d.isAnonymous && <span className="ml-2 inline-flex items-center rounded bg-transparent px-2 py-0.5 text-xs font-semibold tracking-wider text-text-muted uppercase">Anonymous</span>}
-                      </td>
-                      <td className="p-3 px-4">{d.donorEmail}</td>
-                      <td className="p-3 px-4 text-right font-semibold">${(d.amountPaidCents / 100).toFixed(2)}</td>
-                      <td className="p-3 px-4">
-                        {d.tributeType !== 'none' && (
-                          <span className="text-gray-500">
-                            In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of <strong>{d.tributeName}</strong>
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3 px-4">
-                        <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${d.status === 'paid' ? 'bg-success-bg text-success-text' : d.status === 'refunded' ? 'bg-danger-bg text-danger-text' : 'bg-amber-100 text-amber-800'}`}>
-                          {d.status}
-                        </span>
-                      </td>
-                      <td className="p-3 px-2 text-right">
-                        {d.status === 'paid' && (
-                          <button className="btn btn-danger btn-sm" onClick={() => handleRefund(d.id)}>
-                            Refund
-                          </button>
-                        )}
-                      </td>
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-slate-50/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">Donor</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">Email</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">Tribute</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">Status</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-border bg-surface">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-8 text-center text-sm text-text-muted">
+                          Loading...
+                        </td>
+                      </tr>
+                    ) : sortedDonations.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-8 text-center text-sm text-text-muted">
+                          No donations found.
+                        </td>
+                      </tr>
+                    ) : (
+                      sortedDonations.map(d => (
+                        <tr key={d.id} className="transition-colors hover:bg-slate-50/50">
+                          <td className="px-6 py-4 text-sm text-text">
+                            {formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </td>
+                          <td className="px-6 py-4 text-sm font-semibold text-text">
+                            {d.donorName}
+                            {d.isAnonymous && (
+                              <span className="ml-2 inline-flex items-center rounded bg-gray-100 px-2 py-0.5 text-xs font-semibold tracking-wider text-text-muted uppercase">
+                                Anonymous
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-text-muted">
+                            {d.donorEmail}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm font-semibold text-text">
+                            ${(d.amountPaidCents / 100).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-text-muted">
+                            {d.tributeType !== 'none' && (
+                              <span>
+                                In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of <strong>{d.tributeName}</strong>
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-sm">
+                            <Badge tone={d.status === 'paid' ? 'success' : d.status === 'refunded' ? 'danger' : 'neutral'}>
+                              {d.status}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm">
+                            {d.status === 'paid' && (
+                              <Button variant="danger" size="small" onClick={() => handleRefund(d.id)}>
+                                Refund
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </AppCard>
-        </>
-      )}
+        </div>
+      </TabPanel>
 
-      {activeTab === 'levels' && (
-        <>
-          <AppCard className="m-0 rounded-lg border-l-4 border-pink-600 bg-[rgba(219,39,119,0.05)] p-4">
-            <h3 className="mb-2 text-pink-600">Donor Levels</h3>
-            <p className="m-0">These levels are displayed to donors on the public donation page.</p>
+      <TabPanel tabId="levels" activeTab={activeTab}>
+        <div className="flex flex-col gap-6">
+          <AppCard className="m-0 rounded-lg border-l-4 border-pink-600 bg-pink-500/5 p-4">
+            <h3 className="mb-2 text-base font-bold text-pink-600">Donor Levels</h3>
+            <p className="m-0 text-sm text-text">These levels are displayed to donors on the public donation page.</p>
           </AppCard>
 
           <AppCard title="Public Page Settings">
             <div className="flex flex-col gap-4">
-              <div className="flex flex-1 flex-col gap-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Call-to-Action Heading</label>
-                <input
+              <FormField label="Call-to-Action Heading" required>
+                <Input
                   type="text"
-                  className="h-10 w-full border border-gray-200 px-3"
                   value={donationButtonText}
                   onChange={e => setDonationButtonText(e.target.value)}
                   placeholder="e.g. Support our Music"
+                  required
                 />
-              </div>
-              <div className="flex flex-1 flex-col gap-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Description</label>
+              </FormField>
+              <FormField label="Description">
                 <textarea
-                  className="min-h-[80px] resize-y border border-gray-200 p-2"
+                  className="min-h-[80px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm text-text outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]"
                   value={donationDescription}
                   onChange={e => setDonationDescription(e.target.value)}
                   placeholder="e.g. Your contribution helps us keep the music playing..."
                 />
-              </div>
+              </FormField>
               <div className="flex gap-4">
-                <button
-                  className="btn btn-primary"
+                <Button
+                  variant="primary"
                   onClick={handleSavePublicSettings}
                   disabled={saving || !donationButtonText}
                 >
                   {saving ? 'Saving...' : 'Save Settings'}
-                </button>
+                </Button>
               </div>
             </div>
           </AppCard>
 
           <AppCard title="Donor Levels Configuration" noPadding>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] border-collapse text-left">
-                <thead>
-                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-                    <th className="p-3 px-4 text-left">Label</th>
-                    <th className="p-3 px-4 text-right">Amount</th>
-                    <th className="p-3 px-4 text-left">Benefit</th>
-                    <th className="p-3 px-4 text-right">Actions</th>
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-slate-50/50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">Label</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">Benefit</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border bg-surface">
                   {!settings || settings.levels.length === 0 ? (
-                    <tr><td colSpan={4} className="p-8 text-center text-gray-500">No donor levels defined.</td></tr>
-                  ) : settings.levels.map(l => (
-                    <tr key={l.id} className="border-b border-gray-200 text-sm">
-                      <td className="p-3 px-4 font-semibold">{l.label}</td>
-                      <td className="p-3 px-4 text-right font-semibold">${l.amount}</td>
-                      <td className="p-3 px-4">{l.benefit}</td>
-                      <td className="p-3 px-4 text-right">
-                        <button className="btn btn-sm btn-ghost" onClick={() => openLevelModal(l)}>
-                          Edit
-                        </button>
-                        <button className="btn btn-sm btn-ghost btn-danger" onClick={() => handleDeleteLevel(l.id)}>
-                          Delete
-                        </button>
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-sm text-text-muted">
+                        No donor levels defined.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    settings.levels.map(l => (
+                      <tr key={l.id} className="transition-colors hover:bg-slate-50/50">
+                        <td className="px-6 py-4 text-sm font-semibold text-text">{l.label}</td>
+                        <td className="px-6 py-4 text-right text-sm font-semibold text-text">${l.amount}</td>
+                        <td className="px-6 py-4 text-sm text-text-muted">{l.benefit}</td>
+                        <td className="px-6 py-4 text-right text-sm">
+                          <div className="flex flex-row justify-end gap-2">
+                            <Button variant="ghost" size="small" onClick={() => openLevelModal(l)}>
+                              Edit
+                            </Button>
+                            <Button variant="danger" size="small" onClick={() => handleDeleteLevel(l.id)}>
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </AppCard>
-        </>
-      )}
+        </div>
+      </TabPanel>
 
       <BaseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingLevel ? 'Edit Donor Level' : 'Add Donor Level'}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setIsModalOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleSaveLevel} disabled={saving || !levelLabel || levelAmount <= 0}>
+              {saving ? 'Saving...' : 'Save Level'}
+            </Button>
+          </>
+        }
       >
         <div className="flex flex-col gap-4">
-          <div className="flex flex-1 flex-col gap-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Level Label</label>
-            <input 
+          <FormField label="Level Label" required>
+            <Input 
               type="text" 
-              className="h-10 w-full border border-gray-200 px-3"
               value={levelLabel} 
               onChange={e => setLevelLabel(e.target.value)}
               placeholder="e.g. Supporter"
+              required
             />
-          </div>
-          <div className="flex flex-1 flex-col gap-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Amount ($)</label>
-            <input 
+          </FormField>
+          <FormField label="Amount ($)" required>
+            <Input 
               type="number" 
-              className="h-10 w-full border border-gray-200 px-3"
               value={levelAmount} 
               onChange={e => setLevelAmount(Number(e.target.value))}
+              required
             />
-          </div>
-          <div className="flex flex-1 flex-col gap-1">
-            <label className="text-xs font-bold text-gray-500 uppercase">Benefit (Optional)</label>
+          </FormField>
+          <FormField label="Benefit (Optional)">
             <textarea 
-              className="min-h-[80px] resize-y border border-gray-200 p-2"
+              className="min-h-[80px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm text-text outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]"
               value={levelBenefit} 
               onChange={e => setLevelBenefit(e.target.value)}
               placeholder="e.g. Mention in program"
             />
-          </div>
-          <div className="mt-4 flex gap-4">
-            <button className="btn btn-ghost" onClick={() => setIsModalOpen(false)} disabled={saving}>
-              Cancel
-            </button>
-            <button className="btn btn-primary" onClick={handleSaveLevel} disabled={saving || !levelLabel || levelAmount <= 0}>
-              {saving ? 'Saving...' : 'Save Level'}
-            </button>
-          </div>
+          </FormField>
         </div>
       </BaseModal>
     </div>
