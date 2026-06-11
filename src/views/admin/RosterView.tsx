@@ -281,14 +281,8 @@ export default function RosterView() {
                 placeholder="Search by name or email..."
                 value={filters.name || ''}
                 onChange={(e) => setFilter('name', e.target.value)}
-                className="card h-11 w-full pr-3 pl-10 text-base"
+                className="card h-11 w-full pr-8 text-base"
               />
-              <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-500">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-              </span>
               {filters.name && (
                 <button
                   onClick={() => setFilter('name', '')}

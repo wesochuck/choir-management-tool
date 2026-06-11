@@ -411,19 +411,21 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   if (readOnlyOnDesktop && !isMobile) {
     return (
       <div
-        className="photo-uploader-avatar"
-        style={{ width: px, height: px }} // @allow-inline-style - dynamic sizing px value based on props
+        className="relative flex items-center justify-center rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0"
+        // @allow-inline-style - dynamic sizing px value based on props
+        style={{ width: px, height: px }}
       >
         {showImage ? (
           <img
             src={preview || displayUrl}
             alt={profileName}
-            className="photo-uploader-avatar-img"
+            className="size-full object-cover"
           />
         ) : (
           <div
-            className="photo-uploader-avatar-fallback"
-            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }} // @allow-inline-style - dynamic font sizing based on props
+            className="flex items-center justify-center font-bold text-slate-500 uppercase select-none"
+            // @allow-inline-style - dynamic font sizing based on props
+            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }}
           >
             {initials}
           </div>
@@ -433,19 +435,20 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   }
 
   return (
-    <div className="photo-uploader-container">
+    <div className="flex flex-col items-center gap-3 w-full">
       {/* Upload trigger circle zone */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleAvatarClick}
-        className="photo-uploader-trigger"
+        className="relative flex items-center justify-center rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 shrink-0 cursor-pointer group hover:border-primary transition-all shadow-sm"
         // @allow-inline-style - dynamic sizing px value and dragging borders based on component state
         style={{
           width: px,
           height: px,
-          border: isDragging ? '3px dashed var(--primary)' : '2px solid transparent',
+          borderStyle: isDragging ? 'dashed' : 'solid',
+          borderColor: isDragging ? 'var(--color-primary)' : '',
           boxShadow: isDragging ? '0 0 0 4px rgba(74, 124, 89, 0.25)' : 'none',
         }}
       >
@@ -453,27 +456,35 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           <img
             src={preview || displayUrl}
             alt={profileName}
-            className="photo-uploader-avatar-img"
+            className="size-full object-cover transition-transform group-hover:scale-105 duration-200"
           />
         ) : (
           <div
-            className="photo-uploader-avatar-fallback"
-            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }} // @allow-inline-style - dynamic font sizing based on props
+            className="flex items-center justify-center font-bold text-slate-500 uppercase select-none"
+            // @allow-inline-style - dynamic font sizing based on props
+            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }}
           >
             {initials}
           </div>
         )}
 
+        {/* Hover overlay indicator */}
+        {!readOnlyOnDesktop && !isUploading && (
+          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-semibold tracking-wide uppercase">
+            Change
+          </div>
+        )}
+
         {/* Upload spinner overlay */}
         {isUploading && (
-          <div className="photo-uploader-spinner-overlay">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
             <div className="size-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
           </div>
         )}
 
-        {/* Drag and Drop Over Overlay (active during active drag overlays) */}
+        {/* Drag and Drop Over Overlay */}
         {!isMobile && isDragging && !isUploading && (
-          <div className="photo-uploader-drag-overlay">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-primary-light/90 text-primary-deep text-center z-10 p-2">
             <span style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span> {/* @allow-inline-style - dynamic text size based on props */}
           </div>
         )}
@@ -481,12 +492,12 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
       {/* Desktop instructions and buttons panel below the photo */}
       {!isMobile && size !== 'sm' && (
-        <div className="photo-uploader-btn-panel">
-          <div className="photo-uploader-btn-group">
+        <div className="flex flex-col items-center gap-1.5 w-full">
+          <div className="flex items-center justify-center gap-2.5 text-xs">
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click(); }}
-              className="photo-uploader-action-btn"
+              className="flex items-center gap-1 font-medium text-primary hover:text-primary-deep cursor-pointer transition-colors"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -496,12 +507,12 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               Choose File
             </button>
             
-            <span className="text-muted text-xs">|</span>
+            <span className="text-slate-300">|</span>
 
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(true); }}
-              className="photo-uploader-action-btn"
+              className="flex items-center gap-1 font-medium text-primary hover:text-primary-deep cursor-pointer transition-colors"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -512,11 +523,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
             {displayUrl && (
               <>
-                <span className="text-muted text-xs">|</span>
+                <span className="text-slate-300">|</span>
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
-                  className="photo-uploader-remove-btn"
+                  className="flex items-center gap-1 font-medium text-red-600 hover:text-red-700 cursor-pointer transition-colors"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" />
@@ -527,7 +538,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </>
             )}
           </div>
-          <span className="text-muted text-xs">
+          <span className="text-[10px] text-slate-400">
             or drag & drop photo here
           </span>
         </div>
@@ -535,15 +546,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
       {/* Mobile-only clean footer instruction */}
       {isMobile && size !== 'sm' && (
-        <div className="photo-uploader-btn-panel-mobile">
-          <span className="text-muted text-xs">
+        <div className="flex flex-col items-center gap-1.5 w-full">
+          <span className="text-xs text-slate-500">
             Tap photo to change
           </span>
           {displayUrl && (
             <button
               type="button"
               onClick={handleRemovePhoto}
-              className="photo-uploader-remove-btn"
+              className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer transition-colors"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
@@ -569,15 +580,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       {showCamera && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="camera-modal-overlay"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
         >
-          <div className="camera-modal-content">
-            <div className="camera-modal-header">
-              <h3 className="camera-modal-title">Camera Preview</h3>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-800">Camera Preview</h3>
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelCamera(); }}
-                className="camera-modal-close-btn"
+                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -588,23 +599,23 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
             {/* Error messaging */}
             {cameraError ? (
-              <div className="camera-error-alert">
-                <div>{cameraError}</div>
+              <div className="p-6 flex flex-col items-center gap-4 text-center">
+                <div className="text-sm text-red-600 font-medium">{cameraError}</div>
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(false); fileRef.current?.click(); }}
-                  className="camera-error-btn"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 transition-colors text-slate-700 text-xs font-semibold rounded-lg cursor-pointer"
                 >
                   Choose File from Device
                 </button>
               </div>
             ) : (
               /* Viewfinder frame */
-              <div className="camera-viewfinder-frame">
+              <div className="relative aspect-square w-full bg-slate-950 flex items-center justify-center overflow-hidden">
                 {isCameraLoading && (
-                  <div className="camera-loading-container">
-                    <div className="camera-loading-spinner size-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
-                    <span className="camera-loading-text">Starting camera...</span>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900 text-white text-xs">
+                    <div className="size-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
+                    <span>Starting camera...</span>
                   </div>
                 )}
                 
@@ -616,19 +627,19 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                   style={{
                     display: isCameraLoading ? 'none' : 'block',
                   }}
-                  className="camera-video-feed"
+                  className="size-full object-cover scale-x-[-1]"
                 />
               </div>
             )}
 
             {/* Switching devices dropdown */}
             {!cameraError && videoDevices.length > 1 && (
-              <div className="camera-device-switch-container">
-                <span className="camera-device-label">Switch Camera</span>
+              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-500">Switch Camera</span>
                 <select
                   value={selectedDeviceId}
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className="camera-device-select"
+                  className="bg-white border border-slate-200 rounded px-2 py-1 outline-none text-slate-700"
                 >
                   {videoDevices.map((device) => (
                     <option key={device.deviceId} value={device.deviceId}>
@@ -641,15 +652,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
             {/* Shutter capture button */}
             {!cameraError && !isCameraLoading && (
-              <div className="camera-shutter-container">
+              <div className="p-6 flex flex-col items-center justify-center gap-2 bg-slate-50">
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCapture(); }}
-                  className="camera-shutter-btn"
+                  className="size-14 rounded-full border-4 border-white bg-red-500 flex items-center justify-center hover:bg-red-600 transition-all hover:scale-105 active:scale-95 shadow-md"
                 >
-                  <div className="camera-shutter-inner" />
+                  <div className="size-5 rounded-full bg-white/40" />
                 </button>
-                <span className="camera-shutter-label">Click to capture</span>
+                <span className="text-[10px] text-slate-400 font-medium">Click to capture</span>
               </div>
             )}
           </div>
@@ -660,20 +671,20 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       {showCrop && preview && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="crop-modal-overlay"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
         >
-          <div className="card crop-modal-content">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 flex flex-col gap-6 items-center">
             <img
               src={preview}
               alt="Preview"
-              className="crop-modal-img"
+              className="w-full max-w-[240px] aspect-square object-cover rounded-full border-4 border-white shadow-md bg-slate-100"
             />
-            <div className="crop-modal-actions">
+            <div className="flex flex-col sm:flex-row gap-2 w-full justify-center">
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveOriginal(); }}
                 disabled={isUploading}
-                className="btn btn-primary"
+                className="btn btn-primary px-5"
               >
                 {isUploading ? 'Uploading...' : 'Use Photo'}
               </button>
@@ -681,7 +692,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCrop(); }}
                 disabled={isUploading}
-                className="btn btn-secondary"
+                className="btn btn-secondary px-5"
               >
                 Crop to Square
               </button>
@@ -689,7 +700,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancel(); }}
                 disabled={isUploading}
-                className="btn btn-ghost"
+                className="btn btn-ghost px-5"
               >
                 Cancel
               </button>
