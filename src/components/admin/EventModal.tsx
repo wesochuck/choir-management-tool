@@ -332,7 +332,8 @@ export const EventModal: React.FC<EventModalProps> = ({
       const dateChanged = formData.date !== formattedDate;
       const typeChanged = formData.type !== initialData.type;
       const detailsChanged = (formData.details || '') !== (initialData.details || '');
-      const durationChanged = (formData.durationMinutes || 0) !== (initialData.durationMinutes || 0);
+      const initialDuration = initialData.durationMinutes || getDefaultDurationMinutes(initialData.type);
+      const durationChanged = (formData.durationMinutes || 0) !== (initialDuration || 0);
       const callTimeChanged = (formData.callTime || '') !== (initialData.callTime || '');
       const parentChanged = (formData.parentPerformanceId || '') !== (initialData.parentPerformanceId || '');
       const venueChanged = (formData.venue || '') !== (initialData.venue || '');
