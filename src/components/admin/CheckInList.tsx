@@ -95,7 +95,7 @@ const CheckInRow: React.FC<{
       </td>
 
       {/* Missed Rehearsals */}
-      <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
+      <td className="px-6 py-4 text-center text-sm whitespace-nowrap max-[700px]:hidden">
         {missCounts &&
         missCounts[item.profileId] !== undefined &&
         missCounts[item.profileId] > 0 ? (
@@ -114,26 +114,27 @@ const CheckInRow: React.FC<{
       </td>
 
       {/* RSVP Status */}
-      <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
+      <td className="px-6 py-4 text-center text-sm whitespace-nowrap max-[700px]:hidden">
         <StatusBadge label={rsvpDisplay.label} tone={rsvpDisplay.tone} size="sm" />
       </td>
 
       {/* Attendance Action Buttons */}
       <td className="px-6 py-4 text-sm whitespace-nowrap">
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-end gap-3">
           {isPending && (
             <>
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Absent')}
-                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition active:scale-95"
+                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition active:scale-95"
               >
                 Absent
               </button>
+              <div className="w-16" /> {/* Spacer to align with the Reset button */}
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Present')}
-                className="cursor-pointer inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95"
+                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg bg-emerald-700 text-sm font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95"
               >
                 ✓ Present
               </button>
@@ -145,18 +146,18 @@ const CheckInRow: React.FC<{
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Absent')}
-                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-500 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition active:scale-95"
               >
                 Mark Absent
               </button>
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Pending')}
-                className="cursor-pointer text-xs font-semibold text-slate-400 hover:text-slate-600 px-1.5 py-1.5 transition"
+                className="cursor-pointer w-16 h-10 inline-flex items-center justify-center text-sm font-semibold text-slate-400 hover:text-slate-600 transition"
               >
                 Reset
               </button>
-              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+              <span className="inline-flex w-[130px] h-10 items-center justify-center gap-1 rounded-lg bg-emerald-100 text-sm font-bold text-emerald-800 border border-emerald-200">
                 ✓ Present
               </span>
             </>
@@ -164,20 +165,20 @@ const CheckInRow: React.FC<{
 
           {isAbsent && (
             <>
-              <span className="inline-flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-bold text-red-800 border border-red-200">
+              <span className="inline-flex w-[130px] h-10 items-center justify-center gap-1 rounded-lg bg-red-100 text-sm font-bold text-red-800 border border-red-200">
                 ✗ Absent
               </span>
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Pending')}
-                className="cursor-pointer text-xs font-semibold text-slate-400 hover:text-slate-600 px-1.5 py-1.5 transition"
+                className="cursor-pointer w-16 h-10 inline-flex items-center justify-center text-sm font-semibold text-slate-400 hover:text-slate-600 transition"
               >
                 Reset
               </button>
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Present')}
-                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-500 shadow-xs hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition"
+                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition active:scale-95"
               >
                 Mark Present
               </button>
@@ -325,13 +326,13 @@ export const CheckInList: React.FC<CheckInListProps> = ({
               <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Voice
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase max-[700px]:hidden">
                 Missed Rehearsals
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase max-[700px]:hidden">
                 RSVP
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold tracking-wide text-slate-500 uppercase">
+              <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">
                 Attendance
               </th>
             </tr>

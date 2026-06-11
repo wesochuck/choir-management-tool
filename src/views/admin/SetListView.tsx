@@ -707,6 +707,7 @@ export default function SetListView() {
       </AppCard>
       </div>
 
+      {/* @allow-inline-style - print page styling rule for print-only rendering */}
       <div className="print-only mx-auto max-w-2xl p-8" style={{ page: 'setlist' }}>
         {selectedEvent && (
           <>
