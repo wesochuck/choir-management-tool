@@ -451,10 +451,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                         {singer.rowNumber}
                       </td>
                       <td>
-                        <strong style={{ /* @allow-inline-style */ 
-                          // @allow-inline-style - error text color
-                          color: hasErrors ? '#c62828' : 'inherit' 
-                        }}>
+                        <strong className={hasErrors ? 'text-[#c62828]' : ''}>
                           {singer.data.name || '(Empty Name)'}
                         </strong>
                       </td>
@@ -519,10 +516,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
           <div className="flex gap-5 text-sm text-text-muted">
             <span>Successes: <strong className="text-primary-deep">{successCount}</strong></span>
-            <span>Failures: <strong style={{ /* @allow-inline-style */ 
-                  // @allow-inline-style - error count text color
-                  color: errorsList.length > 0 ? '#991b1b' : 'inherit' 
-                }}>{errorsList.length}</strong></span>
+            <span>Failures: <strong className={errorsList.length > 0 ? 'text-[#991b1b]' : ''}>{errorsList.length}</strong></span>
           </div>
         </div>
       )}

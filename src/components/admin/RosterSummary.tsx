@@ -103,25 +103,17 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 gap: 'var(--space-xs)'
               }}
             >
-              {/* @allow-inline-style - typography overrides */}
-              <div className="text-xs" style={{ color: 'var(--primary-deep)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div className="text-xs font-bold uppercase tracking-wider text-primary-deep">
                 {sec.name}
               </div>
-              {/* @allow-inline-style - typography overrides */}
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary-deep)', lineHeight: 1 }}>{sectionCounts[sec.code] || 0}</div>
+              <div className="text-[2rem] font-extrabold leading-none text-primary-deep">{sectionCounts[sec.code] || 0}</div>
             </div>
           );
         })}
       </div>
 
       {/* Individual Part Breakdowns */}
-      {/* @allow-inline-style - dynamic grid layout configuration */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', 
-        gap: 'var(--space-sm)',
-        marginTop: 0
-      }}>
+      <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
         {voiceParts.map(vp => {
           const isSelected = selectedVoiceParts.includes(vp.label);
           return (
@@ -137,10 +129,8 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
               }}
             >
-              {/* @allow-inline-style - typography overrides */}
-              <div className="text-muted text-xs" style={{ fontWeight: 700 }}>{vp.label}</div>
-              {/* @allow-inline-style - typography overrides */}
-              <div className="text-label" style={{ fontWeight: 700 }}>{partCounts[vp.label] || 0}</div>
+              <div className="text-muted text-xs font-bold">{vp.label}</div>
+              <div className="text-label font-bold">{partCounts[vp.label] || 0}</div>
             </div>
           );
         })}

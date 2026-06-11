@@ -157,24 +157,22 @@ export default function PublicPollView() {
                 <button
                   onClick={() => handleSubmitResponse('Yes')}
                   disabled={isUpdating}
-                  className={`btn h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${selectedResponse !== 'Yes' ? 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted' : ''}`}
-                  style={selectedResponse === 'Yes' ? {
-                    backgroundColor: 'var(--primary)',
-                    color: 'white',
-                    border: '2px solid var(--primary-deep)',
-                  } : undefined}
+                   className={`btn h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
+                    selectedResponse === 'Yes'
+                      ? 'bg-primary text-white border-2 border-primary-deep'
+                      : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted'
+                  }`}
                 >
                   {isUpdating && selectedResponse === 'Yes' ? '...' : 'Yes / Volunteer'}
                 </button>
                 <button
                   onClick={() => handleSubmitResponse('No')}
                   disabled={isUpdating}
-                  className={`btn h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${selectedResponse !== 'No' ? 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted' : ''}`}
-                  style={selectedResponse === 'No' ? {
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    border: '2px solid #991b1b',
-                  } : undefined}
+                   className={`btn h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
+                    selectedResponse === 'No'
+                      ? 'bg-[#ef4444] text-white border-2 border-[#991b1b]'
+                      : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted'
+                  }`}
                 >
                   {isUpdating && selectedResponse === 'No' ? '...' : 'No / Cannot'}
                 </button>

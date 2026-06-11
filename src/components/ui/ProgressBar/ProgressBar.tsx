@@ -22,7 +22,7 @@ export function ProgressBar({ value, label, className }: ProgressBarProps) {
     >
       <div
         className="h-full rounded bg-primary transition-[width] duration-300 ease-[ease]"
-        // @allow-inline-style - dynamic width from value prop
+        // @allow-inline-style - dynamic progress bar width percentage
         style={{ width: `${clamped}%` }}
       />
     </div>

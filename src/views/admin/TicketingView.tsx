@@ -637,9 +637,7 @@ export default function TicketingView() {
                       return (
                         <tr
                           key={p.id}
-                          className="hover:bg-slate-50"
-                          // @allow-inline-style - isRefunded text color/opacity
-                          style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
+                          className={`hover:bg-slate-50 ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
                         >
                           <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-800">
                             {p.buyerName}
@@ -808,9 +806,7 @@ export default function TicketingView() {
                     return (
                       <tr 
                         key={order.stripeSessionId} 
-                        className="border-b border-gray-200 text-sm" 
-                        // @allow-inline-style - isRefunded text color/opacity
-                        style={{ color: isRefunded ? 'var(--text-muted)' : 'inherit', opacity: isRefunded ? 0.6 : 1 }}
+                        className={`border-b border-gray-200 text-sm ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
                       >
                         <td className="p-3 px-2 font-semibold">{order.buyerName}</td>
                         <td className="p-3 px-2">{order.buyerEmail}</td>
@@ -950,9 +946,7 @@ export default function TicketingView() {
                   return (
                     <label 
                       key={ev.id} 
-                      className="flex flex-row items-center gap-2 text-sm" 
-                      // @allow-inline-style - hasPurchases cursor
-                      style={{ cursor: hasPurchases ? 'not-allowed' : 'pointer' }}
+                      className={`flex flex-row items-center gap-2 text-sm ${hasPurchases ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       <input
                         type="checkbox"

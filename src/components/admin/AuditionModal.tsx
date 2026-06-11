@@ -140,26 +140,22 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('info')}
-            className="cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200"
-            style={{ /* @allow-inline-style */
-              // @allow-inline-style - tab active state indicator
-              borderBottom: activeTab === 'info' ? '2px solid var(--primary)' : '2px solid transparent',
-              fontWeight: activeTab === 'info' ? 600 : 500,
-              color: activeTab === 'info' ? 'var(--primary)' : 'var(--text-muted)',
-            }}
+            className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${
+              activeTab === 'info'
+                ? 'border-b-2 border-primary font-semibold text-primary'
+                : 'border-b-2 border-transparent font-medium text-text-muted'
+            }`}
           >
             Applicant Details
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('slots')}
-            className="cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200"
-            style={{ /* @allow-inline-style */
-              // @allow-inline-style - tab active state indicator
-              borderBottom: activeTab === 'slots' ? '2px solid var(--primary)' : '2px solid transparent',
-              fontWeight: activeTab === 'slots' ? 600 : 500,
-              color: activeTab === 'slots' ? 'var(--primary)' : 'var(--text-muted)',
-            }}
+            className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${
+              activeTab === 'slots'
+                ? 'border-b-2 border-primary font-semibold text-primary'
+                : 'border-b-2 border-transparent font-medium text-text-muted'
+            }`}
           >
             Requested Slots ({formData.requestedSlots?.length || 0})
           </button>
@@ -167,7 +163,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
         {/* Tab 1: Information Form Fields */}
         <div className="flex-col gap-4" style={{ /* @allow-inline-style */ 
-          // @allow-inline-style - Dynamic display based on active tab state
+          // @allow-inline-style - dynamic display for tab visibility
           display: activeTab === 'info' ? 'flex' : 'none' 
         }}>
           <div className="flex-col gap-1">
@@ -196,12 +192,9 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             <div className="flex flex-col gap-1">
               <label className="text-label">Confirmed Scheduled Time</label>
               <div 
-                className="rounded-md h-[44px] flex-row items-center truncate border border-border bg-bg px-2 text-sm w-full" 
-                style={{ /* @allow-inline-style */ 
-                  // @allow-inline-style - dynamic scheduled time slot
-                  color: formData.scheduledTimeSlot ? 'var(--text)' : 'var(--text-muted)',
-                  fontWeight: formData.scheduledTimeSlot ? 700 : 400,
-                }}
+                className={`rounded-md h-[44px] flex-row items-center truncate border border-border bg-bg px-2 text-sm w-full ${
+                  formData.scheduledTimeSlot ? 'text-text font-bold' : 'text-text-muted font-normal'
+                }`}
                 title={formData.scheduledTimeSlot ? formatInTimezone(formData.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Not scheduled yet'}
               >
                 {formData.scheduledTimeSlot ? (

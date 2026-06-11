@@ -111,6 +111,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={className}
+        // @allow-inline-style - passes through style prop for composition
         style={style}
         required={required}
         autoComplete="off"

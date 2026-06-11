@@ -110,15 +110,7 @@ export function SectionBucketEditor({
                       <div 
                         onClick={() => setActiveColorPickerIndex(null)}
                         // @allow-inline-style - full screen click handler
-                        style={{
-                          position: 'fixed',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          zIndex: 100,
-                          cursor: 'default'
-                        }}
+                        className="fixed inset-0 z-[100] cursor-default"
                       />
                       <div className="absolute left-0 top-full z-50 mt-2 w-48 rounded-lg border border-slate-200 bg-white p-3 shadow-lg flex flex-col gap-2">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Presets</span>

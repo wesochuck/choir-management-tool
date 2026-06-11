@@ -26,6 +26,7 @@ export const AppCard: React.FC<AppCardProps> = ({
   return (
     <div 
       className={cardClass} 
+      // @allow-inline-style - passes through style prop for composition
       style={style}
       onClick={onClick}
     >

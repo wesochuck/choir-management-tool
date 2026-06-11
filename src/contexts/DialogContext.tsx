@@ -155,17 +155,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                 placeholder={activeDialog.options.placeholder}
                 maxLength={activeDialog.options.maxLength}
                 // @allow-inline-style - textarea default styling
-                style={{
-                  width: '100%',
-                  minHeight: '80px',
-                  padding: '10px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border)',
-                  fontFamily: 'inherit',
-                  fontSize: '0.9rem',
-                  resize: 'vertical',
-                  boxSizing: 'border-box'
-                }}
+                className="w-full min-h-[80px] p-[10px] rounded-sm border border-border font-[inherit] text-[0.9rem] resize-y box-border"
               />
               {activeDialog.options.maxLength && (
                 <div className="text-right text-[0.7rem] text-text-muted">

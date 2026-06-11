@@ -314,7 +314,7 @@ export default function SeatingFinderView() {
                       
                       <div
                         className="flex min-w-max items-center justify-center gap-[10px]"
-                        // @allow-inline-style - dynamic flex direction based on perspective toggle
+                        // @allow-inline-style - dynamic flex direction for perspective toggle
                         style={{
                           flexDirection: perspective === 'director' ? 'row-reverse' : 'row'
                         }}
@@ -339,7 +339,7 @@ export default function SeatingFinderView() {
                                 isMySeat ? 'shadow-[0_0_0_4px_rgba(74,124,89,0.3)] z-[5] !border-primary-deep' : '',
                                 selectedSeat?.row === rIdx && selectedSeat?.seat === sIdx ? 'outline-[3px] outline-primary-deep outline-offset-[3px]' : '',
                               ].join(' ')}
-                              // @allow-inline-style - dynamic singer color based on voice part/section
+                              // @allow-inline-style - dynamic singer seat color from voice part mapping
                               style={{ 
                                 borderColor: singerColor,
                                 borderWidth: isMySeat ? '2px' : '2px',

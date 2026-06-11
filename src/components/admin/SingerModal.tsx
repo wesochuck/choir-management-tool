@@ -295,7 +295,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   {resetFeedback && (
                     <span 
                       className="text-[11px] font-semibold"
-                      // @allow-inline-style - dynamic feedback color
+                      // @allow-inline-style - dynamic feedback color from server response
                       style={{
                         color: resetFeedback.startsWith('Error') ? 'var(--color-danger-text, #ef4444)' : 'var(--color-success-text, #22c55e)'
                       }}
@@ -412,24 +412,16 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             )}
             {formData.email?.trim() ? (
               <label
-                className="min-h-auto cursor-pointer flex-row items-center gap-2"
-                // @allow-inline-style - dynamic opacity based on isSelf
-                style={{
-                  opacity: isSelf ? 0.6 : 1,
-                }}
+                className={`min-h-auto cursor-pointer flex-row items-center gap-2${isSelf ? ' opacity-60' : ''}`}
                 title={isSelf ? "You cannot remove your own administrator permissions to prevent accidental lockout." : undefined}
               >
-                <input
-                  type="checkbox"
-                  checked={formData.role === 'admin'}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.checked ? 'admin' : 'singer' })}
-                  disabled={Boolean(isSelf)}
-                  className="size-4 min-h-auto shrink-0 cursor-pointer accent-[var(--primary)]"
-                  // @allow-inline-style - dynamic cursor based on isSelf
-                  style={{
-                    cursor: isSelf ? 'not-allowed' : 'pointer',
-                  }}
-                />
+                  <input
+                    type="checkbox"
+                    checked={formData.role === 'admin'}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.checked ? 'admin' : 'singer' })}
+                    disabled={Boolean(isSelf)}
+                    className={`size-4 min-h-auto shrink-0 accent-[var(--primary)] ${isSelf ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  />
                 <span className="text-label">Administrator</span>
               </label>
             ) : <div />}

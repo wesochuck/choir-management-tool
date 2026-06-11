@@ -375,7 +375,7 @@ export default function PublicRsvpView() {
               <div className="bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:shadow-md p-4 text-center">
                 <div className="text-xs font-bold tracking-wider text-text-muted uppercase">Your response</div>
                 {/* @allow-inline-style - dynamic color based on RSVP status */}
-                <div className="mt-2 text-xl font-extrabold" style={{ color: dbRsvp === 'Yes' ? 'var(--primary-deep)' : dbRsvp === 'No' ? '#ef4444' : '#6b7280' }}>
+                <div className={`mt-2 text-xl font-extrabold ${dbRsvp === 'Yes' ? 'text-primary-deep' : dbRsvp === 'No' ? 'text-[#ef4444]' : 'text-gray-500'}`}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
                     : dbRsvp === 'No'
@@ -431,12 +431,7 @@ export default function PublicRsvpView() {
                   <button
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
-                    className="btn btn-primary h-12 flex-1 justify-center font-bold"
-                    // @allow-inline-style - dynamic opacity/border based on RSVP selection
-                    style={{
-                      opacity: selectedRsvp === 'Yes' ? 1 : 0.6,
-                      border: selectedRsvp === 'Yes' ? '2px solid var(--primary-deep)' : '1px solid var(--border)'
-                    }}
+                    className={`btn btn-primary h-12 flex-1 justify-center font-bold ${selectedRsvp === 'Yes' ? 'opacity-100 border-2 border-primary-deep' : 'opacity-60 border border-border'}`}
                   >
                     {isUpdating && selectedRsvp === 'Yes' ? 'Confirming...' : 'Yes, I Will Attend'}
                   </button>
@@ -449,14 +444,7 @@ export default function PublicRsvpView() {
                       }
                     }}
                     disabled={isUpdating}
-                    className="btn btn-danger h-12 flex-1 justify-center font-bold"
-                    // @allow-inline-style - dynamic opacity/color/border based on RSVP selection
-                    style={{
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      opacity: selectedRsvp === 'No' ? 1 : 0.6,
-                      border: selectedRsvp === 'No' ? '2px solid #991b1b' : '1px solid var(--border)'
-                    }}
+                    className={`btn h-12 flex-1 justify-center font-bold ${selectedRsvp === 'No' ? 'bg-[#ef4444] text-white opacity-100 border-2 border-[#991b1b]' : 'bg-[#ef4444] text-white opacity-60 border border-border'}`}
                   >
                     {isUpdating && selectedRsvp === 'No' ? 'Confirming...' : (event.type === 'Rehearsal' && selectedRsvp === 'No' ? 'Confirm RSVP Decline' : 'No, I Cannot Attend')}
                   </button>
@@ -474,12 +462,7 @@ export default function PublicRsvpView() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col items-center gap-1 border-b border-border pb-4 text-center">
                 <div 
-                  className="mb-1 flex size-20 items-center justify-center rounded-full text-5xl transition-all duration-300"
-                  // @allow-inline-style - dynamic attendance state background/color
-                  style={{ 
-                    backgroundColor: isAttending ? '#e6f4ea' : '#fce8e6', 
-                    color: isAttending ? 'var(--primary)' : '#c5221f',
-                  }}
+                  className={`mb-1 flex size-20 items-center justify-center rounded-full text-5xl transition-all duration-300 ${isAttending ? 'bg-[#e6f4ea] text-primary' : 'bg-[#fce8e6] text-[#c5221f]'}`}
                 >
                   {isAttending ? '✓' : '✗'}
                 </div>
@@ -520,12 +503,11 @@ export default function PublicRsvpView() {
                     <button
                       onClick={() => handleConfirmRsvp('Yes')}
                       disabled={isUpdating}
-                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${!isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted' : ''}`}
-                      style={isAttending ? {
-                        backgroundColor: 'var(--primary)',
-                        color: '#ffffff',
-                        boxShadow: '0 2px 8px rgba(74, 117, 89, 0.2)'
-                      } : undefined}
+                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${
+                        isAttending
+                          ? 'bg-primary text-white shadow-[0_2px_8px_rgba(74,117,89,0.2)]'
+                          : 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted'
+                      }`}
                     >
                       {isUpdating && isAttending ? 'Updating...' : 'I Will Attend'}
                     </button>
@@ -538,12 +520,11 @@ export default function PublicRsvpView() {
                         }
                       }}
                       disabled={isUpdating}
-                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${isAttending ? 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted' : ''}`}
-                      style={!isAttending ? {
-                        backgroundColor: '#ef4444',
-                        color: '#ffffff',
-                        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.2)'
-                      } : undefined}
+                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${
+                        !isAttending
+                          ? 'bg-[#ef4444] text-white shadow-[0_2px_8px_rgba(239,68,68,0.2)]'
+                          : 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted'
+                      }`}
                     >
                       {isUpdating && !isAttending ? 'Updating...' : 'I Cannot Attend'}
                     </button>

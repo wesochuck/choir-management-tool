@@ -27,7 +27,7 @@ export function Table<T>({ columns, data, keyExtractor, onRowClick, emptyState }
         <tr>
           {columns.map((col) => (
             <th key={col.key} className="border-b border-border px-4 py-2 text-left text-xs font-medium tracking-wider text-text-muted uppercase"
-              // @allow-inline-style - dynamic column width from config
+              // @allow-inline-style - dynamic column min-width from config
               style={col.width ? { minWidth: col.width } : undefined}
             >
               {col.header}

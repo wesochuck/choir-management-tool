@@ -312,23 +312,17 @@ export default function DashboardView() {
                       <div className="text-sm font-bold">{poll.question}</div>
                       <div className="flex-row gap-1">
                         <button 
-                          className="btn btn-sm flex-1 border border-border font-bold" 
-                          // @allow-inline-style - Dynamic color based on poll status
-                          style={{ 
-                            backgroundColor: poll.status === 'Yes' ? 'var(--primary)' : 'white',
-                            color: poll.status === 'Yes' ? 'white' : 'var(--neutral-text)',
-                          }}
+                          className={`btn btn-sm flex-1 border border-border font-bold ${
+                            poll.status === 'Yes' ? 'bg-primary text-white' : 'bg-white text-[var(--neutral-text)]'
+                          }`}
                           onClick={() => handlePollResponse(poll.id, 'Yes')}
                         >
                           {poll.status === 'Yes' ? '✓ Yes' : 'Yes'}
                         </button>
                         <button 
-                          className="btn btn-sm flex-1 border border-border font-bold" 
-                          // @allow-inline-style - Dynamic color based on poll status
-                          style={{ 
-                            backgroundColor: poll.status === 'No' ? '#ef4444' : 'white',
-                            color: poll.status === 'No' ? 'white' : 'var(--neutral-text)',
-                          }}
+                          className={`btn btn-sm flex-1 border border-border font-bold ${
+                            poll.status === 'No' ? 'bg-[#ef4444] text-white' : 'bg-white text-[var(--neutral-text)]'
+                          }`}
                           onClick={() => handlePollResponse(poll.id, 'No')}
                         >
                           {poll.status === 'No' ? '✗ No' : 'No'}

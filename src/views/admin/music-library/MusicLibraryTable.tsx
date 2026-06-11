@@ -60,21 +60,13 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         const isActive = sortField === field;
         return (
             <th 
-                className={`text-label cursor-pointer border border-[var(--border)] px-[10px] py-[6px] font-semibold text-[var(--text-muted)] select-none`}
-                // @allow-inline-style - dynamic color based on sort state
-                style={{ 
-                    color: isActive ? 'var(--primary)' : 'var(--text-muted)'
-                }}
+                className={`text-label cursor-pointer border border-[var(--border)] px-[10px] py-[6px] font-semibold select-none ${isActive ? 'text-primary' : 'text-text-muted'}`}
                 onClick={() => onSortChange(field)}
             >
                 <div className="flex items-center gap-[var(--space-xs)]">
                     <span>{label}</span>
                     <span 
-                        className="inline-block text-[10px]"
-                        // @allow-inline-style - dynamic opacity based on sort state
-                        style={{ 
-                            opacity: isActive ? 1 : 0.35
-                        }}
+                        className={`inline-block text-[10px] ${isActive ? 'opacity-100' : 'opacity-[0.35]'}`}
                     >
                         {!isActive ? '⇅' : sortDirection === 'asc' ? '▲' : '▼'}
                     </span>

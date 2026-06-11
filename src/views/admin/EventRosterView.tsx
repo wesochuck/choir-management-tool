@@ -260,8 +260,6 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                         : 'border-transparent'
                     }`}
                     onClick={() => handleVoicePartToggle(sec.code)}
-                    // @allow-inline-style - dynamic border color based on selection
-                    style={{ borderColor: isSelected ? 'var(--primary)' : 'transparent' }}
                   >
                     <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
                       {sec.name}
@@ -280,15 +278,12 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 return (
                   <div
                     key={vp.label}
-                    className={`flex cursor-pointer flex-col rounded-lg border bg-white transition-colors duration-150 hover:bg-primary-light ${
-                      isSelected ? 'border-primary bg-primary-light' : 'border-gray-200'
+                    className={`flex cursor-pointer flex-col rounded-lg transition-colors duration-150 hover:bg-primary-light ${
+                      isSelected
+                        ? 'border-2 border-primary bg-primary-light p-[7px]'
+                        : 'border border-gray-200 bg-white p-2'
                     }`}
                     onClick={() => handleVoicePartToggle(vp.label)}
-                    // @allow-inline-style - dynamic border and padding based on selection
-                    style={{
-                      borderWidth: isSelected ? '2px' : '1px',
-                      padding: isSelected ? 'calc(8px - 1px)' : '8px'
-                    }}
                   >
                     <div className="text-xs font-bold">{vp.label}</div>
                     <div className="text-sm font-bold">{count}</div>

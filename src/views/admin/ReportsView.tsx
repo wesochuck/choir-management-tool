@@ -257,11 +257,7 @@ export default function ReportsView() {
                       {summary.singerReports.map(report => (
                         <tr 
                           key={report.profileId} 
-                          // @allow-inline-style - dynamic background and text color based on absence threshold
-                          style={{ 
-                            backgroundColor: report.absences >= 2 ? 'var(--color-danger-bg)' : 'transparent',
-                            color: report.absences >= 2 ? 'var(--color-danger-text)' : 'inherit'
-                          }}
+                          className={report.absences >= 2 ? 'bg-danger-bg text-danger-text' : ''}
                         >
                           <td className="border-b border-border p-4 font-semibold">{report.name}</td>
                           <td className="border-b border-border p-4">{report.voicePart}</td>
