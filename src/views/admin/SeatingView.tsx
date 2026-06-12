@@ -436,7 +436,8 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           {/* Seating Charts Tabs Row */}
-          <div ref={tabsContainerRef} className="no-print mb-2 w-full flex flex-row flex-nowrap items-center gap-2 border-b border-border px-4 overflow-x-auto">
+          <div className="no-print mb-2 w-full overflow-x-auto border-b border-border">
+          <div ref={tabsContainerRef} className="flex flex-row flex-nowrap items-stretch gap-0 min-w-max px-4 overflow-y-hidden">
             {/* Render visible tabs (dynamic count based on container width) */}
             {(charts || []).slice(0, visibleTabCount).map(c => {
               const isActive = c.id === activeChartId;
@@ -444,7 +445,7 @@ export default function SeatingView() {
               return (
                 <div 
                   key={c.id} 
-                  className={`-mb-px cursor-pointer flex-row items-center gap-[4px] px-[10px] py-2 border-b-2 border-l-2 transition-[border-color_0.15s_ease] ${
+                  className={`cursor-pointer flex-row items-center gap-[4px] px-[10px] py-2 border-b-2 border-l-2 transition-[border-color_0.15s_ease] ${
                     isActive ? 'border-b-primary' : 'border-b-transparent'
                   } ${
                     isDragOver ? 'border-l-primary' : 'border-l-transparent'
@@ -552,7 +553,7 @@ export default function SeatingView() {
             {/* Render overflow dropdown when charts exceed visible count */}
             {(charts || []).length > visibleTabCount && (
               <div 
-                className={`-mb-px border-b-2 pb-2 ${
+                className={`border-b-2 pb-2 ${
                   !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId)
                     ? 'border-b-primary'
                     : 'border-b-transparent'
@@ -587,6 +588,7 @@ export default function SeatingView() {
             >
               +
             </button>
+          </div>
           </div>
 
           <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:flex-row">
