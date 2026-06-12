@@ -27,9 +27,6 @@ dist-ssr
 *.sw?
 .env
 
-# other stuff
-google-drive-player-main/*
-
 # Agent-tooling scratch (work artifacts, prompts, sentinel logs)
 .planning/tmp/
 .kilo/
