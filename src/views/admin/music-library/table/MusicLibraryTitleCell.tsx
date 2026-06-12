@@ -56,7 +56,7 @@ export function MusicLibraryTitleCell({
               └─
             </span>
           )}
-          <strong className={`font-bold ${isDuplicate ? 'text-[#e64a19]' : ''}`}>
+          <strong className={`font-bold ${isDuplicate ? 'text-section-orange' : ''}`}>
             {piece.title}
           </strong>
           {isParent && <MultiMovementBadge />}

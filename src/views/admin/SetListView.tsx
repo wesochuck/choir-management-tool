@@ -818,18 +818,18 @@ export default function SetListView() {
           </>
         }
       >
-        <div className="rounded-md border border-border bg-white p-6 font-[Georgia,serif] text-[#333] shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
+        <div className="rounded-md border border-border bg-white p-6 font-[Georgia,serif] text-gray-800 shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
           <div className="mb-4 text-center">
-            <h3 className="!m-0 mb-0.5 text-[1.4rem] font-bold text-[#111]">
+            <h3 className="!m-0 mb-0.5 text-[1.4rem] font-bold text-gray-900">
               {selectedEvent?.title || selectedEvent?.type}
             </h3>
-            <div className="text-[0.85rem] font-medium text-[#666]">
+            <div className="text-[0.85rem] font-medium text-text-muted">
               {selectedEvent && formatInTimezone(selectedEvent.date, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               {selectedEvent && ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
               {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
             </div>
           </div>
-          <div className="mb-4 border-b border-[#eee]"></div>
+          <div className="mb-4 border-b border-border"></div>
           <div className="flex flex-col gap-2">
             {(() => {
               let songIndex = 1;
@@ -838,7 +838,7 @@ export default function SetListView() {
                   return (
                     <div 
                       key={item.id} 
-                      className="my-2 border-y border-dashed border-dashed border-[#eee] border-[#eee] py-[6px] text-center text-[0.95rem] font-bold text-[#666]"
+                      className="my-2 border-y border-dashed border-border py-[6px] text-center text-[0.95rem] font-bold text-text-muted"
                     >
                       ⏸️ {item.displayTitle || 'Intermission'}
                     </div>
@@ -847,11 +847,11 @@ export default function SetListView() {
                   const el = (
                     <div 
                       key={item.id} 
-                      className="flex justify-between border-b border-[#fafafa] py-[2px] text-[1.05rem]"
+                      className="flex justify-between border-b border-gray-50 py-[2px] text-[1.05rem]"
                     >
                       <span className="font-medium">{songIndex}. {item.displayTitle}</span>
                       {item.displayComposer && (
-                        <span className="text-right text-[0.9rem] text-[#666] italic">
+                        <span className="text-right text-[0.9rem] text-text-muted italic">
                           {item.displayComposer}
                         </span>
                       )}

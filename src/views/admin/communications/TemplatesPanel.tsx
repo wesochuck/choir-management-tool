@@ -114,7 +114,7 @@ export function TemplatesPanel({
           <AppCard
             title="Template Preview"
             actions={
-              <div className="flex gap-4 rounded-b-lg border-t border-border bg-[#f8fafc] p-4">
+              <div className="flex gap-4 rounded-b-lg border-t border-border bg-slate-50 p-4">
                 <Button
                   type="button"
                   variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
@@ -142,7 +142,7 @@ export function TemplatesPanel({
               <div
                 className={`flex min-h-[400px] w-full flex-col bg-surface shadow-md transition-all duration-300 ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
               >
-                <div className="flex flex-col gap-1.5 border-b border-border bg-[#f8fafc] p-4 text-xs">
+                <div className="flex flex-col gap-1.5 border-b border-border bg-slate-50 p-4 text-xs">
                   <div className="flex text-text-muted">
                     <span className="w-[60px] font-semibold">From:</span>
                     <span className="text-slate-800">

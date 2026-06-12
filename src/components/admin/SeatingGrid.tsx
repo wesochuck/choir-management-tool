@@ -187,7 +187,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
     >
       {/* Warning banner if not enough seats */}
       {activeSingersForFormationCount > totalSeats && onUpdateRowCounts && (
-        <div className="no-print flex w-full max-w-[800px] flex-col items-center justify-center gap-4 rounded-md border border-[#fecaca] bg-danger-bg p-4 text-center text-danger-text shadow-sm">
+        <div className="no-print flex w-full max-w-[800px] flex-col items-center justify-center gap-4 rounded-md border border-red-200 bg-danger-bg p-4 text-center text-danger-text shadow-sm">
           <span className="text-xl">⚠️</span>
           <div className="flex flex-1 flex-col gap-0.5">
             <strong className="text-[0.9375rem] font-bold">Not enough seats configured!</strong>

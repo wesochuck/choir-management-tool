@@ -145,7 +145,7 @@ export const EventList: React.FC<EventListProps> = ({
                   <Badge tone="success">🎵 Auditions Open</Badge>
                 )}
                 {e.callTime && (
-                  <span className="inline-flex items-center gap-1 rounded border border-[#c7d2fe] bg-[#eef2ff] px-1.5 py-px text-xs font-bold text-[#4338ca]">
+                  <span className="inline-flex items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-1.5 py-px text-xs font-bold text-indigo-700">
                     📢 Call: {formatTime12h(e.callTime)}
                   </span>
                 )}

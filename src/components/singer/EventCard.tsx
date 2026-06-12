@@ -115,7 +115,7 @@ export const EventCard: React.FC<EventCardProps> = ({
              {isPerformance && rsvp !== 'No' && (
                <Link 
                  to={`/seating/${event.id}`}
-                 className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-[#d1dfd6] max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
+                  className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-primary-deep/10 max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
                >
                  🪑 Seating
                </Link>
@@ -244,7 +244,7 @@ export const EventCard: React.FC<EventCardProps> = ({
               </button>
               <button 
                 onClick={() => handleRSVP('No')}
-                className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border font-sans font-medium whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-50 ${rsvp === 'No' ? 'bg-danger-bg text-danger-text hover:border-[#fca5a5] hover:bg-[#fecaca]' : 'border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
+                className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border font-sans font-medium whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-50 ${rsvp === 'No' ? 'bg-danger-bg text-danger-text hover:border-red-300 hover:bg-red-200' : 'border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep'} max-sm:min-h-[44px]`}
                 disabled={isWindowClosed || submittingStatus !== null}
               >
                 {submittingStatus === 'No' ? 'Processing...' : labels.no}

@@ -394,7 +394,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                         {piece.rowNumber}
                       </td>
                       <td>
-                        <strong className={hasErrors ? 'text-[#c62828]' : ''}>
+                        <strong className={hasErrors ? 'text-danger' : ''}>
                           {piece.data.title || '(Empty Title)'}
                         </strong>
                       </td>
@@ -412,12 +412,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                       </td>
                       <td>
                         {hasErrors && (
-                          <div className="flex flex-col gap-[2px] text-[0.8rem] text-[#c62828]">
+                          <div className="flex flex-col gap-[2px] text-[0.8rem] text-danger">
                             {piece.errors.map((e, i) => <span key={i}>❌ {e}</span>)}
                           </div>
                         )}
                         {hasWarnings && (
-                          <div className="flex flex-col gap-[2px] text-[0.8rem] text-[#b78103]">
+                          <div className="flex flex-col gap-[2px] text-[0.8rem] text-warning-text">
                             {piece.warnings.map((w, i) => <span key={i}>⚠️ {w}</span>)}
                           </div>
                         )}
@@ -481,9 +481,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
               <strong className="text-[0.9rem] text-danger-text">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
-              <div className="max-h-[150px] overflow-y-auto rounded-md border border-border bg-[#fafafa] p-[8px_12px] text-[0.8rem]">
+              <div className="max-h-[150px] overflow-y-auto rounded-md border border-border bg-surface-muted p-[8px_12px] text-[0.8rem]">
                 {errorsList.map((err, i) => (
-                  <div key={i} className="border-b border-border py-1 text-[#444] last:border-b-0">
+                  <div key={i} className="border-b border-border py-1 text-gray-600 last:border-b-0">
                     Row {err.row} (<strong>{err.title}</strong>): <span className="text-danger-text">{err.error}</span>
                   </div>
                 ))}

@@ -192,7 +192,7 @@ export default function SettingsView() {
             </div>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <label className="inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-light px-4 font-sans text-xs font-semibold text-primary-deep transition-colors hover:bg-[#d1dfd6] active:translate-y-px">
+                <label className="inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-light px-4 font-sans text-xs font-semibold text-primary-deep transition-colors hover:bg-primary-deep/10 active:translate-y-px">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="17 8 12 3 7 8" />

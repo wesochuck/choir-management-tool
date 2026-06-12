@@ -451,7 +451,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                         {singer.rowNumber}
                       </td>
                       <td>
-                        <strong className={hasErrors ? 'text-[#c62828]' : ''}>
+                        <strong className={hasErrors ? 'text-danger' : ''}>
                           {singer.data.name || '(Empty Name)'}
                         </strong>
                       </td>
@@ -468,12 +468,12 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                       </td>
                       <td>
                         {hasErrors && (
-                          <div className="flex flex-col gap-0.5 text-xs text-[#c62828]">
+                          <div className="flex flex-col gap-0.5 text-xs text-danger">
                             {singer.errors.map((e, i) => <span key={i}>❌ {e}</span>)}
                           </div>
                         )}
                         {hasWarnings && (
-                          <div className="flex flex-col gap-0.5 text-xs text-[#b78103]">
+                          <div className="flex flex-col gap-0.5 text-xs text-warning-text">
                             {singer.warnings.map((w, i) => <span key={i}>⚠️ {w}</span>)}
                           </div>
                         )}
@@ -516,7 +516,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
           <div className="flex gap-5 text-sm text-text-muted">
             <span>Successes: <strong className="text-primary-deep">{successCount}</strong></span>
-            <span>Failures: <strong className={errorsList.length > 0 ? 'text-[#991b1b]' : ''}>{errorsList.length}</strong></span>
+            <span>Failures: <strong className={errorsList.length > 0 ? 'text-danger-text' : ''}>{errorsList.length}</strong></span>
           </div>
         </div>
       )}
@@ -561,9 +561,9 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               <strong className="text-sm text-danger-text">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
-              <div className="max-h-[150px] overflow-y-auto rounded-lg border border-border bg-[#fafafa] p-[8px_12px] text-xs">
+              <div className="max-h-[150px] overflow-y-auto rounded-lg border border-border bg-surface-muted p-[8px_12px] text-xs">
                 {errorsList.map((err, i) => (
-                  <div key={i} className="p-[4px_0] text-[#444]" 
+                  <div key={i} className="p-[4px_0] text-gray-600" 
                     // @allow-inline-style - Dynamic border based on position in list
                     style={{
                       borderBottom: i < errorsList.length - 1 ? '1px solid var(--color-border)' : undefined 

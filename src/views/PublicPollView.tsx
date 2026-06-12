@@ -92,7 +92,7 @@ export default function PublicPollView() {
 
   if (status === 'error' || !pollData) {
     return (
-      <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-[#fef2f2]">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-red-50">
         <AppCard className="w-full max-w-[min(440px,calc(100vw-32px))] border border-red-100 p-6 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="text-5xl">⚠️</div>
@@ -174,7 +174,7 @@ export default function PublicPollView() {
                   disabled={isUpdating}
                   className={`h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
                     selectedResponse === 'No'
-                      ? 'border-2 border-[#991b1b] bg-[#ef4444] text-white hover:bg-[#dc2626]'
+                      ? 'border-2 border-danger-text bg-danger text-white hover:bg-red-600'
                       : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted hover:bg-slate-200'
                   }`}
                 >

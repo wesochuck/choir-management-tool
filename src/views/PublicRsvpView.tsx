@@ -309,7 +309,7 @@ export default function PublicRsvpView() {
 
   if (status === 'error' || !event || !profile) {
     return (
-      <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-[#fef2f2]">
+      <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-red-50">
         <AppCard className="w-full max-w-[min(440px,calc(100vw-32px))] border border-red-100 p-6 text-center">
           <div className="flex flex-col items-center gap-4">
             <div className="text-5xl">⚠️</div>
@@ -379,7 +379,7 @@ export default function PublicRsvpView() {
 
               <div className="rounded-lg border border-border bg-surface p-4 text-center shadow-sm transition-all duration-200 hover:shadow-md">
                 <div className="text-xs font-bold tracking-wider text-text-muted uppercase">Your response</div>
-                <div className={`mt-2 text-xl font-extrabold ${dbRsvp === 'Yes' ? 'text-primary-deep' : dbRsvp === 'No' ? 'text-[#ef4444]' : 'text-gray-500'}`}>
+                <div className={`mt-2 text-xl font-extrabold ${dbRsvp === 'Yes' ? 'text-primary-deep' : dbRsvp === 'No' ? 'text-danger' : 'text-gray-500'}`}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
                     : dbRsvp === 'No'
@@ -453,7 +453,7 @@ export default function PublicRsvpView() {
                     }}
                     disabled={isUpdating}
                     variant="danger"
-                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'No' ? 'border-2 border-[#991b1b] opacity-100' : 'border border-border opacity-60'}`}
+                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'No' ? 'border-2 border-danger-text opacity-100' : 'border border-border opacity-60'}`}
                   >
                     {isUpdating && selectedRsvp === 'No' ? 'Confirming...' : (event.type === 'Rehearsal' && selectedRsvp === 'No' ? 'Confirm RSVP Decline' : 'No, I Cannot Attend')}
                   </Button>
@@ -471,7 +471,7 @@ export default function PublicRsvpView() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col items-center gap-1 border-b border-border pb-4 text-center">
                 <div 
-                  className={`mb-1 flex size-20 items-center justify-center rounded-full text-5xl transition-all duration-300 ${isAttending ? 'bg-[#e6f4ea] text-primary' : 'bg-[#fce8e6] text-[#c5221f]'}`}
+                  className={`mb-1 flex size-20 items-center justify-center rounded-full text-5xl transition-all duration-300 ${isAttending ? 'bg-primary-light text-primary' : 'bg-red-100 text-danger'}`}
                 >
                   {isAttending ? '✓' : '✗'}
                 </div>

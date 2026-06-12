@@ -18,9 +18,9 @@ export interface ButtonProps {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md',
-  secondary: 'bg-primary-light text-primary-deep hover:bg-[#d1dfd6]',
+  secondary: 'bg-primary-light text-primary-deep hover:bg-primary-deep/10',
   outline: 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
-  danger: 'bg-danger-bg text-danger-text hover:bg-[#fecaca] hover:border-[#fca5a5]',
+  danger: 'bg-danger-bg text-danger-text hover:bg-red-200 hover:border-red-300',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
