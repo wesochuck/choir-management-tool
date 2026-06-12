@@ -178,11 +178,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
     <div
       ref={gridRef}
       className="grid-print flex flex-col items-center w-full"
-      // @allow-inline-style - dynamic gap and padding from layout calculations
+      // @allow-inline-style - dynamic gap, padding, and seat size from layout calculations
       style={{
         gap: rowGap,
         padding: containerPadding,
-      }}
+        '--seat-size': `${seatSize}px`,
+      } as React.CSSProperties}
     >
       {/* Warning banner if not enough seats */}
       {activeSingersForFormationCount > totalSeats && onUpdateRowCounts && (
