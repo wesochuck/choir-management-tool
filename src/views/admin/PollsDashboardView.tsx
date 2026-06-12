@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal } from '../../components/ui';
+import { Button, FormField, Badge, Modal, EmptyState } from '../../components/ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
@@ -248,11 +248,105 @@ export default function PollsDashboardView() {
     }
   };
 
+  // Helper to render expanded poll details (shared between desktop and mobile)
+  const renderPollDetails = (poll: PollRecord, stat: typeof pollStats[string]) => {
+    const contactedSingers = (() => {
+      const contactedMap = new Map<string, CommunicationRecipient>();
+      const msgs = pollMessages.filter(msg => msg.content.includes(`{{POLL_LINK:${poll.id}}}`));
+      msgs.forEach(msg => {
+        if (Array.isArray(msg.recipients)) {
+          msg.recipients.forEach(rec => {
+            contactedMap.set(rec.id, rec);
+          });
+        }
+      });
+      return Array.from(contactedMap.values());
+    })();
+
+    return (
+      <div className="flex flex-col gap-6 border-t border-slate-100 bg-slate-50/30 p-6 px-6 md:px-8 text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
+            <span>📨</span>
+            {contactedSingers.length > 0 ? (
+              <span>Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
+            ) : (
+              <span>
+                No sent communications found yet.{' '}
+                <button
+                  type="button"
+                  className="text-primary underline hover:text-primary-deep font-semibold"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate('/admin/communications');
+                  }}
+                >
+                  Communications page
+                </button>
+              </span>
+            )}
+          </div>
+          {contactedSingers.length > 0 && (
+            <button
+              type="button"
+              className="text-xs font-bold text-primary underline transition-colors hover:text-primary-deep text-left sm:text-right"
+              onClick={() => setRecipientModal({
+                isOpen: true,
+                recipients: contactedSingers,
+                title: `Contacted Singers — ${poll.question}`
+              })}
+            >
+              View Contacted List →
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-8 md:flex-row">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <h4 className="m-0 border-b-2 border-primary/20 pb-1.5 text-sm font-black tracking-wider text-primary uppercase">
+              Volunteers ({stat.yes})
+            </h4>
+            {stat.volunteers.length === 0 ? (
+              <p className="m-0 text-sm font-medium text-slate-400 italic">No volunteers yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {stat.volunteers.map(v => (
+                  <div key={v.id} className="rounded-lg border border-slate-100 bg-white p-2.5 px-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="font-bold text-slate-800 text-sm">{v.expand?.profileId.name}</div>
+                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">{v.expand?.profileId.voicePart}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
+            <h4 className="m-0 border-b-2 border-danger-text/20 pb-1.5 text-sm font-black tracking-wider text-danger-text uppercase">
+              Declined ({stat.no})
+            </h4>
+            {stat.decliners.length === 0 ? (
+              <p className="m-0 text-sm font-medium text-slate-400 italic">No decliners yet.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {stat.decliners.map(v => (
+                  <div key={v.id} className="rounded-lg border border-danger-text/10 bg-white p-2.5 px-4 opacity-90 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="font-bold text-slate-800 text-sm">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
+                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">{v.expand?.profileId?.voicePart ?? ''}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading && polls.length === 0) {
     return (
       <div className="mx-auto flex max-w-7xl flex-col p-6">
-        <div className="flex items-center justify-center rounded-lg border border-border bg-surface py-12 shadow-xs">
-          <p className="font-medium text-text-muted">Loading polls...</p>
+        <div className="flex items-center justify-center rounded-lg border border-slate-200 bg-white py-12 shadow-sm">
+          <p className="font-medium text-slate-500">Loading polls...</p>
         </div>
       </div>
     );
@@ -260,228 +354,249 @@ export default function PollsDashboardView() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
-      <div className="flex flex-col justify-between gap-6 border-b border-border pb-6 md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-6 border-b border-slate-200 pb-5 md:flex-row md:items-center">
         <div className="flex flex-col gap-1">
-          <h2 className="m-0 text-3xl font-extrabold tracking-tight text-text">Engagement Polls & Volunteering</h2>
-          <p className="text-sm font-medium text-text-muted">Review volunteer responses and counts.</p>
+          <h2 className="m-0 text-3xl font-extrabold tracking-tight text-slate-900">Engagement Polls & Volunteering</h2>
+          <p className="text-sm font-medium text-slate-500">Review volunteer responses and counts.</p>
         </div>
         <div className="flex flex-row flex-wrap items-center gap-4 max-md:w-full max-md:justify-start">
-          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-text">
+          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-700">
             <input 
               type="checkbox" 
               checked={showArchived} 
               onChange={e => setShowArchived(e.target.checked)}
-              className="h-4 w-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
+              className="size-4 rounded-sm border-slate-300 text-primary focus:ring-primary focus:ring-offset-0"
             />
             Show Archived
           </label>
-          <button 
-            type="button"
-            className="flex h-10 flex-row items-center gap-1.5 rounded-md border border-border bg-surface px-4 text-sm font-bold text-text-muted shadow-xs transition-all hover:bg-gray-50 active:scale-95" 
+          <Button 
+            variant="secondary"
+            className="px-3 md:px-6 font-semibold shadow-sm"
             onClick={() => setIsSettingsModalOpen(true)}
+            title="Settings"
+            icon={
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+            }
           >
-            <span>⚙️</span> Settings
-          </button>
-          <button 
-            type="button"
-            className="flex h-10 flex-row items-center gap-1.5 rounded-md bg-primary px-4 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95" 
+            <span className="hidden md:inline">Settings</span>
+          </Button>
+          <Button 
+            variant="primary"
+            className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
             onClick={openQuickCreate}
+            title="Start New Poll"
+            icon={
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            }
           >
-            <span className="text-lg">+</span> Start New Poll
-          </button>
+            <span className="hidden md:inline">Start New Poll</span>
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-col gap-6">
         {loadError && (
-          <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-5 shadow-xs">
+          <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-5 shadow-xs text-left">
             <p className="m-0 font-bold text-danger-text">{loadError}</p>
           </div>
         )}
         
         {filteredPolls.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface/30 py-16 text-center shadow-xs">
-            <p className="mt-0 mb-6 text-lg font-semibold text-text-muted">No active polls found.</p>
-            <button 
-              type="button" 
-              className="rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95" 
-              onClick={openQuickCreate}
-            >
-              Start New Poll
-            </button>
-          </div>
+          <EmptyState
+            title="No Active Polls Found"
+            description={
+              showArchived
+                ? "No polls have been created yet."
+                : "No active engagement polls are available. Check 'Show Archived' to view past polls."
+            }
+            icon="🗳️"
+            action={
+              <Button variant="primary" onClick={openQuickCreate} size="small">
+                + Start New Poll
+              </Button>
+            }
+          />
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
-              {paginatedPolls.map((poll, index) => {
-                const stat = pollStats[poll.id];
-                const isExpanded = expandedPollId === poll.id;
-                const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
-                const isArchived = (event ? new Date(event.date) < new Date() : false) || 
-                                   (poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < new Date() : false);
-                const createdLabel = poll.created
-                  ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
-                  : null;
-                const archiveLabel = poll.archiveAt
-                  ? formatInTimezone(poll.archiveAt, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
-                  : null;
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+              <div className="divide-y divide-slate-100">
+                {paginatedPolls.map((poll) => {
+                  const stat = pollStats[poll.id];
+                  const isExpanded = expandedPollId === poll.id;
+                  const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
+                  const isArchived = (event ? new Date(event.date) < new Date() : false) || 
+                                     (poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < new Date() : false);
+                  const createdLabel = poll.created
+                    ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : null;
+                  const archiveLabel = poll.archiveAt
+                    ? formatInTimezone(poll.archiveAt, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : null;
 
-                return (
-                  <div
-                    key={poll.id}
-                    className={`border-b border-border ${index === paginatedPolls.length - 1 ? 'border-b-0' : ''}`}
-                  >
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className={`flex cursor-pointer items-center justify-between gap-6 p-4 px-6 transition-all duration-150 select-none hover:bg-primary-light/30 focus-visible:bg-primary-light/30 focus-visible:outline-none ${isExpanded ? 'bg-primary-light/10' : ''} max-md:flex-col max-md:items-stretch`}
-                    onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
-                  >
-                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <h3 className="m-0 truncate text-lg font-bold tracking-tight text-text">{poll.question}</h3>
-                        {isArchived && <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Archived</span>}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-semibold text-text-muted">
-                        {createdLabel && <span className="flex items-center gap-1.5"><span>📅</span> Created {createdLabel}</span>}
-                        {archiveLabel && (
-                          <span 
-                            className="flex items-center gap-1.5"
-                            title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
-                          >
-                            <span>⏱️</span> {isArchived ? 'Archived' : 'Auto-archives'} {archiveLabel}
-                          </span>
-                        )}
-                        {event && (
-                          <span className="flex items-center gap-1.5">
-                            <span>🎭</span> {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-shrink-0 items-center gap-8 max-md:flex-col max-md:items-stretch max-md:gap-5">
-                      <div className="flex items-center gap-3" aria-label="Poll response counts">
-                        <div className="flex min-w-[56px] flex-col rounded-lg border border-primary/20 bg-primary/5 p-1.5 text-center shadow-xs">
-                          <span className="text-lg leading-tight font-black text-primary-deep">{stat.yes}</span>
-                          <span className="text-[0.65rem] font-bold tracking-wider text-primary-deep uppercase">Yes</span>
-                        </div>
-                        <div className="flex min-w-[56px] flex-col rounded-lg border border-danger-text/20 bg-danger-bg p-1.5 text-center shadow-xs">
-                          <span className="text-lg leading-tight font-black text-danger-text">{stat.no}</span>
-                          <span className="text-[0.65rem] font-bold tracking-wider text-danger-text uppercase">No</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 max-md:justify-between">
-                        <span className="text-sm font-bold text-text-muted">
-                          {isExpanded ? '▲ Hide Details' : '▼ View Names'}
-                        </span>
-                        <button
-                          className="rounded-md p-1.5 text-xs font-bold text-danger-text transition-colors hover:bg-danger-bg active:opacity-70"
-                          onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
-                          onKeyDown={(e) => { e.stopPropagation(); }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isExpanded && (() => {
-                    const contactedSingers = (() => {
-                      const contactedMap = new Map<string, CommunicationRecipient>();
-                      const msgs = pollMessages.filter(msg => msg.content.includes(`{{POLL_LINK:${poll.id}}}`));
-                      msgs.forEach(msg => {
-                        if (Array.isArray(msg.recipients)) {
-                          msg.recipients.forEach(rec => {
-                            contactedMap.set(rec.id, rec);
-                          });
-                        }
-                      });
-                      return Array.from(contactedMap.values());
-                    })();
-
-                    return (
-                      <div className="flex flex-col gap-6 border-t border-border bg-gray-50/50 p-6 px-8">
-                        <div className="flex flex-row items-center justify-between border-b border-border pb-3">
-                          <div className="flex items-center gap-2 text-sm font-bold text-text-muted">
-                            <span>📨</span>
-                            {contactedSingers.length > 0 ? (
-                              <span>Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
+                  return (
+                    <div
+                      key={poll.id}
+                      className="transition-colors hover:bg-slate-50/20"
+                    >
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        className={`flex cursor-pointer items-center justify-between gap-6 p-4 px-6 transition-all duration-150 select-none focus-visible:bg-slate-50/40 focus-visible:outline-none ${isExpanded ? 'bg-slate-50/40' : ''}`}
+                        onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
+                      >
+                        <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <h3 className="m-0 truncate text-base font-bold tracking-tight text-slate-900">{poll.question}</h3>
+                            {isArchived ? (
+                              <Badge tone="neutral">Archived</Badge>
                             ) : (
-                              <span>
-                                No sent communications found for this poll yet. You can send it from the{' '}
-                                <button
-                                  className="text-primary underline hover:text-primary-deep"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    navigate('/admin/communications');
-                                  }}
-                                >
-                                  Communications page
-                                </button>.
+                              <Badge tone="success">Active</Badge>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-semibold text-slate-400">
+                            {createdLabel && <span className="flex items-center gap-1.5"><span>📅</span> Created {createdLabel}</span>}
+                            {archiveLabel && (
+                              <span 
+                                className="flex items-center gap-1.5"
+                                title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
+                              >
+                                <span>⏱️</span> {isArchived ? 'Archived' : 'Auto-archives'} {archiveLabel}
+                              </span>
+                            )}
+                            {event && (
+                              <span className="flex items-center gap-1.5">
+                                <span>🎭</span> {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
                               </span>
                             )}
                           </div>
-                          {contactedSingers.length > 0 && (
-                            <button
-                              type="button"
-                              className="text-xs font-bold text-primary underline transition-colors hover:text-primary-deep"
-                              onClick={() => setRecipientModal({
-                                isOpen: true,
-                                recipients: contactedSingers,
-                                title: `Contacted Singers — ${poll.question}`
-                              })}
-                            >
-                              View Contacted List →
-                            </button>
-                          )}
                         </div>
 
-                        <div className="flex flex-col gap-8 md:flex-row">
-                          <div className="flex min-w-0 flex-1 flex-col gap-3">
-                            <h4 className="m-0 border-b-2 border-primary/20 pb-1.5 text-sm font-black tracking-wider text-primary-deep uppercase">
-                              Volunteers ({stat.yes})
-                            </h4>
-                            {stat.volunteers.length === 0 ? (
-                              <p className="m-0 text-sm font-medium text-text-muted italic">No volunteers yet.</p>
-                            ) : (
-                              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
-                                {stat.volunteers.map(v => (
-                                  <div key={v.id} className="rounded-lg border border-border bg-surface p-2.5 px-4 shadow-xs transition-shadow hover:shadow-sm">
-                                    <div className="font-bold text-text">{v.expand?.profileId.name}</div>
-                                    <div className="text-[0.7rem] font-bold tracking-wide text-text-muted uppercase">{v.expand?.profileId.voicePart}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                        <div className="flex flex-shrink-0 items-center gap-8">
+                          <div className="flex items-center gap-3" aria-label="Poll response counts">
+                            <div className="flex min-w-[56px] flex-col rounded-lg border border-primary/20 bg-primary/5 p-1.5 text-center shadow-xs">
+                              <span className="text-lg leading-tight font-black text-primary">{stat.yes}</span>
+                              <span className="text-[0.65rem] font-bold tracking-wider text-primary uppercase">Yes</span>
+                            </div>
+                            <div className="flex min-w-[56px] flex-col rounded-lg border border-danger-text/20 bg-danger-bg p-1.5 text-center shadow-xs">
+                              <span className="text-lg leading-tight font-black text-danger-text">{stat.no}</span>
+                              <span className="text-[0.65rem] font-bold tracking-wider text-danger-text uppercase">No</span>
+                            </div>
                           </div>
 
-                          <div className="flex min-w-0 flex-1 flex-col gap-3">
-                            <h4 className="m-0 border-b-2 border-danger-text/20 pb-1.5 text-sm font-black tracking-wider text-danger-text uppercase">
-                              Declined ({stat.no})
-                            </h4>
-                            {stat.decliners.length === 0 ? (
-                              <p className="m-0 text-sm font-medium text-text-muted italic">No decliners yet.</p>
-                            ) : (
-                              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2.5">
-                                {stat.decliners.map(v => (
-                                  <div key={v.id} className="rounded-lg border border-danger-text/10 bg-surface p-2.5 px-4 opacity-90 shadow-xs">
-                                    <div className="font-bold text-text">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
-                                    <div className="text-[0.7rem] font-bold tracking-wide text-text-muted uppercase">{v.expand?.profileId?.voicePart ?? ''}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors">
+                              {isExpanded ? '▲ Hide Details' : '▼ View Names'}
+                            </span>
+                            <Button
+                              variant="danger"
+                              size="small"
+                              className="font-semibold shadow-sm"
+                              onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
+                            >
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       </div>
-                    );
-                  })()}
-                </div>
-                );
-              })}
+
+                      {isExpanded && renderPollDetails(poll, stat)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+              <div className="divide-y divide-slate-100">
+                {paginatedPolls.map((poll) => {
+                  const stat = pollStats[poll.id];
+                  const isExpanded = expandedPollId === poll.id;
+                  const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
+                  const isArchived = (event ? new Date(event.date) < new Date() : false) || 
+                                     (poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < new Date() : false);
+                  const createdLabel = poll.created
+                    ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : null;
+                  const archiveLabel = poll.archiveAt
+                    ? formatInTimezone(poll.archiveAt, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    : null;
+
+                  return (
+                    <div key={poll.id} className="flex flex-col">
+                      <div className="p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40 text-left">
+                        {/* Row 1: Fine-grain dates and status badge */}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                            {createdLabel && <span>Created: {createdLabel}</span>}
+                            {archiveLabel && (
+                              <span title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}>
+                                {isArchived ? 'Archived' : 'Expires'}: {archiveLabel}
+                              </span>
+                            )}
+                          </div>
+                          <Badge tone={isArchived ? 'neutral' : 'success'}>
+                            {isArchived ? 'Archived' : 'Active'}
+                          </Badge>
+                        </div>
+
+                        {/* Row 2: Question & Linked Event */}
+                        <div className="flex flex-col gap-1">
+                          <h3 className="text-sm font-bold text-slate-900 leading-snug">{poll.question}</h3>
+                          {event && (
+                            <div className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
+                              <span>🎭</span> {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Row 3: Response summary stats */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 py-1.5 text-xs font-bold text-primary">
+                            <span>{stat.yes}</span>
+                            <span className="text-[10px] font-bold tracking-wider uppercase">Yes</span>
+                          </div>
+                          <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-danger-text/20 bg-danger-bg py-1.5 text-xs font-bold text-danger-text">
+                            <span>{stat.no}</span>
+                            <span className="text-[10px] font-bold tracking-wider uppercase">No</span>
+                          </div>
+                        </div>
+
+                        {/* Row 4: Primary Actions */}
+                        <div className="flex items-center gap-2 pt-1 border-t border-slate-50">
+                          <Button
+                            variant="secondary"
+                            size="small"
+                            className="flex-1 font-semibold"
+                            onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
+                          >
+                            {isExpanded ? '▲ Hide Names' : '▼ View Names'}
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="small"
+                            className="font-semibold"
+                            onClick={() => handleDeletePoll(poll.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Expanded Section inside the mobile card */}
+                      {isExpanded && renderPollDetails(poll, stat)}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <Pagination
@@ -499,93 +614,87 @@ export default function PollsDashboardView() {
         title={quickCreateStep === 1 ? 'Quick Create Poll' : 'Confirm & Open Review'}
         maxWidth="560px"
       >
-        <div className="flex flex-col gap-6 py-2">
+        <div className="flex flex-col gap-6 py-2 text-left">
           {quickCreateStep === 1 ? (
             <>
-              <p className="m-0 text-sm font-medium text-text-muted leading-relaxed">
+              <p className="m-0 text-sm font-medium text-slate-500 leading-relaxed">
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted" htmlFor="quick-poll-question">Poll Question</label>
+              <FormField label="Poll Question">
                 <input
                   id="quick-poll-question"
                   type="text"
-                  className="h-10 w-full rounded-md border border-border bg-surface px-4 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                   value={quickPollQuestion}
                   onChange={(e) => setQuickPollQuestion(e.target.value)}
                   placeholder="e.g. Who can help with setup?"
                   required
                 />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted" htmlFor="quick-poll-days">Auto-Archive Poll in (Days)</label>
+              </FormField>
+              <FormField label="Auto-Archive Poll in (Days)">
                 <input
                   id="quick-poll-days"
                   type="number"
                   min="1"
                   max="365"
-                  className="h-10 w-[120px] rounded-md border border-border bg-surface px-4 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  className="block w-[120px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                   value={quickPollDays}
                   onChange={(e) => setQuickPollDays(parseInt(e.target.value) || 1)}
                   required
                 />
-              </div>
+              </FormField>
               <div className="flex flex-col gap-4">
-                <p className="m-0 text-xs font-medium text-text-muted">
+                <p className="m-0 text-xs font-medium text-slate-400">
                   Recipients default to all singers with status Active or Idle.
                 </p>
-                <div className="flex flex-row justify-end gap-3 border-t border-border pt-4">
-                  <button 
-                    type="button" 
-                    className="h-10 rounded-md px-4 text-sm font-bold text-text-muted transition-colors hover:bg-gray-100" 
+                <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
+                  <Button 
+                    variant="secondary"
                     onClick={() => setIsQuickCreateOpen(false)}
                   >
                     Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="h-10 rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                  </Button>
+                  <Button
+                    variant="primary"
                     disabled={!quickPollQuestion.trim()}
                     onClick={() => setQuickCreateStep(2)}
                   >
                     Next
-                  </button>
+                  </Button>
                 </div>
               </div>
             </>
           ) : (
             <>
-              <p className="m-0 text-sm font-medium text-text-muted leading-relaxed">
-                We'll create this poll and save a pre-filled message to your <strong className="text-text">Drafts</strong>. You can review, edit, and send from the Communications page.
+              <p className="m-0 text-sm font-medium text-slate-500 leading-relaxed">
+                We'll create this poll and save a pre-filled message to your <strong className="text-slate-900 font-semibold">Drafts</strong>. You can review, edit, and send from the Communications page.
               </p>
               <div className="flex flex-col gap-4">
-                <div className="rounded-lg border border-border bg-gray-50/50 p-4 shadow-xs">
-                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-text-muted uppercase">Poll Question</div>
-                  <strong className="text-lg text-text tracking-tight">{quickPollQuestion.trim()}</strong>
+                <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
+                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">Poll Question</div>
+                  <strong className="text-lg text-slate-900 tracking-tight font-extrabold">{quickPollQuestion.trim()}</strong>
                 </div>
-                <div className="rounded-lg border border-border bg-gray-50/50 p-4 shadow-xs">
-                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-text-muted uppercase">Draft Preview</div>
-                  <div className="text-sm"><strong>Subject:</strong> Quick Choir Poll</div>
-                  <div className="mt-3 whitespace-pre-wrap rounded-md border border-border bg-surface p-3 text-xs text-text-muted italic">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
+                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">Draft Preview</div>
+                  <div className="text-sm"><strong className="text-slate-800">Subject:</strong> Quick Choir Poll</div>
+                  <div className="mt-3 whitespace-pre-wrap rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-500 italic">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
                 </div>
               </div>
-              <div className="flex flex-row justify-end gap-3 border-t border-border pt-4">
-                <button 
-                  type="button" 
-                  className="h-10 rounded-md px-4 text-sm font-bold text-text-muted transition-colors hover:bg-gray-100" 
+              <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
+                <Button 
+                  variant="secondary"
                   disabled={isCreatingQuickPoll} 
                   onClick={() => setQuickCreateStep(1)}
                 >
                   Back
-                </button>
-                <button
-                  type="button"
-                  className="h-10 rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                </Button>
+                <Button
+                  variant="primary"
                   disabled={isCreatingQuickPoll}
                   onClick={() => void handleQuickCreateAndOpenReview()}
                 >
                   {isCreatingQuickPoll ? 'Saving draft...' : 'Create + Save as Draft'}
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -599,44 +708,41 @@ export default function PollsDashboardView() {
         title="⚙️ Engagement Poll Settings"
         maxWidth="400px"
       >
-        <div className="flex flex-col gap-6 py-2">
-          <p className="m-0 text-sm font-medium text-text-muted leading-relaxed">
+        <div className="flex flex-col gap-6 py-2 text-left">
+          <p className="m-0 text-sm font-medium text-slate-500 leading-relaxed">
             Configure global default settings for quick engagement polls.
           </p>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted" htmlFor="settings-default-days">Default Auto-Archive (Days)</label>
+          <FormField label="Default Auto-Archive (Days)">
             <input
               id="settings-default-days"
               type="number"
               min="1"
               max="365"
-              className="h-10 w-[120px] rounded-md border border-border bg-surface px-4 text-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+              className="block w-[120px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               value={globalDefaultDays}
               onChange={(e) => setGlobalDefaultDays(parseInt(e.target.value) || 1)}
               required
             />
-          </div>
+          </FormField>
           <div className="flex flex-col gap-4">
-            <p className="m-0 text-xs font-medium text-text-muted">
+            <p className="m-0 text-xs font-medium text-slate-400">
               New quick polls will automatically archive after this many days unless overridden.
             </p>
-            <div className="flex flex-row justify-end gap-3 border-t border-border pt-4">
-              <button 
-                type="button" 
-                className="h-10 rounded-md px-4 text-sm font-bold text-text-muted transition-colors hover:bg-gray-100" 
+            <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
+              <Button 
+                variant="secondary"
                 disabled={isSavingSettings} 
                 onClick={() => setIsSettingsModalOpen(false)}
               >
                 Cancel
-              </button>
-              <button
-                type="button"
-                className="h-10 rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+              </Button>
+              <Button
+                variant="primary"
                 disabled={isSavingSettings}
                 onClick={() => void handleSaveSettings()}
               >
                 {isSavingSettings ? 'Saving...' : 'Save Settings'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -648,20 +754,19 @@ export default function PollsDashboardView() {
         title={recipientModal.title}
         maxWidth="500px"
         footer={
-          <button
-            type="button"
-            className="flex h-10 items-center justify-center rounded-md border border-border bg-surface px-6 text-sm font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:scale-95"
+          <Button
+            variant="secondary"
             onClick={() => setRecipientModal({ ...recipientModal, isOpen: false })}
           >
             Close
-          </button>
+          </Button>
         }
       >
-        <div className="flex max-h-[400px] flex-col gap-2 overflow-y-auto pr-2">
+        <div className="flex max-h-[400px] flex-col gap-2 overflow-y-auto pr-2 text-left">
           {recipientModal.recipients.map(r => (
-            <div key={r.id} className="flex flex-row items-center justify-between rounded-lg border border-border bg-gray-50/30 p-3 px-4 shadow-xs">
-              <strong className="text-sm font-bold text-text">{r.name}</strong>
-              <span className="text-[0.65rem] font-black tracking-wider text-text-muted uppercase">{r.voicePart}</span>
+            <div key={r.id} className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-slate-50/30 p-3 px-4 shadow-sm">
+              <strong className="text-sm font-bold text-slate-800">{r.name}</strong>
+              <Badge tone="neutral">{r.voicePart}</Badge>
             </div>
           ))}
         </div>
