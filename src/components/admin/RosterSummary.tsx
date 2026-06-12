@@ -78,15 +78,11 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
     >
       {/* Section Subtotals */}
       <div 
-        className="roster-summary-sections"
-        // @allow-inline-style - dynamic grid columns based on section list length
+        className="grid grid-cols-[repeat(var(--grid-cols),1fr)] max-[640px]:grid-cols-2 max-[400px]:grid-cols-1 gap-4 border-b border-border pb-4"
+        // @allow-inline-style - dynamic grid columns based on section list length using CSS variable
         style={{ 
-          display: 'grid', 
-          gridTemplateColumns: `repeat(${sectionsList.length}, 1fr)`, 
-          gap: 'var(--space-md)',
-          paddingBottom: 'var(--space-md)',
-          borderBottom: '1px solid var(--border)'
-        }}
+          '--grid-cols': sectionsList.length
+        } as React.CSSProperties}
       >
         {sectionsList.map((sec: SectionDef) => {
           const isSelected = selectedVoiceParts.includes(sec.code);
@@ -97,10 +93,10 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
               onClick={() => onVoicePartToggle?.(sec.code)}
               // @allow-inline-style - dynamic padding based on selection state
               style={{ 
-                padding: 'calc(var(--space-md) - 2px)', 
-                borderRadius: 'var(--radius-md)', 
-                backgroundColor: 'var(--primary-light)',
-                gap: 'var(--space-xs)'
+                padding: '14px', 
+                borderRadius: '8px', 
+                backgroundColor: 'var(--color-primary-light)',
+                gap: '4px'
               }}
             >
               <div className="text-xs font-bold uppercase tracking-wider text-primary-deep">
@@ -119,14 +115,14 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           return (
             <div 
               key={vp.label} 
-              className={`cursor-pointer flex-col border text-center transition-all duration-200 hover:-translate-y-px hover:border-primary-deep hover:bg-primary-light ${isSelected ? 'border-primary bg-primary-light' : 'border-border bg-[var(--bg)]'}`}
+              className={`cursor-pointer flex-col border text-center transition-all duration-200 hover:-translate-y-px hover:border-primary-deep hover:bg-primary-light ${isSelected ? 'border-primary bg-primary-light' : 'border-border bg-bg'}`}
               onClick={() => onVoicePartToggle?.(vp.label)}
               // @allow-inline-style - dynamic padding based on selection state
               style={{ 
-                borderRadius: 'var(--radius-sm)', 
+                borderRadius: '4px', 
                 gap: '2px',
                 borderWidth: isSelected ? '2px' : '1px',
-                padding: isSelected ? 'calc(var(--space-sm) - 1px)' : 'var(--space-sm)'
+                padding: isSelected ? '7px' : '8px'
               }}
             >
               <div className="text-muted text-xs font-bold">{vp.label}</div>

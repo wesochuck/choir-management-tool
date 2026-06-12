@@ -264,7 +264,7 @@ export function TemplatesPanel({
                       <div className="flex items-center gap-1.5">
                         <span>{tpl.title}</span>
                         {tpl.isSystemTemplate && (
-                          <span className="inline-flex items-center rounded bg-performance-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-performance-text uppercase opacity-80">
+                          <span className="inline-flex items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase opacity-80">
                             System
                           </span>
                         )}

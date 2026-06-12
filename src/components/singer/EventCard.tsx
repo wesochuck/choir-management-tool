@@ -94,7 +94,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     <AppCard noPadding>
       <div className="flex flex-col gap-4 p-6">
         <div className="flex w-full flex-row items-center justify-between max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
-          <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-semibold tracking-wider uppercase ${isPerformance ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+          <span className={`inline-flex rounded px-1.5 py-0.5 text-xs font-semibold tracking-wider uppercase ${isPerformance ? 'bg-danger-bg text-danger-text' : 'bg-primary-light text-primary-deep'}`}>
              {event.type}
            </span>
            <div className="flex flex-row flex-wrap justify-end gap-1 max-sm:grid max-sm:w-full max-sm:grid-cols-[repeat(auto-fit,minmax(80px,1fr))] max-sm:gap-1.5">

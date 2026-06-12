@@ -244,9 +244,9 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
             {/* Section Subtotals */}
             <div
-              className="roster-summary-sections grid gap-4 border-b border-gray-200 pb-4"
-              // @allow-inline-style - dynamic grid columns based on section count
-              style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
+              className="grid grid-cols-[repeat(var(--grid-cols),1fr)] max-[640px]:grid-cols-2 max-[400px]:grid-cols-1 gap-4 border-b border-gray-200 pb-4"
+              // @allow-inline-style - dynamic grid columns based on section count using CSS variable
+              style={{ '--grid-cols': sections.length } as React.CSSProperties}
             >
               {sections.map(sec => {
                 const isSelected = selectedVoiceParts.includes(sec.code);

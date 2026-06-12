@@ -379,7 +379,7 @@ export default function AttendanceView() {
                           'Untitled Event'}
                       </h2>
                       <span
-                        className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary/20 text-primary-deep'}`}
+                        className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary/20 text-primary-deep'}`}
                       >
                         {selectedEvent.type}
                       </span>

@@ -338,7 +338,7 @@ export default function ReportsView() {
                                         <td className="border-b border-border p-4">{stat.piece.composer || '-'}</td>
                                         <td className="border-b border-border p-4">{stat.piece.arranger || '-'}</td>
                                         <td className="border-b border-border p-4 text-center">
-                                            <span className="inline-flex items-center rounded bg-performance-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-performance-text uppercase">{stat.totalPerformances}</span>
+                                            <span className="inline-flex items-center rounded bg-danger-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-danger-text uppercase">{stat.totalPerformances}</span>
                                         </td>
                                         <td className="border-b border-border p-4">
                                             {stat.lastPerformed ? stat.lastPerformed.toLocaleDateString() : '-'}

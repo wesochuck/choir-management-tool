@@ -35,7 +35,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
     const isMovement = !!uploadingKeyPrefix;
 
     return (
-        <div className="flex flex-col gap-[var(--space-xs)] rounded-[var(--radius)] border border-[var(--border)] bg-[rgb(0_0_0_/_2%)] p-[var(--space-sm)]">
+        <div className="flex flex-col gap-1 rounded-md border border-border bg-[rgb(0_0_0_/_2%)] p-2">
             {visibleKeys.map(partLabel => {
                 const filename = piece.audioTrackMapping?.[partLabel];
                 const uploadKey = `${uploadingKeyPrefix}${partLabel}`;
@@ -60,7 +60,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                 return (
                     <div 
                         key={partLabel} 
-                        className={`flex-row items-center justify-between gap-[var(--space-md)] transition-all duration-150 ${isMovement ? 'scale-100 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[6px_10px] text-[13px] shadow-none' : 'scale-100 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[8px_12px] shadow-none'}`} 
+                        className={`flex-row items-center justify-between gap-4 transition-all duration-150 ${isMovement ? 'scale-100 rounded-md border border-border bg-[var(--bg-card-hover)] p-[6px_10px] text-[13px] shadow-none' : 'scale-100 rounded-md border border-border bg-[var(--bg-card-hover)] p-[8px_12px] shadow-none'}`} 
                         onDragOver={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -107,7 +107,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                         {isUploading ? (
                             <span className="text-muted animate-pulse text-xs text-[12px]">Uploading...</span>
                         ) : filename ? (
-                            <div className="flex flex-1 flex-row items-center justify-end gap-[var(--space-sm)]">
+                            <div className="flex flex-1 flex-row items-center justify-end gap-2">
                                 <audio 
                                     src={pb.files.getURL(piece, filename)} 
                                     controls 
@@ -152,8 +152,8 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
             })}
 
             {addableParts.length > 0 && (
-                <div className="animate-fade-in mt-[var(--space-xs)] flex-row items-center justify-start gap-[var(--space-xs)] border-t border-dashed border-[var(--border)] pt-[var(--space-xs)]">
-                    <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                <div className="animate-fade-in mt-1 flex-row items-center justify-start gap-1 border-t border-dashed border-border pt-1">
+                    <span className="text-[11px] font-semibold text-muted">
                         ➕ Add voice part track slot:
                     </span>
                     <select
@@ -164,7 +164,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 onAddPart(val);
                             }
                         }}
-                        className="cursor-pointer rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-card-hover)] p-[3px_8px] text-[11px] font-medium text-[var(--text-color)] outline-none"
+                        className="cursor-pointer rounded-md border border-border bg-[var(--bg-card-hover)] p-[3px_8px] text-[11px] font-medium text-[var(--text-color)] outline-none"
                     >
                         <option value="" disabled>Select voice part...</option>
                         {addableParts.map(vp => (

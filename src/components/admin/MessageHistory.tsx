@@ -149,7 +149,7 @@ export function MessageHistory({
                           {message.type}
                         </span>
                         {isAutomated && (
-                          <span className="inline-flex w-fit items-center rounded bg-performance-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-performance-text uppercase opacity-80">
+                          <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase opacity-80">
                             {mType}
                           </span>
                         )}
@@ -160,7 +160,7 @@ export function MessageHistory({
                     </td>
                     <td className="p-3 px-4">
                       {isAutomated ? (
-                        <span className="inline-flex w-fit items-center rounded bg-performance-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-performance-text uppercase">
+                        <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase">
                           Automated
                         </span>
                       ) : (

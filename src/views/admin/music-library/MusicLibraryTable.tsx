@@ -60,10 +60,10 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         const isActive = sortField === field;
         return (
             <th 
-                className={`text-label cursor-pointer border border-[var(--border)] px-[10px] py-[6px] font-semibold select-none ${isActive ? 'text-primary' : 'text-text-muted'}`}
+                className={`text-label cursor-pointer border border-border px-[10px] py-[6px] font-semibold select-none ${isActive ? 'text-primary' : 'text-text-muted'}`}
                 onClick={() => onSortChange(field)}
             >
-                <div className="flex items-center gap-[var(--space-xs)]">
+                <div className="flex items-center gap-1">
                     <span>{label}</span>
                     <span 
                         className={`inline-block text-[10px] ${isActive ? 'opacity-100' : 'opacity-[0.35]'}`}
@@ -78,10 +78,10 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     return (
         <div className="!m-0">
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] border-collapse border border-[var(--border)] text-left">
+                <table className="w-full min-w-[760px] border-collapse border border-border text-left">
                     <thead>
-                        <tr className="bg-[var(--primary-light)]">
-                            <th className="text-label w-10 border border-[var(--border)] px-[10px] py-[6px] text-center font-semibold text-[var(--text-muted)]">
+                        <tr className="bg-primary-light">
+                            <th className="text-label w-10 border border-border px-[10px] py-[6px] text-center font-semibold text-muted">
                                 <input 
                                     type="checkbox" 
                                     checked={filteredPieces.length > 0 && filteredPieces.every(p => selectedIds.has(p.id))}
@@ -92,11 +92,11 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                             {renderSortHeader('Title', 'title')}
                             {renderSortHeader('Composer/Arranger', 'composer')}
                             {renderSortHeader('Duration', 'duration')}
-                            <th className="text-label w-[50px] border border-[var(--border)] px-[10px] py-[6px] text-center font-semibold text-[var(--text-muted)]">Perf</th>
+                            <th className="text-label w-[50px] border border-border px-[10px] py-[6px] text-center font-semibold text-muted">Perf</th>
                             {renderSortHeader('Last Performed', 'lastPerformed')}
-                            <th className="text-label border border-[var(--border)] px-[10px] py-[6px] font-semibold text-[var(--text-muted)]">Tracks</th>
-                            <th className="text-label w-[60px] border border-[var(--border)] px-[10px] py-[6px] text-center font-semibold text-[var(--text-muted)]">Link</th>
-                            <th className="text-label w-20 border border-[var(--border)] px-[10px] py-[6px] font-semibold text-[var(--text-muted)]">Actions</th>
+                            <th className="text-label border border-border px-[10px] py-[6px] font-semibold text-muted">Tracks</th>
+                            <th className="text-label w-[60px] border border-border px-[10px] py-[6px] text-center font-semibold text-muted">Link</th>
+                            <th className="text-label w-20 border border-border px-[10px] py-[6px] font-semibold text-muted">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -162,7 +162,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
             </div>
 
             {!isLoading && totalParentCount > 0 && (
-                <div className="mt-[var(--space-xs)] flex items-center justify-between rounded-[0_0_var(--radius-md)_var(--radius-md)] border-t border-[var(--border)] bg-[var(--bg-card,#fff)] px-[var(--space-lg)] py-[var(--space-md)]">
+                <div className="mt-1 flex items-center justify-between rounded-b-md border-t border-border bg-[var(--bg-card,#fff)] px-6 py-4">
                     <span className="text-muted text-sm font-medium">
                         Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–{Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
                     </span>

@@ -101,10 +101,10 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         </div>
       }
     >
-      <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col gap-[var(--space-md)]">
-        <div className="flex-col gap-[var(--space-xs)]">
+      <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col gap-4">
+        <div className="flex-col gap-1">
           <label className="text-label">Item Type</label>
-          <div className="flex-row gap-[var(--space-sm)]">
+          <div className="flex-row gap-2">
             <Button
               type="button"
               variant={type === 'song' ? 'primary' : 'outline'}
@@ -126,7 +126,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-col gap-[var(--space-xs)]">
+        <div className="flex-col gap-1">
           <label className="text-label">Title</label>
           <input
             required
@@ -137,7 +137,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         </div>
 
         {type === 'song' && (
-          <div className="flex-col gap-[var(--space-xs)]">
+          <div className="flex-col gap-1">
             <label className="text-label">Composer/Arranger</label>
             <input
               value={composer}
@@ -163,7 +163,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           </div>
         )}
 
-        <div className="flex-col gap-[var(--space-xs)]">
+        <div className="flex-col gap-1">
           <label className="text-label">Duration</label>
           <input
             value={duration}
@@ -173,7 +173,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           />
         </div>
 
-        <div className="flex-col gap-[var(--space-xs)]">
+        <div className="flex-col gap-1">
           <label className="text-label">Notes</label>
           <textarea
             value={notes}

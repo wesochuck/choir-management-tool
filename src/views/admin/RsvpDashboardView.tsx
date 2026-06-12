@@ -66,7 +66,7 @@ export default function RsvpDashboardView() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6">
-            <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+            <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary-light text-primary-deep'}`}>
               {selectedEvent.type}
             </span>
             <a 

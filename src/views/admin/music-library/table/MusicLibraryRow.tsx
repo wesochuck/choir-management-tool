@@ -57,7 +57,7 @@ export function MusicLibraryRow({
       onClick={() => onEditPiece(piece)}
       data-has-tracks={hasTracks}
     >
-      <td className="border border-[var(--border)] px-[10px] py-[6px] text-center align-middle">
+      <td className="border border-border px-[10px] py-[6px] text-center align-middle">
         <input
           type="checkbox"
           checked={selectedIds.has(piece.id)}
@@ -77,19 +77,19 @@ export function MusicLibraryRow({
         onToggleExpansion={(event) => onToggleExpansion(piece.id, event)}
       />
 
-      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
+      <td className="border border-border px-[10px] py-[6px] align-middle">
         {piece.composer && piece.arranger
           ? `${piece.composer} / arr. ${piece.arranger}`
           : (piece.composer || piece.arranger || '-')}
       </td>
 
-      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
+      <td className="border border-border px-[10px] py-[6px] align-middle">
         {piece.duration
           ? formatSecondsToDuration(parseDurationToSeconds(piece.duration))
           : '-'}
       </td>
 
-      <td className="border border-[var(--border)] px-[10px] py-[6px] text-center align-middle font-semibold">
+      <td className="border border-border px-[10px] py-[6px] text-center align-middle font-semibold">
         {piece.performances && piece.performances.length > 0 ? (
           <span>
             {piece.performances.length}
@@ -97,7 +97,7 @@ export function MusicLibraryRow({
         ) : '-'}
       </td>
 
-      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
+      <td className="border border-border px-[10px] py-[6px] align-middle">
         {lastPerformedDate || '-'}
       </td>
 
@@ -114,8 +114,8 @@ export function MusicLibraryRow({
         catalogLookupTemplate={catalogLookupTemplate}
       />
 
-      <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
-        <div className="flex items-center justify-center gap-[var(--space-xs)]">
+      <td className="border border-border px-[10px] py-[6px] align-middle">
+        <div className="flex items-center justify-center gap-1">
           <Button
             variant="outline"
             size="tiny"

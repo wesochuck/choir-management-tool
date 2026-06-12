@@ -130,7 +130,7 @@ export function SeatingBottomDock({
   }, [unassigned, isVoicePartLayout, displaySections, voiceParts]);
 
   return (
-    <div className="no-print mt-4 rounded-xl border border-[var(--border)] bg-[var(--primary-light)] p-[var(--space-sm)]">
+    <div className="no-print mt-4 rounded-xl border border-border bg-primary-light p-2">
       <div 
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -144,11 +144,11 @@ export function SeatingBottomDock({
             console.error('Failed to parse bottom dock drop data', err);
           }
         }}
-        className="flex-col gap-[var(--space-sm)]"
+        className="flex-col gap-2"
       >
         <div className="flex w-full flex-row items-center justify-between">
           <div className="flex-col gap-0.5">
-            <h3 className="text-headline m-0 text-[1.05rem] text-[var(--primary-deep)]">📥 Unassigned Singers Shelf</h3>
+            <h3 className="text-headline m-0 text-[1.05rem] text-primary-deep">📥 Unassigned Singers Shelf</h3>
             <span className="text-muted text-[11px]">Drag up to assign, or drop here to clear a seat assignment.</span>
           </div>
           <div className="no-print flex-row gap-1">
@@ -156,7 +156,7 @@ export function SeatingBottomDock({
               <button
                 type="button"
                 onClick={onLookupSinger}
-                className="flex h-8 min-h-[32px] items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--primary-light)] px-3 text-xs font-label text-[var(--primary-deep)]"
+                className="flex h-8 min-h-[32px] items-center gap-1.5 whitespace-nowrap rounded-md bg-primary-light px-3 text-xs font-label text-primary-deep"
               >
                 🔍 Lookup Singer
               </button>
@@ -165,7 +165,7 @@ export function SeatingBottomDock({
               <button
                 type="button"
                 onClick={onAddSinger}
-                className="flex h-8 min-h-[32px] items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--primary-light)] px-3 text-xs font-label text-[var(--primary-deep)]"
+                className="flex h-8 min-h-[32px] items-center gap-1.5 whitespace-nowrap rounded-md bg-primary-light px-3 text-xs font-label text-primary-deep"
               >
                 + Add New Singer
               </button>
@@ -173,7 +173,7 @@ export function SeatingBottomDock({
           </div>
         </div>
         <div 
-          className="grid h-[220px] gap-[var(--space-sm)]" 
+          className="grid h-[220px] gap-2" 
           // @allow-inline-style - dynamic grid columns based on section count
           style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}
         >
@@ -192,8 +192,8 @@ export function SeatingBottomDock({
             } : undefined;
 
             return (
-              <div key={key} className="flex h-full flex-col gap-1 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5">
-                <div className="flex-row items-center justify-between border-b border-[var(--border)] pb-1">
+              <div key={key} className="flex h-full flex-col gap-1 overflow-hidden rounded-lg border border-border bg-[var(--surface)] p-1.5">
+                <div className="flex-row items-center justify-between border-b border-border pb-1">
                   <span className="text-label font-bold" style={labelStyle}>
                     {label}
                   </span>
@@ -208,7 +208,7 @@ export function SeatingBottomDock({
                       key={p.id}
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                      className="flex h-[26px] min-h-[26px] cursor-grab flex-row items-center justify-between gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-1.5 text-xs shadow-sm leading-[1.2]"
+                      className="flex h-[26px] min-h-[26px] cursor-grab flex-row items-center justify-between gap-1 rounded-lg border border-border bg-bg px-1.5 text-xs shadow-sm leading-[1.2]"
                     >
                       <span className="min-w-0 flex-1 truncate" title={p.name}>
                         {uniqueDisplayNames[p.id] || p.name.split(' ').pop()}

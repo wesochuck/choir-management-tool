@@ -44,7 +44,7 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
       ref={setNodeRef}
       style={style}
       // @allow-inline-style - dynamic dnd-kit transform, transition, color, and row styling
-      className="flex items-center gap-1.5 rounded-[var(--radius-sm)] text-[0.85rem] font-semibold shadow-[var(--shadow-sm)] cursor-grab select-none"
+      className="flex items-center gap-1.5 rounded-sm text-[0.85rem] font-semibold shadow-sm cursor-grab select-none"
     >
       {/* drag handle */}
       <span
@@ -116,7 +116,7 @@ function FormationRow({
     <div
       className="flex w-full flex-col rounded-lg border border-border bg-bg p-2 transition-all duration-200 ease-out"
       // @allow-inline-style - expansion toggle
-      style={{ gap: isExpanded ? 'var(--space-sm)' : '0' }}
+      style={{ gap: isExpanded ? '8px' : '0' }}
     >
       {/* Collapsible Accordion Header */}
       <div

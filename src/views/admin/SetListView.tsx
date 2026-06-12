@@ -130,12 +130,12 @@ export default function SetListView() {
       await dialog.showMessage({
         title: 'Player Link Generated',
         message: (
-          <div className="flex-col gap-[var(--space-md)]">
+          <div className="flex-col gap-4">
             <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
-             <div className="border border-[var(--border)] bg-[var(--bg)] rounded-lg p-[var(--space-sm)] text-[0.85rem] break-all">
+             <div className="border border-border bg-bg rounded-lg p-2 text-[0.85rem] break-all">
               {url}
             </div>
-            <div className="flex-row gap-[var(--space-sm)]">
+            <div className="flex-row gap-2">
               <Button 
                 variant="primary"
                 size="small"
@@ -709,7 +709,7 @@ export default function SetListView() {
       </AppCard>
       </div>
 
-      // @allow-inline-style - print page styling rule for print-only rendering
+      {/* @allow-inline-style - print page styling rule for print-only rendering */}
       <div className="print-only mx-auto max-w-2xl p-8" style={{ page: 'setlist' }}>
         {selectedEvent && (
           <>
@@ -818,9 +818,9 @@ export default function SetListView() {
           </>
         }
       >
-        <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-white p-[var(--space-lg)] font-[Georgia,serif] text-[#333] shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
-          <div className="mb-[var(--space-md)] text-center">
-            <h3 className="!m-0 mb-[var(--space-xxs)] text-[1.4rem] font-bold text-[#111]">
+        <div className="rounded-md border border-border bg-white p-6 font-[Georgia,serif] text-[#333] shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
+          <div className="mb-4 text-center">
+            <h3 className="!m-0 mb-0.5 text-[1.4rem] font-bold text-[#111]">
               {selectedEvent?.title || selectedEvent?.type}
             </h3>
             <div className="text-[0.85rem] font-medium text-[#666]">
@@ -829,7 +829,7 @@ export default function SetListView() {
               {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
             </div>
           </div>
-          <div className="mb-[var(--space-md)] border-b border-[#eee]"></div>
+          <div className="mb-4 border-b border-[#eee]"></div>
           <div className="flex flex-col gap-2">
             {(() => {
               let songIndex = 1;

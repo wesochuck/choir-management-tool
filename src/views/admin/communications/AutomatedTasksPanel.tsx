@@ -63,7 +63,7 @@ export function AutomatedTasksPanel({
                     {task.scheduledTime.toLocaleString()}
                   </td>
                   <td className="p-3 px-4">
-                    <span className="inline-flex w-fit items-center rounded bg-performance-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-performance-text uppercase">
+                    <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase">
                       {task.type}
                     </span>
                   </td>

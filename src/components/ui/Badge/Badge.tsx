@@ -19,9 +19,9 @@ export interface BadgeProps {
 }
 
 const toneClasses: Record<BadgeTone, string> = {
-  performance: 'bg-performance-bg text-performance-text',
+  performance: 'bg-danger-bg text-danger-text',
   rehearsal: 'bg-primary-light text-primary-deep',
-  concert: 'bg-performance-bg text-performance-text',
+  concert: 'bg-danger-bg text-danger-text',
   success: 'bg-success-bg text-success-text',
   danger: 'bg-danger-bg text-danger-text',
   neutral: 'bg-gray-500/10 text-gray-600 border border-gray-500/20',

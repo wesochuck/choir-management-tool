@@ -47,11 +47,11 @@ export function SeatingTextList({
           : 'No singers assigned';
 
         return (
-          <div key={originalIndex} className="flex-col gap-[var(--space-xs)]">
-            <h3 className="text-label m-0 border-b-2 border-[var(--primary)] pb-1 text-[var(--primary-deep)]" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
+          <div key={originalIndex} className="flex-col gap-1">
+            <h3 className="text-label m-0 border-b-2 border-[var(--primary)] pb-1 text-primary-deep" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
               {label} {assignedSingers.length}/{row.length}
             </h3>
-            <div className="rounded-[var(--radius-sm)] border border-[var(--border)] bg-[var(--bg)] p-[var(--space-sm)] text-sm leading-relaxed">
+            <div className="rounded-sm border border-border bg-bg p-2 text-sm leading-relaxed">
               {namesString}
             </div>
           </div>

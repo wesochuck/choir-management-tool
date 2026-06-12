@@ -195,7 +195,7 @@ export default function PublicRsvpView() {
     if (!event) return null;
     return (
       <div className="flex flex-col gap-2 rounded-xl border border-border bg-neutral-100 p-4 sm:p-5">
-        <span className={`inline-flex items-center self-start rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${event.type === 'Performance' ? 'bg-performance-bg text-performance-text' : 'bg-primary-light text-primary-deep'}`}>
+        <span className={`inline-flex items-center self-start rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${event.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary-light text-primary-deep'}`}>
           {event.type}
         </span>
         <h2 className={`text-headline m-0 text-lg font-bold ${titleClass || ''}`}>

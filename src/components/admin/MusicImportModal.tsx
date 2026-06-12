@@ -264,18 +264,18 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     >
       {/* STEP 1: UPLOAD */}
       {step === 'UPLOAD' && (
-        <div className="flex flex-col gap-[var(--space-md)] py-5 text-center">
+        <div className="flex flex-col gap-4 py-5 text-center">
           <p className="text-muted !m-0 text-sm">
             Upload a CSV file containing your music repertoire to bootstrap the process.
           </p>
 
           <div 
             onClick={() => fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border-2 border-dashed border-[var(--border)] bg-[rgb(74_124_89_/_2%)] px-5 py-10 hover:border-[var(--primary)] hover:bg-[rgb(74_124_89_/_5%)]"
+            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-[rgb(74_124_89_/_2%)] px-5 py-10 hover:border-[var(--primary)] hover:bg-[rgb(74_124_89_/_5%)]"
           >
             <span className="text-5xl">🎼</span>
             <div>
-              <strong className="block text-base font-bold text-[var(--primary-deep)]">
+              <strong className="block text-base font-bold text-primary-deep">
                 Select a CSV file to upload
               </strong>
               <span className="text-muted mt-1 block text-xs">
@@ -291,7 +291,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-[0.8rem] text-[var(--text-muted)]">
+          <div className="flex items-center justify-center gap-2 text-[0.8rem] text-muted">
             <span>💡</span>
             <span>The importer will automatically try to match column headers for you!</span>
           </div>
@@ -300,12 +300,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* STEP 2: FIELD MAPPING */}
       {step === 'MAP' && csvData && (
-        <div className="flex flex-col gap-[var(--space-md)]">
+        <div className="flex flex-col gap-4">
           <p className="text-muted !m-0 text-sm">
             Align the columns in your CSV with our music library database fields. Smart auto-matches have been pre-selected.
           </p>
 
-          <div className="flex max-h-[350px] flex-col gap-[var(--space-sm)] overflow-y-auto pr-1">
+          <div className="flex max-h-[350px] flex-col gap-2 overflow-y-auto pr-1">
             {fieldsConfig.map(field => {
               const selectedIndex = mapping[field.key];
               const isRequiredMissing = field.required && selectedIndex === -1;
@@ -348,13 +348,13 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* STEP 3: PREVIEW & VALIDATION */}
       {step === 'PREVIEW' && (
-        <div className="flex flex-col gap-[var(--space-md)]">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <p className="text-muted !m-0 text-sm">
               Verify parsed music piece details and resolve validation warnings or errors before importing.
             </p>
             <div className="flex gap-3">
-              <span className="rounded-md border border-primary/20 bg-[rgb(74_124_89_/_5%)] !p-[4px_8px] text-xs font-semibold text-[var(--primary-deep)]">
+              <span className="rounded-md border border-primary/20 bg-[rgb(74_124_89_/_5%)] !p-[4px_8px] text-xs font-semibold text-primary-deep">
                 Total Mapped: {mappedPieces.length}
               </span>
               <span className="rounded-md border border-danger-text/20 bg-[rgb(153_27_27_/_5%)] !p-[4px_8px] text-xs font-semibold text-danger-text">
@@ -363,11 +363,11 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </div>
           </div>
 
-          <div className="max-h-[350px] overflow-x-auto rounded-[var(--radius-md)] border border-[var(--border)]">
+          <div className="max-h-[350px] overflow-x-auto rounded-md border border-border">
             <table className="!m-0 table w-full min-w-[600px]">
-              <thead className="sticky top-0 z-[1] bg-[var(--bg)] shadow-[0_1px_0_var(--border)]">
+              <thead className="sticky top-0 z-[1] bg-bg shadow-[0_1px_0_var(--border)]">
                 <tr>
-                  <th className="w-[60px] text-center text-[0.8rem] text-[var(--text-muted)]">Row</th>
+                  <th className="w-[60px] text-center text-[0.8rem] text-muted">Row</th>
                   <th>Title</th>
                   <th>Composer</th>
                   <th>Arranger</th>
@@ -389,7 +389,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                         backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
                       }}
                     >
-                      <td className="w-[60px] text-center text-[0.8rem] text-[var(--text-muted)]">
+                      <td className="w-[60px] text-center text-[0.8rem] text-muted">
                         {piece.rowNumber}
                       </td>
                       <td>
@@ -421,7 +421,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                           </div>
                         )}
                         {!hasErrors && !hasWarnings && (
-                          <span className="text-[0.8rem] text-[var(--primary-deep)]">Ready</span>
+                          <span className="text-[0.8rem] text-primary-deep">Ready</span>
                         )}
                       </td>
                     </tr>
@@ -435,7 +435,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* STEP 4: IMPORTING PROGRESS */}
       {step === 'IMPORTING' && (
-        <div className="flex flex-col items-center gap-[var(--space-md)] py-5">
+        <div className="flex flex-col items-center gap-4 py-5">
           <span className="animate-[spin_2s_linear_infinite] text-5xl">⚙️</span>
           
           <div className="flex w-full flex-col items-center gap-[6px]">
@@ -457,8 +457,8 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             />
           </div>
 
-          <div className="flex gap-5 text-[0.9rem] text-[var(--text-muted)]">
-            <span>Successes: <strong className="text-[var(--primary-deep)]">{successCount}</strong></span>
+          <div className="flex gap-5 text-[0.9rem] text-muted">
+            <span>Successes: <strong className="text-primary-deep">{successCount}</strong></span>
             <span>Failures: <strong className={errorsList.length > 0 ? 'text-danger-text' : ''}>{errorsList.length}</strong></span>
           </div>
         </div>
@@ -466,23 +466,23 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
       {/* STEP 5: IMPORT COMPLETE */}
       {step === 'COMPLETE' && (
-        <div className="flex flex-col gap-[var(--space-lg)] py-[10px_0]">
+        <div className="flex flex-col gap-6 py-[10px_0]">
           <div className="flex flex-col items-center gap-2 text-center">
             <span className="text-[3.5rem]">🎉</span>
-            <h3 className="!m-0 text-[1.3rem] text-[var(--primary-deep)]">Import Finished!</h3>
+            <h3 className="!m-0 text-[1.3rem] text-primary-deep">Import Finished!</h3>
             <p className="text-muted !m-0 text-sm">
               Successfully imported <strong>{successCount}</strong> music pieces into your library.
             </p>
           </div>
 
           {errorsList.length > 0 && (
-            <div className="flex flex-col gap-[var(--space-xs)]">
+            <div className="flex flex-col gap-1">
               <strong className="text-[0.9rem] text-danger-text">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
-              <div className="max-h-[150px] overflow-y-auto rounded-[var(--radius-md)] border border-[var(--border)] bg-[#fafafa] p-[8px_12px] text-[0.8rem]">
+              <div className="max-h-[150px] overflow-y-auto rounded-md border border-border bg-[#fafafa] p-[8px_12px] text-[0.8rem]">
                 {errorsList.map((err, i) => (
-                  <div key={i} className="border-b border-[var(--border)] py-1 text-[#444] last:border-b-0">
+                  <div key={i} className="border-b border-border py-1 text-[#444] last:border-b-0">
                     Row {err.row} (<strong>{err.title}</strong>): <span className="text-danger-text">{err.error}</span>
                   </div>
                 ))}

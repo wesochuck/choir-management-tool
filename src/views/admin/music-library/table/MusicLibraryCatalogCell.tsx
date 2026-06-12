@@ -14,7 +14,7 @@ export function MusicLibraryCatalogCell({
     : null;
 
   return (
-    <td className="border border-[var(--border)] px-[10px] py-[6px] text-center align-middle">
+    <td className="border border-border px-[10px] py-[6px] text-center align-middle">
       {catalogId && catalogLookupUrl ? (
         <a
           href={catalogLookupUrl}
@@ -22,7 +22,7 @@ export function MusicLibraryCatalogCell({
           rel="noopener noreferrer"
           onClick={(event) => event.stopPropagation()}
           title={`View Catalog ID: ${catalogId}`}
-          className="inline-flex size-6 items-center justify-center rounded-[var(--radius-sm)] text-[var(--primary)]"
+          className="inline-flex size-6 items-center justify-center rounded-sm text-[var(--primary)]"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>

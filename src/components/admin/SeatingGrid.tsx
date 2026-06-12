@@ -126,8 +126,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   }, [maxSeats, isCompact]);
 
   const isTightGrid = seatSize < baseSeatSize;
-  const rowGap = isCompact ? 'var(--space-xs)' : 'var(--space-sm)';
-  const containerPadding = isCompact ? 'var(--space-xs)' : 'var(--space-md)';
+  const rowGap = isCompact ? '4px' : '8px';
+  const containerPadding = isCompact ? '4px' : '16px';
   const seatNameFontSize = isCompact ? (isTightGrid ? '1.05rem' : '1.375rem') : '1.25rem';
   const seatVoicePartFontSize = isCompact ? (isTightGrid ? '0.625rem' : '0.75rem') : '0.875rem';
   const emptySeatFontSize = isCompact ? (isTightGrid ? '0.875rem' : '1rem') : '1.125rem';
@@ -232,7 +232,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}
           variant="outline"
           size="small"
-          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mb-[var(--space-xs)]"
+          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mb-1"
           title="Add a new row with 10 seats at the back"
         >
           ➕ Add Row to Back
@@ -268,7 +268,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               justifyContent: 'center',
               minWidth: 'max-content'
             }}>
-            <div className="text-text flex flex-col items-end justify-center seating-row-label font-bold text-right pr-[var(--space-md)]"
+            <div className="text-text flex flex-col items-end justify-center seating-row-label font-bold text-right pr-4"
               // @allow-inline-style - dynamic width based on compact mode
               style={{ width: isCompact ? '110px' : '130px' }}
               title={`${occupiedCount} of ${seatCount} seats occupied`}>
@@ -629,7 +629,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}
           variant="outline"
           size="small"
-          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mt-[var(--space-xs)]"
+          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mt-1"
           title="Add a new row with 10 seats at the front"
         >
           ➕ Add Row to Front

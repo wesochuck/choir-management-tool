@@ -295,7 +295,7 @@ export default function SeatingView() {
 
   return (
     <div 
-      className={`flex w-full flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] print-landscape ${isWideLayout ? '!bg-[var(--bg)] !p-[var(--space-md)] w-full max-w-none !mx-0' : ''}`} 
+      className={`flex w-full flex-col gap-4 bg-transparent px-0 py-2 print-landscape ${isWideLayout ? '!bg-bg !p-4 w-full max-w-none !mx-0' : ''}`} 
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
@@ -308,13 +308,13 @@ export default function SeatingView() {
           }
         }
       `}</style>
-      <div className="no-print flex w-full flex-row items-center justify-between gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
-        <div className="flex-row flex-wrap items-center gap-[var(--space-md)]">
+      <div className="no-print flex w-full flex-row items-center justify-between gap-4 border-b border-border pb-2">
+        <div className="flex-row flex-wrap items-center gap-4">
           <h1 className="text-headline m-0 text-xl font-extrabold">
             Seating Chart
           </h1>
           
-          <div className="flex-row gap-[2px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-muted,#f1f5f9)] p-[3px]">
+          <div className="flex-row gap-[2px] rounded-md border border-border bg-[var(--surface-muted,#f1f5f9)] p-[3px]">
             <button
               onClick={() => setActiveTab('chart')}
               // @allow-inline-style - active tab state
@@ -363,13 +363,13 @@ export default function SeatingView() {
         </div>
         
         {activeTab === 'chart' && (
-          <div className="flex-row flex-wrap items-center gap-[var(--space-sm)]">
+          <div className="flex-row flex-wrap items-center gap-2">
             <div className="flex-row items-center gap-[6px]">
-              <span className="font-semibold text-[var(--text-muted)]">Perf:</span>
+              <span className="font-semibold text-muted">Perf:</span>
               <select 
                 value={performanceId} 
                 onChange={(e) => setPerformanceId(e.target.value)}
-                className="h-8 min-h-[32px] w-[180px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-xs"
+                className="h-8 min-h-[32px] w-[180px] rounded-md border border-border bg-[var(--surface)] px-[8px] text-xs"
               >
                 <option value="">-- Select Performance --</option>
                 {performances.map(p => (
@@ -379,11 +379,11 @@ export default function SeatingView() {
             </div>
 
             <div className="flex-row items-center gap-[6px]">
-              <span className="font-semibold text-[var(--text-muted)]">Venue:</span>
+              <span className="font-semibold text-muted">Venue:</span>
               <select 
                 value={venueId} 
                 onChange={(e) => setVenueId(e.target.value)}
-                className="h-8 min-h-[32px] w-[220px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-xs"
+                className="h-8 min-h-[32px] w-[220px] rounded-md border border-border bg-[var(--surface)] px-[8px] text-xs"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -416,7 +416,7 @@ export default function SeatingView() {
                       }
                     }
                   }}
-                  className="no-print inline-flex h-9 min-h-[36px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-dashed border-[var(--primary)] bg-[var(--primary-light)] px-[var(--space-sm)] text-[0.8125rem] font-semibold text-[var(--primary-deep)]" 
+                  className="no-print inline-flex h-9 min-h-[36px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-dashed border-[var(--primary)] bg-primary-light px-2 text-[0.8125rem] font-semibold text-primary-deep" 
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
@@ -425,7 +425,7 @@ export default function SeatingView() {
             </div>
 
             <div className="flex-row items-center gap-[6px]">
-              <span className="font-semibold text-[var(--text-muted)]">Format:</span>
+              <span className="font-semibold text-muted">Format:</span>
               <div className="flex-row gap-1">
                 <select 
                   value={chart?.formationId || seatingSettings.defaultFormationId} 
@@ -444,7 +444,7 @@ export default function SeatingView() {
 
                     await updateChart({ formationId: selectedId, assignments: {} });
                   }}
-                  className="h-8 min-h-[32px] w-[130px] rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface)] px-[8px] text-xs"
+                  className="h-8 min-h-[32px] w-[130px] rounded-md border border-border bg-[var(--surface)] px-[8px] text-xs"
                 >
                   {seatingSettings.formations?.map(formation => (
                     <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -461,7 +461,7 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           {/* Seating Charts Tabs Row */}
-          <div ref={tabsContainerRef} className="no-print mb-[var(--space-sm)] w-full flex-row flex-nowrap items-center gap-[var(--space-sm)] border-b border-[var(--border)] px-[var(--space-md)]">
+          <div ref={tabsContainerRef} className="no-print mb-2 w-full flex-row flex-nowrap items-center gap-2 border-b border-border px-4">
             {/* Render visible tabs (dynamic count based on container width) */}
             {(charts || []).slice(0, visibleTabCount).map(c => {
               const isActive = c.id === activeChartId;
@@ -518,7 +518,7 @@ export default function SeatingView() {
                     }}
                     onDragEnd={() => setDragOverChartId(null)}
                     className={`inline-flex items-center cursor-grab px-1 py-0.5 text-[0.9rem] select-none mr-0.5 font-bold ${
-                      isActive ? 'text-[var(--primary-deep)] opacity-95' : 'text-[var(--text-muted)] opacity-75'
+                      isActive ? 'text-primary-deep opacity-95' : 'text-muted opacity-75'
                     }`}
                     title="Drag to reorder"
                   >
@@ -530,7 +530,7 @@ export default function SeatingView() {
                       if (!isActive) setActiveChartId(c.id);
                     }}
                     className={`inline-flex h-auto min-h-auto items-center justify-center gap-2 whitespace-nowrap rounded-none border-none bg-transparent p-[4px_8px] text-xs shadow-none ${
-                      isActive ? 'font-bold text-[var(--primary-deep)]' : 'font-medium text-[var(--text-muted)]'
+                      isActive ? 'font-bold text-primary-deep' : 'font-medium text-muted'
                     }`}
                   >
                     {c.name}
@@ -544,7 +544,7 @@ export default function SeatingView() {
                           setRenameChartName(c.name);
                           setIsRenameChartModalOpen(true);
                         }}
-                        className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-4 text-xs font-label text-[var(--text-muted)]"
+                        className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-4 text-xs font-label text-muted"
                         title="Rename chart"
                       >
                         ✏️
@@ -563,7 +563,7 @@ export default function SeatingView() {
                               await deleteChart(c.id);
                             }
                           }}
-                          className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-4 text-xs font-label text-[var(--color-danger-text)]"
+                          className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-4 text-xs font-label text-[var(--color-danger-text)]"
                           title="Delete chart"
                         >
                           ❌
@@ -593,8 +593,8 @@ export default function SeatingView() {
                   }}
                   className={`h-6 min-h-[24px] w-[140px] rounded-sm border-none bg-transparent px-[8px] text-xs shadow-none ${
                     !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId)
-                      ? 'text-[var(--primary-deep)] font-bold'
-                      : 'text-[var(--text-muted)] font-medium'
+                      ? 'text-primary-deep font-bold'
+                      : 'text-muted font-medium'
                   }`}
                 >
                   <option value="">More Charts... ▼</option>
@@ -608,18 +608,18 @@ export default function SeatingView() {
             {/* Add New Seating Chart Button (Plus sign to the right of tabs) */}
             <button
               onClick={() => setIsNewChartModalOpen(true)}
-              className="mb-2 inline-flex h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-[var(--border)] bg-transparent p-0 text-xl font-extrabold text-[var(--primary)]"
+              className="mb-2 inline-flex h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-transparent p-0 text-xl font-extrabold text-[var(--primary)]"
               title="Create new seating chart"
             >
               +
             </button>
           </div>
 
-          <div className="flex w-full min-w-0 flex-col items-start gap-[var(--space-md)] sm:flex-row">
-          <AppCard className="w-full min-w-0 flex-1 flex-col p-[var(--space-md)]">
-            <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--primary-light)] p-1.5 px-3 shadow-sm">
+          <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:flex-row">
+          <AppCard className="w-full min-w-0 flex-1 flex-col p-4">
+            <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-primary-light p-1.5 px-3 shadow-sm">
                <div className="flex flex-row gap-1">
-                  <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs font-label text-[var(--text-muted)]">
+                  <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-[var(--surface)] px-2.5 text-xs font-label text-muted">
                     🧹 Clear
                   </button>
                   <button onClick={handleReset} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--color-danger-bg)] px-2.5 text-xs font-label text-[var(--color-danger-text)]">
@@ -627,26 +627,26 @@ export default function SeatingView() {
                   </button>
                </div>
                
-               <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-0.5">
+               <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-border bg-[var(--surface)] p-0.5">
                 <button 
                   onClick={() => setPrintMode('visual')}
-                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'visual' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-[var(--text-muted)]'}`}
+                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'visual' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
                 >
                   Grid
                 </button>
                 <button 
                   onClick={() => setPrintMode('text')}
-                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'text' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-[var(--text-muted)]'}`}
+                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'text' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
                 >
                   List
                 </button>
                </div>
 
-               <div className="no-print flex flex-row flex-wrap gap-[var(--space-sm)]">
+               <div className="no-print flex flex-row flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] px-2.5 text-xs font-label ${isFullscreen ? 'text-[var(--bg,white)]' : 'text-[var(--text-muted)]'}`}
+                    className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border px-2.5 text-xs font-label ${isFullscreen ? 'text-[var(--bg,white)]' : 'text-muted'}`}
                     // @allow-inline-style - dynamic fullscreen state background
                     style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)' }}
                   >
@@ -654,7 +654,7 @@ export default function SeatingView() {
                  </button>
 
                  {printMode === 'text' && (
-                   <label className="ml-[var(--space-sm)] cursor-pointer flex-row items-center gap-[var(--space-xs)] text-[0.8125rem] font-semibold text-[var(--text-muted)] select-none">
+                   <label className="ml-2 cursor-pointer flex-row items-center gap-1 text-[0.8125rem] font-semibold text-muted select-none">
                      <input 
                        type="checkbox" 
                        checked={showVoicePartsInList} 
@@ -667,11 +667,11 @@ export default function SeatingView() {
                </div>
                
                <div className="flex flex-1 flex-row items-center justify-center gap-1 min-w-[200px]">
-                  <span className="whitespace-nowrap text-xs font-semibold text-[var(--text-muted)]">Copy:</span>
+                  <span className="whitespace-nowrap text-xs font-semibold text-muted">Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    className="h-8 min-h-8 max-w-[200px] flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-[10px] text-xs"
+                    className="h-8 min-h-8 max-w-[200px] flex-1 rounded-lg border border-border bg-[var(--surface)] px-[10px] text-xs"
                   >
                     <option value="">-- Choose --</option>
                     {allCharts
@@ -687,12 +687,12 @@ export default function SeatingView() {
                </button>
                <div className="flex flex-row items-center gap-1">
                  <SavingIndicator isSaving={isSaving} error={saveError} />
-                 <span className="mr-1 whitespace-nowrap text-xs font-medium text-[var(--text-muted)]">
+                 <span className="mr-1 whitespace-nowrap text-xs font-medium text-muted">
                    Auto-saved
                  </span>
                  <button
                    onClick={handleManualSave}
-                   className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-2.5 text-xs font-label text-[var(--text-muted)]"
+                   className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-2.5 text-xs font-label text-muted"
                    // @allow-inline-style - dynamic save feedback color
                    style={{ 
                      color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
@@ -704,30 +704,30 @@ export default function SeatingView() {
             </div>
 
             {isLoading ? (
-              <div className="flex-col items-center p-[var(--space-xl)]">
+              <div className="flex-col items-center p-8">
                 <p className="text-muted">Loading seating data...</p>
               </div>
             ) : selectedVenue?.isOpenSeating ? (
-              <div className="flex-col items-center p-[var(--space-xl)] text-center">
+              <div className="flex-col items-center p-8 text-center">
                 <h3 className="text-headline">Open Seating</h3>
                 <p className="text-muted">This venue is configured for open seating. No seating assignments are required.</p>
                 {selectedVenue.address && (
-                  <p className="mt-[var(--space-md)]">
-                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-6 font-label text-[var(--text-muted)]">
+                  <p className="mt-4">
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-6 font-label text-muted">
                       📍 View Map
                     </a>
                   </p>
                 )}
               </div>
             ) : (
-              <div className="min-w-0 flex-col gap-[var(--space-lg)]">
+              <div className="min-w-0 flex-col gap-6">
                 {printMode === 'visual' && (
-                  <div className="no-print rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--primary-light)] p-[var(--space-sm)] text-center text-sm text-[var(--primary-deep)] shadow-sm">
+                  <div className="no-print rounded-md border border-border bg-primary-light p-2 text-center text-sm text-primary-deep shadow-sm">
                     <strong>Editor Mode:</strong>{' '}
                     {singersListPosition === 'bottom' ? (
                       <span>
                         Drag singers from the <strong>bottom shelf</strong> below, or click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them.
-                        <span className="ml-[var(--space-sm)] font-bold text-[var(--color-performance-text)]">
+                        <span className="ml-2 font-bold text-[var(--color-danger-text)]">
                           👇 Scroll down to see unassigned singers!
                         </span>
                       </span>
@@ -775,7 +775,7 @@ export default function SeatingView() {
                 )}
 
                 {printMode === 'text' && unassignedCount > 0 && (
-                  <div className="no-print mb-[var(--space-md)] rounded-[var(--radius-md)] border border-[var(--color-danger-text)] bg-[var(--color-danger-bg)] p-[var(--space-md)] text-center text-sm font-semibold text-[var(--color-danger-text)] shadow-sm">
+                  <div className="no-print mb-4 rounded-md border border-[var(--color-danger-text)] bg-[var(--color-danger-bg)] p-4 text-center text-sm font-semibold text-[var(--color-danger-text)] shadow-sm">
                     ⚠️ You have {unassignedCount} unassigned singer{unassignedCount > 1 ? 's' : ''} left. Switch to Grid view to assign them.
                   </div>
                 )}
@@ -795,7 +795,7 @@ export default function SeatingView() {
           </AppCard>
 
           {(!selectedVenue?.isOpenSeating && singersListPosition === 'side' && printMode === 'visual') && (
-            <AppCard className="no-print sticky top-[var(--space-lg)] flex h-[calc(100vh-140px)] w-[320px] flex-col border-2 border-dashed border-[var(--border)]">
+            <AppCard className="no-print sticky top-6 flex h-[calc(100vh-140px)] w-[320px] flex-col border-2 border-dashed border-border">
               <div 
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -811,26 +811,26 @@ export default function SeatingView() {
                 }}
                 className="flex size-full flex-col"
               >
-                <div className="mb-[var(--space-md)] flex-row items-center justify-between gap-[var(--space-xs)]">
+                <div className="mb-4 flex-row items-center justify-between gap-1">
                   <h3 className="text-headline m-0">Unassigned</h3>
                   <div className="flex-row gap-1">
                     <button
                       type="button"
                       onClick={() => setIsSingerLookupOpen(true)}
-                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--primary-light)] px-2 text-[11px] font-semibold text-[var(--primary-deep)]"
+                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary-light px-2 text-[11px] font-semibold text-primary-deep"
                     >
                       🔍 Lookup
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsSingerModalOpen(true)}
-                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--primary-light)] px-2 text-[11px] font-semibold text-[var(--primary-deep)]"
+                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary-light px-2 text-[11px] font-semibold text-primary-deep"
                     >
                       + Add New
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 flex-col gap-[var(--space-sm)] overflow-y-auto pr-1">
+                <div className="flex-1 flex-col gap-2 overflow-y-auto pr-1">
                   {activeProfiles
                     .filter(p => !Object.values(optimisticAssignments).includes(p.id))
                     .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
@@ -839,14 +839,14 @@ export default function SeatingView() {
                         key={p.id}
                         draggable
                         onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                        className="cursor-grab flex-row justify-between rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--bg)] p-[var(--space-sm)_var(--space-md)]"
+                        className="cursor-grab flex-row justify-between rounded-md border border-border bg-bg px-4 py-2"
                       >
                         <span className="text-label font-semibold">{p.name}</span>
                         <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">{p.voicePart}</span>
                       </div>
                     ))}
                   {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
-                    <div className="p-[var(--space-xl)] text-center">
+                    <div className="p-8 text-center">
                       <p className="text-muted text-sm">All singers assigned!</p>
                     </div>
                   )}
@@ -888,7 +888,7 @@ export default function SeatingView() {
           <>
             <button 
               type="button"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-6 font-label text-[var(--text-muted)]" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-6 font-label text-muted" 
               onClick={() => {
                 setIsNewChartModalOpen(false);
                 setNewChartName('');
@@ -918,7 +918,7 @@ export default function SeatingView() {
             }
           }}
         >
-          <div className="flex-col gap-[var(--space-xs)]">
+          <div className="flex-col gap-1">
             <label className="text-label font-semibold">Chart Name</label>
             <input 
               className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3" 
@@ -945,7 +945,7 @@ export default function SeatingView() {
           <>
             <button 
               type="button"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-transparent px-6 font-label text-[var(--text-muted)]" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-6 font-label text-muted" 
               onClick={() => {
                 setIsRenameChartModalOpen(false);
                 setRenameChartName('');
@@ -977,7 +977,7 @@ export default function SeatingView() {
             }
           }}
         >
-          <div className="flex-col gap-[var(--space-xs)]">
+          <div className="flex-col gap-1">
             <label className="text-label font-semibold">New Chart Name</label>
             <input 
               className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3" 
