@@ -8,7 +8,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
-import { Modal } from '../../components/ui';
+import { Modal, Button, FormField, Badge, EmptyState } from '../../components/ui';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -412,261 +412,486 @@ export default function TicketingView() {
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-row items-start justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-            Ticketing Dashboard
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Manage ticket sales, configure season bundles, and view check-in checklists.
-          </p>
-        </div>
+    <div className="w-full flex flex-col gap-6">
+      {/* Header Area */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+          Ticketing Dashboard
+        </h1>
+        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+          Manage ticket sales, configure season bundles, and view check-in checklists.
+        </p>
       </div>
 
-      {/* Tab Controls */}
-      <div className="mt-8 border-b border-slate-200">
-        <div className="-mb-px flex items-center justify-between">
-          <nav className="flex gap-2">
-            <button
-              className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'willcall' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-              onClick={() => setActiveTab('willcall')}
-            >
-              Concert Will Call
-            </button>
-            <button
-              className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'bundles' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-              onClick={() => setActiveTab('bundles')}
-            >
-              Season Bundles
-            </button>
-            <button
-              className={`rounded-t-lg px-5 py-2.5 text-sm font-medium ${activeTab === 'orders' ? 'bg-emerald-700 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}
-              onClick={() => setActiveTab('orders')}
-            >
-              Bundle Orders
-            </button>
-          </nav>
+      {/* Tabs / Actions Navigation Bar */}
+      <div className="w-full flex flex-row items-center justify-between border-b border-slate-200 pb-px">
+        <div className="flex gap-3 md:gap-6">
+          <button
+            type="button"
+            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+              activeTab === 'willcall'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+            }`}
+            onClick={() => setActiveTab('willcall')}
+          >
+            Concert Will Call
+          </button>
+          <button
+            type="button"
+            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+              activeTab === 'bundles'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+            }`}
+            onClick={() => setActiveTab('bundles')}
+          >
+            Season Bundles
+          </button>
+          <button
+            type="button"
+            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+              activeTab === 'orders'
+                ? 'border-primary text-primary font-bold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+            }`}
+            onClick={() => setActiveTab('orders')}
+          >
+            Bundle Orders
+          </button>
+        </div>
 
-          <div className="flex items-center gap-4">
-            {activeTab === 'bundles' && (
-              <button onClick={handleOpenCreateModal} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
-                + Create New Bundle
-              </button>
-            )}
-            {activeTab === 'willcall' && selectedEventId && (
-              <button onClick={handleExportCSV} className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800">
-                Export Will Call CSV
-              </button>
-            )}
-          </div>
+        <div className="flex items-center gap-2 pb-1.5">
+          {activeTab === 'bundles' && (
+            <Button
+              variant="primary"
+              className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
+              onClick={handleOpenCreateModal}
+              title="Create New Bundle"
+              icon={
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              }
+            >
+              <span className="hidden md:inline">Create New Bundle</span>
+            </Button>
+          )}
+          {activeTab === 'willcall' && selectedEventId && (
+            <Button
+              variant="secondary"
+              className="px-3 md:px-6 font-semibold shadow-sm"
+              onClick={handleExportCSV}
+              disabled={activePurchases.length === 0}
+              title="Export Will Call CSV"
+              icon={
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              }
+            >
+              <span className="hidden md:inline">Export Will Call CSV</span>
+            </Button>
+          )}
         </div>
       </div>
 
       {activeTab === 'willcall' && (
         <>
-          <section className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-6 py-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Performance Summary
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
+          <AppCard noPadding>
+            <div className="border-b border-slate-100 px-6 py-4">
+              <h3 className="text-lg font-bold text-slate-800">Performance Summary</h3>
+              <p className="mt-1 text-sm text-slate-500 font-medium">
                 Choose a performance to view ticket sales, revenue, and will call activity. To enable ticketing for an event, go to the{' '}
                 <Link to="/admin/events" className="text-emerald-700 hover:text-emerald-800 underline">
                   Event Management
                 </Link>{' '}
-                page, edit the performance (must be of type Performance), and check the "Enable Online Ticket Sales" option on the Tickets tab.
+                page, edit the performance, and check the "Enable Online Ticket Sales" option on the Tickets tab.
               </p>
             </div>
 
-            <div className="px-6 py-5">
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,24rem)_auto] lg:items-end">
-                <label className="block">
-                  <span className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                    Select Performance
-                  </span>
-                  <select
-                    value={selectedEventId}
-                    onChange={e => setSelectedEventId(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
-                  >
-                    {visibleEvents.map(ev => {
-                      const cutoffTime = now - 3 * 60 * 60 * 1000;
-                      const isPast = new Date(ev.date).getTime() < cutoffTime;
-                      const isInactive = !ev.isTicketingEnabled;
-                      const suffix = isInactive ? ' (Inactive)' : isPast ? ' (Past)' : '';
-                      return (
-                        <option key={ev.id} value={ev.id}>
-                          {ev.title} ({formatInTimezone(ev.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })}){suffix}
-                        </option>
-                      );
-                    })}
-                    {visibleEvents.length === 0 && (
-                      <option value="">No ticketing-enabled events</option>
-                    )}
-                  </select>
-                </label>
+            <div className="p-6 flex flex-col gap-6">
+              {/* Performance selection & options grid deck */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                <div className="md:col-span-2">
+                  <FormField label="Select Performance">
+                    <select
+                      value={selectedEventId}
+                      onChange={e => setSelectedEventId(e.target.value)}
+                      className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    >
+                      {visibleEvents.map(ev => {
+                        const cutoffTime = now - 3 * 60 * 60 * 1000;
+                        const isPast = new Date(ev.date).getTime() < cutoffTime;
+                        const isInactive = !ev.isTicketingEnabled;
+                        const suffix = isInactive ? ' (Inactive)' : isPast ? ' (Past)' : '';
+                        return (
+                          <option key={ev.id} value={ev.id}>
+                            {ev.title} ({formatInTimezone(ev.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })}){suffix}
+                          </option>
+                        );
+                      })}
+                      {visibleEvents.length === 0 && (
+                        <option value="">No ticketing-enabled events</option>
+                      )}
+                    </select>
+                  </FormField>
+                </div>
 
-                <label className="flex items-center gap-2 pb-2 text-sm text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={showPastAndInactive}
-                    onChange={e => setShowPastAndInactive(e.target.checked)}
-                    className="size-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-600"
-                  />
-                  <span>Include past and inactive performances</span>
-                </label>
+                <div className="md:col-span-2 flex items-end pb-2">
+                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showPastAndInactive}
+                      onChange={e => setShowPastAndInactive(e.target.checked)}
+                      className="rounded border-slate-300 text-primary focus:ring-primary/25"
+                    />
+                    <span className="font-medium text-slate-700">Include past and inactive performances</span>
+                  </label>
+                </div>
               </div>
 
               {selectedEvent && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                      Tickets Sold
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-900">
-                      {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
-                    </p>
+                /* Performance Stats Analytics Dashboard */
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  {/* Tickets Sold Card */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-slate-400 group-hover:bg-slate-500 transition-colors" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                          Tickets Sold
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-slate-900 tracking-tight">
+                          {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 p-3 text-slate-500 group-hover:bg-slate-100 transition-colors">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                      Ticket Sales
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-900">
-                      ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
-                    </p>
+                  {/* Ticket Sales Card */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-pink-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-pink-500 group-hover:bg-pink-600 transition-colors" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-pink-500">
+                          Ticket Sales
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-pink-600 tracking-tight">
+                          ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-pink-50 p-3 text-pink-500 group-hover:bg-pink-100/80 transition-colors">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="1" x2="12" y2="23" />
+                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                      Fees Collected
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-slate-700">
-                      ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
-                    </p>
+                  {/* Fees Collected Card */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-amber-500 group-hover:bg-amber-600 transition-colors" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                          Fees Collected
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-amber-700 tracking-tight">
+                          ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-amber-50 p-3 text-amber-600 group-hover:bg-amber-100/80 transition-colors">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="16" />
+                          <line x1="8" y1="12" x2="16" y2="12" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3">
-                    <p className="text-xs font-semibold tracking-wide text-emerald-700 uppercase">
-                      Total Revenue
-                    </p>
-                    <p className="mt-1 text-2xl font-semibold text-emerald-700">
-                      ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
-                    </p>
+                  {/* Total Revenue Card */}
+                  <div className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-emerald-500 group-hover:bg-emerald-600 transition-colors" />
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                          Total Revenue
+                        </p>
+                        <p className="mt-2 text-2xl font-black text-emerald-700 tracking-tight">
+                          ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700 group-hover:bg-emerald-100/80 transition-colors">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {showWarning && (
-                <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
                   ⚠️ Warning: Sold tickets ({totalTicketsSold}) have reached or exceeded 90% of capacity ({eventCapacity}).
                 </div>
               )}
             </div>
-          </section>
+          </AppCard>
 
-          <section className="mt-6 rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-6 py-5">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Will Call Checklist
-              </h2>
+          <AppCard noPadding>
+            <div className="border-b border-slate-100 px-6 py-4">
+              <h3 className="text-lg font-bold text-slate-800">Will Call Checklist</h3>
               <p className="mt-1 text-sm text-slate-500">
                 Search ticket buyers, confirm payment status, and process refunds.
               </p>
             </div>
-
-            <div className="grid gap-3 border-b border-slate-200 bg-slate-50/50 px-6 py-4 lg:grid-cols-[1fr_14rem]">
-              <input
-                type="text"
-                placeholder="Search buyer name or email..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
-              />
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
-              >
-                <option value="lastName">Sort by Last Name</option>
-                <option value="firstName">Sort by First Name</option>
-                <option value="saleDate">Sort by Sale Date</option>
-              </select>
-            </div>
-
-            <div className="overflow-x-auto">
-              {loading ? (
-                <div className="px-6 py-12 text-center">
-                  <p className="text-sm font-medium text-slate-700">Loading registrations...</p>
+            
+            <div className="p-6 flex flex-col gap-6">
+              {/* Checklist Search and Sort grid deck */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                <div className="md:col-span-2">
+                  <FormField label="Search">
+                    <div className="relative">
+                      <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-slate-400" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="11" cy="11" r="8" />
+                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                      </span>
+                      <input 
+                        type="text" 
+                        placeholder="Search buyer name or email..." 
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="block w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </FormField>
                 </div>
-              ) : filteredPurchases.length === 0 ? (
-                <div className="px-6 py-12 text-center">
-                  <p className="text-sm font-medium text-slate-700">No purchase records found.</p>
+                <div className="md:col-span-1">
+                  <FormField label="Sort By">
+                    <select
+                      value={sortBy}
+                      onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
+                      className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="lastName">Last Name</option>
+                      <option value="firstName">First Name</option>
+                      <option value="saleDate">Sale Date</option>
+                    </select>
+                  </FormField>
                 </div>
-              ) : (
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
+                {(searchQuery) && (
+                  <div className="flex items-end gap-2 md:col-span-1">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setSearchQuery('')}
+                      className="h-10 px-3 flex items-center justify-center font-semibold"
+                      title="Reset search"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                        <path d="M3 3v5h5" />
+                      </svg>
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Will Call - Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+                <table className="min-w-full divide-y divide-slate-100 text-left">
+                  <thead className="bg-slate-50/75">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Buyer Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Email
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Sale Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Qty
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Amount Paid
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        Actions
-                      </th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Buyer Name</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Email</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Sale Date</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Qty</th>
+                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">Amount Paid</th>
+                      <th className="px-6 py-3.5 text-center text-xs font-bold tracking-wider text-slate-500 uppercase">Status</th>
+                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {filteredPurchases.map(p => {
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-400 font-medium">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                            Loading purchases...
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredPurchases.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-6 py-12 text-center">
+                          <EmptyState
+                            title="No Purchases Found"
+                            description={
+                              searchQuery
+                                ? "No purchases match your search query."
+                                : "No purchase records are available for this event yet."
+                            }
+                            icon="🎟️"
+                            action={
+                              searchQuery ? (
+                                <Button variant="secondary" size="small" onClick={() => setSearchQuery('')}>
+                                  Reset Search
+                                </Button>
+                              ) : undefined
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPurchases.map(p => {
+                        const isRefunded = p.status === 'refunded';
+                        return (
+                          <tr
+                            key={p.id}
+                            className={`transition-colors hover:bg-slate-50/40 ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
+                          >
+                            <td className="px-6 py-4 text-sm font-semibold whitespace-nowrap text-slate-800">
+                              <div className="flex flex-col gap-0.5">
+                                <span>{p.buyerName}</span>
+                                {p.expand?.bundle && (
+                                  <span className="w-fit inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
+                                    Season Ticket: {p.expand.bundle.title}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500 font-medium">
+                              {p.buyerEmail}
+                            </td>
+                            <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500 font-medium">
+                              {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                            </td>
+                            <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500 font-medium">
+                              {p.quantity}
+                            </td>
+                            <td className="px-6 py-4 text-right text-sm font-extrabold text-slate-950">
+                              ${(p.amountPaidCents / 100).toFixed(2)}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-center">
+                              <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
+                                {p.status}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
+                              {p.status === 'paid' && (
+                                <Button
+                                  variant="danger"
+                                  size="small"
+                                  className="font-semibold shadow-sm"
+                                  onClick={() => {
+                                    if (p.bundle) {
+                                      handleRefundBundle(p.stripePaymentIntentId);
+                                    } else {
+                                      handleRefund(p.id);
+                                    }
+                                  }}
+                                >
+                                  Refund
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Will Call - Mobile Card List View */}
+              <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="divide-y divide-slate-100">
+                  {loading ? (
+                    <div className="p-6 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                      <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                      Loading purchases...
+                    </div>
+                  ) : filteredPurchases.length === 0 ? (
+                    <div className="p-6 text-center">
+                      <EmptyState
+                        title="No Purchases Found"
+                        description={
+                          searchQuery
+                            ? "No purchases match your search query."
+                            : "No purchase records are available for this event yet."
+                        }
+                        icon="🎟️"
+                        action={
+                          searchQuery ? (
+                            <Button variant="secondary" size="small" onClick={() => setSearchQuery('')}>
+                              Reset Search
+                            </Button>
+                          ) : undefined
+                        }
+                      />
+                    </div>
+                  ) : (
+                    filteredPurchases.map(p => {
                       const isRefunded = p.status === 'refunded';
                       return (
-                        <tr
-                          key={p.id}
-                          className={`hover:bg-slate-50 ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
+                        <div 
+                          key={p.id} 
+                          className={`p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}
                         >
-                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-800">
-                            {p.buyerName}
-                            {p.expand?.bundle && (
-                              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium tracking-wide text-emerald-700 uppercase">
-                                Season Ticket: {p.expand.bundle.title}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500">
-                            {p.buyerEmail}
-                          </td>
-                          <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500">
-                            {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                          </td>
-                          <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500">
-                            {p.quantity}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-800">
-                            ${(p.amountPaidCents / 100).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 text-sm whitespace-nowrap">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide uppercase ${p.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                              {p.status}
+                          {/* Row 1: Sale Date & Status Badge */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-slate-400 font-medium">
+                              {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                             </span>
-                          </td>
-                          <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
-                            {p.status === 'paid' && (
-                              <button
+                            <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
+                              {p.status}
+                            </Badge>
+                          </div>
+
+                          {/* Row 2: Buyer Info & Tickets Qty/Paid */}
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-bold text-slate-800">
+                                {p.buyerName}
+                              </span>
+                              {p.expand?.bundle && (
+                                <span className="w-fit inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-emerald-700 uppercase">
+                                  Season Ticket: {p.expand.bundle.title}
+                                </span>
+                              )}
+                              <span className="text-xs text-slate-500 font-medium break-all">{p.buyerEmail}</span>
+                            </div>
+                            <div className="flex flex-col items-end gap-0.5 shrink-0">
+                              <span className="text-sm font-bold text-slate-900">{p.quantity} Ticket{p.quantity !== 1 ? 's' : ''}</span>
+                              <span className="text-base font-extrabold text-emerald-700">
+                                ${(p.amountPaidCents / 100).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Row 3: Refund Actions */}
+                          {p.status === 'paid' && (
+                            <div className="flex justify-end pt-1.5 border-t border-slate-50 mt-1">
+                              <Button
+                                variant="danger"
+                                size="small"
+                                className="w-full font-semibold shadow-sm text-xs py-1.5"
                                 onClick={() => {
                                   if (p.bundle) {
                                     handleRefundBundle(p.stripePaymentIntentId);
@@ -674,10 +899,274 @@ export default function TicketingView() {
                                     handleRefund(p.id);
                                   }
                                 }}
-                                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-slate-50"
                               >
                                 Refund
-                              </button>
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          </AppCard>
+        </>
+      )}
+
+      {activeTab === 'bundles' && (
+        <AppCard noPadding>
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-lg font-bold text-slate-800">Season Bundles Configuration</h3>
+            <p className="mt-1 text-sm text-slate-500 font-medium">
+              Create and manage season ticket packages containing multiple concerts at a discount.
+            </p>
+          </div>
+          
+          <div className="p-6">
+            {/* Season Bundles - Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+              {loading ? (
+                <div className="px-6 py-12 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                  <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                  Loading bundles...
+                </div>
+              ) : bundles.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <EmptyState
+                    title="No Season Bundles Configured"
+                    description="Create recognition tiers or pass bundles to offer discount packages to your ticket buyers."
+                    icon="🎟️"
+                    action={
+                      <Button variant="primary" size="small" className="font-semibold" onClick={handleOpenCreateModal}>
+                        + Create New Bundle
+                      </Button>
+                    }
+                  />
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-slate-100 text-left">
+                  <thead className="bg-slate-50/75">
+                    <tr>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Bundle Title</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Price</th>
+                      <th className="px-6 py-3.5 text-center text-xs font-bold tracking-wider text-slate-500 uppercase">Active</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Capacity Sold</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Sale End Date</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Included Events</th>
+                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {bundles.map(b => {
+                      const sold = getBundleSoldQty(b.id, b.events);
+                      return (
+                        <tr key={b.id} className="transition-colors hover:bg-slate-50/40">
+                          <td className="px-6 py-4 text-sm font-semibold text-slate-800">{b.title}</td>
+                          <td className="px-6 py-4 text-sm font-extrabold text-slate-900 whitespace-nowrap">${(b.priceCents / 100).toFixed(2)}</td>
+                          <td className="px-6 py-4 text-sm text-center">
+                            <Badge tone={b.isActive ? 'success' : 'neutral'}>
+                              {b.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-sm whitespace-nowrap">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-slate-800 font-medium">{sold} / {b.capacity} sold</span>
+                              <div className="h-1.5 w-[100px] overflow-hidden rounded bg-slate-100">
+                                <div 
+                                  className="h-full bg-primary" 
+                                  // @allow-inline-style - progress bar width
+                                  style={{ width: `${Math.min(100, (sold / b.capacity) * 100)}%` }} 
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500 font-medium whitespace-nowrap">
+                            {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </td>
+                          <td className="max-w-[240px] px-6 py-4 text-sm whitespace-normal">
+                            <div className="flex flex-wrap gap-1">
+                              {b.expand?.events?.map(ev => (
+                                <span key={ev.id} className="inline-flex items-center rounded bg-slate-50 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-700 uppercase whitespace-nowrap">
+                                  {ev.title}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                onClick={() => handleOpenEditModal(b)}
+                                variant="secondary"
+                                size="small"
+                                className="font-semibold shadow-sm"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteBundle(b.id, b.events)}
+                                variant="danger"
+                                size="small"
+                                className="font-semibold shadow-sm"
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Season Bundles - Mobile Card View */}
+            <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                {loading ? (
+                  <div className="p-6 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                    <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                    Loading bundles...
+                  </div>
+                ) : bundles.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <EmptyState
+                      title="No Season Bundles Configured"
+                      description="Create recognition tiers or pass bundles to offer discount packages to your ticket buyers."
+                      icon="🎟️"
+                      action={
+                        <Button variant="primary" size="small" className="font-semibold" onClick={handleOpenCreateModal}>
+                          + Create New Bundle
+                        </Button>
+                      }
+                    />
+                  </div>
+                ) : (
+                  bundles.map(b => {
+                    const sold = getBundleSoldQty(b.id, b.events);
+                    return (
+                      <div key={b.id} className="p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40">
+                        {/* Row 1: Active status & Sale end date */}
+                        <div className="flex items-center justify-between">
+                          <Badge tone={b.isActive ? 'success' : 'neutral'}>
+                            {b.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <span className="text-xs text-slate-400 font-medium">
+                            Ends: {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </span>
+                        </div>
+
+                        {/* Row 2: Title & Price & Capacity */}
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-bold text-slate-800">{b.title}</span>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {b.expand?.events?.map(ev => (
+                                <span key={ev.id} className="inline-flex items-center rounded bg-slate-50 border border-slate-200 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-slate-600 uppercase whitespace-nowrap">
+                                  {ev.title}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-0.5 shrink-0">
+                            <span className="text-base font-extrabold text-emerald-700">
+                              ${(b.priceCents / 100).toFixed(2)}
+                            </span>
+                            <span className="text-xs text-slate-500 font-medium">{sold} / {b.capacity} Sold</span>
+                          </div>
+                        </div>
+
+                        {/* Row 3: Actions */}
+                        <div className="flex justify-end gap-2 pt-1.5 border-t border-slate-50 mt-1">
+                          <Button variant="secondary" size="small" onClick={() => handleOpenEditModal(b)}>
+                            Edit
+                          </Button>
+                          <Button variant="danger" size="small" onClick={() => handleDeleteBundle(b.id, b.events)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </AppCard>
+      )}
+
+      {activeTab === 'orders' && (
+        <AppCard noPadding>
+          <div className="border-b border-slate-100 px-6 py-4">
+            <h3 className="text-lg font-bold text-slate-800">Season Pass Orders</h3>
+            <p className="mt-1 text-sm text-slate-500 font-medium">
+              View and manage transactions of season bundle ticket pass purchases.
+            </p>
+          </div>
+          
+          <div className="p-6">
+            {/* Season Pass Orders - Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+              {loading ? (
+                <div className="px-6 py-12 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                  <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                  Loading orders...
+                </div>
+              ) : bundleOrders.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <EmptyState
+                    title="No Orders Found"
+                    description="No season pass orders have been placed yet."
+                    icon="🎫"
+                  />
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-slate-100 text-left">
+                  <thead className="bg-slate-50/75">
+                    <tr>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Buyer Name</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Email</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Purchase Date</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Season Bundle</th>
+                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Qty</th>
+                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">Amount Paid</th>
+                      <th className="px-6 py-3.5 text-center text-xs font-bold tracking-wider text-slate-500 uppercase">Status</th>
+                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {bundleOrders.map(order => {
+                      const isRefunded = order.status === 'refunded';
+                      return (
+                        <tr 
+                          key={order.stripeSessionId} 
+                          className={`transition-colors hover:bg-slate-50/40 ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
+                        >
+                          <td className="px-6 py-4 text-sm font-semibold text-slate-800">{order.buyerName}</td>
+                          <td className="px-6 py-4 text-sm text-slate-500 font-medium">{order.buyerEmail}</td>
+                          <td className="px-6 py-4 text-sm text-slate-500 font-medium whitespace-nowrap">
+                            {formatInTimezone(order.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-800 font-medium">{order.bundleTitle}</td>
+                          <td className="px-6 py-4 text-sm text-slate-500 font-medium">{order.quantity}</td>
+                          <td className="px-6 py-4 text-right text-sm font-extrabold text-slate-950">${(order.amountPaidCents / 100).toFixed(2)}</td>
+                          <td className="px-6 py-4 text-sm text-center">
+                            <Badge tone={order.status === 'paid' ? 'success' : 'danger'}>
+                              {order.status}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
+                            {order.status === 'paid' && (
+                              <Button
+                                onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
+                                variant="danger"
+                                size="small"
+                                className="font-semibold shadow-sm"
+                              >
+                                Refund Bundle
+                              </Button>
                             )}
                           </td>
                         </tr>
@@ -687,157 +1176,68 @@ export default function TicketingView() {
                 </table>
               )}
             </div>
-          </section>
-        </>
-      )}
 
-      {activeTab === 'bundles' && (
-        <AppCard title="Season Bundles Configuration">
-          {loading ? (
-            <p className="text-gray-500">Loading bundles...</p>
-          ) : bundles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
-              <p className="text-gray-500">No season bundles configured.</p>
-              <button
-                onClick={handleOpenCreateModal}
-                className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-800"
-              >
-                + Create New Bundle
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-                    <th className="p-3 px-2 text-left">Bundle Title</th>
-                    <th className="p-3 px-2 text-left">Price</th>
-                    <th className="p-3 px-2 text-left">Active</th>
-                    <th className="p-3 px-2 text-left">Capacity Sold</th>
-                    <th className="p-3 px-2 text-left">Sale End Date</th>
-                    <th className="p-3 px-2 text-left">Included Events</th>
-                    <th className="p-3 px-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bundles.map(b => {
-                    const sold = getBundleSoldQty(b.id, b.events);
-                    return (
-                      <tr key={b.id} className="border-b border-gray-200 text-sm">
-                        <td className="p-3 px-2 font-semibold">{b.title}</td>
-                        <td className="p-3 px-2">${(b.priceCents / 100).toFixed(2)}</td>
-                        <td className="p-3 px-2">
-                          <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${b.isActive ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
-                            {b.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td className="p-3 px-2">
-                          <div className="flex flex-col gap-1">
-                            <span>{sold} / {b.capacity} sold</span>
-                            <div className="h-1.5 w-[100px] overflow-hidden rounded bg-gray-200">
-                              <div 
-                                className="h-full bg-primary" 
-                                // @allow-inline-style - progress bar width
-                                style={{ width: `${Math.min(100, (sold / b.capacity) * 100)}%` }} 
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-3 px-2">
-                          {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                        </td>
-                        <td className="max-w-[240px] p-3 px-2">
-                          <div className="flex flex-wrap gap-1">
-                            {b.expand?.events?.map(ev => (
-                              <span key={ev.id} className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider whitespace-nowrap text-primary-deep uppercase">
-                                {ev.title}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="p-3 px-2 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => handleOpenEditModal(b)}
-                            className="btn btn-secondary btn-sm mr-2"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBundle(b.id, b.events)}
-                            className="btn btn-danger btn-sm"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </AppCard>
-      )}
-
-      {activeTab === 'orders' && (
-        <AppCard title="Season Pass Orders">
-          {loading ? (
-            <p className="text-gray-500">Loading orders...</p>
-          ) : bundleOrders.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">No season pass orders found.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-                    <th className="p-3 px-2 text-left">Buyer Name</th>
-                    <th className="p-3 px-2 text-left">Email</th>
-                    <th className="p-3 px-2 text-left">Purchase Date</th>
-                    <th className="p-3 px-2 text-left">Season Bundle</th>
-                    <th className="p-3 px-2 text-left">Qty</th>
-                    <th className="p-3 px-2 text-left">Amount Paid</th>
-                    <th className="p-3 px-2 text-left">Status</th>
-                    <th className="p-3 px-2 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bundleOrders.map(order => {
+            {/* Season Pass Orders - Mobile Card View */}
+            <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                {loading ? (
+                  <div className="p-6 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                    <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                    Loading orders...
+                  </div>
+                ) : bundleOrders.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <EmptyState
+                      title="No Orders Found"
+                      description="No season pass orders have been placed yet."
+                      icon="🎫"
+                    />
+                  </div>
+                ) : (
+                  bundleOrders.map(order => {
                     const isRefunded = order.status === 'refunded';
                     return (
-                      <tr 
-                        key={order.stripeSessionId} 
-                        className={`border-b border-gray-200 text-sm ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
-                      >
-                        <td className="p-3 px-2 font-semibold">{order.buyerName}</td>
-                        <td className="p-3 px-2">{order.buyerEmail}</td>
-                        <td className="p-3 px-2">
-                          {formatInTimezone(order.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                        </td>
-                        <td className="p-3 px-2 font-medium">{order.bundleTitle}</td>
-                        <td className="p-3 px-2">{order.quantity}</td>
-                        <td className="p-3 px-2">${(order.amountPaidCents / 100).toFixed(2)}</td>
-                        <td className="p-3 px-2">
-                          <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${order.status === 'paid' ? 'bg-success-bg text-success-text' : 'bg-danger-bg text-danger-text'}`}>
-                            {order.status}
+                      <div key={order.stripeSessionId} className={`p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}>
+                        {/* Row 1: Date & Status Badge */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-400 font-medium">
+                            {formatInTimezone(order.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </span>
-                        </td>
-                        <td className="p-3 px-2 text-right">
-                          {order.status === 'paid' && (
-                            <button
-                              onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
-                              className="btn btn-danger btn-sm"
-                            >
+                          <Badge tone={order.status === 'paid' ? 'success' : 'danger'}>
+                            {order.status}
+                          </Badge>
+                        </div>
+
+                        {/* Row 2: Buyer Info & Pass Info */}
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-bold text-slate-800">{order.buyerName}</span>
+                            <span className="text-xs text-slate-500 font-medium break-all">{order.buyerEmail}</span>
+                            <span className="mt-1 block text-xs font-semibold text-slate-600">Bundle: {order.bundleTitle}</span>
+                          </div>
+                          <div className="flex flex-col items-end gap-0.5 shrink-0">
+                            <span className="text-sm font-bold text-slate-900">{order.quantity} Pass{order.quantity !== 1 ? 'es' : ''}</span>
+                            <span className="text-base font-extrabold text-emerald-700">
+                              ${(order.amountPaidCents / 100).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Row 3: Refund Actions */}
+                        {order.status === 'paid' && (
+                          <div className="flex justify-end pt-1.5 border-t border-slate-50 mt-1">
+                            <Button variant="danger" size="small" className="w-full font-semibold shadow-sm text-xs py-1.5" onClick={() => handleRefundBundle(order.stripePaymentIntentId)}>
                               Refund Bundle
-                            </button>
-                          )}
-                        </td>
-                      </tr>
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     );
-                  })}
-                </tbody>
-              </table>
+                  })
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </AppCard>
       )}
 
@@ -849,21 +1249,27 @@ export default function TicketingView() {
         maxWidth="600px"
         footer={
           <div className="flex flex-row gap-4">
-            <button
-              type="button"
-              className="btn btn-ghost"
+            <Button
+              variant="ghost"
               onClick={() => setIsModalOpen(false)}
             >
               Cancel
-            </button>
-            <button
-              type="submit"
+            </Button>
+            <Button
               form="bundle-form"
-              className="btn btn-primary"
+              variant="primary"
               disabled={saving}
+              className="font-semibold shadow-sm"
+              onClick={() => {
+                // Submit the form programmatically
+                const form = document.getElementById('bundle-form') as HTMLFormElement;
+                if (form) {
+                  form.requestSubmit();
+                }
+              }}
             >
               {saving ? "Saving..." : "Save Bundle"}
-            </button>
+            </Button>
           </div>
         }
       >
@@ -882,63 +1288,62 @@ export default function TicketingView() {
             </div>
           )}
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold">Bundle Title</label>
+          <FormField label="Bundle Title" required>
             <input
               type="text"
               required
               placeholder="e.g. 2026-2027 Season Pass"
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
-          </div>
+          </FormField>
 
           <div className="flex flex-wrap gap-4">
-            <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-semibold">Price (USD)</label>
-              <input
-                type="number"
-                required
-                min="0.01"
-                step="0.01"
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
-                value={price || ''}
-                onChange={e => setPrice(Number(e.target.value))}
-              />
+            <div className="flex-1 min-w-[150px]">
+              <FormField label="Price (USD)" required>
+                <input
+                  type="number"
+                  required
+                  min="0.01"
+                  step="0.01"
+                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  value={price || ''}
+                  onChange={e => setPrice(Number(e.target.value))}
+                />
+              </FormField>
             </div>
-            <div className="flex flex-1 flex-col gap-1">
-              <label className="text-sm font-semibold">Capacity Limit</label>
-              <input
-                type="number"
-                required
-                min="1"
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
-                value={capacity || ''}
-                onChange={e => setCapacity(Number(e.target.value))}
-              />
+            <div className="flex-1 min-w-[150px]">
+              <FormField label="Capacity Limit" required>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  value={capacity || ''}
+                  onChange={e => setCapacity(Number(e.target.value))}
+                />
+              </FormField>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold">Sale End Date</label>
+          <FormField label="Sale End Date" required>
             <input
               type="datetime-local"
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               value={saleEndDate}
               onChange={e => setSaleEndDate(e.target.value)}
             />
-          </div>
+          </FormField>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold">Included Performances</label>
+          <FormField label="Included Performances">
             {hasPurchases && (
-              <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-2 text-sm text-yellow-700">
+              <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-2 text-xs text-yellow-700 mb-2">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}
-            <div className="flex max-h-[200px] flex-col gap-2 overflow-y-auto border border-gray-200 rounded-lg p-2">
+            <div className="flex max-h-[200px] flex-col gap-2 overflow-y-auto border border-slate-200 bg-white rounded-lg p-3">
               {events
                 .filter(ev => ev.isTicketingEnabled)
                 .map(ev => {
@@ -946,12 +1351,13 @@ export default function TicketingView() {
                   return (
                     <label 
                       key={ev.id} 
-                      className={`flex flex-row items-center gap-2 text-sm ${hasPurchases ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                      className={`flex flex-row items-center gap-2 text-sm text-slate-700 ${hasPurchases ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
                     >
                       <input
                         type="checkbox"
                         checked={isChecked}
                         disabled={hasPurchases}
+                        className="rounded border-slate-300 text-primary focus:ring-primary/25"
                         onChange={e => {
                           if (e.target.checked) {
                             setSelectedEventIds([...selectedEventIds, ev.id]);
@@ -967,28 +1373,28 @@ export default function TicketingView() {
                   );
                 })}
               {events.filter(ev => ev.isTicketingEnabled).length === 0 && (
-                <span className="text-xs text-gray-500">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
+                <span className="text-xs text-slate-400 font-medium">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
               )}
             </div>
-          </div>
+          </FormField>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold">Public Details / Instructions</label>
+          <FormField label="Public Details / Instructions">
             <textarea
               placeholder="e.g. Please bring a photo ID. This pass is non-transferable."
-              className="bg-surface border border-gray-200 rounded-md outline-none transition-colors focus:border-primary min-h-[100px] resize-y p-2"
+              className="block w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] resize-y"
               value={publicDetails}
               onChange={e => setPublicDetails(e.target.value)}
             />
-          </div>
+          </FormField>
 
-          <label className="flex cursor-pointer flex-row items-center gap-2">
+          <label className="flex cursor-pointer flex-row items-center gap-2 mt-2">
             <input
               type="checkbox"
               checked={isActive}
+              className="rounded border-slate-300 text-primary focus:ring-primary/25"
               onChange={e => setIsActive(e.target.checked)}
             />
-            <span className="m-0 text-sm font-semibold">Active and visible to the public</span>
+            <span className="text-sm font-semibold text-slate-800">Active and visible to the public</span>
           </label>
         </form>
       </Modal>

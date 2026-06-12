@@ -9,7 +9,7 @@ import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { safeLocalStorage } from '../../lib/storage';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, FormField, Badge } from '../../components/ui';
+import { Button, FormField, Badge, EmptyState } from '../../components/ui';
 
 const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
@@ -380,8 +380,23 @@ export default function PatronsView() {
                   </tr>
                 ) : filteredPatrons.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-400 font-medium">
-                      No patrons found.
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <EmptyState
+                        title="No Patrons Found"
+                        description={
+                          searchQuery || startDate || endDate
+                            ? "No patrons match your search/filter criteria."
+                            : "No patron records are available yet."
+                        }
+                        icon="👥"
+                        action={
+                          (searchQuery || startDate || endDate) ? (
+                            <Button variant="secondary" onClick={handleClearFilters} size="small">
+                              Reset Filters
+                            </Button>
+                          ) : undefined
+                        }
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -435,8 +450,23 @@ export default function PatronsView() {
                   Loading patrons...
                 </div>
               ) : filteredPatrons.length === 0 ? (
-                <div className="p-6 text-center text-sm text-slate-400 font-medium">
-                  No patrons found.
+                <div className="p-6 text-center">
+                  <EmptyState
+                    title="No Patrons Found"
+                    description={
+                      searchQuery || startDate || endDate
+                        ? "No patrons match your search/filter criteria."
+                        : "No patron records are available yet."
+                    }
+                    icon="👥"
+                    action={
+                      (searchQuery || startDate || endDate) ? (
+                        <Button variant="secondary" onClick={handleClearFilters} size="small">
+                          Reset Filters
+                        </Button>
+                      ) : undefined
+                    }
+                  />
                 </div>
               ) : (
                 filteredPatrons.map(p => (
