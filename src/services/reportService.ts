@@ -3,7 +3,7 @@ import { type Event } from './eventService';
 import { rosterService } from './rosterService';
 import { profileService } from './profileService';
 
-export interface SingerReport {
+interface SingerReport {
   profileId: string;
   name: string;
   voicePart: string;

@@ -1,5 +1,5 @@
 import type { Event } from '../../../services/eventService';
-import type { CommunicationFilters, CommunicationRecipient } from '../../../services/communicationService';
+import type { CommunicationRecipient } from '../../../services/communicationService';
 
 export type WizardStep = 'TARGETS' | 'COMPOSE' | 'REVIEW';
 
@@ -11,13 +11,6 @@ export interface AutomatedTask {
   status: 'Scheduled' | 'Sent' | 'Archived';
   recipientCount?: number;
 }
-
-export const DEFAULT_FILTERS: CommunicationFilters = {
-  eventId: '',
-  rsvp: 'All',
-  voiceParts: [],
-  globalStatus: 'Active',
-};
 
 export interface CommunicationRouteState {
   initialRecipients?: CommunicationRecipient[];

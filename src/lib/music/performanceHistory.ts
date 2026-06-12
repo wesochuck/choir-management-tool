@@ -56,9 +56,6 @@ export function getMostRecentPerformanceDate(
 /**
  * Formats the most recent performance date or returns '-' if null.
  */
-export function formatMostRecentPerformanceDate(piece: MusicPieceWithPerformanceHistory): string {
-  return getMostRecentPerformanceDate(piece) || '-';
-}
 
 /**
  * Resolves the effective most recent performance date, inheriting from parent if needed.

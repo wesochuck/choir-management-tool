@@ -1,14 +1,3 @@
-export function TrackBadge() {
-  return (
-    <span
-      title="Has learning tracks"
-      className="inline-flex cursor-default items-center text-[13px] leading-none"
-    >
-      🎧
-    </span>
-  );
-}
-
 export function MultiMovementBadge() {
   return (
     <span className="inline-flex items-center rounded-[4px] border border-[rgb(27_77_62_/_20%)] bg-primary-light px-[6px] py-[2px] text-[10px] leading-[1.2] font-semibold text-primary">

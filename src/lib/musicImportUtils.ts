@@ -20,12 +20,12 @@ export interface MappedMusicPiece {
   warnings: string[];
 }
 
-export function trimStr(s: string): string {
+function trimStr(s: string): string {
   if (!s) return "";
   return s.replace(/^[\s,;./()]+|[\s,;./()]+$/g, '').trim();
 }
 
-export function parseComposerArranger(combined: string): { composer: string; arranger: string } {
+function parseComposerArranger(combined: string): { composer: string; arranger: string } {
   if (!combined) return { composer: "", arranger: "" };
 
   const trimmed = combined.trim();
@@ -77,7 +77,7 @@ export function parseComposerArranger(combined: string): { composer: string; arr
   return { composer: trimStr(trimmed), arranger: "" };
 }
 
-export function parsePurchaseDate(val: string): string | undefined {
+function parsePurchaseDate(val: string): string | undefined {
   const clean = val.trim();
   if (!clean) return undefined;
 

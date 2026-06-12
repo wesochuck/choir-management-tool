@@ -1,4 +1,4 @@
-export type DisplayTone = 'success' | 'danger' | 'warning' | 'muted' | 'primary';
+type DisplayTone = 'success' | 'danger' | 'warning' | 'muted' | 'primary';
 
 interface StatusDisplay {
   label: string;

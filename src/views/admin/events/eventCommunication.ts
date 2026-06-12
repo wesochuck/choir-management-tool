@@ -7,7 +7,7 @@ import {
 } from '../../../services/settingsService';
 import { formatInTimezone } from '../../../lib/timezone';
 
-export interface EventCommunicationTemplateValues extends Record<string, string> {
+interface EventCommunicationTemplateValues extends Record<string, string> {
   eventTitle: string;
   eventType: string;
   eventDate: string;
@@ -24,7 +24,7 @@ export function getEventVenueName(event: Event, venues: Venue[]): string {
     : 'TBD';
 }
 
-export function buildEventCommunicationTemplateValues(args: {
+function buildEventCommunicationTemplateValues(args: {
   event: Event;
   venues: Venue[];
   timezone: string;

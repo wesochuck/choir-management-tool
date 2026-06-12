@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { CHIP_COLORS, getChipColor } from '../../../lib/chipColorUtils';
 import { Button } from '../../../components/ui';
 
-export interface MultiSelectOption {
+interface MultiSelectOption {
     id: string;
     label: string;
 }

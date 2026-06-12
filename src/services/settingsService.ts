@@ -138,7 +138,7 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
 };
 
 
-export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
+const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultStatus: '',
   defaultSort: 'lastName',
   defaultRsvpSort: 'lastName',
@@ -149,7 +149,7 @@ export const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   maxRehearsalMisses: 3,
 };
 
-export const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
+const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
   catalogLookupUrlTemplate: '',
   genres: [
     { id: 'christmas', label: 'Christmas' },
@@ -173,7 +173,7 @@ export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
   },
 };
 
-export const DEFAULT_POLL_SETTINGS: PollSettings = {
+const DEFAULT_POLL_SETTINGS: PollSettings = {
   defaultAutoArchiveDays: 3,
 };
 

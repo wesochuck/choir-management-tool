@@ -12,7 +12,7 @@ export interface EventRosterExportEvent {
   type?: string;
 }
 
-export interface EventRosterExportProfile {
+interface EventRosterExportProfile {
   name: string;
   voicePart?: string;
   isSectionLeader?: boolean;
@@ -23,12 +23,12 @@ export interface EventRosterExportSinger {
   rsvp: RsvpStatus;
 }
 
-export interface EventRosterExportVoicePart {
+interface EventRosterExportVoicePart {
   label: string;
   sectionCode: string;
 }
 
-export interface EventRosterExportSection {
+interface EventRosterExportSection {
   code: string;
   name: string;
 }

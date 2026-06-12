@@ -1,4 +1,4 @@
-export const PUBLIC_ROUTE_PREFIXES = [
+const PUBLIC_ROUTE_PREFIXES = [
   '/login',
   '/reset-password',
   '/auditions',

@@ -2,11 +2,11 @@ import type { RecordModel } from 'pocketbase';
 import type { Retry429Options } from '../../lib/networkSafety';
 
 export type MessageType = 'Email' | 'SMS' | 'Both';
-export type RsvpFilter = 'All' | 'Yes' | 'No' | 'Pending';
-export type MessageStatus = 'Draft' | 'Sent' | 'Failed' | 'Archived';
+type RsvpFilter = 'All' | 'Yes' | 'No' | 'Pending';
+type MessageStatus = 'Draft' | 'Sent' | 'Failed' | 'Archived';
 export type AutomatedTaskType = 'Reminder' | 'Report' | 'RSVP Request' | 'Ticket Buyer Reminder';
 
-export type AutomatedTaskResolutionStatus = 'pending' | 'sent' | 'archived';
+type AutomatedTaskResolutionStatus = 'pending' | 'sent' | 'archived';
 export type AutomatedTaskStatusMap = Record<string, AutomatedTaskResolutionStatus>;
 
 export interface CommunicationRecipient {

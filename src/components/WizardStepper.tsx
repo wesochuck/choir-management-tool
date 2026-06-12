@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface Step {
+interface Step {
   number: number;
   id: string;
   label: string;

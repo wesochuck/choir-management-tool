@@ -14,7 +14,7 @@ function makeDialog() {
     showMessage: async () => {},
     showToast: () => {},
     prompt: async () => '',
-  } as unknown as ReturnType<typeof import('../../../../src/contexts/DialogContext.ts').useDialog>;
+  } as unknown as ReturnType<typeof import('../../../../src/contexts/DialogContext.tsx').useDialog>;
 }
 
 function defaultArgs(overrides: Record<string, unknown> = {}) {

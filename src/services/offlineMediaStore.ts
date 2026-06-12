@@ -1,6 +1,6 @@
 import type { PlayerMediaFile } from './playerService';
 
-export interface OfflineTrackRecord {
+interface OfflineTrackRecord {
   id: string;
   name: string;
   mimeType: string;
@@ -10,7 +10,7 @@ export interface OfflineTrackRecord {
   streamUrl: string;
 }
 
-export interface OfflinePlaylistRecord {
+interface OfflinePlaylistRecord {
   key: string; // token or eventId
   files: PlayerMediaFile[];
   savedAt: number;
@@ -171,7 +171,7 @@ export async function getOfflineTrackUrl(trackId: string): Promise<string | null
   });
 }
 
-export function revokeOfflineTrackUrl(trackId: string): void {
+function revokeOfflineTrackUrl(trackId: string): void {
   const url = activeUrls.get(trackId);
   if (url) {
     URL.revokeObjectURL(url);
@@ -184,20 +184,6 @@ export function revokeAllOfflineTrackUrls(): void {
     URL.revokeObjectURL(url);
   }
   activeUrls.clear();
-}
-
-export async function isTrackDownloaded(trackId: string): Promise<boolean> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_TRACKS, 'readonly');
-    const store = transaction.objectStore(STORE_TRACKS);
-
-    const request = store.getKey(trackId);
-    request.onsuccess = () => {
-      resolve(request.result !== undefined);
-    };
-    request.onerror = () => reject(request.error);
-  });
 }
 
 export async function removeOfflineTrack(trackId: string): Promise<void> {
@@ -215,7 +201,7 @@ export async function removeOfflineTrack(trackId: string): Promise<void> {
   });
 }
 
-export async function listDownloadedTrackIds(): Promise<Set<string>> {
+async function listDownloadedTrackIds(): Promise<Set<string>> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_TRACKS, 'readonly');
@@ -251,31 +237,6 @@ export async function hydrateOfflineStatus(files: PlayerMediaFile[]): Promise<Pl
     console.error('Failed to hydrate offline status:', err);
     return files;
   }
-}
-
-export async function getOfflineStorageSummary(): Promise<{
-  trackCount: number;
-  totalBytes: number;
-}> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_TRACKS, 'readonly');
-    const store = transaction.objectStore(STORE_TRACKS);
-
-    const request = store.getAll();
-    request.onsuccess = () => {
-      const records = request.result as OfflineTrackRecord[];
-      let totalBytes = 0;
-      for (const record of records) {
-        totalBytes += record.size || record.blob.size || 0;
-      }
-      resolve({
-        trackCount: records.length,
-        totalBytes,
-      });
-    };
-    request.onerror = () => reject(request.error);
-  });
 }
 
 export async function clearAllDownloads(): Promise<void> {

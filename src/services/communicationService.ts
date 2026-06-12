@@ -36,10 +36,6 @@ export type { CommunicationConfig } from './settingsService';
 
 export type {
   MessageType,
-  RsvpFilter,
-  MessageStatus,
-  AutomatedTaskType,
-  AutomatedTaskResolutionStatus,
   AutomatedTaskStatusMap,
   CommunicationRecipient,
   CommunicationFilters,
