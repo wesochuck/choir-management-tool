@@ -7,6 +7,7 @@ import { settingsService, getVoicePartsAndSections, type SectionDef, type VoiceP
 import { AppCard } from '../common/AppCard';
 import { FloatingSaveBar } from './FloatingSaveBar';
 import { useDialog } from '../../contexts/DialogContext';
+import { Button } from '../ui';
 import { toggleAccordion } from '../../lib/seatingFormationsUtils';
 
 
@@ -313,12 +314,14 @@ function FormationRow({
                 ))
               )}
             </select>
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary btn-sm pointer-events-none flex h-[26px] items-center gap-1 border border-dashed border-border bg-transparent px-2 text-[0.8rem]"
+              variant="secondary"
+              size="tiny"
+              className="pointer-events-none border border-dashed border-border bg-transparent"
             >
               {isVoice ? "+ Add Voice Part" : "+ Add Section"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -485,12 +488,15 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
           <p className="text-muted m-0">
               Define reusable seating formations for your choir.
             </p>
-            <Link 
+            <Button 
+              as={Link}
               to="/admin/roster" 
-              className="btn btn-ghost btn-sm inline-flex items-center gap-[6px] px-2 py-1 text-sm font-semibold text-primary"
+              variant="outline"
+              size="small"
+              className="inline-flex items-center gap-[6px] px-2 py-1 text-sm font-semibold text-primary"
             >
               🎨 Edit Section Colors in Roster
-            </Link>
+            </Button>
           </div>
 
           {customSeatingSettings.formations?.map((formation, formationIndex) => (
@@ -506,7 +512,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
             />
           ))}
 
-          <button
+          <Button
             type="button"
             onClick={() => {
               const newId = `preset-${Date.now()}`;
@@ -518,10 +524,11 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
                 ]
               }));
             }}
-            className="btn btn-secondary self-start"
+            variant="secondary"
+            className="self-start"
           >
             + Add Formation Preset
-          </button>
+          </Button>
         </div>
       </AppCard>
 

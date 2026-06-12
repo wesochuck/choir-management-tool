@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal } from '../ui';
+import { Modal, Button } from '../ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import type { RecordModel } from 'pocketbase';
@@ -83,18 +83,20 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
 
       <div className="flex-col gap-4">
         <div className="flex-row gap-1 border-b border-border pb-1">
-          <button
-            className={`btn btn-sm ${tab === 'list' ? 'btn-primary' : 'btn-ghost'}`}
+          <Button
+            size="small"
+            variant={tab === 'list' ? 'primary' : 'outline'}
             onClick={() => setTab('list')}
           >
             Existing Polls
-          </button>
-          <button
-            className={`btn btn-sm ${tab === 'create' ? 'btn-primary' : 'btn-ghost'}`}
+          </Button>
+          <Button
+            size="small"
+            variant={tab === 'create' ? 'primary' : 'outline'}
             onClick={() => setTab('create')}
           >
             Create New Poll
-          </button>
+          </Button>
         </div>
 
         {tab === 'list' ? (
@@ -125,7 +127,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
               )}
             </div>
             <div className="mt-1 flex-row justify-end">
-              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             </div>
           </div>
         ) : (
@@ -158,11 +160,11 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
               </select>
             </div>
 
-            <div className="mt-1 flex-row justify-end">
-              <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={isCreating || !question}>
-                {isCreating ? 'Creating...' : 'Create & Insert Poll'}
-              </button>
+            <div className="mt-1 flex-row justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={isCreating || !question} loading={isCreating}>
+                Create & Insert Poll
+              </Button>
             </div>
           </form>
         )}

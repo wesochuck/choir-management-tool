@@ -8,6 +8,7 @@ import PublicLogo from '../components/common/PublicLogo';
 import { sanitizeHtml } from '../lib/textSafety';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
+import { Button } from '../components/ui';
 
 export default function PublicTicketPurchaseView() {
   useDocumentTitle('Purchase Tickets');
@@ -58,7 +59,7 @@ export default function PublicTicketPurchaseView() {
           <p className="m-0 text-danger-text">
             {error || (!event ? 'Event not found.' : 'Ticket sales are closed for this event.')}
           </p>
-          <Link to="/tickets" className="btn btn-ghost no-underline">Back to Events</Link>
+          <Button as={Link} to="/tickets" variant="outline" className="no-underline">Back to Events</Button>
         </AppCard>
       </div>
     );
@@ -103,7 +104,7 @@ export default function PublicTicketPurchaseView() {
       <PublicLogo />
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
-          <Link to="/tickets" className="btn btn-ghost btn-sm self-start">← Back to Events</Link>
+          <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">← Back to Events</Button>
           <div className="flex flex-col gap-0.5">
             {choirName && <span className="text-xs font-bold tracking-wider text-text-muted uppercase">{choirName}</span>}
             <h1 className="text-display m-0">Buy Tickets</h1>
@@ -242,13 +243,14 @@ export default function PublicTicketPurchaseView() {
             </label>
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={submitting}
-            className="btn btn-primary btn-lg h-12 w-full font-semibold"
+            className="h-12 w-full font-semibold"
+            variant="primary"
           >
             {submitting ? "Opening Secure Checkout…" : "Proceed to Payment"}
-          </button>
+          </Button>
         </form>
       </AppCard>
     </div>

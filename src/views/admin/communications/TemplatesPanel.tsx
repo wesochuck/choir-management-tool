@@ -10,6 +10,7 @@ import {
 } from '../../../services/communicationService';
 import { resolvePreviewContent } from '../../../lib/communicationUtils';
 import { useDialog } from '../../../contexts/DialogContext';
+import { Button } from '../../../components/ui';
 
 export interface TemplatesPanelProps {
   templates: TemplateRecord[];
@@ -114,20 +115,24 @@ export function TemplatesPanel({
             title="Template Preview"
             actions={
               <div className="flex gap-4 rounded-b-lg border-t border-border bg-[#f8fafc] p-4">
-                <button
+                <Button
                   type="button"
-                  className={`btn btn-sm ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'} h-[30px] px-2.5 py-1`}
+                  variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
+                  size="small"
+                  className="h-[30px] px-2.5 py-1"
                   onClick={() => setPreviewDevice('desktop')}
                 >
                   🖥️ Desktop
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className={`btn btn-sm ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'} h-[30px] px-2.5 py-1`}
+                  variant={previewDevice === 'mobile' ? 'secondary' : 'outline'}
+                  size="small"
+                  className="h-[30px] px-2.5 py-1"
                   onClick={() => setPreviewDevice('mobile')}
                 >
                   📱 Mobile
-                </button>
+                </Button>
               </div>
             }
           >
@@ -169,16 +174,16 @@ export function TemplatesPanel({
           </AppCard>
 
           <div className="flex justify-end gap-2">
-            <button
+            <Button
               type="button"
-              className="btn btn-ghost"
+              variant="outline"
               onClick={() => setEditingTemplate(null)}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="btn btn-primary"
+              variant="primary"
               onClick={async () => {
                 if (!editingTemplate.title || !editingTemplate.content) {
                   dialog.showToast('Title and content are required.');
@@ -200,7 +205,7 @@ export function TemplatesPanel({
               }}
             >
               Save Template
-            </button>
+            </Button>
           </div>
         </div>
         <PlaceholderPanel onInsert={onInsertPlaceholder} />
@@ -212,9 +217,10 @@ export function TemplatesPanel({
     <AppCard
       title="Message Templates"
       actions={
-        <button
+        <Button
           type="button"
-          className="btn btn-primary btn-sm inline-flex h-8 items-center gap-1 rounded border border-border bg-slate-100 px-2 text-xs text-slate-600"
+          variant="primary"
+          size="small"
           onClick={() =>
             setEditingTemplate({
               title: '',
@@ -226,7 +232,7 @@ export function TemplatesPanel({
           }
         >
           ➕ Add Custom Template
-        </button>
+        </Button>
       }
     >
       <div className="flex flex-col gap-4">
@@ -277,26 +283,30 @@ export function TemplatesPanel({
                     </td>
                     <td className="p-3 px-4 text-right whitespace-nowrap">
                       <div className="flex justify-end gap-1.5">
-                        <button
+                        <Button
                           type="button"
-                          className="btn btn-ghost btn-sm"
+                          variant="outline"
+                          size="small"
                           onClick={() => setEditingTemplate(tpl)}
                         >
                           Edit
-                        </button>
+                        </Button>
                         {onUseTemplate && (
-                          <button
+                          <Button
                             type="button"
-                            className="btn btn-ghost btn-sm"
+                            variant="outline"
+                            size="small"
                             onClick={() => onUseTemplate(tpl)}
                           >
                             Use
-                          </button>
+                          </Button>
                         )}
                         {!tpl.isSystemTemplate && (
-                          <button
+                          <Button
                             type="button"
-                            className="btn btn-ghost btn-sm text-red-500"
+                            variant="outline"
+                            size="small"
+                            className="text-red-500"
                             onClick={async () => {
                               if (
                                 await dialog.confirm({
@@ -320,7 +330,7 @@ export function TemplatesPanel({
                             }}
                           >
                             Delete
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>

@@ -156,7 +156,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                   <td className="px-6 py-4 text-right text-sm" onClick={(e) => e.stopPropagation()}>
                     <Button 
                       onClick={() => onEdit(p)}
-                      variant="ghost"
+                      variant="outline"
                       size="small"
                     >
                       Edit

@@ -1,3 +1,4 @@
+import { Button } from '../../../components/ui';
 import type { MessageRecord } from '../../../services/communicationService';
 
 interface DraftsPanelProps {
@@ -49,18 +50,20 @@ export function DraftsPanel({
                 </td>
                 <td className="p-3 px-4 text-right whitespace-nowrap">
                   <div className="flex justify-end gap-2">
-                    <button
-                      className="btn btn-ghost btn-sm"
+                    <Button
+                      variant="outline"
+                      size="small"
                       onClick={() => onDeleteDraft(draft)}
                     >
                       Delete
-                    </button>
-                    <button
-                      className="btn btn-primary btn-sm"
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="small"
                       onClick={() => onResumeDraft(draft)}
                     >
                       Resume Draft
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>

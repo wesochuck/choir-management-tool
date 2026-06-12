@@ -259,7 +259,7 @@ export default function ResourcesView() {
         maxWidth="500px"
         footer={
           <div className="flex flex-row gap-4">
-            <Button type="button" onClick={resetForm} disabled={isSaving} variant="ghost">Cancel</Button>
+            <Button type="button" onClick={resetForm} disabled={isSaving} variant="outline">Cancel</Button>
             <Button type="submit" form="resource-form" disabled={isSaving} variant="primary">
               {isSaving ? 'Saving...' : 'Save Resource'}
             </Button>
@@ -412,7 +412,7 @@ export default function ResourcesView() {
                           <div className="flex justify-end gap-2">
                             <Button 
                               onClick={() => handleEdit(r)} 
-                              variant="ghost" 
+                              variant="outline" 
                               size="small"
                             >
                               Edit

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal } from '../ui';
+import { Modal, Button } from '../ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc } from '../../lib/timezone';
 
@@ -184,17 +184,18 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
       onClose={handleClose}
       title="Bulk Add Rehearsals"
       footer={
-        <>
-          <button type="button" onClick={handleClose} className="btn btn-ghost">Cancel</button>
-          <button 
+        <div className="flex justify-end gap-2">
+          <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
+          <Button 
             type="submit" 
             form="bulk-event-form"
             disabled={isSubmitting}
-            className="btn btn-primary"
+            variant="primary"
+            loading={isSubmitting}
           >
-            {isSubmitting ? 'Generating...' : 'Generate Rehearsals'}
-          </button>
-        </>
+            Generate Rehearsals
+          </Button>
+        </div>
       }
       maxWidth="480px"
     >

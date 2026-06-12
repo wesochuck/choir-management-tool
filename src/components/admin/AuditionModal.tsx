@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal } from '../ui';
+import { Modal, Button } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Audition, AuditionInput } from '../../services/auditionService';
 import { type Event } from '../../services/eventService';
@@ -90,12 +90,12 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
       title={audition ? `Edit ${audition.name}` : 'Add Audition Manually'}
       maxWidth="640px"
       footer={
-        <>
-          <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
-          <button type="submit" form="audition-form" className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : audition ? 'Save Audition' : 'Add Audition'}
-          </button>
-        </>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+          <Button type="submit" form="audition-form" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
+            {audition ? 'Save Audition' : 'Add Audition'}
+          </Button>
+        </div>
       }
     >
       <form id="audition-form" onSubmit={handleSubmit} className="flex-col gap-4">
@@ -103,8 +103,9 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-row items-center justify-between gap-4 rounded bg-primary-light px-4 py-2">
             <span className="text-label text-primary-deep">Quick Contact:</span>
             {formData.contact.includes('@') ? (
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => {
                   navigate('/admin/communications', {
                     state: {
@@ -122,10 +123,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   });
                   onClose();
                 }}
-                className="btn btn-link font-semibold underline"
+                className="font-semibold underline !p-0 !h-auto !min-h-0 text-primary hover:text-primary-deep"
               >
                 {formData.contact}
-              </button>
+              </Button>
             ) : (
               <a
                 href={`tel:${formData.contact}`}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from './ui';
 
 interface LivePreviewProps {
   channel: 'Email' | 'SMS' | 'Both';
@@ -117,38 +118,46 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
         <div className="flex gap-2">
           {channel === 'Both' && (
             <div className="flex gap-1 rounded-md border border-border bg-bg p-0.5">
-              <button
+              <Button
                 type="button"
-                className={`btn btn-sm h-[30px] px-2.5 py-1 ${activeTab === 'email' ? 'btn-secondary' : 'btn-ghost'}`}
+                variant={activeTab === 'email' ? 'secondary' : 'outline'}
+                size="small"
+                className="h-[30px] px-2.5 py-1"
                 onClick={() => setActiveTab('email')}
               >
                 Email View
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className={`btn btn-sm h-[30px] px-2.5 py-1 ${activeTab === 'sms' ? 'btn-secondary' : 'btn-ghost'}`}
+                variant={activeTab === 'sms' ? 'secondary' : 'outline'}
+                size="small"
+                className="h-[30px] px-2.5 py-1"
                 onClick={() => setActiveTab('sms')}
               >
                 SMS View
-              </button>
+              </Button>
             </div>
           )}
           {activeTab === 'email' && channel !== 'SMS' && (
             <div className="flex gap-1 rounded-md border border-border bg-bg p-0.5">
-              <button
+              <Button
                 type="button"
-                className={`btn btn-sm h-[30px] px-2.5 py-1 ${previewDevice === 'desktop' ? 'btn-secondary' : 'btn-ghost'}`}
+                variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
+                size="small"
+                className="h-[30px] px-2.5 py-1"
                 onClick={() => setPreviewDevice('desktop')}
               >
                 🖥️ Desktop
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className={`btn btn-sm h-[30px] px-2.5 py-1 ${previewDevice === 'mobile' ? 'btn-secondary' : 'btn-ghost'}`}
+                variant={previewDevice === 'mobile' ? 'secondary' : 'outline'}
+                size="small"
+                className="h-[30px] px-2.5 py-1"
                 onClick={() => setPreviewDevice('mobile')}
               >
                 📱 Mobile
-              </button>
+              </Button>
             </div>
           )}
         </div>

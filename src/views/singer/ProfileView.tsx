@@ -4,6 +4,7 @@ import { profileService, type Profile, type CalendarFeedUrls } from '../../servi
 import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
+import { Button } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -335,9 +336,9 @@ export default function ProfileView() {
             </div>
           )}
 
-          <button type="submit" disabled={isSaving} className="btn btn-primary w-full">
+          <Button type="submit" disabled={isSaving} className="w-full" variant="primary">
             {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
+          </Button>
         </form>
 
         {profile.id && (
@@ -354,12 +355,14 @@ export default function ProfileView() {
                   {/* Action 1: Subscribe in Calendar App (webcalUrl) */}
                   <div className="flex-col gap-1">
                     <label className="text-label">Subscribe Directly</label>
-                    <a
+                    <Button
+                      as="a"
                       href={calendarFeedUrls.webcalUrl}
-                      className="btn btn-primary flex h-10 w-full items-center justify-center text-center no-underline"
+                      variant="primary"
+                      className="flex h-10 w-full items-center justify-center text-center no-underline"
                     >
                       Subscribe in Calendar App
-                    </a>
+                    </Button>
                   </div>
 
                   {/* Action 2: Copy Google Calendar URL (httpsUrl) */}
@@ -372,13 +375,14 @@ export default function ProfileView() {
                         className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 flex-1 px-3 text-sm"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
-                      <button
+                      <Button
                         type="button"
                         onClick={handleCopyGoogleLink}
-                        className={`btn flex h-10 min-w-[180px] items-center justify-center px-4 ${isCopied ? 'btn-success' : 'btn-primary'}`}
+                        variant="primary"
+                        className={`flex h-10 min-w-[180px] items-center justify-center px-4 ${isCopied ? '!bg-success-bg !text-success-text !border-transparent' : ''}`}
                       >
                         {isCopied ? 'Copied! ✓' : 'Copy Google Calendar URL'}
-                      </button>
+                      </Button>
                     </div>
                     <span className="text-muted text-xs">
                       For Google Calendar, copy the HTTPS URL and add it with Other calendars → From URL.
@@ -390,14 +394,15 @@ export default function ProfileView() {
               )}
 
               <div className="mt-1 flex-row justify-start">
-                <button
+                <Button
                   type="button"
                   onClick={handleResetLink}
-                  className="btn btn-ghost cursor-pointer rounded-md border border-danger-text bg-transparent px-4 text-sm text-danger-text"
+                  className="cursor-pointer border border-danger-text !text-danger-text bg-transparent text-sm"
+                  variant="outline"
                   disabled={isCalendarLoading}
                 >
                   Reset Calendar Link...
-                </button>
+                </Button>
               </div>
               <p className="text-muted m-0 text-xs italic">
                 Note: Resetting will invalidate any previous link you've set up on your devices.

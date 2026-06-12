@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import { profileService } from '../../services/profileService';
-import { Modal } from '../ui';
+import { Modal, Button } from '../ui';
 
 interface SingerLookupModalProps {
   isOpen: boolean;
@@ -60,7 +60,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
       onClose={onClose}
       title="Lookup Singer"
       maxWidth="500px"
-      footer={<button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>}
+      footer={<Button type="button" onClick={onClose} variant="outline">Cancel</Button>}
     >
       <div className="flex-col gap-4">
         <input

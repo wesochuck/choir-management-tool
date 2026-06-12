@@ -3,6 +3,7 @@ import { pb } from '../../../lib/pocketbase';
 import type { MusicPiece } from '../../../types/musicLibrary';
 import type { SectionDef, VoicePartDef } from '../../../services/settingsService';
 import { getVisibleTrackKeys } from './learningTrackKeys';
+import { Button } from '../../../components/ui';
 
 export interface LearningTracksEditorProps {
     piece: MusicPiece;
@@ -112,19 +113,24 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                     controls 
                                     className={`w-full flex-1 ${isMovement ? 'h-6' : 'h-7'}`}
                                 />
-                                <button 
+                                <Button 
                                     type="button" 
-                                    className="btn btn-ghost btn-sm !m-0 !h-auto min-h-auto cursor-pointer !border-none !bg-none !p-[4px_6px] !text-[var(--danger)]" 
+                                    variant="outline"
+                                    size="tiny"
+                                    className="!m-0 !h-auto min-h-auto cursor-pointer !border-none !bg-none !p-[4px_6px] !text-[var(--danger)]" 
                                     onClick={() => onDelete(partLabel)}
                                     title="Delete track"
                                 >
                                     🗑️
-                                </button>
+                                </Button>
                             </div>
                         ) : (
                             <div className="flex flex-1 flex-row items-center justify-end">
-                                <label 
-                                    className="btn btn-secondary btn-sm !m-0 inline-flex !h-6 !min-h-6 cursor-pointer items-center gap-1 !p-[2px_8px] !text-[11px]" 
+                                <Button 
+                                    as="label"
+                                    variant="secondary"
+                                    size="tiny"
+                                    className="!m-0 cursor-pointer" 
                                 >
                                     📤 Upload
                                     <input 
@@ -138,7 +144,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                         }}
                                         className="hidden"
                                     />
-                                </label>
+                                </Button>
                             </div>
                         )}
                     </div>

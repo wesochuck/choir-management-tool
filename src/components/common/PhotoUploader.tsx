@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { updateProfilePhoto, deleteProfilePhoto, type Profile } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
+import { Button } from '../ui';
 
 
 interface PhotoUploaderProps {
@@ -680,30 +681,34 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               className="w-full max-w-[240px] aspect-square object-cover rounded-full border-4 border-white shadow-md bg-slate-100"
             />
             <div className="flex flex-col sm:flex-row gap-2 w-full justify-center">
-              <button
+              <Button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveOriginal(); }}
                 disabled={isUploading}
-                className="btn btn-primary px-5"
+                variant="primary"
+                className="px-5"
+                loading={isUploading}
               >
-                {isUploading ? 'Uploading...' : 'Use Photo'}
-              </button>
-              <button
+                Use Photo
+              </Button>
+              <Button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCrop(); }}
                 disabled={isUploading}
-                className="btn btn-secondary px-5"
+                variant="secondary"
+                className="px-5"
               >
                 Crop to Square
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancel(); }}
                 disabled={isUploading}
-                className="btn btn-ghost px-5"
+                variant="outline"
+                className="px-5"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>

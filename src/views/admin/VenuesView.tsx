@@ -105,7 +105,7 @@ export default function VenuesView() {
         maxWidth="500px"
         footer={
           <div className="flex flex-row gap-4">
-            <Button variant="ghost" onClick={resetForm}>Cancel</Button>
+            <Button variant="outline" onClick={resetForm}>Cancel</Button>
             <Button type="submit" form="venue-form" variant="primary">Save Template</Button>
           </div>
         }

@@ -136,20 +136,22 @@ export default function SetListView() {
               {url}
             </div>
             <div className="flex-row gap-[var(--space-sm)]">
-              <button 
-                className="btn btn-primary btn-sm"
+              <Button 
+                variant="primary"
+                size="small"
                 onClick={() => {
                   navigator.clipboard.writeText(url);
                 }}
               >
                 Copy Link
-              </button>
-              <button 
-                className="btn btn-secondary btn-sm"
+              </Button>
+              <Button 
+                variant="secondary"
+                size="small"
                 onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
               >
                 Open Player
-              </button>
+              </Button>
             </div>
           </div>
         )
@@ -793,24 +795,26 @@ export default function SetListView() {
         maxWidth="600px"
         footer={
           <>
-            <button 
-              className="btn btn-ghost" 
+            <Button 
+              variant="outline" 
               onClick={() => setIsPrintModalOpen(false)}
             >
               Close
-            </button>
-            <button 
-              className="btn btn-secondary flex items-center gap-[6px]" 
+            </Button>
+            <Button 
+              variant="secondary"
+              className="flex items-center gap-[6px]" 
               onClick={handleCopyList}
             >
               {copied ? '✓ Copied!' : '📋 Copy Plain Text'}
-            </button>
-            <button 
-              className="btn btn-primary flex items-center gap-[6px]" 
+            </Button>
+            <Button 
+              variant="primary"
+              className="flex items-center gap-[6px]" 
               onClick={handlePrintList}
             >
               🖨️ Print List
-            </button>
+            </Button>
           </>
         }
       >

@@ -386,7 +386,7 @@ export default function AuditionsView() {
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={handleCancelSettings}>
+              <Button variant="outline" onClick={handleCancelSettings}>
                 Cancel
               </Button>
               <Button 
@@ -763,7 +763,7 @@ export default function AuditionsView() {
                         </Button>
                       )}
                       {audition.status !== 'Closed' && (
-                        <Button variant="ghost" size="small" onClick={() => updateStatus(audition, 'Closed')}>
+                        <Button variant="outline" size="small" onClick={() => updateStatus(audition, 'Closed')}>
                           Close
                         </Button>
                       )}
@@ -802,7 +802,7 @@ export default function AuditionsView() {
         maxWidth="500px"
         footer={
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setSchedulingAudition(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setSchedulingAudition(null)}>Cancel</Button>
             <Button variant="primary" type="submit" form="schedule-form">Confirm & Send Email</Button>
           </div>
         }

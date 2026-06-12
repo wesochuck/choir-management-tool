@@ -75,7 +75,7 @@ export default function PublicUnsubscribeView() {
                 {errorMessage}
               </p>
               <div className="mt-4">
-                <Button as={Link} to="/login" variant="ghost">Return to Site</Button>
+                <Button as={Link} to="/login" variant="outline">Return to Site</Button>
               </div>
             </>
           )}

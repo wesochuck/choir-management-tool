@@ -6,6 +6,7 @@ import { pollService, type PollDetails } from '../services/pollService';
 import { formatInTimezone } from '../lib/timezone';
 import { pb } from '../lib/pocketbase';
 import { useDialog } from '../contexts/DialogContext';
+import { Button } from '../components/ui';
 
 export default function PublicPollView() {
   const dialog = useDialog();
@@ -100,12 +101,14 @@ export default function PublicPollView() {
               {errorMessage}
             </p>
             <div className="mt-4 flex w-full flex-col gap-2">
-              <a
+              <Button
+                as="a"
                 href="/login"
-                className="btn btn-primary inline-flex h-11 w-full items-center justify-center font-bold no-underline"
+                className="inline-flex h-11 w-full items-center justify-center font-bold no-underline"
+                variant="primary"
               >
                 Sign In to Member Portal
-              </a>
+              </Button>
             </div>
           </div>
         </AppCard>
@@ -154,28 +157,29 @@ export default function PublicPollView() {
               </p>
               
               <div className="flex w-full gap-2">
-                <button
+                <Button
                   onClick={() => handleSubmitResponse('Yes')}
                   disabled={isUpdating}
-                   className={`btn h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
+                  variant={selectedResponse === 'Yes' ? 'primary' : 'secondary'}
+                  className={`h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
                     selectedResponse === 'Yes'
-                      ? 'bg-primary text-white border-2 border-primary-deep'
-                      : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted'
+                      ? 'border-2 border-primary-deep'
+                      : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted hover:bg-slate-200'
                   }`}
                 >
                   {isUpdating && selectedResponse === 'Yes' ? '...' : 'Yes / Volunteer'}
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleSubmitResponse('No')}
                   disabled={isUpdating}
-                   className={`btn h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
+                  className={`h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
                     selectedResponse === 'No'
-                      ? 'bg-[#ef4444] text-white border-2 border-[#991b1b]'
-                      : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted'
+                      ? 'bg-[#ef4444] text-white border-2 border-[#991b1b] hover:bg-[#dc2626]'
+                      : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted hover:bg-slate-200'
                   }`}
                 >
                   {isUpdating && selectedResponse === 'No' ? '...' : 'No / Cannot'}
-                </button>
+                </Button>
               </div>
             </div>
 

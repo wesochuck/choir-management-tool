@@ -13,6 +13,7 @@ import {
   getMovementTrackCount,
   isParentPiece,
 } from './musicLibraryTableUtils';
+import { Button } from '../../../../components/ui';
 
 interface MusicLibraryRowProps {
   piece: MusicPiece;
@@ -115,15 +116,17 @@ export function MusicLibraryRow({
 
       <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
         <div className="flex items-center justify-center gap-[var(--space-xs)]">
-          <button
-            className="btn btn-ghost btn-sm !m-0 !h-6 !min-h-auto !p-[0_8px] !text-xs"
+          <Button
+            variant="outline"
+            size="tiny"
+            className="!m-0"
             onClick={(event) => {
               event.stopPropagation();
               onEditPiece(piece);
             }}
           >
             Edit
-          </button>
+          </Button>
         </div>
       </td>
     </tr>

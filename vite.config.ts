@@ -20,6 +20,7 @@ export default defineConfig({
             'test/eventCardSetList.test.ts',
             'test/useVoiceParts.test.ts',
             'test/attendanceRsvpSync.test.ts',
+            'test/eventRosterTable.test.ts',
           ],
           globals: true,
           alias: {
@@ -38,6 +39,7 @@ export default defineConfig({
             'test/eventCardSetList.test.ts',
             'test/useVoiceParts.test.ts',
             'test/attendanceRsvpSync.test.ts',
+            'test/eventRosterTable.test.ts',
           ],
           globals: true,
           alias: {

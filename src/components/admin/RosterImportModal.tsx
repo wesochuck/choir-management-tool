@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Modal } from '../ui';
+import { Modal, Button } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService, generateRandomPassword } from '../../services/profileService';
 import {
@@ -251,32 +251,32 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     switch (step) {
       case 'UPLOAD':
         return (
-          <>
-            <button onClick={handleModalClose} className="btn btn-ghost">Cancel</button>
-          </>
+          <div className="flex justify-end gap-2 w-full">
+            <Button onClick={handleModalClose} variant="outline">Cancel</Button>
+          </div>
         );
       case 'MAP':
         return (
-          <>
-            <button onClick={handleReset} className="btn btn-ghost mr-auto">Restart</button>
-            <button onClick={() => setStep('UPLOAD')} className="btn btn-ghost">Back</button>
-            <button onClick={handleApplyMapping} className="btn btn-primary">Preview & Validate</button>
-          </>
+          <div className="flex justify-end gap-2 w-full">
+            <Button onClick={handleReset} variant="outline" className="mr-auto">Restart</Button>
+            <Button onClick={() => setStep('UPLOAD')} variant="outline">Back</Button>
+            <Button onClick={handleApplyMapping} variant="primary">Preview & Validate</Button>
+          </div>
         );
       case 'PREVIEW':
         return (
-          <>
-            <button onClick={() => setStep('MAP')} className="btn btn-ghost">Back</button>
-            <button onClick={handleStartImport} className="btn btn-primary">Confirm & Import</button>
-          </>
+          <div className="flex justify-end gap-2 w-full">
+            <Button onClick={() => setStep('MAP')} variant="outline">Back</Button>
+            <Button onClick={handleStartImport} variant="primary">Confirm & Import</Button>
+          </div>
         );
       case 'IMPORTING':
         return null; // Don't allow closing/modifying during live import
       case 'COMPLETE':
         return (
-          <>
-            <button onClick={handleModalClose} className="btn btn-primary">Done</button>
-          </>
+          <div className="flex justify-end gap-2 w-full">
+            <Button onClick={handleModalClose} variant="primary">Done</Button>
+          </div>
         );
     }
   };
@@ -545,12 +545,13 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   Created {credentialsList.length} new login accounts. Download this CSV now to save their temporary login passwords.
                 </span>
               </div>
-              <button 
+              <Button 
                 onClick={handleDownloadCredentials} 
-                className="btn btn-primary flex h-10 items-center gap-[6px] whitespace-nowrap"
+                variant="primary"
+                className="flex h-10 items-center gap-[6px] whitespace-nowrap"
               >
                 📥 Download CSV
-              </button>
+              </Button>
             </div>
           )}
 

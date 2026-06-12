@@ -84,7 +84,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
         <div className="flex flex-row gap-1 rounded-md border border-border bg-white p-[2px]">
           <Button
             type="button"
-            variant={type === 'song' ? 'primary' : 'ghost'}
+            variant={type === 'song' ? 'primary' : 'outline'}
             size="small"
             className="!h-8"
             onClick={() => setType('song')}
@@ -94,7 +94,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </Button>
           <Button
             type="button"
-            variant={type === 'intermission' ? 'primary' : 'ghost'}
+            variant={type === 'intermission' ? 'primary' : 'outline'}
             size="small"
             className="!h-8"
             onClick={() => setType('intermission')}
@@ -137,7 +137,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                 <Button
                   key={p.id}
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="small"
                   onClick={() => handleAddItem(p)}
                   className="flex h-auto min-h-0 w-full flex-col items-start gap-0.5 rounded px-3 py-1.5 text-left"
@@ -149,7 +149,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
               
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="small"
                 onClick={() => handleAddItem()}
                 className="flex h-auto min-h-0 w-full flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary"

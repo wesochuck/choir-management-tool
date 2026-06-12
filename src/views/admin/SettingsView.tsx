@@ -371,7 +371,7 @@ function QueueWebhookSettings() {
               type="button"
               disabled={!token}
               onClick={handleCopy}
-              variant="ghost"
+              variant="outline"
               size="small"
               icon={
                 copied ? (

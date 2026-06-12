@@ -4,6 +4,7 @@ import { donationService, type DonationLevel } from '../services/donationService
 import { AppCard } from '../components/common/AppCard';
 import PublicLogo from '../components/common/PublicLogo';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
+import { Button } from '../components/ui';
 
 export default function PublicDonationView() {
   useDocumentTitle('Support Our Music');
@@ -103,7 +104,7 @@ export default function PublicDonationView() {
       <PublicLogo />
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
-          <Link to="/tickets" className="btn btn-ghost btn-sm self-start">← Back to Concerts</Link>
+          <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">← Back to Concerts</Button>
           <div className="flex flex-col gap-0.5">
             {choirName && <span className="text-xs font-bold tracking-wider text-text-muted uppercase">{choirName}</span>}
             <h1 className="text-display m-0">Support Our Music</h1>
@@ -241,13 +242,14 @@ export default function PublicDonationView() {
             </div>
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={submitting || effectiveAmount < 5}
-            className="btn btn-primary btn-lg h-12 w-full font-semibold"
+            className="h-12 w-full font-semibold"
+            variant="primary"
           >
             {submitting ? "Opening Secure Checkout…" : `Donate $${effectiveAmount.toFixed(2)}`}
-          </button>
+          </Button>
 
           <p className="m-0 text-center text-xs text-text-muted">
             Secure payment processing provided by Stripe.

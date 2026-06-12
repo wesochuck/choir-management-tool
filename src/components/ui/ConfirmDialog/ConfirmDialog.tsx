@@ -22,7 +22,7 @@ export function ConfirmDialog({
     <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="440px"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={loading}>{cancelLabel}</Button>
+          <Button variant="outline" onClick={onClose} disabled={loading}>{cancelLabel}</Button>
           <Button variant={variant === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>{confirmLabel}</Button>
         </>
       }

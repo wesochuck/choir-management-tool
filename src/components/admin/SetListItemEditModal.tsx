@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal } from '../ui';
+import { Modal, Button } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { isValidDurationString } from '../../lib/musicPieceUtils';
 import type { SetListItem } from '../../services/eventService';
@@ -95,30 +95,34 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       title="Edit Set List Item"
       maxWidth="500px"
       footer={
-        <>
-          <button type="button" className="btn btn-ghost" onClick={handleClose}>Cancel</button>
-          <button type="submit" form="edit-item-form" className="btn btn-primary">Update Item</button>
-        </>
+        <div className="flex justify-end gap-2">
+          <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
+          <Button type="submit" form="edit-item-form" variant="primary">Update Item</Button>
+        </div>
       }
     >
       <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col gap-[var(--space-md)]">
         <div className="flex-col gap-[var(--space-xs)]">
           <label className="text-label">Item Type</label>
           <div className="flex-row gap-[var(--space-sm)]">
-            <button
+            <Button
               type="button"
-              className={`btn btn-sm sl-modal-type-btn ${type === 'song' ? 'btn-primary' : 'btn-ghost'}`}
+              variant={type === 'song' ? 'primary' : 'outline'}
+              size="small"
+              className="sl-modal-type-btn"
               onClick={() => setType('song')}
             >
               🎼 Song
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={`btn btn-sm sl-modal-type-btn ${type === 'intermission' ? 'btn-primary' : 'btn-ghost'}`}
+              variant={type === 'intermission' ? 'primary' : 'outline'}
+              size="small"
+              className="sl-modal-type-btn"
               onClick={() => setType('intermission')}
             >
               ⏸️ Intermission
-            </button>
+            </Button>
           </div>
         </div>
 

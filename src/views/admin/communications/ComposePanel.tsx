@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
+import { Button } from '../../../components/ui';
 import { WizardStepper } from '../../../components/WizardStepper';
 import { TemplateGrid } from '../../../components/TemplateGrid';
 import { ComposeStep } from '../../../components/ComposeStep';
@@ -230,15 +231,15 @@ export function ComposePanel({
               <h2 className="text-lg font-semibold text-text">Step 1: Define Your Audience</h2>
               <p className="text-xs text-text-muted">Select filter criteria on the left and verify reachable users on the right.</p>
             </div>
-            <button 
-              className="btn btn-primary" 
+            <Button 
+              variant="primary" 
               onClick={() => {
                 setWizardStep('COMPOSE');
                 setStartedMessage(false);
               }}
             >
               Continue to Message
-            </button>
+            </Button>
           </div>
 
           {/* Two Column Grid */}
@@ -463,15 +464,15 @@ export function ComposePanel({
 
           {/* Sticky/Bottom Actions */}
           <div className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-end gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
-            <button 
-              className="btn btn-primary" 
+            <Button 
+              variant="primary" 
               onClick={() => {
                 setWizardStep('COMPOSE');
                 setStartedMessage(false);
               }}
             >
               Continue to Message
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -486,9 +487,9 @@ export function ComposePanel({
                   <h2 className="text-lg font-semibold text-text">Step 2: Choose how to start your message</h2>
                   <p className="text-xs text-text-muted">Select a template below or start with a blank message.</p>
                 </div>
-                <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
+                <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
                   ← Back to Audience
-                </button>
+                </Button>
               </div>
 
               <AppCard title="Templates & Quick Starts">
@@ -504,12 +505,12 @@ export function ComposePanel({
               </AppCard>
 
               <div className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-between border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:bg-transparent lg:p-0 lg:shadow-none">
-                <button className="btn btn-ghost" onClick={() => setWizardStep('TARGETS')}>
+                <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
                   ← Back to Audience
-                </button>
-                <button className="btn btn-primary" onClick={handleContinue}>
+                </Button>
+                <Button variant="primary" onClick={handleContinue}>
                   {selectedTemplateId === 'blank' ? 'Start Blank Message' : 'Use Template & Continue'}
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
@@ -518,16 +519,16 @@ export function ComposePanel({
               <div
                 className="flex w-full w-full flex-col items-center justify-between gap-2 border-b border-border pb-2.5 md:flex-row"
               >
-                <button className="btn btn-ghost" onClick={() => setStartedMessage(false)}>
+                <Button variant="outline" onClick={() => setStartedMessage(false)}>
                   ← Back to Template Selection
-                </button>
+                </Button>
                 <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
-                  <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                  <Button variant="secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                     {isSavingDraft ? 'Saving...' : 'Save Draft'}
-                  </button>
-                  <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
+                  </Button>
+                  <Button variant="primary" onClick={() => setWizardStep('REVIEW')}>
                     Next: Review & Send →
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
@@ -548,16 +549,16 @@ export function ComposePanel({
                   <div
                     className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex w-full flex-col items-center justify-between gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row lg:static lg:mx-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none"
                   >
-                    <button className="btn btn-ghost" onClick={() => setStartedMessage(false)}>
+                    <Button variant="outline" onClick={() => setStartedMessage(false)}>
                       ← Back to Template Selection
-                    </button>
+                    </Button>
                     <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
-                      <button className="btn btn-secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                      <Button variant="secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
                         {isSavingDraft ? 'Saving...' : 'Save Draft'}
-                      </button>
-                      <button className="btn btn-primary" onClick={() => setWizardStep('REVIEW')}>
+                      </Button>
+                      <Button variant="primary" onClick={() => setWizardStep('REVIEW')}>
                         Next: Review & Send →
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -644,9 +645,10 @@ export function ComposePanel({
             <AppCard
               title="Recipient Summary"
               actions={
-                <button
+                <Button
                   type="button"
-                  className="btn btn-ghost btn-sm"
+                  variant="outline"
+                  size="small"
                   disabled={selectedRecipients.length === 0}
                   onClick={() => onViewRecipients(selectedRecipients, 'Recipients Selected for Send')}
                 >
@@ -655,7 +657,7 @@ export function ComposePanel({
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2.5"
-                    className="inline-flex"
+                    className="inline-flex size-4 mr-1"
                   >
                     <line x1="8" y1="6" x2="21" y2="6" />
                     <line x1="8" y1="12" x2="21" y2="12" />
@@ -665,7 +667,7 @@ export function ComposePanel({
                     <line x1="3" y1="18" x2="3.01" y2="18" />
                   </svg>
                   View List
-                </button>
+                </Button>
               }
             >
               <div className="mt-1 grid grid-cols-3 gap-3 max-md:grid-cols-1">

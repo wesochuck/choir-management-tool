@@ -3,6 +3,8 @@ import type { useDialog } from '../../../contexts/DialogContext';
 import type { Event } from '../../../services/eventService';
 import { playerService } from '../../../services/playerService';
 
+import { Button } from '../../../components/ui';
+
 interface UseEventPlayerLinkArgs {
   dialog: ReturnType<typeof useDialog>;
 }
@@ -24,20 +26,22 @@ export function useEventPlayerLink({ dialog }: UseEventPlayerLinkArgs) {
               {url}
             </div>
             <div className="flex-row gap-2">
-              <button
-                className="btn btn-primary btn-sm"
+              <Button
+                variant="primary"
+                size="small"
                 onClick={() => {
                   navigator.clipboard.writeText(url);
                 }}
               >
                 Copy Link
-              </button>
-              <button
-                className="btn btn-secondary btn-sm"
+              </Button>
+              <Button
+                variant="secondary"
+                size="small"
                 onClick={() => window.open(url, '_blank')}
               >
                 Open Player
-              </button>
+              </Button>
             </div>
           </div>
         ),

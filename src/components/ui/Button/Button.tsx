@@ -1,8 +1,8 @@
 import type { ElementType, MouseEventHandler, ReactNode } from 'react';
 import { Spinner } from '../Spinner/Spinner';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'default' | 'small';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
+export type ButtonSize = 'default' | 'small' | 'tiny';
 
 export interface ButtonProps {
   as?: ElementType;
@@ -19,13 +19,14 @@ export interface ButtonProps {
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md',
   secondary: 'bg-primary-light text-primary-deep hover:bg-[#d1dfd6]',
-  ghost: 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
+  outline: 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
   danger: 'bg-danger-bg text-danger-text hover:bg-[#fecaca] hover:border-[#fca5a5]',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
   default: 'h-11 px-6 text-sm',
   small: 'h-8 px-4 text-xs',
+  tiny: 'h-6 px-2 text-[11px] gap-1',
 };
 
 export function Button({

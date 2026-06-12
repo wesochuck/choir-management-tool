@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { CHIP_COLORS, getChipColor } from '../../../lib/chipColorUtils';
+import { Button } from '../../../components/ui';
 
 export interface MultiSelectOption {
     id: string;
@@ -399,14 +400,16 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                 }}
                                 disabled={isCreating}
                             />
-                            <button
+                            <Button
                                 type="button"
-                                className="btn btn-secondary btn-sm inline-flex h-8 min-h-8 items-center justify-center rounded px-3 text-xs"
+                                variant="secondary"
+                                size="small"
+                                className="inline-flex h-8 min-h-8 items-center justify-center rounded px-3 text-xs"
                                 onClick={handleCreateOption}
                                 disabled={isCreating || !newOptionLabel.trim()}
                             >
                                 {isCreating ? 'Adding...' : 'Add'}
-                            </button>
+                            </Button>
                         </div>
                     )}
 

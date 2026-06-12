@@ -1,4 +1,5 @@
 import type { MusicPiece } from '../../../../types/musicLibrary';
+import { Button } from '../../../../components/ui';
 
 interface MusicLibraryTracksCellProps {
   piece: MusicPiece;
@@ -18,15 +19,17 @@ export function MusicLibraryTracksCell({
   return (
     <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
       {piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0 ? (
-        <button
-          className="btn btn-secondary btn-sm !m-0 !inline-flex !h-6 !min-h-6 !items-center !gap-1 !p-[2px_8px] !text-[11px]"
+        <Button
+          variant="secondary"
+          size="tiny"
+          className="!m-0"
           onClick={(e) => {
             e.stopPropagation();
             onPlayTrack(piece);
           }}
         >
           🎵 Play
-        </button>
+        </Button>
       ) : isParent && totalMovementTracksCount > 0 ? (
         <span
           onClick={(e) => {

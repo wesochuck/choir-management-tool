@@ -6,6 +6,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { calendarUtils } from '../lib/calendar';
 import { formatInTimezone } from '../lib/timezone';
 import { useDialog } from '../contexts/DialogContext';
+import { Button } from '../components/ui';
 
 interface EventDetails {
   id: string;
@@ -317,18 +318,22 @@ export default function PublicRsvpView() {
               {errorMessage}
             </p>
             <div className="mt-4 flex w-full flex-col gap-2">
-              <a
+              <Button
+                as="a"
                 href="/login"
-                className="btn btn-primary inline-flex h-11 w-full items-center justify-center font-bold no-underline"
+                variant="primary"
+                className="w-full font-bold no-underline"
               >
                 Sign In to Member Portal
-              </a>
-              <a
+              </Button>
+              <Button
+                as="a"
                 href="mailto:admin@choir.org"
-                className="btn btn-ghost inline-flex h-11 w-full items-center justify-center border border-border font-bold no-underline"
+                variant="outline"
+                className="w-full font-bold no-underline"
               >
                 📧 Contact Choir Admins
-              </a>
+              </Button>
             </div>
           </div>
         </AppCard>
@@ -390,19 +395,22 @@ export default function PublicRsvpView() {
 
               <div className="flex w-full gap-2 border-t border-border pt-4">
                 {dbRsvp === 'Yes' && (
-                  <button 
+                  <Button 
                     onClick={handleDownloadCalendar}
-                    className="btn btn-secondary h-11 flex-1 justify-center gap-1.5 font-bold"
+                    variant="secondary"
+                    className="flex-1 font-bold"
                   >
                     📅 Add to Calendar (.ics)
-                  </button>
+                  </Button>
                 )}
-                <a 
+                <Button 
+                  as="a"
                   href="/login" 
-                  className="btn btn-ghost inline-flex h-11 flex-1 items-center justify-center border border-border font-bold no-underline"
+                  variant="outline"
+                  className="flex-1 font-bold no-underline"
                 >
                   Sign In to Portal
-                </a>
+                </Button>
               </div>
             </div>
           ) : !isConfirmed ? (
@@ -427,14 +435,15 @@ export default function PublicRsvpView() {
                   Are you planning to attend?
                 </p>
                 <div className="flex w-full gap-2">
-                  <button
+                  <Button
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
-                    className={`btn btn-primary h-12 flex-1 justify-center font-bold ${selectedRsvp === 'Yes' ? 'opacity-100 border-2 border-primary-deep' : 'opacity-60 border border-border'}`}
+                    variant="primary"
+                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'Yes' ? 'opacity-100 border-2 border-primary-deep' : 'opacity-60 border border-border'}`}
                   >
                     {isUpdating && selectedRsvp === 'Yes' ? 'Confirming...' : 'Yes, I Will Attend'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       if (event.type === 'Rehearsal' && selectedRsvp !== 'No') {
                         setSelectedRsvp('No');
@@ -443,10 +452,11 @@ export default function PublicRsvpView() {
                       }
                     }}
                     disabled={isUpdating}
-                    className={`btn h-12 flex-1 justify-center font-bold ${selectedRsvp === 'No' ? 'bg-[#ef4444] text-white opacity-100 border-2 border-[#991b1b]' : 'bg-[#ef4444] text-white opacity-60 border border-border'}`}
+                    variant="danger"
+                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'No' ? 'opacity-100 border-2 border-[#991b1b]' : 'opacity-60 border border-border'}`}
                   >
                     {isUpdating && selectedRsvp === 'No' ? 'Confirming...' : (event.type === 'Rehearsal' && selectedRsvp === 'No' ? 'Confirm RSVP Decline' : 'No, I Cannot Attend')}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -484,13 +494,15 @@ export default function PublicRsvpView() {
                     <p className="m-0 text-xs text-text-muted">
                       This note is visible to choir admins.
                     </p>
-                    <button 
+                    <Button 
                       onClick={() => handleConfirmRsvp('No')}
                       disabled={isUpdating}
-                      className="btn btn-primary h-9 px-4 text-xs font-bold"
+                      variant="primary"
+                      size="small"
+                      className="font-bold"
                     >
                       {isUpdating ? 'Saving...' : 'Save Note'}
-                    </button>
+                    </Button>
                   </div>
                 )}
                 <div className="flex flex-col gap-1.5">
@@ -499,18 +511,19 @@ export default function PublicRsvpView() {
                   </label>
                   
                   <div className="flex h-12 w-full rounded-xl border border-border bg-[var(--primary-light,#f1f5f9)] p-1 max-sm:h-auto max-sm:flex-col max-sm:gap-2 max-sm:border-none max-sm:bg-transparent max-sm:p-0">
-                    <button
+                    <Button
                       onClick={() => handleConfirmRsvp('Yes')}
                       disabled={isUpdating}
-                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${
+                      variant={isAttending ? 'primary' : 'outline'}
+                      className={`h-full flex-1 text-sm font-bold transition-all ${
                         isAttending
-                          ? 'bg-primary text-white shadow-[0_2px_8px_rgba(74,117,89,0.2)]'
-                          : 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted'
+                          ? 'shadow-[0_2px_8px_rgba(74,117,89,0.2)]'
+                          : 'shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)]'
                       }`}
                     >
                       {isUpdating && isAttending ? 'Updating...' : 'I Will Attend'}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => {
                         if (event.type === 'Rehearsal' && selectedRsvp !== 'No') {
                           setSelectedRsvp('No');
@@ -519,14 +532,15 @@ export default function PublicRsvpView() {
                         }
                       }}
                       disabled={isUpdating}
-                      className={`btn h-full flex-1 cursor-pointer rounded-lg border-none text-sm font-bold transition-all ${
+                      variant={!isAttending ? 'danger' : 'outline'}
+                      className={`h-full flex-1 text-sm font-bold transition-all ${
                         !isAttending
-                          ? 'bg-[#ef4444] text-white shadow-[0_2px_8px_rgba(239,68,68,0.2)]'
-                          : 'bg-transparent text-text-muted shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)] max-sm:text-text-muted'
+                          ? 'shadow-[0_2px_8px_rgba(239,68,68,0.2)]'
+                          : 'shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:border-border max-sm:bg-[var(--border-light,#f8fafc)]'
                       }`}
                     >
                       {isUpdating && !isAttending ? 'Updating...' : 'I Cannot Attend'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -537,19 +551,22 @@ export default function PublicRsvpView() {
 
                 <div className="flex w-full gap-2 border-t border-border pt-4 max-sm:flex-col max-sm:items-stretch">
                   {isAttending && (
-                    <button 
+                    <Button 
                       onClick={handleDownloadCalendar}
-                      className="btn btn-secondary h-11 flex-1 justify-center gap-1.5 font-bold"
+                      variant="secondary"
+                      className="flex-1 font-bold"
                     >
                       📅 Add to Calendar (.ics)
-                    </button>
+                    </Button>
                   )}
-                  <a 
+                  <Button 
+                    as="a"
                     href="/login" 
-                    className="btn btn-ghost inline-flex h-11 flex-1 items-center justify-center border border-border font-bold no-underline"
+                    variant="outline"
+                    className="flex-1 font-bold no-underline"
                   >
                     Sign In to Portal
-                  </a>
+                  </Button>
                 </div>
               </div>
             </div>

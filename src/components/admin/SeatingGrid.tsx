@@ -6,6 +6,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { removeSeatFromRow, removeRowAndShiftAssignments } from '../../lib/seatingSync';
 import { isSectionMismatch } from '../../lib/voicePartUtils';
 import { getContrastColor } from '../../lib/colorUtils';
+import { Button } from '../ui';
 
 
 interface SeatingGridProps {
@@ -223,17 +224,19 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
       {/* Add Row to Back Button */}
       {!isReadOnly && onUpdateRowCounts && (
-        <button
+        <Button
           onClick={() => {
             const defaultSeats = 10;
             const newRowCounts = [...rowCounts, defaultSeats];
             onUpdateRowCounts(newRowCounts);
           }}
-          className="btn btn-sm btn-ghost no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mb-[var(--space-xs)]"
+          variant="outline"
+          size="small"
+          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mb-[var(--space-xs)]"
           title="Add a new row with 10 seats at the back"
         >
           ➕ Add Row to Back
-        </button>
+        </Button>
       )}
 
       {rowCounts.map((_, index) => {
@@ -612,7 +615,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
       {/* Add Row to Front Button */}
       {!isReadOnly && onUpdateRowCounts && (
-        <button
+        <Button
           onClick={() => {
             const defaultSeats = 10;
             const newRowCounts = [defaultSeats, ...rowCounts];
@@ -624,11 +627,13 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             });
             onUpdateRowCounts(newRowCounts, shiftedAssignments);
           }}
-          className="btn btn-sm btn-ghost no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mt-[var(--space-xs)]"
+          variant="outline"
+          size="small"
+          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mt-[var(--space-xs)]"
           title="Add a new row with 10 seats at the front"
         >
           ➕ Add Row to Front
-        </button>
+        </Button>
       )}
 
       {/* Director Indicator */}

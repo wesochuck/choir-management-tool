@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { pb } from '../../lib/pocketbase';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { Button } from '../../components/ui';
 
 const dashboardSections = [
   {
@@ -106,8 +107,8 @@ export default function AdminDashboardView() {
             </div>
           </div>
           <div className="flex flex-row items-center gap-4">
-            <Link to="/profile" className="btn btn-ghost">My Profile</Link>
-            <button onClick={handleLogout} className="btn btn-ghost">Logout</button>
+            <Button as={Link} to="/profile" variant="outline">My Profile</Button>
+            <Button onClick={handleLogout} variant="outline">Logout</Button>
           </div>
         </div>
       </header>

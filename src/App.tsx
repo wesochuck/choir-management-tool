@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { PageLayout } from './components/common/PageLayout';
+import { Button } from './components/ui';
 
 function lazyWithReload<T extends React.ComponentType<Record<string, never>>>(
   importer: () => Promise<{ default: T }>
@@ -106,9 +107,9 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
             The app may have been updated while your browser still had an older version cached.
             Refresh the page to load the latest version.
           </p>
-          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+          <Button variant="primary" onClick={() => window.location.reload()}>
             Refresh Page
-          </button>
+          </Button>
         </div>
       );
     }

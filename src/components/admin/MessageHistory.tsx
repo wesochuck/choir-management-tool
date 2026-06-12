@@ -4,6 +4,7 @@ import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Pagination } from '../common/Pagination';
+import { Button } from '../ui';
 
 export type SourceFilter = 'all' | 'manual' | 'automated';
 
@@ -169,9 +170,10 @@ export function MessageHistory({
                       )}
                     </td>
                     <td className="p-3 px-4 text-center">
-                      <button
+                      <Button
                         type="button"
-                        className="btn btn-ghost h-auto min-h-0 cursor-pointer border-0 bg-transparent p-0 text-xs text-primary underline"
+                        variant="outline"
+                        className="h-auto min-h-0 cursor-pointer border-0 bg-transparent p-0 text-xs text-primary underline"
                         onClick={() =>
                           onViewRecipients(
                             message.recipients,
@@ -180,7 +182,7 @@ export function MessageHistory({
                         }
                       >
                         {message.recipients.length} recipient{message.recipients.length !== 1 ? 's' : ''}
-                      </button>
+                      </Button>
                     </td>
                     <td className="p-3 px-4">
                       {message.status === 'Archived' ? (
@@ -195,12 +197,12 @@ export function MessageHistory({
                     </td>
                     <td className="p-3 px-4 text-right whitespace-nowrap">
                       <div className="flex justify-end gap-2">
-                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => onViewDetails(message)}>
+                        <Button type="button" variant="outline" size="small" onClick={() => onViewDetails(message)}>
                           Details
-                        </button>
-                        <button type="button" className="btn btn-secondary btn-sm" onClick={() => onCopyDraft(message)}>
+                        </Button>
+                        <Button type="button" variant="secondary" size="small" onClick={() => onCopyDraft(message)}>
                           Copy to Draft
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

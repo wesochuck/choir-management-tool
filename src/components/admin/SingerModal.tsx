@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal } from '../ui';
+import { Modal, Button } from '../ui';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
@@ -176,27 +176,30 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           {activeTab === 'profile' ? (
             <>
               {initialData && onDelete && (
-                <button
+                <Button
                   type="button"
                   onClick={handleDelete}
                   disabled={isDeleting || isSubmitting}
-                  className="btn btn-danger mr-auto"
+                  variant="danger"
+                  className="mr-auto"
+                  loading={isDeleting}
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete Singer'}
-                </button>
+                  Delete Singer
+                </Button>
               )}
-              <button type="button" onClick={handleClose} className="btn btn-ghost">Cancel</button>
-              <button 
+              <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
+              <Button 
                 type="submit" 
                 form="singer-form"
                 disabled={isSubmitting}
-                className="btn btn-primary"
+                variant="primary"
+                loading={isSubmitting}
               >
-                {isSubmitting ? 'Saving...' : 'Save Changes'}
-              </button>
+                Save Changes
+              </Button>
             </>
           ) : (
-            <button type="button" onClick={handleClose} className="btn btn-primary">Close</button>
+            <Button type="button" onClick={handleClose} variant="primary">Close</Button>
           )}
         </>
       }
@@ -284,14 +287,17 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               </p>
               {initialData?.user && formData.email && (
                 <div className="mt-[6px] flex flex-col items-start gap-1">
-                  <button
+                  <Button
                     type="button"
                     onClick={handleResetPassword}
                     disabled={isResettingPassword}
-                    className="btn btn-xs btn-secondary flex h-6 cursor-pointer items-center gap-1 px-2 text-[11px] font-semibold"
+                    variant="secondary"
+                    size="tiny"
+                    className="cursor-pointer font-semibold"
+                    loading={isResettingPassword}
                   >
-                    {isResettingPassword ? 'Sending Link...' : '🔑 Reset Password'}
-                  </button>
+                    🔑 Reset Password
+                  </Button>
                   {resetFeedback && (
                     <span 
                       className="text-[11px] font-semibold"

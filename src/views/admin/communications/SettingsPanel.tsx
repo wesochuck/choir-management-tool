@@ -6,6 +6,8 @@ import type { TemplateRecord } from '../../../services/communicationService';
 import { useDialog } from '../../../contexts/DialogContext';
 import { TemplatesPanel } from './TemplatesPanel';
 
+import { Button } from '../../../components/ui';
+
 export interface SettingsPanelProps {
   commSettings: CommunicationSettings;
   setCommSettings: React.Dispatch<React.SetStateAction<CommunicationSettings>>;
@@ -115,26 +117,26 @@ export function SettingsPanel({
                   onChange={(e) => setTestEmailAddress(e.target.value)}
                   placeholder="e.g. test@example.com"
                 />
-                <button
+                <Button
                   type="button"
-                  className="btn btn-secondary"
+                  variant="secondary"
                   onClick={onSendConnectionTest}
                   disabled={isTestingSmtp || !testEmailAddress}
                 >
                   {isTestingSmtp ? 'Sending Test...' : '🧪 Send Test Email'}
-                </button>
+                </Button>
               </div>
             </div>
           </AppCard>
 
           <div className="flex justify-end">
-            <button
-              className="btn btn-primary"
+            <Button
+              variant="primary"
               onClick={onSaveSettings}
               disabled={isSavingConfig}
             >
               {isSavingConfig ? 'Saving...' : 'Save Settings'}
-            </button>
+            </Button>
           </div>
         </>
       )}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { renderCommunicationTemplate, type CommunicationSettings } from '../../../services/settingsService';
 import type { AutomatedTask } from './types';
+import { Button } from '../../../components/ui';
 
 interface AutomatedTasksPanelProps {
   upcomingTasks: AutomatedTask[];
@@ -79,22 +80,25 @@ export function AutomatedTasksPanel({
                   </td>
                   <td className="p-3 px-4 text-right whitespace-nowrap">
                     <div className="flex justify-end gap-2">
-                      <button
-                        className="btn btn-ghost btn-sm"
+                      <Button
+                        variant="outline"
+                        size="small"
                         disabled={isSending || isArchiving === task.id}
                         onClick={() => handleArchive(task)}
                       >
                         {isArchiving === task.id ? 'Archiving…' : 'Archive'}
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="small"
                         disabled={isSending || isArchiving === task.id}
                         onClick={() => onViewTaskRecipients(task)}
                       >
                         {task.type === 'Report' ? 'View Admins' : 'Recipients'}
-                      </button>
-                      <button
-                        className="btn btn-primary btn-sm"
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="small"
                         disabled={isSending || isArchiving === task.id}
                         onClick={async () => {
                           if (task.type === 'Report') {
@@ -123,7 +127,7 @@ export function AutomatedTasksPanel({
                         }}
                       >
                         {task.type === 'Report' ? 'Send Now' : 'Open Compose'}
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

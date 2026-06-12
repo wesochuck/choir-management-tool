@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { reportService, type ConcertSummary } from '../../services/reportService';
 import { eventService, type Event } from '../../services/eventService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
+import { Button } from '../../components/ui';
 
 type ReportTab = 'attendance' | 'repertoire';
 
@@ -160,12 +161,12 @@ export default function ReportsView() {
       <div className="flex flex-col items-center justify-between md:flex-row">
         <h1 className="text-display m-0">Reports & Insights</h1>
         <div className="flex-row gap-2">
-            <button className={`btn ${tab === 'attendance' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('attendance')}>
+            <Button variant={tab === 'attendance' ? 'primary' : 'outline'} onClick={() => setTab('attendance')}>
                 Attendance
-            </button>
-            <button className={`btn ${tab === 'repertoire' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setTab('repertoire')}>
+            </Button>
+            <Button variant={tab === 'repertoire' ? 'primary' : 'outline'} onClick={() => setTab('repertoire')}>
                 Repertoire History
-            </button>
+            </Button>
         </div>
       </div>
 
@@ -192,12 +193,12 @@ export default function ReportsView() {
 
               {summary && (
                 <div className="flex-row">
-                  <button onClick={handleExportCSV} className="btn btn-secondary btn-sm">
-                    <span>📥</span> Download CSV
-                  </button>
-                  <button onClick={handlePrint} className="btn btn-ghost btn-sm">
-                    <span>🖨️</span> Print Report
-                  </button>
+                  <Button onClick={handleExportCSV} variant="secondary" size="small">
+                    📥 Download CSV
+                  </Button>
+                  <Button onClick={handlePrint} variant="outline" size="small">
+                    🖨️ Print Report
+                  </Button>
                 </div>
               )}
             </div>
@@ -300,12 +301,12 @@ export default function ReportsView() {
                     <p className="text-muted">A consolidated view of all library pieces and their performance dates.</p>
                 </div>
                 <div className="flex-row gap-2">
-                    <button onClick={handleExportCSV} className="btn btn-secondary btn-sm" disabled={isRepertoireLoading || repertoireStats.length === 0}>
-                        <span>📥</span> Download CSV
-                    </button>
-                    <button onClick={handlePrint} className="btn btn-ghost btn-sm" disabled={isRepertoireLoading || repertoireStats.length === 0}>
-                        <span>🖨️</span> Print Report
-                    </button>
+                    <Button onClick={handleExportCSV} variant="secondary" size="small" disabled={isRepertoireLoading || repertoireStats.length === 0}>
+                        📥 Download CSV
+                    </Button>
+                    <Button onClick={handlePrint} variant="outline" size="small" disabled={isRepertoireLoading || repertoireStats.length === 0}>
+                        🖨️ Print Report
+                    </Button>
                 </div>
             </div>
 

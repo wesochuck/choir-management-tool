@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import PublicLogo from '../components/common/PublicLogo';
+import { Button } from '../components/ui';
 import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
@@ -110,7 +111,7 @@ export default function PublicAuditionView() {
       <PublicLogo />
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
-          <Link to="/login" className="btn btn-ghost btn-sm self-start">Admin Login</Link>
+          <Button as={Link} to="/login" variant="outline" size="small" className="self-start">Admin Login</Button>
           <h1 className="text-display m-0">Choir Auditions</h1>
           {!submitted && (
             <p className="m-0 text-text-muted">
@@ -136,12 +137,14 @@ export default function PublicAuditionView() {
               {settings.confirmationMessage}
             </p>
             {homepageUrl && (
-              <a 
+              <Button 
+                as="a"
                 href={homepageUrl} 
-                className="btn btn-primary mt-4 inline-flex items-center gap-1.5 self-start no-underline"
+                className="mt-4 inline-flex items-center gap-1.5 self-start no-underline"
+                variant="primary"
               >
                 🏠 Visit our Homepage
-              </a>
+              </Button>
             )}
           </div>
         ) : (
@@ -252,9 +255,9 @@ export default function PublicAuditionView() {
                 />
               </div>
               {error && <p className="m-0 text-danger-text">{error}</p>}
-              <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} variant="primary">
                 {isSubmitting ? 'Submitting...' : 'Request Audition'}
-              </button>
+              </Button>
             </form>
           </div>
         )}

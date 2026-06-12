@@ -1,4 +1,6 @@
 
+import { Button } from '../ui';
+
 interface FloatingSaveBarProps {
   isDirty: boolean;
   isSaving: boolean;
@@ -17,22 +19,25 @@ export function FloatingSaveBar({ isDirty, isSaving, onSave, onDiscard }: Floati
         </span>
       </div>
       <div className="flex gap-3">
-        <button 
+        <Button 
           type="button" 
-          className="btn btn-ghost btn-sm" 
+          variant="outline"
+          size="small"
           disabled={isSaving}
           onClick={onDiscard}
         >
           Discard
-        </button>
-        <button 
+        </Button>
+        <Button 
           type="button" 
-          className="btn btn-primary btn-sm" 
+          variant="primary"
+          size="small"
           disabled={isSaving}
           onClick={onSave}
+          loading={isSaving}
         >
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </button>
+          Save Changes
+        </Button>
       </div>
     </div>
   );

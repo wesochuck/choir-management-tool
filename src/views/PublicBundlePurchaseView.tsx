@@ -4,6 +4,7 @@ import { pb } from '../lib/pocketbase';
 import { ticketService, type TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
+import { Button } from '../components/ui';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { sanitizeHtml } from '../lib/textSafety';
 
@@ -56,7 +57,7 @@ export default function PublicBundlePurchaseView() {
           <p className="m-0 text-danger-text">
             {error || 'This season ticket bundle is not currently active for purchase.'}
           </p>
-          <Link to="/tickets" className="btn btn-ghost no-underline">Back to Concerts</Link>
+          <Button as={Link} to="/tickets" variant="outline" className="no-underline">Back to Concerts</Button>
         </AppCard>
       </div>
     );
@@ -70,7 +71,7 @@ export default function PublicBundlePurchaseView() {
           <p className="m-0 text-danger-text">
             The sale period for this season ticket bundle has ended.
           </p>
-          <Link to="/tickets" className="btn btn-ghost no-underline">Back to Concerts</Link>
+          <Button as={Link} to="/tickets" variant="outline" className="no-underline">Back to Concerts</Button>
         </AppCard>
       </div>
     );
@@ -109,7 +110,7 @@ export default function PublicBundlePurchaseView() {
     <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
-          <Link to="/tickets" className="btn btn-ghost btn-sm self-start">← Back to Tickets</Link>
+          <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">← Back to Tickets</Button>
           <div className="flex flex-col gap-0.5">
             {choirName && <span className="text-xs font-bold tracking-wider text-text-muted uppercase">{choirName}</span>}
             <h1 className="text-display m-0">Buy Season Tickets</h1>
@@ -238,13 +239,14 @@ export default function PublicBundlePurchaseView() {
             </label>
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={submitting}
-            className="btn btn-primary btn-lg h-12 w-full font-semibold"
+            className="h-12 w-full font-semibold"
+            variant="primary"
           >
             {submitting ? "Opening Secure Checkout…" : "Proceed to Payment"}
-          </button>
+          </Button>
         </form>
       </AppCard>
     </div>

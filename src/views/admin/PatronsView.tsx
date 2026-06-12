@@ -305,7 +305,7 @@ export default function PatronsView() {
               </div>
               {(searchQuery || startDate || endDate) && (
                 <Button 
-                  variant="ghost" 
+                  variant="outline" 
                   onClick={handleClearFilters}
                   className="h-10 px-3 flex items-center justify-center font-semibold"
                   title="Reset filters"

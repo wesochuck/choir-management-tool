@@ -161,7 +161,7 @@ export const SortableSetListItem: React.FC<Props> = ({
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="small" onClick={() => onEdit(item)}>Edit</Button>
+        <Button variant="outline" size="small" onClick={() => onEdit(item)}>Edit</Button>
         {hasAudio && onPlayTrack && (
           <Button 
             variant="secondary" 

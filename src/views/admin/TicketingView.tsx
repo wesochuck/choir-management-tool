@@ -699,7 +699,7 @@ export default function TicketingView() {
                 {(searchQuery) && (
                   <div className="flex items-end gap-2 md:col-span-1">
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       onClick={() => setSearchQuery('')}
                       className="h-10 px-3 flex items-center justify-center font-semibold"
                       title="Reset search"
@@ -1250,7 +1250,7 @@ export default function TicketingView() {
         footer={
           <div className="flex flex-row gap-4">
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => setIsModalOpen(false)}
             >
               Cancel

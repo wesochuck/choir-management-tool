@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { pb } from '../lib/pocketbase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { Button } from '../components/ui';
 
 type LoginMode = 'otp' | 'password';
 type OtpStep = 'request' | 'verify';
@@ -202,13 +203,14 @@ export default function LoginView() {
             {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
             {resetSuccess && <p className="m-0 text-xs font-semibold text-primary">{resetSuccess}</p>}
 
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="btn btn-primary mt-1 w-full"
+              variant="primary"
+              className="mt-1 w-full"
             >
               {isLoading ? 'Sending reset link...' : 'Send Reset Link'}
-            </button>
+            </Button>
 
             <button
               type="button"
@@ -240,13 +242,14 @@ export default function LoginView() {
                       />
                     </div>
                     {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
-                    <button
+                    <Button
                       type="submit"
                       disabled={isLoading}
-                      className="btn btn-primary mt-1 w-full"
+                      variant="primary"
+                      className="mt-1 w-full"
                     >
                       {isLoading ? 'Sending Login Code...' : 'Send Login Code'}
-                    </button>
+                    </Button>
                   </form>
                 ) : (
                   <form onSubmit={handleVerifyOTP} className="flex flex-col gap-6">
@@ -294,13 +297,14 @@ export default function LoginView() {
                     {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
                     {resetSuccess && <p className="m-0 text-xs font-semibold text-primary">{resetSuccess}</p>}
 
-                    <button
+                    <Button
                       type="submit"
                       disabled={isLoading || countdown <= 0}
-                      className="btn btn-primary mt-1 w-full"
+                      variant="primary"
+                      className="mt-1 w-full"
                     >
                       {isLoading ? 'Verifying...' : 'Verify & Sign In'}
-                    </button>
+                    </Button>
 
                     <button
                       type="button"
@@ -367,13 +371,14 @@ export default function LoginView() {
                   />
                 </div>
                 {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
-                <button
+                <Button
                   type="submit"
                   disabled={isLoading}
-                  className="btn btn-primary mt-4 w-full"
+                  variant="primary"
+                  className="mt-4 w-full"
                 >
                   {isLoading ? 'Logging in...' : 'Login'}
-                </button>
+                </Button>
               </form>
             )}
           </div>

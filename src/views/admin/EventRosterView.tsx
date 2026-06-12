@@ -151,7 +151,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           )}
           {!isInline ? (
             <Button 
-              variant="ghost"
+              variant="outline"
               size="small"
               onClick={() => navigate('/admin/events')}
             >
@@ -159,7 +159,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             </Button>
           ) : onClose ? (
             <Button 
-              variant="ghost"
+              variant="outline"
               size="small"
               onClick={onClose}
             >

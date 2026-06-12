@@ -26,7 +26,7 @@ export function FloatingSaveBar({
       </div>
       <div className="flex shrink-0 gap-2 max-sm:flex-col">
         {onDiscard && (
-          <Button variant="ghost" size="small" disabled={saving} onClick={onDiscard}>
+          <Button variant="outline" size="small" disabled={saving} onClick={onDiscard}>
             Discard
           </Button>
         )}

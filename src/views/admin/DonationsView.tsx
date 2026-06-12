@@ -482,7 +482,7 @@ export default function DonationsView() {
                   </div>
                   {(searchQuery || startDate || endDate) && (
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       onClick={handleClearFilters}
                       className="h-10 px-3 flex items-center justify-center font-semibold"
                       title="Reset filters"
@@ -795,7 +795,7 @@ export default function DonationsView() {
 
                         <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-50 pt-3 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                           <Button 
-                            variant="ghost" 
+                            variant="outline" 
                             size="small" 
                             className="h-8 font-bold border-none"
                             onClick={() => openLevelModal(l)}
@@ -846,7 +846,7 @@ export default function DonationsView() {
         maxWidth="500px"
         footer={
           <div className="flex justify-end gap-2 w-full">
-            <Button variant="ghost" className="font-semibold" onClick={() => setIsModalOpen(false)} disabled={saving}>
+            <Button variant="outline" className="font-semibold" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </Button>
             <Button 

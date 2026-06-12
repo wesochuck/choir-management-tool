@@ -1,6 +1,6 @@
 import React from 'react';
 import EasyMDE from 'easymde';
-import { Modal } from '../../../components/ui';
+import { Button, Modal } from '../../../components/ui';
 import { PollSelectionModal } from '../../../components/admin/PollSelectionModal';
 import type {
   MessageRecord,
@@ -66,9 +66,9 @@ export function CommunicationModals({
         title="Message Details"
         maxWidth="600px"
         footer={
-          <button className="btn btn-secondary" onClick={() => setSelectedMessage(null)}>
+          <Button variant="secondary" onClick={() => setSelectedMessage(null)}>
             Cancel
-          </button>
+          </Button>
         }
       >
         {selectedMessage && (
@@ -118,13 +118,13 @@ export function CommunicationModals({
         title={recipientPreviewList.title}
         maxWidth="500px"
         footer={
-          <button
+          <Button
             type="button"
-            className="btn btn-secondary"
+            variant="secondary"
             onClick={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })}
           >
             Cancel
-          </button>
+          </Button>
         }
       >
         <div className="flex flex-wrap gap-2">

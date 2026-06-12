@@ -12,7 +12,7 @@ import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
-import { Modal } from '../../components/ui';
+import { Button, Modal } from '../../components/ui';
 
 
 export default function DashboardView() {
@@ -190,8 +190,8 @@ export default function DashboardView() {
       title="Singer Dashboard" 
       actions={
         <div className="flex-row gap-2">
-          <Link to="/profile" className="btn btn-ghost">My Profile</Link>
-          <button onClick={() => pb.authStore.clear()} className="btn btn-ghost">Logout</button>
+          <Button as={Link} to="/profile" variant="outline">My Profile</Button>
+          <Button onClick={() => pb.authStore.clear()} variant="outline">Logout</Button>
         </div>
       }
       maxWidth="1200px"
@@ -210,14 +210,14 @@ export default function DashboardView() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Link to={`/player?eventId=${nextEvent.id}`} className="btn btn-primary">
+                  <Button as={Link} to={`/player?eventId=${nextEvent.id}`} variant="primary">
                     🎵 Practice
-                  </Link>
+                  </Button>
 
                   {hasPerformanceSeatLink && (
-                    <Link to={`/seating/${nextEvent.id}`} className="btn btn-secondary">
+                    <Button as={Link} to={`/seating/${nextEvent.id}`} variant="secondary">
                       🪑 Seat
-                    </Link>
+                    </Button>
                   )}
                 </div>
 
@@ -228,22 +228,24 @@ export default function DashboardView() {
                 ) : (
                   <>
                     <div className="grid grid-cols-2 gap-2">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => handleUpdateRSVP(nextEvent.id, 'Yes')}
-                        className={`btn btn-sm ${nextRoster?.rsvp === 'Yes' ? 'btn-primary' : 'btn-ghost'}`}
+                        variant={nextRoster?.rsvp === 'Yes' ? 'primary' : 'outline'}
+                        size="small"
                         disabled={isNextEventClosed || submittingRsvpStatus !== null}
                       >
                         {submittingRsvpStatus === 'Yes' ? 'Processing...' : nextEventLabels.yes}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => handleUpdateRSVP(nextEvent.id, 'No')}
-                        className={`btn btn-sm ${nextRoster?.rsvp === 'No' ? 'btn-danger' : 'btn-ghost'}`}
+                        variant={nextRoster?.rsvp === 'No' ? 'danger' : 'outline'}
+                        size="small"
                         disabled={isNextEventClosed || submittingRsvpStatus !== null}
                       >
                         {submittingRsvpStatus === 'No' ? 'Processing...' : nextEventLabels.no}
-                      </button>
+                      </Button>
                     </div>
                     {isNextEventClosed && (
                       <div className="text-muted mt-1 text-center text-xs">
@@ -311,22 +313,22 @@ export default function DashboardView() {
                     <div key={poll.id} className="rounded-xl flex flex-col gap-1 border border-border p-2 shadow-none">
                       <div className="text-sm font-bold">{poll.question}</div>
                       <div className="flex-row gap-1">
-                        <button 
-                          className={`btn btn-sm flex-1 border border-border font-bold ${
-                            poll.status === 'Yes' ? 'bg-primary text-white' : 'bg-white text-[var(--neutral-text)]'
-                          }`}
+                        <Button 
+                          size="small"
+                          variant={poll.status === 'Yes' ? 'primary' : 'outline'}
+                          className="flex-1 font-bold border border-border"
                           onClick={() => handlePollResponse(poll.id, 'Yes')}
                         >
                           {poll.status === 'Yes' ? '✓ Yes' : 'Yes'}
-                        </button>
-                        <button 
-                          className={`btn btn-sm flex-1 border border-border font-bold ${
-                            poll.status === 'No' ? 'bg-[#ef4444] text-white' : 'bg-white text-[var(--neutral-text)]'
-                          }`}
+                        </Button>
+                        <Button 
+                          size="small"
+                          variant={poll.status === 'No' ? 'danger' : 'outline'}
+                          className="flex-1 font-bold border border-border"
                           onClick={() => handlePollResponse(poll.id, 'No')}
                         >
                           {poll.status === 'No' ? '✗ No' : 'No'}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -402,13 +404,14 @@ export default function DashboardView() {
         title={selectedAnnouncement?.subject || 'Bulletin details'}
         maxWidth="600px"
         footer={
-          <button 
+          <Button 
             type="button" 
             onClick={() => setSelectedAnnouncement(null)} 
-            className="btn btn-secondary btn-sm"
+            variant="secondary"
+            size="small"
           >
             Close
-          </button>
+          </Button>
         }
       >
         {selectedAnnouncement && (

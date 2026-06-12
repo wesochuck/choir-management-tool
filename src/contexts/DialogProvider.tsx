@@ -98,7 +98,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
           activeDialog && (
             <div className="flex w-full justify-end gap-2">
               {(activeDialog.type === 'confirm' || activeDialog.type === 'prompt') && (
-                <Button variant="ghost" onClick={() => closeDialog(null)}>
+                <Button variant="outline" onClick={() => closeDialog(null)}>
                   {activeDialog.options.cancelLabel || 'Cancel'}
                 </Button>
               )}

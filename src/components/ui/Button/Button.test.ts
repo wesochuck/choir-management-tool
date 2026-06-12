@@ -19,8 +19,8 @@ test('Button renders secondary variant', () => {
   assert.equal(el.tagName, 'BUTTON');
 });
 
-test('Button renders ghost variant', () => {
-  const { container } = render(React.createElement(Button, { variant: 'ghost' }, 'Ghost'));
+test('Button renders outline variant', () => {
+  const { container } = render(React.createElement(Button, { variant: 'outline' }, 'Outline'));
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   assert.equal(el.tagName, 'BUTTON');
@@ -35,6 +35,13 @@ test('Button renders danger variant', () => {
 
 test('Button renders small size', () => {
   const { container } = render(React.createElement(Button, { size: 'small' }, 'Small'));
+  const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
+  assert.equal(el.tagName, 'BUTTON');
+});
+
+test('Button renders tiny size', () => {
+  const { container } = render(React.createElement(Button, { size: 'tiny' }, 'Tiny'));
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   assert.equal(el.tagName, 'BUTTON');

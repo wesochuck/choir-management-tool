@@ -4,6 +4,7 @@ import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
+import { Button } from '../../components/ui';
 import { type Profile } from '../../services/profileService';
 import { seatingService, type SeatingSingerProfile } from '../../services/seatingService';
 
@@ -233,13 +234,15 @@ export default function SeatingFinderView() {
             {charts.map(c => {
               const isActive = c.id === activeChartId;
               return (
-                <button
+                <Button
                   key={c.id}
                   onClick={() => setActiveChartId(c.id)}
-                  className={`btn btn-sm font-semibold text-text-muted ${isActive ? 'btn-primary' : 'btn-ghost'}`}
+                  variant={isActive ? 'primary' : 'outline'}
+                  size="small"
+                  className="font-semibold"
                 >
                   {c.name}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -254,9 +257,15 @@ export default function SeatingFinderView() {
               <div className="text-muted">Find a spot with your section when you arrive.</div>
               {address && (
                 <div className="flex items-center">
-                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+                  <Button 
+                    as="a"
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    variant="primary"
+                  >
                     📍 Open in Google Maps
-                  </a>
+                  </Button>
                 </div>
               )}
             </div>
@@ -285,18 +294,20 @@ export default function SeatingFinderView() {
         {!isOpenSeating && (
           <div className="flex-col gap-4 py-8">
             <div className="mx-auto mb-1 w-max flex-row justify-center gap-1 rounded-md bg-[var(--surface-muted)] p-1">
-              <button
-                className={`btn btn-sm ${perspective === 'singer' ? 'btn-primary' : 'btn-ghost'}`}
+              <Button
+                variant={perspective === 'singer' ? 'primary' : 'outline'}
+                size="small"
                 onClick={() => setPerspective('singer')}
               >
                 Singer View
-              </button>
-              <button
-                className={`btn btn-sm ${perspective === 'director' ? 'btn-primary' : 'btn-ghost'}`}
+              </Button>
+              <Button
+                variant={perspective === 'director' ? 'primary' : 'outline'}
+                size="small"
                 onClick={() => setPerspective('director')}
               >
                 Director View
-              </button>
+              </Button>
             </div>
             <h3 className="mb-1 text-center text-lg font-semibold tracking-widest text-text-muted uppercase">
               Interactive Stage Layout
@@ -410,13 +421,14 @@ export default function SeatingFinderView() {
                 )}
               </div>
 
-              <button
+              <Button
                 type="button"
-                className="btn btn-ghost btn-sm"
+                variant="outline"
+                size="small"
                 onClick={() => setSelectedSeat(null)}
               >
                 Clear
-              </button>
+              </Button>
             </div>
           </AppCard>
         )}
