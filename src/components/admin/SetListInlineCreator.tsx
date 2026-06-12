@@ -140,7 +140,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                   variant="outline"
                   size="small"
                   onClick={() => handleAddItem(p)}
-                  className="flex h-auto min-h-0 w-full flex-col items-start gap-0.5 rounded px-3 py-1.5 text-left"
+                  className="flex !h-auto !min-h-0 w-full flex-col items-start gap-0.5 rounded px-3 py-1.5 text-left"
                 >
                   <span className="text-sm font-semibold">{p.title}</span>
                   {p.composer && <span className="text-xs text-text-muted">by {p.composer}</span>}
@@ -152,7 +152,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                 variant="outline"
                 size="small"
                 onClick={() => handleAddItem()}
-                className="flex h-auto min-h-0 w-full flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary"
+                className="flex !h-auto !min-h-0 w-full flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary"
                 // @allow-inline-style - conditional border when library has results
                 style={{ 
                   borderTop: filteredLibrary.length > 0 ? '1px solid var(--color-border)' : 'none'
