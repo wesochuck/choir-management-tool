@@ -236,3 +236,24 @@ Run: `rtk npx tsc -b && rtk npm run lint`
 5. Search for a name. Confirm stats update to reflect only that search result.
 
 ---
+
+## Mobile-First Responsive Polish (Tailwind Conversion)
+
+To support mobile-first experiences, eliminate horizontal scrolling, and resolve UI wrapping issues on mobile viewports:
+
+### 1. Filter Deck Grid Configuration
+* **Structure:** Set `grid-cols-1 md:grid-cols-4` for the primary grid container to stack components on mobile.
+* **Date Row Flex Box:** Group the **From Date** and **To Date** inputs inside a single nested container `md:col-span-2 flex flex-row gap-4` using `flex-1 min-w-0` on children to guarantee a consistent horizontal spacing layout that shrinks dynamically without overlapping or touching on mobile screens.
+
+### 2. Actions & Navigation Bar Layout
+* **Action Buttons:** Compress button elements on small screens (Export CSV and Add Level) into compact icon-only styles using `hidden md:inline` on button texts and `px-3 md:px-6` padding rules to prevent tab title collision.
+* **Tab Spacing:** Reduce spacing between tabs on mobile (`gap-3 md:gap-6`) to keep all navigation controls sitting cleanly on a single line.
+
+### 3. Responsive History Views
+* **Desktop View (`hidden md:block`):** Standard `<table>` with columns for Date, Donor, Email, Amount, Tribute, Status, and Actions.
+* **Mobile View (`md:hidden`):** Card-based list view where each donation is a distinct block with clear status tags, donor info, tribute labels, and a full-width refund action button.
+
+- [ ] **Step 3: Verification**
+  * Confirm `rtk npm run build` compiles with zero TS/Vite compilation errors.
+  * Confirm `rtk npm run lint` passes with zero errors on the modified DonationsView.tsx file.
+
