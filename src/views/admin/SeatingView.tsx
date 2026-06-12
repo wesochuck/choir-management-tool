@@ -325,8 +325,8 @@ export default function SeatingView() {
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 borderRadius: 'calc(var(--radius-md) - 2px)',
-                backgroundColor: activeTab === 'chart' ? 'var(--primary)' : 'transparent',
-                color: activeTab === 'chart' ? 'var(--bg, white)' : 'var(--text-muted)',
+                backgroundColor: activeTab === 'chart' ? 'var(--color-primary)' : 'transparent',
+                color: activeTab === 'chart' ? 'var(--bg, white)' : 'var(--color-text-muted)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -347,8 +347,8 @@ export default function SeatingView() {
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 borderRadius: 'calc(var(--radius-md) - 2px)',
-                backgroundColor: activeTab === 'templates' ? 'var(--primary)' : 'transparent',
-                color: activeTab === 'templates' ? 'var(--bg, white)' : 'var(--text-muted)',
+                backgroundColor: activeTab === 'templates' ? 'var(--color-primary)' : 'transparent',
+                color: activeTab === 'templates' ? 'var(--bg, white)' : 'var(--color-text-muted)',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
@@ -369,7 +369,7 @@ export default function SeatingView() {
               <select 
                 value={performanceId} 
                 onChange={(e) => setPerformanceId(e.target.value)}
-                className="h-8 min-h-[32px] w-[180px] rounded-md border border-border bg-[var(--surface)] px-[8px] text-xs"
+                className="h-8 min-h-[32px] w-[180px] rounded-md border border-border bg-surface px-[8px] text-xs"
               >
                 <option value="">-- Select Performance --</option>
                 {performances.map(p => (
@@ -383,7 +383,7 @@ export default function SeatingView() {
               <select 
                 value={venueId} 
                 onChange={(e) => setVenueId(e.target.value)}
-                className="h-8 min-h-[32px] w-[220px] rounded-md border border-border bg-[var(--surface)] px-[8px] text-xs"
+                className="h-8 min-h-[32px] w-[220px] rounded-md border border-border bg-surface px-[8px] text-xs"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -416,7 +416,7 @@ export default function SeatingView() {
                       }
                     }
                   }}
-                  className="no-print inline-flex h-9 min-h-[36px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-dashed border-[var(--primary)] bg-primary-light px-2 text-[0.8125rem] font-semibold text-primary-deep" 
+                  className="no-print inline-flex h-9 min-h-[36px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-dashed border-primary bg-primary-light px-2 text-[0.8125rem] font-semibold text-primary-deep" 
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
@@ -444,7 +444,7 @@ export default function SeatingView() {
 
                     await updateChart({ formationId: selectedId, assignments: {} });
                   }}
-                  className="h-8 min-h-[32px] w-[130px] rounded-md border border-border bg-[var(--surface)] px-[8px] text-xs"
+                  className="h-8 min-h-[32px] w-[130px] rounded-md border border-border bg-surface px-[8px] text-xs"
                 >
                   {seatingSettings.formations?.map(formation => (
                     <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -472,8 +472,8 @@ export default function SeatingView() {
                   className="-mb-px cursor-pointer flex-row items-center gap-[4px] px-[10px] py-2 transition-[border-color_0.15s_ease]"
                   // @allow-inline-style - dynamic border based on active and drag-over state
                   style={{ 
-                    borderBottom: `2px solid ${isActive ? 'var(--primary)' : 'transparent'}`,
-                    borderLeft: isDragOver ? '2px solid var(--primary)' : '2px solid transparent'
+                    borderBottom: `2px solid ${isActive ? 'var(--color-primary)' : 'transparent'}`,
+                    borderLeft: isDragOver ? '2px solid var(--color-primary)' : '2px solid transparent'
                   }}
                   onClick={() => {
                     if (!isActive) {
@@ -581,7 +581,7 @@ export default function SeatingView() {
                 className="-mb-px border-b-0 pb-2"
                 // @allow-inline-style - dynamic border based on active chart visibility
                 style={{
-                  borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary)' : 'transparent'}`
+                  borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--color-primary)' : 'transparent'}`
                 }}
               >
                 <select
@@ -608,7 +608,7 @@ export default function SeatingView() {
             {/* Add New Seating Chart Button (Plus sign to the right of tabs) */}
             <button
               onClick={() => setIsNewChartModalOpen(true)}
-              className="mb-2 inline-flex h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-transparent p-0 text-xl font-extrabold text-[var(--primary)]"
+              className="mb-2 inline-flex h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-transparent p-0 text-xl font-extrabold text-primary"
               title="Create new seating chart"
             >
               +
@@ -619,7 +619,7 @@ export default function SeatingView() {
           <AppCard className="w-full min-w-0 flex-1 flex-col p-4">
             <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-primary-light p-1.5 px-3 shadow-sm">
                <div className="flex flex-row gap-1">
-                  <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-[var(--surface)] px-2.5 text-xs font-label text-muted">
+                  <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 text-xs font-label text-muted">
                     🧹 Clear
                   </button>
                   <button onClick={handleReset} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--color-danger-bg)] px-2.5 text-xs font-label text-[var(--color-danger-text)]">
@@ -627,16 +627,16 @@ export default function SeatingView() {
                   </button>
                </div>
                
-               <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-border bg-[var(--surface)] p-0.5">
+               <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-border bg-surface p-0.5">
                 <button 
                   onClick={() => setPrintMode('visual')}
-                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'visual' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
+                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'visual' ? 'bg-primary text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
                 >
                   Grid
                 </button>
                 <button 
                   onClick={() => setPrintMode('text')}
-                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'text' ? 'bg-[var(--primary)] text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
+                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'text' ? 'bg-primary text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
                 >
                   List
                 </button>
@@ -648,7 +648,7 @@ export default function SeatingView() {
                     onClick={toggleFullscreen}
                     className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border px-2.5 text-xs font-label ${isFullscreen ? 'text-[var(--bg,white)]' : 'text-muted'}`}
                     // @allow-inline-style - dynamic fullscreen state background
-                    style={{ backgroundColor: isFullscreen ? 'var(--primary)' : 'var(--surface)' }}
+                    style={{ backgroundColor: isFullscreen ? 'var(--color-primary)' : 'var(--color-surface)' }}
                   >
                    {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
@@ -671,7 +671,7 @@ export default function SeatingView() {
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    className="h-8 min-h-8 max-w-[200px] flex-1 rounded-lg border border-border bg-[var(--surface)] px-[10px] text-xs"
+                    className="h-8 min-h-8 max-w-[200px] flex-1 rounded-lg border border-border bg-surface px-[10px] text-xs"
                   >
                     <option value="">-- Choose --</option>
                     {allCharts
@@ -682,7 +682,7 @@ export default function SeatingView() {
                   </select>
                </div>
 
-               <button onClick={handlePrint} className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--primary)] bg-[var(--primary)] px-2.5 text-xs font-label text-[var(--surface)]">
+               <button onClick={handlePrint} className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary bg-primary px-2.5 text-xs font-label text-surface">
                   🖨️ Print
                </button>
                <div className="flex flex-row items-center gap-1">
@@ -695,7 +695,7 @@ export default function SeatingView() {
                    className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-2.5 text-xs font-label text-muted"
                    // @allow-inline-style - dynamic save feedback color
                    style={{ 
-                     color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--text)'
+                     color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--color-text)'
                    }}
                  >
                    {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
@@ -899,7 +899,7 @@ export default function SeatingView() {
             <button 
               type="submit"
               form="new-chart-form"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--primary)] bg-[var(--primary)] px-6 font-label text-[var(--surface)]" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary bg-primary px-6 font-label text-surface" 
               disabled={!newChartName.trim()}
             >
               Create
@@ -957,7 +957,7 @@ export default function SeatingView() {
             <button 
               type="submit"
               form="rename-chart-form"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--primary)] bg-[var(--primary)] px-6 font-label text-[var(--surface)]" 
+              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary bg-primary px-6 font-label text-surface" 
               disabled={!renameChartName.trim()}
             >
               Save

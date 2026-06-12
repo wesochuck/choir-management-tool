@@ -157,7 +157,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               checked={soloSmallGroup}
               onChange={(e) => setSoloSmallGroup(e.target.checked)}
               onClick={(e) => e.stopPropagation()}
-              className="size-[18px] cursor-pointer accent-[var(--primary)]"
+              className="size-[18px] cursor-pointer accent-primary"
             />
             <span className="text-[14px] font-medium">🎤 Mark as Solo / Small Group</span>
           </div>

@@ -53,10 +53,10 @@ describe('colorUtils', () => {
       assert.equal(getContrastColor('#333333'), '#ffffff'); // Dark gray
     });
 
-    test('should return var(--text) for invalid inputs', () => {
-      assert.equal(getContrastColor(''), 'var(--text)');
-      assert.equal(getContrastColor('ffffff'), 'var(--text)'); // Missing #
-      assert.equal(getContrastColor('#fff'), 'var(--text)'); // Length < 7
+    test('should return var(--color-text) for invalid inputs', () => {
+      assert.equal(getContrastColor(''), 'var(--color-text)');
+      assert.equal(getContrastColor('ffffff'), 'var(--color-text)'); // Missing #
+      assert.equal(getContrastColor('#fff'), 'var(--color-text)'); // Length < 7
     });
   });
 });

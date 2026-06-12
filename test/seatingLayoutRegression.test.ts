@@ -52,17 +52,15 @@ test('seating drag and drop does not rely on visible grab-handle dots', () => {
   );
 });
 
-test('legacy flex helpers keep their direction when Tailwind is enabled', () => {
-  assert.match(
-    indexCss,
-    /:where\(\.flex-row\)\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*row;/s,
-    'legacy flex-row helper must continue to provide display:flex for older row-only layout classes',
+test('legacy flex helpers have been removed in favor of Tailwind native classes', () => {
+  assert.ok(
+    !/:where\(\.flex-row\)/.test(indexCss),
+    'legacy :where(.flex-row) helper should be removed — Tailwind flex flex-row classes are the replacement',
   );
 
-  assert.match(
-    indexCss,
-    /:where\(\.flex-col\)\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/s,
-    'legacy flex-col helper must stay low-specificity so responsive Tailwind classes like sm:flex-row can override direction',
+  assert.ok(
+    !/:where\(\.flex-col\)/.test(indexCss),
+    'legacy :where(.flex-col) helper should be removed — Tailwind flex flex-col classes are the replacement',
   );
 });
 

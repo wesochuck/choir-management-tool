@@ -199,7 +199,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             {isChips ? (
                 <button
                     type="button"
-                    className={`flex min-h-10 w-full cursor-pointer flex-wrap items-center justify-between gap-1 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--primary-light)]' : ''}`}
+                    className={`flex min-h-10 w-full cursor-pointer flex-wrap items-center justify-between gap-1 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
                     onClick={toggleDropdown}
                     disabled={disabled}
                     aria-haspopup="listbox"
@@ -248,7 +248,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             ) : (
                 <button
                     type="button"
-                    className={`flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-3.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--primary-light)]' : ''}`}
+                    className={`flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-3.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
                     onClick={toggleDropdown}
                     disabled={disabled}
                     aria-haspopup="listbox"
@@ -327,7 +327,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                                 <button
                                                     key={option.id}
                                                     type="button"
-                                                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] bg-white px-3 py-1 text-xs font-medium text-gray-500 transition-all duration-180 ease-in-out outline-none select-none hover:border-primary hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--primary-light)] ${isChecked ? 'font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : ''}`}
+                                                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] bg-white px-3 py-1 text-xs font-medium text-gray-500 transition-all duration-180 ease-in-out outline-none select-none hover:border-primary hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--color-primary-light)] ${isChecked ? 'font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : ''}`}
                                                     role="option"
                                                     aria-selected={isChecked}
                                                     onClick={() => handleOptionToggle(option.id)}

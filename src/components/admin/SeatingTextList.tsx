@@ -48,7 +48,7 @@ export function SeatingTextList({
 
         return (
           <div key={originalIndex} className="flex-col gap-1">
-            <h3 className="text-label m-0 border-b-2 border-[var(--primary)] pb-1 text-primary-deep" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
+            <h3 className="text-label m-0 border-b-2 border-primary pb-1 text-primary-deep" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
               {label} {assignedSingers.length}/{row.length}
             </h3>
             <div className="rounded-sm border border-border bg-bg p-2 text-sm leading-relaxed">

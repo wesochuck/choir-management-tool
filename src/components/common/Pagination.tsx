@@ -14,7 +14,7 @@ const paginationBtnClass =
   'disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-text-muted disabled:border-border disabled:transform-none ' +
   'hover:enabled:border-primary-deep hover:enabled:bg-gray-50 hover:enabled:text-primary-deep hover:enabled:-translate-y-px ' +
   'active:enabled:translate-y-0 ' +
-  'focus-visible:shadow-[0_0_0_2px_white,0_0_0_4px_var(--primary-deep)] ' +
+  'focus-visible:shadow-[0_0_0_2px_white,0_0_0_4px_var(--color-primary-deep)] ' +
   'motion-reduce:transition-none motion-reduce:transform-none';
 
 const activeBtnClass =

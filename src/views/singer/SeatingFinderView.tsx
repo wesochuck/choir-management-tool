@@ -143,11 +143,11 @@ export default function SeatingFinderView() {
   // Helper to get section/voice part color
   const getSingerColor = (singerId: string) => {
     const profile = getSingerProfile(singerId);
-    if (!profile) return 'var(--primary)';
+    if (!profile) return 'var(--color-primary)';
     const vp = voiceParts.find(v => v.label === profile.voicePart);
     const sectionCode = vp?.sectionCode || profile.voicePart[0];
     const sec = sections.find(s => s.code === sectionCode);
-    return sec?.color || 'var(--primary)';
+    return sec?.color || 'var(--color-primary)';
   };
 
   type NeighborInfo =
@@ -339,7 +339,7 @@ export default function SeatingFinderView() {
                             : singerId
                               ? '•'
                               : '';
-                          const singerColor = singerId ? getSingerColor(singerId) : 'var(--border)';
+                          const singerColor = singerId ? getSingerColor(singerId) : 'var(--color-border)';
 
                           return (
                             <button
@@ -354,7 +354,7 @@ export default function SeatingFinderView() {
                               style={{ 
                                 borderColor: singerColor,
                                 borderWidth: isMySeat ? '2px' : '2px',
-                                color: singerId ? 'white' : 'var(--text-muted)',
+                                color: singerId ? 'white' : 'var(--color-text-muted)',
                                 backgroundColor: singerId ? singerColor : 'white',
                                 borderStyle: 'solid',
                               }}

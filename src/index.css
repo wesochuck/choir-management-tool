@@ -56,6 +56,8 @@
   --animate-modal-fade-in: modal-fade-in 0.2s ease-out forwards;
   --animate-modal-slide-up: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-save-bar-slide-up: save-bar-slide-up 0.3s ease forwards;
+
+  --default-font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* ----------------------------------------------------
@@ -98,51 +100,6 @@
 @keyframes save-bar-slide-up {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
-}
-
-/* ----------------------------------------------------
-   Base Styling Overrides
-   ---------------------------------------------------- */
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: var(--color-bg);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: var(--color-text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Compatibility CSS Custom Properties */
-:root {
-  --primary: var(--color-primary);
-  --primary-light: var(--color-primary-light);
-  --primary-deep: var(--color-primary-deep);
-  --bg: var(--color-bg);
-  --surface: var(--color-surface);
-  --text: var(--color-text);
-  --text-muted: var(--color-text-muted);
-  --border: var(--color-border);
-  --font-size-display: clamp(2rem, 5vw, 3rem);
-}
-
-/* ----------------------------------------------------
-   Utility Classes & Layout Helpers
-   ---------------------------------------------------- */
-.print-only {
-  display: none;
-}
-
-/* Legacy Flex Compatibility Helpers (wrapped in :where to permit Tailwind override classes) */
-:where(.flex-row) {
-  display: flex;
-  flex-direction: row;
-}
-
-:where(.flex-col) {
-  display: flex;
-  flex-direction: column;
 }
 
 /* ----------------------------------------------------

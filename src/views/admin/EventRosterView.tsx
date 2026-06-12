@@ -255,7 +255,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                     key={sec.code}
                     className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-colors duration-150 hover:bg-primary-light/80 ${
                       isSelected
-                        ? 'border-primary shadow-[0_0_0_1px_var(--primary)]'
+                        ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]'
                         : 'border-transparent'
                     }`}
                     onClick={() => handleVoicePartToggle(sec.code)}
@@ -420,7 +420,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               style={{ 
                 width: bulkProgress ? `${(bulkProgress.current / bulkProgress.total) * 100}%` : '0%', 
                 height: '100%', 
-                backgroundColor: 'var(--primary)', 
+                backgroundColor: 'var(--color-primary)', 
                 transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)' 
               }} 
             />

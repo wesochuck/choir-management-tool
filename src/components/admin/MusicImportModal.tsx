@@ -271,7 +271,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
           <div 
             onClick={() => fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-[rgb(74_124_89_/_2%)] px-5 py-10 hover:border-[var(--primary)] hover:bg-[rgb(74_124_89_/_5%)]"
+            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-[rgb(74_124_89_/_2%)] px-5 py-10 hover:border-primary hover:bg-[rgb(74_124_89_/_5%)]"
           >
             <span className="text-5xl">🎼</span>
             <div>
@@ -317,7 +317,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                 >
                   <div className="flex flex-1 flex-col gap-[2px]">
                     <div className="flex items-center gap-[6px]">
-                      <strong className="text-[0.9rem] text-[var(--text)]">{field.label}</strong>
+                      <strong className="text-[0.9rem] text-text">{field.label}</strong>
                       {field.required && (
                         <span className="rounded bg-[rgb(153_27_27_/_10%)] px-[6px] py-[1px] text-[0.7rem] font-semibold text-danger-text">
                           Required
@@ -330,7 +330,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   <select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className={`bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-[200px] px-[10px] text-[0.85rem] shadow-none ${selectedIndex !== -1 ? '!border-[var(--primary)]' : ''}`}
+                    className={`bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-[200px] px-[10px] text-[0.85rem] shadow-none ${selectedIndex !== -1 ? '!border-primary' : ''}`}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
                     {csvData.headers.map((hdr: string, idx: number) => (
@@ -365,7 +365,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
 
           <div className="max-h-[350px] overflow-x-auto rounded-md border border-border">
             <table className="!m-0 table w-full min-w-[600px]">
-              <thead className="sticky top-0 z-[1] bg-bg shadow-[0_1px_0_var(--border)]">
+              <thead className="sticky top-0 z-[1] bg-bg shadow-[0_1px_0_var(--color-border)]">
                 <tr>
                   <th className="w-[60px] text-center text-[0.8rem] text-muted">Row</th>
                   <th>Title</th>
@@ -439,7 +439,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
           <span className="animate-[spin_2s_linear_infinite] text-5xl">⚙️</span>
           
           <div className="flex w-full flex-col items-center gap-[6px]">
-            <strong className="text-[1.1rem] text-[var(--text)]">
+            <strong className="text-[1.1rem] text-text">
               Importing {mappedPieces.filter(p => p.isValid).length} Pieces...
             </strong>
             <span className="text-muted text-sm">
@@ -447,9 +447,9 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </span>
           </div>
 
-          <div className="mt-[10px] h-3 w-full overflow-hidden rounded-[6px] bg-[var(--border)]">
+          <div className="mt-[10px] h-3 w-full overflow-hidden rounded-[6px] bg-border">
             <div 
-              className="h-full bg-[var(--primary)] transition-[width_0.1s_ease-out]"
+              className="h-full bg-primary transition-[width_0.1s_ease-out]"
               // @allow-inline-style - dynamic progress bar width
               style={{ 
                 width: `${importProgress}%`,

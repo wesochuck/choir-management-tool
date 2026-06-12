@@ -89,7 +89,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           return (
             <div 
               key={sec.code} 
-              className={`cursor-pointer flex-col border-2 text-center transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--primary)]' : 'border-transparent'}`}
+              className={`cursor-pointer flex-col border-2 text-center transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]' : 'border-transparent'}`}
               onClick={() => onVoicePartToggle?.(sec.code)}
               // @allow-inline-style - dynamic padding based on selection state
               style={{ 

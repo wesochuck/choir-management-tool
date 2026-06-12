@@ -192,7 +192,7 @@ export function SeatingBottomDock({
             } : undefined;
 
             return (
-              <div key={key} className="flex h-full flex-col gap-1 overflow-hidden rounded-lg border border-border bg-[var(--surface)] p-1.5">
+              <div key={key} className="flex h-full flex-col gap-1 overflow-hidden rounded-lg border border-border bg-surface p-1.5">
                 <div className="flex-row items-center justify-between border-b border-border pb-1">
                   <span className="text-label font-bold" style={labelStyle}>
                     {label}

@@ -381,12 +381,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               const activeColor = (isAssigned && singerSecColor) ? singerSecColor : secColor;
               const colors = activeColor
                 ? { bg: activeColor, text: getContrastColor(activeColor) }
-                : { bg: 'var(--surface)', text: 'var(--text-muted)' };
+                : { bg: 'var(--color-surface)', text: 'var(--color-text-muted)' };
 
-              const seatBg = isAssigned ? colors.bg : 'var(--surface)';
-              const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--text-muted)');
+              const seatBg = isAssigned ? colors.bg : 'var(--color-surface)';
+              const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--color-text-muted)');
               const borderStyle = isAssigned ? 'solid' : 'dashed';
-              const borderColor = isAssigned ? '#000000' : (secColor || 'var(--border)');
+              const borderColor = isAssigned ? '#000000' : (secColor || 'var(--color-border)');
 
               // Wedge Outline Logic
               const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;

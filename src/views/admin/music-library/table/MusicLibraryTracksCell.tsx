@@ -17,7 +17,7 @@ export function MusicLibraryTracksCell({
   onEditPiece,
 }: MusicLibraryTracksCellProps) {
   return (
-    <td className="border border-[var(--border)] px-[10px] py-[6px] align-middle">
+    <td className="border border-border px-[10px] py-[6px] align-middle">
       {piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0 ? (
         <Button
           variant="secondary"
@@ -36,7 +36,7 @@ export function MusicLibraryTracksCell({
             e.stopPropagation();
             onEditPiece?.(piece, 'tracks');
           }}
-          className="hover-glow inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap text-[var(--primary)]"
+          className="hover-glow inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap text-primary"
         >
           🎧 {totalMovementTracksCount} in mvts
         </span>

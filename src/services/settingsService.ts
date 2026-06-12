@@ -416,7 +416,7 @@ export interface SeatingSettings {
 
 export const DEFAULT_SECTIONS: SectionDef[] = [
   { code: 'S', name: 'Sopranos', color: '#1b4d3e', colorBg: 'var(--color-danger-bg)', colorText: 'var(--color-danger-text)' },
-  { code: 'A', name: 'Altos', color: '#4a7c59', colorBg: 'var(--primary-light)', colorText: 'var(--primary-deep)' },
+  { code: 'A', name: 'Altos', color: '#4a7c59', colorBg: 'var(--color-primary-light)', colorText: 'var(--color-primary-deep)' },
   { code: 'T', name: 'Tenors', color: '#92400e', colorBg: '#fef3c7', colorText: '#92400e' },
   { code: 'B', name: 'Basses', color: '#075985', colorBg: '#e0f2fe', colorText: '#075985' },
 ];

@@ -315,11 +315,11 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             onClick={() => fileInputRef.current?.click()}
             className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-[rgb(74_124_89_/_2%)] p-[40px_20px] transition-[border-color,background-color] duration-200"
             onMouseOver={(e) => {
-              e.currentTarget.style.borderColor = 'var(--primary)';
+              e.currentTarget.style.borderColor = 'var(--color-primary)';
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.05)';
             }}
             onMouseOut={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.borderColor = 'var(--color-border)';
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.02)';
             }}
           >
@@ -388,7 +388,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-[200px] px-[10px] text-sm shadow-none"
                     // @allow-inline-style - conditional match border
                     style={{
-                      borderColor: selectedIndex !== -1 ? 'var(--primary)' : undefined,
+                      borderColor: selectedIndex !== -1 ? 'var(--color-primary)' : undefined,
                     }}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
@@ -424,7 +424,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
           <div className="max-h-[350px] overflow-x-auto rounded-lg border border-border">
             <table className="m-0 table w-full min-w-[600px]">
-              <thead className="sticky top-0 z-[1] bg-bg shadow-[0_1px_0_var(--border)]">
+              <thead className="sticky top-0 z-[1] bg-bg shadow-[0_1px_0_var(--color-border)]">
                 <tr>
                   <th className="w-[60px] text-center">Row</th>
                   <th>Name</th>
@@ -566,7 +566,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   <div key={i} className="p-[4px_0] text-[#444]" 
                     // @allow-inline-style - Dynamic border based on position in list
                     style={{
-                      borderBottom: i < errorsList.length - 1 ? '1px solid var(--border)' : undefined 
+                      borderBottom: i < errorsList.length - 1 ? '1px solid var(--color-border)' : undefined 
                     }}>
                     Row {err.row} (<strong>{err.name}</strong>): <span className="text-danger-text">{err.error}</span>
                   </div>

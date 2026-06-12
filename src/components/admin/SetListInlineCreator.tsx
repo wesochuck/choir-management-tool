@@ -155,7 +155,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                 className="flex h-auto min-h-0 w-full flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary"
                 // @allow-inline-style - conditional border when library has results
                 style={{ 
-                  borderTop: filteredLibrary.length > 0 ? '1px solid var(--border)' : 'none'
+                  borderTop: filteredLibrary.length > 0 ? '1px solid var(--color-border)' : 'none'
                 }}
               >
                 <span>"{query.trim()}"</span>

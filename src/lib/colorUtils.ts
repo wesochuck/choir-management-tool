@@ -27,7 +27,7 @@ export function isColorTooClose(hex1: string, hex2: string): boolean {
 }
 
 export function getContrastColor(hex: string): string {
-  if (!hex || !hex.startsWith('#') || hex.length < 7) return 'var(--text)';
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return 'var(--color-text)';
   const r = parseInt(hex.substring(1, 3), 16);
   const g = parseInt(hex.substring(3, 5), 16);
   const b = parseInt(hex.substring(5, 7), 16);

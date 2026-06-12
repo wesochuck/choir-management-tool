@@ -36,7 +36,7 @@ export function MusicLibraryTitleCell({
 
   return (
     <td
-      className={`border border-[var(--border)] px-[10px] py-[6px] align-middle ${isChild ? '!pl-8' : ''}`}
+      className={`border border-border px-[10px] py-[6px] align-middle ${isChild ? '!pl-8' : ''}`}
     >
       <div className="flex flex-col gap-[2px]">
         <div className="flex flex-row flex-wrap items-center gap-[6px]">
@@ -46,7 +46,7 @@ export function MusicLibraryTitleCell({
               onClick={onToggleExpansion}
               aria-label={`${isExpanded ? 'Collapse' : 'Expand'} movements for ${piece.title}`}
               title={`${isExpanded ? 'Collapse' : 'Expand'} movements`}
-              className="inline-flex cursor-pointer items-center border-none bg-none p-0 px-[4px] text-[12px] text-[var(--text-muted)] select-none"
+              className="inline-flex cursor-pointer items-center border-none bg-none p-0 px-[4px] text-[12px] text-muted select-none"
             >
               {isExpanded ? '▼' : '▶'}
             </button>

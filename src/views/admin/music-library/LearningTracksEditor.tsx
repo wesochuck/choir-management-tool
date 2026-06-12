@@ -88,7 +88,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 ? (isMovement ? '5px 9px' : '7px 11px') 
                                 : undefined,
                             backgroundColor: isDraggedOver ? 'rgba(74, 124, 89, 0.08)' : undefined,
-                            border: isDraggedOver ? '2px dashed var(--primary)' : undefined,
+                            border: isDraggedOver ? '2px dashed var(--color-primary)' : undefined,
                             transform: isDraggedOver ? 'scale(1.01)' : 'scale(1)',
                             boxShadow: isDraggedOver 
                                 ? (isMovement ? '0 2px 8px rgba(74, 124, 89, 0.12)' : '0 4px 12px rgba(74, 124, 89, 0.15)') 

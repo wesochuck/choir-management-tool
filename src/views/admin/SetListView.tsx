@@ -710,7 +710,7 @@ export default function SetListView() {
       </div>
 
       {/* @allow-inline-style - print page styling rule for print-only rendering */}
-      <div className="print-only mx-auto max-w-2xl p-8" style={{ page: 'setlist' }}>
+      <div className="hidden print:block mx-auto max-w-2xl p-8" style={{ page: 'setlist' }}>
         {selectedEvent && (
           <>
             <div className="mb-6 text-center">

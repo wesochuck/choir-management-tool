@@ -286,8 +286,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                       className="rounded-xl m-0 cursor-pointer flex-row items-center gap-3 p-3 shadow-none" 
                       // @allow-inline-style - checkbox checked state
                       style={{
-                        border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',
-                        backgroundColor: isChecked ? 'var(--primary-light)' : 'var(--bg)',
+                        border: isChecked ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+                        backgroundColor: isChecked ? 'var(--color-primary-light)' : 'var(--color-bg)',
                       }}
                     >
                       <input 
@@ -301,7 +301,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                             setFormData({ ...formData, requestedSlots: [...current, slot].sort() });
                           }
                         }}
-                        className="size-4 cursor-pointer accent-[var(--primary)]"
+                        className="size-4 cursor-pointer accent-primary"
                       />
                       <span className={`text-sm text-text ${isChecked ? 'font-semibold' : 'font-normal'}`}>
                         {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}

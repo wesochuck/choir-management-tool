@@ -431,7 +431,7 @@ export function PhotoUploader({
         style={{
           width: px,
           height: px,
-          border: isDragging ? '3px dashed var(--primary)' : '2px solid transparent',
+          border: isDragging ? '3px dashed var(--color-primary)' : '2px solid transparent',
           boxShadow: isDragging ? '0 0 0 4px rgba(74, 124, 89, 0.25)' : 'none',
         }}
       >
