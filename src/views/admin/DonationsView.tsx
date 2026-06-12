@@ -284,7 +284,7 @@ export default function DonationsView() {
 
       {/* Tabs / Actions Navigation Bar */}
       <div className="w-full flex flex-row items-center justify-between border-b border-slate-200 pb-px">
-        <div className="flex gap-6">
+        <div className="flex gap-3 md:gap-6">
           <button
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
@@ -313,9 +313,10 @@ export default function DonationsView() {
           {activeTab === 'history' && (
             <Button
               variant="secondary"
-              className="font-semibold shadow-sm"
+              className="px-3 md:px-6 font-semibold shadow-sm"
               onClick={handleExportCSV}
               disabled={sortedDonations.length === 0}
+              title="Export CSV"
               icon={
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -324,14 +325,15 @@ export default function DonationsView() {
                 </svg>
               }
             >
-              Export CSV
+              <span className="hidden md:inline">Export CSV</span>
             </Button>
           )}
           {activeTab === 'levels' && (
             <Button
               variant="primary"
-              className="font-semibold shadow-sm animate-pulse-once"
+              className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
               onClick={() => openLevelModal()}
+              title="Add Level"
               icon={
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="12" y1="5" x2="12" y2="19" />
@@ -339,7 +341,7 @@ export default function DonationsView() {
                 </svg>
               }
             >
-              Add Level
+              <span className="hidden md:inline">Add Level</span>
             </Button>
           )}
         </div>
@@ -422,8 +424,8 @@ export default function DonationsView() {
             </div>
             <div className="flex flex-col gap-4 p-6">
               {/* Filter deck */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                <div className="col-span-2 md:col-span-1">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                <div className="md:col-span-1">
                   <FormField label="Search">
                     <div className="relative">
                       <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-slate-400" aria-hidden="true">
@@ -442,27 +444,29 @@ export default function DonationsView() {
                     </div>
                   </FormField>
                 </div>
-                <div className="col-span-1">
-                  <FormField label="From Date">
-                    <input 
-                      type="date" 
-                      value={startDate}
-                      onChange={e => handleSetStartDate(e.target.value)}
-                      className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </FormField>
+                <div className="md:col-span-2 flex flex-row gap-4">
+                  <div className="flex-1 min-w-0">
+                    <FormField label="From Date">
+                      <input 
+                        type="date" 
+                        value={startDate}
+                        onChange={e => handleSetStartDate(e.target.value)}
+                        className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      />
+                    </FormField>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <FormField label="To Date">
+                      <input 
+                        type="date" 
+                        value={endDate}
+                        onChange={e => setEndDate(e.target.value)}
+                        className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      />
+                    </FormField>
+                  </div>
                 </div>
-                <div className="col-span-1">
-                  <FormField label="To Date">
-                    <input 
-                      type="date" 
-                      value={endDate}
-                      onChange={e => setEndDate(e.target.value)}
-                      className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </FormField>
-                </div>
-                <div className="col-span-2 md:col-span-1 flex items-end gap-2">
+                <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <FormField label="Sort By">
                       <select
