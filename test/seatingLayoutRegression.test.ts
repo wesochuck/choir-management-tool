@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const seatingView = readFileSync(new URL('../src/views/admin/SeatingView.tsx', import.meta.url), 'utf8');
 const seatingGrid = readFileSync(new URL('../src/components/admin/SeatingGrid.tsx', import.meta.url), 'utf8');
 const seatingBottomDock = readFileSync(new URL('../src/components/admin/SeatingBottomDock.tsx', import.meta.url), 'utf8');
+const singerLookupModal = readFileSync(new URL('../src/components/admin/SingerLookupModal.tsx', import.meta.url), 'utf8');
 const indexCss = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
 
 test('seating wide layout is reserved for actual fullscreen mode', () => {
@@ -177,5 +178,30 @@ test('unassigned singer shelf uses grouped chips with one shared scroll area', (
     seatingBottomDock,
     /!\s*isVoicePartLayout\s*&&\s*\(\s*<span className="inline-flex items-center rounded bg-primary-light/,
     'section-based chart shelves should show voice-part badges on singer chips',
+  );
+});
+
+test('singer lookup modal uses compact picker rows instead of large cards', () => {
+  assert.match(
+    singerLookupModal,
+    /maxWidth="560px"/,
+    'lookup modal should have room for a compact name/voice/status picker row',
+  );
+
+  assert.match(
+    singerLookupModal,
+    /\{filtered\.length\}\s+available singer/,
+    'lookup modal should show a concise result count',
+  );
+
+  assert.match(
+    singerLookupModal,
+    /grid-cols-\[minmax\(0,1fr\)_auto_auto\]/,
+    'singer result rows should use explicit columns for name, voice, and status',
+  );
+
+  assert.ok(
+    !/rounded-xl shadow-sm/.test(singerLookupModal),
+    'lookup results should not render as tall card buttons',
   );
 });

@@ -59,16 +59,16 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Lookup Singer"
-      maxWidth="500px"
+      maxWidth="560px"
       footer={<Button type="button" onClick={onClose} variant="outline">Cancel</Button>}
     >
-      <div className="flex-col gap-4">
+      <div className="flex-col gap-3">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by name, voice part, status..."
-          className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
+          placeholder="Search singers..."
+          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm outline-none transition-colors focus:border-primary"
           autoFocus
         />
 
@@ -81,31 +81,48 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
             ⚠️ {error}
           </div>
         ) : (
-          <div className="max-h-[300px] flex-col gap-[6px] overflow-y-auto pr-1">
-            {filtered.map(p => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={async () => {
-                  await onSelect(p);
-                  onClose();
-                }}
-                className="bg-surface hover:bg-bg w-full cursor-pointer flex-row items-center justify-between gap-2 border border-border p-[10px_14px] text-left rounded-xl shadow-sm transition-all duration-200"
-              >
-                <div className="flex-col gap-0.5">
-                  <span className="font-semibold text-text">{p.name}</span>
-                  <span className="text-muted text-xs">Status: {p.globalStatus}</span>
-                </div>
-                <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
-                  {p.voicePart || 'Unknown'}
-                </span>
-              </button>
-            ))}
-            {filtered.length === 0 && (
-              <div className="p-4 text-center text-sm text-text-muted">
-                No singers found
+          <div className="flex-col gap-2">
+            <div className="flex flex-row items-center justify-between px-1 text-xs text-muted">
+              <span>
+                {filtered.length} available singer{filtered.length === 1 ? '' : 's'}
+              </span>
+              <span className="hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-3 font-semibold uppercase tracking-wider text-text-muted sm:grid">
+                <span>Name</span>
+                <span>Voice</span>
+                <span>Status</span>
+              </span>
+            </div>
+
+            <div className="max-h-[320px] overflow-y-auto rounded-lg border border-border bg-surface">
+              <div className="divide-y divide-border">
+                {filtered.map(p => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={async () => {
+                      await onSelect(p);
+                      onClose();
+                    }}
+                    className="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-primary-light/50 focus:bg-primary-light/60 focus:outline-none"
+                  >
+                    <span className="min-w-0 truncate font-semibold text-text" title={p.name}>
+                      {p.name}
+                    </span>
+                    <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
+                      {p.voicePart || 'Unknown'}
+                    </span>
+                    <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-medium text-muted">
+                      {p.globalStatus}
+                    </span>
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <div className="p-6 text-center text-sm text-text-muted">
+                    No singers found
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>
