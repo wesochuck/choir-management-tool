@@ -426,7 +426,6 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    fontSize: 'var(--seat-font-size)',
                     position: 'relative',
                     cursor: isReadOnly ? 'default' : (assignedProfile ? 'grab' : 'pointer'),
                     boxShadow: boxShadow,
@@ -529,9 +528,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
 
                   <div
-                    className="font-bold"
-                    // @allow-inline-style - dynamic color and font size from computed seat styles
-                    style={{ color: seatTextColor, fontSize: 'var(--seat-font-size)' }}>
+                    className={`font-bold ${isCompact ? 'text-[9px]' : 'text-xs'}`}
+                    // @allow-inline-style - dynamic color from computed seat styles
+                    style={{ color: seatTextColor }}>
                     {displaySuggestion
                       ? (isVoicePartLayout ? `${displaySuggestion} - ${displaySeatNumber}` : `${sectionDef?.name[0] || displaySuggestion}${displaySeatNumber}`)
                       : ''
@@ -542,15 +541,15 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       // @allow-inline-style - dynamic gap based on compact mode
                       style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
                       <div
-                        className="leading-[1.1] font-extrabold"
-                        // @allow-inline-style - dynamic font size and color from computed styles
-                        style={{ fontSize: 'var(--seat-name-font-size)', color: colors.text }}>
+                        className={`leading-[1.1] font-extrabold ${isCompact ? 'text-[11px]' : 'text-sm'}`}
+                        // @allow-inline-style - dynamic color from computed styles
+                        style={{ color: colors.text }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>
                       <div
-                        className="font-bold"
-                        // @allow-inline-style - dynamic font size and color from computed styles
-                        style={{ color: colors.text, fontSize: 'var(--seat-vp-font-size)' }}>
+                        className={`font-bold ${isCompact ? 'text-[9px]' : 'text-[11px]'}`}
+                        // @allow-inline-style - dynamic color from computed styles
+                        style={{ color: colors.text }}>
                         {assignedProfile.voicePart}
                       </div>
                       <div className={`no-print pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 ${isMismatch ? 'bg-red-700' : ''} ${rowIndex === rowCounts.length - 1 ? '-bottom-1 translate-y-full' : '-top-1 -translate-y-full'}`}>
@@ -568,9 +567,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     </div>
                   ) : (
                     <div
-                      className="font-semibold"
-                      // @allow-inline-style - dynamic font size and color from computed styles
-                      style={{ color: seatTextColor, fontSize: 'var(--seat-empty-font-size)' }}>
+                      className={`font-semibold ${isCompact ? 'text-[9px]' : 'text-xs'}`}
+                      // @allow-inline-style - dynamic color from computed styles
+                      style={{ color: seatTextColor }}>
                       {isCompact ? '—' : 'Empty'}
                     </div>
                   )}
