@@ -37,22 +37,22 @@
   --color-section-slate: #64748B;
 
   /* Typography Scale */
-  --font-size-display: clamp(2rem, 5vw, 3rem);
-  --font-size-display--line-height: 1.1;
-  --font-size-display--letter-spacing: 0;
-  --font-size-display--font-weight: 700;
+  --text-display: clamp(2rem, 5vw, 3rem);
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: 0;
+  --text-display--font-weight: 700;
 
-  --font-size-headline: var(--font-size-2xl);
-  --font-size-headline--line-height: 1.2;
-  --font-size-headline--font-weight: 600;
+  --text-headline: var(--font-size-2xl);
+  --text-headline--line-height: 1.2;
+  --text-headline--font-weight: 600;
 
-  --font-size-body: var(--font-size-base);
-  --font-size-body--line-height: 1.5;
-  --font-size-body--font-weight: 400;
+  --text-body: var(--font-size-base);
+  --text-body--line-height: 1.5;
+  --text-body--font-weight: 400;
 
-  --font-size-label: var(--font-size-sm);
-  --font-size-label--letter-spacing: 0.01em;
-  --font-size-label--font-weight: 500;
+  --text-label: var(--font-size-sm);
+  --text-label--letter-spacing: 0.01em;
+  --text-label--font-weight: 500;
 
   /* Animation Configurations */
   --animate-login-fade-in: login-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;

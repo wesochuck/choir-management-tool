@@ -45,11 +45,10 @@ Spacing is driven by Tailwind's standard spacing scale (based on 4px/8px increme
 - **Font Family**: Inter, system-ui, sans-serif (Tailwind `font-sans`).
 - **Weights**: `font-normal` (400), `font-medium` (500), `font-semibold` (600), `font-bold` / `font-black` (700/900).
 - **Scale**:
-  - `font-size-display`: Tailwind Display size (`text-4xl text-display` / clamp)
-  - `font-size-headline`: Tailwind Headline size (`text-xl text-headline`)
-  - `font-size-body`: Tailwind Body size (`text-base text-body`)
-  - `font-size-label`: Tailwind Label size (`text-sm text-label`)
-  - `font-size-sm`: Tailwind Badges/Fine print (`text-xs text-sm`)
+  - `--text-display`: Tailwind Display size (`text-display` / clamp)
+  - `--text-headline`: Tailwind Headline size (`text-headline`)
+  - `--text-body`: Tailwind Body size (`text-body`)
+  - `--text-label`: Tailwind Label size (`text-label`)
 
 ### Radii & Shadow
 

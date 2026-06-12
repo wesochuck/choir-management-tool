@@ -22,15 +22,16 @@ export default defineConfig([
   {
     ...tailwind.configs.recommended,
     files: ['src/**/*.{ts,tsx,js,jsx}'],
+    settings: {
+      tailwindcss: {
+        cssConfigPath: './src/index.css',
+      },
+    },
     rules: {
       'tailwindcss/no-custom-classname': [
         'warn',
         {
           whitelist: [
-            'text-label',
-            'text-body',
-            'text-display',
-            'text-headline',
             'no-print',
             'seating-row-label',
             'progress-ring__circle',
