@@ -267,7 +267,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               justifyContent: 'center',
               minWidth: 'max-content'
             }}>
-            <div className="text-text flex flex-col items-end justify-center"
+            <div className="text-text flex flex-col items-end justify-center seating-row-label"
               // @allow-inline-style - wider label to accommodate seat count badge
               // @allow-inline-style - dynamic width based on compact mode
               style={{ width: isCompact ? '110px' : '130px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}

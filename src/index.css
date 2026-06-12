@@ -264,12 +264,24 @@ body {
     display: none !important;
   }
 
-  [data-print-mode="visual"] {
+  [data-print-mode="visual"] .grid-print {
     --seat-size: var(--print-seat-size, 42px) !important;
     --seat-font-size: 8px !important;
     --seat-name-font-size: 10px !important;
     --seat-vp-font-size: 7px !important;
     --seat-empty-font-size: 8px !important;
+  }
+
+  [data-print-mode="visual"] .seating-row-label {
+    padding-right: 8px !important;
+    width: 85px !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+
+  [data-print-mode="visual"] .seating-row-label span {
+    font-size: 10px !important;
   }
 
   [data-print-mode="visual"] .director-indicator {
