@@ -422,8 +422,8 @@ export default function DonationsView() {
             </div>
             <div className="flex flex-col gap-4 p-6">
               {/* Filter deck */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
-                <div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+                <div className="col-span-2 md:col-span-1">
                   <FormField label="Search">
                     <div className="relative">
                       <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-slate-400" aria-hidden="true">
@@ -442,7 +442,7 @@ export default function DonationsView() {
                     </div>
                   </FormField>
                 </div>
-                <div>
+                <div className="col-span-1">
                   <FormField label="From Date">
                     <input 
                       type="date" 
@@ -452,7 +452,7 @@ export default function DonationsView() {
                     />
                   </FormField>
                 </div>
-                <div>
+                <div className="col-span-1">
                   <FormField label="To Date">
                     <input 
                       type="date" 
@@ -462,7 +462,7 @@ export default function DonationsView() {
                     />
                   </FormField>
                 </div>
-                <div className="flex items-end gap-2">
+                <div className="col-span-2 md:col-span-1 flex items-end gap-2">
                   <div className="flex-1">
                     <FormField label="Sort By">
                       <select
@@ -492,8 +492,8 @@ export default function DonationsView() {
                 </div>
               </div>
 
-              {/* Responsive Register Table */}
-              <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+              {/* Responsive Register View - Desktop Table */}
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
                 <table className="min-w-full divide-y divide-slate-100 text-left">
                   <thead className="bg-slate-50/75">
                     <tr>
@@ -591,6 +591,87 @@ export default function DonationsView() {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Responsive Register View - Mobile Card List */}
+              <div className="md:hidden divide-y divide-slate-100 bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+                {loading ? (
+                  <div className="px-6 py-12 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                    <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                    Loading donations history...
+                  </div>
+                ) : sortedDonations.length === 0 ? (
+                  <div className="px-6 py-12 text-center">
+                    <EmptyState
+                      title="No Donations Found"
+                      description={
+                        searchQuery || startDate || endDate
+                          ? "No gifts match your search/filter criteria."
+                          : "No donation records are available yet."
+                      }
+                      icon="💝"
+                      action={
+                        (searchQuery || startDate || endDate) ? (
+                          <Button variant="secondary" onClick={handleClearFilters} size="small">
+                            Reset Filters
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                  </div>
+                ) : (
+                  sortedDonations.map(d => (
+                    <div key={d.id} className="p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40">
+                      {/* Row 1: Date and Status badge */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-400 font-medium">
+                          {formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                        </span>
+                        <Badge tone={d.status === 'paid' ? 'success' : d.status === 'refunded' ? 'danger' : 'neutral'}>
+                          {d.status}
+                        </Badge>
+                      </div>
+
+                      {/* Row 2: Donor info & Amount */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-bold text-slate-800">{d.donorName}</span>
+                          {d.isAnonymous && (
+                            <span className="w-fit inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-slate-600 uppercase">
+                              Anonymous
+                            </span>
+                          )}
+                          <span className="text-xs text-slate-500 font-medium break-all">{d.donorEmail}</span>
+                        </div>
+                        <span className="text-base font-extrabold text-slate-900 shrink-0">
+                          ${(d.amountPaidCents / 100).toFixed(2)}
+                        </span>
+                      </div>
+
+                      {/* Row 3: Tribute type and info */}
+                      {d.tributeType !== 'none' && (
+                        <div className="text-xs text-slate-500 leading-relaxed bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                          <span className="text-slate-400">In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of</span>{' '}
+                          <strong className="text-slate-700 font-semibold">{d.tributeName}</strong>
+                        </div>
+                      )}
+
+                      {/* Row 4: Actions (if status is 'paid') */}
+                      {d.status === 'paid' && (
+                        <div className="flex justify-end pt-1.5 border-t border-slate-50 mt-1">
+                          <Button 
+                            variant="danger" 
+                            size="small" 
+                            className="w-full font-semibold shadow-sm text-xs py-1.5"
+                            onClick={() => handleRefund(d.id)}
+                          >
+                            Refund
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </AppCard>
