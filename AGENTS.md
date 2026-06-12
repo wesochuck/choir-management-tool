@@ -411,7 +411,40 @@ When using this exception, add:
 
 When displaying empty states in dashboards or lists (e.g. "No items found" or "No season bundles configured"), always include a call-to-action button (preceded by a `+` symbol for creation/addition actions, e.g. `+ Create New Bundle`) directly within the empty state container. This ensures the user does not have to hunt for primary action buttons located elsewhere on the screen.
 
-## 18. Before Finishing
+## 18. Vitest Testing Guidelines
+
+All tests are executed via Vitest, but they use a custom compatibility layer mapped to `'node:test'` imports.
+
+### Import Convention
+Always use the Node-style test imports:
+```ts
+import { describe, it, test, mock, beforeEach, afterEach } from 'node:test';
+import assert from 'node:assert';
+```
+Do NOT import directly from `'vitest'` in test files, as we use a path-aliased wrapper [`test/vitest-node-test-compat.ts`](file:///Users/wesosborn/Downloads/choir-management-tool/test/vitest-node-test-compat.ts) to keep test definitions consistent.
+
+### Spies & Mocks
+Use the wrapper's `mock` context properties which mimic Node's test runner API:
+- Create mock function: `const fn = mock.fn(impl);`
+- Spy on method: `const spy = mock.method(obj, 'methodName', impl);`
+- Change implementation dynamically: `fn.mock.mockImplementation(newImpl);`
+- Reset calls: `fn.mock.resetCalls();`
+- Call count assertion: `assert.strictEqual(fn.mock.callCount(), 1);`
+- Asserting calls arguments: `assert.deepStrictEqual(fn.mock.calls[0].arguments, ['arg1']);`
+
+### Test Environment Selection
+- **Node Environment (Default)**: Normal backend/logic tests run in `'node'`. Place them directly in the `test/` directory.
+- **JSDOM Environment (Browser/UI)**: Component or hook tests requiring DOM/window APIs. Place them under `src/components/ui/**/*.test.ts`, `test/views/**/*.test.ts`, or add a directive comment at the very top of the test file:
+  ```ts
+  // @vitest-environment jsdom
+  ```
+
+### Running Tests
+Always prefix commands with `rtk`:
+- Run all tests: `rtk npm test`
+- Run single test file: `rtk npx vitest run path/to/my.test.ts`
+
+## 19. Before Finishing
 
 Before final response:
 

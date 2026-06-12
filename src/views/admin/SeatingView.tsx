@@ -52,6 +52,7 @@ export default function SeatingView() {
   const [showVoicePartsInList, setShowVoicePartsInList] = useState(true);
   
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const isWideLayout = isFullscreen;
   const singersListPosition = getSingersListPosition();
   
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -294,7 +295,7 @@ export default function SeatingView() {
 
   return (
     <div 
-      className={`flex w-full flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] print-landscape ${isFullscreen ? '!bg-[var(--bg)] !p-[var(--space-md)] w-full max-w-none !mx-0' : ''}`} 
+      className={`flex w-full flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] print-landscape ${isWideLayout ? '!bg-[var(--bg)] !p-[var(--space-md)] w-full max-w-none !mx-0' : ''}`} 
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
@@ -630,7 +631,7 @@ export default function SeatingView() {
 
           <div className="flex w-full min-w-0 flex-col items-start gap-[var(--space-md)] sm:flex-row">
           <AppCard className="w-full min-w-0 flex-1 flex-col p-[var(--space-md)]">
-            <div className="no-print flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--primary-light)] p-1.5 px-3 shadow-sm">
+            <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--primary-light)] p-1.5 px-3 shadow-sm">
                <div className="flex flex-row gap-1">
                   <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs font-label text-[var(--text-muted)]">
                     🧹 Clear

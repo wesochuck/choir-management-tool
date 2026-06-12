@@ -9,7 +9,7 @@ Object.defineProperty(globalThis, 'navigator', {
 });
 (globalThis as unknown as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 
-import test, { afterEach } from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { render, fireEvent, within } from '@testing-library/react';
@@ -18,10 +18,6 @@ import { ConfirmDialog } from './ConfirmDialog';
 function getDialog() {
   return document.body.querySelector('[role="dialog"]');
 }
-
-afterEach(() => {
-  document.body.innerHTML = '';
-});
 
 test('ConfirmDialog does not render when isOpen is false', () => {
   render(React.createElement(ConfirmDialog, {

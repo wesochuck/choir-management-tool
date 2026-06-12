@@ -272,12 +272,20 @@ body {
     --seat-vp-font-size: 7px !important;
     --seat-empty-font-size: 8px !important;
   }
+
+  [data-print-mode="visual"] .director-indicator {
+    display: flex !important;
+  }
 }
 
 @media print {
   /* Enforce standard portrait layout globally */
   @page {
     size: portrait;
+    margin: 0.5in;
+  }
+  @page landscape-canvas {
+    size: landscape;
     margin: 0.5in;
   }
 }

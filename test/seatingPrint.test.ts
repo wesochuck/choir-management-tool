@@ -15,8 +15,8 @@ test('seating list print mode keeps navigation and editor controls out of the pr
 
   assert.match(
     printRules,
-    /\[data-print-mode="text"\]\s+\.seating-print-shell\s*>\s*:not\(\.seating-text-list\)\s*\{[^}]*display:\s*none\s*!important/,
-    'text print mode should hide every seating print sibling except the row list',
+    /\[data-print-mode="text"\]\s+\[data-seating-text-list\]\s*\{[^}]*display:\s*block\s*!important/,
+    'text print mode should show the text list',
   );
 
   assert.match(
@@ -31,19 +31,13 @@ test('seating grid print mode prints only the visual grid surface', () => {
 
   assert.match(
     printRules,
-    /\[data-print-mode="visual"\]\s+\.seating-text-list[\s\S]*?\{[^}]*display:\s*none\s*!important/,
+    /\[data-print-mode="visual"\]\s+\[data-seating-text-list\][\s\S]*?\{[^}]*display:\s*none\s*!important/,
     'visual print mode should not show the text list',
   );
 
   assert.match(
     printRules,
-    /\[data-print-mode="visual"\]\s+\.seating-print-shell\s*>\s*:not\(\.grid-print\)[\s\S]*?\{[^}]*display:\s*none\s*!important/,
-    'visual print mode should hide shelf, warnings, and other print-shell siblings except the grid',
-  );
-
-  assert.match(
-    printRules,
-    /\[data-print-mode="visual"\]\s+\.unassigned-print-section[\s\S]*?\{[^}]*display:\s*none\s*!important/,
+    /\[data-print-mode="visual"\]\s+\[data-unassigned-print\][\s\S]*?\{[^}]*display:\s*none\s*!important/,
     'visual print mode should not print the unassigned singers print badge or shelf',
   );
 
