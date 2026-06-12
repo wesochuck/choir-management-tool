@@ -299,15 +299,6 @@ export default function SeatingView() {
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
-      {/* Dynamic @page setup to default to landscape orientation for printing */}
-      <style>{`
-        @media print {
-          @page {
-            size: landscape;
-            margin: ${printMode === 'visual' ? '0.25in' : '0.5in'};
-          }
-        }
-      `}</style>
       {/* Header Area */}
       <div className="no-print flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
@@ -445,7 +436,7 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           {/* Seating Charts Tabs Row */}
-          <div ref={tabsContainerRef} className="no-print mb-2 w-full flex-row flex-nowrap items-center gap-2 border-b border-border px-4">
+          <div ref={tabsContainerRef} className="no-print mb-2 w-full flex flex-row flex-nowrap items-center gap-2 border-b border-border px-4 overflow-x-auto">
             {/* Render visible tabs (dynamic count based on container width) */}
             {(charts || []).slice(0, visibleTabCount).map(c => {
               const isActive = c.id === activeChartId;

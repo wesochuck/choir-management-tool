@@ -481,3 +481,66 @@ test('codebase integrity: enforce no inline styles rule', () => {
   }
   assert.ok(true, 'No unauthorized inline styles found');
 });
+
+test('codebase integrity: no inline <style> tags without annotation', () => {
+  const files = getSrcFiles(['.tsx', '.jsx']);
+  const srcDir = resolveProjectPath('src');
+
+  const violations: string[] = [];
+  for (const file of files) {
+    const relPath = path.relative(srcDir, file);
+    const key = `src/${relPath}`;
+
+    const content = fs.readFileSync(file, 'utf8');
+    if (!content.includes('<style')) {
+      continue;
+    }
+
+    const lines = content.split('\n');
+    lines.forEach((line, idx) => {
+      if (line.includes('<style>') || line.includes('<style ')) {
+        const prevLine = idx > 0 ? lines[idx - 1] : '';
+        const currentLine = lines[idx];
+        const isBypassed = prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style');
+
+        if (!isBypassed) {
+          violations.push(`${key}:${idx + 1} -> "${line.trim()}"`);
+        }
+      }
+    });
+  }
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found raw <style> tag in component file:\n` +
+      violations.map(v => `  - ${v}`).join('\n') +
+      `\n\nDo not embed raw CSS in <style> tags inside components. ` +
+      `Use Tailwind utility classes in className props instead.\n` +
+      `If the styling is truly dynamic and cannot be expressed with Tailwind, add a preceding comment:\n` +
+      `// @allow-inline-style - [explanation of dynamic styling requirement]`
+    );
+  }
+  assert.ok(true, 'No unauthorized <style> tags found');
+});
+
+test('codebase integrity: no custom CSS files outside index.css', () => {
+  const srcDir = resolveProjectPath('src');
+  const files = getFilesRecursively(srcDir, ['.css', '.scss', '.less', '.module.css']);
+  const allowed = [path.resolve(srcDir, 'index.css')];
+
+  const violations = files
+    .filter(f => !allowed.includes(f))
+    .map(f => path.relative(srcDir, f));
+
+  if (violations.length > 0) {
+    assert.fail(
+      `CRITICAL ERROR: Found custom CSS files that bypass Tailwind:\n` +
+      violations.map(v => `  - src/${v}`).join('\n') +
+      `\n\nDo not create standalone CSS files for styling components. ` +
+      `Use Tailwind utility classes in className props or define custom theme values in src/index.css.\n` +
+      `The only allowed CSS file is src/index.css (Tailwind v4 entry point with @theme configuration).\n` +
+      `For component-specific styles, use Tailwind's built-in utilities or add @utility directives to src/index.css.`
+    );
+  }
+  assert.ok(true, 'No unauthorized CSS files found');
+});
