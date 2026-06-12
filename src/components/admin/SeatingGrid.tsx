@@ -528,7 +528,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
 
                   <div
-                    className={`font-bold ${isCompact ? 'text-[9px]' : 'text-xs'}`}
+                    className={`font-bold ${isCompact ? 'text-[10px]' : 'text-[13px]'}`}
                     // @allow-inline-style - dynamic color from computed seat styles
                     style={{ color: seatTextColor }}>
                     {displaySuggestion
@@ -539,15 +539,15 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   {assignedProfile ? (
                     <div className="flex flex-col"
                       // @allow-inline-style - dynamic gap based on compact mode
-                      style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
+                      style={{ gap: '1px', alignItems: 'center' }}>
                       <div
-                        className={`leading-[1.1] font-extrabold ${isCompact ? 'text-[11px]' : 'text-sm'}`}
+                        className={`leading-tight font-extrabold ${isCompact ? 'text-xs' : 'text-sm'}`}
                         // @allow-inline-style - dynamic color from computed styles
                         style={{ color: colors.text }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>
                       <div
-                        className={`font-bold ${isCompact ? 'text-[9px]' : 'text-[11px]'}`}
+                        className={`font-bold ${isCompact ? 'text-[10px]' : 'text-xs'}`}
                         // @allow-inline-style - dynamic color from computed styles
                         style={{ color: colors.text }}>
                         {assignedProfile.voicePart}
@@ -567,7 +567,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     </div>
                   ) : (
                     <div
-                      className={`font-semibold ${isCompact ? 'text-[9px]' : 'text-xs'}`}
+                      className={`font-semibold ${isCompact ? 'text-[10px]' : 'text-[13px]'}`}
                       // @allow-inline-style - dynamic color from computed styles
                       style={{ color: seatTextColor }}>
                       {isCompact ? '—' : 'Empty'}
