@@ -10,6 +10,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { Modal, Button, FormField, Badge, EmptyState, Select } from '../../components/ui';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
+import { settingsService } from '../../services/settingsService';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -27,6 +28,13 @@ export default function TicketingView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
   const [sortBy, setSortBy] = useState<'lastName' | 'firstName' | 'saleDate'>('lastName');
+
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  useEffect(() => {
+    settingsService.getLogoUrl()
+      .then(url => setLogoUrl(url ?? null))
+      .catch(() => setLogoUrl(null));
+  }, []);
 
   // Bundle CRUD modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1283,6 +1291,7 @@ export default function TicketingView() {
               url="/tickets"
               badgeText="General Storefront"
               badgeTone="success"
+              logoUrl={logoUrl ?? undefined}
             />
           </div>
 
@@ -1300,6 +1309,7 @@ export default function TicketingView() {
                   url={`/tickets/${ev.id}`}
                   badgeText="Concert Ticket"
                   badgeTone="performance"
+                  logoUrl={logoUrl ?? undefined}
                 />
               ))}
               {upcomingTicketingEvents.length === 0 && (
@@ -1324,6 +1334,7 @@ export default function TicketingView() {
                   url={`/tickets/bundle/${b.id}`}
                   badgeText="Season Pass"
                   badgeTone="success"
+                  logoUrl={logoUrl ?? undefined}
                 />
               ))}
               {activeBundles.length === 0 && (

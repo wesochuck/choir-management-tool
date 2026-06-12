@@ -8,6 +8,17 @@ interface QRCodeShareCardProps {
   url: string;
   badgeText?: string;
   badgeTone?: 'success' | 'performance' | 'rehearsal' | 'neutral';
+  logoUrl?: string;
+  logoSize?: number;
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
 }
 
 export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
@@ -16,6 +27,8 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
   url,
   badgeText,
   badgeTone = 'neutral',
+  logoUrl,
+  logoSize,
 }) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
@@ -30,33 +43,78 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
     return `${origin.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
   }, [url]);
 
+  const effectiveLogoSize = useMemo(() => {
+    const raw = logoSize ?? 0.2;
+    return Math.min(0.45, Math.max(0.05, raw));
+  }, [logoSize]);
+
   useEffect(() => {
     let active = true;
-    QRCode.toDataURL(
-      absoluteUrl,
-      {
-        width: 512,
-        margin: 2,
-        color: {
-          dark: '#0f172a', // Slate 900
-          light: '#ffffff',
-        },
+    const qrOptions: QRCode.QRCodeToDataURLOptions = {
+      width: 512,
+      margin: 2,
+      errorCorrectionLevel: 'H',
+      color: {
+        dark: '#0f172a',
+        light: '#ffffff',
       },
-      (err, qrUrl) => {
+    };
+
+    (async () => {
+      try {
+        const qrDataUrl = await QRCode.toDataURL(absoluteUrl, qrOptions);
         if (!active) return;
-        if (err) {
-          console.error('Failed to generate QR code', err);
-          setGenerationError(true);
-        } else {
-          setQrCodeUrl(qrUrl);
-          setGenerationError(false);
+
+        let finalUrl = qrDataUrl;
+
+        if (logoUrl) {
+          try {
+            const qrImage = await loadImage(qrDataUrl);
+            const logoImage = await loadImage(logoUrl);
+            if (!active) return;
+
+            const qrWidth = qrImage.width;
+            const qrHeight = qrImage.height;
+            const canvas = document.createElement('canvas');
+            canvas.width = qrWidth;
+            canvas.height = qrHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+            ctx.drawImage(qrImage, 0, 0);
+
+            const logoPx = qrWidth * effectiveLogoSize;
+            const bgRadius = (logoPx * 1.4) / 2;
+            const cx = qrWidth / 2;
+            const cy = qrHeight / 2;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, bgRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            ctx.drawImage(logoImage, cx - logoPx / 2, cy - logoPx / 2, logoPx, logoPx);
+
+            finalUrl = canvas.toDataURL();
+          } catch (logoErr) {
+            console.error('Failed to composite logo onto QR code', logoErr);
+          }
         }
+
+        if (!active) return;
+        setQrCodeUrl(finalUrl);
+        setGenerationError(false);
+      } catch (err) {
+        if (!active) return;
+        console.error('Failed to generate QR code', err);
+        setGenerationError(true);
       }
-    );
+    })();
+
     return () => {
       active = false;
     };
-  }, [absoluteUrl]);
+  }, [absoluteUrl, logoUrl, effectiveLogoSize]);
 
   const handleCopyLink = async () => {
     try {
