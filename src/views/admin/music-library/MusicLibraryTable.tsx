@@ -162,7 +162,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
             </div>
 
             {!isLoading && totalParentCount > 0 && (
-                <div className="mt-1 flex items-center justify-between rounded-b-md border-t border-border bg-[var(--bg-card,#fff)] px-6 py-4">
+                <div className="flex items-center justify-between rounded-b-md border-x border-b border-border bg-[var(--bg-card,#fff)] px-6 py-4">
                     <span className="text-muted text-sm font-medium">
                         Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–{Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
                     </span>

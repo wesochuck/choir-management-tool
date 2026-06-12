@@ -308,82 +308,68 @@ export default function SeatingView() {
           }
         }
       `}</style>
-      <div className="no-print flex w-full flex-row items-center justify-between gap-4 border-b border-border pb-2">
-        <div className="flex-row flex-wrap items-center gap-4">
-          <h1 className="text-headline m-0 text-xl font-extrabold">
-            Seating Chart
-          </h1>
-          
-          <div className="flex-row gap-[2px] rounded-md border border-border bg-[var(--surface-muted,#f1f5f9)] p-[3px]">
-            <button
-              onClick={() => setActiveTab('chart')}
-              // @allow-inline-style - active tab state
-              style={{
-                height: '28px',
-                minHeight: '28px',
-                padding: '0 12px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                borderRadius: 'calc(var(--radius-md) - 2px)',
-                backgroundColor: activeTab === 'chart' ? 'var(--color-primary)' : 'transparent',
-                color: activeTab === 'chart' ? 'var(--bg, white)' : 'var(--color-text-muted)',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              Chart
-            </button>
-            <button
-              onClick={() => setActiveTab('templates')}
-              // @allow-inline-style - active tab state
-              style={{
-                height: '28px',
-                minHeight: '28px',
-                padding: '0 12px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                borderRadius: 'calc(var(--radius-md) - 2px)',
-                backgroundColor: activeTab === 'templates' ? 'var(--color-primary)' : 'transparent',
-                color: activeTab === 'templates' ? 'var(--bg, white)' : 'var(--color-text-muted)',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              Formations
-            </button>
-          </div>
-        </div>
-        
-        {activeTab === 'chart' && (
-          <div className="flex-row flex-wrap items-center gap-2">
-            <div className="flex-row items-center gap-[6px]">
-              <span className="font-semibold text-muted">Perf:</span>
-              <select 
-                value={performanceId} 
-                onChange={(e) => setPerformanceId(e.target.value)}
-                className="h-8 min-h-[32px] w-[180px] rounded-md border border-border bg-surface px-[8px] text-xs"
-              >
-                <option value="">-- Select Performance --</option>
-                {performances.map(p => (
-                  <option key={p.id} value={p.id}>{p.title || formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })}</option>
-                ))}
-              </select>
-            </div>
+      {/* Header Area */}
+      <div className="no-print flex flex-col gap-2">
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+          Seating Chart
+        </h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
+          Assign singers to seats, manage formations, and print seating layouts
+        </p>
+      </div>
 
-            <div className="flex-row items-center gap-[6px]">
-              <span className="font-semibold text-muted">Venue:</span>
-              <select 
-                value={venueId} 
+      {/* Tabs / Actions Navigation Bar */}
+      <div className="no-print flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
+        <div className="flex gap-3 md:gap-6">
+          <button
+            type="button"
+            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+              activeTab === 'chart'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+            }`}
+            onClick={() => setActiveTab('chart')}
+          >
+            Chart
+          </button>
+          <button
+            type="button"
+            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+              activeTab === 'templates'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+            }`}
+            onClick={() => setActiveTab('templates')}
+          >
+            Formations
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Deck (Chart tab only) */}
+      {activeTab === 'chart' && (
+        <div className="no-print grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Performance</label>
+            <select
+              value={performanceId}
+              onChange={(e) => setPerformanceId(e.target.value)}
+              className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            >
+              <option value="">-- Select Performance --</option>
+              {performances.map(p => (
+                <option key={p.id} value={p.id}>{p.title || formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Venue</label>
+            <div className="flex items-center gap-2">
+              <select
+                value={venueId}
                 onChange={(e) => setVenueId(e.target.value)}
-                className="h-8 min-h-[32px] w-[220px] rounded-md border border-border bg-surface px-[8px] text-xs"
+                className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -391,7 +377,7 @@ export default function SeatingView() {
                 ))}
               </select>
               {hasLayoutOverride && (
-                <button 
+                <button
                   onClick={async () => {
                     const confirmed = await dialog.confirm({
                       title: 'Update Master Venue Template?',
@@ -416,45 +402,43 @@ export default function SeatingView() {
                       }
                     }
                   }}
-                  className="no-print inline-flex h-9 min-h-[36px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-dashed border-primary bg-primary-light px-2 text-[0.8125rem] font-semibold text-primary-deep" 
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-primary bg-primary-light px-3 text-xs font-bold text-primary-deep shadow-sm transition-colors hover:bg-primary/10"
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
                 </button>
               )}
             </div>
-
-            <div className="flex-row items-center gap-[6px]">
-              <span className="font-semibold text-muted">Format:</span>
-              <div className="flex-row gap-1">
-                <select 
-                  value={chart?.formationId || seatingSettings.defaultFormationId} 
-                  onChange={async (e) => {
-                    const selectedId = e.target.value;
-                    const formation = seatingSettings.formations.find(f => f.id === selectedId);
-                    if (!formation) return;
-                    
-                    const shouldChange = await dialog.confirm({
-                      title: 'Change Formation',
-                      message: 'Changing the formation logic will clear all current seating assignments. Do you want to proceed?',
-                      confirmLabel: 'Change',
-                      variant: 'danger',
-                    });
-                    if (!shouldChange) return;
-
-                    await updateChart({ formationId: selectedId, assignments: {} });
-                  }}
-                  className="h-8 min-h-[32px] w-[130px] rounded-md border border-border bg-surface px-[8px] text-xs"
-                >
-                  {seatingSettings.formations?.map(formation => (
-                    <option key={formation.id} value={formation.id}>{formation.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
           </div>
-        )}
-      </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Formation</label>
+            <select
+              value={chart?.formationId || seatingSettings.defaultFormationId}
+              onChange={async (e) => {
+                const selectedId = e.target.value;
+                const formation = seatingSettings.formations.find(f => f.id === selectedId);
+                if (!formation) return;
+
+                const shouldChange = await dialog.confirm({
+                  title: 'Change Formation',
+                  message: 'Changing the formation logic will clear all current seating assignments. Do you want to proceed?',
+                  confirmLabel: 'Change',
+                  variant: 'danger',
+                });
+                if (!shouldChange) return;
+
+                await updateChart({ formationId: selectedId, assignments: {} });
+              }}
+              className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+            >
+              {seatingSettings.formations?.map(formation => (
+                <option key={formation.id} value={formation.id}>{formation.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'templates' ? (
         <SeatingFormationsEditor onSaveSuccess={refresh} />
@@ -469,12 +453,11 @@ export default function SeatingView() {
               return (
                 <div 
                   key={c.id} 
-                  className="-mb-px cursor-pointer flex-row items-center gap-[4px] px-[10px] py-2 transition-[border-color_0.15s_ease]"
-                  // @allow-inline-style - dynamic border based on active and drag-over state
-                  style={{ 
-                    borderBottom: `2px solid ${isActive ? 'var(--color-primary)' : 'transparent'}`,
-                    borderLeft: isDragOver ? '2px solid var(--color-primary)' : '2px solid transparent'
-                  }}
+                  className={`-mb-px cursor-pointer flex-row items-center gap-[4px] px-[10px] py-2 border-b-2 border-l-2 transition-[border-color_0.15s_ease] ${
+                    isActive ? 'border-b-primary' : 'border-b-transparent'
+                  } ${
+                    isDragOver ? 'border-l-primary' : 'border-l-transparent'
+                  }`}
                   onClick={() => {
                     if (!isActive) {
                       setActiveChartId(c.id);
@@ -578,11 +561,11 @@ export default function SeatingView() {
             {/* Render overflow dropdown when charts exceed visible count */}
             {(charts || []).length > visibleTabCount && (
               <div 
-                className="-mb-px border-b-0 pb-2"
-                // @allow-inline-style - dynamic border based on active chart visibility
-                style={{
-                  borderBottom: `2px solid ${!(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--color-primary)' : 'transparent'}`
-                }}
+                className={`-mb-px border-b-2 pb-2 ${
+                  !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId)
+                    ? 'border-b-primary'
+                    : 'border-b-transparent'
+                }`}
               >
                 <select
                   value={(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? '' : activeChartId}
@@ -646,9 +629,7 @@ export default function SeatingView() {
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border px-2.5 text-xs font-label ${isFullscreen ? 'text-[var(--bg,white)]' : 'text-muted'}`}
-                    // @allow-inline-style - dynamic fullscreen state background
-                    style={{ backgroundColor: isFullscreen ? 'var(--color-primary)' : 'var(--color-surface)' }}
+                    className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border px-2.5 text-xs font-label ${isFullscreen ? 'bg-primary text-surface' : 'bg-surface text-muted'}`}
                   >
                    {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
@@ -692,11 +673,9 @@ export default function SeatingView() {
                  </span>
                  <button
                    onClick={handleManualSave}
-                   className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-2.5 text-xs font-label text-muted"
-                   // @allow-inline-style - dynamic save feedback color
-                   style={{ 
-                     color: saveError ? 'var(--color-danger-text)' : saveFeedback ? 'var(--color-success-text)' : 'var(--color-text)'
-                   }}
+                   className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-2.5 text-xs font-label ${
+                     saveError ? 'text-[var(--color-danger-text)]' : saveFeedback ? 'text-[var(--color-success-text)]' : 'text-text'
+                   }`}
                  >
                    {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
                  </button>
