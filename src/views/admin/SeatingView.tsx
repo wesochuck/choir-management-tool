@@ -52,7 +52,6 @@ export default function SeatingView() {
   const [showVoicePartsInList, setShowVoicePartsInList] = useState(true);
   
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const isWideLayout = isFullscreen;
   const singersListPosition = getSingersListPosition();
   
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -295,11 +294,11 @@ export default function SeatingView() {
 
   return (
     <div 
-      className={`flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] print-landscape ${isWideLayout ? '' : ''} ${isFullscreen ? '!bg-[var(--bg)] !p-[var(--space-md)]' : ''}`} 
+      className={`flex w-full flex-col gap-[var(--space-md)] bg-transparent px-0 py-[var(--space-sm)] print-landscape ${isFullscreen ? '!bg-[var(--bg)] !p-[var(--space-md)] w-full max-w-none !mx-0' : ''}`} 
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
-      <div className="no-print items-center justify-between gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
+      <div className="no-print flex w-full flex-row items-center justify-between gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
         <div className="flex-row flex-wrap items-center gap-[var(--space-md)]">
           <h1 className="text-headline m-0 text-xl font-extrabold">
             Seating Chart
@@ -621,7 +620,7 @@ export default function SeatingView() {
           </div>
 
           <div className="flex w-full min-w-0 flex-col items-start gap-[var(--space-md)] sm:flex-row">
-          <AppCard className="max-w-full min-w-0 flex-1 flex-col p-[var(--space-md)]">
+          <AppCard className="w-full min-w-0 flex-1 flex-col p-[var(--space-md)]">
             <div className="no-print flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--primary-light)] p-1.5 px-3 shadow-sm">
                <div className="flex flex-row gap-1">
                   <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs font-label text-[var(--text-muted)]">

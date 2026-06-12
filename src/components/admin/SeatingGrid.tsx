@@ -98,7 +98,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const tightGridGap = isCompact ? 4 : 8;
   const labelWidth = isCompact ? 75 : 105;
   const canEditLayout = !isReadOnly && Boolean(onUpdateRowCounts);
-  const editButtonCount = canEditLayout ? 3 : 0;
+  const editButtonCount = canEditLayout ? 2 : 0;
   const rowChildCount = 1 + maxSeats + editButtonCount;
   const editButtonWidth = editButtonCount * 28;
   const editButtonMargins = canEditLayout ? 24 : 0;
@@ -267,7 +267,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "🗑️" remove row button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="no-print btn btn-ghost ml-1.5 inline-flex size-7 min-w-7 min-h-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-danger-bg p-0 text-[13px] font-bold text-danger-text shadow-sm transition-all duration-200"
+                className="no-print ml-1.5 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-danger-bg p-0 text-[13px] font-bold text-danger-text shadow-sm transition-all duration-200 hover:bg-opacity-80 active:scale-95"
                 onClick={async () => {
                   const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
                   let shouldRemove = true;
@@ -588,7 +588,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "+" add seat button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="no-print btn btn-ghost ml-3 inline-flex size-7 min-w-7 min-h-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-primary bg-primary-light p-0 text-[15px] font-bold text-primary-deep shadow-sm transition-all duration-200"
+                className="no-print ml-3 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-primary bg-primary-light p-0 text-[15px] font-bold text-primary-deep shadow-sm transition-all duration-200 hover:bg-opacity-80 active:scale-95"
                 onClick={() => {
                   const newRowCounts = [...rowCounts];
                   newRowCounts[rowIndex] += 1;
@@ -597,38 +597,6 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 title="Add seat to this row"
               >
                 +
-              </button>
-            )}
-
-            {/* "-" remove seat button */}
-            {!isReadOnly && onUpdateRowCounts && seatCount > 0 && (
-              <button
-                className="no-print btn btn-ghost ml-1.5 inline-flex size-7 min-w-7 min-h-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-danger-text bg-danger-bg p-0 text-[15px] font-bold text-danger-text shadow-sm transition-all duration-200"
-                onClick={async () => {
-                  const seatIndex = seatCount - 1;
-                  const seatKey = `${rowIndex}-${seatIndex}`;
-                  const seatHasAssignment = !!assignments[seatKey];
-                  let shouldRemove = true;
-                  if (seatHasAssignment) {
-                    const profile = profileMap[assignments[seatKey]];
-                    const singerName = profile ? profile.name : 'A singer';
-                    shouldRemove = await dialog.confirm({
-                      title: 'Remove Seat?',
-                      message: `The last seat of Row ${rowIndex + 1} is assigned to ${singerName}. Removing this seat will unassign them. Proceed?`,
-                      confirmLabel: 'Remove Seat',
-                      cancelLabel: 'Cancel',
-                      variant: 'danger'
-                    });
-                  }
-
-                  if (shouldRemove) {
-                    const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
-                    onUpdateRowCounts(result.rowCounts, result.assignments);
-                  }
-                }}
-                title="Remove last seat from this row"
-              >
-                -
               </button>
             )}
           </div>
