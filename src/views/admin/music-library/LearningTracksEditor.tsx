@@ -164,7 +164,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 onAddPart(val);
                             }
                         }}
-                        className="!h-8 !py-1 !pl-2 !pr-7 !text-[11px] !w-auto inline-block cursor-pointer font-medium"
+                        size="compact" className="!w-auto inline-block cursor-pointer font-medium"
                     >
                         <option value="" disabled>Select voice part...</option>
                         {addableParts.map(vp => (

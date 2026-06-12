@@ -1249,7 +1249,7 @@ export function MusicPieceModal({
                     )}
                   </div>
                   <Select
-                    className="!h-10 !w-full"
+                    size="small"
                     value=""
                     onChange={(e) => {
                       if (e.target.value) togglePerformance(e.target.value);
@@ -1383,7 +1383,7 @@ export function MusicPieceModal({
 
               <div className="flex flex-row flex-wrap gap-3">
                 <Select
-                  className="!h-10 min-w-0 flex-[1_1_200px]"
+                  size="small" className="min-w-0 flex-[1_1_200px]"
                   value=""
                   onChange={(e) => {
                     if (e.target.value) {
@@ -1451,7 +1451,7 @@ export function MusicPieceModal({
                       <Select
                         value={quickVenue}
                         onChange={(e) => setQuickVenue(e.target.value)}
-                        className="!h-9 !w-full !text-xs"
+                        size="compact"
                       >
                         <option value="">-- Select Venue --</option>
                         {venues.map((v) => (

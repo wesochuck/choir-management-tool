@@ -452,7 +452,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     <Select
                       value={profileId || ''}
                       onChange={(e) => onAssign(seatKey, e.target.value)}
-                      className="!absolute !inset-0 !size-full !cursor-pointer !opacity-0"
+                      visuallyHidden
                     >
                        <option value="">-- Assign --</option>
                       <option value="">(Empty)</option>

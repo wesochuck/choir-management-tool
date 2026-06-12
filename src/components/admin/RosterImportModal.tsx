@@ -385,7 +385,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   <Select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className="!h-[38px] !w-[200px] !py-1"
+                    size="small" className="!w-[200px]"
                     // @allow-inline-style - conditional match border
                     style={{
                       borderColor: selectedIndex !== -1 ? 'var(--color-primary)' : undefined,

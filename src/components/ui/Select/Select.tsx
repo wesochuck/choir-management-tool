@@ -2,7 +2,7 @@ import type { ComponentPropsWithoutRef } from 'react';
 
 export type SelectSize = 'default' | 'small' | 'compact';
 
-export interface SelectProps extends ComponentPropsWithoutRef<'select'> {
+export interface SelectProps extends Omit<ComponentPropsWithoutRef<'select'>, 'size'> {
   invalid?: boolean;
   /** @default 'default' */
   size?: SelectSize;

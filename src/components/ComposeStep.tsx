@@ -52,7 +52,7 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           <Select
             value={messageType}
             onChange={(e) => onMessageTypeChange(e.target.value as 'Email' | 'SMS' | 'Both')}
-            className="!h-10"
+            size="small"
           >
             <option value="Email">Email</option>
             <option value="SMS">SMS</option>

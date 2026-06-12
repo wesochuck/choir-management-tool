@@ -640,7 +640,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 <Select
                   value={selectedDeviceId}
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className="!rounded !border-slate-200 !bg-white !px-2 !py-1 !text-slate-700"
+                  size="small" className="!rounded !border-slate-200 !bg-white !text-slate-700"
                 >
                   {videoDevices.map((device) => (
                     <option key={device.deviceId} value={device.deviceId}>

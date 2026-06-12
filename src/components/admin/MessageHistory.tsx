@@ -93,7 +93,7 @@ export function MessageHistory({
         <Select
           value={sourceFilter}
           onChange={(e) => onSourceFilterChange(e.target.value as SourceFilter)}
-          className="!h-10"
+          size="small"
         >
           <option value="all">All Sources</option>
           <option value="manual">Manual</option>

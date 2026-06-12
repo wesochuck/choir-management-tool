@@ -295,7 +295,7 @@ export default function PatronsView() {
                   <Select
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
-                    className="block w-full cursor-pointer"
+
                   >
                     <option value="ltv">Lifetime Value</option>
                     <option value="name">Name</option>

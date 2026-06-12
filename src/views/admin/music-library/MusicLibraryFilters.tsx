@@ -125,7 +125,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 <div className="flex flex-row items-center gap-2">
                     <span className="text-sm font-semibold text-text-muted">Last Performed:</span>
                     <Select
-                      className="!h-10 !w-auto !py-1.5"
+                      size="small" className="!w-auto"
                       value={recencyFilter}
                       onChange={(e) => onRecencyFilterChange(e.target.value as PerformanceRecencyFilter)}
                     >
@@ -142,7 +142,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
                 <div className="flex flex-row items-center gap-2">
                     <span className="text-sm font-semibold text-text-muted">Per Page:</span>
                     <Select
-                      className="!h-10 !w-[80px] !min-w-[80px] !py-1.5"
+                      size="small" className="!w-[80px] !min-w-[80px]"
                       value={pageSize}
                       onChange={(e) => onPageSizeChange(Number(e.target.value))}
                     >

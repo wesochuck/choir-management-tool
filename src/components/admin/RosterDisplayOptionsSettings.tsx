@@ -18,7 +18,7 @@ export function RosterDisplayOptionsSettings({
           <Select
             value={configDefaultStatus}
             onChange={(event) => setConfigDefaultStatus(event.target.value)}
-            className="!h-10"
+            size="small"
           >
             <option value="">All Statuses</option>
             <option value="Active">Active</option>

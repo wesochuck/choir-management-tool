@@ -74,7 +74,7 @@ export function VoicePartEditor({
                     newParts[index] = { ...newParts[index], sectionCode: e.target.value };
                     setConfigVoiceParts(newParts);
                   }}
-                  className="!h-10"
+                  size="small"
                 >
                   <option value="">Select Section...</option>
                   {configSections.map(s => (

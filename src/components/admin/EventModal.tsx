@@ -500,7 +500,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       setActiveTab('details');
                     }
                   }}
-                  className="!h-10 !w-full"
+                  size="small"
                 >
                   <option value="Rehearsal">Rehearsal</option>
                   <option value="Performance">Performance</option>
@@ -524,7 +524,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 <Select 
                   value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
                   onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                  className="!h-10 !w-full"
+                  size="small"
                 >
                   <option value={30}>30 minutes</option>
                   <option value={45}>45 minutes</option>
@@ -583,7 +583,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   }
                 }}
                 required
-                className="!h-10 !w-full"
+                size="small"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -692,7 +692,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                         <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Day</label>
                         <Select 
                           value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
-                          className="!h-10 !w-full animate-none"
+                          size="small" className="animate-none"
                         >
                           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
                             <option key={d} value={i}>{d}</option>
@@ -712,7 +712,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       <Select 
                         value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
                         required
-                        className="!h-10 !w-full"
+                        size="small"
                       >
                         <option value="">-- Select Rehearsal Venue --</option>
                         {venues.map(v => (
@@ -736,7 +736,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 <Select 
                   value={formData.parentPerformanceId} 
                   onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
-                  className="!h-10 !w-full"
+                  size="small"
                 >
                   <option value="">None</option>
                   {performances.filter(p => p.id !== initialData?.id).map(p => (

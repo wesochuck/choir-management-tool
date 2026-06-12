@@ -251,7 +251,7 @@ export function ComposePanel({
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Event Context</label>
                   <Select
-                    className="w-full !text-sm !h-10"
+                    size="small"
                     value={filters.eventId}
                     onChange={(event) => handleEventContextChange(event.target.value)}
                   >
@@ -268,7 +268,7 @@ export function ComposePanel({
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">RSVP Status</label>
                   <Select
-                    className="w-full !text-sm !h-10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50"
+                    size="small"
                     value={filters.rsvp}
                     onChange={(event) =>
                       updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
@@ -291,7 +291,7 @@ export function ComposePanel({
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Member Status</label>
                   <Select
-                    className="w-full !text-sm !h-10"
+                    size="small"
                     value={filters.globalStatus}
                     onChange={(event) => updateFilter('globalStatus', event.target.value)}
                   >

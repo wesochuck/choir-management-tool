@@ -98,7 +98,7 @@ export function useEventRosterExport({
               onChange={(event) => {
                 chosenSort = event.target.value as RsvpExportSort;
               }}
-              className="!h-10 !py-1"
+              size="small"
             >
               <option value="lastName">Last Name</option>
               <option value="section">Section → Last Name</option>

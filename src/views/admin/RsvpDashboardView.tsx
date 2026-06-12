@@ -45,7 +45,7 @@ export default function RsvpDashboardView() {
             <Select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="block w-full !text-sm !h-10"
+              size="small"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (

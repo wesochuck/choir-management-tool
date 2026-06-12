@@ -329,7 +329,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
                 required={formData.role !== 'admin'}
-                className="!h-[38px] !min-h-[38px] !py-1"
+                size="small"
               >
                 {formData.role === 'admin' ? (
                   <option value="">-- Not Applicable (Admin) --</option>
@@ -348,7 +348,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <Select 
                 value={formData.globalStatus} 
                 onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
-                className="!h-[38px] !min-h-[38px] !py-1"
+                size="small"
               >
                 <option value="Active">Active</option>
                 <option value="Idle">Idle</option>

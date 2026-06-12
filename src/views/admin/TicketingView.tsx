@@ -545,7 +545,6 @@ export default function TicketingView() {
                     <Select
                       value={selectedEventId}
                       onChange={e => setSelectedEventId(e.target.value)}
-                      className="block w-full cursor-pointer"
                     >
                       {visibleEvents.map(ev => {
                         const cutoffTime = now - 3 * 60 * 60 * 1000;
@@ -712,7 +711,6 @@ export default function TicketingView() {
                     <Select
                       value={sortBy}
                       onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
-                      className="block w-full cursor-pointer"
                     >
                       <option value="lastName">Last Name</option>
                       <option value="firstName">First Name</option>

@@ -328,7 +328,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             <Select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="!h-11 !w-[210px] !text-base"
+              size="small" className="!w-[210px] !text-base"
               aria-label="Sort singers"
             >
               <option value="lastName">Last Name</option>

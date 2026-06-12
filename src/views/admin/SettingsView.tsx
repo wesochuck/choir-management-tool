@@ -261,7 +261,7 @@ export default function SettingsView() {
               id="choir-timezone"
               value={timezone}
               onChange={(event) => setTimezone(event.target.value)}
-              className="block w-full max-w-lg cursor-pointer"
+              className="max-w-lg"
             >
               <optgroup label="Common Timezones">
                 {COMMON_TIMEZONES.map((tz) => (

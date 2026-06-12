@@ -328,9 +328,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   </div>
 
                   <Select
+                    size="small"
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className={`!h-[38px] !w-[200px] ${selectedIndex !== -1 ? '!border-primary' : ''}`}
+                    className={`!w-[200px] ${selectedIndex !== -1 ? '!border-primary' : ''}`}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
                     {csvData.headers.map((hdr: string, idx: number) => (

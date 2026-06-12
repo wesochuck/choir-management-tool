@@ -182,7 +182,7 @@ function FormationRow({
                 return { ...prev, formations: newFormations };
               });
             }}
-            className="!h-[38px] !w-full !px-2 !py-1 !text-sm"
+            size="small"
           >
             <option value="vertical_column">Vertical Columns</option>
             <option value="horizontal_row">Horizontal Rows</option>
@@ -296,7 +296,7 @@ function FormationRow({
                   return { ...prev, formations: newFormations };
                 });
               }}
-              className="!absolute !top-0 !left-0 !z-[2] !size-full !cursor-pointer !opacity-0"
+              visuallyHidden
               title={isVoice ? "Add voice part to order" : "Add section to order"}
             >
               <option value="" disabled>{isVoice ? "+ Add Voice Part" : "+ Add Section"}</option>
@@ -470,7 +470,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
           <Select
             value={customSeatingSettings.defaultFormationId}
             onChange={(e) => setCustomSeatingSettings((prev) => ({ ...prev, defaultFormationId: e.target.value }))}
-            className="!h-10 !w-full !max-w-[400px]"
+            size="small" className="!max-w-[400px]"
           >
             {customSeatingSettings.formations?.map(form => (
               <option key={form.id} value={form.id}>{form.name}</option>

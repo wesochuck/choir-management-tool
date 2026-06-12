@@ -72,7 +72,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
               value={currentRsvp}
               disabled={isSaving}
               onChange={(e) => onRsvpChange(performance.id, e.target.value as EventRoster['rsvp'])}
-              className={`!h-8 !min-h-[32px] !px-2 !text-[13px] !font-semibold ${selectToneClass}`}
+              size="compact" className={`!font-semibold ${selectToneClass}`}
             >
               <option value="Pending">Pending</option>
               <option value="Yes">Yes (Attending)</option>

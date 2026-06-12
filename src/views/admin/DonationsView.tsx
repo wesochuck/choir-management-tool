@@ -472,7 +472,7 @@ export default function DonationsView() {
                       <Select
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value as 'amount' | 'name' | 'date')}
-                        className="block w-full cursor-pointer"
+
                       >
                         <option value="date">Date (Newest First)</option>
                         <option value="amount">Amount (Highest First)</option>

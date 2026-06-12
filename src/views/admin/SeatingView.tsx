@@ -320,7 +320,7 @@ export default function SeatingView() {
             <Select
               value={performanceId}
               onChange={(e) => setPerformanceId(e.target.value)}
-              className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+              size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
             >
               <option value="">-- Select Performance --</option>
               {performances.map(p => (
@@ -335,7 +335,7 @@ export default function SeatingView() {
               <Select
                 value={venueId}
                 onChange={(e) => setVenueId(e.target.value)}
-                className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+                size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -396,7 +396,7 @@ export default function SeatingView() {
 
                 await updateChart({ formationId: selectedId, assignments: {} });
               }}
-              className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+              size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
             >
               {seatingSettings.formations?.map(formation => (
                 <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -415,7 +415,7 @@ export default function SeatingView() {
                     setActiveChartId(e.target.value);
                   }
                 }}
-                className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+                size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
               >
                 {chartList.map((c, index) => (
                   <option key={c.id} value={c.id}>{`${index + 1}. ${c.name}`}</option>
@@ -546,7 +546,7 @@ export default function SeatingView() {
                   <Select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    className="!h-8 !min-h-8 max-w-[200px] flex-1 !py-1 !px-[10px] !text-xs"
+                    size="compact" className="max-w-[200px] flex-1"
                   >
                     <option value="">-- Choose --</option>
                     {allCharts
