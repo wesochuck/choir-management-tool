@@ -30,25 +30,21 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
     transition: isDragging ? 'none' : (transition ?? undefined),
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : undefined,
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
     padding: isRows ? '6px 10px' : '4px 8px',
-    borderRadius: 'var(--radius-sm)',
     backgroundColor: bgColor,
     color: textColor,
     border: `1px solid ${borderColor}`,
-    fontSize: '0.85rem',
-    fontWeight: 600,
-    boxShadow: 'var(--shadow-sm)',
-    cursor: 'grab',
-    userSelect: 'none',
     // fill width when displaying as a row
     ...(isRows ? { width: '100%', boxSizing: 'border-box' as const, justifyContent: 'space-between' } : {}),
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      // @allow-inline-style - dynamic dnd-kit transform, transition, color, and row styling
+      className="flex items-center gap-1.5 rounded-[var(--radius-sm)] text-[0.85rem] font-semibold shadow-[var(--shadow-sm)] cursor-grab select-none"
+    >
       {/* drag handle */}
       <span
         {...attributes}

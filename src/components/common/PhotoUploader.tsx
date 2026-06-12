@@ -485,9 +485,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         {/* Drag and Drop Over Overlay */}
         {!isMobile && isDragging && !isUploading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-primary-light/90 text-primary-deep text-center z-10 p-2">
-            <span 
-              // @allow-inline-style - dynamic text size based on props
-              style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span>
+            <span className={`font-bold ${size === 'sm' ? 'text-[8px]' : 'text-[12px]'}`}>Drop Photo</span>
           </div>
         )}
       </div>

@@ -122,6 +122,22 @@ export default function PublicTicketPurchaseView() {
             <p className="text-body m-0">
               Date: <strong>{formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</strong>
             </p>
+            {event.expand?.venue?.name && (
+              <p className="text-body m-0">
+                Location:{' '}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.expand.venue.address || event.expand.venue.name || '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-text transition-colors hover:text-primary-deep inline-flex items-center gap-1"
+                >
+                  📍 {event.expand.venue.name}
+                  {event.expand.venue.address && (
+                    <span className="font-normal text-text-muted text-sm"> ({event.expand.venue.address})</span>
+                  )}
+                </a>
+              </p>
+            )}
             {event.doorsOpenTime && (
               <p className="m-0 text-sm text-text-muted">
                 Doors Open: <strong>{event.doorsOpenTime}</strong>

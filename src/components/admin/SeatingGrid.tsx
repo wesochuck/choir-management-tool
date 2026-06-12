@@ -229,9 +229,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             const newRowCounts = [...rowCounts, defaultSeats];
             onUpdateRowCounts(newRowCounts);
           }}
-          className="btn btn-sm btn-ghost no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep"
-          // @allow-inline-style - static typography and margin overrides for button appearance
-          style={{ fontWeight: 600, fontSize: '0.8125rem', marginBottom: 'var(--space-xs)' }}
+          className="btn btn-sm btn-ghost no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mb-[var(--space-xs)]"
           title="Add a new row with 10 seats at the back"
         >
           ➕ Add Row to Back
@@ -267,10 +265,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               justifyContent: 'center',
               minWidth: 'max-content'
             }}>
-            <div className="text-text flex flex-col items-end justify-center seating-row-label"
-              // @allow-inline-style - wider label to accommodate seat count badge
+            <div className="text-text flex flex-col items-end justify-center seating-row-label font-bold text-right pr-[var(--space-md)]"
               // @allow-inline-style - dynamic width based on compact mode
-              style={{ width: isCompact ? '110px' : '130px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}
+              style={{ width: isCompact ? '110px' : '130px' }}
               title={`${occupiedCount} of ${seatCount} seats occupied`}>
               <span className="leading-tight text-sm md:text-base">
                 {rowLabel}
@@ -533,39 +530,22 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           onUpdateRowCounts(result.rowCounts, result.assignments);
                         }
                       }}
-                      className="no-print"
+                      className={`no-print absolute top-[2px] right-[2px] w-4 h-4 rounded-full border-none text-[10px] flex items-center justify-center cursor-pointer z-[12] p-0 leading-none font-bold shadow-[var(--shadow-xs)] ${
+                        assignments[seatKey]
+                          ? 'bg-[var(--bg-muted,#e2e8f0)] text-[var(--text-muted,#475569)]'
+                          : 'bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]'
+                      }`}
                       data-action={assignments[seatKey] ? "unassign" : "delete"}
                       title={assignments[seatKey] ? "Unassign singer" : "Delete empty seat"}
-                      // @allow-inline-style - dynamic background and color based on assignment state
-                      style={{
-                        position: 'absolute',
-                        top: '2px',
-                        right: '2px',
-                        width: '16px',
-                        height: '16px',
-                        borderRadius: '50%',
-                        backgroundColor: assignments[seatKey] ? 'var(--bg-muted, #e2e8f0)' : 'var(--color-danger-bg)',
-                        color: assignments[seatKey] ? 'var(--text-muted, #475569)' : 'var(--color-danger-text)',
-                        border: 'none',
-                        fontSize: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        zIndex: 12,
-                        padding: 0,
-                        lineHeight: 1,
-                        fontWeight: 'bold',
-                        boxShadow: 'var(--shadow-xs)',
-                      }}
                     >
                       ×
                     </button>
                   )}
 
                   <div
+                    className="font-bold"
                     // @allow-inline-style - dynamic color and font size from computed seat styles
-                    style={{ fontWeight: 700, color: seatTextColor, fontSize: 'var(--seat-font-size)' }}>
+                    style={{ color: seatTextColor, fontSize: 'var(--seat-font-size)' }}>
                     {displaySuggestion
                       ? (isVoicePartLayout ? `${displaySuggestion} - ${displaySeatNumber}` : `${sectionDef?.name[0] || displaySuggestion}${displaySeatNumber}`)
                       : ''
@@ -576,13 +556,15 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       // @allow-inline-style - dynamic gap based on compact mode
                       style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
                       <div
+                        className="font-extrabold leading-[1.1]"
                         // @allow-inline-style - dynamic font size and color from computed styles
-                        style={{ fontWeight: 800, fontSize: 'var(--seat-name-font-size)', color: colors.text, lineHeight: 1.1 }}>
+                        style={{ fontSize: 'var(--seat-name-font-size)', color: colors.text }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
                       </div>
                       <div
+                        className="font-bold"
                         // @allow-inline-style - dynamic font size and color from computed styles
-                        style={{ fontWeight: 700, color: colors.text, fontSize: 'var(--seat-vp-font-size)' }}>
+                        style={{ color: colors.text, fontSize: 'var(--seat-vp-font-size)' }}>
                         {assignedProfile.voicePart}
                       </div>
                       <div className={`no-print pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 ${isMismatch ? 'bg-red-700' : ''} ${rowIndex === rowCounts.length - 1 ? '-bottom-1 translate-y-full' : '-top-1 -translate-y-full'}`}>
@@ -599,8 +581,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       </div>
                     </div>
                   ) : (
-                    // @allow-inline-style - dynamic font size and color from computed styles
-                    <div style={{ fontWeight: 600, color: seatTextColor, fontSize: 'var(--seat-empty-font-size)' }}>{isCompact ? '—' : 'Empty'}</div>
+                    <div
+                      className="font-semibold"
+                      // @allow-inline-style - dynamic font size and color from computed styles
+                      style={{ color: seatTextColor, fontSize: 'var(--seat-empty-font-size)' }}>
+                      {isCompact ? '—' : 'Empty'}
+                    </div>
                   )}
                 </div>
               );
@@ -638,13 +624,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             });
             onUpdateRowCounts(newRowCounts, shiftedAssignments);
           }}
-          className="btn btn-sm btn-ghost no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep"
-          // @allow-inline-style - static typography and margin overrides for button appearance
-          style={{
-            fontWeight: 600,
-            fontSize: '0.8125rem',
-            marginTop: 'var(--space-xs)'
-          }}
+          className="btn btn-sm btn-ghost no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mt-[var(--space-xs)]"
           title="Add a new row with 10 seats at the front"
         >
           ➕ Add Row to Front

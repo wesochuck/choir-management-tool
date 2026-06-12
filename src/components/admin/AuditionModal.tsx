@@ -302,10 +302,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                         }}
                         className="size-4 cursor-pointer accent-[var(--primary)]"
                       />
-                      // @allow-inline-style - Dynamic fontWeight based on isChecked state
-                      <span className="text-sm text-text" style={{
-                        fontWeight: isChecked ? 600 : 400 
-                      }}>
+                      <span className={`text-sm text-text ${isChecked ? 'font-semibold' : 'font-normal'}`}>
                         {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                       </span>
                     </label>

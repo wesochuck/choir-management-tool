@@ -517,19 +517,9 @@ export default function SeatingView() {
                       e.dataTransfer.effectAllowed = 'move';
                     }}
                     onDragEnd={() => setDragOverChartId(null)}
-                    // @allow-inline-style - dynamic drag handle color and opacity
-                    style={{
-                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)',
-                      opacity: isActive ? 0.95 : 0.75,
-                      cursor: 'grab',
-                      padding: '2px 4px',
-                      fontSize: '0.9rem',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      userSelect: 'none',
-                      marginRight: '2px',
-                      fontWeight: 'bold'
-                    }}
+                    className={`inline-flex items-center cursor-grab px-1 py-0.5 text-[0.9rem] select-none mr-0.5 font-bold ${
+                      isActive ? 'text-[var(--primary-deep)] opacity-95' : 'text-[var(--text-muted)] opacity-75'
+                    }`}
                     title="Drag to reorder"
                   >
                     ⋮⋮
@@ -539,12 +529,9 @@ export default function SeatingView() {
                       e.stopPropagation();
                       if (!isActive) setActiveChartId(c.id);
                     }}
-                    className="inline-flex h-auto min-h-auto items-center justify-center gap-2 whitespace-nowrap rounded-none border-none bg-transparent p-[4px_8px] text-xs font-medium shadow-none"
-                    // @allow-inline-style - dynamic font weight and color based on active state
-                    style={{ 
-                      fontWeight: isActive ? 700 : 500,
-                      color: isActive ? 'var(--primary-deep)' : 'var(--text-muted)'
-                    }}
+                    className={`inline-flex h-auto min-h-auto items-center justify-center gap-2 whitespace-nowrap rounded-none border-none bg-transparent p-[4px_8px] text-xs shadow-none ${
+                      isActive ? 'font-bold text-[var(--primary-deep)]' : 'font-medium text-[var(--text-muted)]'
+                    }`}
                   >
                     {c.name}
                   </button>
@@ -604,12 +591,11 @@ export default function SeatingView() {
                       setActiveChartId(e.target.value);
                     }
                   }}
-                  className="h-6 min-h-[24px] w-[140px] rounded-sm border-none bg-transparent px-[8px] text-xs shadow-none"
-                  // @allow-inline-style - dynamic color and weight based on active chart
-                  style={{
-                    color: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 'var(--primary-deep)' : 'var(--text-muted)',
-                    fontWeight: !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? 700 : 500
-                  }}
+                  className={`h-6 min-h-[24px] w-[140px] rounded-sm border-none bg-transparent px-[8px] text-xs shadow-none ${
+                    !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId)
+                      ? 'text-[var(--primary-deep)] font-bold'
+                      : 'text-[var(--text-muted)] font-medium'
+                  }`}
                 >
                   <option value="">More Charts... ▼</option>
                   {(charts || []).slice(visibleTabCount).map(c => (

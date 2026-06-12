@@ -244,7 +244,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
             {/* Section Subtotals */}
             <div
-              className="grid gap-4 border-b border-gray-200 pb-4"
+              className="roster-summary-sections grid gap-4 border-b border-gray-200 pb-4"
               // @allow-inline-style - dynamic grid columns based on section count
               style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}
             >

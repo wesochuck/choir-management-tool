@@ -181,19 +181,20 @@ export function SeatingBottomDock({
             const list = groupedSingers[key] || [];
             const secColor = color;
             const badgeStyle = secColor ? {
+              // @allow-inline-style - dynamic badge color matching section
               backgroundColor: secColor,
               color: getContrastColor(secColor),
               border: `1px solid ${secColor}`
             } : undefined;
             const labelStyle = secColor ? {
-              color: secColor,
-              fontWeight: 700
+              // @allow-inline-style - dynamic text color matching section
+              color: secColor
             } : undefined;
 
             return (
               <div key={key} className="flex h-full flex-col gap-1 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1.5">
                 <div className="flex-row items-center justify-between border-b border-[var(--border)] pb-1">
-                  <span className="text-label" style={labelStyle}>
+                  <span className="text-label font-bold" style={labelStyle}>
                     {label}
                   </span>
                   <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase" style={badgeStyle}>
@@ -222,16 +223,8 @@ export function SeatingBottomDock({
                             e.stopPropagation();
                             onRemoveRsvp(p.id, p.name);
                           }}
-                          className="no-print ml-1.5 flex size-[18px] min-h-[18px] shrink-0 cursor-pointer items-center justify-center rounded border-0 bg-transparent p-0 text-xs font-bold text-text-muted transition-all duration-200"
+                          className="no-print ml-1.5 flex size-[18px] min-h-[18px] shrink-0 cursor-pointer items-center justify-center rounded border-0 bg-transparent p-0 text-xs font-bold text-text-muted transition-all duration-200 hover:bg-red-500/15 hover:text-red-700"
                           title="Mark as Not Attending"
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-                            e.currentTarget.style.color = '#b91c1c';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.color = 'var(--text-muted)';
-                          }}
                         >
                           ×
                         </button>
