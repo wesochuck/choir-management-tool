@@ -161,7 +161,7 @@ export const EventList: React.FC<EventListProps> = ({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(event) => event.stopPropagation()}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-text-muted transition-colors hover:text-primary-deep"
+                  className="inline-flex w-fit items-center gap-1 text-sm font-medium text-text-muted transition-colors hover:text-primary-deep"
                 >
                   📍 <strong className="text-text group-hover:text-primary-deep">{e.expand?.venue?.name}</strong>
                 </a>

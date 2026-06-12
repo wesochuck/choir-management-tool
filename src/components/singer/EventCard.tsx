@@ -141,7 +141,7 @@ export const EventCard: React.FC<EventCardProps> = ({
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.expand?.venue?.address || event.expand?.venue?.name || '')}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="flex items-center gap-1"
+              className="inline-flex w-fit items-center gap-1"
             >
               📍 {event.expand?.venue?.name || ''}
             </a>
