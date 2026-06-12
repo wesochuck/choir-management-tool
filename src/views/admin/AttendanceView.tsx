@@ -552,91 +552,92 @@ export default function AttendanceView() {
             {/* Filter and Bulk Action Toolbar */}
             {!isLoading && !error && (
               <div className="mt-1 flex flex-col gap-3">
-                {/* Row 1 — Search */}
-                <div className="relative w-full">
-                  <span
-                    className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-gray-500"
-                    aria-hidden="true"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="11" cy="11" r="8"></circle>
-                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search active singers..."
-                    value={filterName}
-                    onChange={(e) => setFilterName(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-200 bg-surface px-[42px] pl-[38px] text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-                  />
-                  {filterName && (
-                    <button
-                      type="button"
-                      onClick={() => setFilterName('')}
-                      className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-none bg-none p-1 text-gray-500 hover:bg-black/5"
-                      title="Clear search"
-                      aria-label="Clear search"
+                {/* Row 1 — Search + filter selects inline on desktop */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Search input — grows to fill remaining space */}
+                  <div className="relative min-w-[200px] flex-1">
+                    <span
+                      className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-gray-500"
+                      aria-hidden="true"
                     >
                       <svg
-                        width="14"
-                        height="14"
+                        width="16"
+                        height="16"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="3"
+                        strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                       </svg>
-                    </button>
-                  )}
-                </div>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Search active singers..."
+                      value={filterName}
+                      onChange={(e) => setFilterName(e.target.value)}
+                      className="h-11 w-full rounded-lg border border-gray-200 bg-surface px-[42px] pl-[38px] text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    />
+                    {filterName && (
+                      <button
+                        type="button"
+                        onClick={() => setFilterName('')}
+                        className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-none bg-none p-1 text-gray-500 hover:bg-black/5"
+                        title="Clear search"
+                        aria-label="Clear search"
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
 
-                {/* Row 2 — Dropdowns + Bulk Actions */}
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {/* Left cluster: filter selects + reset */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Sort By selector */}
+                  {/* Sort By — wrapper constrains w-full select to content width */}
+                  <div className="shrink-0">
                     <Select
                       value={sortBy}
                       onChange={(e) =>
                         handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')
                       }
                       aria-label="Sort singers"
-                      className="w-auto"
                     >
                       <option value="lastName">Last Name</option>
                       <option value="voicePart">Voice Part + Last Name</option>
                       <option value="section">Section + Last Name</option>
                     </Select>
+                  </div>
 
-                    {/* RSVP Filter Selection */}
+                  {/* RSVP Filter — wrapper constrains w-full select to content width */}
+                  <div className="shrink-0">
                     <Select
                       value={rsvpFilter}
                       onChange={(e) =>
                         handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')
                       }
                       aria-label="RSVP Status Filter"
-                      className="w-auto"
                     >
                       <option value="Both">Both (Attending + Pending)</option>
                       <option value="Yes">Attending Only</option>
                       <option value="Pending">Pending RSVP Only</option>
                     </Select>
+                  </div>
 
-                    {/* Voice Part Filter Selection */}
+                  {/* Voice Part Filter — wrapper constrains w-full select to content width */}
+                  <div className="shrink-0">
                     <Select
                       value={selectedVoiceParts[0] || ''}
                       onChange={(e) => {
@@ -644,7 +645,6 @@ export default function AttendanceView() {
                         setSelectedVoiceParts(val ? [val] : []);
                       }}
                       aria-label="Filter by Voice Part"
-                      className="w-auto"
                     >
                       <option value="">All Voice Parts / Sections</option>
                       <optgroup label="Sections">
@@ -662,40 +662,41 @@ export default function AttendanceView() {
                         ))}
                       </optgroup>
                     </Select>
-
-                    {/* Reset Filters action */}
-                    {(filterName ||
-                      selectedVoiceParts.length > 0 ||
-                      filterStatus !== '' ||
-                      rsvpFilter !== 'Both') && (
-                      <Button
-                        onClick={handleResetFilters}
-                        variant="secondary"
-                        className="flex h-11 items-center gap-1 font-bold whitespace-nowrap"
-                      >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                          <path d="M3 3v5h5"></path>
-                        </svg>
-                        Reset Filters
-                      </Button>
-                    )}
                   </div>
 
-                  {/* Bulk Actions Panel */}
-                  <div
-                    className="flex flex-wrap items-center justify-end gap-2"
-                    aria-label="Bulk attendance actions"
-                  >
+                  {/* Reset Filters action */}
+                  {(filterName ||
+                    selectedVoiceParts.length > 0 ||
+                    filterStatus !== '' ||
+                    rsvpFilter !== 'Both') && (
+                    <Button
+                      onClick={handleResetFilters}
+                      variant="secondary"
+                      className="flex h-11 shrink-0 items-center gap-1 font-bold whitespace-nowrap"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                      </svg>
+                      Reset Filters
+                    </Button>
+                  )}
+                </div>
+
+                {/* Row 2 — Bulk Actions */}
+                <div
+                  className="flex flex-wrap items-center justify-end gap-2"
+                  aria-label="Bulk attendance actions"
+                >
                   <span className="text-xs font-bold whitespace-nowrap text-gray-500">
                     {filteredCheckInItems.length} shown
                   </span>
@@ -804,8 +805,6 @@ export default function AttendanceView() {
                   >
                     Reset All
                   </Button>
-                  </div>
-                  {/* end Row 2 justify-between */}
                 </div>
               </div>
             )}
