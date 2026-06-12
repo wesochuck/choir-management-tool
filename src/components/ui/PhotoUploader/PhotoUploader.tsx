@@ -396,8 +396,8 @@ export function PhotoUploader({
   if (readOnlyOnDesktop && !isMobile) {
     return (
       <div
-        // @allow-inline-style - dynamic sizing px value based on props
         className="relative shrink-0 overflow-hidden rounded-full border border-border bg-primary-light"
+        // @allow-inline-style - dynamic sizing px value based on props
         style={{ width: px, height: px }}
       >
         {showImage ? (
@@ -408,8 +408,8 @@ export function PhotoUploader({
           />
         ) : (
           <div
-            // @allow-inline-style - dynamic font sizing based on props
             className="flex size-full items-center justify-center bg-primary-light font-semibold text-primary-deep"
+            // @allow-inline-style - dynamic font sizing based on props
             style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }}
           >
             {initials}
@@ -442,9 +442,9 @@ export function PhotoUploader({
             className="block size-full object-cover"
           />
         ) : (
-          // @allow-inline-style - dynamic font sizing based on props
           <div
             className="flex size-full items-center justify-center bg-primary-light font-semibold text-primary-deep"
+            // @allow-inline-style - dynamic font sizing based on props
             style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }}
           >
             {initials}
