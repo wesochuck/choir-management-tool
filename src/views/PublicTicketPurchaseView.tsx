@@ -210,7 +210,7 @@ export default function PublicTicketPurchaseView() {
           <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex w-full flex-col gap-1 bg-neutral-100 p-4">
             <h4 className="m-0 text-primary-deep">Pricing Summary</h4>
             <div className="flex flex-row justify-between text-sm">
-              <span>Ticket Price ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>
+              <span>{isShowDay ? 'Day-Of' : 'Advance'} Price ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>
               <span>${((unitPrice * quantity) / 100).toFixed(2)}</span>
             </div>
             {feeCents > 0 && (
