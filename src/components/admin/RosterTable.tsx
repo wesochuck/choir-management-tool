@@ -192,11 +192,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({
       {/* Lightbox Preview Modal */}
       {activePhoto && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-opacity duration-300 animate-[modal-fade-in_0.2s_ease-out]"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-opacity duration-300 animate-modal-fade-in"
           onClick={() => setActivePhoto(null)}
         >
           <div 
-            className="relative max-w-sm w-full bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 transition-all transform animate-[modal-slide-up_0.2s_ease-out] border border-slate-100"
+            className="relative max-w-sm w-full bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 transition-all transform animate-modal-slide-up border border-slate-100"
             onClick={(e) => e.stopPropagation()}
           >
             <button

@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
+/* ----------------------------------------------------
+   Tailwind CSS v4 Custom Theme Configuration
+   ---------------------------------------------------- */
 @theme {
+  /* Branding & Semantic Colors */
   --color-primary: #4a7c59;
   --color-primary-light: #e9f0eb;
   --color-primary-deep: #345940;
@@ -13,6 +17,8 @@
   --color-danger-text: var(--color-red-800);
   --color-success-bg: var(--color-green-100);
   --color-success-text: var(--color-green-800);
+
+  /* Section Representation Colors */
   --color-section-red: #EF4444;
   --color-section-orange: #F97316;
   --color-section-amber: #F59E0B;
@@ -23,6 +29,8 @@
   --color-section-purple: #8B5CF6;
   --color-section-pink: #EC4899;
   --color-section-slate: #64748B;
+
+  /* Typography Scale */
   --font-size-display: clamp(2rem, 5vw, 3rem);
   --font-size-display--line-height: 1.1;
   --font-size-display--letter-spacing: 0;
@@ -40,13 +48,19 @@
   --font-size-label--letter-spacing: 0.01em;
   --font-size-label--font-weight: 500;
 
-  --color-muted: #64748b;
+  /* Animation Configurations */
   --animate-login-fade-in: login-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-toast-slide-in: toast-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-drop-zone-pulse: drop-zone-pulse 1.2s infinite;
   --animate-bounce-subtle: bounce-subtle 1s infinite alternate;
+  --animate-modal-fade-in: modal-fade-in 0.2s ease-out forwards;
+  --animate-modal-slide-up: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-save-bar-slide-up: save-bar-slide-up 0.3s ease forwards;
 }
 
+/* ----------------------------------------------------
+   Global Custom Keyframe Animations
+   ---------------------------------------------------- */
 @keyframes toast-slide-in {
   from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -71,17 +85,6 @@
   to { transform: translateY(-4px); }
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  background-color: var(--color-bg);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  color: var(--color-text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 @keyframes modal-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -97,6 +100,21 @@ body {
   to { transform: translateY(0); }
 }
 
+/* ----------------------------------------------------
+   Base Styling Overrides
+   ---------------------------------------------------- */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Compatibility CSS Custom Properties */
 :root {
   --primary: var(--color-primary);
   --primary-light: var(--color-primary-light);
@@ -109,13 +127,27 @@ body {
   --font-size-display: clamp(2rem, 5vw, 3rem);
 }
 
-
-
-
+/* ----------------------------------------------------
+   Utility Classes & Layout Helpers
+   ---------------------------------------------------- */
 .print-only {
   display: none;
 }
 
+/* Legacy Flex Compatibility Helpers (wrapped in :where to permit Tailwind override classes) */
+:where(.flex-row) {
+  display: flex;
+  flex-direction: row;
+}
+
+:where(.flex-col) {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ----------------------------------------------------
+   Print Stylesheet Configuration
+   ---------------------------------------------------- */
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
@@ -180,31 +212,6 @@ body {
   [data-print-mode="visual"] .director-indicator {
     display: flex !important;
   }
-}
-
-@media print {
-  /* Enforce standard portrait layout globally */
-  @page {
-    size: portrait;
-    margin: 0.5in;
-  }
-  @page landscape-canvas {
-    size: landscape;
-    margin: 0.5in;
-  }
-}
-
-/* Expose a utility class to assign target views to the landscape geometry block */
-@utility print-landscape {
-  page: landscape-canvas;
-}
-
-
-
-@media print {
-  .print-only {
-    display: block !important;
-  }
 
   table {
     border: 1px solid black !important;
@@ -222,13 +229,19 @@ body {
   }
 }
 
-/* Global backward-compatibility helper classes for flex layouts (wrapped in :where to allow Tailwind overrides) */
-:where(.flex-row) {
-  display: flex;
-  flex-direction: row;
+@media print {
+  /* Enforce standard portrait layout globally */
+  @page {
+    size: portrait;
+    margin: 0.5in;
+  }
+  @page landscape-canvas {
+    size: landscape;
+    margin: 0.5in;
+  }
 }
 
-:where(.flex-col) {
-  display: flex;
-  flex-direction: column;
+/* Expose a utility class to assign target views to the landscape geometry block */
+@utility print-landscape {
+  page: landscape-canvas;
 }

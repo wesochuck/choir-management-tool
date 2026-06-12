@@ -89,8 +89,8 @@ export function Modal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[1000] flex animate-[modal-fade-in_0.2s_ease-out] items-center justify-center bg-black/40 p-4 no-print" role="presentation" onMouseDown={handleOverlayClick}>
-      <div ref={modalRef} className="flex w-full animate-[modal-slide-up_0.3s_cubic-bezier(0.16,1,0.3,1)] flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-md" role="dialog" aria-modal="true"
+    <div className="fixed inset-0 z-[1000] flex animate-modal-fade-in items-center justify-center bg-black/40 p-4 no-print" role="presentation" onMouseDown={handleOverlayClick}>
+      <div ref={modalRef} className="flex w-full animate-modal-slide-up flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-md" role="dialog" aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         // @allow-inline-style - dynamic maxWidth from props
         style={{ maxWidth }}>

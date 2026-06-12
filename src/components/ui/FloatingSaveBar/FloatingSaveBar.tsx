@@ -16,7 +16,7 @@ export function FloatingSaveBar({
   if (!visible) return null;
 
   return (
-    <div className="sticky bottom-0 z-[100] flex animate-[save-bar-slide-up_0.3s_ease] items-center justify-between gap-4 border-t border-border bg-surface px-6 py-4 max-sm:flex-col max-sm:items-stretch">
+    <div className="sticky bottom-0 z-[100] flex animate-save-bar-slide-up items-center justify-between gap-4 border-t border-border bg-surface px-6 py-4 max-sm:flex-col max-sm:items-stretch">
       <div className="flex items-center gap-2 text-sm text-text-muted">
         <span>
           {dirtyFieldCount !== undefined
