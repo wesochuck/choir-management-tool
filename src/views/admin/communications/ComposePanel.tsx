@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useClickOutside } from '../../../hooks/useClickOutside';
 import { Link } from 'react-router-dom';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
@@ -145,16 +146,9 @@ export function ComposePanel({
     setStartedMessage(true);
   };
 
-  // Dropdown outside click handler
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    if (isDropdownOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
+  useClickOutside(dropdownRef, () => setIsDropdownOpen(false), {
+    enabled: isDropdownOpen,
+  });
 
   const handleVoicePartToggle = (token: string) => {
     const active = filters.voiceParts || [];

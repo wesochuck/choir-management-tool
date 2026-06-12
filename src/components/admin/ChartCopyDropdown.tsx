@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
+import { useClickOutside } from '../../hooks/useClickOutside';
 import type { SeatingChart } from '../../services/seatingService';
 
 interface ChartCopyDropdownProps {
@@ -46,25 +47,10 @@ export function ChartCopyDropdown({ allCharts, currentChartId, onCopy }: ChartCo
     return result;
   }, [allCharts]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsOpen(false);
-      }
-    };
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  useClickOutside(containerRef, () => setIsOpen(false), {
+    enabled: isOpen,
+    escape: true,
+  });
 
   const handleSelect = (chartId: string) => {
     setIsOpen(false);

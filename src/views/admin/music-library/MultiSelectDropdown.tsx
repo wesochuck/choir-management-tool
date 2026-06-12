@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useClickOutside } from '../../../hooks/useClickOutside';
 import { CHIP_COLORS, getChipColor } from '../../../lib/chipColorUtils';
 import { Button } from '../../../components/ui';
 
@@ -64,37 +65,10 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         }
     }, [isOpen, searchable]);
 
-    // Close on clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    // Close on Escape key press
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setIsOpen(false);
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('keydown', handleKeyDown);
-        }
-        return () => {
-            document.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isOpen]);
+    useClickOutside(containerRef, () => setIsOpen(false), {
+        enabled: isOpen,
+        escape: true,
+    });
 
     // Handle selecting/deselecting an option
     const handleOptionToggle = (optionId: string) => {

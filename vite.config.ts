@@ -17,6 +17,7 @@ export default defineConfig({
           include: [
             'src/components/ui/**/*.test.{ts,tsx}',
             'src/components/admin/**/*.test.{ts,tsx}',
+            'src/hooks/**/*.test.{ts,tsx}',
             'test/views/**/*.test.{ts,tsx}',
             'test/eventCardSetList.test.ts',
             'test/useVoiceParts.test.ts',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 interface AutocompleteInputProps {
   value: string;
@@ -43,16 +44,9 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     setActiveIndex(-1);
   }, [value, suggestions]);
 
-  // Click outside listener to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  useClickOutside(containerRef, () => setShowSuggestions(false), {
+    enabled: showSuggestions,
+  });
 
   // Keyboard navigation handler
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

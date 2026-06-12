@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { useClickOutside } from '../../hooks/useClickOutside';
 import type { MusicPiece } from '../../types/musicLibrary';
 import type { SetListItem } from '../../services/eventService';
 import { createSetListItemFromCustomInput, createSetListItemFromMusicPiece, filterMusicLibrarySuggestions } from '../../lib/setList/setListItems';
@@ -28,15 +29,9 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
     return filterMusicLibrarySuggestions(library, query);
   }, [library, query, type]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  useClickOutside(containerRef, () => setShowSuggestions(false), {
+    enabled: showSuggestions,
+  });
 
   const handleAddItem = (piece?: MusicPiece) => {
     try {
