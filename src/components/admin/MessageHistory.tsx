@@ -72,7 +72,8 @@ export function MessageHistory({
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ paddingRight: searchTerm ? '32px' : '12px' }} // @allow-inline-style - dynamic padding based on clear button
+            // @allow-inline-style - dynamic padding based on clear button
+            style={{ paddingRight: searchTerm ? '32px' : '12px' }}
           />
           {searchTerm && (
             <button

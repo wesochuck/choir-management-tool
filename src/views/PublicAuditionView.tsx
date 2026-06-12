@@ -155,7 +155,6 @@ export default function PublicAuditionView() {
                   <span className="text-label text-primary-deep">CONCERT DETAILS & SCHEDULE</span>
                   <span className="text-xs text-text-muted">Please review the commitment for this concert series</span>
                 </div>
-                {/* @allow-inline-style - dynamic transform based on expansion state */}
                 <span className={`text-[1.2rem] transition-transform duration-200 ${isScheduleExpanded ? 'rotate-180' : 'rotate-0'}`}>
                   ▼
                 </span>
@@ -231,7 +230,6 @@ export default function PublicAuditionView() {
                             }
                           }}
                         />
-                        {/* @allow-inline-style - dynamic font weight based on check state */}
                         <span className={`text-sm ${isChecked ? 'font-semibold' : 'font-normal'}`}>
                           {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                         </span>

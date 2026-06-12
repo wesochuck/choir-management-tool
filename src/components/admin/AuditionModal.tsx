@@ -163,8 +163,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
         </div>
 
         {/* Tab 1: Information Form Fields */}
-        <div className="flex-col gap-4" style={{ /* @allow-inline-style */ 
-          // @allow-inline-style - dynamic display for tab visibility
+        // @allow-inline-style - dynamic display for tab visibility
+        <div className="flex-col gap-4" style={{
           display: activeTab === 'info' ? 'flex' : 'none' 
         }}>
           <div className="flex-col gap-1">
@@ -283,8 +283,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                     <label 
                       key={slot} 
                       className="rounded-xl m-0 cursor-pointer flex-row items-center gap-3 p-3 shadow-none" 
-                      style={{ /* @allow-inline-style */ 
-                        // @allow-inline-style - checkbox checked state
+                      // @allow-inline-style - checkbox checked state
+                      style={{
                         border: isChecked ? '1px solid var(--primary)' : '1px solid var(--border)',
                         backgroundColor: isChecked ? 'var(--primary-light)' : 'var(--bg)',
                       }}
@@ -302,8 +302,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                         }}
                         className="size-4 cursor-pointer accent-[var(--primary)]"
                       />
-                      <span className="text-sm text-text" style={{ /* @allow-inline-style */ 
-                        // @allow-inline-style - Dynamic fontWeight based on isChecked state
+                      // @allow-inline-style - Dynamic fontWeight based on isChecked state
+                      <span className="text-sm text-text" style={{
                         fontWeight: isChecked ? 600 : 400 
                       }}>
                         {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}

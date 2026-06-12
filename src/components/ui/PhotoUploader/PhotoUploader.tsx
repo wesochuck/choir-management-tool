@@ -396,8 +396,9 @@ export function PhotoUploader({
   if (readOnlyOnDesktop && !isMobile) {
     return (
       <div
+        // @allow-inline-style - dynamic sizing px value based on props
         className="relative shrink-0 overflow-hidden rounded-full border border-border bg-primary-light"
-        style={{ width: px, height: px }} // @allow-inline-style - dynamic sizing px value based on props
+        style={{ width: px, height: px }}
       >
         {showImage ? (
           <img
@@ -407,8 +408,9 @@ export function PhotoUploader({
           />
         ) : (
           <div
+            // @allow-inline-style - dynamic font sizing based on props
             className="flex size-full items-center justify-center bg-primary-light font-semibold text-primary-deep"
-            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }} // @allow-inline-style - dynamic font sizing based on props
+            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }}
           >
             {initials}
           </div>
@@ -440,9 +442,10 @@ export function PhotoUploader({
             className="block size-full object-cover"
           />
         ) : (
+          // @allow-inline-style - dynamic font sizing based on props
           <div
             className="flex size-full items-center justify-center bg-primary-light font-semibold text-primary-deep"
-            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }} // @allow-inline-style - dynamic font sizing based on props
+            style={{ fontSize: size === 'sm' ? '14px' : size === 'md' ? '36px' : '44px' }}
           >
             {initials}
           </div>
@@ -456,7 +459,9 @@ export function PhotoUploader({
 
         {!isMobile && isDragging && !isUploading && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[rgba(74,124,89,0.85)] text-white backdrop-blur-sm">
-            <span style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span> {/* @allow-inline-style - dynamic text size based on props */}
+            <span 
+              // @allow-inline-style - dynamic text size based on props
+              style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span>}
           </div>
         )}
       </div>
@@ -671,7 +676,7 @@ export function PhotoUploader({
         </div>
       )}
 
-      {/* @allow-inline-style - hidden canvas for image manipulation */}
+      // @allow-inline-style - hidden canvas for image manipulation
       <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   );

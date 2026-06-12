@@ -363,8 +363,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                 <div 
                   key={field.key} 
                   className="rounded-xl flex flex-row items-center justify-between gap-3 p-3 px-4 border border-border bg-surface" 
-                  style={{ /* @allow-inline-style */ 
-                    // @allow-inline-style - conditional field validation border
+                  // @allow-inline-style - conditional field validation border
+                  style={{
                     borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
                   }}
                 >
@@ -386,8 +386,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
                     className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-[200px] px-[10px] text-sm shadow-none"
-                    style={{ /* @allow-inline-style */ 
-                      // @allow-inline-style - conditional match border
+                    // @allow-inline-style - conditional match border
+                    style={{
                       borderColor: selectedIndex !== -1 ? 'var(--primary)' : undefined,
                     }}
                   >
@@ -442,8 +442,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   return (
                     <tr 
                       key={idx} 
-                      style={{ /* @allow-inline-style */ 
-                        // @allow-inline-style - error/warning status background
+                      // @allow-inline-style - error/warning status background
+                      style={{
                         backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
                       }}
                     >
@@ -507,8 +507,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           <div className="mt-[10px] h-3 w-full overflow-hidden rounded-full bg-border">
             <div 
               className="h-full bg-primary transition-[width] duration-100 ease-out"
-              style={{ /* @allow-inline-style */ 
-                // @allow-inline-style - dynamic progress bar width
+              // @allow-inline-style - dynamic progress bar width
+              style={{
                 width: `${importProgress}%`,
               }}
             />
@@ -563,8 +563,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               <div className="max-h-[150px] overflow-y-auto rounded-lg border border-border bg-[#fafafa] p-[8px_12px] text-xs">
                 {errorsList.map((err, i) => (
                   <div key={i} className="p-[4px_0] text-[#444]" 
-                    style={{ /* @allow-inline-style */ 
-                      // @allow-inline-style - Dynamic border based on position in list
+                    // @allow-inline-style - Dynamic border based on position in list
+                    style={{
                       borderBottom: i < errorsList.length - 1 ? '1px solid var(--border)' : undefined 
                     }}>
                     Row {err.row} (<strong>{err.name}</strong>): <span className="text-danger-text">{err.error}</span>

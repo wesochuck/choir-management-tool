@@ -140,7 +140,7 @@ export const Player: React.FC<PlayerProps> = ({
           // @allow-inline-style - active part badge state
           <div className="mb-4 flex items-center justify-center gap-3 rounded-lg p-3 px-4 text-sm font-semibold" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
             <span>Skipped first {skipStart}s of track</span>
-            {/* @allow-inline-style - inactive part badge state */}
+            // @allow-inline-style - inactive part badge state
             <button onClick={() => setShowSkipNotify(false)} className="cursor-pointer rounded-lg border-none px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors" style={{ background: 'var(--border-color)', color: 'var(--text-primary)' }}>Dismiss</button>
           </div>
         )}

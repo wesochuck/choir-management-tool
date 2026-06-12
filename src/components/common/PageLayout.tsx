@@ -28,7 +28,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   return (
     <div className="min-h-screen bg-bg">
       <header className="sticky top-0 z-40 border-b border-border bg-surface shadow-sm no-print">
-        {/* @allow-inline-style - dynamic maxWidth from props */}
+        // @allow-inline-style - dynamic maxWidth from props
         <div className="mx-auto flex items-center justify-between gap-6 px-6 py-3" style={{ maxWidth }}>
           <div className="flex items-center gap-6">
             <Link to="/" className="inline-flex h-[38px] items-center justify-center rounded-md border border-border bg-transparent px-4 text-sm font-semibold whitespace-nowrap text-text-muted no-underline transition-all duration-200 hover:bg-primary-light hover:text-primary-deep" title="Dashboard">🏠 Home</Link>
@@ -47,7 +47,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
         </div>
       </header>
 
-      {/* @allow-inline-style - dynamic maxWidth from props */}
+      // @allow-inline-style - dynamic maxWidth from props
       <main className="mx-auto w-full px-6 py-8" style={{ maxWidth }}>
         {children}
       </main>

@@ -374,7 +374,6 @@ export default function PublicRsvpView() {
 
               <div className="bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:shadow-md p-4 text-center">
                 <div className="text-xs font-bold tracking-wider text-text-muted uppercase">Your response</div>
-                {/* @allow-inline-style - dynamic color based on RSVP status */}
                 <div className={`mt-2 text-xl font-extrabold ${dbRsvp === 'Yes' ? 'text-primary-deep' : dbRsvp === 'No' ? 'text-[#ef4444]' : 'text-gray-500'}`}>
                   {dbRsvp === 'Yes'
                     ? 'Attending'
