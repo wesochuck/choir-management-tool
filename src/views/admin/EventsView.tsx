@@ -17,8 +17,6 @@ import { useEventPlayerLink } from './events/useEventPlayerLink';
 import { useEventCommunicationDraft } from './events/useEventCommunicationDraft';
 import { useEventCloneWorkflow } from './events/useEventCloneWorkflow';
 import { useEventSaveWorkflow } from './events/useEventSaveWorkflow';
-import { EventsToolbar } from './events/EventsToolbar';
-import { EventsTabs } from './events/EventsTabs';
 
 export default function EventsView(): React.JSX.Element {
   const dialog = useDialog();
@@ -150,27 +148,83 @@ export default function EventsView(): React.JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-row items-start justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-            Event Management
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Create and manage rehearsals, performances, and call times. Track attendance and edit seating charts.
-          </p>
-        </div>
-        <div className="mt-1 flex-shrink-0">
-          <EventsToolbar onBulkAdd={handleBulkAdd} onAdd={handleAdd} />
-        </div>
+    <div className="w-full flex flex-col gap-6">
+      {/* Header Area */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+          Event Management
+        </h1>
+        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+          Create and manage rehearsals, performances, and call times. Track attendance and edit seating charts.
+        </p>
       </div>
 
-      <EventsTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        showPastEvents={showPastEvents}
-        setShowPastEvents={setShowPastEvents}
-      />
+      {/* Tabs / Actions Navigation Bar */}
+      <div className="w-full flex flex-row flex-wrap items-center justify-between border-b border-slate-200 pb-px gap-4 no-print">
+        <div className="flex gap-3 md:gap-6">
+          {(['all', 'performances', 'rehearsals'] as const).map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                type="button"
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  isActive
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === 'all' ? 'All Events' : tab === 'performances' ? 'Performances' : 'Rehearsals'}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-4 pb-1.5 flex-wrap">
+          {/* Show past checkbox */}
+          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-500 select-none">
+            <input
+              type="checkbox"
+              checked={showPastEvents}
+              onChange={(e) => setShowPastEvents(e.target.checked)}
+              className="size-4 cursor-pointer accent-primary rounded border-slate-300 text-primary focus:ring-primary/25"
+            />
+            <span>Show past events</span>
+          </label>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleBulkAdd}
+              variant="secondary"
+              className="px-3 md:px-6 font-semibold shadow-sm"
+              title="Bulk Add Rehearsals"
+              icon={
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+              }
+            >
+              <span className="hidden md:inline">Bulk Add Rehearsals</span>
+            </Button>
+            <Button
+              onClick={handleAdd}
+              variant="primary"
+              className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
+              title="Single Event"
+              icon={
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              }
+            >
+              <span className="hidden md:inline">Single Event</span>
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <EventList
         events={filteredEvents}

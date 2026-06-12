@@ -461,7 +461,7 @@ export function PhotoUploader({
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[rgba(74,124,89,0.85)] text-white backdrop-blur-sm">
             <span 
               // @allow-inline-style - dynamic text size based on props
-              style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span>}
+              style={{ fontSize: size === 'sm' ? '8px' : '12px', fontWeight: 700 }}>Drop Photo</span>
           </div>
         )}
       </div>
