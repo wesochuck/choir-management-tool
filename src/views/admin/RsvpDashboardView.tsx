@@ -6,6 +6,7 @@ import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import EventRosterView from './EventRosterView';
+import { Select } from '../../components/ui';
 
 export default function RsvpDashboardView() {
   const [searchParams] = useSearchParams();
@@ -36,21 +37,21 @@ export default function RsvpDashboardView() {
   );
 
   return (
-    <div className="flex-col py-4">
+    <div className="flex flex-col py-4">
         <div className="mb-6 flex items-center justify-between">
         <div className="flex min-w-[320px] items-center gap-2">
           <div className="flex flex-1 flex-col gap-1">
             <label className="text-label text-xs font-semibold text-text-muted uppercase">Select Event</label>
-            <select 
+            <Select 
               value={selectedEventId} 
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="block w-full rounded-md border-border bg-surface px-3 py-2 text-sm"
+              className="block w-full !text-sm !h-10"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map(e => (
                 <option key={e.id} value={e.id}>{formatInTimezone(e.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {e.title || e.expand?.venue?.name || ''} ({e.type})</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
       </div>

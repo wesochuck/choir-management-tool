@@ -18,14 +18,14 @@ export function useEventPlayerLink({ dialog }: UseEventPlayerLinkArgs) {
       await dialog.showMessage({
         title: 'Player Link Generated',
         message: (
-          <div className="flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <p>
               A standalone practice link has been generated for "{event.title || event.type}".
             </p>
             <div className="rounded-lg border border-border bg-bg p-2 text-sm break-all">
               {url}
             </div>
-            <div className="flex-row gap-2">
+            <div className="flex flex-row gap-2">
               <Button
                 variant="primary"
                 size="small"

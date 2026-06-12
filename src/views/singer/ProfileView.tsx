@@ -4,7 +4,7 @@ import { profileService, type Profile, type CalendarFeedUrls } from '../../servi
 import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
-import { Button } from '../../components/ui';
+import { Button, Select } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -210,7 +210,7 @@ export default function ProfileView() {
 
   return (
     <PageLayout title="My Profile" backTo="/" maxWidth="500px">
-      <div className="flex-col items-center gap-8 py-8">
+      <div className="flex flex-col items-center gap-8 py-8">
 
         {/* Photo / Avatar */}
         <div className="flex flex-col items-center gap-2">
@@ -230,8 +230,8 @@ export default function ProfileView() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSave} className="w-full flex-col gap-4">
-          <div className="flex-col gap-1">
+        <form onSubmit={handleSave} className="w-full flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
             <label className="text-label">Name</label>
             <input
               value={name}
@@ -241,7 +241,7 @@ export default function ProfileView() {
             />
           </div>
 
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label">Email</label>
             <input
               type="email"
@@ -254,40 +254,40 @@ export default function ProfileView() {
 
           {user?.role === 'admin' && (
             <>
-              <label className="my-1 cursor-pointer flex-row items-center gap-2">
+              <label className="my-1 cursor-pointer flex flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveAttendanceReports}
                   onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
                   className="size-[18px] shrink-0 cursor-pointer accent-primary"
                 />
-                <div className="flex-col gap-[2px]">
+                <div className="flex flex-col gap-[2px]">
                   <span className="text-label font-semibold">Receive attendance reports</span>
                   <span className="text-muted text-xs">Receive automated after-event reports for all events.</span>
                 </div>
               </label>
 
-              <label className="my-1 cursor-pointer flex-row items-center gap-2">
+              <label className="my-1 cursor-pointer flex flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveRsvpDeclineNotices}
                   onChange={(e) => setReceiveRsvpDeclineNotices(e.target.checked)}
                   className="size-[18px] shrink-0 cursor-pointer accent-primary"
                 />
-                <div className="flex-col gap-[2px]">
+                <div className="flex flex-col gap-[2px]">
                   <span className="text-label font-semibold">Receive RSVP decline notifications</span>
                   <span className="text-muted text-xs">Receive automated email alerts when a singer declines a rehearsal or performance.</span>
                 </div>
               </label>
 
-              <label className="my-1 cursor-pointer flex-row items-center gap-2">
+              <label className="my-1 cursor-pointer flex flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveAdminNotifications}
                   onChange={(e) => setReceiveAdminNotifications(e.target.checked)}
                   className="size-[18px] shrink-0 cursor-pointer accent-primary"
                 />
-                <div className="flex-col gap-[2px]">
+                <div className="flex flex-col gap-[2px]">
                   <span className="text-label font-semibold">Receive general admin notifications</span>
                   <span className="text-muted text-xs">Receive automated general admin alerts and system notifications.</span>
                 </div>
@@ -297,7 +297,7 @@ export default function ProfileView() {
 
           {profile.id ? (
             <>
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Phone</label>
                 <input
                   value={phone}
@@ -307,7 +307,7 @@ export default function ProfileView() {
               </div>
 
               {/* Voice Part — read-only */}
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Voice Part</label>
                 <div className="flex h-11 w-full items-center rounded-xl border border-border bg-bg px-3 text-text-muted">
                   {profile.voicePart}
@@ -316,7 +316,7 @@ export default function ProfileView() {
               </div>
             </>
           ) : (
-            <div className="flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Role</label>
               <div className="flex h-11 w-full items-center rounded-xl border border-border bg-bg px-3 text-text-muted">
                 Administrator
@@ -347,13 +347,13 @@ export default function ProfileView() {
               Subscribe to your personalized choir calendar to sync performances, rehearsals, call times, and set lists directly to your personal Google, Apple, or Outlook calendar.
             </p>
 
-            <div className="flex-col gap-4">
+            <div className="flex flex-col gap-4">
               {isCalendarLoading ? (
                 <div className="text-muted py-2 text-xs">Loading feed links...</div>
               ) : calendarFeedUrls ? (
-                <div className="flex-col gap-4">
+                <div className="flex flex-col gap-4">
                   {/* Action 1: Subscribe in Calendar App (webcalUrl) */}
-                  <div className="flex-col gap-1">
+                  <div className="flex flex-col gap-1">
                     <label className="text-label">Subscribe Directly</label>
                     <Button
                       as="a"
@@ -366,20 +366,20 @@ export default function ProfileView() {
                   </div>
 
                   {/* Action 2: Copy Google Calendar URL (httpsUrl) */}
-                  <div className="flex-col gap-1">
+                  <div className="flex flex-col gap-1">
                     <label className="text-label">Google Calendar Setup</label>
-                    <div className="w-full flex-row items-center gap-1">
+                    <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-1">
                       <input
                         readOnly
                         value={calendarFeedUrls.httpsUrl}
-                        className="h-10 flex-1 rounded-md border border-border bg-surface px-3 text-sm transition-colors outline-none focus:border-primary"
+                        className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors outline-none focus:border-primary sm:flex-1"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <Button
                         type="button"
                         onClick={handleCopyGoogleLink}
                         variant="primary"
-                        className={`flex h-10 min-w-[180px] items-center justify-center px-4 ${isCopied ? '!border-transparent !bg-success-bg !text-success-text' : ''}`}
+                        className={`flex h-10 w-full min-w-[180px] items-center justify-center px-4 sm:w-auto ${isCopied ? '!border-transparent !bg-success-bg !text-success-text' : ''}`}
                       >
                         {isCopied ? 'Copied! ✓' : 'Copy Google Calendar URL'}
                       </Button>
@@ -393,7 +393,7 @@ export default function ProfileView() {
                 <div className="text-muted text-xs">Failed to load calendar link.</div>
               )}
 
-              <div className="mt-1 flex-row justify-start">
+              <div className="mt-1 flex flex-row justify-start">
                 <Button
                   type="button"
                   onClick={handleResetLink}
@@ -422,42 +422,42 @@ export default function ProfileView() {
               These settings customize how directories and rosters are ordered for your account across all your devices.
             </p>
 
-            <div className="flex-col gap-4">
-              <div className="flex-col gap-1">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Directory Sort</label>
-                <select
+                <Select
                   value={user?.preferences?.rosterSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                  className="h-11 w-full"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part</option>
-                </select>
+                </Select>
               </div>
 
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Attendance Sort</label>
-                <select
+                <Select
                   value={user?.preferences?.attendanceSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart' | 'section')}
-                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                  className="h-11 w-full"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
                   <option value="section">Section + Last Name</option>
-                </select>
+                </Select>
               </div>
 
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <label className="text-label">Event RSVP Sort</label>
-                <select
+                <Select
                   value={user?.preferences?.rsvpSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                  className="h-11 w-full"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
-                </select>
+                </Select>
               </div>
 
               {prefSuccess && (

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Select } from '../ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import type { RecordModel } from 'pocketbase';
@@ -81,8 +81,8 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
       maxWidth="500px"
     >
 
-      <div className="flex-col gap-4">
-        <div className="flex-row gap-1 border-b border-border pb-1">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-row gap-1 border-b border-border pb-1">
           <Button
             size="small"
             variant={tab === 'list' ? 'primary' : 'outline'}
@@ -100,8 +100,8 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
         </div>
 
         {tab === 'list' ? (
-          <div className="flex-col gap-2">
-            <div className="max-h-[400px] flex-col gap-2 overflow-y-auto">
+          <div className="flex flex-col gap-2">
+            <div className="max-h-[400px] flex flex-col gap-2 overflow-y-auto">
               {isLoading ? (
                 <p className="text-muted p-4 text-center">Loading polls...</p>
               ) : polls.length === 0 ? (
@@ -126,13 +126,13 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
                 ))
               )}
             </div>
-            <div className="mt-1 flex-row justify-end">
+            <div className="mt-1 flex flex-row justify-end">
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleCreate} className="flex-col gap-4">
-            <div className="flex-col gap-1">
+          <form onSubmit={handleCreate} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Poll Question</label>
               <input
                 className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
@@ -144,10 +144,9 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
               />
             </div>
 
-            <div className="flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <label className="text-label">Linked Event (Optional)</label>
-              <select
-                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              <Select
                 value={eventId}
                 onChange={e => setEventId(e.target.value)}
               >
@@ -157,10 +156,10 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
                     {event.title || event.type} ({new Date(event.date).toLocaleDateString()})
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
 
-            <div className="mt-1 flex-row justify-end gap-2">
+            <div className="mt-1 flex flex-row justify-end gap-2">
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
               <Button type="submit" variant="primary" disabled={isCreating || !question} loading={isCreating}>
                 Create & Insert Poll

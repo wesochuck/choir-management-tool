@@ -2,7 +2,7 @@ import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import type { Profile } from '../../services/profileService';
 import { getContrastColor } from '../../lib/colorUtils';
-import { Button } from '../ui';
+import { Button, Select } from '../ui';
 
 interface VoicePartEditorProps {
   configVoiceParts: VoicePartDef[];
@@ -67,20 +67,20 @@ export function VoicePartEditor({
                   placeholder="Full Name"
                   className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
-                <select
+                <Select
                   value={vp.sectionCode}
                   onChange={(e) => {
                     const newParts = [...configVoiceParts];
                     newParts[index] = { ...newParts[index], sectionCode: e.target.value };
                     setConfigVoiceParts(newParts);
                   }}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                  className="!h-10"
                 >
                   <option value="">Select Section...</option>
                   {configSections.map(s => (
                     <option key={s.code} value={s.code}>{s.name} ({s.code})</option>
                   ))}
-                </select>
+                </Select>
 
                 <div className="flex items-center gap-1.5">
                   <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-slate-200 shadow-sm transition-transform hover:scale-105">

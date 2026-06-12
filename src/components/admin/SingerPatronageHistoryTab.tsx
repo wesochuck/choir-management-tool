@@ -82,7 +82,7 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
   }
 
   return (
-    <div className="flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1 rounded-xl border border-[rgb(74_117_89_/_20%)] bg-primary-light p-4">
         <div className="text-xs font-semibold tracking-wider text-primary-deep uppercase">Lifetime Value</div>
         <div className="text-2xl font-extrabold text-primary">
@@ -94,20 +94,20 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
         <h4 className="m-0 mb-2 text-xs tracking-wider text-text-muted uppercase">
           Transaction History ({items.length})
         </h4>
-        <div className="flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {items.length === 0 ? (
             <p className="text-muted m-0 text-sm">No patronage history found.</p>
           ) : (
             items.map((item) => (
               <div key={`${item.type}-${item.id}`} className="m-0 rounded-xl border border-border bg-surface p-3 px-4 shadow-none">
-                <div className="flex-row items-center justify-between">
-                  <div className="flex-col">
+                <div className="flex flex-row items-center justify-between">
+                  <div className="flex flex-col">
                     <span className="text-sm font-medium">{item.description}</span>
                     <span className="text-muted text-xs">
                       {formatInTimezone(item.date, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
-                  <div className="flex-col items-end text-right">
+                  <div className="flex flex-col items-end text-right">
                     <span className="text-sm font-bold">${(item.amountPaidCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     <span className={`text-xs font-bold uppercase ${item.status === 'paid' ? 'text-success-text' : 'text-danger-text'}`}>
                       {item.status}

@@ -9,7 +9,7 @@ import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { safeLocalStorage } from '../../lib/storage';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, FormField, Badge, EmptyState } from '../../components/ui';
+import { Button, FormField, Badge, EmptyState, Select } from '../../components/ui';
 
 const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
@@ -292,15 +292,15 @@ export default function PatronsView() {
             <div className="flex items-end gap-2">
               <div className="flex-1">
                 <FormField label="Sort By">
-                  <select
+                  <Select
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
-                    className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="block w-full cursor-pointer"
                   >
                     <option value="ltv">Lifetime Value</option>
                     <option value="name">Name</option>
                     <option value="lastDate">Last Transaction</option>
-                  </select>
+                  </Select>
                 </FormField>
               </div>
               {(searchQuery || startDate || endDate) && (

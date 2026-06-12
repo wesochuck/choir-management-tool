@@ -6,7 +6,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
-import { Button } from '../../components/ui';
+import { Button, Select } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -257,11 +257,11 @@ export default function SettingsView() {
 
         <AppCard title="Choir Timezone">
           <div className="flex flex-col gap-2">
-            <select
+            <Select
               id="choir-timezone"
               value={timezone}
               onChange={(event) => setTimezone(event.target.value)}
-              className="block w-full max-w-lg cursor-pointer rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-primary"
+              className="block w-full max-w-lg cursor-pointer"
             >
               <optgroup label="Common Timezones">
                 {COMMON_TIMEZONES.map((tz) => (
@@ -277,7 +277,7 @@ export default function SettingsView() {
                   </option>
                 ))}
               </optgroup>
-            </select>
+            </Select>
             <p className="text-xs text-slate-500">
               This timezone controls all event scheduling, display clocks, and email/SMS automatic reminders.
             </p>

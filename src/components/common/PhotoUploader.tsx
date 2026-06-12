@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { updateProfilePhoto, deleteProfilePhoto, type Profile } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Button } from '../ui';
+import { Button, Select } from '../ui';
 
 
 interface PhotoUploaderProps {
@@ -637,17 +637,17 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             {!cameraError && videoDevices.length > 1 && (
               <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs">
                 <span className="font-semibold text-slate-500">Switch Camera</span>
-                <select
+                <Select
                   value={selectedDeviceId}
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className="rounded border border-slate-200 bg-white px-2 py-1 text-slate-700 outline-none"
+                  className="!rounded !border-slate-200 !bg-white !px-2 !py-1 !text-slate-700"
                 >
                   {videoDevices.map((device) => (
                     <option key={device.deviceId} value={device.deviceId}>
                       {device.label || `Camera ${device.deviceId.slice(0, 5)}`}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
             )}
 

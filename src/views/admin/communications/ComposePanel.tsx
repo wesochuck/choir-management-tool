@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
-import { Button } from '../../../components/ui';
+import { Button, Select } from '../../../components/ui';
 import { WizardStepper } from '../../../components/WizardStepper';
 import { TemplateGrid } from '../../../components/TemplateGrid';
 import { ComposeStep } from '../../../components/ComposeStep';
@@ -250,8 +250,8 @@ export function ComposePanel({
                 {/* Event Context */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Event Context</label>
-                  <select
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none"
+                  <Select
+                    className="w-full !text-sm !h-10"
                     value={filters.eventId}
                     onChange={(event) => handleEventContextChange(event.target.value)}
                   >
@@ -261,14 +261,14 @@ export function ComposePanel({
                         {event.title || event.expand?.venue?.name || ''}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
 
                 {/* RSVP Status */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">RSVP Status</label>
-                  <select
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50"
+                  <Select
+                    className="w-full !text-sm !h-10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-50"
                     value={filters.rsvp}
                     onChange={(event) =>
                       updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
@@ -279,7 +279,7 @@ export function ComposePanel({
                     <option value="Yes">Attending Only</option>
                     <option value="No">Declined Only</option>
                     <option value="Pending">No Response (Pending)</option>
-                  </select>
+                  </Select>
                   {!filters.eventId && (
                     <span className="text-[11px] text-text-muted italic">
                       Select an event first to filter by RSVP status.
@@ -290,8 +290,8 @@ export function ComposePanel({
                 {/* Member Status */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Member Status</label>
-                  <select
-                    className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none"
+                  <Select
+                    className="w-full !text-sm !h-10"
                     value={filters.globalStatus}
                     onChange={(event) => updateFilter('globalStatus', event.target.value)}
                   >
@@ -299,7 +299,7 @@ export function ComposePanel({
                     <option value="Idle">Idle</option>
                     <option value="Inactive">Inactive</option>
                     <option value="">All Statuses</option>
-                  </select>
+                  </Select>
                 </div>
 
                 {/* Voice Part / Section dropdown */}

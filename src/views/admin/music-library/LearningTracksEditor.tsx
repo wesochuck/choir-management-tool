@@ -3,7 +3,7 @@ import { pb } from '../../../lib/pocketbase';
 import type { MusicPiece } from '../../../types/musicLibrary';
 import type { SectionDef, VoicePartDef } from '../../../services/settingsService';
 import { getVisibleTrackKeys } from './learningTrackKeys';
-import { Button } from '../../../components/ui';
+import { Button, Select } from '../../../components/ui';
 
 export interface LearningTracksEditorProps {
     piece: MusicPiece;
@@ -60,7 +60,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                 return (
                     <div 
                         key={partLabel} 
-                        className={`flex-row items-center justify-between gap-4 transition-all duration-150 ${isMovement ? 'scale-100 rounded-md border border-border bg-[var(--bg-card-hover)] p-[6px_10px] text-[13px] shadow-none' : 'scale-100 rounded-md border border-border bg-[var(--bg-card-hover)] p-[8px_12px] shadow-none'}`} 
+                        className={`flex flex-row items-center justify-between gap-4 transition-all duration-150 ${isMovement ? 'scale-100 rounded-md border border-border bg-[var(--bg-card-hover)] p-[6px_10px] text-[13px] shadow-none' : 'scale-100 rounded-md border border-border bg-[var(--bg-card-hover)] p-[8px_12px] shadow-none'}`} 
                         onDragOver={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -95,7 +95,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 : undefined,
                         }}
                     >
-                        <div className={`flex-col ${isMovement ? 'min-w-[80px]' : 'min-w-[90px]'}`}>
+                        <div className={`flex flex-col ${isMovement ? 'min-w-[80px]' : 'min-w-[90px]'}`}>
                             <strong className={`text-[var(--text-color)] ${isMovement ? 'text-[12px]' : 'text-[13px]'}`}>
                                 {displayName}
                             </strong>
@@ -152,11 +152,11 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
             })}
 
             {addableParts.length > 0 && (
-                <div className="animate-fade-in mt-1 flex-row items-center justify-start gap-1 border-t border-dashed border-border pt-1">
+                <div className="animate-fade-in mt-1 flex flex-row items-center justify-start gap-1 border-t border-dashed border-border pt-1">
                     <span className="text-muted text-[11px] font-semibold">
                         ➕ Add voice part track slot:
                     </span>
-                    <select
+                    <Select
                         value=""
                         onChange={(e) => {
                             const val = e.target.value;
@@ -164,7 +164,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 onAddPart(val);
                             }
                         }}
-                        className="cursor-pointer rounded-md border border-border bg-[var(--bg-card-hover)] p-[3px_8px] text-[11px] font-medium text-[var(--text-color)] outline-none"
+                        className="!h-8 !py-1 !pl-2 !pr-7 !text-[11px] !w-auto inline-block cursor-pointer font-medium"
                     >
                         <option value="" disabled>Select voice part...</option>
                         {addableParts.map(vp => (
@@ -172,7 +172,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                 {vp.label} ({vp.fullName})
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
             )}
         </div>

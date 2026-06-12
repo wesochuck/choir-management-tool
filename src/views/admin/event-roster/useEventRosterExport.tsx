@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import type { useDialog } from '../../../contexts/DialogContext';
+import { Select } from '../../../components/ui';
 import type { UserPreferences } from '../../../types/auth';
 import type { Event } from '../../../services/eventService';
 import type { useEventRosterData } from '../../../hooks/useEventRosterData';
@@ -91,17 +92,17 @@ export function useEventRosterExport({
             <label className="text-xs font-semibold text-text-muted uppercase">
               Sort Order
             </label>
-            <select
+            <Select
               id="rsvp-export-sort-select"
               defaultValue={defaultExportSort}
               onChange={(event) => {
                 chosenSort = event.target.value as RsvpExportSort;
               }}
-              className="rounded-md border border-border px-3 py-1.5"
+              className="!h-10 !py-1"
             >
               <option value="lastName">Last Name</option>
               <option value="section">Section → Last Name</option>
-            </select>
+            </Select>
           </div>
         </div>
       ),

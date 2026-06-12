@@ -16,7 +16,7 @@ import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
-import { Button } from '../../components/ui';
+import { Button, Select } from '../../components/ui';
 
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
@@ -403,25 +403,25 @@ export default function RosterView() {
               )}
             </div>
 
-            <select 
+            <Select 
               value={filters.status} 
               onChange={(e) => setFilter('status', e.target.value)}
-              className="h-11 w-[200px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-base text-gray-800"
+              className="!w-[200px] !text-base"
             >
               <option value="">All Statuses</option>
               <option value="Active">Active</option>
               <option value="Idle">Idle</option>
               <option value="Inactive">Inactive</option>
-            </select>
+            </Select>
 
-            <select 
+            <Select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="h-11 w-[200px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-base text-gray-800"
+              className="!w-[200px] !text-base"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
-            </select>
+            </Select>
 
             {(filters.name || (filters.voiceParts && filters.voiceParts.length > 0) || filters.status) && (
               <Button 

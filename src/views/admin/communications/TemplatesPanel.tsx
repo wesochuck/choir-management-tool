@@ -10,7 +10,7 @@ import {
 } from '../../../services/communicationService';
 import { resolvePreviewContent } from '../../../lib/communicationUtils';
 import { useDialog } from '../../../contexts/DialogContext';
-import { Button } from '../../../components/ui';
+import { Button, Select } from '../../../components/ui';
 
 export interface TemplatesPanelProps {
   templates: TemplateRecord[];
@@ -64,8 +64,8 @@ export function TemplatesPanel({
                 </div>
                 <div className="flex flex-[0_0_150px] flex-col gap-1">
                   <label className="text-label">Channel</label>
-                  <select
-                    className="h-10 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                  <Select
+                    className="!h-10 !w-full"
                     value={editingTemplate.type || 'Email'}
                     onChange={(e) =>
                       setEditingTemplate({
@@ -78,7 +78,7 @@ export function TemplatesPanel({
                     <option value="Email">Email</option>
                     <option value="SMS">SMS</option>
                     <option value="Both">Both</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Select } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Audition, AuditionInput } from '../../services/auditionService';
 import { type Event } from '../../services/eventService';
@@ -98,9 +98,9 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
         </div>
       }
     >
-      <form id="audition-form" onSubmit={handleSubmit} className="flex-col gap-4">
+      <form id="audition-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
         {audition && (
-          <div className="flex-row items-center justify-between gap-4 rounded bg-primary-light px-4 py-2">
+          <div className="flex flex-row items-center justify-between gap-4 rounded bg-primary-light px-4 py-2">
             <span className="text-label text-primary-deep">Quick Contact:</span>
             {formData.contact.includes('@') ? (
               <Button
@@ -138,7 +138,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           </div>
         )}
 
-        <div className="mb-1 flex-row gap-4 border-b border-border">
+        <div className="mb-1 flex flex-row gap-4 border-b border-border">
           <button
             type="button"
             onClick={() => setActiveTab('info')}
@@ -165,10 +165,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
         {/* Tab 1: Information Form Fields */}
         // @allow-inline-style - dynamic display for tab visibility
-        <div className="flex-col gap-4" style={{
+        <div className="flex flex-col gap-4" style={{
           display: activeTab === 'info' ? 'flex' : 'none' 
         }}>
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label">Name</label>
             <input
               className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
@@ -179,7 +179,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             />
           </div>
 
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label">Email or Phone</label>
             <input
               className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
@@ -193,8 +193,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
               <label className="text-label">Voice Part</label>
-              <select
-                className="h-[44px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              <Select
                 value={formData.voicePart || ''}
                 onChange={(event) => setFormData({ ...formData, voicePart: event.target.value as Audition['voicePart'] })}
               >
@@ -202,13 +201,12 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 {voicePartLabels.map((part) => (
                   <option key={part} value={part}>{part}</option>
                 ))}
-              </select>
+              </Select>
             </div>
 
             <div className="flex flex-col gap-1">
               <label className="text-label">Tied to Performance</label>
-              <select
-                className="h-[44px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              <Select
                 value={formData.performance || ''}
                 onChange={(event) => setFormData({ ...formData, performance: event.target.value })}
               >
@@ -216,7 +214,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 {performances.map(p => (
                   <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -227,7 +225,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             </div>
           </div>
 
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label">Experience / Musical Background</label>
             <textarea
               className="min-h-20 resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
@@ -237,7 +235,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             />
           </div>
 
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label">Internal Notes</label>
             <textarea
               className="min-h-20 resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
@@ -250,11 +248,10 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
         {/* Tab 2: Time Slots & Scheduling */}
         {activeTab === 'slots' && (
-          <div className="flex-col gap-4 py-2">
+          <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-1">
               <label className="text-label">Confirmed Scheduled Time</label>
-              <select
-                className="h-[44px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              <Select
                 value={formData.scheduledTimeSlot || ''}
                 onChange={(event) => setFormData({ ...formData, scheduledTimeSlot: event.target.value })}
               >
@@ -269,7 +266,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                     {formatInTimezone(formData.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })} (Custom)
                   </option>
                 )}
-              </select>
+              </Select>
             </div>
 
             <div className="mt-2 flex flex-col gap-2">
@@ -277,13 +274,13 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               <p className="text-muted m-0 text-sm">
                 Select the potential time slots this applicant requested or is available for:
               </p>
-              <div className="max-h-[250px] flex-col gap-[10px] overflow-y-auto pr-1">
+              <div className="max-h-[250px] flex flex-col gap-[10px] overflow-y-auto pr-1">
                 {(settings?.slots || []).map((slot) => {
                   const isChecked = formData.requestedSlots?.includes(slot);
                   return (
                     <label 
                       key={slot} 
-                      className="m-0 cursor-pointer flex-row items-center gap-3 rounded-xl p-3 shadow-none" 
+                      className="m-0 cursor-pointer flex flex-row items-center gap-3 rounded-xl p-3 shadow-none"
                       // @allow-inline-style - checkbox checked state
                       style={{
                         border: isChecked ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',

@@ -153,10 +153,10 @@ export function SeatingBottomDock({
             console.error('Failed to parse bottom dock drop data', err);
           }
         }}
-        className="flex-col gap-3"
+        className="flex flex-col gap-3"
       >
         <div className="flex w-full flex-row flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0 flex-col gap-0.5">
+          <div className="min-w-0 flex flex-col gap-0.5">
             <div className="flex flex-row flex-wrap items-center gap-2">
               <h3 className="m-0 text-base leading-tight font-bold text-primary-deep">Unassigned Singers</h3>
               <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-primary-deep shadow-xs">

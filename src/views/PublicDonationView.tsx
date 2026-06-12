@@ -4,7 +4,7 @@ import { donationService, type DonationLevel } from '../services/donationService
 import { AppCard } from '../components/common/AppCard';
 import PublicLogo from '../components/common/PublicLogo';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
-import { Button } from '../components/ui';
+import { Button, Select } from '../components/ui';
 
 export default function PublicDonationView() {
   useDocumentTitle('Support Our Music');
@@ -198,7 +198,7 @@ export default function PublicDonationView() {
           <div className="flex flex-col gap-1">
             <label className="text-label">Tribute Information (Optional)</label>
             <div className="flex flex-col gap-4 md:flex-row">
-              <select 
+              <Select 
                 className="h-11 flex-1 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={tributeType}
                 onChange={e => setTributeType(e.target.value as 'none' | 'memory' | 'honor')}
@@ -206,7 +206,7 @@ export default function PublicDonationView() {
                 <option value="none">No Tribute</option>
                 <option value="memory">In Memory Of</option>
                 <option value="honor">In Honor Of</option>
-              </select>
+              </Select>
               {tributeType !== 'none' && (
                 <input
                   type="text"

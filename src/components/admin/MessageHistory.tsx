@@ -4,7 +4,7 @@ import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Pagination } from '../common/Pagination';
-import { Button } from '../ui';
+import { Button, Select } from '../ui';
 
 export type SourceFilter = 'all' | 'manual' | 'automated';
 
@@ -90,15 +90,15 @@ export function MessageHistory({
             </button>
           )}
         </div>
-        <select
-          className="h-10 rounded border border-gray-200 bg-white px-3 text-sm text-gray-700"
+        <Select
           value={sourceFilter}
           onChange={(e) => onSourceFilterChange(e.target.value as SourceFilter)}
+          className="!h-10"
         >
           <option value="all">All Sources</option>
           <option value="manual">Manual</option>
           <option value="automated">Automated</option>
-        </select>
+        </Select>
       </div>
 
       <div className="overflow-x-auto">

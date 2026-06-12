@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, TabPanel, FormField, Badge, Modal, EmptyState } from '../../components/ui';
+import { Button, TabPanel, FormField, Badge, Modal, EmptyState, Select } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
@@ -469,15 +469,15 @@ export default function DonationsView() {
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
                     <FormField label="Sort By">
-                      <select
+                      <Select
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value as 'amount' | 'name' | 'date')}
-                        className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="block w-full cursor-pointer"
                       >
                         <option value="date">Date (Newest First)</option>
                         <option value="amount">Amount (Highest First)</option>
                         <option value="name">Donor Name</option>
-                      </select>
+                      </Select>
                     </FormField>
                   </div>
                   {(searchQuery || startDate || endDate) && (

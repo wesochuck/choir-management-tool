@@ -47,8 +47,8 @@ export default function PublicUnsubscribeView() {
   }, [token]);
 
   return (
-    <div className="mx-auto max-w-[500px] pt-20">
-      <AppCard title="Unsubscribe from Emails">
+    <div className="flex min-h-screen w-screen flex-col items-center justify-start bg-bg px-4 pt-20">
+      <AppCard title="Unsubscribe from Emails" className="w-full max-w-[500px]">
         <div className="flex flex-col gap-4 text-center">
           {status === 'loading' && (
             <div className="flex flex-row items-center gap-2 text-text-muted"><Spinner size="small" /> Processing your request...</div>

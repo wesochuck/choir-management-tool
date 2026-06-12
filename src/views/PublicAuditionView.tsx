@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import PublicLogo from '../components/common/PublicLogo';
-import { Button } from '../components/ui';
+import { Button, Select } from '../components/ui';
 import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
@@ -203,12 +203,12 @@ export default function PublicAuditionView() {
               <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Voice Part</label>
-                  <select className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
+                  <Select className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
                     <option value="">Not sure yet</option>
                     {voicePartLabels.map((part) => (
                       <option key={part} value={part}>{part}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div className="flex flex-col gap-1">

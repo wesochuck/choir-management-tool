@@ -228,7 +228,7 @@ export default function SeatingFinderView() {
       backTo="/"
       maxWidth="1100px"
     >
-      <div className="flex-col gap-4 py-8">
+      <div className="flex flex-col gap-4 py-8">
         {charts.length > 1 && (
           <div className="mb-1 flex flex-row flex-wrap justify-center gap-4 p-4">
             {charts.map(c => {
@@ -249,7 +249,7 @@ export default function SeatingFinderView() {
         )}
         <AppCard>
           {isOpenSeating ? (
-            <div className="flex-col rounded-md border border-border bg-bg p-4 text-center">
+            <div className="flex flex-col rounded-md border border-border bg-bg p-4 text-center">
               <div className="mb-1 text-[0.85rem] font-bold tracking-wider text-primary-deep uppercase">Seating Type</div>
               <div className="text-lg font-semibold text-text-muted">
                  Open Seating
@@ -270,7 +270,7 @@ export default function SeatingFinderView() {
               )}
             </div>
           ) : row !== null ? (
-            <div className="flex-col rounded-md border border-border bg-bg p-4 text-center">
+            <div className="flex flex-col rounded-md border border-border bg-bg p-4 text-center">
               <div className="mb-1 text-[0.85rem] font-bold tracking-wider text-primary-deep uppercase">Your Assignment</div>
               <div className="text-lg font-semibold text-text-muted">
                  Row {row + 1}
@@ -292,8 +292,8 @@ export default function SeatingFinderView() {
         </AppCard>
  
         {!isOpenSeating && (
-          <div className="flex-col gap-4 py-8">
-            <div className="mx-auto mb-1 w-max flex-row justify-center gap-1 rounded-md bg-[var(--surface-muted)] p-1">
+          <div className="flex flex-col gap-4 py-8">
+            <div className="mx-auto mb-1 w-max flex flex-row justify-center gap-1 rounded-md bg-[var(--surface-muted)] p-1">
               <Button
                 variant={perspective === 'singer' ? 'primary' : 'outline'}
                 size="small"
@@ -435,7 +435,7 @@ export default function SeatingFinderView() {
 
         {/* Standing Neighbors HUD Card */}
         {!isOpenSeating && row !== null && seat !== null && (
-          <div className="flex-col gap-4 py-8">
+          <div className="flex flex-col gap-4 py-8">
             <div className="flex flex-col items-center">
               <h3 className="mb-1 text-lg font-semibold tracking-widest text-text-muted uppercase">
                 Standing Neighbors HUD

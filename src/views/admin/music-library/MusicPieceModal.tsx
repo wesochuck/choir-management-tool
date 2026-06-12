@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Modal } from '../../../components/ui';
+import { Modal, Select } from '../../../components/ui';
 import { useDialog } from '../../../contexts/DialogContext';
 import {
   musicLibraryService,
@@ -1248,8 +1248,8 @@ export function MusicPieceModal({
                       })
                     )}
                   </div>
-                  <select
-                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  <Select
+                    className="!h-10 !w-full"
                     value=""
                     onChange={(e) => {
                       if (e.target.value) togglePerformance(e.target.value);
@@ -1266,7 +1266,7 @@ export function MusicPieceModal({
                         </option>
                       );
                     })}
-                  </select>
+                  </Select>
                 </div>
                 <div className="mt-2 flex flex-col gap-1.5">
                   <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
@@ -1382,8 +1382,8 @@ export function MusicPieceModal({
               </div>
 
               <div className="flex flex-row flex-wrap gap-3">
-                <select
-                  className="h-10 min-w-0 flex-[1_1_200px] rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                <Select
+                  className="!h-10 min-w-0 flex-[1_1_200px]"
                   value=""
                   onChange={(e) => {
                     if (e.target.value) {
@@ -1402,7 +1402,7 @@ export function MusicPieceModal({
                       </option>
                     );
                   })}
-                </select>
+                </Select>
                 <button
                   type="button"
                   className="flex h-10 flex-[1_1_auto] cursor-pointer items-center justify-center rounded-md bg-primary-light px-4 text-sm font-bold text-primary-deep shadow-xs transition-colors hover:bg-emerald-100 active:scale-95"
@@ -1448,10 +1448,10 @@ export function MusicPieceModal({
                       <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                         Venue
                       </label>
-                      <select
+                      <Select
                         value={quickVenue}
                         onChange={(e) => setQuickVenue(e.target.value)}
-                        className="h-9 w-full rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                        className="!h-9 !w-full !text-xs"
                       >
                         <option value="">-- Select Venue --</option>
                         {venues.map((v) => (
@@ -1459,7 +1459,7 @@ export function MusicPieceModal({
                             {v.name}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                   </div>
 

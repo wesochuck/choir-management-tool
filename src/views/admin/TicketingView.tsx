@@ -8,7 +8,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
-import { Modal, Button, FormField, Badge, EmptyState } from '../../components/ui';
+import { Modal, Button, FormField, Badge, EmptyState, Select } from '../../components/ui';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 
 export default function TicketingView() {
@@ -542,10 +542,10 @@ export default function TicketingView() {
               <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
                 <div className="md:col-span-2">
                   <FormField label="Select Performance">
-                    <select
+                    <Select
                       value={selectedEventId}
                       onChange={e => setSelectedEventId(e.target.value)}
-                      className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      className="block w-full cursor-pointer"
                     >
                       {visibleEvents.map(ev => {
                         const cutoffTime = now - 3 * 60 * 60 * 1000;
@@ -561,7 +561,7 @@ export default function TicketingView() {
                       {visibleEvents.length === 0 && (
                         <option value="">No ticketing-enabled events</option>
                       )}
-                    </select>
+                    </Select>
                   </FormField>
                 </div>
 
@@ -709,15 +709,15 @@ export default function TicketingView() {
                 </div>
                 <div className="md:col-span-1">
                   <FormField label="Sort By">
-                    <select
+                    <Select
                       value={sortBy}
                       onChange={e => setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')}
-                      className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                      className="block w-full cursor-pointer"
                     >
                       <option value="lastName">Last Name</option>
                       <option value="firstName">First Name</option>
                       <option value="saleDate">Sale Date</option>
-                    </select>
+                    </Select>
                   </FormField>
                 </div>
                 {(searchQuery) && (

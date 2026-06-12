@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal } from '../ui';
+import { Modal, Select } from '../ui';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
@@ -478,7 +478,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Type</label>
-                <select 
+                <Select 
                   value={formData.type} 
                   onChange={(e) => {
                     const newType = e.target.value as 'Performance' | 'Rehearsal';
@@ -500,11 +500,11 @@ export const EventModal: React.FC<EventModalProps> = ({
                       setActiveTab('details');
                     }
                   }}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  className="!h-10 !w-full"
                 >
                   <option value="Rehearsal">Rehearsal</option>
                   <option value="Performance">Performance</option>
-                </select>
+                </Select>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Date & Time</label>
@@ -521,10 +521,10 @@ export const EventModal: React.FC<EventModalProps> = ({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Duration</label>
-                <select 
+                <Select 
                   value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
                   onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  className="!h-10 !w-full"
                 >
                   <option value={30}>30 minutes</option>
                   <option value={45}>45 minutes</option>
@@ -539,7 +539,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   <option value={180}>3 hours</option>
                   <option value={210}>3.5 hours</option>
                   <option value={240}>4 hours</option>
-                </select>
+                </Select>
                 {endTime && (
                   <div className="mt-1 text-xs font-medium text-text-muted">
                     Ends at approximately <span className="font-bold text-primary">{endTime}</span>
@@ -569,7 +569,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             <div className="flex flex-col gap-1.5">
               <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Venue</label>
-              <select
+              <Select
                 value={formData.venue || ''}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -583,14 +583,14 @@ export const EventModal: React.FC<EventModalProps> = ({
                   }
                 }}
                 required
-                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                className="!h-10 !w-full"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
                 <option value="new" className="font-bold text-primary">+ Add New Venue...</option>
-              </select>
+              </Select>
             </div>
 
             {isAddingNewVenue && (
@@ -690,14 +690,14 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
                         <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Day</label>
-                        <select 
+                        <Select 
                           value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
-                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                          className="!h-10 !w-full animate-none"
                         >
                           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
                             <option key={d} value={i}>{d}</option>
                           ))}
-                        </select>
+                        </Select>
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
                         <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Time</label>
@@ -709,16 +709,16 @@ export const EventModal: React.FC<EventModalProps> = ({
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Rehearsal Venue</label>
-                      <select 
+                      <Select 
                         value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
                         required
-                        className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                        className="!h-10 !w-full"
                       >
                         <option value="">-- Select Rehearsal Venue --</option>
                         {venues.map(v => (
                           <option key={v.id} value={v.id}>{v.name}</option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                     {startDate && (
                       <div className="mt-2 inline-flex items-center justify-center rounded-lg border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary-deep shadow-xs">
@@ -733,16 +733,16 @@ export const EventModal: React.FC<EventModalProps> = ({
             {formData.type === 'Rehearsal' && (
               <div className="flex flex-col gap-1.5">
                 <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Linked Performance (Parent)</label>
-                <select 
+                <Select 
                   value={formData.parentPerformanceId} 
                   onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  className="!h-10 !w-full"
                 >
                   <option value="">None</option>
                   {performances.filter(p => p.id !== initialData?.id).map(p => (
                     <option key={p.id} value={p.id}>{p.title || new Date(p.date).toLocaleDateString()} - {p.expand?.venue?.name || ''}</option>
                   ))}
-                </select>
+                </Select>
               </div>
             )}
 

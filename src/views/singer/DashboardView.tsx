@@ -189,7 +189,7 @@ export default function DashboardView() {
     <PageLayout 
       title="Singer Dashboard" 
       actions={
-        <div className="flex-row gap-2">
+        <div className="flex flex-row gap-2">
           <Button as={Link} to="/profile" variant="outline">My Profile</Button>
           <Button onClick={() => pb.authStore.clear()} variant="outline">Logout</Button>
         </div>
@@ -281,7 +281,7 @@ export default function DashboardView() {
         <div className="grid grid-cols-[1fr_340px] items-start gap-8 max-md:grid-cols-1 max-md:gap-6">
           
           {/* Main timeline panel: Events */}
-          <div className="flex-col gap-6">
+          <div className="flex flex-col gap-6">
             <h2 className="m-0 mb-1 text-2xl font-bold text-text">Upcoming Events</h2>
             {upcomingEvents.map((e) => (
               <EventCard 
@@ -303,16 +303,16 @@ export default function DashboardView() {
           </div>
 
           {/* Right sidebar: Quick widgets */}
-          <div className="flex-col gap-6">
+          <div className="flex flex-col gap-6">
             
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
               <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="📊 Quick Polls">
-                <div className="flex-col gap-2">
+                <div className="flex flex-col gap-2">
                   {activePolls.map(poll => (
                     <div key={poll.id} className="flex flex-col gap-1 rounded-xl border border-border p-2 shadow-none">
                       <div className="text-sm font-bold">{poll.question}</div>
-                      <div className="flex-row gap-1">
+                      <div className="flex flex-row gap-1">
                         <Button 
                           size="small"
                           variant={poll.status === 'Yes' ? 'primary' : 'outline'}
@@ -415,7 +415,7 @@ export default function DashboardView() {
         }
       >
         {selectedAnnouncement && (
-          <div className="flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <div className="text-muted -mt-2 text-xs">
               Dispatched on {getFormattedDate(selectedAnnouncement.created)}
             </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { MarkdownEditor } from './common/MarkdownEditor';
+import { Select } from './ui';
 import EasyMDE from 'easymde';
 
 import { type ValidationWarning } from '../utils/communicationValidation';
@@ -48,15 +49,15 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-label">Channel</label>
-          <select
-            className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+          <Select
             value={messageType}
             onChange={(e) => onMessageTypeChange(e.target.value as 'Email' | 'SMS' | 'Both')}
+            className="!h-10"
           >
             <option value="Email">Email</option>
             <option value="SMS">SMS</option>
             <option value="Both">Both</option>
-          </select>
+          </Select>
         </div>
       </div>
       <div className="flex flex-col gap-1">

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Select } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPieceInput } from '../../services/musicLibraryService';
 import { parseCSV, type CSVData } from '../../lib/rosterImportUtils';
@@ -327,10 +327,10 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                     <span className="text-muted text-xs">{field.desc}</span>
                   </div>
 
-                  <select
+                  <Select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className={`h-[38px] w-[200px] rounded-md border border-border bg-surface px-[10px] text-[0.85rem] shadow-none transition-colors outline-none focus:border-primary ${selectedIndex !== -1 ? '!border-primary' : ''}`}
+                    className={`!h-[38px] !w-[200px] ${selectedIndex !== -1 ? '!border-primary' : ''}`}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
                     {csvData.headers.map((hdr: string, idx: number) => (
@@ -338,7 +338,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                         Column: "{hdr}"
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               );
             })}

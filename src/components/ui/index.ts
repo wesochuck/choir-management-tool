@@ -8,7 +8,7 @@ export { Input } from './Input/Input';
 export type { InputProps } from './Input/Input';
 
 export { Select } from './Select/Select';
-export type { SelectProps } from './Select/Select';
+export type { SelectSize, SelectProps } from './Select/Select';
 
 export { Badge } from './Badge/Badge';
 export type { BadgeTone, BadgeProps } from './Badge/Badge';

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { reportService, type ConcertSummary } from '../../services/reportService';
 import { eventService, type Event } from '../../services/eventService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
-import { Button } from '../../components/ui';
+import { Button, Select } from '../../components/ui';
 
 type ReportTab = 'attendance' | 'repertoire';
 
@@ -157,10 +157,10 @@ export default function ReportsView() {
   const handlePrint = () => window.print();
 
   return (
-    <div className="flex-col gap-8 py-8">
+    <div className="flex flex-col gap-8 py-8">
       <div className="flex flex-col items-center justify-between md:flex-row">
         <h1 className="text-display m-0">Reports & Insights</h1>
-        <div className="flex-row gap-2">
+        <div className="flex flex-row gap-2">
             <Button variant={tab === 'attendance' ? 'primary' : 'outline'} onClick={() => setTab('attendance')}>
                 Attendance
             </Button>
@@ -171,14 +171,13 @@ export default function ReportsView() {
       </div>
 
       {tab === 'attendance' && (
-        <div className="flex-col gap-8">
+        <div className="flex flex-col gap-8">
           {/* Selection Header */}
           <div className="no-print rounded-xl border border-border bg-surface p-6 shadow-sm">
             <div className="flex flex-col justify-between md:flex-row">
-              <div className="flex-col gap-1">
+              <div className="flex flex-col gap-1">
                 <label className="text-label text-muted">Select Concert / Performance</label>
-                <select 
-                  className="h-10 w-[300px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                <Select
                   value={selectedPerformanceId}
                   onChange={(e) => setSelectedPerformanceId(e.target.value)}
                 >
@@ -188,11 +187,11 @@ export default function ReportsView() {
                       {new Date(p.date).toLocaleDateString()} - {p.title}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {summary && (
-                <div className="flex-row">
+                <div className="flex flex-row gap-2">
                   <Button onClick={handleExportCSV} variant="secondary" size="small">
                     📥 Download CSV
                   </Button>
@@ -294,13 +293,13 @@ export default function ReportsView() {
       )}
 
       {tab === 'repertoire' && (
-          <div className="flex-col gap-8">
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col justify-between md:flex-row">
                 <div>
                     <h3>Repertoire History</h3>
                     <p className="text-muted">A consolidated view of all library pieces and their performance dates.</p>
                 </div>
-                <div className="flex-row gap-2">
+                <div className="flex flex-row gap-2">
                     <Button onClick={handleExportCSV} variant="secondary" size="small" disabled={isRepertoireLoading || repertoireStats.length === 0}>
                         📥 Download CSV
                     </Button>

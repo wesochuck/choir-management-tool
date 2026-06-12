@@ -11,7 +11,7 @@ import { SeatingBottomDock } from '../../components/admin/SeatingBottomDock';
 import { SeatingFormationsEditor } from '../../components/admin/SeatingFormationsEditor';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
-import { Modal } from '../../components/ui';
+import { Modal, Select } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -317,31 +317,31 @@ export default function SeatingView() {
         <div className="no-print grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 md:grid-cols-2 xl:grid-cols-[0.8fr_1fr_1fr_1.6fr]">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Performance</label>
-            <select
+            <Select
               value={performanceId}
               onChange={(e) => setPerformanceId(e.target.value)}
-              className="block h-9 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
             >
               <option value="">-- Select Performance --</option>
               {performances.map(p => (
                 <option key={p.id} value={p.id}>{p.title || formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Venue</label>
             <div className="flex items-center gap-2">
-              <select
+              <Select
                 value={venueId}
                 onChange={(e) => setVenueId(e.target.value)}
-                className="block h-9 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
                   <option key={v.id} value={v.id}>{v.name}</option>
                 ))}
-              </select>
+              </Select>
               {hasLayoutOverride && (
                 <button
                   onClick={async () => {
@@ -379,7 +379,7 @@ export default function SeatingView() {
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Formation</label>
-            <select
+            <Select
               value={chart?.formationId || seatingSettings.defaultFormationId}
               onChange={async (e) => {
                 const selectedId = e.target.value;
@@ -396,18 +396,18 @@ export default function SeatingView() {
 
                 await updateChart({ formationId: selectedId, assignments: {} });
               }}
-              className="block h-9 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
             >
               {seatingSettings.formations?.map(formation => (
                 <option key={formation.id} value={formation.id}>{formation.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="flex min-w-0 flex-col gap-1">
             <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Chart</label>
             <div className="flex min-w-0 items-center gap-1">
-              <select
+              <Select
                 aria-label="Select seating chart"
                 value={activeChartId || ''}
                 onChange={(e) => {
@@ -415,12 +415,12 @@ export default function SeatingView() {
                     setActiveChartId(e.target.value);
                   }
                 }}
-                className="h-9 min-w-0 flex-1 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="!h-9 !text-sm text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
               >
                 {chartList.map((c, index) => (
                   <option key={c.id} value={c.id}>{`${index + 1}. ${c.name}`}</option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 onClick={() => moveActiveChart(-1)}
@@ -493,7 +493,7 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:flex-row">
-          <AppCard className="w-full min-w-0 flex-1 flex-col p-4">
+          <AppCard className="w-full min-w-0 flex-1 flex flex-col p-4">
             <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-primary-light p-1.5 px-3 shadow-sm">
                <div className="flex flex-row gap-1">
                   <button onClick={handleClear} className="font-medium tracking-wide text-muted inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs whitespace-nowrap">
@@ -543,10 +543,10 @@ export default function SeatingView() {
                
                <div className="flex min-w-[200px] flex-1 flex-row items-center justify-center gap-1">
                   <span className="text-muted text-xs font-semibold whitespace-nowrap">Copy:</span>
-                  <select 
+                  <Select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
-                    className="h-8 min-h-8 max-w-[200px] flex-1 rounded-lg border border-border bg-surface px-[10px] text-xs"
+                    className="!h-8 !min-h-8 max-w-[200px] flex-1 !py-1 !px-[10px] !text-xs"
                   >
                     <option value="">-- Choose --</option>
                     {allCharts
@@ -554,7 +554,7 @@ export default function SeatingView() {
                       .map(c => (
                         <option key={c.id} value={c.id}>{c.expand?.performance?.title || 'Untitled'}</option>
                       ))}
-                  </select>
+                  </Select>
                </div>
 
                <button onClick={handlePrint} className="font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-2.5 text-xs whitespace-nowrap text-surface">
@@ -577,11 +577,11 @@ export default function SeatingView() {
             </div>
 
             {isLoading ? (
-              <div className="flex-col items-center p-8">
+              <div className="flex flex-col items-center p-8">
                 <p className="text-muted">Loading seating data...</p>
               </div>
             ) : selectedVenue?.isOpenSeating ? (
-              <div className="flex-col items-center p-8 text-center">
+              <div className="flex flex-col items-center p-8 text-center">
                 <h3 className="text-headline">Open Seating</h3>
                 <p className="text-muted">This venue is configured for open seating. No seating assignments are required.</p>
                 {selectedVenue.address && (
@@ -593,7 +593,7 @@ export default function SeatingView() {
                 )}
               </div>
             ) : (
-              <div className="min-w-0 flex-col gap-6">
+              <div className="flex min-w-0 flex-col gap-6">
                 {printMode === 'visual' && (
                   <div className="no-print rounded-md border border-border bg-primary-light p-2 text-center text-sm text-primary-deep shadow-sm">
                     <strong>Editor Mode:</strong>{' '}
@@ -684,9 +684,9 @@ export default function SeatingView() {
                 }}
                 className="flex size-full flex-col"
               >
-                <div className="mb-4 flex-row items-center justify-between gap-1">
+                <div className="mb-4 flex flex-row items-center justify-between gap-1">
                   <h3 className="text-headline m-0">Unassigned</h3>
-                  <div className="flex-row gap-1">
+                  <div className="flex flex-row gap-1">
                     <button
                       type="button"
                       onClick={() => setIsSingerLookupOpen(true)}
@@ -703,7 +703,7 @@ export default function SeatingView() {
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 flex-col gap-2 overflow-y-auto pr-1">
+                <div className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
                   {activeProfiles
                     .filter(p => !Object.values(optimisticAssignments).includes(p.id))
                     .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
@@ -712,7 +712,7 @@ export default function SeatingView() {
                         key={p.id}
                         draggable
                         onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                        className="cursor-grab flex-row justify-between rounded-md border border-border bg-bg px-4 py-2"
+                        className="cursor-grab flex flex-row justify-between rounded-md border border-border bg-bg px-4 py-2"
                       >
                         <span className="text-label font-semibold">{p.name}</span>
                         <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">{p.voicePart}</span>
@@ -791,7 +791,7 @@ export default function SeatingView() {
             }
           }}
         >
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label font-semibold">Chart Name</label>
             <input 
               className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" 
@@ -850,7 +850,7 @@ export default function SeatingView() {
             }
           }}
         >
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label font-semibold">New Chart Name</label>
             <input 
               className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" 

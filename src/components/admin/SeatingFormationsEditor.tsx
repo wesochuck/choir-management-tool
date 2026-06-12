@@ -7,7 +7,7 @@ import { settingsService, getVoicePartsAndSections, type SectionDef, type VoiceP
 import { AppCard } from '../common/AppCard';
 import { FloatingSaveBar } from './FloatingSaveBar';
 import { useDialog } from '../../contexts/DialogContext';
-import { Button } from '../ui';
+import { Button, Select } from '../ui';
 import { toggleAccordion } from '../../lib/seatingFormationsUtils';
 
 
@@ -173,7 +173,7 @@ function FormationRow({
             placeholder="Formation Name"
             className="h-[38px] w-full rounded-md border border-border bg-surface px-2 transition-colors outline-none focus:border-primary"
           />
-          <select
+          <Select
             value={formation.strategy}
             onChange={(e) => {
               setCustomSeatingSettings((prev) => {
@@ -182,11 +182,11 @@ function FormationRow({
                 return { ...prev, formations: newFormations };
               });
             }}
-            className="h-[38px] w-full rounded-md border border-border bg-surface px-2 transition-colors outline-none focus:border-primary"
+            className="!h-[38px] !w-full !px-2 !py-1 !text-sm"
           >
             <option value="vertical_column">Vertical Columns</option>
             <option value="horizontal_row">Horizontal Rows</option>
-          </select>
+          </Select>
         </div>
 
         {/* Checkbox: Voice Part Layout Toggle */}
@@ -282,7 +282,7 @@ function FormationRow({
         <div className="flex flex-wrap items-center gap-1">
           <div
             className={`relative inline-block${formation.sectionOrder.length > 0 ? ' mt-[6px]' : ''}`}
-          >              <select
+          >              <Select
               value=""
               onChange={(e) => {
                 const val = e.target.value;
@@ -296,7 +296,7 @@ function FormationRow({
                   return { ...prev, formations: newFormations };
                 });
               }}
-              className="absolute top-0 left-0 z-[2] size-full cursor-pointer opacity-0"
+              className="!absolute !top-0 !left-0 !z-[2] !size-full !cursor-pointer !opacity-0"
               title={isVoice ? "Add voice part to order" : "Add section to order"}
             >
               <option value="" disabled>{isVoice ? "+ Add Voice Part" : "+ Add Section"}</option>
@@ -313,7 +313,7 @@ function FormationRow({
                   </option>
                 ))
               )}
-            </select>
+            </Select>
             <Button
               type="button"
               variant="secondary"
@@ -455,7 +455,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
   }
 
   return (
-    <div className="flex-col gap-8 pb-16">
+    <div className="flex flex-col gap-8 pb-16">
       {message && (
         <div 
           className={`inline-flex items-center self-start rounded px-2 py-1 text-xs font-semibold tracking-wider uppercase ${message.startsWith('Error') ? 'border border-red-200 bg-red-100 text-red-800' : 'border border-sky-200 bg-sky-100 text-sky-700'}`}
@@ -465,17 +465,17 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       )}
 
       <AppCard title="Default Seating Formation">
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
           <label className="text-label">Default Seating Formation</label>
-          <select
+          <Select
             value={customSeatingSettings.defaultFormationId}
             onChange={(e) => setCustomSeatingSettings((prev) => ({ ...prev, defaultFormationId: e.target.value }))}
-            className="h-10 w-full max-w-[400px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+            className="!h-10 !w-full !max-w-[400px]"
           >
             {customSeatingSettings.formations?.map(form => (
               <option key={form.id} value={form.id}>{form.name}</option>
             ))}
-          </select>
+          </Select>
           <p className="text-muted m-0">
             This formation logic will be used by default for newly created seating charts.
           </p>
@@ -483,7 +483,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       </AppCard>
 
       <AppCard title="Seating Formations">
-        <div className="flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-row flex-wrap items-center justify-between gap-2">
           <p className="text-muted m-0">
               Define reusable seating formations for your choir.

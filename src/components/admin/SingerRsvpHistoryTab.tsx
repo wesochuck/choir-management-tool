@@ -28,12 +28,12 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
   }
 
   return (
-    <div className="flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div>
         <h4 className="m-0 mb-2 text-xs tracking-wider text-text-muted uppercase">
           Upcoming Performances ({upcomingPerformances.length})
         </h4>
-        <div className="flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {upcomingPerformances.length === 0 ? (
             <p className="text-muted m-0 text-sm">No upcoming performances.</p>
           ) : (
@@ -59,7 +59,7 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
         <h4 className="m-0 mb-2 text-xs tracking-wider text-text-muted uppercase">
           Past Performances ({pastPerformances.length})
         </h4>
-        <div className="flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {pastPerformances.length === 0 ? (
             <p className="text-muted m-0 text-sm">No past performances.</p>
           ) : (

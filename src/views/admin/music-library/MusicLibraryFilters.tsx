@@ -3,7 +3,7 @@ import type { SectionDef, MusicGenreDef } from '../../../services/settingsServic
 import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
 import type { FilterMode } from '../../../lib/music/libraryRows';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
-import { Input, Button } from '../../../components/ui';
+import { Input, Button, Select } from '../../../components/ui';
 
 export interface MusicLibraryFiltersProps {
     searchTerm: string;
@@ -124,33 +124,33 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
             <div className="flex flex-row flex-wrap items-center gap-6 pt-2">
                 <div className="flex flex-row items-center gap-2">
                     <span className="text-sm font-semibold text-text-muted">Last Performed:</span>
-                    <select
-                        className="h-10 cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm transition-all outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]"
-                        value={recencyFilter}
-                        onChange={(e) => onRecencyFilterChange(e.target.value as PerformanceRecencyFilter)}
+                    <Select
+                      className="!h-10 !w-auto !py-1.5"
+                      value={recencyFilter}
+                      onChange={(e) => onRecencyFilterChange(e.target.value as PerformanceRecencyFilter)}
                     >
-                        <option value="all">All</option>
-                        <option value="within-1-year">Within 1 year</option>
-                        <option value="within-2-years">Within 2 years</option>
-                        <option value="within-3-years">Within 3 years</option>
-                        <option value="not-within-3-years">Not in 3 years</option>
-                        <option value="not-within-5-years">Not in 5 years</option>
-                        <option value="never">Never Performed</option>
-                    </select>
+                      <option value="all">All</option>
+                      <option value="within-1-year">Within 1 year</option>
+                      <option value="within-2-years">Within 2 years</option>
+                      <option value="within-3-years">Within 3 years</option>
+                      <option value="not-within-3-years">Not in 3 years</option>
+                      <option value="not-within-5-years">Not in 5 years</option>
+                      <option value="never">Never Performed</option>
+                    </Select>
                 </div>
 
                 <div className="flex flex-row items-center gap-2">
                     <span className="text-sm font-semibold text-text-muted">Per Page:</span>
-                    <select
-                        className="h-10 min-w-[70px] cursor-pointer rounded-md border border-border bg-surface px-3 py-1.5 text-sm transition-all outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]"
-                        value={pageSize}
-                        onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                    <Select
+                      className="!h-10 !w-[80px] !min-w-[80px] !py-1.5"
+                      value={pageSize}
+                      onChange={(e) => onPageSizeChange(Number(e.target.value))}
                     >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                    </select>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </Select>
                 </div>
 
                 <label className="flex cursor-pointer flex-row items-center gap-2 select-none">

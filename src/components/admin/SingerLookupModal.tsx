@@ -62,7 +62,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
       maxWidth="560px"
       footer={<Button type="button" onClick={onClose} variant="outline">Cancel</Button>}
     >
-      <div className="flex-col gap-3">
+      <div className="flex flex-col gap-3">
         <input
           type="text"
           value={searchQuery}
@@ -81,7 +81,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
             ⚠️ {error}
           </div>
         ) : (
-          <div className="flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <div className="text-muted flex flex-row items-center justify-between px-1 text-xs">
               <span>
                 {filtered.length} available singer{filtered.length === 1 ? '' : 's'}

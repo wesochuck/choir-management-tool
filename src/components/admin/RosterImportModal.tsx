@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Select } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService, generateRandomPassword } from '../../services/profileService';
 import {
@@ -306,7 +306,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     >
       {/* STEP 1: UPLOAD */}
       {step === 'UPLOAD' && (
-        <div className="flex-col gap-4 py-5 text-center">
+        <div className="flex flex-col gap-4 py-5 text-center">
           <p className="text-muted m-0 text-sm">
             Upload a CSV file containing your singer roster to bootstrap the process.
           </p>
@@ -350,12 +350,12 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
       {/* STEP 2: FIELD MAPPING */}
       {step === 'MAP' && csvData && (
-        <div className="flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <p className="text-muted m-0 text-sm">
             Align the columns in your CSV with our system database fields. Smart auto-matches have been pre-selected.
           </p>
 
-          <div className="max-h-[350px] flex-col gap-2 overflow-y-auto pr-1">
+          <div className="max-h-[350px] flex flex-col gap-2 overflow-y-auto pr-1">
             {fieldsConfig.map(field => {
               const selectedIndex = mapping[field.key];
               
@@ -368,7 +368,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
                   }}
                 >
-                  <div className="flex-1 flex-col gap-0.5">
+                  <div className="flex-1 flex flex-col gap-0.5">
                     <div className="flex items-center gap-[6px]">
                       <strong className="text-sm text-text">{field.label}</strong>
                       {field.required && (
@@ -382,10 +382,10 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     <span className="text-muted text-xs">{field.desc}</span>
                   </div>
 
-                  <select
+                  <Select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className="h-[38px] w-[200px] rounded-md border border-border bg-surface px-[10px] text-sm shadow-none transition-colors outline-none focus:border-primary"
+                    className="!h-[38px] !w-[200px] !py-1"
                     // @allow-inline-style - conditional match border
                     style={{
                       borderColor: selectedIndex !== -1 ? 'var(--color-primary)' : undefined,
@@ -397,7 +397,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                         Column: "{hdr}"
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               );
             })}
@@ -407,7 +407,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
       {/* STEP 3: PREVIEW & VALIDATION */}
       {step === 'PREVIEW' && (
-        <div className="flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex flex-col items-center justify-between md:flex-row">
             <p className="text-muted m-0 text-sm">
               Verify parsed singer details and resolve validation warnings or errors before importing.
@@ -492,10 +492,10 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
       {/* STEP 4: IMPORTING PROGRESS */}
       {step === 'IMPORTING' && (
-        <div className="flex-col items-center gap-4 py-5">
+        <div className="flex flex-col items-center gap-4 py-5">
           <span className="animate-spin text-5xl">⚙️</span>
           
-          <div className="w-full flex-col items-center gap-[6px]">
+          <div className="w-full flex flex-col items-center gap-[6px]">
             <strong className="text-lg text-text">
               Importing {mappedSingers.filter(s => s.isValid).length} Singers...
             </strong>
@@ -523,7 +523,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
       {/* STEP 5: IMPORT COMPLETE */}
       {step === 'COMPLETE' && (
-        <div className="flex-col gap-6 py-[10px]">
+        <div className="flex flex-col gap-6 py-[10px]">
           <div className="flex flex-col items-center gap-2 text-center">
             <span className="text-6xl">🎉</span>
             <h3 className="m-0 text-2xl text-primary-deep">Import Finished!</h3>
@@ -537,7 +537,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             <div 
               className="flex flex-row items-center justify-between gap-4 rounded-xl border border-[rgb(74_124_89_/_20%)] bg-[rgb(74_124_89_/_6%)] p-4 px-5"
             >
-              <div className="flex-1 flex-col gap-1">
+              <div className="flex-1 flex flex-col gap-1">
                 <strong className="text-sm text-primary-deep">
                   🔑 Generated temporary credentials
                 </strong>
@@ -557,7 +557,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
           {/* Error Details */}
           {errorsList.length > 0 && (
-            <div className="flex-col gap-1">
+            <div className="flex flex-col gap-1">
               <strong className="text-sm text-danger-text">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>

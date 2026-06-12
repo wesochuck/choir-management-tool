@@ -18,7 +18,7 @@ import type { EventRoster } from '../../services/rosterService';
 import { chunkArray } from '../../lib/networkSafety';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { AppCard } from '../../components/common/AppCard';
-import { Button } from '../../components/ui';
+import { Button, Select } from '../../components/ui';
 import { matchesVoiceParts } from '../../lib/voicePartUtils';
 
 export default function AttendanceView() {
@@ -328,13 +328,12 @@ export default function AttendanceView() {
               <span className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                 Select Event
               </span>
-              <select
+              <Select
                 value={selectedEventId}
                 onChange={(e) => {
                   setSelectedEventId(e.target.value);
                   handleResetFilters(); // Reset filters when changing active event
                 }}
-                className="h-10 w-full min-w-[240px] rounded-md border border-border bg-surface px-3 text-sm text-slate-800 shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden md:w-80"
               >
                 <option value="">-- Choose an Event --</option>
                 {sortedEvents.map((e) => (
@@ -347,7 +346,7 @@ export default function AttendanceView() {
                     - {e.title || e.expand?.venue?.name || ''} ({e.type})
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
         }
@@ -607,41 +606,38 @@ export default function AttendanceView() {
                   </div>
 
                   {/* Sort By selector */}
-                  <select
+                  <Select
                     value={sortBy}
                     onChange={(e) =>
                       handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')
                     }
-                    className="h-11 w-[210px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-sm text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     aria-label="Sort singers"
                   >
                     <option value="lastName">Last Name</option>
                     <option value="voicePart">Voice Part + Last Name</option>
                     <option value="section">Section + Last Name</option>
-                  </select>
+                  </Select>
 
                   {/* RSVP Filter Selection */}
-                  <select
+                  <Select
                     value={rsvpFilter}
                     onChange={(e) =>
                       handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')
                     }
-                    className="h-11 w-[240px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-sm text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     aria-label="RSVP Status Filter"
                   >
                     <option value="Both">Both (Attending + Pending)</option>
                     <option value="Yes">Attending Only</option>
                     <option value="Pending">Pending RSVP Only</option>
-                  </select>
+                  </Select>
 
                   {/* Voice Part Filter Selection */}
-                  <select
+                  <Select
                     value={selectedVoiceParts[0] || ''}
                     onChange={(e) => {
                       const val = e.target.value;
                       setSelectedVoiceParts(val ? [val] : []);
                     }}
-                    className="h-11 w-[230px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-sm text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     aria-label="Filter by Voice Part"
                   >
                     <option value="">All Voice Parts / Sections</option>
@@ -659,7 +655,7 @@ export default function AttendanceView() {
                         </option>
                       ))}
                     </optgroup>
-                  </select>
+                  </Select>
 
                   {/* Reset Filters action */}
                   {(filterName ||
@@ -864,10 +860,9 @@ export default function AttendanceView() {
                       </div>
 
                       <div className="flex w-full min-w-[320px] flex-row items-center gap-3 md:w-auto">
-                        <select
+                        <Select
                           value={selectedDeclinedProfileId}
                           onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
-                          className="h-10 flex-1 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-xs transition-colors focus:border-red-600 focus:ring-1 focus:ring-red-600 focus:outline-hidden md:w-64"
                         >
                           <option value="">-- Select Declined Singer --</option>
                           {declinedSingers.map((s) => (
@@ -875,7 +870,7 @@ export default function AttendanceView() {
                               {s.name} ({s.voicePart})
                             </option>
                           ))}
-                        </select>
+                        </Select>
                         <Button
                           disabled={!selectedDeclinedProfileId}
                           onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}

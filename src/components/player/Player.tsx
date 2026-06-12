@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PlayerMediaFile } from '../../services/playerService';
 import { useAudioPlayback } from '../../hooks/useAudioPlayback';
+import { Select } from '../ui';
 import {
   PlayIcon,
   PauseIcon,
@@ -235,17 +236,17 @@ export const Player: React.FC<PlayerProps> = ({
           {/* INTER-TRACK GAP SETTING */}
           <div className="flex items-center gap-1.5">
             <label htmlFor="delay-select" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Gap:</label>
-            <select 
+            <Select
               id="delay-select"
-              value={delaySetting} 
+              value={delaySetting}
               onChange={(e) => setDelaySetting(Number(e.target.value))}
-              className="cursor-pointer rounded-lg border border-border bg-primary-light px-2 py-1.5 text-sm font-semibold text-text outline-none focus:border-primary"
+              className="!h-auto !w-auto !cursor-pointer !rounded-lg !border-border !bg-primary-light !px-2 !py-1.5 !text-sm !font-semibold !text-text !outline-none focus:!border-primary"
             >
               <option value={0}>None</option>
               <option value={2}>2s</option>
               <option value={5}>5s</option>
               <option value={10}>10s</option>
-            </select>
+            </Select>
           </div>
         </div>
 

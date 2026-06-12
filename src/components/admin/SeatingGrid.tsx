@@ -6,7 +6,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { removeSeatFromRow, removeRowAndShiftAssignments } from '../../lib/seatingSync';
 import { isSectionMismatch } from '../../lib/voicePartUtils';
 import { getContrastColor } from '../../lib/colorUtils';
-import { Button } from '../ui';
+import { Button, Select } from '../ui';
 
 
 interface SeatingGridProps {
@@ -449,10 +449,10 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   )}
 
                   {(!isReadOnly && !assignedProfile) && (
-                    <select
+                    <Select
                       value={profileId || ''}
                       onChange={(e) => onAssign(seatKey, e.target.value)}
-                      className="absolute inset-0 size-full cursor-pointer opacity-0"
+                      className="!absolute !inset-0 !size-full !cursor-pointer !opacity-0"
                     >
                        <option value="">-- Assign --</option>
                       <option value="">(Empty)</option>
@@ -499,7 +499,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           ))
                         }
                       </optgroup>
-                    </select>
+                    </Select>
                   )}
 
                   {!isReadOnly && onUpdateRowCounts && (
@@ -538,7 +538,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     }
                   </div>
                   {assignedProfile ? (
-                    <div className="flex-col"
+                    <div className="flex flex-col"
                       // @allow-inline-style - dynamic gap based on compact mode
                       style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
                       <div

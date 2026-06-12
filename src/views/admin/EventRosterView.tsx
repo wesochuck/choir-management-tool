@@ -4,7 +4,7 @@ import { profileService, type Profile, type ProfileInput } from '../../services/
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, Modal } from '../../components/ui';
+import { Button, Modal, Select } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
@@ -325,15 +325,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               )}
             </div>
 
-            <select
+            <Select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="h-11 w-[210px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-base text-gray-800"
+              className="!h-11 !w-[210px] !text-base"
               aria-label="Sort singers"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
-            </select>
+            </Select>
 
             {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
               <Button

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Select } from '../ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc } from '../../lib/timezone';
 
@@ -203,14 +203,14 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
         Quickly generate a series of weekly rehearsals leading up to a performance.
       </p>
 
-      <form id="bulk-event-form" onSubmit={handleSubmit} className="flex-col gap-4">
-        <div className="flex-col gap-1">
+      <form id="bulk-event-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Target Performance</label>
-          <select 
+          <Select 
             value={selectedPerformanceId} 
             onChange={(e) => handlePerformanceChange(e.target.value)}
             required
-            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
+            className="w-full"
           >
             <option value="">-- Select Performance --</option>
             {performances.map(p => (
@@ -218,26 +218,26 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
                 {p.title || formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} ({p.expand?.venue?.name || ''})
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <div className="flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Rehearsal Venue</label>
-          <select 
+          <Select 
             value={venue} 
             onChange={(e) => setVenue(e.target.value)} 
             required
-            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
+            className="w-full"
           >
             <option value="">-- Select Rehearsal Venue --</option>
             {venues.map(v => (
               <option key={v.id} value={v.id}>{v.name}</option>
             ))}
-          </select>
+          </Select>
         </div>
 
-        <div className="flex-row gap-4">
-          <div className="flex-1 flex-col gap-1">
+        <div className="flex flex-row gap-4">
+          <div className="flex-1 flex flex-col gap-1">
             <label className="text-label">Count</label>
             <input 
               type="number" 
@@ -247,7 +247,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
               className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
             />
           </div>
-          <div className="flex-1 flex-col gap-1">
+          <div className="flex-1 flex flex-col gap-1">
              <label className="text-label">Time</label>
              <input 
               type="time" 
@@ -259,12 +259,12 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Day of Week</label>
-          <select 
+          <Select 
             value={dayOfWeek} 
             onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
+            className="w-full"
           >
             <option value={0}>Sunday</option>
             <option value={1}>Monday</option>
@@ -273,7 +273,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
             <option value={4}>Thursday</option>
             <option value={5}>Friday</option>
             <option value={6}>Saturday</option>
-          </select>
+          </Select>
         </div>
 
         {range && selectedPerformance && (

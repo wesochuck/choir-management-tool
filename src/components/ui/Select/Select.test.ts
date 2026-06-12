@@ -40,3 +40,28 @@ test('Select merges className', () => {
   assert.ok(el, 'renders an element');
   assert.ok(el.classList.contains('custom-class'), 'has custom class');
 });
+
+test('Select applies default size class', () => {
+  const { container } = render(React.createElement(Select, null));
+  const el = container.firstElementChild;
+  assert.ok(el.classList.contains('h-[44px]'), 'default size has 44px height');
+});
+
+test('Select applies small size class', () => {
+  const { container } = render(React.createElement(Select, { size: 'small' }));
+  const el = container.firstElementChild;
+  assert.ok(el.classList.contains('h-10'), 'small size has h-10 height');
+});
+
+test('Select applies compact size class', () => {
+  const { container } = render(React.createElement(Select, { size: 'compact' }));
+  const el = container.firstElementChild;
+  assert.ok(el.classList.contains('h-8'), 'compact size has h-8 height');
+});
+
+test('Select visuallyHidden strips chevron background', () => {
+  const { container } = render(React.createElement(Select, { visuallyHidden: true }));
+  const el = container.firstElementChild as HTMLElement;
+  assert.equal(el.style.backgroundImage, 'none', 'visuallyHidden removes chevron SVG');
+  assert.ok(el.classList.contains('!opacity-0'), 'visuallyHidden adds opacity-0');
+});

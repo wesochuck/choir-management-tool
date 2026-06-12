@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Event } from '../../services/eventService';
 import type { EventRoster } from '../../services/rosterService';
-import { Badge } from '../ui';
+import { Badge, Select } from '../ui';
 import { getAttendanceDisplay, getRsvpDisplay } from '../../lib/statusDisplay';
 
 interface SingerPerformanceRsvpRowProps {
@@ -68,16 +68,16 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
         <div className="flex flex-col items-start gap-0.5">
           <span className="text-muted text-[10px] font-semibold tracking-wider uppercase">RSVP</span>
           <div className="flex flex-row items-center gap-2">
-            <select
+            <Select
               value={currentRsvp}
               disabled={isSaving}
               onChange={(e) => onRsvpChange(performance.id, e.target.value as EventRoster['rsvp'])}
-              className={`h-8 min-h-[32px] cursor-pointer rounded border px-2 text-[13px] font-semibold transition-all duration-200 outline-none ${selectToneClass}`}
+              className={`!h-8 !min-h-[32px] !px-2 !text-[13px] !font-semibold ${selectToneClass}`}
             >
               <option value="Pending">Pending</option>
               <option value="Yes">Yes (Attending)</option>
               <option value="No">No (Declined)</option>
-            </select>
+            </Select>
 
             {isSaving && (
               <span className="flex items-center gap-1">

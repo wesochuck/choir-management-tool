@@ -101,10 +101,10 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         </div>
       }
     >
-      <form id="edit-item-form" onSubmit={handleSubmit} className="flex-col gap-4">
-        <div className="flex-col gap-1">
+      <form id="edit-item-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Item Type</label>
-          <div className="flex-row gap-2">
+          <div className="flex flex-row gap-2">
             <Button
               type="button"
               variant={type === 'song' ? 'primary' : 'outline'}
@@ -124,7 +124,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Title</label>
           <input
             required
@@ -135,7 +135,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         </div>
 
         {type === 'song' && (
-          <div className="flex-col gap-1">
+          <div className="flex flex-col gap-1">
             <label className="text-label">Composer/Arranger</label>
             <input
               value={composer}
@@ -147,7 +147,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
 
         {type === 'song' && (
           <div 
-            className={`flex-row items-center gap-3 rounded-xl border p-3 px-4 shadow-sm cursor-pointer transition-colors ${soloSmallGroup ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
+            className={`flex flex-row items-center gap-3 rounded-xl border p-3 px-4 shadow-sm cursor-pointer transition-colors ${soloSmallGroup ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
             onClick={() => setSoloSmallGroup(!soloSmallGroup)}
           >
             <input
@@ -161,7 +161,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           </div>
         )}
 
-        <div className="flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Duration</label>
           <input
             value={duration}
@@ -171,7 +171,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           />
         </div>
 
-        <div className="flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Notes</label>
           <textarea
             value={notes}

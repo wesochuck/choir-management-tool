@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Select } from '../ui';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
@@ -206,7 +206,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     >
       <div className="flex flex-col gap-4">
         {initialData && (
-        <div className="mb-4 flex-row gap-4 border-b border-border">
+        <div className="mb-4 flex flex-row gap-4 border-b border-border">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
@@ -234,7 +234,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       )}
 
       {activeTab === 'profile' ? (
-        <form id="singer-form" onSubmit={handleSubmit} className="flex-col gap-4">
+        <form id="singer-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col items-center gap-1">
             {initialData ? (
               <>
@@ -325,11 +325,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col items-start gap-1">
               <label className="text-label">Voice Part</label>
-              <select 
+              <Select 
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
                 required={formData.role !== 'admin'}
-                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                className="!h-[38px] !min-h-[38px] !py-1"
               >
                 {formData.role === 'admin' ? (
                   <option value="">-- Not Applicable (Admin) --</option>
@@ -341,24 +341,24 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     {v.label} {v.fullName ? `(${v.fullName})` : ''}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div className="flex flex-col items-start gap-1">
               <label className="text-label">Status</label>
-              <select 
+              <Select 
                 value={formData.globalStatus} 
                 onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
-                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                className="!h-[38px] !min-h-[38px] !py-1"
               >
                 <option value="Active">Active</option>
                 <option value="Idle">Idle</option>
                 <option value="Inactive">Inactive</option>
-              </select>
+              </Select>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-2 gap-x-4">
-            <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
+            <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.doNotEmail}
@@ -367,7 +367,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               />
               <span className="text-label">Do Not Email</span>
             </label>
-            <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
+            <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.statusIsManual}
@@ -376,7 +376,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               />
               <span className="text-label">Lock Status (Disable Automation)</span>
             </label>
-            <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
+            <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
               <input
                 type="checkbox"
                 checked={Boolean(formData.isSectionLeader)}
@@ -387,7 +387,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             </label>
             {formData.role === 'admin' && (
               <>
-                <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
+                <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
                   <input
                     type="checkbox"
                     checked={formData.receiveAttendanceReports !== false}
@@ -396,7 +396,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   />
                   <span className="text-label">Receive Attendance Reports</span>
                 </label>
-                <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
+                <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
                   <input
                     type="checkbox"
                     checked={Boolean(formData.receiveRsvpDeclineNotices)}
@@ -405,7 +405,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   />
                   <span className="text-label">Receive RSVP Decline Notices</span>
                 </label>
-                <label className="min-h-auto cursor-pointer flex-row items-center gap-2">
+                <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
                   <input
                     type="checkbox"
                     checked={formData.receiveAdminNotifications !== false}
@@ -418,7 +418,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             )}
             {formData.email?.trim() ? (
               <label
-                className={`min-h-auto cursor-pointer flex-row items-center gap-2${isSelf ? ' opacity-60' : ''}`}
+                className={`min-h-auto cursor-pointer flex flex-row items-center gap-2${isSelf ? ' opacity-60' : ''}`}
                 title={isSelf ? "You cannot remove your own administrator permissions to prevent accidental lockout." : undefined}
               >
                   <input
