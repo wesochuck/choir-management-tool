@@ -280,8 +280,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   </span>
                 )}
               </span>
-              <span className="text-[11px] md:text-xs font-normal leading-tight opacity-75 mt-0.5">
-                {occupiedCount}/{seatCount} occupied
+              <span className="text-xs md:text-sm font-semibold leading-tight opacity-80 mt-0.5">
+                {occupiedCount}/{seatCount}
               </span>
             </div>
 

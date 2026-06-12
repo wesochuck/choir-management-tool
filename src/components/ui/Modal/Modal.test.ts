@@ -1,16 +1,5 @@
-import { JSDOM } from 'jsdom';
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-  url: 'http://localhost/',
-});
-globalThis.window = dom.window as unknown as Window & typeof globalThis;
-globalThis.document = dom.window.document;
-Object.defineProperty(globalThis, 'navigator', {
-  value: dom.window.navigator,
-});
-(globalThis as unknown as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
-
 // Suppress React 19 dev-mode attachEvent polyfill error in JSDOM
-Object.defineProperty(dom.window.Element.prototype, 'attachEvent', {
+Object.defineProperty(Element.prototype, 'attachEvent', {
   value: () => {},
   writable: true,
   configurable: true,
