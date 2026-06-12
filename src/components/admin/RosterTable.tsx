@@ -4,9 +4,8 @@ import type { SeasonalDue } from '../../services/duesService';
 import { pb } from '../../lib/pocketbase';
 import { Pagination } from '../common/Pagination';
 import { AppCard } from '../common/AppCard';
-import { StatusBadge } from '../common/StatusBadge';
 import { getGlobalStatusDisplay } from '../../lib/statusDisplay';
-import { Button } from '../ui';
+import { Button, Badge } from '../ui';
 
 interface RosterTableProps {
   profiles: Profile[];
@@ -135,7 +134,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <StatusBadge
+                    <Badge
                       label={statusDisplay.label}
                       tone={statusDisplay.tone}
                       size="sm"

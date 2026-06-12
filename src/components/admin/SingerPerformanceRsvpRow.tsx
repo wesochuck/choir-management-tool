@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Event } from '../../services/eventService';
 import type { EventRoster } from '../../services/rosterService';
-import { StatusBadge } from '../common/StatusBadge';
+import { Badge } from '../ui';
 import { getAttendanceDisplay, getRsvpDisplay } from '../../lib/statusDisplay';
 
 interface SingerPerformanceRsvpRowProps {
@@ -61,7 +61,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
         {isPast && (
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-muted text-[10px] font-semibold tracking-wider uppercase">Attended</span>
-            <StatusBadge label={attendanceDisplay.label} tone={attendanceDisplay.tone} />
+            <Badge label={attendanceDisplay.label} tone={attendanceDisplay.tone} />
           </div>
         )}
 

@@ -3,7 +3,7 @@ import type { Profile } from '../../services/profileService';
 import type { EventRoster } from '../../services/rosterService';
 import { pb } from '../../lib/pocketbase';
 import { PhotoUploader } from '../common/PhotoUploader';
-import { StatusBadge } from '../common/StatusBadge';
+import { Badge } from '../ui';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
 
 
@@ -104,7 +104,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                 </td>
                 <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
                   <div className="flex flex-col items-center gap-1">
-                    <StatusBadge
+                    <Badge
                       label={rsvpDisplay.label}
                       tone={rsvpDisplay.tone}
                       size="sm"

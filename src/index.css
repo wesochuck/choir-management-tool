@@ -195,22 +195,6 @@ body {
   font-size: var(--font-size-sm);
 }
 
-/* Badge Classes */
-.badge {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-weight: 700;
-  font-size: var(--font-size-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.badge-performance { background-color: var(--color-performance-bg); color: var(--color-performance-text); }
-.badge-rehearsal { background-color: var(--primary-light); color: var(--primary-deep); }
-.badge-success { background-color: var(--color-success-bg); color: var(--color-success-text); }
-.badge-danger { background-color: var(--color-danger-bg); color: var(--color-danger-text); }
-.badge-muted { background-color: var(--border); color: var(--text-muted); }
 
 /* Typography Utility Classes */
 .text-display { font-size: var(--font-size-display); font-weight: var(--font-weight-display); line-height: 1.1; letter-spacing: 0; }

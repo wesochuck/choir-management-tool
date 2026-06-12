@@ -4,7 +4,7 @@ import type { AttendanceItem } from '../../hooks/useAttendance';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { pb } from '../../lib/pocketbase';
 import { PhotoUploader } from '../common/PhotoUploader';
-import { StatusBadge } from '../common/StatusBadge';
+import { Badge } from '../ui';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
 
 interface CheckInListProps {
@@ -115,7 +115,7 @@ const CheckInRow: React.FC<{
 
       {/* RSVP Status */}
       <td className="px-6 py-4 text-center text-sm whitespace-nowrap max-[700px]:hidden">
-        <StatusBadge label={rsvpDisplay.label} tone={rsvpDisplay.tone} size="sm" />
+        <Badge label={rsvpDisplay.label} tone={rsvpDisplay.tone} size="sm" />
       </td>
 
       {/* Attendance Action Buttons */}
