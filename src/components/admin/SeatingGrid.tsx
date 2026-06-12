@@ -190,7 +190,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   return (
     <div
       ref={gridRef}
-      className="flex-col items-center w-full"
+      className="flex flex-col items-center w-full"
       style={{
         gap: rowGap,
         padding: containerPadding,
@@ -227,10 +227,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       )}
 
       {/* Scrollable seating grid */}
-      <div style={{
-        width: '100%',
-        overflowX: 'auto',
-      }}>
+      <div className="w-full" style={{ overflowX: 'auto' }}>
 
       {rowCounts.map((_, index) => {
         const rowIndex = rowCounts.length - 1 - index;
@@ -385,8 +382,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
               const rightSuggestion = seatIndex < seatCount - 1 ? suggestions[`${rowIndex}-${seatIndex + 1}`] : null;
 
-              const hasLeftBorder = suggestion !== leftSuggestion;
-              const hasRightBorder = suggestion !== rightSuggestion;
+              const hasLeftBorder = !!(suggestion && leftSuggestion && suggestion !== leftSuggestion);
+              const hasRightBorder = !!(suggestion && rightSuggestion && suggestion !== rightSuggestion);
 
               const activeHoverOrDrag = hoveredSeat || activeDragOver;
               const isHovered = seatKey === activeHoverOrDrag;
@@ -566,7 +563,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       <div className={`no-print pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 ${isMismatch ? 'bg-red-700' : ''} ${rowIndex === rowCounts.length - 1 ? '-bottom-1 translate-y-full' : '-top-1 -translate-y-full'}`}>
                         {isMismatch ? (
                           <>
-                            <span>⚠️ {assignedProfile.name}</span>
+                            <span>⚠️ {assignedProfile.name} </span>
                             <span>
                               Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || displaySuggestion} seat ${displaySeatNumber}` : `${sectionDef?.name || displaySuggestion} seat ${displaySeatNumber}`}
                             </span>
