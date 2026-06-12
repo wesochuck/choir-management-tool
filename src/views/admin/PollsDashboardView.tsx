@@ -7,7 +7,11 @@ import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService } from '../../services/profileService';
-import { communicationService, type CommunicationRecipient, type MessageRecord } from '../../services/communicationService';
+import {
+  communicationService,
+  type CommunicationRecipient,
+  type MessageRecord,
+} from '../../services/communicationService';
 import type { RecordModel } from 'pocketbase';
 import { settingsService, type PollSettings } from '../../services/settingsService';
 import { Pagination } from '../../components/common/Pagination';
@@ -28,7 +32,7 @@ interface PollResponseRecord extends RecordModel {
     profileId: {
       name: string;
       voicePart: string;
-    }
+    };
   };
 }
 
@@ -40,7 +44,11 @@ export default function PollsDashboardView() {
   const [polls, setPolls] = useState<PollRecord[]>([]);
   const [responses, setResponses] = useState<PollResponseRecord[]>([]);
   const [pollMessages, setPollMessages] = useState<MessageRecord[]>([]);
-  const [recipientModal, setRecipientModal] = useState<{ isOpen: boolean; recipients: CommunicationRecipient[]; title: string }>({
+  const [recipientModal, setRecipientModal] = useState<{
+    isOpen: boolean;
+    recipients: CommunicationRecipient[];
+    title: string;
+  }>({
     isOpen: false,
     recipients: [],
     title: '',
@@ -70,7 +78,9 @@ export default function PollsDashboardView() {
     try {
       const [pollList, responseList, loadedSettings, messagesList] = await Promise.all([
         pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
-        pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
+        pb
+          .collection('pollResponses')
+          .getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
         settingsService.getPollSettings(),
         pb.collection('messages').getFullList<MessageRecord>({
           filter: 'status = "Sent" && content ~ "{{POLL_LINK:"',
@@ -83,7 +93,9 @@ export default function PollsDashboardView() {
       setPollMessages(messagesList);
     } catch (err) {
       console.error('Failed to load poll dashboard data', err);
-      setLoadError('Unable to load polls. Check PocketBase collection fields, API rules, and browser console.');
+      setLoadError(
+        'Unable to load polls. Check PocketBase collection fields, API rules, and browser console.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -99,15 +111,15 @@ export default function PollsDashboardView() {
 
   const filteredPolls = useMemo(() => {
     const now = new Date();
-    return polls.filter(poll => {
+    return polls.filter((poll) => {
       // Auto-archive check
-      const isExpired = poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < now : false;
+      const isExpired = poll.archiveAt ? new Date(poll.archiveAt.replace(' ', 'T')) < now : false;
 
       if (showArchived) return true;
       if (isExpired) return false;
 
       if (!poll.eventId) return true; // Polls without events stay active
-      const event = events.find(e => e.id === poll.eventId);
+      const event = events.find((e) => e.id === poll.eventId);
       if (!event) return true;
       return new Date(event.date) > now;
     });
@@ -119,13 +131,16 @@ export default function PollsDashboardView() {
   }, [filteredPolls, currentPage, pageSize]);
 
   const pollStats = useMemo(() => {
-    const stats: Record<string, { yes: number; no: number; volunteers: PollResponseRecord[]; decliners: PollResponseRecord[] }> = {};
-    
-    polls.forEach(p => {
+    const stats: Record<
+      string,
+      { yes: number; no: number; volunteers: PollResponseRecord[]; decliners: PollResponseRecord[] }
+    > = {};
+
+    polls.forEach((p) => {
       stats[p.id] = { yes: 0, no: 0, volunteers: [], decliners: [] };
     });
 
-    responses.forEach(r => {
+    responses.forEach((r) => {
       if (stats[r.pollId]) {
         if (r.status === 'Yes') {
           stats[r.pollId].yes++;
@@ -151,8 +166,8 @@ export default function PollsDashboardView() {
 
     try {
       await pb.collection('polls').delete(id);
-      setPolls(prev => prev.filter(p => p.id !== id));
-      setResponses(prev => prev.filter(r => r.pollId !== id));
+      setPolls((prev) => prev.filter((p) => p.id !== id));
+      setResponses((prev) => prev.filter((r) => r.pollId !== id));
       dialog.showToast('Poll deleted.');
     } catch {
       await dialog.showMessage({
@@ -242,20 +257,24 @@ export default function PollsDashboardView() {
       setIsSettingsModalOpen(false);
       dialog.showToast('Poll settings saved successfully.');
     } catch {
-      await dialog.showMessage({ title: 'Error', message: 'Failed to save poll settings.', variant: 'danger' });
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to save poll settings.',
+        variant: 'danger',
+      });
     } finally {
       setIsSavingSettings(false);
     }
   };
 
   // Helper to render expanded poll details (shared between desktop and mobile)
-  const renderPollDetails = (poll: PollRecord, stat: typeof pollStats[string]) => {
+  const renderPollDetails = (poll: PollRecord, stat: (typeof pollStats)[string]) => {
     const contactedSingers = (() => {
       const contactedMap = new Map<string, CommunicationRecipient>();
-      const msgs = pollMessages.filter(msg => msg.content.includes(`{{POLL_LINK:${poll.id}}}`));
-      msgs.forEach(msg => {
+      const msgs = pollMessages.filter((msg) => msg.content.includes(`{{POLL_LINK:${poll.id}}}`));
+      msgs.forEach((msg) => {
         if (Array.isArray(msg.recipients)) {
-          msg.recipients.forEach(rec => {
+          msg.recipients.forEach((rec) => {
             contactedMap.set(rec.id, rec);
           });
         }
@@ -264,18 +283,21 @@ export default function PollsDashboardView() {
     })();
 
     return (
-      <div className="flex flex-col gap-6 border-t border-slate-100 bg-slate-50/30 p-6 px-6 md:px-8 text-left">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+      <div className="flex flex-col gap-6 border-t border-slate-100 bg-slate-50/30 p-6 px-6 text-left md:px-8">
+        <div className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
             <span>📨</span>
             {contactedSingers.length > 0 ? (
-              <span>Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''} via Communications.</span>
+              <span>
+                Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''}{' '}
+                via Communications.
+              </span>
             ) : (
               <span>
                 No sent communications found yet.{' '}
                 <button
                   type="button"
-                  className="text-primary underline hover:text-primary-deep font-semibold"
+                  className="font-semibold text-primary underline hover:text-primary-deep"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate('/admin/communications');
@@ -289,12 +311,14 @@ export default function PollsDashboardView() {
           {contactedSingers.length > 0 && (
             <button
               type="button"
-              className="text-xs font-bold text-primary underline transition-colors hover:text-primary-deep text-left sm:text-right"
-              onClick={() => setRecipientModal({
-                isOpen: true,
-                recipients: contactedSingers,
-                title: `Contacted Singers — ${poll.question}`
-              })}
+              className="text-left text-xs font-bold text-primary underline transition-colors hover:text-primary-deep sm:text-right"
+              onClick={() =>
+                setRecipientModal({
+                  isOpen: true,
+                  recipients: contactedSingers,
+                  title: `Contacted Singers — ${poll.question}`,
+                })
+              }
             >
               View Contacted List →
             </button>
@@ -309,11 +333,18 @@ export default function PollsDashboardView() {
             {stat.volunteers.length === 0 ? (
               <p className="m-0 text-sm font-medium text-slate-400 italic">No volunteers yet.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {stat.volunteers.map(v => (
-                  <div key={v.id} className="rounded-lg border border-slate-100 bg-white p-2.5 px-4 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="font-bold text-slate-800 text-sm">{v.expand?.profileId.name}</div>
-                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">{v.expand?.profileId.voicePart}</div>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {stat.volunteers.map((v) => (
+                  <div
+                    key={v.id}
+                    className="rounded-lg border border-slate-100 bg-white p-2.5 px-4 shadow-sm transition-shadow hover:shadow-md"
+                  >
+                    <div className="text-sm font-bold text-slate-800">
+                      {v.expand?.profileId.name}
+                    </div>
+                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">
+                      {v.expand?.profileId.voicePart}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -327,11 +358,18 @@ export default function PollsDashboardView() {
             {stat.decliners.length === 0 ? (
               <p className="m-0 text-sm font-medium text-slate-400 italic">No decliners yet.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {stat.decliners.map(v => (
-                  <div key={v.id} className="rounded-lg border border-danger-text/10 bg-white p-2.5 px-4 opacity-90 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="font-bold text-slate-800 text-sm">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
-                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">{v.expand?.profileId?.voicePart ?? ''}</div>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {stat.decliners.map((v) => (
+                  <div
+                    key={v.id}
+                    className="rounded-lg border border-danger-text/10 bg-white p-2.5 px-4 opacity-90 shadow-sm transition-shadow hover:shadow-md"
+                  >
+                    <div className="text-sm font-bold text-slate-800">
+                      {v.expand?.profileId?.name ?? 'Unknown singer'}
+                    </div>
+                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">
+                      {v.expand?.profileId?.voicePart ?? ''}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -344,7 +382,7 @@ export default function PollsDashboardView() {
 
   if (isLoading && polls.length === 0) {
     return (
-      <div className="mx-auto flex max-w-7xl flex-col p-6">
+      <div className="flex w-full flex-col p-6">
         <div className="flex items-center justify-center rounded-lg border border-slate-200 bg-white py-12 shadow-sm">
           <p className="font-medium text-slate-500">Loading polls...</p>
         </div>
@@ -353,29 +391,48 @@ export default function PollsDashboardView() {
   }
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
-      <div className="flex flex-col justify-between gap-6 border-b border-slate-200 pb-5 md:flex-row md:items-center">
-        <div className="flex flex-col gap-1">
-          <h2 className="m-0 text-3xl font-extrabold tracking-tight text-slate-900">Engagement Polls & Volunteering</h2>
-          <p className="text-sm font-medium text-slate-500">Review volunteer responses and counts.</p>
-        </div>
-        <div className="flex flex-row flex-wrap items-center gap-4 max-md:w-full max-md:justify-start">
-          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-700">
-            <input 
-              type="checkbox" 
-              checked={showArchived} 
-              onChange={e => setShowArchived(e.target.checked)}
+    <div className="flex w-full flex-col gap-6">
+      {/* Header Area */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+          Engagement Polls & Volunteering
+        </h1>
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
+          Review volunteer responses, coordinate singer feedback, and draft quick engagement
+          messages.
+        </p>
+      </div>
+
+      {/* Tabs / Actions Navigation Bar */}
+      <div className="flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
+        <div className="flex items-center gap-3 pb-1.5">
+          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-700 select-none">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
               className="size-4 rounded-sm border-slate-300 text-primary focus:ring-primary focus:ring-offset-0"
             />
             Show Archived
           </label>
-          <Button 
+        </div>
+        <div className="flex items-center gap-2 pb-1.5">
+          <Button
             variant="secondary"
-            className="px-3 md:px-6 font-semibold shadow-sm"
+            className="px-3 font-semibold shadow-sm md:px-6"
             onClick={() => setIsSettingsModalOpen(true)}
             title="Settings"
             icon={
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
@@ -383,13 +440,22 @@ export default function PollsDashboardView() {
           >
             <span className="hidden md:inline">Settings</span>
           </Button>
-          <Button 
+          <Button
             variant="primary"
-            className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
+            className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
             onClick={openQuickCreate}
             title="Start New Poll"
             icon={
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
@@ -402,17 +468,17 @@ export default function PollsDashboardView() {
 
       <div className="flex flex-col gap-6">
         {loadError && (
-          <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-5 shadow-xs text-left">
+          <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-5 text-left shadow-xs">
             <p className="m-0 font-bold text-danger-text">{loadError}</p>
           </div>
         )}
-        
+
         {filteredPolls.length === 0 ? (
           <EmptyState
             title="No Active Polls Found"
             description={
               showArchived
-                ? "No polls have been created yet."
+                ? 'No polls have been created yet.'
                 : "No active engagement polls are available. Check 'Show Archived' to view past polls."
             }
             icon="🗳️"
@@ -425,36 +491,49 @@ export default function PollsDashboardView() {
         ) : (
           <div className="flex flex-col gap-6">
             {/* Desktop View */}
-            <div className="hidden md:block overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+            <div className="hidden overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:block">
               <div className="divide-y divide-slate-100">
                 {paginatedPolls.map((poll) => {
                   const stat = pollStats[poll.id];
                   const isExpanded = expandedPollId === poll.id;
-                  const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
-                  const isArchived = (event ? new Date(event.date) < new Date() : false) || 
-                                     (poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < new Date() : false);
+                  const event = poll.eventId ? events.find((e) => e.id === poll.eventId) : null;
+                  const isArchived =
+                    (event ? new Date(event.date) < new Date() : false) ||
+                    (poll.archiveAt
+                      ? new Date(poll.archiveAt.replace(' ', 'T')) < new Date()
+                      : false);
                   const createdLabel = poll.created
-                    ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    ? formatInTimezone(poll.created, timezone, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
                     : null;
                   const archiveLabel = poll.archiveAt
-                    ? formatInTimezone(poll.archiveAt, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    ? formatInTimezone(poll.archiveAt, timezone, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
                     : null;
 
                   return (
-                    <div
-                      key={poll.id}
-                      className="transition-colors hover:bg-slate-50/20"
-                    >
+                    <div key={poll.id} className="transition-colors hover:bg-slate-50/20">
                       <div
                         role="button"
                         tabIndex={0}
                         className={`flex cursor-pointer items-center justify-between gap-6 p-4 px-6 transition-all duration-150 select-none focus-visible:bg-slate-50/40 focus-visible:outline-none ${isExpanded ? 'bg-slate-50/40' : ''}`}
                         onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedPollId(isExpanded ? null : poll.id); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ')
+                            setExpandedPollId(isExpanded ? null : poll.id);
+                        }}
                       >
                         <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left">
                           <div className="flex min-w-0 items-center gap-3">
-                            <h3 className="m-0 truncate text-base font-bold tracking-tight text-slate-900">{poll.question}</h3>
+                            <h3 className="m-0 truncate text-base font-bold tracking-tight text-slate-900">
+                              {poll.question}
+                            </h3>
                             {isArchived ? (
                               <Badge tone="neutral">Archived</Badge>
                             ) : (
@@ -462,44 +541,68 @@ export default function PollsDashboardView() {
                             )}
                           </div>
                           <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-semibold text-slate-400">
-                            {createdLabel && <span className="flex items-center gap-1.5"><span>📅</span> Created {createdLabel}</span>}
+                            {createdLabel && (
+                              <span className="flex items-center gap-1.5">
+                                <span>📅</span> Created {createdLabel}
+                              </span>
+                            )}
                             {archiveLabel && (
-                              <span 
+                              <span
                                 className="flex items-center gap-1.5"
                                 title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
                               >
-                                <span>⏱️</span> {isArchived ? 'Archived' : 'Auto-archives'} {archiveLabel}
+                                <span>⏱️</span> {isArchived ? 'Archived' : 'Auto-archives'}{' '}
+                                {archiveLabel}
                               </span>
                             )}
                             {event && (
                               <span className="flex items-center gap-1.5">
-                                <span>🎭</span> {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
+                                <span>🎭</span> {event.title} (
+                                {formatInTimezone(event.date, timezone, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                                )
                               </span>
                             )}
                           </div>
                         </div>
 
                         <div className="flex flex-shrink-0 items-center gap-8">
-                          <div className="flex items-center gap-3" aria-label="Poll response counts">
+                          <div
+                            className="flex items-center gap-3"
+                            aria-label="Poll response counts"
+                          >
                             <div className="flex min-w-[56px] flex-col rounded-lg border border-primary/20 bg-primary/5 p-1.5 text-center shadow-xs">
-                              <span className="text-lg leading-tight font-black text-primary">{stat.yes}</span>
-                              <span className="text-[0.65rem] font-bold tracking-wider text-primary uppercase">Yes</span>
+                              <span className="text-lg leading-tight font-black text-primary">
+                                {stat.yes}
+                              </span>
+                              <span className="text-[0.65rem] font-bold tracking-wider text-primary uppercase">
+                                Yes
+                              </span>
                             </div>
                             <div className="flex min-w-[56px] flex-col rounded-lg border border-danger-text/20 bg-danger-bg p-1.5 text-center shadow-xs">
-                              <span className="text-lg leading-tight font-black text-danger-text">{stat.no}</span>
-                              <span className="text-[0.65rem] font-bold tracking-wider text-danger-text uppercase">No</span>
+                              <span className="text-lg leading-tight font-black text-danger-text">
+                                {stat.no}
+                              </span>
+                              <span className="text-[0.65rem] font-bold tracking-wider text-danger-text uppercase">
+                                No
+                              </span>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors">
+                            <span className="text-xs font-bold text-slate-500 transition-colors hover:text-slate-900">
                               {isExpanded ? '▲ Hide Details' : '▼ View Names'}
                             </span>
                             <Button
                               variant="danger"
                               size="small"
                               className="font-semibold shadow-sm"
-                              onClick={(e) => { e.stopPropagation(); handleDeletePoll(poll.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePoll(poll.id);
+                              }}
                             >
                               Delete
                             </Button>
@@ -515,30 +618,43 @@ export default function PollsDashboardView() {
             </div>
 
             {/* Mobile View */}
-            <div className="md:hidden overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
               <div className="divide-y divide-slate-100">
                 {paginatedPolls.map((poll) => {
                   const stat = pollStats[poll.id];
                   const isExpanded = expandedPollId === poll.id;
-                  const event = poll.eventId ? events.find(e => e.id === poll.eventId) : null;
-                  const isArchived = (event ? new Date(event.date) < new Date() : false) || 
-                                     (poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < new Date() : false);
+                  const event = poll.eventId ? events.find((e) => e.id === poll.eventId) : null;
+                  const isArchived =
+                    (event ? new Date(event.date) < new Date() : false) ||
+                    (poll.archiveAt
+                      ? new Date(poll.archiveAt.replace(' ', 'T')) < new Date()
+                      : false);
                   const createdLabel = poll.created
-                    ? formatInTimezone(poll.created, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    ? formatInTimezone(poll.created, timezone, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
                     : null;
                   const archiveLabel = poll.archiveAt
-                    ? formatInTimezone(poll.archiveAt, timezone, { month: 'short', day: 'numeric', year: 'numeric' })
+                    ? formatInTimezone(poll.archiveAt, timezone, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
                     : null;
 
                   return (
                     <div key={poll.id} className="flex flex-col">
-                      <div className="p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40 text-left">
+                      <div className="flex flex-col gap-3 p-4 text-left transition-colors hover:bg-slate-50/40">
                         {/* Row 1: Fine-grain dates and status badge */}
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex flex-col gap-0.5 text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                          <div className="flex flex-col gap-0.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
                             {createdLabel && <span>Created: {createdLabel}</span>}
                             {archiveLabel && (
-                              <span title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}>
+                              <span
+                                title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
+                              >
                                 {isArchived ? 'Archived' : 'Expires'}: {archiveLabel}
                               </span>
                             )}
@@ -550,10 +666,17 @@ export default function PollsDashboardView() {
 
                         {/* Row 2: Question & Linked Event */}
                         <div className="flex flex-col gap-1">
-                          <h3 className="text-sm font-bold text-slate-900 leading-snug">{poll.question}</h3>
+                          <h3 className="text-sm leading-snug font-bold text-slate-900">
+                            {poll.question}
+                          </h3>
                           {event && (
                             <div className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
-                              <span>🎭</span> {event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})
+                              <span>🎭</span> {event.title} (
+                              {formatInTimezone(event.date, timezone, {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                              )
                             </div>
                           )}
                         </div>
@@ -562,16 +685,20 @@ export default function PollsDashboardView() {
                         <div className="flex items-center gap-3">
                           <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 py-1.5 text-xs font-bold text-primary">
                             <span>{stat.yes}</span>
-                            <span className="text-[10px] font-bold tracking-wider uppercase">Yes</span>
+                            <span className="text-[10px] font-bold tracking-wider uppercase">
+                              Yes
+                            </span>
                           </div>
                           <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-danger-text/20 bg-danger-bg py-1.5 text-xs font-bold text-danger-text">
                             <span>{stat.no}</span>
-                            <span className="text-[10px] font-bold tracking-wider uppercase">No</span>
+                            <span className="text-[10px] font-bold tracking-wider uppercase">
+                              No
+                            </span>
                           </div>
                         </div>
 
                         {/* Row 4: Primary Actions */}
-                        <div className="flex items-center gap-2 pt-1 border-t border-slate-50">
+                        <div className="flex items-center gap-2 border-t border-slate-50 pt-1">
                           <Button
                             variant="secondary"
                             size="small"
@@ -617,7 +744,7 @@ export default function PollsDashboardView() {
         <div className="flex flex-col gap-6 py-2 text-left">
           {quickCreateStep === 1 ? (
             <>
-              <p className="m-0 text-sm font-medium text-slate-500 leading-relaxed">
+              <p className="m-0 text-sm leading-relaxed font-medium text-slate-500">
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
               <FormField label="Poll Question">
@@ -648,10 +775,7 @@ export default function PollsDashboardView() {
                   Recipients default to all singers with status Active or Idle.
                 </p>
                 <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
-                  <Button 
-                    variant="secondary"
-                    onClick={() => setIsQuickCreateOpen(false)}
-                  >
+                  <Button variant="secondary" onClick={() => setIsQuickCreateOpen(false)}>
                     Cancel
                   </Button>
                   <Button
@@ -666,24 +790,34 @@ export default function PollsDashboardView() {
             </>
           ) : (
             <>
-              <p className="m-0 text-sm font-medium text-slate-500 leading-relaxed">
-                We'll create this poll and save a pre-filled message to your <strong className="text-slate-900 font-semibold">Drafts</strong>. You can review, edit, and send from the Communications page.
+              <p className="m-0 text-sm leading-relaxed font-medium text-slate-500">
+                We'll create this poll and save a pre-filled message to your{' '}
+                <strong className="font-semibold text-slate-900">Drafts</strong>. You can review,
+                edit, and send from the Communications page.
               </p>
               <div className="flex flex-col gap-4">
                 <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">Poll Question</div>
-                  <strong className="text-lg text-slate-900 tracking-tight font-extrabold">{quickPollQuestion.trim()}</strong>
+                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">
+                    Poll Question
+                  </div>
+                  <strong className="text-lg font-extrabold tracking-tight text-slate-900">
+                    {quickPollQuestion.trim()}
+                  </strong>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">Draft Preview</div>
-                  <div className="text-sm"><strong className="text-slate-800">Subject:</strong> Quick Choir Poll</div>
-                  <div className="mt-3 whitespace-pre-wrap rounded-md border border-slate-200 bg-white p-3 text-xs text-slate-500 italic">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
+                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">
+                    Draft Preview
+                  </div>
+                  <div className="text-sm">
+                    <strong className="text-slate-800">Subject:</strong> Quick Choir Poll
+                  </div>
+                  <div className="mt-3 rounded-md border border-slate-200 bg-white p-3 text-xs whitespace-pre-wrap text-slate-500 italic">{`Hi everyone,\n\nPlease tap below to answer:\n{{POLL_LINK:newPollId}}\n\nThank you!`}</div>
                 </div>
               </div>
               <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
-                <Button 
+                <Button
                   variant="secondary"
-                  disabled={isCreatingQuickPoll} 
+                  disabled={isCreatingQuickPoll}
                   onClick={() => setQuickCreateStep(1)}
                 >
                   Back
@@ -709,7 +843,7 @@ export default function PollsDashboardView() {
         maxWidth="400px"
       >
         <div className="flex flex-col gap-6 py-2 text-left">
-          <p className="m-0 text-sm font-medium text-slate-500 leading-relaxed">
+          <p className="m-0 text-sm leading-relaxed font-medium text-slate-500">
             Configure global default settings for quick engagement polls.
           </p>
           <FormField label="Default Auto-Archive (Days)">
@@ -729,9 +863,9 @@ export default function PollsDashboardView() {
               New quick polls will automatically archive after this many days unless overridden.
             </p>
             <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
-              <Button 
+              <Button
                 variant="secondary"
-                disabled={isSavingSettings} 
+                disabled={isSavingSettings}
                 onClick={() => setIsSettingsModalOpen(false)}
               >
                 Cancel
@@ -763,15 +897,17 @@ export default function PollsDashboardView() {
         }
       >
         <div className="flex max-h-[400px] flex-col gap-2 overflow-y-auto pr-2 text-left">
-          {recipientModal.recipients.map(r => (
-            <div key={r.id} className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-slate-50/30 p-3 px-4 shadow-sm">
+          {recipientModal.recipients.map((r) => (
+            <div
+              key={r.id}
+              className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-slate-50/30 p-3 px-4 shadow-sm"
+            >
               <strong className="text-sm font-bold text-slate-800">{r.name}</strong>
               <Badge tone="neutral">{r.voicePart}</Badge>
             </div>
           ))}
         </div>
       </Modal>
-
     </div>
   );
 }
