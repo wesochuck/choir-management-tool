@@ -349,7 +349,7 @@ export default function PublicRsvpView() {
         <AppCard className="box-border flex w-full flex-col gap-6 border p-6">
           
           {rsvpWindow.isReadOnly && (
-            <div className="border border-border bg-neutral-100 rounded-lg shadow-sm transition-all duration-200 hover:shadow-md p-4">
+            <div className="rounded-lg border border-border bg-neutral-100 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
               <p className="m-0 text-text-muted">
                 {rsvpWindow.reason}
               </p>
@@ -377,7 +377,7 @@ export default function PublicRsvpView() {
 
               {renderRehearsalsList()}
 
-              <div className="bg-surface border border-border rounded-lg shadow-sm transition-all duration-200 hover:shadow-md p-4 text-center">
+              <div className="rounded-lg border border-border bg-surface p-4 text-center shadow-sm transition-all duration-200 hover:shadow-md">
                 <div className="text-xs font-bold tracking-wider text-text-muted uppercase">Your response</div>
                 <div className={`mt-2 text-xl font-extrabold ${dbRsvp === 'Yes' ? 'text-primary-deep' : dbRsvp === 'No' ? 'text-[#ef4444]' : 'text-gray-500'}`}>
                   {dbRsvp === 'Yes'
@@ -439,7 +439,7 @@ export default function PublicRsvpView() {
                     onClick={() => handleConfirmRsvp('Yes')}
                     disabled={isUpdating}
                     variant="primary"
-                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'Yes' ? 'opacity-100 border-2 border-primary-deep' : 'opacity-60 border border-border'}`}
+                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'Yes' ? 'border-2 border-primary-deep opacity-100' : 'border border-border opacity-60'}`}
                   >
                     {isUpdating && selectedRsvp === 'Yes' ? 'Confirming...' : 'Yes, I Will Attend'}
                   </Button>
@@ -453,7 +453,7 @@ export default function PublicRsvpView() {
                     }}
                     disabled={isUpdating}
                     variant="danger"
-                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'No' ? 'opacity-100 border-2 border-[#991b1b]' : 'opacity-60 border border-border'}`}
+                    className={`h-12 flex-1 font-bold ${selectedRsvp === 'No' ? 'border-2 border-[#991b1b] opacity-100' : 'border border-border opacity-60'}`}
                   >
                     {isUpdating && selectedRsvp === 'No' ? 'Confirming...' : (event.type === 'Rehearsal' && selectedRsvp === 'No' ? 'Confirm RSVP Decline' : 'No, I Cannot Attend')}
                   </Button>

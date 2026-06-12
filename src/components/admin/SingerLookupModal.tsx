@@ -68,7 +68,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search singers..."
-          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm outline-none transition-colors focus:border-primary"
+          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors outline-none focus:border-primary"
           autoFocus
         />
 
@@ -82,11 +82,11 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
           </div>
         ) : (
           <div className="flex-col gap-2">
-            <div className="flex flex-row items-center justify-between px-1 text-xs text-muted">
+            <div className="text-muted flex flex-row items-center justify-between px-1 text-xs">
               <span>
                 {filtered.length} available singer{filtered.length === 1 ? '' : 's'}
               </span>
-              <span className="hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-3 font-semibold uppercase tracking-wider text-text-muted sm:grid">
+              <span className="hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-3 font-semibold tracking-wider text-text-muted uppercase sm:grid">
                 <span>Name</span>
                 <span>Voice</span>
                 <span>Status</span>
@@ -111,7 +111,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
                     <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
                       {p.voicePart || 'Unknown'}
                     </span>
-                    <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-medium text-muted">
+                    <span className="text-muted rounded-full bg-bg px-2 py-0.5 text-xs font-medium">
                       {p.globalStatus}
                     </span>
                   </button>

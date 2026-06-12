@@ -27,7 +27,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
 
   return (
     <div className="min-h-screen bg-bg">
-      <header className="sticky top-0 z-40 border-b border-border bg-surface shadow-sm no-print">
+      <header className="no-print sticky top-0 z-40 border-b border-border bg-surface shadow-sm">
         <div 
           className="mx-auto flex items-center justify-between gap-6 px-6 py-3" 
           // @allow-inline-style - dynamic maxWidth from props

@@ -211,19 +211,19 @@ export default function RosterView() {
   if (error) return <div className="p-5 text-red-500">Error: {error}</div>;
 
   return (
-    <div className="w-full flex flex-col gap-6 pb-8">
+    <div className="flex w-full flex-col gap-6 pb-8">
       {/* Header Area */}
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
           Global Roster
         </h1>
-        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
           Manage choir members, voice parts, sections, and configurations. Import or export roster data.
         </p>
       </div>
 
       {/* Tabs / Actions Navigation Bar */}
-      <div className="w-full flex flex-row flex-wrap items-center justify-between border-b border-slate-200 pb-px gap-4 no-print">
+      <div className="no-print flex w-full flex-row flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-px">
         <div className="flex gap-3 md:gap-6">
           {(['roster', 'config'] as const).map((tab) => {
             const isActive = activeTab === tab;
@@ -233,8 +233,8 @@ export default function RosterView() {
                 type="button"
                 className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   isActive
-                    ? 'border-primary text-primary font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                    ? 'border-primary font-bold text-primary'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
                 }`}
                 onClick={() => setActiveTab(tab)}
               >
@@ -244,13 +244,13 @@ export default function RosterView() {
           })}
         </div>
 
-        <div className="flex items-center gap-2 pb-1.5 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 pb-1.5">
           {activeTab === 'roster' && (
             <>
               <Button
                 onClick={handleExportCSV}
                 variant="secondary"
-                className="px-3 md:px-6 font-semibold shadow-sm"
+                className="px-3 font-semibold shadow-sm md:px-6"
                 title="Export Roster"
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -265,7 +265,7 @@ export default function RosterView() {
               <Button
                 onClick={() => setIsImportModalOpen(true)}
                 variant="secondary"
-                className="px-3 md:px-6 font-semibold shadow-sm"
+                className="px-3 font-semibold shadow-sm md:px-6"
                 title="Import CSV"
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -280,7 +280,7 @@ export default function RosterView() {
               <Button
                 onClick={handleAdd}
                 variant="primary"
-                className="px-3 md:px-6 font-semibold shadow-sm"
+                className="px-3 font-semibold shadow-sm md:px-6"
                 title="Add Singer"
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -311,7 +311,7 @@ export default function RosterView() {
                 placeholder="Search by name or email..."
                 value={filters.name || ''}
                 onChange={(e) => setFilter('name', e.target.value)}
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full pr-8 text-base"
+                className="h-11 w-full rounded-md border border-border bg-surface pr-8 text-base transition-colors outline-none focus:border-primary"
               />
               {filters.name && (
                 <button

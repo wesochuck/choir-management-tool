@@ -296,7 +296,7 @@ export default function DashboardView() {
             ))}
 
             {upcomingEvents.length === 0 && (
-              <div className="border border-border rounded-lg bg-surface/80 p-6 py-12 text-text-muted shadow-sm backdrop-blur-sm flex flex-col items-center justify-center">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface/80 p-6 py-12 text-text-muted shadow-sm backdrop-blur-sm">
                 <p className="text-muted">No upcoming events at this time.</p>
               </div>
             )}
@@ -310,13 +310,13 @@ export default function DashboardView() {
               <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="📊 Quick Polls">
                 <div className="flex-col gap-2">
                   {activePolls.map(poll => (
-                    <div key={poll.id} className="rounded-xl flex flex-col gap-1 border border-border p-2 shadow-none">
+                    <div key={poll.id} className="flex flex-col gap-1 rounded-xl border border-border p-2 shadow-none">
                       <div className="text-sm font-bold">{poll.question}</div>
                       <div className="flex-row gap-1">
                         <Button 
                           size="small"
                           variant={poll.status === 'Yes' ? 'primary' : 'outline'}
-                          className="flex-1 font-bold border border-border"
+                          className="flex-1 border border-border font-bold"
                           onClick={() => handlePollResponse(poll.id, 'Yes')}
                         >
                           {poll.status === 'Yes' ? '✓ Yes' : 'Yes'}
@@ -324,7 +324,7 @@ export default function DashboardView() {
                         <Button 
                           size="small"
                           variant={poll.status === 'No' ? 'danger' : 'outline'}
-                          className="flex-1 font-bold border border-border"
+                          className="flex-1 border border-border font-bold"
                           onClick={() => handlePollResponse(poll.id, 'No')}
                         >
                           {poll.status === 'No' ? '✗ No' : 'No'}
@@ -419,7 +419,7 @@ export default function DashboardView() {
             <div className="text-muted -mt-2 text-xs">
               Dispatched on {getFormattedDate(selectedAnnouncement.created)}
             </div>
-            <div className="message-preview-content max-h-[60vh] overflow-y-auto">
+            <div className="max-h-[60vh] overflow-y-auto text-body leading-relaxed">
               {/* Secure content rendering */}
               <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedAnnouncement.content) }} />
             </div>

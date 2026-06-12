@@ -217,7 +217,7 @@ export const Player: React.FC<PlayerProps> = ({
             <span className="text-xs font-bold tracking-wider text-text-muted uppercase">s</span>
           </div>
 
-          <div className="touch:hidden flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden">
+          <div className="pointer-coarse:hidden flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden">
             <label htmlFor="volume-input" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Volume</label>
             <input 
               id="volume-input"

@@ -412,7 +412,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   if (readOnlyOnDesktop && !isMobile) {
     return (
       <div
-        className="relative flex items-center justify-center rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0"
+        className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100"
         // @allow-inline-style - dynamic sizing px value based on props
         style={{ width: px, height: px }}
       >
@@ -436,14 +436,14 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full">
+    <div className="flex w-full flex-col items-center gap-3">
       {/* Upload trigger circle zone */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleAvatarClick}
-        className="relative flex items-center justify-center rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 shrink-0 cursor-pointer group hover:border-primary transition-all shadow-sm"
+        className="group relative flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 bg-slate-100 shadow-sm transition-all hover:border-primary"
         // @allow-inline-style - dynamic sizing px value and dragging borders based on component state
         style={{
           width: px,
@@ -457,7 +457,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           <img
             src={preview || displayUrl}
             alt={profileName}
-            className="size-full object-cover transition-transform group-hover:scale-105 duration-200"
+            className="size-full object-cover transition-transform duration-200 group-hover:scale-105"
           />
         ) : (
           <div
@@ -471,21 +471,21 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
         {/* Hover overlay indicator */}
         {!readOnlyOnDesktop && !isUploading && (
-          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-semibold tracking-wide uppercase">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-[10px] font-semibold tracking-wide text-white uppercase opacity-0 transition-opacity group-hover:opacity-100">
             Change
           </div>
         )}
 
         {/* Upload spinner overlay */}
         {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
             <div className="size-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
           </div>
         )}
 
         {/* Drag and Drop Over Overlay */}
         {!isMobile && isDragging && !isUploading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-primary-light/90 text-primary-deep text-center z-10 p-2">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-primary-light/90 p-2 text-center text-primary-deep">
             <span className={`font-bold ${size === 'sm' ? 'text-[8px]' : 'text-[12px]'}`}>Drop Photo</span>
           </div>
         )}
@@ -493,12 +493,12 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
       {/* Desktop instructions and buttons panel below the photo */}
       {!isMobile && size !== 'sm' && (
-        <div className="flex flex-col items-center gap-1.5 w-full">
+        <div className="flex w-full flex-col items-center gap-1.5">
           <div className="flex items-center justify-center gap-2.5 text-xs">
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click(); }}
-              className="flex items-center gap-1 font-medium text-primary hover:text-primary-deep cursor-pointer transition-colors"
+              className="flex cursor-pointer items-center gap-1 font-medium text-primary transition-colors hover:text-primary-deep"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -513,7 +513,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(true); }}
-              className="flex items-center gap-1 font-medium text-primary hover:text-primary-deep cursor-pointer transition-colors"
+              className="flex cursor-pointer items-center gap-1 font-medium text-primary transition-colors hover:text-primary-deep"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -528,7 +528,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
-                  className="flex items-center gap-1 font-medium text-red-600 hover:text-red-700 cursor-pointer transition-colors"
+                  className="flex cursor-pointer items-center gap-1 font-medium text-red-600 transition-colors hover:text-red-700"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" />
@@ -547,7 +547,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
       {/* Mobile-only clean footer instruction */}
       {isMobile && size !== 'sm' && (
-        <div className="flex flex-col items-center gap-1.5 w-full">
+        <div className="flex w-full flex-col items-center gap-1.5">
           <span className="text-xs text-slate-500">
             Tap photo to change
           </span>
@@ -555,7 +555,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             <button
               type="button"
               onClick={handleRemovePhoto}
-              className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 cursor-pointer transition-colors"
+              className="flex cursor-pointer items-center gap-1 text-xs font-medium text-red-600 transition-colors hover:text-red-700"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="3 6 5 6 21 6" />
@@ -581,15 +581,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       {showCamera && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <h3 className="text-base font-bold text-slate-800">Camera Preview</h3>
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelCamera(); }}
-                className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="cursor-pointer text-slate-400 transition-colors hover:text-slate-600"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -600,21 +600,21 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
             {/* Error messaging */}
             {cameraError ? (
-              <div className="p-6 flex flex-col items-center gap-4 text-center">
-                <div className="text-sm text-red-600 font-medium">{cameraError}</div>
+              <div className="flex flex-col items-center gap-4 p-6 text-center">
+                <div className="text-sm font-medium text-red-600">{cameraError}</div>
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(false); fileRef.current?.click(); }}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 transition-colors text-slate-700 text-xs font-semibold rounded-lg cursor-pointer"
+                  className="cursor-pointer rounded-lg bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200"
                 >
                   Choose File from Device
                 </button>
               </div>
             ) : (
               /* Viewfinder frame */
-              <div className="relative aspect-square w-full bg-slate-950 flex items-center justify-center overflow-hidden">
+              <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden bg-slate-950">
                 {isCameraLoading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900 text-white text-xs">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900 text-xs text-white">
                     <div className="size-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white" />
                     <span>Starting camera...</span>
                   </div>
@@ -628,19 +628,19 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                   style={{
                     display: isCameraLoading ? 'none' : 'block',
                   }}
-                  className="size-full object-cover scale-x-[-1]"
+                  className="size-full scale-x-[-1] object-cover"
                 />
               </div>
             )}
 
             {/* Switching devices dropdown */}
             {!cameraError && videoDevices.length > 1 && (
-              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs">
                 <span className="font-semibold text-slate-500">Switch Camera</span>
                 <select
                   value={selectedDeviceId}
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  className="bg-white border border-slate-200 rounded px-2 py-1 outline-none text-slate-700"
+                  className="rounded border border-slate-200 bg-white px-2 py-1 text-slate-700 outline-none"
                 >
                   {videoDevices.map((device) => (
                     <option key={device.deviceId} value={device.deviceId}>
@@ -653,15 +653,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
             {/* Shutter capture button */}
             {!cameraError && !isCameraLoading && (
-              <div className="p-6 flex flex-col items-center justify-center gap-2 bg-slate-50">
+              <div className="flex flex-col items-center justify-center gap-2 bg-slate-50 p-6">
                 <button
                   type="button"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCapture(); }}
-                  className="size-14 rounded-full border-4 border-white bg-red-500 flex items-center justify-center hover:bg-red-600 transition-all hover:scale-105 active:scale-95 shadow-md"
+                  className="flex size-14 items-center justify-center rounded-full border-4 border-white bg-red-500 shadow-md transition-all hover:scale-105 hover:bg-red-600 active:scale-95"
                 >
                   <div className="size-5 rounded-full bg-white/40" />
                 </button>
-                <span className="text-[10px] text-slate-400 font-medium">Click to capture</span>
+                <span className="text-[10px] font-medium text-slate-400">Click to capture</span>
               </div>
             )}
           </div>
@@ -672,15 +672,15 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       {showCrop && preview && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
         >
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 flex flex-col gap-6 items-center">
+          <div className="flex w-full max-w-md flex-col items-center gap-6 rounded-xl bg-white p-6 shadow-xl">
             <img
               src={preview}
               alt="Preview"
-              className="w-full max-w-[240px] aspect-square object-cover rounded-full border-4 border-white shadow-md bg-slate-100"
+              className="aspect-square w-full max-w-[240px] rounded-full border-4 border-white bg-slate-100 object-cover shadow-md"
             />
-            <div className="flex flex-col sm:flex-row gap-2 w-full justify-center">
+            <div className="flex w-full flex-col justify-center gap-2 sm:flex-row">
               <Button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveOriginal(); }}

@@ -110,7 +110,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
                 polls.map(poll => (
                   <button
                     key={poll.id}
-                    className="bg-surface hover:bg-bg border border-border rounded-xl shadow-sm p-3 px-4 text-left flex flex-col gap-1 cursor-pointer transition-all duration-200"
+                    className="flex cursor-pointer flex-col gap-1 rounded-xl border border-border bg-surface p-3 px-4 text-left shadow-sm transition-all duration-200 hover:bg-bg"
                     onClick={() => {
                       onSelect(poll.id, poll.question);
                       onClose();
@@ -135,7 +135,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
             <div className="flex-col gap-1">
               <label className="text-label">Poll Question</label>
               <input
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3"
+                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 autoFocus
                 required
                 value={question}
@@ -147,7 +147,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
             <div className="flex-col gap-1">
               <label className="text-label">Linked Event (Optional)</label>
               <select
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3"
+                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={eventId}
                 onChange={e => setEventId(e.target.value)}
               >

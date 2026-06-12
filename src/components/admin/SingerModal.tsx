@@ -267,7 +267,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               value={formData.name || ''} 
               onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
+              className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
             />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -277,7 +277,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
+                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 placeholder="e.g. singer@example.com"
               />
               <p className="text-muted m-0 text-xs">
@@ -317,7 +317,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <input 
                 value={formData.phone || ''} 
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
+                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 placeholder="e.g. 555-123-4567"
               />
             </div>
@@ -329,7 +329,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                 value={formData.voicePart} 
                 onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
                 required={formData.role !== 'admin'}
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
+                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               >
                 {formData.role === 'admin' ? (
                   <option value="">-- Not Applicable (Admin) --</option>
@@ -348,7 +348,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <select 
                 value={formData.globalStatus} 
                 onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] min-h-[38px] w-full px-3"
+                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               >
                 <option value="Active">Active</option>
                 <option value="Idle">Idle</option>
@@ -434,7 +434,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
           </div>
 
           {initialData?.statusLastChangedAt && (
-            <div className="rounded-xl flex flex-row flex-wrap justify-between gap-[4px_12px] border border-border bg-bg p-[6px_10px] shadow-none">
+            <div className="flex flex-row flex-wrap justify-between gap-[4px_12px] rounded-xl border border-border bg-bg p-[6px_10px] shadow-none">
               <div className="text-muted m-0 text-xs">
                 <strong>Status Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleDateString()}
               </div>
@@ -449,7 +449,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
             <textarea 
               value={formData.notes} 
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[60px] min-h-[60px] w-full resize-y p-3"
+              className="h-[60px] min-h-[60px] w-full resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
             />
           </div>
         </form>

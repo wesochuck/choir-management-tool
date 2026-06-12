@@ -31,9 +31,9 @@ export const AppCard: React.FC<AppCardProps> = ({
       onClick={onClick}
     >
       {(title || actions) && (
-        <div className={`card-header ${title ? 'has-title' : ''}`}>
-          {title && <h3 className="card-title">{title}</h3>}
-          {actions && <div className="card-actions">{actions}</div>}
+        <div className="flex items-center justify-between">
+          {title && <h3 className="text-xl font-semibold text-text">{title}</h3>}
+          {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
       )}
       {children}

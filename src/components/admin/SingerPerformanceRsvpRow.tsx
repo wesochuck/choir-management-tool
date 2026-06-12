@@ -38,7 +38,7 @@ export const SingerPerformanceRsvpRow: React.FC<SingerPerformanceRsvpRowProps> =
       : 'border-border bg-surface text-text';
 
   return (
-    <div className="rounded-xl shadow-sm flex items-center justify-between gap-4 border border-border bg-bg p-4 transition-colors duration-200 hover:border-primary max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-bg p-4 shadow-sm transition-colors duration-200 hover:border-primary max-sm:flex-col max-sm:items-stretch max-sm:gap-2">
       <div className="flex min-w-[100px] flex-col gap-0.5 max-sm:min-w-full">
         <span className="text-[13px] font-semibold text-text">{dateString}</span>
         <span className="text-muted text-xs">{timeString}</span>

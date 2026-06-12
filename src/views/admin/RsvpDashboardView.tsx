@@ -38,9 +38,6 @@ export default function RsvpDashboardView() {
   return (
     <div className="flex-col py-4">
         <div className="mb-6 flex items-center justify-between">
-          <div className="admin-view-titles">
-          {/* Page title is already handled by PageLayout in App.tsx */}
-        </div>
         <div className="flex min-w-[320px] items-center gap-2">
           <div className="flex flex-1 flex-col gap-1">
             <label className="text-label text-xs font-semibold text-text-muted uppercase">Select Event</label>
@@ -59,7 +56,7 @@ export default function RsvpDashboardView() {
       </div>
 
       {selectedEvent && (
-        <div className="card-accent flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-muted text-xs font-semibold tracking-wider uppercase">Active Event</span>
             {selectedEvent.title && <h2 className="m-0 text-2xl font-extrabold text-primary-deep">{selectedEvent.title}</h2>}

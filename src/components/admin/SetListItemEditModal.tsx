@@ -109,7 +109,6 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               type="button"
               variant={type === 'song' ? 'primary' : 'outline'}
               size="small"
-              className="sl-modal-type-btn"
               onClick={() => setType('song')}
             >
               🎼 Song
@@ -118,7 +117,6 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               type="button"
               variant={type === 'intermission' ? 'primary' : 'outline'}
               size="small"
-              className="sl-modal-type-btn"
               onClick={() => setType('intermission')}
             >
               ⏸️ Intermission
@@ -132,7 +130,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+            className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
           />
         </div>
 
@@ -142,14 +140,14 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             <input
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
             />
           </div>
         )}
 
         {type === 'song' && (
           <div 
-            className={`rounded-xl border border-border bg-surface p-3 px-4 shadow-sm sl-modal-solo-card flex-row ${soloSmallGroup ? 'sl-modal-solo-card-selected' : 'sl-modal-solo-card-unselected'}`}
+            className={`flex-row items-center gap-3 rounded-xl border p-3 px-4 shadow-sm cursor-pointer transition-colors ${soloSmallGroup ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
             onClick={() => setSoloSmallGroup(!soloSmallGroup)}
           >
             <input
@@ -169,7 +167,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="e.g. 3:30"
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+            className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
           />
         </div>
 
@@ -178,7 +176,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-[80px] resize-y p-3"
+            className="min-h-[80px] resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
           />
         </div>
       </form>

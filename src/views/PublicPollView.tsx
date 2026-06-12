@@ -174,7 +174,7 @@ export default function PublicPollView() {
                   disabled={isUpdating}
                   className={`h-16 flex-1 justify-center rounded-xl text-lg font-extrabold transition-all ${
                     selectedResponse === 'No'
-                      ? 'bg-[#ef4444] text-white border-2 border-[#991b1b] hover:bg-[#dc2626]'
+                      ? 'border-2 border-[#991b1b] bg-[#ef4444] text-white hover:bg-[#dc2626]'
                       : 'border border-border bg-[var(--primary-light,#f1f5f9)] text-text-muted hover:bg-slate-200'
                   }`}
                 >

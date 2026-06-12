@@ -74,11 +74,10 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           )}
         </div>
       }
-      className="admin-settings-group"
     >
       {/* Section Subtotals */}
       <div 
-        className="grid grid-cols-[repeat(var(--grid-cols),1fr)] max-[640px]:grid-cols-2 max-[400px]:grid-cols-1 gap-4 border-b border-border pb-4"
+        className="grid grid-cols-[repeat(var(--grid-cols),1fr)] gap-4 border-b border-border pb-4 max-[640px]:grid-cols-2 max-[400px]:grid-cols-1"
         // @allow-inline-style - dynamic grid columns based on section list length using CSS variable
         style={{ 
           '--grid-cols': sectionsList.length
@@ -99,10 +98,10 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
                 gap: '4px'
               }}
             >
-              <div className="text-xs font-bold uppercase tracking-wider text-primary-deep">
+              <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
                 {sec.name}
               </div>
-              <div className="text-[2rem] font-extrabold leading-none text-primary-deep">{sectionCounts[sec.code] || 0}</div>
+              <div className="text-[2rem] leading-none font-extrabold text-primary-deep">{sectionCounts[sec.code] || 0}</div>
             </div>
           );
         })}

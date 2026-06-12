@@ -128,7 +128,7 @@ export default function EventsView(): React.JSX.Element {
 
   if (error) {
     return (
-      <div className="rounded-xl shadow-sm transition-all duration-200 hover:shadow-md mx-auto my-8 flex max-w-[500px] flex-col items-center border-danger-text bg-danger-bg p-8 text-center">
+      <div className="mx-auto my-8 flex max-w-[500px] flex-col items-center rounded-xl border-danger-text bg-danger-bg p-8 text-center shadow-sm transition-all duration-200 hover:shadow-md">
         <span className="text-3xl" role="img" aria-label="Warning">⚠️</span>
         <div className="text-lg font-semibold text-danger-text">
           Failed to load events
@@ -148,19 +148,19 @@ export default function EventsView(): React.JSX.Element {
   }
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
           Event Management
         </h1>
-        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
           Create and manage rehearsals, performances, and call times. Track attendance and edit seating charts.
         </p>
       </div>
 
       {/* Tabs / Actions Navigation Bar */}
-      <div className="w-full flex flex-row flex-wrap items-center justify-between border-b border-slate-200 pb-px gap-4 no-print">
+      <div className="no-print flex w-full flex-row flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-px">
         <div className="flex gap-3 md:gap-6">
           {(['all', 'performances', 'rehearsals'] as const).map((tab) => {
             const isActive = activeTab === tab;
@@ -170,8 +170,8 @@ export default function EventsView(): React.JSX.Element {
                 type="button"
                 className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   isActive
-                    ? 'border-primary text-primary font-bold'
-                    : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                    ? 'border-primary font-bold text-primary'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
                 }`}
                 onClick={() => setActiveTab(tab)}
               >
@@ -181,14 +181,14 @@ export default function EventsView(): React.JSX.Element {
           })}
         </div>
 
-        <div className="flex items-center gap-4 pb-1.5 flex-wrap">
+        <div className="flex flex-wrap items-center gap-4 pb-1.5">
           {/* Show past checkbox */}
           <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-500 select-none">
             <input
               type="checkbox"
               checked={showPastEvents}
               onChange={(e) => setShowPastEvents(e.target.checked)}
-              className="size-4 cursor-pointer accent-primary rounded border-slate-300 text-primary focus:ring-primary/25"
+              className="size-4 cursor-pointer rounded border-slate-300 text-primary accent-primary focus:ring-primary/25"
             />
             <span>Show past events</span>
           </label>
@@ -198,7 +198,7 @@ export default function EventsView(): React.JSX.Element {
             <Button
               onClick={handleBulkAdd}
               variant="secondary"
-              className="px-3 md:px-6 font-semibold shadow-sm"
+              className="px-3 font-semibold shadow-sm md:px-6"
               title="Bulk Add Rehearsals"
               icon={
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -211,7 +211,7 @@ export default function EventsView(): React.JSX.Element {
             <Button
               onClick={handleAdd}
               variant="primary"
-              className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
+              className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
               title="Single Event"
               icon={
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

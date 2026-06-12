@@ -126,7 +126,7 @@ const CheckInRow: React.FC<{
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Absent')}
-                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition active:scale-95"
+                className="inline-flex h-10 w-[130px] cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 active:scale-95"
               >
                 Absent
               </button>
@@ -134,7 +134,7 @@ const CheckInRow: React.FC<{
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Present')}
-                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg bg-emerald-700 text-sm font-bold text-white shadow-xs hover:bg-emerald-800 transition active:scale-95"
+                className="inline-flex h-10 w-[130px] cursor-pointer items-center justify-center rounded-lg bg-emerald-700 text-sm font-bold text-white shadow-xs transition hover:bg-emerald-800 active:scale-95"
               >
                 ✓ Present
               </button>
@@ -146,18 +146,18 @@ const CheckInRow: React.FC<{
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Absent')}
-                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition active:scale-95"
+                className="inline-flex h-10 w-[130px] cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 active:scale-95"
               >
                 Mark Absent
               </button>
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Pending')}
-                className="cursor-pointer w-16 h-10 inline-flex items-center justify-center text-sm font-semibold text-slate-400 hover:text-slate-600 transition"
+                className="inline-flex h-10 w-16 cursor-pointer items-center justify-center text-sm font-semibold text-slate-400 transition hover:text-slate-600"
               >
                 Reset
               </button>
-              <span className="inline-flex w-[130px] h-10 items-center justify-center gap-1 rounded-lg bg-emerald-100 text-sm font-bold text-emerald-800 border border-emerald-200">
+              <span className="inline-flex h-10 w-[130px] items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-100 text-sm font-bold text-emerald-800">
                 ✓ Present
               </span>
             </>
@@ -165,20 +165,20 @@ const CheckInRow: React.FC<{
 
           {isAbsent && (
             <>
-              <span className="inline-flex w-[130px] h-10 items-center justify-center gap-1 rounded-lg bg-red-100 text-sm font-bold text-red-800 border border-red-200">
+              <span className="inline-flex h-10 w-[130px] items-center justify-center gap-1 rounded-lg border border-red-200 bg-red-100 text-sm font-bold text-red-800">
                 ✗ Absent
               </span>
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Pending')}
-                className="cursor-pointer w-16 h-10 inline-flex items-center justify-center text-sm font-semibold text-slate-400 hover:text-slate-600 transition"
+                className="inline-flex h-10 w-16 cursor-pointer items-center justify-center text-sm font-semibold text-slate-400 transition hover:text-slate-600"
               >
                 Reset
               </button>
               <button
                 type="button"
                 onClick={() => onSetAttendance(item.profileId, 'Present')}
-                className="cursor-pointer inline-flex w-[130px] h-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition active:scale-95"
+                className="inline-flex h-10 w-[130px] cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 shadow-xs transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 active:scale-95"
               >
                 Mark Present
               </button>
@@ -294,7 +294,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
             <tr className="border-none">
               <td colSpan={5} className="p-0 pt-6 pb-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-primary-deep text-[0.8rem] font-extrabold tracking-wider uppercase">
+                  <span className="text-[0.8rem] font-extrabold tracking-wider text-primary-deep uppercase">
                     {headerText}
                   </span>
                   <div className="h-px flex-1 bg-[rgb(74_117_89_/_15%)]" />
@@ -351,11 +351,11 @@ export const CheckInList: React.FC<CheckInListProps> = ({
                   <tr className="border-none">
                     <td colSpan={5} className="p-0 pt-6 pb-2">
                       <div className="flex items-center gap-4">
-                        <div className="to-border h-px flex-1 bg-gradient-to-r from-transparent" />
-                        <span className="bg-surface text-primary-deep flex items-center gap-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] px-4 py-[6px] text-[0.8rem] font-extrabold tracking-widest uppercase shadow-[0_2px_8px_rgb(0_0_0_/_3%)]">
+                        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
+                        <span className="flex items-center gap-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] bg-surface px-4 py-[6px] text-[0.8rem] font-extrabold tracking-widest text-primary-deep uppercase shadow-[0_2px_8px_rgb(0_0_0_/_3%)]">
                           ✓ Checked In ({checkedIn.length})
                         </span>
-                        <div className="to-border h-px flex-1 bg-gradient-to-l from-transparent" />
+                        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
                       </div>
                     </td>
                   </tr>

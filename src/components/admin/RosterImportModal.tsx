@@ -251,13 +251,13 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     switch (step) {
       case 'UPLOAD':
         return (
-          <div className="flex justify-end gap-2 w-full">
+          <div className="flex w-full justify-end gap-2">
             <Button onClick={handleModalClose} variant="outline">Cancel</Button>
           </div>
         );
       case 'MAP':
         return (
-          <div className="flex justify-end gap-2 w-full">
+          <div className="flex w-full justify-end gap-2">
             <Button onClick={handleReset} variant="outline" className="mr-auto">Restart</Button>
             <Button onClick={() => setStep('UPLOAD')} variant="outline">Back</Button>
             <Button onClick={handleApplyMapping} variant="primary">Preview & Validate</Button>
@@ -265,7 +265,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         );
       case 'PREVIEW':
         return (
-          <div className="flex justify-end gap-2 w-full">
+          <div className="flex w-full justify-end gap-2">
             <Button onClick={() => setStep('MAP')} variant="outline">Back</Button>
             <Button onClick={handleStartImport} variant="primary">Confirm & Import</Button>
           </div>
@@ -274,7 +274,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         return null; // Don't allow closing/modifying during live import
       case 'COMPLETE':
         return (
-          <div className="flex justify-end gap-2 w-full">
+          <div className="flex w-full justify-end gap-2">
             <Button onClick={handleModalClose} variant="primary">Done</Button>
           </div>
         );
@@ -362,7 +362,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               return (
                 <div 
                   key={field.key} 
-                  className="rounded-xl flex flex-row items-center justify-between gap-3 p-3 px-4 border border-border bg-surface" 
+                  className="flex flex-row items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 px-4" 
                   // @allow-inline-style - conditional field validation border
                   style={{
                     borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
@@ -385,7 +385,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   <select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-[200px] px-[10px] text-sm shadow-none"
+                    className="h-[38px] w-[200px] rounded-md border border-border bg-surface px-[10px] text-sm shadow-none transition-colors outline-none focus:border-primary"
                     // @allow-inline-style - conditional match border
                     style={{
                       borderColor: selectedIndex !== -1 ? 'var(--color-primary)' : undefined,
@@ -462,7 +462,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                         </span>
                       </td>
                       <td>
-                        <span className="rounded border border-border bg-bg inline-block p-[2px_6px] text-xs">
+                        <span className="inline-block rounded border border-border bg-bg p-[2px_6px] text-xs">
                           {singer.data.globalStatus}
                         </span>
                       </td>

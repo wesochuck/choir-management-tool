@@ -52,7 +52,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* First Page Button */}
       <button
         type="button"
-        className={`${paginationBtnClass} arrow-btn`}
+        className={paginationBtnClass}
         onClick={() => handlePageChange(1)}
         disabled={currentPage === 1}
         aria-label="Go to first page"
@@ -63,7 +63,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* Previous Page Button */}
       <button
         type="button"
-        className={`${paginationBtnClass} arrow-btn`}
+        className={paginationBtnClass}
         onClick={() => handlePageChange(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Go to previous page"
@@ -92,7 +92,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           <button
             key={pageNum}
             type="button"
-            className={`${paginationBtnClass} num-btn ${isCurrent ? activeBtnClass : ''}`}
+            className={`${paginationBtnClass} ${isCurrent ? activeBtnClass : ''}`}
             onClick={() => handlePageChange(pageNum)}
             aria-label={`Go to page ${pageNum}`}
             aria-current={isCurrent ? 'page' : undefined}
@@ -105,7 +105,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* Next Page Button */}
       <button
         type="button"
-        className={`${paginationBtnClass} arrow-btn`}
+        className={paginationBtnClass}
         onClick={() => handlePageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Go to next page"
@@ -116,7 +116,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       {/* Last Page Button */}
       <button
         type="button"
-        className={`${paginationBtnClass} arrow-btn`}
+        className={paginationBtnClass}
         onClick={() => handlePageChange(totalPages)}
         disabled={currentPage === totalPages}
         aria-label="Go to last page"

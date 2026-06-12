@@ -237,7 +237,7 @@ export default function ProfileView() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3"
+              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
             />
           </div>
 
@@ -248,7 +248,7 @@ export default function ProfileView() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3"
+              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
             />
           </div>
 
@@ -302,14 +302,14 @@ export default function ProfileView() {
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3"
+                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 />
               </div>
 
               {/* Voice Part — read-only */}
               <div className="flex-col gap-1">
                 <label className="text-label">Voice Part</label>
-                <div className="rounded-xl flex h-11 w-full items-center border border-border bg-bg px-3 text-text-muted">
+                <div className="flex h-11 w-full items-center rounded-xl border border-border bg-bg px-3 text-text-muted">
                   {profile.voicePart}
                 </div>
                 <span className="text-muted text-xs">Contact your director to change voice part</span>
@@ -318,7 +318,7 @@ export default function ProfileView() {
           ) : (
             <div className="flex-col gap-1">
               <label className="text-label">Role</label>
-              <div className="rounded-xl flex h-11 w-full items-center border border-border bg-bg px-3 text-text-muted">
+              <div className="flex h-11 w-full items-center rounded-xl border border-border bg-bg px-3 text-text-muted">
                 Administrator
               </div>
             </div>
@@ -372,14 +372,14 @@ export default function ProfileView() {
                       <input
                         readOnly
                         value={calendarFeedUrls.httpsUrl}
-                        className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 flex-1 px-3 text-sm"
+                        className="h-10 flex-1 rounded-md border border-border bg-surface px-3 text-sm transition-colors outline-none focus:border-primary"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <Button
                         type="button"
                         onClick={handleCopyGoogleLink}
                         variant="primary"
-                        className={`flex h-10 min-w-[180px] items-center justify-center px-4 ${isCopied ? '!bg-success-bg !text-success-text !border-transparent' : ''}`}
+                        className={`flex h-10 min-w-[180px] items-center justify-center px-4 ${isCopied ? '!border-transparent !bg-success-bg !text-success-text' : ''}`}
                       >
                         {isCopied ? 'Copied! ✓' : 'Copy Google Calendar URL'}
                       </Button>
@@ -397,7 +397,7 @@ export default function ProfileView() {
                 <Button
                   type="button"
                   onClick={handleResetLink}
-                  className="cursor-pointer border border-danger-text !text-danger-text bg-transparent text-sm"
+                  className="cursor-pointer border border-danger-text bg-transparent text-sm !text-danger-text"
                   variant="outline"
                   disabled={isCalendarLoading}
                 >
@@ -428,7 +428,7 @@ export default function ProfileView() {
                 <select
                   value={user?.preferences?.rosterSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3"
+                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part</option>
@@ -440,7 +440,7 @@ export default function ProfileView() {
                 <select
                   value={user?.preferences?.attendanceSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart' | 'section')}
-                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3"
+                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
@@ -453,7 +453,7 @@ export default function ProfileView() {
                 <select
                   value={user?.preferences?.rsvpSort || 'lastName'}
                   onChange={(e) => handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')}
-                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3"
+                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>

@@ -36,7 +36,7 @@ export function MusicLibraryTracksCell({
             e.stopPropagation();
             onEditPiece?.(piece, 'tracks');
           }}
-          className="hover-glow inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap text-primary"
+          className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap text-primary transition-colors hover:bg-[rgb(27_77_62_/_12%)]"
         >
           🎧 {totalMovementTracksCount} in mvts
         </span>

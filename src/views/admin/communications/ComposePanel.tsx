@@ -322,7 +322,7 @@ export function ComposePanel({
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2.5"
-                      className={`transition-transform duration-200 text-text-muted ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
+                      className={`text-text-muted transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
                     >
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
@@ -657,7 +657,7 @@ export function ComposePanel({
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2.5"
-                    className="inline-flex size-4 mr-1"
+                    className="mr-1 inline-flex size-4"
                   >
                     <line x1="8" y1="6" x2="21" y2="6" />
                     <line x1="8" y1="12" x2="21" y2="12" />

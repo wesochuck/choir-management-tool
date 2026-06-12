@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useContext } from 'react';
+import { useEffect, useId, useRef, useContext, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { DialogContext } from '../../../contexts/DialogContext';
 
@@ -19,7 +19,7 @@ export function Modal({
   const modalRef = useRef<HTMLDivElement>(null);
   const dialog = useContext(DialogContext);
 
-  const handleCloseAttempt = async () => {
+  const handleCloseAttempt = useCallback(async () => {
     if (isDirty) {
       if (dialog) {
         const confirmDiscard = await dialog.confirm({
@@ -36,12 +36,12 @@ export function Modal({
       }
     }
     onClose();
-  };
+  }, [isDirty, dialog, onClose]);
 
   const handleCloseAttemptRef = useRef(handleCloseAttempt);
   useEffect(() => {
     handleCloseAttemptRef.current = handleCloseAttempt;
-  }, [isOpen, onClose, isDirty, dialog]);
+  }, [isOpen, onClose, isDirty, dialog, handleCloseAttempt]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -89,7 +89,7 @@ export function Modal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[1000] flex animate-modal-fade-in items-center justify-center bg-black/40 p-4 no-print" role="presentation" onMouseDown={handleOverlayClick}>
+    <div className="no-print fixed inset-0 z-[1000] flex animate-modal-fade-in items-center justify-center bg-black/40 p-4" role="presentation" onMouseDown={handleOverlayClick}>
       <div ref={modalRef} className="flex w-full animate-modal-slide-up flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-md" role="dialog" aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         // @allow-inline-style - dynamic maxWidth from props

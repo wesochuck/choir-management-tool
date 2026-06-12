@@ -60,7 +60,7 @@ const EmailMockup: React.FC<EmailMockupProps> = ({
 
     <div className={`flex-1 overflow-y-auto text-sm leading-relaxed break-words text-slate-600 ${previewDevice === 'mobile' ? 'p-4' : 'p-6'}`}>
       <div
-        className="text-body message-preview-content"
+        className="text-body"
         // @allow-dangerouslySetInnerHTML - bodyHtml is pre-escaped by renderMarkdown/resolvePreviewContent (use with caution)
         dangerouslySetInnerHTML={{
           __html: bodyHtml || '<p class="text-text-muted text-center py-10">No message content drafted yet.</p>',
@@ -112,7 +112,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   return (
-    <div className="live-preview-container flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h3 className="text-headline m-0 text-lg">Live Preview</h3>
         <div className="flex gap-2">

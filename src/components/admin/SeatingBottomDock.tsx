@@ -158,7 +158,7 @@ export function SeatingBottomDock({
         <div className="flex w-full flex-row flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-col gap-0.5">
             <div className="flex flex-row flex-wrap items-center gap-2">
-              <h3 className="m-0 text-[1rem] font-bold leading-tight text-primary-deep">Unassigned Singers</h3>
+              <h3 className="m-0 text-base leading-tight font-bold text-primary-deep">Unassigned Singers</h3>
               <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-primary-deep shadow-xs">
                 {unassigned.length}
               </span>
@@ -170,7 +170,7 @@ export function SeatingBottomDock({
               <button
                 type="button"
                 onClick={onLookupSinger}
-                className="inline-flex h-8 min-h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 text-xs font-label text-primary-deep shadow-xs"
+                className="font-medium tracking-wide inline-flex h-8 min-h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-xs whitespace-nowrap text-primary-deep shadow-xs"
               >
                 🔍 Lookup
               </button>
@@ -179,7 +179,7 @@ export function SeatingBottomDock({
               <button
                 type="button"
                 onClick={onAddSinger}
-                className="inline-flex h-8 min-h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 text-xs font-label text-primary-deep shadow-xs"
+                className="font-medium tracking-wide inline-flex h-8 min-h-8 items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 text-xs whitespace-nowrap text-primary-deep shadow-xs"
               >
                 + Add
               </button>
@@ -204,7 +204,7 @@ export function SeatingBottomDock({
             return (
               <section key={key} className="flex flex-col gap-1.5">
                 <div className="flex flex-row items-center gap-2">
-                  <span className="text-sm font-bold leading-tight" style={labelStyle}>
+                  <span className="text-sm leading-tight font-bold" style={labelStyle}>
                     {label}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase" style={badgeStyle}>
@@ -236,7 +236,7 @@ export function SeatingBottomDock({
                             e.stopPropagation();
                             onRemoveRsvp(p.id, p.name);
                           }}
-                          className="no-print flex size-[18px] min-h-[18px] shrink-0 cursor-pointer items-center justify-center rounded border-0 bg-transparent p-0 text-xs font-bold text-text-muted opacity-0 transition-all duration-200 hover:bg-red-500/15 hover:text-red-700 group-hover:opacity-100 group-focus-within:opacity-100"
+                          className="no-print flex size-[18px] min-h-[18px] shrink-0 cursor-pointer items-center justify-center rounded border-0 bg-transparent p-0 text-xs font-bold text-text-muted opacity-0 transition-all duration-200 group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-red-500/15 hover:text-red-700"
                           title="Mark as Not Attending"
                         >
                           ×
@@ -249,7 +249,7 @@ export function SeatingBottomDock({
             );
           })}
           {groupsWithSingers.length === 0 && (
-            <div className="flex min-h-[72px] items-center justify-center rounded-md border border-dashed border-border bg-bg text-sm font-medium text-muted">
+            <div className="text-muted flex min-h-[72px] items-center justify-center rounded-md border border-dashed border-border bg-bg text-sm font-medium">
               All singers assigned
             </div>
           )}

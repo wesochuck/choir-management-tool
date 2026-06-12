@@ -37,7 +37,7 @@ export const EventList: React.FC<EventListProps> = ({
     if (!activeDropdownId) return;
     const handleOutsideClick = (ev: MouseEvent) => {
       const target = ev.target as HTMLElement;
-      if (!target.closest('.event-overflow-anchor')) {
+      if (!target.closest('[data-event-overflow-anchor]')) {
         setActiveDropdownId(null);
       }
     };
@@ -116,7 +116,7 @@ export const EventList: React.FC<EventListProps> = ({
         return (
           <div
             key={e.id}
-            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-border px-6 py-5 transition-colors duration-150 last:border-b-0 first:rounded-t-xl last:rounded-b-xl hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
+            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-border px-6 py-5 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl last:border-b-0 hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
             onClick={() => onEdit(e)}
             role="button"
             tabIndex={0}
@@ -131,7 +131,7 @@ export const EventList: React.FC<EventListProps> = ({
             {/* Date column */}
             <div className="flex min-w-14 flex-col items-center">
               <span className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">{weekday}</span>
-              <span className="text-2xl font-bold leading-tight text-text">{day}</span>
+              <span className="text-2xl leading-tight font-bold text-text">{day}</span>
               <span className="text-[11px] font-semibold tracking-wide text-text-muted uppercase">{month} {year}</span>
             </div>
 
@@ -152,7 +152,7 @@ export const EventList: React.FC<EventListProps> = ({
               </div>
 
               {e.title && (
-                <div className="text-base font-semibold leading-snug text-text">{e.title}</div>
+                <div className="text-base leading-snug font-semibold text-text">{e.title}</div>
               )}
 
               {(e.expand?.venue?.name) && (
@@ -186,7 +186,7 @@ export const EventList: React.FC<EventListProps> = ({
                 RSVP Roster
               </Button>
 
-              <div className="event-overflow-anchor relative">
+              <div className="relative" data-event-overflow-anchor>
                 <button
                   type="button"
                   className={`flex size-8 cursor-pointer items-center justify-center rounded-full border text-base font-extrabold transition-colors duration-150 ${

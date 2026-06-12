@@ -22,6 +22,27 @@ export default defineConfig([
   {
     ...tailwind.configs.recommended,
     files: ['src/**/*.{ts,tsx,js,jsx}'],
+    rules: {
+      'tailwindcss/no-custom-classname': [
+        'warn',
+        {
+          whitelist: [
+            'text-label',
+            'text-body',
+            'text-display',
+            'text-headline',
+            'no-print',
+            'seating-row-label',
+            'progress-ring__circle',
+            'progress-ring__circle-bg',
+            'grid-print',
+            'director-indicator',
+            'seating-row-action-btn',
+            'seating-toolbar',
+          ],
+        },
+      ],
+    },
   },
   {
     files: ['**/*.{ts,tsx}'],

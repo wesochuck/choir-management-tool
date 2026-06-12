@@ -271,26 +271,26 @@ export default function DonationsView() {
   };
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
           Donations & Giving
         </h1>
-        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
           Monitor your choir's incoming donations, analyze giving statistics, and manage public donation portal settings and recognition tiers.
         </p>
       </div>
 
       {/* Tabs / Actions Navigation Bar */}
-      <div className="w-full flex flex-row items-center justify-between border-b border-slate-200 pb-px">
+      <div className="flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
         <div className="flex gap-3 md:gap-6">
           <button
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'history'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('history')}
           >
@@ -300,8 +300,8 @@ export default function DonationsView() {
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'levels'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('levels')}
           >
@@ -313,7 +313,7 @@ export default function DonationsView() {
           {activeTab === 'history' && (
             <Button
               variant="secondary"
-              className="px-3 md:px-6 font-semibold shadow-sm"
+              className="px-3 font-semibold shadow-sm md:px-6"
               onClick={handleExportCSV}
               disabled={sortedDonations.length === 0}
               title="Export CSV"
@@ -331,7 +331,7 @@ export default function DonationsView() {
           {activeTab === 'levels' && (
             <Button
               variant="primary"
-              className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
+              className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
               onClick={() => openLevelModal()}
               title="Add Level"
               icon={
@@ -353,18 +353,18 @@ export default function DonationsView() {
           {/* Stats Analytics Dashboard */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
             {/* Donations Count Card */}
-            <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 h-1.5 w-full bg-slate-400 group-hover:bg-slate-500 transition-colors" />
+            <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+              <div className="absolute top-0 left-0 h-1.5 w-full bg-slate-400 transition-colors group-hover:bg-slate-500" />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
                     Donations Count
                   </p>
-                  <p className="mt-2 text-3xl font-black text-slate-900 tracking-tight">
+                  <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">
                     {filteredStats.count}
                   </p>
                 </div>
-                <div className="rounded-xl bg-slate-50 p-3 text-slate-500 group-hover:bg-slate-100 transition-colors">
+                <div className="rounded-xl bg-slate-50 p-3 text-slate-500 transition-colors group-hover:bg-slate-100">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                     <circle cx="9" cy="7" r="4" />
@@ -376,18 +376,18 @@ export default function DonationsView() {
             </div>
 
             {/* Total Raised Card */}
-            <div className="group relative overflow-hidden rounded-2xl border border-pink-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 h-1.5 w-full bg-pink-500 group-hover:bg-pink-600 transition-colors" />
+            <div className="group relative overflow-hidden rounded-2xl border border-pink-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+              <div className="absolute top-0 left-0 h-1.5 w-full bg-pink-500 transition-colors group-hover:bg-pink-600" />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-pink-500">
+                  <p className="text-xs font-bold tracking-wider text-pink-500 uppercase">
                     Total Raised
                   </p>
-                  <p className="mt-2 text-3xl font-black text-pink-600 tracking-tight">
+                  <p className="mt-2 text-3xl font-black tracking-tight text-pink-600">
                     ${(filteredStats.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="rounded-xl bg-pink-50 p-3 text-pink-500 group-hover:bg-pink-100/80 transition-colors">
+                <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="12" y1="1" x2="12" y2="23" />
                     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -397,18 +397,18 @@ export default function DonationsView() {
             </div>
 
             {/* Average Donation Card */}
-            <div className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-              <div className="absolute top-0 left-0 h-1.5 w-full bg-emerald-500 group-hover:bg-emerald-600 transition-colors" />
+            <div className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+              <div className="absolute top-0 left-0 h-1.5 w-full bg-emerald-500 transition-colors group-hover:bg-emerald-600" />
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+                  <p className="text-xs font-bold tracking-wider text-emerald-600 uppercase">
                     Average Gift
                   </p>
-                  <p className="mt-2 text-3xl font-black text-emerald-800 tracking-tight">
+                  <p className="mt-2 text-3xl font-black tracking-tight text-emerald-800">
                     ${(filteredStats.avg / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600 group-hover:bg-emerald-100/80 transition-colors">
+                <div className="rounded-xl bg-emerald-50 p-3 text-emerald-600 transition-colors group-hover:bg-emerald-100/80">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -424,7 +424,7 @@ export default function DonationsView() {
             </div>
             <div className="flex flex-col gap-4 p-6">
               {/* Filter deck */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
                 <div className="md:col-span-1">
                   <FormField label="Search">
                     <div className="relative">
@@ -439,13 +439,13 @@ export default function DonationsView() {
                         placeholder="Donor name or email..." 
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="block w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="block w-full rounded-lg border border-slate-200 bg-white py-2 pr-3.5 pl-9 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </FormField>
                 </div>
-                <div className="md:col-span-2 flex flex-row gap-4">
-                  <div className="flex-1 min-w-0">
+                <div className="flex flex-row gap-4 md:col-span-2">
+                  <div className="min-w-0 flex-1">
                     <FormField label="From Date">
                       <input 
                         type="date" 
@@ -455,7 +455,7 @@ export default function DonationsView() {
                       />
                     </FormField>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <FormField label="To Date">
                       <input 
                         type="date" 
@@ -484,7 +484,7 @@ export default function DonationsView() {
                     <Button 
                       variant="outline" 
                       onClick={handleClearFilters}
-                      className="h-10 px-3 flex items-center justify-center font-semibold"
+                      className="flex h-10 items-center justify-center px-3 font-semibold"
                       title="Reset filters"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -497,7 +497,7 @@ export default function DonationsView() {
               </div>
 
               {/* Responsive Register View - Desktop Table */}
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+              <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
                 <table className="min-w-full divide-y divide-slate-100 text-left">
                   <thead className="bg-slate-50/75">
                     <tr>
@@ -513,7 +513,7 @@ export default function DonationsView() {
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {loading ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-400 font-medium">
+                        <td colSpan={7} className="px-6 py-12 text-center text-sm font-medium text-slate-400">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                             Loading donations history...
@@ -544,36 +544,36 @@ export default function DonationsView() {
                     ) : (
                       sortedDonations.map(d => (
                         <tr key={d.id} className="transition-colors hover:bg-slate-50/40">
-                          <td className="px-6 py-4 text-sm text-slate-500 font-medium whitespace-nowrap">
+                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
                             {formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </td>
                           <td className="px-6 py-4 text-sm font-semibold text-slate-800">
                             <div className="flex flex-col gap-0.5">
                               <span>{d.donorName}</span>
                               {d.isAnonymous && (
-                                <span className="w-fit inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-600 uppercase">
+                                <span className="inline-flex w-fit items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-600 uppercase">
                                   Anonymous
                                 </span>
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-500 font-medium">
+                          <td className="px-6 py-4 text-sm font-medium text-slate-500">
                             {d.donorEmail}
                           </td>
-                          <td className="px-6 py-4 text-right text-sm font-extrabold text-slate-900 whitespace-nowrap">
+                          <td className="px-6 py-4 text-right text-sm font-extrabold whitespace-nowrap text-slate-900">
                             ${(d.amountPaidCents / 100).toFixed(2)}
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-500 leading-relaxed">
+                          <td className="px-6 py-4 text-sm leading-relaxed text-slate-500">
                             {d.tributeType !== 'none' ? (
                               <span className="inline-flex flex-wrap items-center gap-1">
                                 <span className="text-slate-400">In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of</span>
-                                <strong className="text-slate-700 font-semibold">{d.tributeName}</strong>
+                                <strong className="font-semibold text-slate-700">{d.tributeName}</strong>
                               </span>
                             ) : (
                               <span className="text-slate-300">—</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-center">
+                          <td className="px-6 py-4 text-center text-sm">
                             <Badge tone={d.status === 'paid' ? 'success' : d.status === 'refunded' ? 'danger' : 'neutral'}>
                               {d.status}
                             </Badge>
@@ -598,10 +598,10 @@ export default function DonationsView() {
               </div>
 
               {/* Responsive Register View - Mobile Card List */}
-              <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
                 <div className="divide-y divide-slate-100">
                   {loading ? (
-                    <div className="px-6 py-12 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                    <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm font-medium text-slate-400">
                       <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                       Loading donations history...
                     </div>
@@ -626,10 +626,10 @@ export default function DonationsView() {
                     </div>
                   ) : (
                     sortedDonations.map(d => (
-                      <div key={d.id} className="p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40">
+                      <div key={d.id} className="flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40">
                         {/* Row 1: Date and Status badge */}
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-400 font-medium">
+                          <span className="text-xs font-medium text-slate-400">
                             {formatInTimezone(d.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </span>
                           <Badge tone={d.status === 'paid' ? 'success' : d.status === 'refunded' ? 'danger' : 'neutral'}>
@@ -642,32 +642,32 @@ export default function DonationsView() {
                           <div className="flex flex-col gap-0.5">
                             <span className="text-sm font-bold text-slate-800">{d.donorName}</span>
                             {d.isAnonymous && (
-                              <span className="w-fit inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-slate-600 uppercase">
+                              <span className="inline-flex w-fit items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-slate-600 uppercase">
                                 Anonymous
                               </span>
                             )}
-                            <span className="text-xs text-slate-500 font-medium break-all">{d.donorEmail}</span>
+                            <span className="text-xs font-medium break-all text-slate-500">{d.donorEmail}</span>
                           </div>
-                          <span className="text-base font-extrabold text-slate-900 shrink-0">
+                          <span className="shrink-0 text-base font-extrabold text-slate-900">
                             ${(d.amountPaidCents / 100).toFixed(2)}
                           </span>
                         </div>
 
                         {/* Row 3: Tribute type and info */}
                         {d.tributeType !== 'none' && (
-                          <div className="text-xs text-slate-500 leading-relaxed bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                          <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-xs leading-relaxed text-slate-500">
                             <span className="text-slate-400">In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of</span>{' '}
-                            <strong className="text-slate-700 font-semibold">{d.tributeName}</strong>
+                            <strong className="font-semibold text-slate-700">{d.tributeName}</strong>
                           </div>
                         )}
 
                         {/* Row 4: Actions (if status is 'paid') */}
                         {d.status === 'paid' && (
-                          <div className="flex justify-end pt-1.5 border-t border-slate-50 mt-1">
+                          <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
                             <Button 
                               variant="danger" 
                               size="small" 
-                              className="w-full font-semibold shadow-sm text-xs py-1.5"
+                              className="w-full py-1.5 text-xs font-semibold shadow-sm"
                               onClick={() => handleRefund(d.id)}
                             >
                               Refund
@@ -686,15 +686,15 @@ export default function DonationsView() {
 
       {/* Levels & Portal Settings Tab Content */}
       <TabPanel tabId="levels" activeTab={activeTab}>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
           {/* Public Portal Configuration Card */}
-          <div className="lg:col-span-1 flex flex-col gap-6">
+          <div className="flex flex-col gap-6 lg:col-span-1">
             <AppCard>
               <div className="border-b border-slate-100 pb-3">
                 <h3 className="text-lg font-bold text-slate-800">Portal Configuration</h3>
               </div>
-              <div className="flex flex-col gap-5 mt-2">
-                <p className="text-xs text-slate-500 leading-relaxed">
+              <div className="mt-2 flex flex-col gap-5">
+                <p className="text-xs leading-relaxed text-slate-500">
                   Customize the heading text and detailed descriptive message shown to users on your public-facing checkout/donation webpage.
                 </p>
                 <FormField label="Call-to-Action Heading" required>
@@ -703,14 +703,14 @@ export default function DonationsView() {
                     value={donationButtonText}
                     onChange={e => setDonationButtonText(e.target.value)}
                     placeholder="e.g. Support our Music"
-                    className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                     required
                   />
                 </FormField>
                 <FormField label="Portal Description">
                   <textarea
                     rows={5}
-                    className="block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                     value={donationDescription}
                     onChange={e => setDonationDescription(e.target.value)}
                     placeholder="e.g. Your contribution helps us keep the music playing..."
@@ -718,7 +718,7 @@ export default function DonationsView() {
                 </FormField>
                 <Button
                   variant="primary"
-                  className="w-full font-semibold shadow-sm mt-2"
+                  className="mt-2 w-full font-semibold shadow-sm"
                   onClick={handleSavePublicSettings}
                   disabled={saving || !donationButtonText.trim()}
                 >
@@ -734,27 +734,27 @@ export default function DonationsView() {
           </div>
 
           {/* Donor Tiers / Levels Cards Configuration */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
+          <div className="flex flex-col gap-6 lg:col-span-2">
             <div className="flex flex-col gap-4">
               {/* Alert Info Notice Panel */}
               <div className="flex items-start gap-3 rounded-2xl border border-pink-100 bg-pink-50/30 p-5 shadow-sm">
-                <div className="rounded-xl bg-pink-100 p-2.5 text-pink-600 shrink-0">
+                <div className="shrink-0 rounded-xl bg-pink-100 p-2.5 text-pink-600">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-extrabold text-pink-800">Donor Levels</h3>
-                  <p className="mt-1 text-sm text-slate-600 leading-relaxed font-medium">
+                  <p className="mt-1 text-sm leading-relaxed font-medium text-slate-600">
                     These levels are displayed to donors on the public donation checkout page to encourage higher donation amounts by highlighting tier benefits.
                   </p>
                 </div>
               </div>
 
               {/* Levels Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {!settings || settings.levels.length === 0 ? (
-                  <div className="col-span-2 rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
+                  <div className="col-span-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
                     <EmptyState
                       title="No Donor Levels Configured"
                       description="Create recognition tiers to prompt donors with suggesting amounts."
@@ -777,7 +777,7 @@ export default function DonationsView() {
                       <div key={l.id} className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                         <div>
                           <div className="flex items-start justify-between gap-4">
-                            <h4 className="text-base font-extrabold text-slate-900 truncate">
+                            <h4 className="truncate text-base font-extrabold text-slate-900">
                               {l.label}
                             </h4>
                             <span className="inline-flex items-center rounded-xl bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-700 ring-1 ring-emerald-600/10">
@@ -786,18 +786,18 @@ export default function DonationsView() {
                           </div>
                           
                           <div className="mt-3 min-h-[48px] border-t border-slate-100 pt-3">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Benefit & Perks</span>
-                            <p className="mt-1 text-sm text-slate-600 font-medium leading-relaxed">
+                            <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Benefit & Perks</span>
+                            <p className="mt-1 text-sm leading-relaxed font-medium text-slate-600">
                               {l.benefit ? l.benefit : <span className="text-slate-300 italic">No benefit specified</span>}
                             </p>
                           </div>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-50 pt-3 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                        <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-50 pt-3 opacity-100 transition-opacity duration-150 group-hover:opacity-100 sm:opacity-0">
                           <Button 
                             variant="outline" 
                             size="small" 
-                            className="h-8 font-bold border-none"
+                            className="h-8 border-none font-bold"
                             onClick={() => openLevelModal(l)}
                           >
                             Edit
@@ -805,7 +805,7 @@ export default function DonationsView() {
                           <Button 
                             variant="danger" 
                             size="small" 
-                            className="h-8 font-bold border-none"
+                            className="h-8 border-none font-bold"
                             onClick={() => handleDeleteLevel(l.id)}
                           >
                             Delete
@@ -820,13 +820,13 @@ export default function DonationsView() {
                       onClick={() => openLevelModal()}
                       className="group flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/20 p-5 text-center transition-all hover:border-primary hover:bg-slate-50"
                     >
-                      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-2.5 text-slate-400 group-hover:border-primary/40 group-hover:text-primary transition-colors shadow-sm">
+                      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-2.5 text-slate-400 shadow-sm transition-colors group-hover:border-primary/40 group-hover:text-primary">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <line x1="12" y1="5" x2="12" y2="19" />
                           <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
                       </div>
-                      <span className="mt-3 text-sm font-bold text-slate-500 group-hover:text-primary transition-colors">
+                      <span className="mt-3 text-sm font-bold text-slate-500 transition-colors group-hover:text-primary">
                         + Add Donor Level
                       </span>
                     </button>
@@ -845,7 +845,7 @@ export default function DonationsView() {
         title={editingLevel ? 'Edit Donor Level' : 'Create Donor Level'}
         maxWidth="500px"
         footer={
-          <div className="flex justify-end gap-2 w-full">
+          <div className="flex w-full justify-end gap-2">
             <Button variant="outline" className="font-semibold" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </Button>
@@ -872,7 +872,7 @@ export default function DonationsView() {
               value={levelLabel} 
               onChange={e => setLevelLabel(e.target.value)}
               placeholder="e.g. Bronze, Gold, Supporter..."
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               required
             />
           </FormField>
@@ -883,14 +883,14 @@ export default function DonationsView() {
               value={levelAmount || ''} 
               onChange={e => setLevelAmount(Math.max(0, Number(e.target.value)))}
               placeholder="e.g. 50"
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               required
             />
           </FormField>
           <FormField label="Benefit / Perks (Optional)">
             <textarea 
               rows={3}
-              className="block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               value={levelBenefit} 
               onChange={e => setLevelBenefit(e.target.value)}
               placeholder="e.g. Mention in concert program, early access..."

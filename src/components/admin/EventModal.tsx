@@ -465,19 +465,19 @@ export const EventModal: React.FC<EventModalProps> = ({
         {activeTab === 'details' && (
           <>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
+              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
               <input 
                 ref={titleInputRef}
                 value={formData.title} 
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
                 placeholder={formData.type === 'Performance' ? 'e.g. Spring Gala 2026' : 'e.g. Mid-week Rehearsal'}
-                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
               />
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Type</label>
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Type</label>
                 <select 
                   value={formData.type} 
                   onChange={(e) => {
@@ -500,31 +500,31 @@ export const EventModal: React.FC<EventModalProps> = ({
                       setActiveTab('details');
                     }
                   }}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                 >
                   <option value="Rehearsal">Rehearsal</option>
                   <option value="Performance">Performance</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Date & Time</label>
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Date & Time</label>
                 <input 
                   type="datetime-local"
                   value={formData.date} 
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })} 
                   required
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Event Duration</label>
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Duration</label>
                 <select 
                   value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
                   onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                 >
                   <option value={30}>30 minutes</option>
                   <option value={45}>45 minutes</option>
@@ -547,12 +547,12 @@ export const EventModal: React.FC<EventModalProps> = ({
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Call Time (Optional)</label>
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Call Time (Optional)</label>
                 <input 
                   type="time"
                   value={formData.callTime || ''}
                   onChange={(e) => setFormData({ ...formData, callTime: e.target.value })}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                 />
               </div>
             </div>
@@ -562,13 +562,13 @@ export const EventModal: React.FC<EventModalProps> = ({
                 type="checkbox"
                 checked={formData.isOpenForRSVP || false}
                 onChange={(e) => setFormData({ ...formData, isOpenForRSVP: e.target.checked })}
-                className="h-4 w-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
+                className="size-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
               />
               <span className="text-sm font-bold text-text">Open for RSVP Links</span>
             </label>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Venue</label>
+              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Venue</label>
               <select
                 value={formData.venue || ''}
                 onChange={(e) => {
@@ -583,7 +583,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   }
                 }}
                 required
-                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -599,32 +599,32 @@ export const EventModal: React.FC<EventModalProps> = ({
                 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Venue Name</label>
+                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Venue Name</label>
                     <input 
                       value={newVenueName} 
                       onChange={(e) => setNewVenueName(e.target.value)}
                       placeholder="e.g. Grace Hall"
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Row Capacities (e.g. 10, 12, 14)</label>
+                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Row Capacities (e.g. 10, 12, 14)</label>
                     <input 
                       value={newVenueRows} 
                       onChange={(e) => setNewVenueRows(e.target.value)}
                       placeholder="e.g. 8, 10, 12"
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     />
                   </div>
                 </div>
 
                 <div className="flex w-full flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Venue Address (Optional, for Google Maps)</label>
+                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Venue Address (Optional, for Google Maps)</label>
                   <input 
                     value={newVenueAddress} 
                     onChange={(e) => setNewVenueAddress(e.target.value)}
                     placeholder="e.g. 123 Main St, Anytown, ST 12345"
-                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                   />
                 </div>
 
@@ -655,7 +655,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                     type="checkbox" 
                     checked={isOpenAuditions} 
                     onChange={(e) => setIsOpenAuditions(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded-sm border-border text-[#ff8a65] focus:ring-[#ff8a65] focus:ring-offset-0"
+                    className="mt-0.5 size-4 rounded-sm border-border text-[#ff8a65] focus:ring-[#ff8a65] focus:ring-offset-0"
                   />
                   <div className="flex flex-col gap-0.5">
                     <span className="text-sm font-bold text-[#e64a19]">Open Public Auditions?</span>
@@ -672,7 +672,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                     type="checkbox" 
                     checked={shouldBulkAdd} 
                     onChange={(e) => setShouldBulkAdd(e.target.checked)}
-                    className="h-4 w-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
+                    className="size-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
                   />
                   <span className="text-sm font-bold text-text">Auto-generate weekly rehearsals?</span>
                 </label>
@@ -681,18 +681,18 @@ export const EventModal: React.FC<EventModalProps> = ({
                   <div className="flex flex-col gap-4 pt-2">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                       <div className="flex flex-col gap-1.5 md:col-span-1">
-                        <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Count</label>
+                        <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Count</label>
                         <input 
                           type="number" min="1" max="20"
                           value={bulkCount} onChange={(e) => setBulkCount(parseInt(e.target.value))}
-                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                         />
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Day</label>
+                        <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Day</label>
                         <select 
                           value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
-                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                         >
                           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
                             <option key={d} value={i}>{d}</option>
@@ -700,19 +700,19 @@ export const EventModal: React.FC<EventModalProps> = ({
                         </select>
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Time</label>
+                        <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Time</label>
                         <input 
                           type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
-                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                         />
                       </div>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Rehearsal Venue</label>
+                      <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Rehearsal Venue</label>
                       <select 
                         value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
                         required
-                        className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                        className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                       >
                         <option value="">-- Select Rehearsal Venue --</option>
                         {venues.map(v => (
@@ -732,11 +732,11 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             {formData.type === 'Rehearsal' && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Linked Performance (Parent)</label>
+                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Linked Performance (Parent)</label>
                 <select 
                   value={formData.parentPerformanceId} 
                   onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                 >
                   <option value="">None</option>
                   {performances.filter(p => p.id !== initialData?.id).map(p => (
@@ -747,11 +747,11 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Details / Notes</label>
+              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Details / Notes</label>
               <textarea 
                 value={formData.details} 
                 onChange={(e) => setFormData({ ...formData, details: e.target.value })} 
-                className="min-h-[100px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                className="min-h-[100px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
               />
             </div>
           </>
@@ -766,7 +766,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 type="checkbox"
                 checked={formData.isTicketingEnabled || false}
                 onChange={(e) => setFormData({ ...formData, isTicketingEnabled: e.target.checked })}
-                className="h-4 w-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
+                className="size-4 rounded-sm border-border text-primary focus:ring-primary focus:ring-offset-0"
               />
               <span className="text-sm font-bold text-text">Enable Online Ticket Sales</span>
             </label>
@@ -793,10 +793,10 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
 
             {hasPurchases && !formData.isTicketingEnabled && (
-              <div className="mt-2 rounded-lg border border-warning-border bg-warning-bg p-4 shadow-sm">
-                <strong className="text-sm font-bold text-warning-text">⚠️ Existing Ticket Sales</strong>
-                <p className="m-0 mt-2 text-sm font-medium leading-relaxed text-warning-text/90">
-                  This event already has active ticket sales. Disabling ticket sales hides it from the storefront, but you can still view its Will Call checklist and process refunds in the <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" className="font-bold underline transition-colors hover:text-warning-text/70">Ticketing Dashboard</a> by checking <em>"Include past & inactive performances"</em>.
+              <div className="border-warning-border bg-warning-bg mt-2 rounded-lg border p-4 shadow-sm">
+                <strong className="text-warning-text text-sm font-bold">⚠️ Existing Ticket Sales</strong>
+                <p className="text-warning-text/90 m-0 mt-2 text-sm leading-relaxed font-medium">
+                  This event already has active ticket sales. Disabling ticket sales hides it from the storefront, but you can still view its Will Call checklist and process refunds in the <a href="/admin/tickets" target="_blank" rel="noopener noreferrer" className="hover:text-warning-text/70 font-bold underline transition-colors">Ticketing Dashboard</a> by checking <em>"Include past & inactive performances"</em>.
                 </p>
               </div>
             )}
@@ -805,7 +805,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               <div className="flex flex-col gap-6 pt-2">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Advance Price ($)</label>
+                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Advance Price ($)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -821,11 +821,11 @@ export const EventModal: React.FC<EventModalProps> = ({
                           setFormData(prev => ({ ...prev, advancePriceCents: Math.round(parsed * 100) }));
                         }
                       }}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Day-Of Price ($)</label>
+                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Day-Of Price ($)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -841,7 +841,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                           setFormData(prev => ({ ...prev, dayOfPriceCents: Math.round(parsed * 100) }));
                         }
                       }}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     />
                     {dayOfLiveText && (
                       <div className="mt-1 text-[0.7rem] font-bold tracking-tight text-primary">
@@ -853,29 +853,29 @@ export const EventModal: React.FC<EventModalProps> = ({
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Ticket Capacity</label>
+                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Ticket Capacity</label>
                     <input
                       type="number"
                       placeholder="e.g. 150"
                       value={formData.ticketCapacity === undefined ? '' : formData.ticketCapacity}
                       onChange={(e) => setFormData({ ...formData, ticketCapacity: e.target.value === '' ? undefined : Number(e.target.value) })}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Doors Open Time</label>
+                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Doors Open Time</label>
                     <input
                       type="text"
                       placeholder="e.g. 6:30 PM"
                       value={formData.doorsOpenTime || ''}
                       onChange={(e) => setFormData({ ...formData, doorsOpenTime: e.target.value })}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Event Graphic / Flyer Image</label>
+                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Graphic / Flyer Image</label>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -883,7 +883,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       const file = e.target.files?.[0] || null;
                       setEventGraphicFile(file);
                     }}
-                    className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                    className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                   />
                   {initialData?.eventGraphic && !eventGraphicFile && (
                     <span className="mt-1 text-xs font-medium text-text-muted">Current file: {initialData.eventGraphic}</span>
@@ -912,12 +912,12 @@ export const EventModal: React.FC<EventModalProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold uppercase tracking-wider text-text-muted">Public Details (HTML / Text)</label>
+                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Public Details (HTML / Text)</label>
                   <textarea
                     placeholder="Describe the concert program, parking info, dress code, etc."
                     value={formData.publicDetails || ''}
                     onChange={(e) => setFormData({ ...formData, publicDetails: e.target.value })}
-                    className="min-h-[120px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:outline-hidden focus:ring-1 focus:ring-primary"
+                    className="min-h-[120px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                   />
                 </div>
               </div>

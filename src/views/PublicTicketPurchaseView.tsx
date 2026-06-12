@@ -111,7 +111,7 @@ export default function PublicTicketPurchaseView() {
           </div>
         </div>
 
-        <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex flex-col gap-4 bg-primary-light p-4 md:flex-row">
+        <div className="flex flex-col gap-4 rounded-xl border border-border bg-primary-light p-4 shadow-sm transition-all duration-200 hover:shadow-md md:flex-row">
           {event.eventGraphic && (
             <img
               src={pb.files.getURL(event, event.eventGraphic)}
@@ -130,11 +130,11 @@ export default function PublicTicketPurchaseView() {
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.expand.venue.address || event.expand.venue.name || '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-text transition-colors hover:text-primary-deep inline-flex items-center gap-1"
+                  className="inline-flex items-center gap-1 font-semibold text-text transition-colors hover:text-primary-deep"
                 >
                   📍 {event.expand.venue.name}
                   {event.expand.venue.address && (
-                    <span className="font-normal text-text-muted text-sm"> ({event.expand.venue.address})</span>
+                    <span className="text-sm font-normal text-text-muted"> ({event.expand.venue.address})</span>
                   )}
                 </a>
               </p>
@@ -165,7 +165,7 @@ export default function PublicTicketPurchaseView() {
             <input
               type="text"
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={name}
               onChange={e => setName(e.target.value)}
             />
@@ -177,7 +177,7 @@ export default function PublicTicketPurchaseView() {
               <input
                 type="email"
                 required
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+                className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
@@ -187,7 +187,7 @@ export default function PublicTicketPurchaseView() {
               <input
                 type="email"
                 required
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+                className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={confirmEmail}
                 onChange={e => setConfirmEmail(e.target.value)}
               />
@@ -201,13 +201,13 @@ export default function PublicTicketPurchaseView() {
               min="1"
               max="10"
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={quantity}
               onChange={e => setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))}
             />
           </div>
 
-          <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex w-full flex-col gap-1 bg-neutral-100 p-4">
+          <div className="flex w-full flex-col gap-1 rounded-xl border border-border bg-neutral-100 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
             <h4 className="m-0 text-primary-deep">Pricing Summary</h4>
             <div className="flex flex-row justify-between text-sm">
               <span>{isShowDay ? 'Day-Of' : 'Advance'} Price ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>

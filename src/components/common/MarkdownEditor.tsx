@@ -98,7 +98,7 @@ export function MarkdownEditor({
   }, [value]);
 
   return (
-    <div className={`markdown-editor-wrapper ${className || ''}`}>
+    <div className={className}>
       <textarea ref={textareaRef} className="hidden" />
     </div>
   );

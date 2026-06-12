@@ -177,7 +177,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   return (
     <div
       ref={gridRef}
-      className="grid-print flex flex-col items-center w-full"
+      className="grid-print flex w-full flex-col items-center"
       // @allow-inline-style - dynamic gap, padding, and seat size from layout calculations
       style={{
         gap: rowGap,
@@ -208,7 +208,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}
           variant="outline"
           size="small"
-          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mb-1"
+          className="no-print mb-1 rounded-md border-dashed border-primary bg-primary-light text-[0.8125rem] font-semibold text-primary-deep"
           title="Add a new row with 10 seats at the back"
         >
           ➕ Add Row to Back
@@ -241,7 +241,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         }
 
         return (
-          <div key={rowIndex} className="row-print"
+          <div key={rowIndex}
             // @allow-inline-style - dynamic gap computed from grid width
             style={{
               display: 'flex',
@@ -251,19 +251,19 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               justifyContent: 'center',
               width: '100%'
             }}>
-            <div className="text-text flex flex-col items-end justify-center seating-row-label font-bold text-right pr-4"
+            <div className="seating-row-label flex flex-col items-end justify-center pr-4 text-right font-bold text-text"
               // @allow-inline-style - dynamic width based on compact mode
               style={{ width: `${rowLabelWidth}px` }}
               title={`${occupiedCount} of ${seatCount} seats occupied`}>
-              <span className="leading-tight text-sm md:text-base">
+              <span className="text-sm leading-tight md:text-base">
                 {rowLabel}
                 {(isFront || rowIndex === rowCounts.length - 1) && (
-                  <span className="no-print text-xs font-normal opacity-75 ml-1">
+                  <span className="no-print ml-1 text-xs font-normal opacity-75">
                     {isFront ? '(Front)' : '(Back)'}
                   </span>
                 )}
               </span>
-              <span className="text-xs md:text-sm font-semibold leading-tight opacity-80 mt-0.5">
+              <span className="mt-0.5 text-xs leading-tight font-semibold opacity-80 md:text-sm">
                 {occupiedCount}/{seatCount}
               </span>
             </div>
@@ -271,7 +271,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "🗑️" remove row button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="seating-row-action-btn no-print ml-1.5 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-danger-bg p-0 text-[13px] font-bold text-danger-text shadow-sm transition-all duration-200 hover:bg-opacity-80 active:scale-95"
+                className="seating-row-action-btn no-print hover:bg-danger-bg/80 ml-1.5 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-danger-bg p-0 text-[13px] font-bold text-danger-text shadow-sm transition-all duration-200 active:scale-95"
                 onClick={async () => {
                   const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
                   let shouldRemove = true;
@@ -364,10 +364,10 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               const activeColor = (isAssigned && singerSecColor) ? singerSecColor : secColor;
               const colors = activeColor
                 ? { bg: activeColor, text: getContrastColor(activeColor) }
-                : { bg: 'var(--color-surface)', text: 'var(--color-text-muted)' };
+                : { bg: 'var(--color-surface)', text: 'var(--color-muted)' };
 
               const seatBg = isAssigned ? colors.bg : 'var(--color-surface)';
-              const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--color-text-muted)');
+              const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--color-muted)');
               const borderStyle = isAssigned ? 'solid' : 'dashed';
               const borderColor = isAssigned ? '#000000' : (secColor || 'var(--color-border)');
 
@@ -412,7 +412,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   draggable={!isReadOnly && !!assignedProfile}
                   onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
                   title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${suggestedSeatNumbers[seatIndex]}` : `Empty Space ${seatIndex + 1}`)}
-                  className={`group relative flex size-8 cursor-pointer flex-col items-center justify-center rounded-md bg-primary-light text-xs font-medium text-primary-deep transition-colors hover:bg-primary hover:text-surface ${isMismatch ? 'bg-[linear-gradient(135deg,rgba(0,0,0,0.08)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.08)_50%,rgba(0,0,0,0.08)_75%,transparent_75%,transparent)] bg-[length:10px_10px]' : ''} ${activeDragOver === seatKey ? 'animate-drop-zone-pulse border-dashed border-2' : ''}`}
+                  className={`group relative flex size-8 cursor-pointer flex-col items-center justify-center rounded-md bg-primary-light text-xs font-medium text-primary-deep transition-colors hover:bg-primary hover:text-surface ${isMismatch ? 'bg-[linear-gradient(135deg,rgba(0,0,0,0.08)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.08)_50%,rgba(0,0,0,0.08)_75%,transparent_75%,transparent)] bg-[length:10px_10px]' : ''} ${activeDragOver === seatKey ? 'animate-drop-zone-pulse border-2 border-dashed' : ''}`}
                   // @allow-inline-style - all seat dimensions, colors, borders, transform computed from props and state
                   style={{
                     width: 'var(--seat-size)',
@@ -439,8 +439,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                   }}
                 >
                   {activeDragOver === seatKey && (
-                    <div className="absolute inset-0 z-5 flex items-center justify-center rounded-[inherit] bg-blue-500/18 pointer-events-none">
-                      <span className="animate-bounce-subtle inline-block leading-none"
+                    <div className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center rounded-[inherit] bg-blue-500/18">
+                      <span className="inline-block animate-bounce-subtle leading-none"
                         // @allow-inline-style - dynamic font size based on compact mode
                         style={{ fontSize: isCompact ? '1.125rem' : '1.5rem' }}>
                         {assignedProfile ? '🔄' : '📥'}
@@ -516,7 +516,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                           onUpdateRowCounts(result.rowCounts, result.assignments);
                         }
                       }}
-                      className={`no-print absolute top-[2px] right-[2px] w-4 h-4 rounded-full border-none text-[10px] flex items-center justify-center cursor-pointer z-[12] p-0 leading-none font-bold shadow-[var(--shadow-xs)] ${
+                      className={`no-print absolute top-[2px] right-[2px] z-[12] flex size-4 cursor-pointer items-center justify-center rounded-full border-none p-0 text-[10px] leading-none font-bold shadow-[var(--shadow-xs)] ${
                         assignments[seatKey]
                           ? 'bg-[var(--bg-muted,#e2e8f0)] text-[var(--text-muted,#475569)]'
                           : 'bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]'
@@ -542,7 +542,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       // @allow-inline-style - dynamic gap based on compact mode
                       style={{ gap: isCompact ? '1px' : '3px', alignItems: 'center' }}>
                       <div
-                        className="font-extrabold leading-[1.1]"
+                        className="leading-[1.1] font-extrabold"
                         // @allow-inline-style - dynamic font size and color from computed styles
                         style={{ fontSize: 'var(--seat-name-font-size)', color: colors.text }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
@@ -581,7 +581,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
             {/* "+" add seat button */}
             {!isReadOnly && onUpdateRowCounts && (
               <button
-                className="seating-row-action-btn no-print ml-3 mr-3 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-primary bg-primary-light p-0 text-[15px] font-bold text-primary-deep shadow-sm transition-all duration-200 hover:bg-opacity-80 active:scale-95"
+                className="seating-row-action-btn no-print hover:bg-primary-light/80 mx-3 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-primary bg-primary-light p-0 text-[15px] font-bold text-primary-deep shadow-sm transition-all duration-200 active:scale-95"
                 onClick={() => {
                   const newRowCounts = [...rowCounts];
                   newRowCounts[rowIndex] += 1;
@@ -613,7 +613,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}
           variant="outline"
           size="small"
-          className="no-print rounded-md border-dashed border-primary bg-primary-light text-primary-deep font-semibold text-[0.8125rem] mt-1"
+          className="no-print mt-1 rounded-md border-dashed border-primary bg-primary-light text-[0.8125rem] font-semibold text-primary-deep"
           title="Add a new row with 10 seats at the front"
         >
           ➕ Add Row to Front

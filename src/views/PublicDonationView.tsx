@@ -151,7 +151,7 @@ export default function PublicDonationView() {
                 step="0.01"
                 required
                 placeholder="0.00"
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3"
+                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={customAmount}
                 onChange={e => setCustomAmount(e.target.value)}
               />
@@ -164,7 +164,7 @@ export default function PublicDonationView() {
               type="text"
               required
               placeholder="Full Name"
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3"
+              className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={name}
               onChange={e => setName(e.target.value)}
             />
@@ -177,7 +177,7 @@ export default function PublicDonationView() {
                 type="email"
                 required
                 placeholder="email@example.com"
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3"
+                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
@@ -188,7 +188,7 @@ export default function PublicDonationView() {
                 type="email"
                 required
                 placeholder="Confirm Email"
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 px-3"
+                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={confirmEmail}
                 onChange={e => setConfirmEmail(e.target.value)}
               />
@@ -199,7 +199,7 @@ export default function PublicDonationView() {
             <label className="text-label">Tribute Information (Optional)</label>
             <div className="flex flex-col gap-4 md:flex-row">
               <select 
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 flex-1 px-3"
+                className="h-11 flex-1 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={tributeType}
                 onChange={e => setTributeType(e.target.value as 'none' | 'memory' | 'honor')}
               >
@@ -212,7 +212,7 @@ export default function PublicDonationView() {
                   type="text"
                   required
                   placeholder="Honoree Name"
-                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 flex-[2] px-3"
+                  className="h-11 flex-[2] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                   value={tributeName}
                   onChange={e => setTributeName(e.target.value)}
                 />
@@ -235,7 +235,7 @@ export default function PublicDonationView() {
             </label>
           </div>
 
-          <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex w-full flex-col gap-1 bg-neutral-100 p-4">
+          <div className="flex w-full flex-col gap-1 rounded-xl border border-border bg-neutral-100 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
             <div className="m-0 mt-0 flex flex-row justify-between border-t-0 border-none p-0 pt-0 font-bold">
               <span>Total Donation</span>
               <span>${effectiveAmount.toFixed(2)}</span>

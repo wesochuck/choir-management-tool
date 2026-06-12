@@ -69,13 +69,13 @@ export function RosterSettingsTab({
   setFilter,
 }: RosterSettingsTabProps) {
   return (
-    <div className="flex flex-col gap-6 max-w-4xl">
+    <div className="flex max-w-4xl flex-col gap-6">
       {configMessage && (
         <div 
-          className={`inline-flex items-center rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition-all duration-300 self-start ${
+          className={`inline-flex items-center self-start rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition-all duration-300 ${
             configMessage.startsWith('Error') 
-              ? 'bg-red-50 text-red-800 border border-red-200' 
-              : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              ? 'border border-red-200 bg-red-50 text-red-800' 
+              : 'border border-emerald-200 bg-emerald-50 text-emerald-800'
           }`}
         >
           {configMessage}

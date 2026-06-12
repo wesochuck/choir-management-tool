@@ -173,12 +173,12 @@ export default function ReportsView() {
       {tab === 'attendance' && (
         <div className="flex-col gap-8">
           {/* Selection Header */}
-          <div className="no-print bg-surface border border-border rounded-xl shadow-sm p-6">
+          <div className="no-print rounded-xl border border-border bg-surface p-6 shadow-sm">
             <div className="flex flex-col justify-between md:flex-row">
               <div className="flex-col gap-1">
                 <label className="text-label text-muted">Select Concert / Performance</label>
                 <select 
-                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-[300px] px-3"
+                  className="h-10 w-[300px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                   value={selectedPerformanceId}
                   onChange={(e) => setSelectedPerformanceId(e.target.value)}
                 >
@@ -216,19 +216,19 @@ export default function ReportsView() {
             <>
               {/* KPI Cards */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6">
-                <div className="bg-surface border border-border rounded-xl shadow-sm p-6 text-center">
+                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Rehearsals</div>
                   <div className="text-display text-primary">{summary.totalRehearsals}</div>
                 </div>
-                <div className="bg-surface border border-border rounded-xl shadow-sm p-6 text-center">
+                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Avg Attendance</div>
                   <div className="text-display text-primary">{summary.avgAttendanceRate.toFixed(1)}%</div>
                 </div>
-                <div className="bg-surface border border-border rounded-xl shadow-sm p-6 text-center">
+                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Total Singers</div>
                   <div className="text-display text-primary">{summary.singerReports.length}</div>
                 </div>
-                <div className="bg-surface border border-border rounded-xl shadow-sm p-6 text-center">
+                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">2+ Absences</div>
                   <div className="text-display text-danger-text">
                     {summary.singerReports.filter(r => r.absences >= 2).length}
@@ -237,7 +237,7 @@ export default function ReportsView() {
               </div>
 
               {/* Detailed Table */}
-              <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden p-0">
+              <div className="overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-sm">
                 <div className="no-print border-b border-border p-6">
                   <h3>Singer Attendance Detail</h3>
                   <p className="text-muted">Singers with 2 or more absences are highlighted in red.</p>
@@ -284,7 +284,7 @@ export default function ReportsView() {
           )}
 
           {!selectedPerformanceId && !isAttendanceLoading && (
-            <div className="bg-surface border border-border rounded-xl shadow-sm p-8 text-center flex flex-col items-center justify-center gap-2">
+            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
               <div className="mb-4 text-5xl">📊</div>
               <h3>No Performance Selected</h3>
               <p className="text-muted">Choose a performance from the dropdown above to analyze attendance data for its associated rehearsals.</p>
@@ -315,11 +315,11 @@ export default function ReportsView() {
                     <div className="text-muted">Loading repertoire data...</div>
                  </div>
             ) : repertoireStats.length === 0 ? (
-                <div className="bg-surface border border-border rounded-xl shadow-sm p-8 text-center flex flex-col items-center justify-center gap-2">
+                <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
                     <p className="text-muted">No pieces in the music library.</p>
                 </div>
             ) : (
-                <div className="bg-surface border border-border rounded-xl shadow-sm overflow-hidden p-0">
+                <div className="overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-sm">
                     <div className="overflow-x-auto">
                         <table className="table w-full border-collapse">
                             <thead>

@@ -129,7 +129,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                 onChange={(e) => setPromptValue(e.target.value)}
                 placeholder={activeDialog.options.placeholder}
                 maxLength={activeDialog.options.maxLength}
-                className="w-full min-h-[80px] p-[10px] rounded-sm border border-border font-[inherit] text-[0.9rem] resize-y box-border"
+                className="box-border min-h-[80px] w-full resize-y rounded-sm border border-border p-[10px] font-[inherit] text-[0.9rem]"
               />
               {activeDialog.options.maxLength && (
                 <div className="text-right text-[0.7rem] text-text-muted">

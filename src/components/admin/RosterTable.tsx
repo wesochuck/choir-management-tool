@@ -62,13 +62,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({
           <thead className="bg-slate-50/70">
             <tr>
               <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Name</th>
-              <th className="hidden sm:table-cell px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Login</th>
+              <th className="hidden px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase sm:table-cell">Login</th>
               <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Voice</th>
               <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Status</th>
               {currentSeason && (
                 <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Dues Paid</th>
               )}
-              <th className="hidden md:table-cell px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Phone</th>
+              <th className="hidden px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase md:table-cell">Phone</th>
               <th className="px-6 py-3.5 text-right text-xs font-semibold tracking-wider text-slate-500 uppercase">Actions</th>
             </tr>
           </thead>
@@ -81,7 +81,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
               return (
                 <tr 
                   key={p.id} 
-                  className="transition-colors hover:bg-slate-50/50 cursor-pointer" 
+                  className="cursor-pointer transition-colors hover:bg-slate-50/50" 
                   onClick={() => onEdit(p)}
                 >
                   <td className="px-6 py-4 text-sm font-medium text-text">
@@ -94,7 +94,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                             setActivePhoto({ url: photoUrl, name: p.name, voicePart: p.voicePart });
                           }
                         }}
-                        className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 transition-all duration-200 select-none ${
+                        className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 transition-all duration-200 select-none ${
                           photoUrl ? 'cursor-zoom-in hover:scale-105 hover:border-primary/50' : 'cursor-default'
                         }`}
                       >
@@ -102,7 +102,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                           <img
                             src={photoUrl}
                             alt={p.name}
-                            className="size-full object-cover rounded-full"
+                            className="size-full rounded-full object-cover"
                           />
                         ) : (
                           <span className="text-sm font-semibold text-slate-500 uppercase">
@@ -114,14 +114,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       <div className="flex flex-col items-start">
                         <span className="font-semibold text-slate-900">{p.name}</span>
                         {p.expand?.user?.role === 'admin' && (
-                          <span className="mt-1 inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[0.65rem] font-bold tracking-wider text-emerald-800 border border-emerald-200 uppercase">
+                          <span className="mt-1 inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[0.65rem] font-bold tracking-wider text-emerald-800 uppercase">
                             Admin
                           </span>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="hidden sm:table-cell px-6 py-4 text-sm text-slate-500">
+                  <td className="hidden px-6 py-4 text-sm text-slate-500 sm:table-cell">
                     {p.expand?.user?.email || <span className="text-slate-300 italic">No login</span>}
                   </td>
                   <td className="px-6 py-4 text-sm">
@@ -150,7 +150,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       />
                     </td>
                   )}
-                  <td className="hidden md:table-cell px-6 py-4 text-sm text-slate-500">
+                  <td className="hidden px-6 py-4 text-sm text-slate-500 md:table-cell">
                     {p.phone || <span className="text-slate-300">—</span>}
                   </td>
                   <td className="px-6 py-4 text-right text-sm" onClick={(e) => e.stopPropagation()}>
@@ -168,7 +168,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             {profiles.length === 0 && (
               <tr>
                 <td colSpan={currentSeason ? 7 : 6} className="px-6 py-8 text-center">
-                  <p className="text-slate-400 text-sm">No singers found.</p>
+                  <p className="text-sm text-slate-400">No singers found.</p>
                 </td>
               </tr>
             )}
@@ -177,7 +177,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
       </div>
       {totalCount > 0 && (
         <div className="no-print mt-1 flex flex-col items-center justify-between rounded-b-xl border-t border-border bg-surface px-6 py-4 md:flex-row">
-          <span className="text-text-muted text-sm font-medium">
+          <span className="text-sm font-medium text-text-muted">
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
           </span>
 
@@ -192,16 +192,16 @@ export const RosterTable: React.FC<RosterTableProps> = ({
       {/* Lightbox Preview Modal */}
       {activePhoto && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-opacity duration-300 animate-modal-fade-in"
+          className="fixed inset-0 z-[100] flex animate-modal-fade-in items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-opacity duration-300"
           onClick={() => setActivePhoto(null)}
         >
           <div 
-            className="relative max-w-sm w-full bg-white rounded-2xl shadow-2xl p-6 flex flex-col items-center gap-4 transition-all transform animate-modal-slide-up border border-slate-100"
+            className="relative flex w-full max-w-sm transform animate-modal-slide-up flex-col items-center gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setActivePhoto(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1 rounded-full hover:bg-slate-100"
+              className="absolute top-4 right-4 cursor-pointer rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
               aria-label="Close preview"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -210,7 +210,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
               </svg>
             </button>
 
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-slate-100 shadow-md">
+            <div className="size-48 overflow-hidden rounded-full border-4 border-slate-100 shadow-md">
               <img
                 src={activePhoto.url}
                 alt={activePhoto.name}

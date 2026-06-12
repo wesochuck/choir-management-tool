@@ -325,7 +325,7 @@ export default function AttendanceView() {
         actions={
           <div className="flex flex-row items-center gap-3">
             <div className="flex flex-col gap-0.5">
-              <span className="text-text-muted text-[0.65rem] font-bold tracking-wider uppercase">
+              <span className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                 Select Event
               </span>
               <select
@@ -334,7 +334,7 @@ export default function AttendanceView() {
                   setSelectedEventId(e.target.value);
                   handleResetFilters(); // Reset filters when changing active event
                 }}
-                className="border-border bg-surface focus:border-primary focus:ring-primary h-10 w-full min-w-[240px] rounded-md border px-3 text-sm text-slate-800 shadow-sm transition-colors focus:ring-1 focus:outline-hidden md:w-80"
+                className="h-10 w-full min-w-[240px] rounded-md border border-border bg-surface px-3 text-sm text-slate-800 shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden md:w-80"
               >
                 <option value="">-- Choose an Event --</option>
                 {sortedEvents.map((e) => (
@@ -353,9 +353,9 @@ export default function AttendanceView() {
         }
       >
         {!selectedEventId ? (
-          <div className="border-border bg-surface/20 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-24 text-center shadow-xs">
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface/20 p-24 text-center shadow-xs">
             <span className="text-5xl opacity-40">📅</span>
-            <p className="text-text-muted mt-6 text-lg font-semibold">
+            <p className="mt-6 text-lg font-semibold text-text-muted">
               Please select an event above to start check-in.
             </p>
           </div>
@@ -363,17 +363,17 @@ export default function AttendanceView() {
           <div className="flex flex-col gap-6">
             {/* Event Summary Details Block */}
             {selectedEvent && (
-              <div className="border-primary/20 bg-primary-light/30 flex flex-col gap-3 rounded-xl border p-5 shadow-xs transition-all duration-200">
+              <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary-light/30 p-5 shadow-xs transition-all duration-200">
                 <div
                   className="flex w-full cursor-pointer flex-row items-center justify-between"
                   onClick={() => selectedEvent.details && setIsEventExpanded(!isEventExpanded)}
                 >
                   <div className="flex flex-col gap-1">
-                    <span className="text-text-muted text-[0.65rem] font-bold tracking-wider uppercase">
+                    <span className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                       Active Event
                     </span>
                     <div className="flex flex-row items-center gap-2.5">
-                      <h2 className="text-primary-deep m-0 text-xl font-extrabold tracking-tight">
+                      <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">
                         {selectedEvent.title ||
                           selectedEvent.expand?.venue?.name ||
                           'Untitled Event'}
@@ -389,7 +389,7 @@ export default function AttendanceView() {
                   {selectedEvent.details && (
                     <button
                       type="button"
-                      className="border-border/40 text-primary-deep flex cursor-pointer items-center gap-1.5 rounded-lg border bg-white/50 px-3 py-1.5 text-xs font-bold transition-all hover:bg-white hover:shadow-xs active:scale-95"
+                      className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border/40 bg-white/50 px-3 py-1.5 text-xs font-bold text-primary-deep transition-all hover:bg-white hover:shadow-xs active:scale-95"
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsEventExpanded(!isEventExpanded);
@@ -401,16 +401,16 @@ export default function AttendanceView() {
                   )}
                 </div>
 
-                <div className="border-primary/10 flex flex-row flex-wrap items-center gap-x-6 gap-y-2 border-t pt-3">
+                <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2 border-t border-primary/10 pt-3">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary hover:text-primary-deep flex items-center gap-1.5 text-sm font-bold transition-colors hover:underline"
+                    className="flex items-center gap-1.5 text-sm font-bold text-primary transition-colors hover:text-primary-deep hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <svg
-                      className="text-primary size-4"
+                      className="size-4 text-primary"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -424,7 +424,7 @@ export default function AttendanceView() {
                     </svg>
                     {selectedEvent.expand?.venue?.name || 'Unknown Venue'}
                   </a>
-                  <span className="text-text-muted flex items-center gap-1.5 text-sm font-medium">
+                  <span className="flex items-center gap-1.5 text-sm font-medium text-text-muted">
                     <svg
                       className="size-4 text-slate-400"
                       viewBox="0 0 24 24"
@@ -451,8 +451,8 @@ export default function AttendanceView() {
                 </div>
 
                 {isEventExpanded && selectedEvent.details && (
-                  <div className="border-primary/10 text-text-muted mt-3 border-t pt-3 text-sm">
-                    <span className="text-text-muted mb-1.5 block text-[0.65rem] font-bold tracking-wider uppercase">
+                  <div className="mt-3 border-t border-primary/10 pt-3 text-sm text-text-muted">
+                    <span className="mb-1.5 block text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
                       Details / Notes
                     </span>
                     <p className="m-0 leading-relaxed whitespace-pre-wrap text-slate-600">
@@ -579,7 +579,7 @@ export default function AttendanceView() {
                       placeholder="Search active singers..."
                       value={filterName}
                       onChange={(e) => setFilterName(e.target.value)}
-                      className="bg-surface focus:border-primary focus:ring-primary h-11 w-full rounded-lg border border-gray-200 px-[42px] pl-[38px] text-gray-800 focus:ring-1 focus:outline-hidden"
+                      className="h-11 w-full rounded-lg border border-gray-200 bg-surface px-[42px] pl-[38px] text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     />
                     {filterName && (
                       <button
@@ -612,7 +612,7 @@ export default function AttendanceView() {
                     onChange={(e) =>
                       handleSortChange(e.target.value as 'lastName' | 'voicePart' | 'section')
                     }
-                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[210px] rounded-lg border border-gray-200 px-3 pr-9 text-sm text-gray-800 focus:ring-1 focus:outline-hidden"
+                    className="h-11 w-[210px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-sm text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     aria-label="Sort singers"
                   >
                     <option value="lastName">Last Name</option>
@@ -626,7 +626,7 @@ export default function AttendanceView() {
                     onChange={(e) =>
                       handleRsvpFilterChange(e.target.value as 'Yes' | 'Pending' | 'Both')
                     }
-                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[240px] rounded-lg border border-gray-200 px-3 pr-9 text-sm text-gray-800 focus:ring-1 focus:outline-hidden"
+                    className="h-11 w-[240px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-sm text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     aria-label="RSVP Status Filter"
                   >
                     <option value="Both">Both (Attending + Pending)</option>
@@ -641,7 +641,7 @@ export default function AttendanceView() {
                       const val = e.target.value;
                       setSelectedVoiceParts(val ? [val] : []);
                     }}
-                    className="bg-surface focus:border-primary focus:ring-primary h-11 w-[230px] rounded-lg border border-gray-200 px-3 pr-9 text-sm text-gray-800 focus:ring-1 focus:outline-hidden"
+                    className="h-11 w-[230px] rounded-lg border border-gray-200 bg-surface px-3 pr-9 text-sm text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
                     aria-label="Filter by Voice Part"
                   >
                     <option value="">All Voice Parts / Sections</option>
@@ -701,7 +701,7 @@ export default function AttendanceView() {
                   {/* Refresh Button */}
                   <button
                     onClick={() => refresh()}
-                    className="border-border bg-surface flex size-9 cursor-pointer items-center justify-center rounded-lg border text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95"
+                    className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95"
                     title="Refresh Roster"
                     aria-label="Refresh roster"
                   >
@@ -808,23 +808,23 @@ export default function AttendanceView() {
 
             {/* Attendance List */}
             {isLoading ? (
-              <div className="border-border bg-surface rounded-lg border p-12 text-center shadow-xs">
-                <p className="text-text-muted m-0 font-medium">Loading attendance data...</p>
+              <div className="rounded-lg border border-border bg-surface p-12 text-center shadow-xs">
+                <p className="m-0 font-medium text-text-muted">Loading attendance data...</p>
               </div>
             ) : error ? (
-              <div className="border-danger-text/30 bg-danger-bg rounded-lg border p-8 text-center shadow-xs">
-                <p className="text-danger-text m-0 font-bold">{error}</p>
+              <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-8 text-center shadow-xs">
+                <p className="m-0 font-bold text-danger-text">{error}</p>
               </div>
             ) : filteredCheckInItems.length === 0 && declinedSingers.length === 0 ? (
-              <div className="border-border bg-surface/30 flex flex-col items-center rounded-lg border-2 border-dashed p-12 text-center shadow-xs">
+              <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-border bg-surface/30 p-12 text-center shadow-xs">
                 <span className="text-4xl">🔍</span>
-                <h3 className="text-text mt-4 mb-2 text-xl font-extrabold">No Matching Singers</h3>
-                <p className="text-text-muted mt-0 mb-6 max-w-sm text-sm font-medium">
+                <h3 className="mt-4 mb-2 text-xl font-extrabold text-text">No Matching Singers</h3>
+                <p className="mt-0 mb-6 max-w-sm text-sm font-medium text-text-muted">
                   Try adjusting your search terms, voice parts, or attendance filters.
                 </p>
                 <button
                   onClick={handleResetFilters}
-                  className="bg-primary hover:bg-primary-deep cursor-pointer rounded-md px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all active:scale-95"
+                  className="cursor-pointer rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95"
                 >
                   Reset All Filters
                 </button>
@@ -843,8 +843,8 @@ export default function AttendanceView() {
                       maxRehearsalMisses={maxRehearsalMisses}
                     />
                   ) : (
-                    <div className="border-border bg-surface/30 rounded-lg border border-dashed p-6 text-center shadow-xs">
-                      <p className="text-text-muted m-0 text-sm font-medium">
+                    <div className="rounded-lg border border-dashed border-border bg-surface/30 p-6 text-center shadow-xs">
+                      <p className="m-0 text-sm font-medium text-text-muted">
                         No singers match your RSVP or attendance filters.
                       </p>
                     </div>

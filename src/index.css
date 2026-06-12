@@ -11,12 +11,18 @@
   --color-bg: #fcfcfc;
   --color-surface: #fff;
   --color-text: #2c3e50;
+  --color-muted: var(--color-slate-500);
   --color-text-muted: var(--color-slate-500);
   --color-border: var(--color-slate-200);
   --color-danger-bg: var(--color-red-100);
   --color-danger-text: var(--color-red-800);
+  --color-danger: var(--color-red-600);
   --color-success-bg: var(--color-green-100);
   --color-success-text: var(--color-green-800);
+  --color-warning-bg: var(--color-amber-100);
+  --color-warning-text: var(--color-amber-800);
+  --color-warning-border: var(--color-amber-200);
+  --color-surface-muted: var(--color-slate-50);
 
   /* Section Representation Colors */
   --color-section-red: #EF4444;
@@ -54,8 +60,10 @@
   --animate-drop-zone-pulse: drop-zone-pulse 1.2s infinite;
   --animate-bounce-subtle: bounce-subtle 1s infinite alternate;
   --animate-modal-fade-in: modal-fade-in 0.2s ease-out forwards;
+  --animate-fade-in: modal-fade-in 0.2s ease-out forwards;
   --animate-modal-slide-up: modal-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-save-bar-slide-up: save-bar-slide-up 0.3s ease forwards;
+  --animate-pulse-once: pulse-once 0.6s ease-out 1;
 
   --default-font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
@@ -95,6 +103,12 @@
 @keyframes modal-slide-up {
   from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse-once {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
 }
 
 @keyframes save-bar-slide-up {

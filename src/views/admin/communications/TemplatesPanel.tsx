@@ -53,7 +53,7 @@ export function TemplatesPanel({
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Template Title</label>
                   <input
-                    className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
+                    className="h-10 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                     value={editingTemplate.title || ''}
                     onChange={(e) =>
                       setEditingTemplate({ ...editingTemplate, title: e.target.value })
@@ -65,7 +65,7 @@ export function TemplatesPanel({
                 <div className="flex flex-[0_0_150px] flex-col gap-1">
                   <label className="text-label">Channel</label>
                   <select
-                    className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
+                    className="h-10 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                     value={editingTemplate.type || 'Email'}
                     onChange={(e) =>
                       setEditingTemplate({
@@ -85,7 +85,7 @@ export function TemplatesPanel({
               <div className="flex flex-col gap-1">
                 <label className="text-label">Subject</label>
                 <input
-                  className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full px-3"
+                  className="h-10 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                   value={editingTemplate.subject || ''}
                   onChange={(e) =>
                     setEditingTemplate({ ...editingTemplate, subject: e.target.value })
@@ -160,7 +160,7 @@ export function TemplatesPanel({
                   className={`flex-1 overflow-y-auto text-sm leading-relaxed break-words text-slate-600 ${previewDevice === 'mobile' ? 'p-4' : 'p-6'}`}
                 >
                   <div
-                    className="text-body message-preview-content"
+                    className="text-body leading-relaxed"
                     // @allow-dangerouslySetInnerHTML - previewHtml is pre-escaped by renderMarkdown/resolvePreviewContent (use with caution)
                     dangerouslySetInnerHTML={{
                       __html:

@@ -46,7 +46,7 @@ export function MusicLibraryTitleCell({
               onClick={onToggleExpansion}
               aria-label={`${isExpanded ? 'Collapse' : 'Expand'} movements for ${piece.title}`}
               title={`${isExpanded ? 'Collapse' : 'Expand'} movements`}
-              className="inline-flex cursor-pointer items-center border-none bg-none p-0 px-[4px] text-[12px] text-muted select-none"
+              className="text-muted inline-flex cursor-pointer items-center border-none bg-none p-0 px-[4px] text-[12px] select-none"
             >
               {isExpanded ? '▼' : '▶'}
             </button>

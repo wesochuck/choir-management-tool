@@ -183,13 +183,13 @@ export default function PatronsView() {
   };
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
           Patrons Dashboard
         </h1>
-        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
           View lifetime value and message your donors and ticket buyers
         </p>
       </div>
@@ -197,18 +197,18 @@ export default function PatronsView() {
       {/* Stats Analytics Dashboard */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         {/* Patrons Count Card */}
-        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-          <div className="absolute top-0 left-0 h-1.5 w-full bg-slate-400 group-hover:bg-slate-500 transition-colors" />
+        <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+          <div className="absolute top-0 left-0 h-1.5 w-full bg-slate-400 transition-colors group-hover:bg-slate-500" />
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
                 Patrons Count
               </p>
-              <p className="mt-2 text-3xl font-black text-slate-900 tracking-tight">
+              <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">
                 {filteredStats.count}
               </p>
             </div>
-            <div className="rounded-xl bg-slate-50 p-3 text-slate-500 group-hover:bg-slate-100 transition-colors">
+            <div className="rounded-xl bg-slate-50 p-3 text-slate-500 transition-colors group-hover:bg-slate-100">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
@@ -220,18 +220,18 @@ export default function PatronsView() {
         </div>
 
         {/* Total LTV Card */}
-        <div className="group relative overflow-hidden rounded-2xl border border-pink-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-          <div className="absolute top-0 left-0 h-1.5 w-full bg-pink-500 group-hover:bg-pink-600 transition-colors" />
+        <div className="group relative overflow-hidden rounded-2xl border border-pink-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+          <div className="absolute top-0 left-0 h-1.5 w-full bg-pink-500 transition-colors group-hover:bg-pink-600" />
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-pink-500">
+              <p className="text-xs font-bold tracking-wider text-pink-500 uppercase">
                 Total Lifetime Value
               </p>
-              <p className="mt-2 text-3xl font-black text-pink-600 tracking-tight">
+              <p className="mt-2 text-3xl font-black tracking-tight text-pink-600">
                 ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="rounded-xl bg-pink-50 p-3 text-pink-500 group-hover:bg-pink-100/80 transition-colors">
+            <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="1" x2="12" y2="23" />
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -247,7 +247,7 @@ export default function PatronsView() {
         </div>
         <div className="flex flex-col gap-4 p-6">
           {/* Filter deck */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
             <div className="md:col-span-1">
               <FormField label="Search">
                 <div className="relative">
@@ -262,13 +262,13 @@ export default function PatronsView() {
                     placeholder="Search patron name or email..." 
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="block w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="block w-full rounded-lg border border-slate-200 bg-white py-2 pr-3.5 pl-9 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                   />
                 </div>
               </FormField>
             </div>
-            <div className="md:col-span-2 flex flex-row gap-4">
-              <div className="flex-1 min-w-0">
+            <div className="flex flex-row gap-4 md:col-span-2">
+              <div className="min-w-0 flex-1">
                 <FormField label="From Date">
                   <input 
                     type="date" 
@@ -278,7 +278,7 @@ export default function PatronsView() {
                   />
                 </FormField>
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <FormField label="To Date">
                   <input 
                     type="date" 
@@ -307,7 +307,7 @@ export default function PatronsView() {
                 <Button 
                   variant="outline" 
                   onClick={handleClearFilters}
-                  className="h-10 px-3 flex items-center justify-center font-semibold"
+                  className="flex h-10 items-center justify-center px-3 font-semibold"
                   title="Reset filters"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -319,10 +319,10 @@ export default function PatronsView() {
             </div>
           </div>
 
-          <div className="w-full flex flex-row items-center justify-between border-b border-slate-200 pb-px">
+          <div className="flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
             <div className="flex items-center gap-2">
               {selectedIds.size > 0 && (
-                <span className="text-sm text-slate-500 font-medium">
+                <span className="text-sm font-medium text-slate-500">
                   {selectedIds.size} patron{selectedIds.size !== 1 ? 's' : ''} selected
                 </span>
               )}
@@ -330,7 +330,7 @@ export default function PatronsView() {
             <div className="flex items-center gap-2 pb-1.5">
               <Button
                 variant="primary"
-                className="px-3 md:px-6 font-semibold shadow-sm"
+                className="px-3 font-semibold shadow-sm md:px-6"
                 onClick={handleSendMessage}
                 disabled={selectedIds.size === 0}
                 title="Send Message"
@@ -348,7 +348,7 @@ export default function PatronsView() {
           </div>
 
           {/* Responsive Register View - Desktop Table */}
-          <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+          <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
             <table className="min-w-full divide-y divide-slate-100 text-left">
               <thead className="bg-slate-50/75">
                 <tr>
@@ -371,7 +371,7 @@ export default function PatronsView() {
               <tbody className="divide-y divide-slate-100 bg-white">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-400 font-medium">
+                    <td colSpan={7} className="px-6 py-12 text-center text-sm font-medium text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                         Loading patrons...
@@ -417,7 +417,7 @@ export default function PatronsView() {
                       <td className="px-6 py-4 text-sm font-semibold text-slate-800">
                         {p.profile.name}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 font-medium">
+                      <td className="px-6 py-4 text-sm font-medium text-slate-500">
                         {p.profile.expand?.user?.email || 'No email'}
                       </td>
                       <td className="px-6 py-4 text-sm">
@@ -425,13 +425,13 @@ export default function PatronsView() {
                           {p.isSinger ? 'Singer' : 'Patron'}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-right text-sm font-extrabold text-emerald-700 whitespace-nowrap">
+                      <td className="px-6 py-4 text-right text-sm font-extrabold whitespace-nowrap text-emerald-700">
                         ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 font-medium whitespace-nowrap">
+                      <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
                         {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
-                      <td className="px-6 py-4 text-right text-sm text-slate-500 font-medium">
+                      <td className="px-6 py-4 text-right text-sm font-medium text-slate-500">
                         {p.transactionCount}
                       </td>
                     </tr>
@@ -442,10 +442,10 @@ export default function PatronsView() {
           </div>
 
           {/* Responsive Register View - Mobile Card List */}
-          <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
             <div className="divide-y divide-slate-100">
               {loading ? (
-                <div className="p-6 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
                   <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                   Loading patrons...
                 </div>
@@ -472,7 +472,7 @@ export default function PatronsView() {
                 filteredPatrons.map(p => (
                   <div 
                     key={p.profile.id} 
-                    className="p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40 cursor-pointer"
+                    className="flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40"
                     onClick={() => handleOpenProfile(p.profile)}
                   >
                     {/* Row 1: Checkbox & Type Badge */}
@@ -484,7 +484,7 @@ export default function PatronsView() {
                           checked={selectedIds.has(p.profile.id)}
                           onChange={() => toggleSelect(p.profile.id)}
                         />
-                        <span className="text-xs text-slate-400 font-medium">
+                        <span className="text-xs font-medium text-slate-400">
                           Last: {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                       </div>
@@ -497,15 +497,15 @@ export default function PatronsView() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex flex-col gap-0.5">
                         <span className="text-sm font-bold text-slate-800">{p.profile.name}</span>
-                        <span className="text-xs text-slate-500 font-medium break-all">
+                        <span className="text-xs font-medium break-all text-slate-500">
                           {p.profile.expand?.user?.email || 'No email'}
                         </span>
                       </div>
-                      <div className="flex flex-col items-end gap-0.5 shrink-0">
+                      <div className="flex shrink-0 flex-col items-end gap-0.5">
                         <span className="text-base font-extrabold text-emerald-700">
                           ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-medium">
+                        <span className="text-[10px] font-medium text-slate-400">
                           {p.transactionCount} order{p.transactionCount !== 1 ? 's' : ''}
                         </span>
                       </div>

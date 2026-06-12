@@ -270,7 +270,7 @@ export default function SeatingView() {
 
   return (
     <div 
-      className={`flex w-full flex-col gap-4 bg-transparent px-0 py-2 print-landscape ${isWideLayout ? '!bg-bg !p-4 w-full max-w-none !mx-0' : ''}`} 
+      className={`flex w-full flex-col gap-4 bg-transparent px-0 py-2 print-landscape ${isWideLayout ? '!mx-0 w-full max-w-none !bg-bg !p-4' : ''}`} 
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
@@ -316,7 +316,7 @@ export default function SeatingView() {
       {activeTab === 'chart' && (
         <div className="no-print grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 md:grid-cols-2 xl:grid-cols-[0.8fr_1fr_1fr_1.6fr]">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Performance</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Performance</label>
             <select
               value={performanceId}
               onChange={(e) => setPerformanceId(e.target.value)}
@@ -330,7 +330,7 @@ export default function SeatingView() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Venue</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Venue</label>
             <div className="flex items-center gap-2">
               <select
                 value={venueId}
@@ -368,7 +368,7 @@ export default function SeatingView() {
                       }
                     }
                   }}
-                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-primary bg-primary-light px-3 text-xs font-bold text-primary-deep shadow-sm transition-colors hover:bg-primary/10"
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary bg-primary-light px-3 text-xs font-bold whitespace-nowrap text-primary-deep shadow-sm transition-colors hover:bg-primary/10"
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
@@ -378,7 +378,7 @@ export default function SeatingView() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Formation</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Formation</label>
             <select
               value={chart?.formationId || seatingSettings.defaultFormationId}
               onChange={async (e) => {
@@ -405,7 +405,7 @@ export default function SeatingView() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-1">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Chart</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Chart</label>
             <div className="flex min-w-0 items-center gap-1">
               <select
                 aria-label="Select seating chart"
@@ -425,7 +425,7 @@ export default function SeatingView() {
                 type="button"
                 onClick={() => moveActiveChart(-1)}
                 disabled={!canMoveChartEarlier}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
                 title="Move chart earlier in concert order"
               >
                 ↑
@@ -434,7 +434,7 @@ export default function SeatingView() {
                 type="button"
                 onClick={() => moveActiveChart(1)}
                 disabled={!canMoveChartLater}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
                 title="Move chart later in concert order"
               >
                 ↓
@@ -442,7 +442,7 @@ export default function SeatingView() {
               <button
                 type="button"
                 onClick={() => setIsNewChartModalOpen(true)}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-primary bg-primary-light text-lg font-extrabold text-primary shadow-sm transition-colors hover:bg-primary/10"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-primary bg-primary-light text-lg font-extrabold text-primary shadow-sm transition-colors hover:bg-primary/10"
                 title="Create new seating chart"
               >
                 +
@@ -456,7 +456,7 @@ export default function SeatingView() {
                   setIsRenameChartModalOpen(true);
                 }}
                 disabled={!activeChart}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
                 title="Rename chart"
               >
                 ✎
@@ -477,7 +477,7 @@ export default function SeatingView() {
                     }
                   }}
                   disabled={!activeChart}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-[var(--color-danger-text)] shadow-sm transition-colors enabled:hover:border-[var(--color-danger-text)] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-[var(--color-danger-text)] shadow-sm transition-colors enabled:hover:border-[var(--color-danger-text)] disabled:cursor-not-allowed disabled:opacity-40"
                   title="Delete chart"
                 >
                   ×
@@ -496,10 +496,10 @@ export default function SeatingView() {
           <AppCard className="w-full min-w-0 flex-1 flex-col p-4">
             <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-primary-light p-1.5 px-3 shadow-sm">
                <div className="flex flex-row gap-1">
-                  <button onClick={handleClear} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 text-xs font-label text-muted">
+                  <button onClick={handleClear} className="font-medium tracking-wide text-muted inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs whitespace-nowrap">
                     🧹 Clear
                   </button>
-                  <button onClick={handleReset} className="inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-[var(--color-danger-bg)] px-2.5 text-xs font-label text-[var(--color-danger-text)]">
+                  <button onClick={handleReset} className="font-medium tracking-wide inline-flex h-8 items-center justify-center gap-2 rounded-md bg-[var(--color-danger-bg)] px-2.5 text-xs whitespace-nowrap text-[var(--color-danger-text)]">
                     💥 Reset
                   </button>
                </div>
@@ -507,13 +507,13 @@ export default function SeatingView() {
                <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-border bg-surface p-0.5">
                 <button 
                   onClick={() => setPrintMode('visual')}
-                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'visual' ? 'bg-primary text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
+                  className={`font-medium tracking-wide inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs ${printMode === 'visual' ? 'bg-primary text-[var(--bg,white)]' : 'text-muted bg-transparent'}`}
                 >
                   Grid
                 </button>
                 <button 
                   onClick={() => setPrintMode('text')}
-                  className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-label ${printMode === 'text' ? 'bg-primary text-[var(--bg,white)]' : 'bg-transparent text-muted'}`}
+                  className={`font-medium tracking-wide inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs ${printMode === 'text' ? 'bg-primary text-[var(--bg,white)]' : 'text-muted bg-transparent'}`}
                 >
                   List
                 </button>
@@ -523,13 +523,13 @@ export default function SeatingView() {
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border px-2.5 text-xs font-label ${isFullscreen ? 'bg-primary text-surface' : 'bg-surface text-muted'}`}
+                    className={`font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-border px-2.5 text-xs whitespace-nowrap ${isFullscreen ? 'bg-primary text-surface' : 'text-muted bg-surface'}`}
                   >
                    {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
 
                   {printMode === 'text' && (
-                    <label className="ml-2 cursor-pointer flex items-center gap-1 text-[0.8125rem] font-semibold text-muted select-none leading-none">
+                    <label className="text-muted ml-2 flex cursor-pointer items-center gap-1 text-[0.8125rem] leading-none font-semibold select-none">
                       <input 
                         type="checkbox" 
                         checked={showVoicePartsInList} 
@@ -541,8 +541,8 @@ export default function SeatingView() {
                  )}
                </div>
                
-               <div className="flex flex-1 flex-row items-center justify-center gap-1 min-w-[200px]">
-                  <span className="whitespace-nowrap text-xs font-semibold text-muted">Copy:</span>
+               <div className="flex min-w-[200px] flex-1 flex-row items-center justify-center gap-1">
+                  <span className="text-muted text-xs font-semibold whitespace-nowrap">Copy:</span>
                   <select 
                     onChange={(e) => handleCopy(e.target.value)}
                     value=""
@@ -557,17 +557,17 @@ export default function SeatingView() {
                   </select>
                </div>
 
-               <button onClick={handlePrint} className="inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary bg-primary px-2.5 text-xs font-label text-surface">
+               <button onClick={handlePrint} className="font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-2.5 text-xs whitespace-nowrap text-surface">
                   🖨️ Print
                </button>
                <div className="flex flex-row items-center gap-1">
                  <SavingIndicator isSaving={isSaving} error={saveError} />
-                 <span className="mr-1 whitespace-nowrap text-xs font-medium text-muted">
+                 <span className="text-muted mr-1 text-xs font-medium whitespace-nowrap">
                    Auto-saved
                  </span>
                  <button
                    onClick={handleManualSave}
-                   className={`inline-flex h-8 min-h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-2.5 text-xs font-label ${
+                   className={`font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-2.5 text-xs whitespace-nowrap ${
                      saveError ? 'text-[var(--color-danger-text)]' : saveFeedback ? 'text-[var(--color-success-text)]' : 'text-text'
                    }`}
                  >
@@ -586,7 +586,7 @@ export default function SeatingView() {
                 <p className="text-muted">This venue is configured for open seating. No seating assignments are required.</p>
                 {selectedVenue.address && (
                   <p className="mt-4">
-                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-6 font-label text-muted">
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="font-medium tracking-wide text-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-6 whitespace-nowrap">
                       📍 View Map
                     </a>
                   </p>
@@ -690,14 +690,14 @@ export default function SeatingView() {
                     <button
                       type="button"
                       onClick={() => setIsSingerLookupOpen(true)}
-                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary-light px-2 text-[11px] font-semibold text-primary-deep"
+                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 rounded-md bg-primary-light px-2 text-[11px] font-semibold whitespace-nowrap text-primary-deep"
                     >
                       🔍 Lookup
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsSingerModalOpen(true)}
-                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary-light px-2 text-[11px] font-semibold text-primary-deep"
+                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 rounded-md bg-primary-light px-2 text-[11px] font-semibold whitespace-nowrap text-primary-deep"
                     >
                       + Add New
                     </button>
@@ -761,7 +761,7 @@ export default function SeatingView() {
           <>
             <button 
               type="button"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-6 font-label text-muted" 
+              className="font-medium tracking-wide text-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-6 whitespace-nowrap" 
               onClick={() => {
                 setIsNewChartModalOpen(false);
                 setNewChartName('');
@@ -772,7 +772,7 @@ export default function SeatingView() {
             <button 
               type="submit"
               form="new-chart-form"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary bg-primary px-6 font-label text-surface" 
+              className="font-medium tracking-wide inline-flex h-11 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-6 whitespace-nowrap text-surface" 
               disabled={!newChartName.trim()}
             >
               Create
@@ -794,7 +794,7 @@ export default function SeatingView() {
           <div className="flex-col gap-1">
             <label className="text-label font-semibold">Chart Name</label>
             <input 
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3" 
+              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" 
               value={newChartName} 
               onChange={(e) => setNewChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir, Combined Finale"
@@ -818,7 +818,7 @@ export default function SeatingView() {
           <>
             <button 
               type="button"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-6 font-label text-muted" 
+              className="font-medium tracking-wide text-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-6 whitespace-nowrap" 
               onClick={() => {
                 setIsRenameChartModalOpen(false);
                 setRenameChartName('');
@@ -830,7 +830,7 @@ export default function SeatingView() {
             <button 
               type="submit"
               form="rename-chart-form"
-              className="inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-primary bg-primary px-6 font-label text-surface" 
+              className="font-medium tracking-wide inline-flex h-11 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-6 whitespace-nowrap text-surface" 
               disabled={!renameChartName.trim()}
             >
               Save
@@ -853,7 +853,7 @@ export default function SeatingView() {
           <div className="flex-col gap-1">
             <label className="text-label font-semibold">New Chart Name</label>
             <input 
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3" 
+              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" 
               value={renameChartName} 
               onChange={(e) => setRenameChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir"

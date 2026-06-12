@@ -33,12 +33,12 @@ export function StatusAutomationSettings({
           />
           <span className="text-sm font-semibold text-slate-700">Enable Automated Status Changes</span>
         </label>
-        <p className="text-xs text-slate-500 pl-6">
+        <p className="pl-6 text-xs text-slate-500">
           Automatically mark singers as Active/Inactive based on their attendance and RSVP history.
         </p>
 
         {configAutomationEnabled && (
-          <div className="ml-6 pl-4 border-l border-slate-100 flex flex-col gap-4 mt-2">
+          <div className="mt-2 ml-6 flex flex-col gap-4 border-l border-slate-100 pl-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-slate-700">Consecutive Misses Threshold</label>
               <input
@@ -47,7 +47,7 @@ export function StatusAutomationSettings({
                 max={10}
                 value={configAutomationMissThreshold}
                 onChange={(e) => setConfigAutomationMissThreshold(Math.max(1, parseInt(e.target.value) || 1))}
-                className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
               />
               <p className="text-xs text-slate-500">
                 Mark a singer as Inactive after this many consecutive absences or 'No' RSVPs.
@@ -63,7 +63,7 @@ export function StatusAutomationSettings({
               />
               <span className="text-sm font-semibold text-slate-700">Enable Automated Status Recovery</span>
             </label>
-            <p className="text-xs text-slate-500 pl-6">
+            <p className="pl-6 text-xs text-slate-500">
               Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future Performance.
             </p>
           </div>
@@ -79,7 +79,7 @@ export function StatusAutomationSettings({
             max={20}
             value={configMaxRehearsalMisses}
             onChange={(e) => setConfigMaxRehearsalMisses(Math.max(0, parseInt(e.target.value) || 0))}
-            className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
           />
           <p className="text-xs text-slate-500">
             The maximum number of rehearsal misses (declined RSVPs or marked absences) allowed for a concert cycle before warnings are shown to singers and admins.

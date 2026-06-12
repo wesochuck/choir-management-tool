@@ -87,7 +87,7 @@ export default function PublicTicketListView() {
                   Season Passes
                 </h2>
                 {bundles.map(bundle => (
-                  <div key={bundle.id} className="rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex flex-col items-center justify-between gap-4 border-2 border-primary bg-primary-light p-4 md:flex-row">
+                  <div key={bundle.id} className="flex flex-col items-center justify-between gap-4 rounded-xl border-2 border-primary bg-primary-light p-4 shadow-sm transition-all duration-200 hover:shadow-md md:flex-row">
                     <div className="flex flex-1 flex-col gap-1">
                       <span className="inline-flex items-center self-start rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">Best Value</span>
                       <h3 className="m-0 text-primary-deep">{bundle.title}</h3>
@@ -124,7 +124,7 @@ export default function PublicTicketListView() {
                   Concert Tickets
                 </h2>
                 {events.map(event => (
-                  <div key={event.id} className="bg-surface border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex flex-col items-center justify-between gap-4 p-4 md:flex-row">
+                  <div key={event.id} className="flex flex-col items-center justify-between gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm transition-all duration-200 hover:shadow-md md:flex-row">
                     <div className="flex flex-1 flex-col gap-1">
                       {event.eventGraphic && (
                         <img

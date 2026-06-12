@@ -232,7 +232,7 @@ export default function SettingsView() {
                   </Button>
                 )}
               </div>
-              <p className="max-w-md text-xs text-slate-500 leading-normal">
+              <p className="max-w-md text-xs leading-normal text-slate-500">
                 Displayed on public pages and the singer dashboard. PNG, JPG, SVG, or WebP formats are supported.
               </p>
             </div>
@@ -261,7 +261,7 @@ export default function SettingsView() {
               id="choir-timezone"
               value={timezone}
               onChange={(event) => setTimezone(event.target.value)}
-              className="block w-full max-w-lg cursor-pointer rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-primary"
+              className="block w-full max-w-lg cursor-pointer rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-primary"
             >
               <optgroup label="Common Timezones">
                 {COMMON_TIMEZONES.map((tz) => (
@@ -365,7 +365,7 @@ function QueueWebhookSettings() {
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="block w-full max-w-lg flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-500 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-primary"
+              className="block w-full max-w-lg flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-500 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-primary"
             />
             <Button
               type="button"
@@ -391,7 +391,7 @@ function QueueWebhookSettings() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-100 mt-2 pt-4">
+        <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-4">
           <div className="text-xs text-slate-500">
             <strong>Status:</strong> {token ? <span className="font-semibold text-emerald-700">Active ({token.substring(0, 8)}...)</span> : <span className="text-slate-400">Unassigned</span>}
           </div>

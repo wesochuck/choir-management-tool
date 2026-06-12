@@ -44,7 +44,7 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
       ref={setNodeRef}
       style={style}
       // @allow-inline-style - dynamic dnd-kit transform, transition, color, and row styling
-      className="flex items-center gap-1.5 rounded-sm text-[0.85rem] font-semibold shadow-sm cursor-grab select-none"
+      className="flex cursor-grab items-center gap-1.5 rounded-sm text-[0.85rem] font-semibold shadow-sm select-none"
     >
       {/* drag handle */}
       <span
@@ -171,7 +171,7 @@ function FormationRow({
               });
             }}
             placeholder="Formation Name"
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-full px-2"
+            className="h-[38px] w-full rounded-md border border-border bg-surface px-2 transition-colors outline-none focus:border-primary"
           />
           <select
             value={formation.strategy}
@@ -182,7 +182,7 @@ function FormationRow({
                 return { ...prev, formations: newFormations };
               });
             }}
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[38px] w-full px-2"
+            className="h-[38px] w-full rounded-md border border-border bg-surface px-2 transition-colors outline-none focus:border-primary"
           >
             <option value="vertical_column">Vertical Columns</option>
             <option value="horizontal_row">Horizontal Rows</option>
@@ -470,7 +470,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
           <select
             value={customSeatingSettings.defaultFormationId}
             onChange={(e) => setCustomSeatingSettings((prev) => ({ ...prev, defaultFormationId: e.target.value }))}
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 w-full max-w-[400px] px-3"
+            className="h-10 w-full max-w-[400px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
           >
             {customSeatingSettings.formations?.map(form => (
               <option key={form.id} value={form.id}>{form.name}</option>

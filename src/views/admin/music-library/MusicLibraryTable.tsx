@@ -81,7 +81,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                 <table className="w-full min-w-[760px] border-collapse border border-border text-left">
                     <thead>
                         <tr className="bg-primary-light">
-                            <th className="text-label w-10 border border-border px-[10px] py-[6px] text-center font-semibold text-muted">
+                            <th className="text-label text-muted w-10 border border-border px-[10px] py-[6px] text-center font-semibold">
                                 <input 
                                     type="checkbox" 
                                     checked={filteredPieces.length > 0 && filteredPieces.every(p => selectedIds.has(p.id))}
@@ -92,11 +92,11 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                             {renderSortHeader('Title', 'title')}
                             {renderSortHeader('Composer/Arranger', 'composer')}
                             {renderSortHeader('Duration', 'duration')}
-                            <th className="text-label w-[50px] border border-border px-[10px] py-[6px] text-center font-semibold text-muted">Perf</th>
+                            <th className="text-label text-muted w-[50px] border border-border px-[10px] py-[6px] text-center font-semibold">Perf</th>
                             {renderSortHeader('Last Performed', 'lastPerformed')}
-                            <th className="text-label border border-border px-[10px] py-[6px] font-semibold text-muted">Tracks</th>
-                            <th className="text-label w-[60px] border border-border px-[10px] py-[6px] text-center font-semibold text-muted">Link</th>
-                            <th className="text-label w-20 border border-border px-[10px] py-[6px] font-semibold text-muted">Actions</th>
+                            <th className="text-label text-muted border border-border px-[10px] py-[6px] font-semibold">Tracks</th>
+                            <th className="text-label text-muted w-[60px] border border-border px-[10px] py-[6px] text-center font-semibold">Link</th>
+                            <th className="text-label text-muted w-20 border border-border px-[10px] py-[6px] font-semibold">Actions</th>
                         </tr>
                     </thead>
                     <tbody>

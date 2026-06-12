@@ -33,7 +33,7 @@ export function VoicePartEditor({
   return (
     <AppCard title="Voice Part Configurations">
       <div className="flex flex-col gap-4">
-        <p className="text-xs text-slate-500 mb-2">
+        <p className="mb-2 text-xs text-slate-500">
           Configure the custom voice parts for the choir (e.g. S1, Soprano 1) and link them to a Section Bucket.
         </p>
 
@@ -54,7 +54,7 @@ export function VoicePartEditor({
                   }}
                   placeholder="Label"
                   disabled={isTied}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-slate-50 disabled:text-slate-400"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
                   title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
                 />
                 <input
@@ -65,7 +65,7 @@ export function VoicePartEditor({
                     setConfigVoiceParts(newParts);
                   }}
                   placeholder="Full Name"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
                 <select
                   value={vp.sectionCode}
@@ -74,7 +74,7 @@ export function VoicePartEditor({
                     newParts[index] = { ...newParts[index], sectionCode: e.target.value };
                     setConfigVoiceParts(newParts);
                   }}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 >
                   <option value="">Select Section...</option>
                   {configSections.map(s => (
@@ -83,7 +83,7 @@ export function VoicePartEditor({
                 </select>
 
                 <div className="flex items-center gap-1.5">
-                  <div className="relative size-8 shrink-0 overflow-hidden rounded-lg border border-slate-200 shadow-sm hover:scale-105 transition-transform cursor-pointer">
+                  <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-slate-200 shadow-sm transition-transform hover:scale-105">
                     <input
                       type="color"
                       value={vp.color || defaultColor}
@@ -118,7 +118,7 @@ export function VoicePartEditor({
                       setConfigVoiceParts(newParts);
                     }}
                     placeholder="Inherit"
-                    className="h-10 w-20 rounded-lg border border-slate-200 bg-white px-2 text-xs font-mono text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="h-10 w-20 rounded-lg border border-slate-200 bg-white px-2 font-mono text-xs text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                   />
                 </div>
 

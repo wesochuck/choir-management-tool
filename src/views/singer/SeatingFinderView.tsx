@@ -354,7 +354,7 @@ export default function SeatingFinderView() {
                               style={{ 
                                 borderColor: singerColor,
                                 borderWidth: isMySeat ? '2px' : '2px',
-                                color: singerId ? 'white' : 'var(--color-text-muted)',
+                                color: singerId ? 'white' : 'var(--color-muted)',
                                 backgroundColor: singerId ? singerColor : 'white',
                                 borderStyle: 'solid',
                               }}

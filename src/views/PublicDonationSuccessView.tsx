@@ -54,7 +54,7 @@ export default function PublicDonationSuccessView() {
         </p>
 
         {donation ? (
-          <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex w-full flex-col gap-1 bg-neutral-100 p-4 text-left">
+          <div className="flex w-full flex-col gap-1 rounded-xl border border-border bg-neutral-100 p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md">
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Transaction ID:</span>
               <strong>{donation.id}</strong>

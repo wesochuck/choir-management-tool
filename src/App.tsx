@@ -72,10 +72,17 @@ const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
 
 
 
+const AppLoader = () => (
+  <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-bg">
+    <div className="size-10 animate-spin rounded-full border-4 border-border border-t-primary" role="status" aria-label="Loading" />
+    <span className="text-sm font-semibold tracking-wide text-muted">Loading Choir Management...</span>
+  </div>
+);
+
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
 
-  if (isLoading) return <div className="app-loading-container container">Loading...</div>;
+  if (isLoading) return <AppLoader />;
   if (!user) return <Navigate to="/login" replace />;
 
   const role = user.role || 'singer';
@@ -101,15 +108,18 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="app-loading-container container">
-          <h1>Something went wrong.</h1>
-          <p>
-            The app may have been updated while your browser still had an older version cached.
-            Refresh the page to load the latest version.
-          </p>
-          <Button variant="primary" onClick={() => window.location.reload()}>
-            Refresh Page
-          </Button>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-bg p-6 text-center">
+          <div className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-8 shadow-lg">
+            <span className="mb-4 inline-block text-4xl" role="img" aria-label="Warning">⚠️</span>
+            <h1 className="mb-2 text-2xl font-bold tracking-tight text-text">Something went wrong.</h1>
+            <p className="mb-6 text-sm leading-relaxed text-muted">
+              The app may have been updated while your browser still had an older version cached.
+              Refresh the page to load the latest version.
+            </p>
+            <Button variant="primary" onClick={() => window.location.reload()} className="w-full justify-center">
+              Refresh Page
+            </Button>
+          </div>
         </div>
       );
     }
@@ -122,7 +132,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <Suspense fallback={<div className="app-loading-container container">Loading...</div>}>
+        <Suspense fallback={<AppLoader />}>
           <Routes>
           <Route path="/login" element={<LoginView />} />
           <Route path="/reset-password" element={<ResetPasswordView />} />

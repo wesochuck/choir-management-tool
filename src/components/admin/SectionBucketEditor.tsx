@@ -25,7 +25,7 @@ export function SectionBucketEditor({
   return (
     <AppCard title="Section Bucket Configurations">
       <div className="flex flex-col gap-4">
-        <p className="text-xs text-slate-500 mb-2">
+        <p className="mb-2 text-xs text-slate-500">
           Configure the section buckets for your choir (e.g. S, Sopranos) and their visual identity on the seating chart.
         </p>
 
@@ -50,7 +50,7 @@ export function SectionBucketEditor({
                   }}
                   placeholder="Code"
                   disabled={isTied}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-slate-50 disabled:text-slate-400"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
                 />
                 <input
                   value={sec.name}
@@ -60,14 +60,14 @@ export function SectionBucketEditor({
                     setConfigSections(newSecs);
                   }}
                   placeholder="Name"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
                 
                 <div className="relative flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setActiveColorPickerIndex(activeColorPickerIndex === index ? null : index)}
-                    className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 shadow-sm hover:scale-105 active:scale-95 transition-transform duration-100"
+                    className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 shadow-sm transition-transform duration-100 hover:scale-105 active:scale-95"
                     // @allow-inline-style - dynamic color background
                     style={{ backgroundColor: hexBg }}
                     title="Choose color"
@@ -93,13 +93,13 @@ export function SectionBucketEditor({
                       setConfigSections(newSecs);
                     }}
                     placeholder="#FFFFFF"
-                    className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 text-sm font-mono text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                   />
 
                   {tooClose && (
                     <span 
                       title="Warning: This color lacks adequate visual contrast with another section color." 
-                      className="text-red-600 text-sm cursor-help"
+                      className="cursor-help text-sm text-red-600"
                     >
                       ⚠️
                     </span>
@@ -112,8 +112,8 @@ export function SectionBucketEditor({
                         // @allow-inline-style - full screen click handler
                         className="fixed inset-0 z-[100] cursor-default"
                       />
-                      <div className="absolute left-0 top-full z-50 mt-2 w-48 rounded-lg border border-slate-200 bg-white p-3 shadow-lg flex flex-col gap-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Presets</span>
+                      <div className="absolute top-full left-0 z-50 mt-2 flex w-48 flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Presets</span>
                         <div className="grid grid-cols-5 gap-1.5">
                           {PALETTE_COLORS.map(c => {
                             const isSelected = hexBg.toUpperCase() === c.toUpperCase();
@@ -132,7 +132,7 @@ export function SectionBucketEditor({
                                   setConfigSections(newSecs);
                                   setActiveColorPickerIndex(null);
                                 }}
-                                className={`size-6 cursor-pointer rounded border border-slate-200 hover:scale-105 active:scale-95 transition-transform ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}`}
+                                className={`size-6 cursor-pointer rounded border border-slate-200 transition-transform hover:scale-105 active:scale-95 ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}`}
                                 // @allow-inline-style - dynamic background preset color
                                 style={{ backgroundColor: c }}
                                 title={c}
@@ -141,9 +141,9 @@ export function SectionBucketEditor({
                           })}
                         </div>
                         
-                        <div className="h-px bg-slate-100 my-1" />
+                        <div className="my-1 h-px bg-slate-100" />
                         
-                        <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                        <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded border border-slate-200 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50">
                           <span className="text-sm">🎨</span> Custom Color
                           <input 
                             type="color"
@@ -159,7 +159,7 @@ export function SectionBucketEditor({
                               };
                               setConfigSections(newSecs);
                             }}
-                            className="absolute inset-0 size-0 opacity-0 pointer-events-none"
+                            className="pointer-events-none absolute inset-0 size-0 opacity-0"
                           />
                         </label>
                       </div>

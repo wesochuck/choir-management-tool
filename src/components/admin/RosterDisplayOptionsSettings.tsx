@@ -17,7 +17,7 @@ export function RosterDisplayOptionsSettings({
           <select
             value={configDefaultStatus}
             onChange={(event) => setConfigDefaultStatus(event.target.value)}
-            className="h-10 w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="h-10 w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
           >
             <option value="">All Statuses</option>
             <option value="Active">Active</option>

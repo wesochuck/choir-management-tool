@@ -22,7 +22,7 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
-import { Button, Select } from '../../components/ui';
+import { Button, Select, Spinner } from '../../components/ui';
 
 export default function SetListView() {
   const { timezone } = useChoirSettings();
@@ -132,7 +132,7 @@ export default function SetListView() {
         message: (
           <div className="flex-col gap-4">
             <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
-             <div className="border border-border bg-bg rounded-lg p-2 text-[0.85rem] break-all">
+             <div className="rounded-lg border border-border bg-bg p-2 text-[0.85rem] break-all">
               {url}
             </div>
             <div className="flex-row gap-2">
@@ -460,7 +460,7 @@ export default function SetListView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-row items-center justify-between gap-4 no-print">
+      <div className="no-print flex flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900">
             Set Lists
@@ -669,7 +669,7 @@ export default function SetListView() {
                   <div className="flex shrink-0 items-center gap-1.5 font-medium">
                     {saveStatus === 'saving' && (
                       <>
-                        <span className="spinner-small !size-3.5 !border-[1.5px]" />
+                        <Spinner size="small" />
                         <span>Saving...</span>
                       </>
                     )}
@@ -687,7 +687,7 @@ export default function SetListView() {
                 <div className="flex justify-end px-2 py-1 text-xs font-medium text-text-muted">
                   {saveStatus === 'saving' && (
                     <div className="flex items-center gap-1.5">
-                      <span className="spinner-small !size-3.5 !border-[1.5px]" />
+                      <Spinner size="small" />
                       <span>Saving...</span>
                     </div>
                   )}
@@ -710,7 +710,7 @@ export default function SetListView() {
       </div>
 
       {/* @allow-inline-style - print page styling rule for print-only rendering */}
-      <div className="hidden print:block mx-auto max-w-2xl p-8" style={{ page: 'setlist' }}>
+      <div className="mx-auto hidden max-w-2xl p-8 print:block" style={{ page: 'setlist' }}>
         {selectedEvent && (
           <>
             <div className="mb-6 text-center">
@@ -738,7 +738,7 @@ export default function SetListView() {
                     <div key={item.id} className="flex items-baseline justify-between gap-4 border-b border-gray-100 py-1 text-lg">
                       <span className="font-medium text-gray-900">{songIndex}. {item.displayTitle}</span>
                       {item.displayComposer && (
-                        <span className="text-right text-base italic text-gray-600">{item.displayComposer}</span>
+                        <span className="text-right text-base text-gray-600 italic">{item.displayComposer}</span>
                       )}
                     </div>
                   );

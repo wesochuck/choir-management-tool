@@ -123,7 +123,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   });
                   onClose();
                 }}
-                className="font-semibold underline !p-0 !h-auto !min-h-0 text-primary hover:text-primary-deep"
+                className="!h-auto !min-h-0 !p-0 font-semibold text-primary underline hover:text-primary-deep"
               >
                 {formData.contact}
               </Button>
@@ -171,7 +171,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Name</label>
             <input
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] px-3"
+              className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
@@ -182,7 +182,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Email or Phone</label>
             <input
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] px-3"
+              className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={formData.contact}
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
               required
@@ -194,7 +194,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             <div className="flex flex-col gap-1">
               <label className="text-label">Voice Part</label>
               <select
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] w-full px-3"
+                className="h-[44px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={formData.voicePart || ''}
                 onChange={(event) => setFormData({ ...formData, voicePart: event.target.value as Audition['voicePart'] })}
               >
@@ -208,7 +208,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             <div className="flex flex-col gap-1">
               <label className="text-label">Tied to Performance</label>
               <select
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] w-full px-3"
+                className="h-[44px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={formData.performance || ''}
                 onChange={(event) => setFormData({ ...formData, performance: event.target.value })}
               >
@@ -230,7 +230,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Experience / Musical Background</label>
             <textarea
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-20 resize-y p-3"
+              className="min-h-20 resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
               value={formData.experience}
               onChange={(event) => setFormData({ ...formData, experience: event.target.value })}
               placeholder="Describe background..."
@@ -240,7 +240,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex-col gap-1">
             <label className="text-label">Internal Notes</label>
             <textarea
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary min-h-20 resize-y p-3"
+              className="min-h-20 resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
               value={formData.notes}
               onChange={(event) => setFormData({ ...formData, notes: event.target.value })}
               placeholder="Add internal notes..."
@@ -254,7 +254,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             <div className="flex flex-col gap-1">
               <label className="text-label">Confirmed Scheduled Time</label>
               <select
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-[44px] w-full px-3"
+                className="h-[44px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={formData.scheduledTimeSlot || ''}
                 onChange={(event) => setFormData({ ...formData, scheduledTimeSlot: event.target.value })}
               >
@@ -272,7 +272,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               </select>
             </div>
 
-            <div className="flex flex-col gap-2 mt-2">
+            <div className="mt-2 flex flex-col gap-2">
               <label className="text-label">Requested Slots ({formData.requestedSlots?.length || 0})</label>
               <p className="text-muted m-0 text-sm">
                 Select the potential time slots this applicant requested or is available for:
@@ -283,7 +283,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   return (
                     <label 
                       key={slot} 
-                      className="rounded-xl m-0 cursor-pointer flex-row items-center gap-3 p-3 shadow-none" 
+                      className="m-0 cursor-pointer flex-row items-center gap-3 rounded-xl p-3 shadow-none" 
                       // @allow-inline-style - checkbox checked state
                       style={{
                         border: isChecked ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',

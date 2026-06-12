@@ -153,22 +153,30 @@ export default function PublicPlayerView() {
   };
 
   if (isLoading) return <div className="pt-16 text-center">Loading playlist...</div>;
-  if (error) return <div className="chorus-player"><div className="error-message">{error}</div></div>;
+  if (error) {
+    return (
+      <div className="mx-auto max-w-md p-4 text-center mt-16">
+        <div className="rounded-lg border border-danger-text bg-danger-bg p-4 text-danger-text font-semibold shadow-sm">
+          {error}
+        </div>
+      </div>
+    );
+  }
   if (!data) return null;
 
   const showDashboardBackLink = Boolean(eventId && !token);
 
   return (
-    <div className="chorus-player">
-      <header>
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <header className="mb-6">
         <div>
           {showDashboardBackLink && (
-            <Link to="/" className="player-back-link">
+            <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-deep hover:underline">
               ← Dashboard
             </Link>
           )}
-          <h1>Chorus</h1>
-          <div className="text-sm text-text-muted">{data.event.title}</div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-text">Chorus</h1>
+          <div className="text-sm text-muted">{data.event.title}</div>
         </div>
       </header>
 
@@ -203,7 +211,7 @@ export default function PublicPlayerView() {
         isDownloadingAll={isDownloadingAll}
       />
 
-      <div className="mt-8">
+      <div className="mt-8 text-center text-xs text-muted">
         You can download tracks for offline practice. They will be saved in your browser.
       </div>
     </div>

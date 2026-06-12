@@ -387,7 +387,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                             <input
                                 ref={inputRef}
                                 type="text"
-                                className="bg-surface border border-border h-8 flex-1 rounded px-2.5 text-xs transition-colors duration-150 outline-none focus:border-primary"
+                                className="h-8 flex-1 rounded border border-border bg-surface px-2.5 text-xs transition-colors duration-150 outline-none focus:border-primary"
                                 placeholder="Add new..."
                                 value={newOptionLabel}
                                 onChange={e => setNewOptionLabel(e.target.value)}
@@ -416,7 +416,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     <div className="flex justify-end border-t border-gray-200 bg-gray-50 px-3 py-2">
                         <button
                             type="button"
-                            className="hover:bg-primary-dark cursor-pointer rounded border-none bg-primary px-[18px] py-1.5 text-xs font-semibold text-white transition-colors duration-150 hover:shadow-[0_1px_4px_rgba(0,0,0,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            className="hover:bg-primary-deep cursor-pointer rounded border-none bg-primary px-[18px] py-1.5 text-xs font-semibold text-white transition-colors duration-150 hover:shadow-[0_1px_4px_rgba(0,0,0,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                             onClick={() => setIsOpen(false)}
                         >
                             Done

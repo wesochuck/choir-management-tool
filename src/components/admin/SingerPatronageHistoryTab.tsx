@@ -83,7 +83,7 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
 
   return (
     <div className="flex-col gap-4">
-      <div className="rounded-xl flex flex-col gap-1 border border-[rgb(74_117_89_/_20%)] bg-primary-light p-4">
+      <div className="flex flex-col gap-1 rounded-xl border border-[rgb(74_117_89_/_20%)] bg-primary-light p-4">
         <div className="text-xs font-semibold tracking-wider text-primary-deep uppercase">Lifetime Value</div>
         <div className="text-2xl font-extrabold text-primary">
           ${(ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -99,7 +99,7 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
             <p className="text-muted m-0 text-sm">No patronage history found.</p>
           ) : (
             items.map((item) => (
-              <div key={`${item.type}-${item.id}`} className="rounded-xl bg-surface m-0 border border-border p-3 px-4 shadow-none">
+              <div key={`${item.type}-${item.id}`} className="m-0 rounded-xl border border-border bg-surface p-3 px-4 shadow-none">
                 <div className="flex-row items-center justify-between">
                   <div className="flex-col">
                     <span className="text-sm font-medium">{item.description}</span>

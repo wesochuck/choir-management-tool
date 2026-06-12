@@ -117,7 +117,7 @@ export default function PublicBundlePurchaseView() {
           </div>
         </div>
 
-        <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex flex-col gap-4 bg-primary-light p-4 md:flex-row">
+        <div className="flex flex-col gap-4 rounded-xl border border-border bg-primary-light p-4 shadow-sm transition-all duration-200 hover:shadow-md md:flex-row">
           <div className="flex flex-1 flex-col gap-1">
             <h3 className="m-0 text-primary-deep">{bundle.title}</h3>
             <p className="text-body m-0">
@@ -130,7 +130,7 @@ export default function PublicBundlePurchaseView() {
           <span className="text-xs font-bold text-text-muted uppercase">Included Performances</span>
           <div className="mt-1 flex flex-col gap-2">
             {includedEvents.map(event => (
-              <div key={event.id} className="bg-surface shadow-sm transition-all duration-200 hover:shadow-md rounded-sm border border-border p-2">
+              <div key={event.id} className="rounded-sm border border-border bg-surface p-2 shadow-sm transition-all duration-200 hover:shadow-md">
                 <strong className="block text-text">{event.title}</strong>
                 <span className="text-xs text-text-muted">
                   {formatInTimezone(event.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
@@ -161,7 +161,7 @@ export default function PublicBundlePurchaseView() {
             <input
               type="text"
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={name}
               onChange={e => setName(e.target.value)}
             />
@@ -173,7 +173,7 @@ export default function PublicBundlePurchaseView() {
               <input
                 type="email"
                 required
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+                className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
@@ -183,7 +183,7 @@ export default function PublicBundlePurchaseView() {
               <input
                 type="email"
                 required
-                className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+                className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 value={confirmEmail}
                 onChange={e => setConfirmEmail(e.target.value)}
               />
@@ -197,13 +197,13 @@ export default function PublicBundlePurchaseView() {
               min="1"
               max="10"
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={quantity}
               onChange={e => setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))}
             />
           </div>
 
-          <div className="border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md flex w-full flex-col gap-1 bg-neutral-100 p-4">
+          <div className="flex w-full flex-col gap-1 rounded-xl border border-border bg-neutral-100 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
             <h4 className="m-0 text-primary-deep">Pricing Summary</h4>
             <div className="flex flex-row justify-between text-sm">
               <span>Season Ticket Pass ({quantity} x ${(unitPrice / 100).toFixed(2)})</span>

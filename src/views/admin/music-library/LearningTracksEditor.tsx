@@ -153,7 +153,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
 
             {addableParts.length > 0 && (
                 <div className="animate-fade-in mt-1 flex-row items-center justify-start gap-1 border-t border-dashed border-border pt-1">
-                    <span className="text-[11px] font-semibold text-muted">
+                    <span className="text-muted text-[11px] font-semibold">
                         ➕ Add voice part track slot:
                     </span>
                     <select

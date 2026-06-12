@@ -29,12 +29,12 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
   const bodyWarning = warnings.find(w => w.field === 'body');
 
   return (
-    <div className="composer-form flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-row flex-wrap items-center gap-2">
-        <div className="composer-subject-field flex flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Subject</label>
           <input
-            className={`bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3 w-full max-w-md ${subjectWarning ? 'border-red-200' : ''}`}
+            className={`h-10 w-full max-w-md rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary ${subjectWarning ? 'border-red-200' : ''}`}
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
             disabled={messageType === 'SMS'}
@@ -46,10 +46,10 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
             </span>
           )}
         </div>
-        <div className="composer-channel-field flex flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Channel</label>
           <select
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-10 px-3"
+            className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
             value={messageType}
             onChange={(e) => onMessageTypeChange(e.target.value as 'Email' | 'SMS' | 'Both')}
           >

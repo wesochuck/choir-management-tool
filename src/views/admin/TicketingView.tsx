@@ -412,26 +412,26 @@ export default function TicketingView() {
   const hasPurchases = editingBundle ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0 : false;
 
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
           Ticketing Dashboard
         </h1>
-        <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
+        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
           Manage ticket sales, configure season bundles, and view check-in checklists.
         </p>
       </div>
 
       {/* Tabs / Actions Navigation Bar */}
-      <div className="w-full flex flex-row items-center justify-between border-b border-slate-200 pb-px">
+      <div className="flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
         <div className="flex gap-3 md:gap-6">
           <button
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'willcall'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('willcall')}
           >
@@ -441,8 +441,8 @@ export default function TicketingView() {
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'bundles'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('bundles')}
           >
@@ -452,8 +452,8 @@ export default function TicketingView() {
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'orders'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('orders')}
           >
@@ -465,7 +465,7 @@ export default function TicketingView() {
           {activeTab === 'bundles' && (
             <Button
               variant="primary"
-              className="px-3 md:px-6 font-semibold shadow-sm animate-pulse-once"
+              className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
               onClick={handleOpenCreateModal}
               title="Create New Bundle"
               icon={
@@ -481,7 +481,7 @@ export default function TicketingView() {
           {activeTab === 'willcall' && selectedEventId && (
             <Button
               variant="secondary"
-              className="px-3 md:px-6 font-semibold shadow-sm"
+              className="px-3 font-semibold shadow-sm md:px-6"
               onClick={handleExportCSV}
               disabled={activePurchases.length === 0}
               title="Export Will Call CSV"
@@ -504,18 +504,18 @@ export default function TicketingView() {
           <AppCard noPadding>
             <div className="border-b border-slate-100 px-6 py-4">
               <h3 className="text-lg font-bold text-slate-800">Performance Summary</h3>
-              <p className="mt-1 text-sm text-slate-500 font-medium">
+              <p className="mt-1 text-sm font-medium text-slate-500">
                 Choose a performance to view ticket sales, revenue, and will call activity. To enable ticketing for an event, go to the{' '}
-                <Link to="/admin/events" className="text-emerald-700 hover:text-emerald-800 underline">
+                <Link to="/admin/events" className="text-emerald-700 underline hover:text-emerald-800">
                   Event Management
                 </Link>{' '}
                 page, edit the performance, and check the "Enable Online Ticket Sales" option on the Tickets tab.
               </p>
             </div>
 
-            <div className="p-6 flex flex-col gap-6">
+            <div className="flex flex-col gap-6 p-6">
               {/* Performance selection & options grid deck */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
                 <div className="md:col-span-2">
                   <FormField label="Select Performance">
                     <select
@@ -541,8 +541,8 @@ export default function TicketingView() {
                   </FormField>
                 </div>
 
-                <div className="md:col-span-2 flex items-end pb-2">
-                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                <div className="flex items-end pb-2 md:col-span-2">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
                     <input
                       type="checkbox"
                       checked={showPastAndInactive}
@@ -558,18 +558,18 @@ export default function TicketingView() {
                 /* Performance Stats Analytics Dashboard */
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Tickets Sold Card */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-                    <div className="absolute top-0 left-0 h-1.5 w-full bg-slate-400 group-hover:bg-slate-500 transition-colors" />
+                  <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-slate-400 transition-colors group-hover:bg-slate-500" />
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
                           Tickets Sold
                         </p>
-                        <p className="mt-2 text-2xl font-black text-slate-900 tracking-tight">
+                        <p className="mt-2 text-2xl font-black tracking-tight text-slate-900">
                           {totalTicketsSold} {eventCapacity > 0 ? `/ ${eventCapacity}` : ''}
                         </p>
                       </div>
-                      <div className="rounded-xl bg-slate-50 p-3 text-slate-500 group-hover:bg-slate-100 transition-colors">
+                      <div className="rounded-xl bg-slate-50 p-3 text-slate-500 transition-colors group-hover:bg-slate-100">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                           <line x1="16" y1="2" x2="16" y2="6" />
@@ -581,18 +581,18 @@ export default function TicketingView() {
                   </div>
 
                   {/* Ticket Sales Card */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-pink-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-                    <div className="absolute top-0 left-0 h-1.5 w-full bg-pink-500 group-hover:bg-pink-600 transition-colors" />
+                  <div className="group relative overflow-hidden rounded-2xl border border-pink-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-pink-500 transition-colors group-hover:bg-pink-600" />
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-pink-500">
+                        <p className="text-xs font-bold tracking-wider text-pink-500 uppercase">
                           Ticket Sales
                         </p>
-                        <p className="mt-2 text-2xl font-black text-pink-600 tracking-tight">
+                        <p className="mt-2 text-2xl font-black tracking-tight text-pink-600">
                           ${(activePurchases.reduce((acc, p) => acc + (p.unitPriceCents * p.quantity), 0) / 100).toFixed(2)}
                         </p>
                       </div>
-                      <div className="rounded-xl bg-pink-50 p-3 text-pink-500 group-hover:bg-pink-100/80 transition-colors">
+                      <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <line x1="12" y1="1" x2="12" y2="23" />
                           <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
@@ -602,18 +602,18 @@ export default function TicketingView() {
                   </div>
 
                   {/* Fees Collected Card */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-                    <div className="absolute top-0 left-0 h-1.5 w-full bg-amber-500 group-hover:bg-amber-600 transition-colors" />
+                  <div className="group relative overflow-hidden rounded-2xl border border-amber-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-amber-500 transition-colors group-hover:bg-amber-600" />
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                        <p className="text-xs font-bold tracking-wider text-amber-600 uppercase">
                           Fees Collected
                         </p>
-                        <p className="mt-2 text-2xl font-black text-amber-700 tracking-tight">
+                        <p className="mt-2 text-2xl font-black tracking-tight text-amber-700">
                           ${(activePurchases.reduce((acc, p) => acc + p.feeCents, 0) / 100).toFixed(2)}
                         </p>
                       </div>
-                      <div className="rounded-xl bg-amber-50 p-3 text-amber-600 group-hover:bg-amber-100/80 transition-colors">
+                      <div className="rounded-xl bg-amber-50 p-3 text-amber-600 transition-colors group-hover:bg-amber-100/80">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="12" cy="12" r="10" />
                           <line x1="12" y1="8" x2="12" y2="16" />
@@ -624,18 +624,18 @@ export default function TicketingView() {
                   </div>
 
                   {/* Total Revenue Card */}
-                  <div className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5">
-                    <div className="absolute top-0 left-0 h-1.5 w-full bg-emerald-500 group-hover:bg-emerald-600 transition-colors" />
+                  <div className="group relative overflow-hidden rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                    <div className="absolute top-0 left-0 h-1.5 w-full bg-emerald-500 transition-colors group-hover:bg-emerald-600" />
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                        <p className="text-xs font-bold tracking-wider text-emerald-700 uppercase">
                           Total Revenue
                         </p>
-                        <p className="mt-2 text-2xl font-black text-emerald-700 tracking-tight">
+                        <p className="mt-2 text-2xl font-black tracking-tight text-emerald-700">
                           ${(activePurchases.reduce((acc, p) => acc + p.amountPaidCents, 0) / 100).toFixed(2)}
                         </p>
                       </div>
-                      <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700 group-hover:bg-emerald-100/80 transition-colors">
+                      <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700 transition-colors group-hover:bg-emerald-100/80">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                         </svg>
@@ -661,9 +661,9 @@ export default function TicketingView() {
               </p>
             </div>
             
-            <div className="p-6 flex flex-col gap-6">
+            <div className="flex flex-col gap-6 p-6">
               {/* Checklist Search and Sort grid deck */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+              <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
                 <div className="md:col-span-2">
                   <FormField label="Search">
                     <div className="relative">
@@ -678,7 +678,7 @@ export default function TicketingView() {
                         placeholder="Search buyer name or email..." 
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="block w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="block w-full rounded-lg border border-slate-200 bg-white py-2 pr-3.5 pl-9 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </div>
                   </FormField>
@@ -701,7 +701,7 @@ export default function TicketingView() {
                     <Button 
                       variant="outline" 
                       onClick={() => setSearchQuery('')}
-                      className="h-10 px-3 flex items-center justify-center font-semibold"
+                      className="flex h-10 items-center justify-center px-3 font-semibold"
                       title="Reset search"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -714,7 +714,7 @@ export default function TicketingView() {
               </div>
 
               {/* Will Call - Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+              <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
                 <table className="min-w-full divide-y divide-slate-100 text-left">
                   <thead className="bg-slate-50/75">
                     <tr>
@@ -730,7 +730,7 @@ export default function TicketingView() {
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {loading ? (
                       <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-400 font-medium">
+                        <td colSpan={7} className="px-6 py-12 text-center text-sm font-medium text-slate-400">
                           <div className="flex flex-col items-center justify-center gap-2">
                             <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                             Loading purchases...
@@ -770,25 +770,25 @@ export default function TicketingView() {
                               <div className="flex flex-col gap-0.5">
                                 <span>{p.buyerName}</span>
                                 {p.expand?.bundle && (
-                                  <span className="w-fit inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
+                                  <span className="inline-flex w-fit items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
                                     Season Ticket: {p.expand.bundle.title}
                                   </span>
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500 font-medium">
+                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
                               {p.buyerEmail}
                             </td>
-                            <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500 font-medium">
+                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
                               {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                             </td>
-                            <td className="px-6 py-4 text-sm whitespace-nowrap text-slate-500 font-medium">
+                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
                               {p.quantity}
                             </td>
                             <td className="px-6 py-4 text-right text-sm font-extrabold text-slate-950">
                               ${(p.amountPaidCents / 100).toFixed(2)}
                             </td>
-                            <td className="px-6 py-4 text-sm text-center">
+                            <td className="px-6 py-4 text-center text-sm">
                               <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
                                 {p.status}
                               </Badge>
@@ -820,10 +820,10 @@ export default function TicketingView() {
               </div>
 
               {/* Will Call - Mobile Card List View */}
-              <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
                 <div className="divide-y divide-slate-100">
                   {loading ? (
-                    <div className="p-6 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                    <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
                       <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                       Loading purchases...
                     </div>
@@ -852,11 +852,11 @@ export default function TicketingView() {
                       return (
                         <div 
                           key={p.id} 
-                          className={`p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}
+                          className={`flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}
                         >
                           {/* Row 1: Sale Date & Status Badge */}
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-slate-400 font-medium">
+                            <span className="text-xs font-medium text-slate-400">
                               {formatInTimezone(p.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                             </span>
                             <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
@@ -871,13 +871,13 @@ export default function TicketingView() {
                                 {p.buyerName}
                               </span>
                               {p.expand?.bundle && (
-                                <span className="w-fit inline-flex items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-emerald-700 uppercase">
+                                <span className="inline-flex w-fit items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-emerald-700 uppercase">
                                   Season Ticket: {p.expand.bundle.title}
                                 </span>
                               )}
-                              <span className="text-xs text-slate-500 font-medium break-all">{p.buyerEmail}</span>
+                              <span className="text-xs font-medium break-all text-slate-500">{p.buyerEmail}</span>
                             </div>
-                            <div className="flex flex-col items-end gap-0.5 shrink-0">
+                            <div className="flex shrink-0 flex-col items-end gap-0.5">
                               <span className="text-sm font-bold text-slate-900">{p.quantity} Ticket{p.quantity !== 1 ? 's' : ''}</span>
                               <span className="text-base font-extrabold text-emerald-700">
                                 ${(p.amountPaidCents / 100).toFixed(2)}
@@ -887,11 +887,11 @@ export default function TicketingView() {
 
                           {/* Row 3: Refund Actions */}
                           {p.status === 'paid' && (
-                            <div className="flex justify-end pt-1.5 border-t border-slate-50 mt-1">
+                            <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
                               <Button
                                 variant="danger"
                                 size="small"
-                                className="w-full font-semibold shadow-sm text-xs py-1.5"
+                                className="w-full py-1.5 text-xs font-semibold shadow-sm"
                                 onClick={() => {
                                   if (p.bundle) {
                                     handleRefundBundle(p.stripePaymentIntentId);
@@ -919,16 +919,16 @@ export default function TicketingView() {
         <AppCard noPadding>
           <div className="border-b border-slate-100 px-6 py-4">
             <h3 className="text-lg font-bold text-slate-800">Season Bundles Configuration</h3>
-            <p className="mt-1 text-sm text-slate-500 font-medium">
+            <p className="mt-1 text-sm font-medium text-slate-500">
               Create and manage season ticket packages containing multiple concerts at a discount.
             </p>
           </div>
           
           <div className="p-6">
             {/* Season Bundles - Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+            <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
               {loading ? (
-                <div className="px-6 py-12 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm font-medium text-slate-400">
                   <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                   Loading bundles...
                 </div>
@@ -964,15 +964,15 @@ export default function TicketingView() {
                       return (
                         <tr key={b.id} className="transition-colors hover:bg-slate-50/40">
                           <td className="px-6 py-4 text-sm font-semibold text-slate-800">{b.title}</td>
-                          <td className="px-6 py-4 text-sm font-extrabold text-slate-900 whitespace-nowrap">${(b.priceCents / 100).toFixed(2)}</td>
-                          <td className="px-6 py-4 text-sm text-center">
+                          <td className="px-6 py-4 text-sm font-extrabold whitespace-nowrap text-slate-900">${(b.priceCents / 100).toFixed(2)}</td>
+                          <td className="px-6 py-4 text-center text-sm">
                             <Badge tone={b.isActive ? 'success' : 'neutral'}>
                               {b.isActive ? 'Active' : 'Inactive'}
                             </Badge>
                           </td>
                           <td className="px-6 py-4 text-sm whitespace-nowrap">
                             <div className="flex flex-col gap-1">
-                              <span className="text-slate-800 font-medium">{sold} / {b.capacity} sold</span>
+                              <span className="font-medium text-slate-800">{sold} / {b.capacity} sold</span>
                               <div className="h-1.5 w-[100px] overflow-hidden rounded bg-slate-100">
                                 <div 
                                   className="h-full bg-primary" 
@@ -982,13 +982,13 @@ export default function TicketingView() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-500 font-medium whitespace-nowrap">
+                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
                             {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </td>
                           <td className="max-w-[240px] px-6 py-4 text-sm whitespace-normal">
                             <div className="flex flex-wrap gap-1">
                               {b.expand?.events?.map(ev => (
-                                <span key={ev.id} className="inline-flex items-center rounded bg-slate-50 border border-slate-200 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-slate-700 uppercase whitespace-nowrap">
+                                <span key={ev.id} className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide whitespace-nowrap text-slate-700 uppercase">
                                   {ev.title}
                                 </span>
                               ))}
@@ -1023,10 +1023,10 @@ export default function TicketingView() {
             </div>
 
             {/* Season Bundles - Mobile Card View */}
-            <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
               <div className="divide-y divide-slate-100">
                 {loading ? (
-                  <div className="p-6 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                  <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
                     <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                     Loading bundles...
                   </div>
@@ -1047,13 +1047,13 @@ export default function TicketingView() {
                   bundles.map(b => {
                     const sold = getBundleSoldQty(b.id, b.events);
                     return (
-                      <div key={b.id} className="p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40">
+                      <div key={b.id} className="flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40">
                         {/* Row 1: Active status & Sale end date */}
                         <div className="flex items-center justify-between">
                           <Badge tone={b.isActive ? 'success' : 'neutral'}>
                             {b.isActive ? 'Active' : 'Inactive'}
                           </Badge>
-                          <span className="text-xs text-slate-400 font-medium">
+                          <span className="text-xs font-medium text-slate-400">
                             Ends: {formatInTimezone(b.saleEndDate, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </span>
                         </div>
@@ -1064,22 +1064,22 @@ export default function TicketingView() {
                             <span className="text-sm font-bold text-slate-800">{b.title}</span>
                             <div className="mt-1 flex flex-wrap gap-1">
                               {b.expand?.events?.map(ev => (
-                                <span key={ev.id} className="inline-flex items-center rounded bg-slate-50 border border-slate-200 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-slate-600 uppercase whitespace-nowrap">
+                                <span key={ev.id} className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide whitespace-nowrap text-slate-600 uppercase">
                                   {ev.title}
                                 </span>
                               ))}
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-0.5 shrink-0">
+                          <div className="flex shrink-0 flex-col items-end gap-0.5">
                             <span className="text-base font-extrabold text-emerald-700">
                               ${(b.priceCents / 100).toFixed(2)}
                             </span>
-                            <span className="text-xs text-slate-500 font-medium">{sold} / {b.capacity} Sold</span>
+                            <span className="text-xs font-medium text-slate-500">{sold} / {b.capacity} Sold</span>
                           </div>
                         </div>
 
                         {/* Row 3: Actions */}
-                        <div className="flex justify-end gap-2 pt-1.5 border-t border-slate-50 mt-1">
+                        <div className="mt-1 flex justify-end gap-2 border-t border-slate-50 pt-1.5">
                           <Button variant="secondary" size="small" onClick={() => handleOpenEditModal(b)}>
                             Edit
                           </Button>
@@ -1101,16 +1101,16 @@ export default function TicketingView() {
         <AppCard noPadding>
           <div className="border-b border-slate-100 px-6 py-4">
             <h3 className="text-lg font-bold text-slate-800">Season Pass Orders</h3>
-            <p className="mt-1 text-sm text-slate-500 font-medium">
+            <p className="mt-1 text-sm font-medium text-slate-500">
               View and manage transactions of season bundle ticket pass purchases.
             </p>
           </div>
           
           <div className="p-6">
             {/* Season Pass Orders - Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
+            <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
               {loading ? (
-                <div className="px-6 py-12 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm font-medium text-slate-400">
                   <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                   Loading orders...
                 </div>
@@ -1145,14 +1145,14 @@ export default function TicketingView() {
                           className={`transition-colors hover:bg-slate-50/40 ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
                         >
                           <td className="px-6 py-4 text-sm font-semibold text-slate-800">{order.buyerName}</td>
-                          <td className="px-6 py-4 text-sm text-slate-500 font-medium">{order.buyerEmail}</td>
-                          <td className="px-6 py-4 text-sm text-slate-500 font-medium whitespace-nowrap">
+                          <td className="px-6 py-4 text-sm font-medium text-slate-500">{order.buyerEmail}</td>
+                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
                             {formatInTimezone(order.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-800 font-medium">{order.bundleTitle}</td>
-                          <td className="px-6 py-4 text-sm text-slate-500 font-medium">{order.quantity}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-slate-800">{order.bundleTitle}</td>
+                          <td className="px-6 py-4 text-sm font-medium text-slate-500">{order.quantity}</td>
                           <td className="px-6 py-4 text-right text-sm font-extrabold text-slate-950">${(order.amountPaidCents / 100).toFixed(2)}</td>
-                          <td className="px-6 py-4 text-sm text-center">
+                          <td className="px-6 py-4 text-center text-sm">
                             <Badge tone={order.status === 'paid' ? 'success' : 'danger'}>
                               {order.status}
                             </Badge>
@@ -1178,10 +1178,10 @@ export default function TicketingView() {
             </div>
 
             {/* Season Pass Orders - Mobile Card View */}
-            <div className="md:hidden bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
               <div className="divide-y divide-slate-100">
                 {loading ? (
-                  <div className="p-6 text-center text-sm text-slate-400 font-medium flex flex-col items-center justify-center gap-2">
+                  <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
                     <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                     Loading orders...
                   </div>
@@ -1197,10 +1197,10 @@ export default function TicketingView() {
                   bundleOrders.map(order => {
                     const isRefunded = order.status === 'refunded';
                     return (
-                      <div key={order.stripeSessionId} className={`p-4 flex flex-col gap-3 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}>
+                      <div key={order.stripeSessionId} className={`flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}>
                         {/* Row 1: Date & Status Badge */}
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-400 font-medium">
+                          <span className="text-xs font-medium text-slate-400">
                             {formatInTimezone(order.created, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                           </span>
                           <Badge tone={order.status === 'paid' ? 'success' : 'danger'}>
@@ -1212,10 +1212,10 @@ export default function TicketingView() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex flex-col gap-0.5">
                             <span className="text-sm font-bold text-slate-800">{order.buyerName}</span>
-                            <span className="text-xs text-slate-500 font-medium break-all">{order.buyerEmail}</span>
+                            <span className="text-xs font-medium break-all text-slate-500">{order.buyerEmail}</span>
                             <span className="mt-1 block text-xs font-semibold text-slate-600">Bundle: {order.bundleTitle}</span>
                           </div>
-                          <div className="flex flex-col items-end gap-0.5 shrink-0">
+                          <div className="flex shrink-0 flex-col items-end gap-0.5">
                             <span className="text-sm font-bold text-slate-900">{order.quantity} Pass{order.quantity !== 1 ? 'es' : ''}</span>
                             <span className="text-base font-extrabold text-emerald-700">
                               ${(order.amountPaidCents / 100).toFixed(2)}
@@ -1225,8 +1225,8 @@ export default function TicketingView() {
 
                         {/* Row 3: Refund Actions */}
                         {order.status === 'paid' && (
-                          <div className="flex justify-end pt-1.5 border-t border-slate-50 mt-1">
-                            <Button variant="danger" size="small" className="w-full font-semibold shadow-sm text-xs py-1.5" onClick={() => handleRefundBundle(order.stripePaymentIntentId)}>
+                          <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
+                            <Button variant="danger" size="small" className="w-full py-1.5 text-xs font-semibold shadow-sm" onClick={() => handleRefundBundle(order.stripePaymentIntentId)}>
                               Refund Bundle
                             </Button>
                           </div>
@@ -1293,33 +1293,33 @@ export default function TicketingView() {
               type="text"
               required
               placeholder="e.g. 2026-2027 Season Pass"
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
           </FormField>
 
           <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[150px]">
+            <div className="min-w-[150px] flex-1">
               <FormField label="Price (USD)" required>
                 <input
                   type="number"
                   required
                   min="0.01"
                   step="0.01"
-                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                   value={price || ''}
                   onChange={e => setPrice(Number(e.target.value))}
                 />
               </FormField>
             </div>
-            <div className="flex-1 min-w-[150px]">
+            <div className="min-w-[150px] flex-1">
               <FormField label="Capacity Limit" required>
                 <input
                   type="number"
                   required
                   min="1"
-                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                   value={capacity || ''}
                   onChange={e => setCapacity(Number(e.target.value))}
                 />
@@ -1331,7 +1331,7 @@ export default function TicketingView() {
             <input
               type="datetime-local"
               required
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               value={saleEndDate}
               onChange={e => setSaleEndDate(e.target.value)}
             />
@@ -1339,11 +1339,11 @@ export default function TicketingView() {
 
           <FormField label="Included Performances">
             {hasPurchases && (
-              <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-2 text-xs text-yellow-700 mb-2">
+              <div className="mb-2 rounded-lg border border-yellow-200 bg-yellow-50 p-2 text-xs text-yellow-700">
                 ⚠️ This bundle has active purchases. Included events are locked to prevent data drift.
               </div>
             )}
-            <div className="flex max-h-[200px] flex-col gap-2 overflow-y-auto border border-slate-200 bg-white rounded-lg p-3">
+            <div className="flex max-h-[200px] flex-col gap-2 overflow-y-auto rounded-lg border border-slate-200 bg-white p-3">
               {events
                 .filter(ev => ev.isTicketingEnabled)
                 .map(ev => {
@@ -1373,7 +1373,7 @@ export default function TicketingView() {
                   );
                 })}
               {events.filter(ev => ev.isTicketingEnabled).length === 0 && (
-                <span className="text-xs text-slate-400 font-medium">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
+                <span className="text-xs font-medium text-slate-400">No ticketing-enabled events found. Please enable ticketing on your events first.</span>
               )}
             </div>
           </FormField>
@@ -1381,13 +1381,13 @@ export default function TicketingView() {
           <FormField label="Public Details / Instructions">
             <textarea
               placeholder="e.g. Please bring a photo ID. This pass is non-transferable."
-              className="block w-full rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary min-h-[100px] resize-y"
+              className="block min-h-[100px] w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               value={publicDetails}
               onChange={e => setPublicDetails(e.target.value)}
             />
           </FormField>
 
-          <label className="flex cursor-pointer flex-row items-center gap-2 mt-2">
+          <label className="mt-2 flex cursor-pointer flex-row items-center gap-2">
             <input
               type="checkbox"
               checked={isActive}

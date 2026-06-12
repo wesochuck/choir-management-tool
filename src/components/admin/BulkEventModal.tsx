@@ -210,7 +210,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
             value={selectedPerformanceId} 
             onChange={(e) => handlePerformanceChange(e.target.value)}
             required
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3 text-text"
+            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
           >
             <option value="">-- Select Performance --</option>
             {performances.map(p => (
@@ -227,7 +227,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
             value={venue} 
             onChange={(e) => setVenue(e.target.value)} 
             required
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3 text-text"
+            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
           >
             <option value="">-- Select Rehearsal Venue --</option>
             {venues.map(v => (
@@ -244,7 +244,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
               value={count} 
               onChange={(e) => setCount(parseInt(e.target.value))} 
               min="1" max="20"
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3 text-text"
+              className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
             />
           </div>
           <div className="flex-1 flex-col gap-1">
@@ -254,7 +254,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
               value={time} 
               onChange={(e) => setTime(e.target.value)} 
               required
-              className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3 text-text"
+              className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
             />
           </div>
         </div>
@@ -264,7 +264,7 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
           <select 
             value={dayOfWeek} 
             onChange={(e) => setDayOfWeek(parseInt(e.target.value))}
-            className="bg-surface border border-border rounded-md outline-none transition-colors focus:border-primary h-11 w-full px-3 text-text"
+            className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
           >
             <option value={0}>Sunday</option>
             <option value={1}>Monday</option>
