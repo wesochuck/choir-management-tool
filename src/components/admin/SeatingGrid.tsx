@@ -541,7 +541,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       // @allow-inline-style - dynamic gap based on compact mode
                       style={{ gap: '1px', alignItems: 'center' }}>
                       <div
-                        className={`leading-tight font-extrabold ${isCompact ? 'text-xs' : 'text-sm'}`}
+                        className="leading-tight font-extrabold text-sm"
                         // @allow-inline-style - dynamic color from computed styles
                         style={{ color: colors.text }}>
                         {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
