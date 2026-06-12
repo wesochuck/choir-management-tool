@@ -299,11 +299,11 @@ export default function SeatingView() {
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
-      {/* Dynamic @page setup based on visual grid landscape mode vs text list portrait mode */}
+      {/* Dynamic @page setup to default to landscape orientation for printing */}
       <style>{`
         @media print {
           @page {
-            size: ${printMode === 'visual' ? 'landscape' : 'portrait'};
+            size: landscape;
             margin: ${printMode === 'visual' ? '0.25in' : '0.5in'};
           }
         }

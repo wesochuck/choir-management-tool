@@ -309,8 +309,8 @@ export default function SeatingFinderView() {
                 {/* Mirrored Stage Grid Wrapper */}
                 <div className="mb-8 flex w-full scrollbar-thin flex-col-reverse items-stretch gap-3 overflow-x-auto overflow-y-visible py-[40px] pb-[10px]">
                   {rowCounts.map((count, rIdx) => (
-                    <div key={rIdx} className="mx-auto grid w-max min-w-max grid-cols-[64px_max-content_64px] items-center justify-center gap-x-3">
-                      <span className="w-auto min-w-16 text-right text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase select-none">Row {rIdx + 1}</span>
+                    <div key={rIdx} className="mx-auto grid w-max min-w-max grid-cols-[72px_max-content_72px] items-center justify-center gap-x-3">
+                      <span className="w-auto min-w-18 text-right text-sm font-bold tracking-wider whitespace-nowrap text-text uppercase select-none">Row {rIdx + 1}</span>
                       
                       <div
                         className="flex min-w-max items-center justify-center gap-[10px]"
@@ -371,7 +371,7 @@ export default function SeatingFinderView() {
                         })}
                       </div>
                       
-                      <span className="w-auto min-w-16 text-left text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase select-none">Row {rIdx + 1}</span>
+                      <span className="w-auto min-w-18 text-left text-sm font-bold tracking-wider whitespace-nowrap text-text uppercase select-none">Row {rIdx + 1}</span>
                     </div>
                   ))}
                 </div>

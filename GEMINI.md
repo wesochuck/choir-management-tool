@@ -138,10 +138,32 @@ These foundational mandates MUST be followed by all agents working on this codeb
 - **Destructive Actions:** Deletes/resets/revocations must use a danger-styled confirmation modal with clear action labels (for example `confirmLabel: 'Delete'`, `variant: 'danger'`).
 - **Modal Exit Action Required:** Every modal must include a visible dismiss action button (`Cancel`, `Close`, or equivalent) in the footer/actions area; ESC key should be supported but do not rely on ESC key or backdrop click as the only exit path.
 - **Allowed Exception:** Native browser dialogs are acceptable only in narrowly scoped, temporary fallback flows where the shared dialog context is not available; prefer migrating these to `useDialog` when touched.
-
 ## UI Empty State Actions
 
 - **Empty State Action Buttons:** When rendering empty states (e.g., "No items found" or "No season bundles configured"), always include a call-to-action button (preceded by a `+` symbol for creation/addition actions, e.g., `+ Create New Bundle`) directly within the empty state container. This provides a clear, immediate action path for the user instead of requiring them to search for primary buttons in the header or toolbar.
+
+## Vitest Testing Guidelines
+
+- **Import Convention:** Always use the Node-style test imports:
+  ```ts
+  import { describe, it, test, mock, beforeEach, afterEach } from 'node:test';
+  import assert from 'node:assert';
+  ```
+  Do NOT import directly from `'vitest'` in test files, as we use a path-aliased wrapper [`test/vitest-node-test-compat.ts`](file:///Users/wesosborn/Downloads/choir-management-tool/test/vitest-node-test-compat.ts) to keep test definitions consistent.
+- **Spies & Mocks:** Use the wrapper's `mock` context properties which mimic Node's test runner API:
+  - Create mock function: `const fn = mock.fn(impl);`
+  - Spy on method: `const spy = mock.method(obj, 'methodName', impl);`
+  - Change implementation dynamically: `fn.mock.mockImplementation(newImpl);`
+  - Reset calls: `fn.mock.resetCalls();`
+  - Call count assertion: `assert.strictEqual(fn.mock.callCount(), 1);`
+  - Asserting calls arguments: `assert.deepStrictEqual(fn.mock.calls[0].arguments, ['arg1']);`
+- **Test Environment Selection:**
+  - **Node Environment (Default):** Normal backend/logic tests run in `'node'`. Place them directly in the `test/` directory.
+  - **JSDOM Environment (Browser/UI):** Component or hook tests requiring DOM/window APIs. Place them under `src/components/ui/**/*.test.ts`, `test/views/**/*.test.ts`, or add a directive comment at the very top of the test file:
+    ```ts
+    // @vitest-environment jsdom
+    ```
+- **Running Tests:** Always prefix commands with `rtk` (e.g. `rtk npm test`, `rtk npx vitest run path/to/my.test.ts`).
 
 ## Recurring Failure Prevention (MANDATORY)
 

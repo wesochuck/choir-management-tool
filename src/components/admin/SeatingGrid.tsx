@@ -114,6 +114,16 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const fittedSeatSize = Math.floor(getFittedSeatSize(gridGap));
   const minSeatSize = isCompact ? 44 : 72;
   const seatSize = Number.isFinite(fittedSeatSize) ? Math.max(minSeatSize, Math.min(baseSeatSize, fittedSeatSize)) : baseSeatSize;
+  const printSeatSize = React.useMemo(() => {
+    if (maxSeats <= 0) return 42;
+    const availableWidth = 920; // 960px standard printable width minus layout buffer
+    const labelW = isCompact ? 110 : 130;
+    const gap = isCompact ? 4 : 6;
+    const totalGapWidth = Math.max(0, maxSeats - 1) * gap;
+    const calculatedSize = (availableWidth - labelW - totalGapWidth) / maxSeats;
+    return Math.max(26, Math.min(42, Math.floor(calculatedSize)));
+  }, [maxSeats, isCompact]);
+
   const isTightGrid = seatSize < baseSeatSize;
   const rowGap = isCompact ? 'var(--space-xs)' : 'var(--space-sm)';
   const containerPadding = isCompact ? 'var(--space-xs)' : 'var(--space-md)';
@@ -190,6 +200,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         ...({
           '--max-seats': maxSeats,
           '--seat-size': `${seatSize}px`,
+          '--print-seat-size': `${printSeatSize}px`,
           '--seat-font-size': isCompact ? (isTightGrid ? '0.625rem' : 'var(--font-size-xs)') : 'var(--font-size-sm)',
           '--seat-name-font-size': seatNameFontSize,
           '--seat-vp-font-size': seatVoicePartFontSize,
@@ -256,21 +267,21 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               justifyContent: 'center',
               minWidth: 'max-content'
             }}>
-            <div className="text-muted text-xs flex flex-col items-end justify-center"
+            <div className="text-text flex flex-col items-end justify-center"
               // @allow-inline-style - wider label to accommodate seat count badge
               // @allow-inline-style - dynamic width based on compact mode
               style={{ width: isCompact ? '110px' : '130px', fontWeight: 700, textAlign: 'right', paddingRight: 'var(--space-md)' }}
               title={`${occupiedCount} of ${seatCount} seats occupied`}>
-              <span className="leading-tight">
+              <span className="leading-tight text-sm md:text-base">
                 {rowLabel}
                 {(isFront || rowIndex === rowCounts.length - 1) && (
-                  <span className="no-print">
-                    {isFront ? ' (Front)' : ' (Back)'}
+                  <span className="no-print text-xs font-normal opacity-75 ml-1">
+                    {isFront ? '(Front)' : '(Back)'}
                   </span>
                 )}
               </span>
-              <span className="text-[10px] font-normal leading-tight opacity-75 mt-0.5">
-                {occupiedCount}/{seatCount}
+              <span className="text-[11px] md:text-xs font-normal leading-tight opacity-75 mt-0.5">
+                {occupiedCount}/{seatCount} occupied
               </span>
             </div>
 
