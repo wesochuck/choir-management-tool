@@ -9,12 +9,13 @@ import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { Modal, Button, FormField, Badge, EmptyState } from '../../components/ui';
+import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
   const dialog = useDialog();
   const [now] = useState(() => Date.now());
-  const [activeTab, setActiveTab] = useState<'willcall' | 'bundles' | 'orders' | 'info'>('willcall');
+  const [activeTab, setActiveTab] = useState<'willcall' | 'bundles' | 'orders' | 'share'>('willcall');
 
   const [events, setEvents] = useState<Event[]>([]);
   const [showPastAndInactive, setShowPastAndInactive] = useState(false);
@@ -114,6 +115,18 @@ export default function TicketingView() {
       return isUpcoming && isActive;
     });
   }, [events, showPastAndInactive, now]);
+
+  const upcomingTicketingEvents = useMemo(() => {
+    const cutoffTime = now - 3 * 60 * 60 * 1000;
+    return events.filter(ev => {
+      const isUpcoming = new Date(ev.date).getTime() >= cutoffTime;
+      return isUpcoming && ev.isTicketingEnabled;
+    });
+  }, [events, now]);
+
+  const activeBundles = useMemo(() => {
+    return bundles.filter(b => b.isActive);
+  }, [bundles]);
 
   useEffect(() => {
     if (visibleEvents.length > 0) {
@@ -458,6 +471,17 @@ export default function TicketingView() {
             onClick={() => setActiveTab('orders')}
           >
             Bundle Orders
+          </button>
+          <button
+            type="button"
+            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+              activeTab === 'share'
+                ? 'border-primary font-bold text-primary'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+            }`}
+            onClick={() => setActiveTab('share')}
+          >
+            Share & QR Codes
           </button>
         </div>
 
@@ -1239,6 +1263,79 @@ export default function TicketingView() {
             </div>
           </div>
         </AppCard>
+      )}
+
+      {activeTab === 'share' && (
+        <div className="flex flex-col gap-6 animate-fade-in">
+          <AppCard>
+            <h3 className="text-xl font-black tracking-tight text-slate-800">Promotional Links & QR Codes</h3>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Share these links or download high-quality QR codes for your flyers, concert programs, and social media.
+            </p>
+          </AppCard>
+
+          {/* General Ticket Storefront Section */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+              General Storefront
+            </h4>
+            <QRCodeShareCard
+              title="Main Public Ticket Page"
+              subtitle="Directs buyers to view all available tickets and pass packages"
+              url="/tickets"
+              badgeText="General Storefront"
+              badgeTone="success"
+            />
+          </div>
+
+          {/* Active Concerts Section */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+              Upcoming Concert Tickets
+            </h4>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {upcomingTicketingEvents.map(ev => (
+                <QRCodeShareCard
+                  key={ev.id}
+                  title={ev.title || 'Untitled Concert'}
+                  subtitle={formatInTimezone(ev.date, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  url={`/tickets/${ev.id}`}
+                  badgeText="Concert Ticket"
+                  badgeTone="performance"
+                />
+              ))}
+              {upcomingTicketingEvents.length === 0 && (
+                <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-sm font-medium text-slate-400">
+                  No upcoming concerts currently have ticketing enabled.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Active Bundles Section */}
+          <div className="flex flex-col gap-3">
+            <h4 className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+              Active Season Bundles
+            </h4>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {activeBundles.map(b => (
+                <QRCodeShareCard
+                  key={b.id}
+                  title={b.title}
+                  subtitle={`Price: $${(b.priceCents / 100).toFixed(2)}`}
+                  url={`/tickets/bundle/${b.id}`}
+                  badgeText="Season Pass"
+                  badgeTone="success"
+                />
+              ))}
+              {activeBundles.length === 0 && (
+                <div className="col-span-full rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center text-sm font-medium text-slate-400">
+                  No active season bundles configured.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* CRUD Bundle Modal */}
