@@ -39,6 +39,25 @@ test('seating grid container can shrink inside normal browser layouts', () => {
   );
 });
 
+test('seating grid fit math uses the rendered row label width and avoids nested scrollbars', () => {
+  assert.match(
+    seatingGrid,
+    /const\s+rowLabelWidth\s*=\s*isCompact\s*\?\s*110\s*:\s*130\s*;/,
+    'fit calculation should reserve the same row label width that is rendered in the row',
+  );
+
+  assert.match(
+    seatingGrid,
+    /style=\{\{\s*width:\s*`\$\{rowLabelWidth\}px`\s*\}\}/,
+    'rendered row label width should be driven by the shared rowLabelWidth constant',
+  );
+
+  assert.ok(
+    !/overflow-x-auto/.test(seatingGrid),
+    'seating grid should not create a nested horizontal scroll container when seats are fitted to the available width',
+  );
+});
+
 test('seating drag and drop does not rely on visible grab-handle dots', () => {
   assert.ok(
     !/seat-grab-handle/.test(seatingGrid),
@@ -75,5 +94,36 @@ test('seating layout does not rely on Tailwind button utilities that are overrid
     seatingView,
     /className="[^"]*\bseating-toolbar\b[^"]*"/,
     'seating toolbar should use its seating-specific CSS hook instead of depending only on Tailwind utilities',
+  );
+});
+
+test('seating chart selection uses a compact ordered dropdown instead of a wrapping tab row', () => {
+  assert.match(
+    seatingView,
+    /aria-label="Select seating chart"/,
+    'chart selection should use a compact dropdown control',
+  );
+
+  assert.match(
+    seatingView,
+    /\$\{index \+ 1\}\.\s*\$\{c\.name\}/,
+    'chart dropdown options should show concert order numbers',
+  );
+
+  assert.match(
+    seatingView,
+    /title="Move chart earlier in concert order"/,
+    'active chart should have a compact move-earlier order control',
+  );
+
+  assert.match(
+    seatingView,
+    /title="Move chart later in concert order"/,
+    'active chart should have a compact move-later order control',
+  );
+
+  assert.ok(
+    !/visibleTabCount|tabsContainerRef|CHART_DRAG_MIME/.test(seatingView),
+    'old tab-row measurement and drag-only chart ordering state should be removed',
   );
 });

@@ -97,7 +97,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const baseSeatSize = isCompact ? 68 : 100;
   const baseGridGap = isCompact ? 6 : 12;
   const tightGridGap = isCompact ? 4 : 8;
-  const labelWidth = isCompact ? 75 : 105;
+  const rowLabelWidth = isCompact ? 110 : 130;
   const canEditLayout = !isReadOnly && Boolean(onUpdateRowCounts);
   const editButtonCount = canEditLayout ? 2 : 0;
   const rowChildCount = 1 + maxSeats + editButtonCount;
@@ -107,7 +107,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const availableGridWidth = gridWidth > 0 ? gridWidth : Number.POSITIVE_INFINITY;
   const getFittedSeatSize = (gap: number): number => {
     const gapWidth = Math.max(0, rowChildCount - 1) * gap;
-    const fixedWidth = labelWidth + editButtonWidth + editButtonMargins + gapWidth + (containerPaddingPx * 2);
+    const fixedWidth = rowLabelWidth + editButtonWidth + editButtonMargins + gapWidth + (containerPaddingPx * 2);
     return maxSeats > 0 ? (availableGridWidth - fixedWidth) / maxSeats : baseSeatSize;
   };
   const baseFittedSeatSize = getFittedSeatSize(baseGridGap);
@@ -215,8 +215,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
         </Button>
       )}
 
-      {/* Scrollable seating grid */}
-      <div className="w-full overflow-x-auto">
+      {/* Seating grid */}
+      <div className="w-full overflow-x-clip overflow-y-visible">
 
       {rowCounts.map((_, index) => {
         const rowIndex = rowCounts.length - 1 - index;
@@ -245,11 +245,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
               alignItems: 'center',
               gap: `${gridGap}px`,
               justifyContent: 'center',
-              minWidth: 'max-content'
+              width: '100%'
             }}>
             <div className="text-text flex flex-col items-end justify-center seating-row-label font-bold text-right pr-4"
               // @allow-inline-style - dynamic width based on compact mode
-              style={{ width: isCompact ? '110px' : '130px' }}
+              style={{ width: `${rowLabelWidth}px` }}
               title={`${occupiedCount} of ${seatCount} seats occupied`}>
               <span className="leading-tight text-sm md:text-base">
                 {rowLabel}

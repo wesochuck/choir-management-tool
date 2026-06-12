@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
@@ -93,48 +93,6 @@ export default function SeatingView() {
   const [isRenameChartModalOpen, setIsRenameChartModalOpen] = useState(false);
   const [renameChartName, setRenameChartName] = useState('');
   const [chartToRename, setChartToRename] = useState<SeatingChart | null>(null);
-
-  const [dragOverChartId, setDragOverChartId] = useState<string | null>(null);
-  const tabsContainerRef = useRef<HTMLDivElement>(null);
-  const [visibleTabCount, setVisibleTabCount] = useState(10);
-
-  const CHART_DRAG_MIME = 'application/x-chart-reorder';
-
-  // Estimate how many tabs fit based on container width and chart name lengths
-  const estimateVisibleTabs = useCallback((containerWidth: number) => {
-    const allChartsList = charts || [];
-    if (allChartsList.length === 0) return 10;
-    // Reserve space for the + button (40px) and overflow dropdown (160px) and padding (32px)
-    const reservedWidth = 40 + 32;
-    let usedWidth = reservedWidth;
-    let count = 0;
-    for (const chart of allChartsList) {
-      // Estimate: drag handle ~20px, name ~8px/char, padding/gap ~48px, action buttons ~60px if active
-      const nameWidth = chart.name.length * 8;
-      const tabWidth = 20 + nameWidth + 48 + (chart.id === activeChartId ? 60 : 0);
-      if (usedWidth + tabWidth > containerWidth && count > 0) {
-        break;
-      }
-      usedWidth += tabWidth;
-      count++;
-    }
-    return Math.max(1, count);
-  }, [charts, activeChartId]);
-
-  useEffect(() => {
-    const container = tabsContainerRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        setVisibleTabCount(estimateVisibleTabs(width));
-      }
-    });
-    observer.observe(container);
-    // Run initial measurement
-    setVisibleTabCount(estimateVisibleTabs(container.offsetWidth));
-    return () => observer.disconnect();
-  }, [estimateVisibleTabs, activeTab]);
 
   const handleLookupSingerSelect = async (profile: Profile) => {
     if (performanceId && profile.id) {
@@ -293,6 +251,23 @@ export default function SeatingView() {
     await copyFromPerformance(source);
   };
 
+  const chartList = charts || [];
+  const activeChart = chartList.find(c => c.id === activeChartId) || null;
+  const activeChartIndex = chartList.findIndex(c => c.id === activeChartId);
+  const canMoveChartEarlier = activeChartIndex > 0;
+  const canMoveChartLater = activeChartIndex >= 0 && activeChartIndex < chartList.length - 1;
+
+  const moveActiveChart = async (direction: -1 | 1) => {
+    if (activeChartIndex < 0) return;
+    const targetIndex = activeChartIndex + direction;
+    if (targetIndex < 0 || targetIndex >= chartList.length) return;
+
+    const orderedCharts = [...chartList];
+    const [movedChart] = orderedCharts.splice(activeChartIndex, 1);
+    orderedCharts.splice(targetIndex, 0, movedChart);
+    await reorderCharts(orderedCharts.map(c => c.id));
+  };
+
   return (
     <div 
       className={`flex w-full flex-col gap-4 bg-transparent px-0 py-2 print-landscape ${isWideLayout ? '!bg-bg !p-4 w-full max-w-none !mx-0' : ''}`} 
@@ -339,13 +314,13 @@ export default function SeatingView() {
 
       {/* Filter Deck (Chart tab only) */}
       {activeTab === 'chart' && (
-        <div className="no-print grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-3">
+        <div className="no-print grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1.1fr]">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Performance</label>
             <select
               value={performanceId}
               onChange={(e) => setPerformanceId(e.target.value)}
-              className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block h-9 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             >
               <option value="">-- Select Performance --</option>
               {performances.map(p => (
@@ -360,7 +335,7 @@ export default function SeatingView() {
               <select
                 value={venueId}
                 onChange={(e) => setVenueId(e.target.value)}
-                className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="block h-9 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -393,7 +368,7 @@ export default function SeatingView() {
                       }
                     }
                   }}
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-primary bg-primary-light px-3 text-xs font-bold text-primary-deep shadow-sm transition-colors hover:bg-primary/10"
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-dashed border-primary bg-primary-light px-3 text-xs font-bold text-primary-deep shadow-sm transition-colors hover:bg-primary/10"
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
@@ -421,12 +396,94 @@ export default function SeatingView() {
 
                 await updateChart({ formationId: selectedId, assignments: {} });
               }}
-              className="block w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block h-9 w-full cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             >
               {seatingSettings.formations?.map(formation => (
                 <option key={formation.id} value={formation.id}>{formation.name}</option>
               ))}
             </select>
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Chart</label>
+            <div className="flex min-w-0 items-center gap-1">
+              <select
+                aria-label="Select seating chart"
+                value={activeChartId || ''}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setActiveChartId(e.target.value);
+                  }
+                }}
+                className="h-9 min-w-0 flex-1 cursor-pointer rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                {chartList.map((c, index) => (
+                  <option key={c.id} value={c.id}>{`${index + 1}. ${c.name}`}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => moveActiveChart(-1)}
+                disabled={!canMoveChartEarlier}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                title="Move chart earlier in concert order"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={() => moveActiveChart(1)}
+                disabled={!canMoveChartLater}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                title="Move chart later in concert order"
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsNewChartModalOpen(true)}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-primary bg-primary-light text-lg font-extrabold text-primary shadow-sm transition-colors hover:bg-primary/10"
+                title="Create new seating chart"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!activeChart) return;
+                  setChartToRename(activeChart);
+                  setRenameChartName(activeChart.name);
+                  setIsRenameChartModalOpen(true);
+                }}
+                disabled={!activeChart}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                title="Rename chart"
+              >
+                ✎
+              </button>
+              {chartList.length > 1 && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!activeChart) return;
+                    const confirmed = await dialog.confirm({
+                      title: 'Delete Seating Chart?',
+                      message: `Are you sure you want to delete "${activeChart.name}"? This cannot be undone.`,
+                      confirmLabel: 'Delete',
+                      variant: 'danger'
+                    });
+                    if (confirmed) {
+                      await deleteChart(activeChart.id);
+                    }
+                  }}
+                  disabled={!activeChart}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-[var(--color-danger-text)] shadow-sm transition-colors enabled:hover:border-[var(--color-danger-text)] disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Delete chart"
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -435,162 +492,6 @@ export default function SeatingView() {
         <SeatingFormationsEditor onSaveSuccess={refresh} />
       ) : performanceId && venueId ? (
         <>
-          {/* Seating Charts Tabs Row */}
-          <div className="no-print mb-2 w-full overflow-x-auto border-b border-border">
-          <div ref={tabsContainerRef} className="flex flex-row flex-nowrap items-stretch gap-0 min-w-max px-4 overflow-y-hidden">
-            {/* Render visible tabs (dynamic count based on container width) */}
-            {(charts || []).slice(0, visibleTabCount).map(c => {
-              const isActive = c.id === activeChartId;
-              const isDragOver = dragOverChartId === c.id;
-              return (
-                <div 
-                  key={c.id} 
-                  className={`cursor-pointer flex-row items-center gap-[4px] px-[10px] py-2 border-b-2 border-l-2 transition-[border-color_0.15s_ease] ${
-                    isActive ? 'border-b-primary' : 'border-b-transparent'
-                  } ${
-                    isDragOver ? 'border-l-primary' : 'border-l-transparent'
-                  }`}
-                  onClick={() => {
-                    if (!isActive) {
-                      setActiveChartId(c.id);
-                    }
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (e.dataTransfer) {
-                      e.dataTransfer.dropEffect = 'move';
-                    }
-                    setDragOverChartId(c.id);
-                  }}
-                  onDragEnter={(e) => {
-                    e.preventDefault();
-                    setDragOverChartId(c.id);
-                  }}
-                  onDragLeave={() => {
-                    setDragOverChartId(prev => prev === c.id ? null : prev);
-                  }}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    setDragOverChartId(null);
-                    const draggedId = e.dataTransfer.getData(CHART_DRAG_MIME);
-                    if (draggedId && draggedId !== c.id) {
-                      const currentCharts = [...(charts || [])];
-                      const draggedIndex = currentCharts.findIndex(x => x.id === draggedId);
-                      const targetIndex = currentCharts.findIndex(x => x.id === c.id);
-                      if (draggedIndex !== -1 && targetIndex !== -1) {
-                        const [draggedItem] = currentCharts.splice(draggedIndex, 1);
-                        currentCharts.splice(targetIndex, 0, draggedItem);
-                        await reorderCharts(currentCharts.map(x => x.id));
-                      }
-                    }
-                  }}
-                >
-                  <span
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData(CHART_DRAG_MIME, c.id);
-                      e.dataTransfer.effectAllowed = 'move';
-                    }}
-                    onDragEnd={() => setDragOverChartId(null)}
-                    className={`inline-flex items-center cursor-grab px-1 py-0.5 text-[0.9rem] select-none mr-0.5 font-bold ${
-                      isActive ? 'text-primary-deep opacity-95' : 'text-muted opacity-75'
-                    }`}
-                    title="Drag to reorder"
-                  >
-                    ⋮⋮
-                  </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!isActive) setActiveChartId(c.id);
-                    }}
-                    className={`inline-flex h-auto min-h-auto items-center justify-center gap-2 whitespace-nowrap rounded-none border-none bg-transparent p-[4px_8px] text-xs shadow-none ${
-                      isActive ? 'font-bold text-primary-deep' : 'font-medium text-muted'
-                    }`}
-                  >
-                    {c.name}
-                  </button>
-                  {isActive && (
-                    <div className="ml-1 flex-row gap-[2px]" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setChartToRename(c);
-                          setRenameChartName(c.name);
-                          setIsRenameChartModalOpen(true);
-                        }}
-                        className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-4 text-xs font-label text-muted"
-                        title="Rename chart"
-                      >
-                        ✏️
-                      </button>
-                      {(charts || []).length > 1 && (
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const confirmed = await dialog.confirm({
-                              title: 'Delete Seating Chart?',
-                              message: `Are you sure you want to delete "${c.name}"? This cannot be undone.`,
-                              confirmLabel: 'Delete',
-                              variant: 'danger'
-                            });
-                            if (confirmed) {
-                              await deleteChart(c.id);
-                            }
-                          }}
-                          className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-transparent px-4 text-xs font-label text-[var(--color-danger-text)]"
-                          title="Delete chart"
-                        >
-                          ❌
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Render overflow dropdown when charts exceed visible count */}
-            {(charts || []).length > visibleTabCount && (
-              <div 
-                className={`border-b-2 pb-2 ${
-                  !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId)
-                    ? 'border-b-primary'
-                    : 'border-b-transparent'
-                }`}
-              >
-                <select
-                  value={(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId) ? '' : activeChartId}
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      setActiveChartId(e.target.value);
-                    }
-                  }}
-                  className={`h-6 min-h-[24px] w-[140px] rounded-sm border-none bg-transparent px-[8px] text-xs shadow-none ${
-                    !(charts || []).slice(0, visibleTabCount).some(c => c.id === activeChartId)
-                      ? 'text-primary-deep font-bold'
-                      : 'text-muted font-medium'
-                  }`}
-                >
-                  <option value="">More Charts... ▼</option>
-                  {(charts || []).slice(visibleTabCount).map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* Add New Seating Chart Button (Plus sign to the right of tabs) */}
-            <button
-              onClick={() => setIsNewChartModalOpen(true)}
-              className="mb-2 inline-flex h-7 min-h-[28px] w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-border bg-transparent p-0 text-xl font-extrabold text-primary"
-              title="Create new seating chart"
-            >
-              +
-            </button>
-          </div>
-          </div>
-
           <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:flex-row">
           <AppCard className="w-full min-w-0 flex-1 flex-col p-4">
             <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-primary-light p-1.5 px-3 shadow-sm">
