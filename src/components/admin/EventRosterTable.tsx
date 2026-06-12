@@ -3,7 +3,7 @@ import type { Profile } from '../../services/profileService';
 import type { EventRoster } from '../../services/rosterService';
 import { pb } from '../../lib/pocketbase';
 import { PhotoUploader } from '../common/PhotoUploader';
-import { Badge } from '../ui';
+import { Badge, Button } from '../ui';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
 
 
@@ -14,6 +14,7 @@ interface EventRosterTableProps {
     roster?: EventRoster;
   }>;
   isUpdating: boolean;
+  onCreate?: () => void;
   onUpdateRSVP: (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => Promise<void>;
   onPhotoChange?: () => void;
   onSingerClick?: (profile: Profile) => void;
@@ -24,6 +25,7 @@ interface EventRosterTableProps {
 export const EventRosterTable: React.FC<EventRosterTableProps> = ({
   singers,
   isUpdating,
+  onCreate,
   onUpdateRSVP,
   onPhotoChange,
   onSingerClick,
@@ -162,7 +164,14 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           {singers.length === 0 && (
             <tr>
               <td colSpan={5} className="px-6 py-12 text-center">
-                <p className="text-sm font-medium text-slate-700">No singers found.</p>
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-sm font-medium text-slate-700">No singers found.</p>
+                  {onCreate && (
+                    <Button onClick={onCreate} variant="primary" size="small">
+                      + Add Singers
+                    </Button>
+                  )}
+                </div>
               </td>
             </tr>
           )}

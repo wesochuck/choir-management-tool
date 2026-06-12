@@ -226,6 +226,7 @@ export default function EventsView(): React.JSX.Element {
       <EventList
         events={filteredEvents}
         onEdit={handleEdit}
+        onCreate={handleAdd}
         onSendMessage={handleSendMessage}
         onViewRoster={(event: Event) => navigate(`/admin/events/${event.id}/roster`)}
         onCheckAttendance={(event: Event) =>

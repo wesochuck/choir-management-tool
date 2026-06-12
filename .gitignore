@@ -29,3 +29,8 @@ dist-ssr
 
 # other stuff
 google-drive-player-main/*
+
+# Agent-tooling scratch (work artifacts, prompts, sentinel logs)
+.planning/tmp/
+.kilo/
+.jules/

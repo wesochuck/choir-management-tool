@@ -9,6 +9,7 @@ import { AppCard } from '../common/AppCard';
 interface EventListProps {
   events: Event[];
   onEdit: (event: Event) => void;
+  onCreate?: () => void;
   onSendMessage: (event: Event) => void;
   onViewRoster: (event: Event) => void;
   onCheckAttendance?: (event: Event) => void;
@@ -21,6 +22,7 @@ interface EventListProps {
 export const EventList: React.FC<EventListProps> = ({
   events,
   onEdit,
+  onCreate,
   onSendMessage,
   onViewRoster,
   onCheckAttendance,
@@ -48,8 +50,13 @@ export const EventList: React.FC<EventListProps> = ({
   if (events.length === 0) {
     return (
       <AppCard noPadding>
-        <div className="p-8 text-center text-sm text-text-muted">
+        <div className="flex flex-col items-center gap-4 p-8 text-center text-sm text-text-muted">
           No events scheduled.
+          {onCreate && (
+            <Button onClick={onCreate} variant="primary" size="small">
+              + Create Event
+            </Button>
+          )}
         </div>
       </AppCard>
     );

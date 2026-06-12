@@ -10,6 +10,7 @@ import { Button, Badge } from '../ui';
 interface RosterTableProps {
   profiles: Profile[];
   onEdit: (profile: Profile) => void;
+  onCreate?: () => void;
   onPhotoChange?: () => void;
   currentSeason?: string;
   duesMap?: Record<string, SeasonalDue>;
@@ -33,6 +34,7 @@ const getInitials = (name: string) => {
 export const RosterTable: React.FC<RosterTableProps> = ({ 
   profiles, 
   onEdit, 
+  onCreate,
   currentSeason, 
   duesMap, 
   onToggleDues,
@@ -168,7 +170,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             {profiles.length === 0 && (
               <tr>
                 <td colSpan={currentSeason ? 7 : 6} className="px-6 py-8 text-center">
-                  <p className="text-sm text-slate-400">No singers found.</p>
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-sm text-slate-400">No singers found.</p>
+                    {onCreate && (
+                      <Button onClick={onCreate} variant="primary" size="small">
+                        + Add Singer
+                      </Button>
+                    )}
+                  </div>
                 </td>
               </tr>
             )}

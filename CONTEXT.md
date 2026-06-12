@@ -175,3 +175,15 @@ The higher price charged for a ticket purchased online on the day of the perform
 ## Discount Code
 
 A code entered by a buyer at checkout to apply a percentage or fixed discount to their ticket purchase, leveraging Stripe's native Checkout Promotion Codes.
+
+## System Configuration
+
+Organization-wide, infrastructure-level settings reserved for the central `SettingsView`. Examples: `choirName`, SMTP server, Twilio integration, payment gateways, global auth providers. Stored as key-value entries in the `appSettings` PocketBase collection. Any new entry requires a corresponding forward migration.
+
+## Feature Configuration
+
+Settings that configure a specific feature's behavior or define templates/presets for that feature. Configured directly inside the relevant product view under a settings/config tab, NOT in the global `SettingsView`. Examples: Roster Settings (Voice Parts, Season, Section Buckets & Colors) inside `RosterView`, Music Catalog Settings (Genres, Catalog URL Lookup) inside the Music Library, Seating Formations Templates inside `SeatingView`. Draft state is managed with a `FloatingSaveBar` and persisted via `dialog.confirm`/`dialog.showMessage` flows.
+
+## View Preferences (Server-Side User Preferences)
+
+Personal, per-user view state (sorting selections, view modes, personal filters) stored on the `users` collection in a flexible JSON field named `preferences`. Never clutter the administrative system settings database with these. Exposed and configured in a single "View Preferences" section of the user's `ProfileView` so both singers and admins can manage device-spanning view behavior in one hub. Type-safe merging lives in `src/lib/userPreferences.ts`, and `useAuth()` exposes `updatePreferences(partialPreferences)` for writes. Feature views should load preferences with sensible local defaults and trigger seamless persistence on change, without showing verbose "preference saved" banners.

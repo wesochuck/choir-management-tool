@@ -384,6 +384,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         <EventRosterTable 
           singers={sortedSingers}
           isUpdating={isUpdating}
+          onCreate={() => navigate('/admin/roster')}
           onUpdateRSVP={handleUpdateRSVP}
           onPhotoChange={handlePhotoChange}
           onSingerClick={handleSingerClick}

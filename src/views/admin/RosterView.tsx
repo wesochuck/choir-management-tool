@@ -445,6 +445,7 @@ export default function RosterView() {
           <RosterTable 
             profiles={paginatedProfiles} 
             onEdit={handleEdit} 
+            onCreate={handleAdd}
             onPhotoChange={refresh} 
             currentSeason={currentSeason}
             duesMap={duesMap}
