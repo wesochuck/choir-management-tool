@@ -115,22 +115,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const fittedSeatSize = Math.floor(getFittedSeatSize(gridGap));
   const minSeatSize = isCompact ? 44 : 72;
   const seatSize = Number.isFinite(fittedSeatSize) ? Math.max(minSeatSize, Math.min(baseSeatSize, fittedSeatSize)) : baseSeatSize;
-  const printSeatSize = React.useMemo(() => {
-    if (maxSeats <= 0) return 42;
-    const availableWidth = 920; // 960px standard printable width minus layout buffer
-    const labelW = isCompact ? 110 : 130;
-    const gap = isCompact ? 4 : 6;
-    const totalGapWidth = Math.max(0, maxSeats - 1) * gap;
-    const calculatedSize = (availableWidth - labelW - totalGapWidth) / maxSeats;
-    return Math.max(26, Math.min(42, Math.floor(calculatedSize)));
-  }, [maxSeats, isCompact]);
-
   const isTightGrid = seatSize < baseSeatSize;
   const rowGap = isCompact ? '4px' : '8px';
   const containerPadding = isCompact ? '4px' : '16px';
-  const seatNameFontSize = isCompact ? (isTightGrid ? '1.05rem' : '1.375rem') : '1.25rem';
-  const seatVoicePartFontSize = isCompact ? (isTightGrid ? '0.625rem' : '0.75rem') : '0.875rem';
-  const emptySeatFontSize = isCompact ? (isTightGrid ? '0.875rem' : '1rem') : '1.125rem';
   const hoverScale = isTightGrid ? 1.24 : 1.45;
   const neighborScale = isTightGrid ? 1.12 : 1.22;
   const hoverTranslateY = isTightGrid ? -4 : -8;
@@ -190,7 +177,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   return (
     <div
       ref={gridRef}
-      className="flex flex-col items-center w-full"
+      className="grid-print flex flex-col items-center w-full"
+      // @allow-inline-style - dynamic gap and padding from layout calculations
       style={{
         gap: rowGap,
         padding: containerPadding,
@@ -227,7 +215,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       )}
 
       {/* Scrollable seating grid */}
-      <div className="w-full" style={{ overflowX: 'auto' }}>
+      <div className="w-full overflow-x-auto">
 
       {rowCounts.map((_, index) => {
         const rowIndex = rowCounts.length - 1 - index;
