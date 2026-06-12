@@ -45,7 +45,6 @@ export default function EventsView(): React.JSX.Element {
   const {
     communicationSettings,
     auditionSettings,
-    setAuditionSettings,
   } = useEventSettings();
 
   const {
@@ -91,8 +90,6 @@ export default function EventsView(): React.JSX.Element {
     venues,
     timezone,
     communicationSettings,
-    auditionSettings,
-    setAuditionSettings,
     navigate,
     dialog,
   });

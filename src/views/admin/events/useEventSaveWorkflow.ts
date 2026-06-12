@@ -7,8 +7,6 @@ import type {
 } from '../../../services/eventService';
 import type { Venue } from '../../../services/venueService';
 import {
-  settingsService,
-  type AuditionSettings,
   type CommunicationSettings,
 } from '../../../services/settingsService';
 import { rosterService } from '../../../services/rosterService';
@@ -30,8 +28,6 @@ interface UseEventSaveWorkflowArgs {
   venues: Venue[];
   timezone: string;
   communicationSettings: CommunicationSettings;
-  auditionSettings: AuditionSettings | null;
-  setAuditionSettings: (settings: AuditionSettings) => void;
   navigate: NavigateFunction;
   dialog: ReturnType<typeof useDialog>;
 }
@@ -46,7 +42,6 @@ export function useEventSaveWorkflow({
   venues,
   timezone,
   communicationSettings,
-  setAuditionSettings,
   navigate,
   dialog,
 }: UseEventSaveWorkflowArgs) {
@@ -54,7 +49,6 @@ export function useEventSaveWorkflow({
     async (
       data: Partial<Event> | FormData,
       bulkConfig?: BulkRehearsalConfig,
-      openAuditions?: boolean,
     ) => {
       let resultEvent: Event | undefined;
 
@@ -85,37 +79,6 @@ export function useEventSaveWorkflow({
             console.error('Failed to clone roster RSVPs:', err);
           } finally {
             setCloningEventId(null);
-          }
-        }
-
-        if (openAuditions && savedEvent.type === 'Performance') {
-          const currentSettings = await settingsService.getAuditionSettings();
-          const updatedSettings = {
-            ...currentSettings,
-            enabled: true,
-            defaultPerformanceId: savedEvent.id,
-          };
-
-          await settingsService.saveAuditionSettings(updatedSettings);
-          setAuditionSettings(updatedSettings);
-
-          dialog.showToast(
-            `Public auditions are now active for "${savedEvent.title || 'this performance'}".`,
-          );
-        } else if (!openAuditions && savedEvent.type === 'Performance') {
-          const currentSettings = await settingsService.getAuditionSettings();
-
-          if (
-            currentSettings.defaultPerformanceId === savedEvent.id &&
-            currentSettings.enabled
-          ) {
-            const updatedSettings = {
-              ...currentSettings,
-              enabled: false,
-            };
-
-            await settingsService.saveAuditionSettings(updatedSettings);
-            setAuditionSettings(updatedSettings);
           }
         }
 
@@ -157,7 +120,6 @@ export function useEventSaveWorkflow({
       venues,
       timezone,
       communicationSettings,
-      setAuditionSettings,
       navigate,
       dialog,
     ],

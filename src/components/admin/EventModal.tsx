@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal, Select } from '../ui';
+import { Modal, Select, Button } from '../ui';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
@@ -12,7 +13,7 @@ import { utcToZonedInputValue, zonedInputValueToUtc } from '../../lib/timezone';
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig, openAuditions?: boolean) => Promise<void>;
+  onSave: (data: Partial<Event>, bulkConfig?: BulkRehearsalConfig) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   initialData?: Event | null;
   performances: Event[];
@@ -34,6 +35,7 @@ export const EventModal: React.FC<EventModalProps> = ({
   onAddVenue
 }) => {
   const dialog = useDialog();
+  const navigate = useNavigate();
   const { timezone } = useChoirSettings();
   const [formData, setFormData] = useState<Partial<Event>>({
     title: '',
@@ -94,14 +96,13 @@ export const EventModal: React.FC<EventModalProps> = ({
   }, [formData.date, timezone]);
 
   const [shouldBulkAdd, setShouldBulkAdd] = useState(false);
-  const [isOpenAuditions, setIsOpenAuditions] = useState(false);
-  const [initialOpenAuditions, setInitialOpenAuditions] = useState(false);
   const [bulkCount, setBulkCount] = useState(8);
   const [bulkDay, setBulkDay] = useState(2); // Tuesday
   const [bulkTime, setBulkTime] = useState('19:00');
   const [bulkVenue, setBulkVenue] = useState('');
 
   const [isSubmitting, setIsLoading] = useState(false);
+  const [isAuditionTarget, setIsAuditionTarget] = useState(false);
   const titleInputRef = React.useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<'details' | 'tickets'>('details');
@@ -225,15 +226,12 @@ export const EventModal: React.FC<EventModalProps> = ({
   }, [formData.date, formData.durationMinutes]);
 
   useEffect(() => {
-    if (isOpen && initialData && initialData.type === 'Performance') {
+    if (isOpen && initialData?.type === 'Performance') {
       settingsService.getAuditionSettings().then(settings => {
-        const isActive = settings.enabled && settings.defaultPerformanceId === initialData.id;
-        setIsOpenAuditions(isActive);
-        setInitialOpenAuditions(isActive);
+        setIsAuditionTarget(settings.enabled && settings.defaultPerformanceId === initialData.id);
       });
-    } else if (isOpen) {
-      setIsOpenAuditions(false);
-      setInitialOpenAuditions(false);
+    } else {
+      setIsAuditionTarget(false);
     }
   }, [initialData, isOpen]);
 
@@ -311,7 +309,7 @@ export const EventModal: React.FC<EventModalProps> = ({
         submitData = fd;
       }
 
-      await onSave(submitData, bulkConfig, isOpenAuditions);
+      await onSave(submitData, bulkConfig);
       onClose();
     } catch (err: unknown) {
       await dialog.showMessage({
@@ -338,7 +336,6 @@ export const EventModal: React.FC<EventModalProps> = ({
       const parentChanged = (formData.parentPerformanceId || '') !== (initialData.parentPerformanceId || '');
       const venueChanged = (formData.venue || '') !== (initialData.venue || '');
       const rsvpChanged = Boolean(formData.isOpenForRSVP) !== Boolean(initialData.isOpenForRSVP);
-      const auditionsChanged = isOpenAuditions !== initialOpenAuditions;
       const ticketingEnabledChanged = Boolean(formData.isTicketingEnabled) !== Boolean(initialData.isTicketingEnabled);
       const advancePriceChanged = (formData.advancePriceCents || 0) !== (initialData.advancePriceCents || 0);
       const dayOfPriceChanged = (formData.dayOfPriceCents || 0) !== (initialData.dayOfPriceCents || 0);
@@ -347,7 +344,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       const publicDetailsChanged = (formData.publicDetails || '') !== (initialData.publicDetails || '');
       const graphicChanged = eventGraphicFile !== null;
       
-      return titleChanged || dateChanged || typeChanged || detailsChanged || durationChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || auditionsChanged || ticketingEnabledChanged || advancePriceChanged || dayOfPriceChanged || capacityChanged || doorsOpenChanged || publicDetailsChanged || graphicChanged;
+      return titleChanged || dateChanged || typeChanged || detailsChanged || durationChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || ticketingEnabledChanged || advancePriceChanged || dayOfPriceChanged || capacityChanged || doorsOpenChanged || publicDetailsChanged || graphicChanged;
     } else {
       const hasTitle = Boolean(formData.title?.trim());
       const hasDetails = Boolean(formData.details?.trim());
@@ -364,7 +361,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
       return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || hasCallTime || isDurationChanged || isTypeChanged || hasBulkAdd || hasInlineVenue || hasTicketing;
     }
-  }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, isOpenAuditions, initialOpenAuditions, eventGraphicFile]);
+  }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, eventGraphicFile]);
 
   const handleClose = async () => {
     if (isDirty) {
@@ -648,20 +645,24 @@ export const EventModal: React.FC<EventModalProps> = ({
               </div>
             )}
 
-            {formData.type === 'Performance' && (
-              <div className="flex flex-col gap-2 rounded-lg border border-dashed border-[#ff8a65] bg-[#ff8a65]/5 p-4">
-                <label className="flex cursor-pointer flex-row gap-3">
-                  <input 
-                    type="checkbox" 
-                    checked={isOpenAuditions} 
-                    onChange={(e) => setIsOpenAuditions(e.target.checked)}
-                    className="mt-0.5 size-4 rounded-sm border-border text-[#ff8a65] focus:ring-[#ff8a65] focus:ring-offset-0"
-                  />
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-bold text-[#e64a19]">Open Public Auditions?</span>
-                    <span className="text-xs font-medium text-text-muted">If checked, this performance will be the target for new audition requests.</span>
+            {formData.type === 'Performance' && isAuditionTarget && (
+              <div className="flex flex-col gap-1 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-row items-center gap-2">
+                    <span className="text-sm font-bold text-primary-deep">Public Auditions Open</span>
+                    <span className="inline-flex size-2 rounded-full bg-primary" />
                   </div>
-                </label>
+                  <span className="text-xs font-medium text-text-muted">This performance is accepting public audition requests. Full controls are in Auditions Settings.</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  className="mt-1 self-start"
+                  onClick={() => navigate('/admin/auditions')}
+                >
+                  Auditions Settings →
+                </Button>
               </div>
             )}
 
