@@ -190,23 +190,10 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   return (
     <div
       ref={gridRef}
-      className="flex-col grid-print"
-      // @allow-inline-style - dynamic gap, padding, and --max-seats computed from layout
+      className="flex-col items-center w-full"
       style={{
         gap: rowGap,
-        alignItems: 'center',
-        width: '100%',
-        overflowX: 'auto',
         padding: containerPadding,
-        ...({
-          '--max-seats': maxSeats,
-          '--seat-size': `${seatSize}px`,
-          '--print-seat-size': `${printSeatSize}px`,
-          '--seat-font-size': isCompact ? (isTightGrid ? '0.625rem' : 'var(--font-size-xs)') : 'var(--font-size-sm)',
-          '--seat-name-font-size': seatNameFontSize,
-          '--seat-vp-font-size': seatVoicePartFontSize,
-          '--seat-empty-font-size': emptySeatFontSize,
-        } as React.CSSProperties)
       }}
     >
       {/* Warning banner if not enough seats */}
@@ -238,6 +225,12 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           ➕ Add Row to Back
         </Button>
       )}
+
+      {/* Scrollable seating grid */}
+      <div style={{
+        width: '100%',
+        overflowX: 'auto',
+      }}>
 
       {rowCounts.map((_, index) => {
         const rowIndex = rowCounts.length - 1 - index;
@@ -612,6 +605,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           </div>
         );
       })}
+      </div>
 
       {/* Add Row to Front Button */}
       {!isReadOnly && onUpdateRowCounts && (

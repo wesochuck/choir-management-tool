@@ -627,16 +627,16 @@ export default function SeatingView() {
                    {isFullscreen ? 'Exit' : '🖥️ Full'}
                  </button>
 
-                 {printMode === 'text' && (
-                   <label className="ml-2 cursor-pointer flex-row items-center gap-1 text-[0.8125rem] font-semibold text-muted select-none">
-                     <input 
-                       type="checkbox" 
-                       checked={showVoicePartsInList} 
-                       onChange={(e) => setShowVoicePartsInList(e.target.checked)}
-                       className="size-[15px] cursor-pointer"
-                     />
-                     Show Voice Parts
-                   </label>
+                  {printMode === 'text' && (
+                    <label className="ml-2 cursor-pointer flex items-center gap-1 text-[0.8125rem] font-semibold text-muted select-none leading-none">
+                      <input 
+                        type="checkbox" 
+                        checked={showVoicePartsInList} 
+                        onChange={(e) => setShowVoicePartsInList(e.target.checked)}
+                        className="size-[15px] cursor-pointer"
+                      />
+                      <span>Show Voice Parts</span>
+                    </label>
                  )}
                </div>
                
