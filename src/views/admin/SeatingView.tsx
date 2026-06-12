@@ -298,6 +298,15 @@ export default function SeatingView() {
       ref={workspaceRef}
       data-print-mode={printMode} 
     >
+      {/* Dynamic @page setup based on visual grid landscape mode vs text list portrait mode */}
+      <style>{`
+        @media print {
+          @page {
+            size: ${printMode === 'visual' ? 'landscape' : 'portrait'};
+            margin: ${printMode === 'visual' ? '0.25in' : '0.5in'};
+          }
+        }
+      `}</style>
       <div className="no-print flex w-full flex-row items-center justify-between gap-[var(--space-md)] border-b border-[var(--border)] pb-[var(--space-sm)]">
         <div className="flex-row flex-wrap items-center gap-[var(--space-md)]">
           <h1 className="text-headline m-0 text-xl font-extrabold">

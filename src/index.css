@@ -224,8 +224,28 @@ body {
 }
 
 @media print {
-    body .no-print.no-print.no-print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body .no-print.no-print.no-print {
     display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .bg-surface {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
 
   [data-print-mode="text"] [data-seating-text-list] {
@@ -243,17 +263,21 @@ body {
   body:has([data-print-mode="visual"]) .admin-layout-header {
     display: none !important;
   }
+
+  /* Scale down the seat sizes to fit standard landscape pages */
+  [data-print-mode="visual"] {
+    --seat-size: 42px !important;
+    --seat-font-size: 8px !important;
+    --seat-name-font-size: 10px !important;
+    --seat-vp-font-size: 7px !important;
+    --seat-empty-font-size: 8px !important;
+  }
 }
 
 @media print {
   /* Enforce standard portrait layout globally */
   @page {
     size: portrait;
-  }
-  
-  /* Allocate a named canvas geometry rule for large layouts */
-  @page landscape-canvas {
-    size: landscape;
     margin: 0.5in;
   }
 }
