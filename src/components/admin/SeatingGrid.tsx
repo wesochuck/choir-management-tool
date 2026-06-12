@@ -179,7 +179,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   return (
     <div
       ref={gridRef}
-      className="flex-col"
+      className="flex-col grid-print"
       // @allow-inline-style - dynamic gap, padding, and --max-seats computed from layout
       style={{
         gap: rowGap,
