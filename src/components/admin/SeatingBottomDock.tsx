@@ -129,8 +129,17 @@ export function SeatingBottomDock({
     return groups;
   }, [unassigned, isVoicePartLayout, displaySections, voiceParts]);
 
+  const groupsWithSingers = useMemo(() => {
+    return displaySections
+      .map(section => ({
+        ...section,
+        singers: groupedSingers[section.key] || []
+      }))
+      .filter(section => section.singers.length > 0);
+  }, [displaySections, groupedSingers]);
+
   return (
-    <div className="no-print mt-4 rounded-xl border border-border bg-primary-light p-2">
+    <div className="no-print mt-4 rounded-xl border border-border bg-primary-light/70 p-3">
       <div 
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -144,40 +153,41 @@ export function SeatingBottomDock({
             console.error('Failed to parse bottom dock drop data', err);
           }
         }}
-        className="flex-col gap-2"
+        className="flex-col gap-3"
       >
-        <div className="flex w-full flex-row items-center justify-between">
-          <div className="flex-col gap-0.5">
-            <h3 className="text-headline m-0 text-[1.05rem] text-primary-deep">📥 Unassigned Singers Shelf</h3>
-            <span className="text-muted text-[11px]">Drag up to assign, or drop here to clear a seat assignment.</span>
+        <div className="flex w-full flex-row flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0 flex-col gap-0.5">
+            <div className="flex flex-row flex-wrap items-center gap-2">
+              <h3 className="m-0 text-[1rem] font-bold leading-tight text-primary-deep">Unassigned Singers</h3>
+              <span className="inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-xs font-bold text-primary-deep shadow-xs">
+                {unassigned.length}
+              </span>
+            </div>
+            <span className="text-muted text-[11px]">Drag up to assign, or drop assigned seats here to clear.</span>
           </div>
-          <div className="no-print flex-row gap-1">
+          <div className="no-print flex flex-row flex-wrap justify-end gap-1">
             {onLookupSinger && (
               <button
                 type="button"
                 onClick={onLookupSinger}
-                className="flex h-8 min-h-[32px] items-center gap-1.5 whitespace-nowrap rounded-md bg-primary-light px-3 text-xs font-label text-primary-deep"
+                className="inline-flex h-8 min-h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 text-xs font-label text-primary-deep shadow-xs"
               >
-                🔍 Lookup Singer
+                🔍 Lookup
               </button>
             )}
             {onAddSinger && (
               <button
                 type="button"
                 onClick={onAddSinger}
-                className="flex h-8 min-h-[32px] items-center gap-1.5 whitespace-nowrap rounded-md bg-primary-light px-3 text-xs font-label text-primary-deep"
+                className="inline-flex h-8 min-h-8 items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-surface px-2.5 text-xs font-label text-primary-deep shadow-xs"
               >
-                + Add New Singer
+                + Add
               </button>
             )}
           </div>
         </div>
-        <div 
-          className="grid h-[220px] gap-2" 
-          // @allow-inline-style - dynamic grid columns based on section count
-          style={{ gridTemplateColumns: `repeat(${displaySections.length}, 1fr)` }}
-        >
-          {displaySections.map(({ key, label, color }) => {
+        <div className="flex max-h-[190px] flex-col gap-3 overflow-y-auto rounded-lg border border-border bg-surface p-2">
+          {groupsWithSingers.map(({ key, label, color, singers }) => {
             const list = groupedSingers[key] || [];
             const secColor = color;
             const badgeStyle = secColor ? {
@@ -192,30 +202,33 @@ export function SeatingBottomDock({
             } : undefined;
 
             return (
-              <div key={key} className="flex h-full flex-col gap-1 overflow-hidden rounded-lg border border-border bg-surface p-1.5">
-                <div className="flex-row items-center justify-between border-b border-border pb-1">
-                  <span className="text-label font-bold" style={labelStyle}>
+              <section key={key} className="flex flex-col gap-1.5">
+                <div className="flex flex-row items-center gap-2">
+                  <span className="text-sm font-bold leading-tight" style={labelStyle}>
                     {label}
                   </span>
-                  <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase" style={badgeStyle}>
+                  <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase" style={badgeStyle}>
                     {list.length}
                   </span>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-[3px] overflow-y-auto pr-0.5 mt-0.5">
-                  {list.map(p => (
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-1.5">
+                  {singers.map(p => (
                     <div 
                       key={p.id}
+                      data-unassigned-singer-chip
                       draggable
                       onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                      className="flex h-[26px] min-h-[26px] cursor-grab flex-row items-center justify-between gap-1 rounded-lg border border-border bg-bg px-1.5 text-xs shadow-sm leading-[1.2]"
+                      className="group flex h-8 min-h-8 cursor-grab flex-row items-center justify-between gap-1 rounded-md border border-border bg-bg px-2 text-xs leading-[1.2] shadow-xs transition-colors hover:border-primary/60 hover:bg-primary-light/40"
                     >
                       <span className="min-w-0 flex-1 truncate" title={p.name}>
                         {uniqueDisplayNames[p.id] || p.name.split(' ').pop()}
                       </span>
-                      <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
-                        {p.voicePart}
-                      </span>
+                      {!isVoicePartLayout && (
+                        <span className="inline-flex items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
+                          {p.voicePart}
+                        </span>
+                      )}
                       {onRemoveRsvp && (
                         <button
                           type="button"
@@ -223,7 +236,7 @@ export function SeatingBottomDock({
                             e.stopPropagation();
                             onRemoveRsvp(p.id, p.name);
                           }}
-                          className="no-print ml-1.5 flex size-[18px] min-h-[18px] shrink-0 cursor-pointer items-center justify-center rounded border-0 bg-transparent p-0 text-xs font-bold text-text-muted transition-all duration-200 hover:bg-red-500/15 hover:text-red-700"
+                          className="no-print flex size-[18px] min-h-[18px] shrink-0 cursor-pointer items-center justify-center rounded border-0 bg-transparent p-0 text-xs font-bold text-text-muted opacity-0 transition-all duration-200 hover:bg-red-500/15 hover:text-red-700 group-hover:opacity-100 group-focus-within:opacity-100"
                           title="Mark as Not Attending"
                         >
                           ×
@@ -231,15 +244,15 @@ export function SeatingBottomDock({
                       )}
                     </div>
                   ))}
-                  {list.length === 0 && (
-                    <div className="flex flex-1 items-center justify-center opacity-40 text-[10px]">
-                      <span>Empty</span>
-                    </div>
-                  )}
                 </div>
-              </div>
+              </section>
             );
           })}
+          {groupsWithSingers.length === 0 && (
+            <div className="flex min-h-[72px] items-center justify-center rounded-md border border-dashed border-border bg-bg text-sm font-medium text-muted">
+              All singers assigned
+            </div>
+          )}
         </div>
       </div>
     </div>

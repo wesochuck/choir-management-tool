@@ -314,7 +314,7 @@ export default function SeatingView() {
 
       {/* Filter Deck (Chart tab only) */}
       {activeTab === 'chart' && (
-        <div className="no-print grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1.1fr]">
+        <div className="no-print grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 md:grid-cols-2 xl:grid-cols-[0.8fr_1fr_1fr_1.6fr]">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Performance</label>
             <select

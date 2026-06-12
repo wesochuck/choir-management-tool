@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const seatingView = readFileSync(new URL('../src/views/admin/SeatingView.tsx', import.meta.url), 'utf8');
 const seatingGrid = readFileSync(new URL('../src/components/admin/SeatingGrid.tsx', import.meta.url), 'utf8');
+const seatingBottomDock = readFileSync(new URL('../src/components/admin/SeatingBottomDock.tsx', import.meta.url), 'utf8');
 const indexCss = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
 
 test('seating wide layout is reserved for actual fullscreen mode', () => {
@@ -58,6 +59,20 @@ test('seating grid fit math uses the rendered row label width and avoids nested 
   );
 });
 
+test('seating grid preserves vertical spacing between rendered seat rows', () => {
+  assert.match(
+    seatingGrid,
+    /className="w-full overflow-x-clip overflow-y-visible flex flex-col"/,
+    'the inner seating-row wrapper should stack row-print rows vertically',
+  );
+
+  assert.match(
+    seatingGrid,
+    /style=\{\{\s*gap:\s*rowGap\s*\}\}/,
+    'the inner seating-row wrapper should apply the computed rowGap between rows',
+  );
+});
+
 test('seating drag and drop does not rely on visible grab-handle dots', () => {
   assert.ok(
     !/seat-grab-handle/.test(seatingGrid),
@@ -100,6 +115,12 @@ test('seating layout does not rely on Tailwind button utilities that are overrid
 test('seating chart selection uses a compact ordered dropdown instead of a wrapping tab row', () => {
   assert.match(
     seatingView,
+    /xl:grid-cols-\[0\.8fr_1fr_1fr_1\.6fr\]/,
+    'the top seating controls should reserve less width for Performance and more width for Chart',
+  );
+
+  assert.match(
+    seatingView,
     /aria-label="Select seating chart"/,
     'chart selection should use a compact dropdown control',
   );
@@ -125,5 +146,36 @@ test('seating chart selection uses a compact ordered dropdown instead of a wrapp
   assert.ok(
     !/visibleTabCount|tabsContainerRef|CHART_DRAG_MIME/.test(seatingView),
     'old tab-row measurement and drag-only chart ordering state should be removed',
+  );
+});
+
+test('unassigned singer shelf uses grouped chips with one shared scroll area', () => {
+  assert.ok(
+    !/grid h-\[220px\]/.test(seatingBottomDock),
+    'unassigned shelf should not use a fixed-height multi-column lane grid',
+  );
+
+  assert.match(
+    seatingBottomDock,
+    /className="flex max-h-\[190px\] flex-col gap-3 overflow-y-auto/,
+    'unassigned shelf should use one shared vertical scroll area for all groups',
+  );
+
+  assert.match(
+    seatingBottomDock,
+    /grid-cols-\[repeat\(auto-fill,minmax\(120px,1fr\)\)\]/,
+    'each voice group should wrap singer chips with auto-fill columns',
+  );
+
+  assert.match(
+    seatingBottomDock,
+    /data-unassigned-singer-chip/,
+    'singers should render as compact draggable chips',
+  );
+
+  assert.match(
+    seatingBottomDock,
+    /!\s*isVoicePartLayout\s*&&\s*\(\s*<span className="inline-flex items-center rounded bg-primary-light/,
+    'section-based chart shelves should show voice-part badges on singer chips',
   );
 });

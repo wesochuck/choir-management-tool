@@ -216,7 +216,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       )}
 
       {/* Seating grid */}
-      <div className="w-full overflow-x-clip overflow-y-visible">
+      <div
+        className="w-full overflow-x-clip overflow-y-visible flex flex-col"
+        // @allow-inline-style - dynamic row gap from layout calculations
+        style={{ gap: rowGap }}
+      >
 
       {rowCounts.map((_, index) => {
         const rowIndex = rowCounts.length - 1 - index;
