@@ -14,5 +14,8 @@
     "pocketbase/pb_hooks_src/hmacTokens.ts",
     "pocketbase/pb_hooks_src/rsvpValidation.ts",
     "pocketbase/pb_hooks_src/email/emailTypes.ts"
-  ]
+  ],
+  "ignoreExportsUsedInFile": {
+    "type": true
+  }
 }

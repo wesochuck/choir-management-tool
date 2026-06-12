@@ -9,6 +9,7 @@ import { SeatingTextList } from '../../components/admin/SeatingTextList';
 import { UnassignedPrintSection } from '../../components/admin/UnassignedPrintSection';
 import { SeatingBottomDock } from '../../components/admin/SeatingBottomDock';
 import { SeatingFormationsEditor } from '../../components/admin/SeatingFormationsEditor';
+import { ChartCopyDropdown } from '../../components/admin/ChartCopyDropdown';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
 import { Modal, Select } from '../../components/ui';
@@ -541,21 +542,11 @@ export default function SeatingView() {
                  )}
                </div>
                
-               <div className="flex min-w-[200px] flex-1 flex-row items-center justify-center gap-1">
-                  <span className="text-muted text-xs font-semibold whitespace-nowrap">Copy:</span>
-                  <Select 
-                    onChange={(e) => handleCopy(e.target.value)}
-                    value=""
-                    size="compact" className="max-w-[200px] flex-1"
-                  >
-                    <option value="">-- Choose --</option>
-                    {allCharts
-                      .filter(c => c.venue === venueId && c.performance !== performanceId)
-                      .map(c => (
-                        <option key={c.id} value={c.id}>{c.expand?.performance?.title || 'Untitled'}</option>
-                      ))}
-                  </Select>
-               </div>
+               <ChartCopyDropdown
+                 allCharts={allCharts.filter(c => c.venue === venueId)}
+                 currentChartId={activeChartId || ''}
+                 onCopy={handleCopy}
+               />
 
                <button onClick={handlePrint} className="font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-2.5 text-xs whitespace-nowrap text-surface">
                   🖨️ Print

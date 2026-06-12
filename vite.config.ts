@@ -15,8 +15,9 @@ export default defineConfig({
           setupFiles: [path.resolve(import.meta.dirname, './test/setup-dom.ts')],
           testTimeout: 30000,
           include: [
-            'src/components/ui/**/*.test.ts',
-            'test/views/**/*.test.ts',
+            'src/components/ui/**/*.test.{ts,tsx}',
+            'src/components/admin/**/*.test.{ts,tsx}',
+            'test/views/**/*.test.{ts,tsx}',
             'test/eventCardSetList.test.ts',
             'test/useVoiceParts.test.ts',
             'test/attendanceRsvpSync.test.ts',
