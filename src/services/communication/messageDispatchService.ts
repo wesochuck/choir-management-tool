@@ -5,10 +5,6 @@ import type {
   SendMessageResult,
 } from './types';
 
-export function encodeSmsBody(content: string): string {
-  return encodeURIComponent(content.slice(0, 1500));
-}
-
 export async function sendBulkMessage(
   data: SendMessageInput,
   draftId?: string
