@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { getOfflineTrackUrl, revokeAllOfflineTrackUrls } from '../src/services/offlineMediaStore.ts';
+import { getOfflineTrackUrl, revokeAllOfflineTrackUrls, getOfflinePlaylist } from '../src/services/offlineMediaStore.ts';
 
 describe('offlineMediaStore', () => {
   let objectURLMock: any;
@@ -25,19 +25,27 @@ describe('offlineMediaStore', () => {
     getRequestMock = {
       onsuccess: null,
       onerror: null,
-      result: undefined
+      result: undefined,
+      error: undefined,
+      forceError: false
     };
 
     const objectStoreMock = {
-      get: mock.fn((trackId: string) => {
+      get: mock.fn((key: string) => {
         // Return our mock request. In the test, we'll manually trigger onsuccess
         // using setTimeout to simulate async behavior of IDBRequest
         setTimeout(() => {
-          // Setup result
-          getRequestMock.result = {
-            id: trackId,
-            blob: new Blob(['dummy audio data'], { type: 'audio/mpeg' }),
-          };
+          if (getRequestMock.forceError) {
+            if (getRequestMock.onerror) getRequestMock.onerror();
+            return;
+          }
+          // Setup default result for tracks if no custom result was provided by a test
+          if (getRequestMock.result === undefined) {
+            getRequestMock.result = {
+              id: key,
+              blob: new Blob(['dummy audio data'], { type: 'audio/mpeg' }),
+            };
+          }
           if (getRequestMock.onsuccess) getRequestMock.onsuccess();
         }, 0);
         return getRequestMock;
@@ -95,5 +103,38 @@ describe('offlineMediaStore', () => {
     objectURLMock.mock.resetCalls();
     await getOfflineTrackUrl('track-1');
     assert.strictEqual(objectURLMock.mock.callCount(), 1, 'Should create a new object URL, meaning cache was cleared');
+  });
+
+  describe('getOfflinePlaylist', () => {
+    it('should return files array when playlist exists', async () => {
+      const mockFiles = [{ id: 'f1', name: 'File 1' }];
+      getRequestMock.result = {
+        key: 'playlist-1',
+        files: mockFiles,
+        savedAt: Date.now()
+      };
+
+      const result = await getOfflinePlaylist('playlist-1');
+      assert.deepStrictEqual(result, mockFiles, 'Should return the files array from the record');
+    });
+
+    it('should return null when playlist does not exist', async () => {
+      getRequestMock.result = null;
+
+      const result = await getOfflinePlaylist('missing-playlist');
+      assert.strictEqual(result, null, 'Should return null for missing record');
+    });
+
+    it('should reject with the request error when an error occurs', async () => {
+      getRequestMock.forceError = true;
+      const expectedError = new Error('IndexedDB read failed');
+      getRequestMock.error = expectedError;
+
+      await assert.rejects(
+        getOfflinePlaylist('playlist-error'),
+        expectedError,
+        'Should reject with the error from the request'
+      );
+    });
   });
 });
