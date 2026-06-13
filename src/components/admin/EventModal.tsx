@@ -298,8 +298,8 @@ export const EventModal: React.FC<EventModalProps> = ({
           if (val !== undefined && val !== null) {
             if (key === 'setList') {
               fd.append(key, JSON.stringify(val));
-            } else if (key === 'expand') {
-              // skip expanded relations in raw form payload
+            } else if (key === 'expand' || key === 'eventGraphic') {
+              // skip expanded relations and file fields in raw form payload
             } else {
               fd.append(key, String(val));
             }
