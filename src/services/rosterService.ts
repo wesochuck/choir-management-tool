@@ -202,6 +202,25 @@ export const rosterService = {
     );
   },
 
+  async getEventRostersBatch(eventIds: string[], options: RosterRequestOptions = {}) {
+    if (eventIds.length === 0) return [];
+    if (eventIds.length === 1) {
+      return await this.getEventRoster(eventIds[0], options);
+    }
+    const filterParts = eventIds.map((_, i) => `event = {:id${i}}`).join(' || ');
+    const params = eventIds.reduce<Record<string, string>>((acc, id, i) => {
+      acc[`id${i}`] = id;
+      return acc;
+    }, {});
+    return await retryOn429(() =>
+      pb.collection('eventRosters').getFullList<EventRoster>({
+        filter: pb.filter(filterParts, params),
+        expand: 'profile,profile.user',
+      }),
+      options
+    );
+  },
+
   async bulkUpdateRSVP(
     eventId: string, 
     updates: { profileId: string; rsvp: RsvpStatus }[],

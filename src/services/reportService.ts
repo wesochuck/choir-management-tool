@@ -51,10 +51,8 @@ export const reportService = {
       };
     }
 
-    // Fetch all rosters in parallel for performance
-    const allRosters = await Promise.all(
-      rehearsalIds.map(id => rosterService.getEventRoster(id))
-    );
+    // Fetch all rosters in a single batched query
+    const allRostersFlat = await rosterService.getEventRostersBatch(rehearsalIds);
 
     // 4. Get all profiles for name/voicePart mapping
     const profiles = await profileService.getProfiles();
@@ -63,18 +61,16 @@ export const reportService = {
     // 5. Aggregate data by singer
     const singerStats = new Map<string, { absences: number; presenceCount: number; total: number }>();
 
-    allRosters.forEach(roster => {
-      roster.forEach(item => {
-        const stats = singerStats.get(item.profile) || { absences: 0, presenceCount: 0, total: 0 };
-        stats.total++;
-        if (item.attendance === 'Absent') {
-          stats.absences++;
-        } else if (item.attendance === 'Present') {
-          stats.presenceCount++;
-        }
-        singerStats.set(item.profile, stats);
-      });
-    });
+    for (const item of allRostersFlat) {
+      const stats = singerStats.get(item.profile) || { absences: 0, presenceCount: 0, total: 0 };
+      stats.total++;
+      if (item.attendance === 'Absent') {
+        stats.absences++;
+      } else if (item.attendance === 'Present') {
+        stats.presenceCount++;
+      }
+      singerStats.set(item.profile, stats);
+    }
 
     const singerReports: SingerReport[] = Array.from(singerStats.entries()).map(([profileId, stats]) => {
       const profile = profileMap.get(profileId);
