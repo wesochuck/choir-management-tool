@@ -50,18 +50,19 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   const [eventGraphicFile, setEventGraphicFile] = useState<File | null>(null);
   const [graphicPreviewUrl, setGraphicPreviewUrl] = useState<string>('');
+  const [isGraphicRemoved, setIsGraphicRemoved] = useState<boolean>(false);
 
   useEffect(() => {
     if (eventGraphicFile) {
       const objectUrl = URL.createObjectURL(eventGraphicFile);
       setGraphicPreviewUrl(objectUrl);
       return () => URL.revokeObjectURL(objectUrl);
-    } else if (initialData?.eventGraphic) {
+    } else if (initialData?.eventGraphic && !isGraphicRemoved) {
       setGraphicPreviewUrl(pb.files.getURL(initialData, initialData.eventGraphic));
     } else {
       setGraphicPreviewUrl('');
     }
-  }, [eventGraphicFile, initialData]);
+  }, [eventGraphicFile, initialData, isGraphicRemoved]);
 
   const dayOfLiveText = useMemo(() => {
     if (!formData.date) return '';
@@ -146,6 +147,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   useEffect(() => {
     setEventGraphicFile(null);
+    setIsGraphicRemoved(false);
     if (initialData) {
       const formattedDate = utcToZonedInputValue(initialData.date, timezone);
       setFormData({ 
@@ -305,6 +307,8 @@ export const EventModal: React.FC<EventModalProps> = ({
         });
         if (eventGraphicFile) {
           fd.append('eventGraphic', eventGraphicFile);
+        } else if (isGraphicRemoved) {
+          fd.append('eventGraphic', '');
         }
         submitData = fd;
       }
@@ -342,7 +346,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       const capacityChanged = (formData.ticketCapacity || 0) !== (initialData.ticketCapacity || 0);
       const doorsOpenChanged = (formData.doorsOpenTime || '') !== (initialData.doorsOpenTime || '');
       const publicDetailsChanged = (formData.publicDetails || '') !== (initialData.publicDetails || '');
-      const graphicChanged = eventGraphicFile !== null;
+      const graphicChanged = eventGraphicFile !== null || isGraphicRemoved;
       
       return titleChanged || dateChanged || typeChanged || detailsChanged || durationChanged || callTimeChanged || parentChanged || venueChanged || rsvpChanged || ticketingEnabledChanged || advancePriceChanged || dayOfPriceChanged || capacityChanged || doorsOpenChanged || publicDetailsChanged || graphicChanged;
     } else {
@@ -877,39 +881,68 @@ export const EventModal: React.FC<EventModalProps> = ({
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Graphic / Flyer Image</label>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setEventGraphicFile(file);
-                    }}
-                    className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-                  />
-                  {initialData?.eventGraphic && !eventGraphicFile && (
-                    <span className="mt-1 text-xs font-medium text-text-muted">Current file: {initialData.eventGraphic}</span>
-                  )}
-                  {graphicPreviewUrl && (
-                    <div className="relative mt-3 w-fit rounded-lg border border-border bg-gray-50/50 p-2 shadow-xs">
-                      <img
-                        src={graphicPreviewUrl}
-                        alt="Event flyer preview"
-                        className="block max-h-[160px] max-w-[240px] rounded object-cover shadow-sm"
-                      />
-                      {eventGraphicFile && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEventGraphicFile(null);
-                            setGraphicPreviewUrl('');
-                          }}
-                          className="mt-2 flex h-8 items-center justify-center rounded-md border border-danger-text/20 bg-danger-bg px-3 text-xs font-bold text-danger-text shadow-xs transition-colors hover:bg-red-100 active:scale-95"
-                        >
-                          Clear Selection
-                        </button>
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
+                      {graphicPreviewUrl ? (
+                        <img src={graphicPreviewUrl} alt="Event flyer preview" className="size-full object-cover" />
+                      ) : (
+                        <svg className="size-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.9 2.9m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375 0 11-.75 0 .375 0 01.75 0z" />
+                        </svg>
                       )}
                     </div>
-                  )}
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <label className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-light px-4 font-sans text-xs font-semibold text-primary-deep transition-colors hover:bg-primary-deep/10 active:translate-y-px">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                          {graphicPreviewUrl ? 'Replace Image' : 'Upload Image'}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null;
+                              if (file) {
+                                setEventGraphicFile(file);
+                                setIsGraphicRemoved(false);
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+
+                        {(eventGraphicFile || (initialData?.eventGraphic && !isGraphicRemoved)) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEventGraphicFile(null);
+                              setIsGraphicRemoved(true);
+                            }}
+                            className="inline-flex h-9 items-center justify-center rounded-md bg-danger-bg px-4 text-xs font-semibold text-danger-text shadow-xs transition-colors hover:bg-red-200 active:scale-95"
+                          >
+                            Remove Image
+                          </button>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-text-muted">
+                        JPG, PNG, or WebP. Max 5MB.
+                      </span>
+                      {initialData?.eventGraphic && !isGraphicRemoved && !eventGraphicFile && (
+                        <span className="text-xs text-text-muted">
+                          Current file: {initialData.eventGraphic}
+                        </span>
+                      )}
+                      {eventGraphicFile && (
+                        <span className="text-xs text-primary font-medium">
+                          New file: {eventGraphicFile.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">

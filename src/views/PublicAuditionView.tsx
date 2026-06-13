@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { Button, Select } from '../components/ui';
@@ -110,7 +109,6 @@ export default function PublicAuditionView() {
     <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
-          <Button as={Link} to="/login" variant="outline" size="small" className="self-start">Admin Login</Button>
           <h1 className="text-display m-0">Choir Auditions</h1>
           {!submitted && (
             <p className="m-0 text-text-muted">
