@@ -58,10 +58,6 @@ function PublicLandingView() {
     );
   }
 
-  const aboutHtml = settings.aboutUsText
-    ? DOMPurify.sanitize(marked.parse(settings.aboutUsText, { async: false }) as string)
-    : '';
-
   return (
     <div className="min-h-screen bg-bg">
       <header className="no-print sticky top-0 z-40 bg-bg border-b border-border shadow-sm">
@@ -77,11 +73,11 @@ function PublicLandingView() {
             <Link to="/history" className="text-sm text-text-muted hover:text-text">History</Link>
             {user ? (
               <Link to="/dashboard">
-                <Button variant="secondary" size="sm">Dashboard</Button>
+                <Button variant="secondary" size="small">Dashboard</Button>
               </Link>
             ) : (
               <Link to="/login">
-                <Button variant="primary" size="sm">Login</Button>
+                <Button variant="primary" size="small">Login</Button>
               </Link>
             )}
           </nav>
@@ -89,14 +85,13 @@ function PublicLandingView() {
       </header>
 
       <main>
-        <section
-          className="relative flex items-center justify-center text-center py-24 px-6"
-          style={{
-            backgroundImage: heroImageUrl ? `url(${heroImageUrl})` : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            minHeight: '400px',
-          }}
+        {/* @allow-inline-style - hero background image is dynamic */}
+        <section className="relative flex items-center justify-center text-center py-24 px-6" style={{
+          backgroundImage: heroImageUrl ? `url(${heroImageUrl})` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          minHeight: '400px',
+        }}
         >
           <div className={`max-w-3xl ${heroImageUrl ? 'bg-black/50 rounded-lg p-8' : ''}`}>
             <h1 className={`text-4xl font-bold mb-4 ${heroImageUrl ? 'text-white' : 'text-text'}`}>
@@ -113,7 +108,9 @@ function PublicLandingView() {
             <AppCard title="About Us">
               <div
                 className="prose prose-sm max-w-none text-text"
-                dangerouslySetInnerHTML={{ __html: aboutHtml }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(marked.parse(settings.aboutUsText, { async: false }) as string),
+                }}
               />
             </AppCard>
           </section>
@@ -132,7 +129,8 @@ function PublicLandingView() {
                   : null;
 
                 return (
-                  <AppCard key={perf.id} title={perf.title} subtitle={formatInTimezone(perf.date, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}>
+                  <AppCard key={perf.id} title={perf.title}>
+                    <p className="text-sm text-text-muted mb-2">{formatInTimezone(perf.date, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                     {graphicUrl && (
                       <img src={graphicUrl} alt={perf.title} className="w-full h-40 object-cover rounded mb-3" />
                     )}

@@ -48,10 +48,6 @@ function PublicHistoryView() {
     );
   }
 
-  const historyHtml = settings.historyText
-    ? DOMPurify.sanitize(marked.parse(settings.historyText, { async: false }) as string)
-    : '';
-
   return (
     <div className="min-h-screen bg-bg">
       <header className="no-print sticky top-0 z-40 bg-bg border-b border-border shadow-sm">
@@ -67,11 +63,11 @@ function PublicHistoryView() {
             <Link to="/history" className="text-sm font-medium text-text">History</Link>
             {user ? (
               <Link to="/dashboard">
-                <Button variant="secondary" size="sm">Dashboard</Button>
+                <Button variant="secondary" size="small">Dashboard</Button>
               </Link>
             ) : (
               <Link to="/login">
-                <Button variant="primary" size="sm">Login</Button>
+                <Button variant="primary" size="small">Login</Button>
               </Link>
             )}
           </nav>
@@ -84,7 +80,9 @@ function PublicHistoryView() {
             {settings.historyText ? (
               <div
                 className="prose prose-sm max-w-none text-text"
-                dangerouslySetInnerHTML={{ __html: historyHtml }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(marked.parse(settings.historyText, { async: false }) as string),
+                }}
               />
             ) : (
               <p className="text-text-muted">No history has been published yet.</p>

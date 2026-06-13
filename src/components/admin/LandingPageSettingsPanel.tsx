@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MarkdownEditor } from '../common/MarkdownEditor';
 import { AppCard } from '../common/AppCard';
 import { Button } from '../ui/Button/Button';
-import { settingsService, LandingPageSettings, DEFAULT_LANDING_SETTINGS } from '../../services/settingsService';
+import { settingsService, type LandingPageSettings, DEFAULT_LANDING_SETTINGS } from '../../services/settingsService';
 import type EasyMDE from 'easymde';
 
 interface LandingPageSettingsPanelProps {
