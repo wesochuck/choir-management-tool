@@ -34,7 +34,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
           style={{ maxWidth }}
         >
           <div className="flex items-center gap-6">
-            <Link to="/" className="inline-flex h-[38px] items-center justify-center rounded-md border border-border bg-transparent px-4 text-sm font-semibold whitespace-nowrap text-text-muted no-underline transition-all duration-200 hover:bg-primary-light hover:text-primary-deep" title="Dashboard">🏠 Home</Link>
+            <Link to="/dashboard" className="inline-flex h-[38px] items-center justify-center rounded-md border border-border bg-transparent px-4 text-sm font-semibold whitespace-nowrap text-text-muted no-underline transition-all duration-200 hover:bg-primary-light hover:text-primary-deep" title="Dashboard">🏠 Home</Link>
           </div>
           {(actions || user?.role === 'admin') && (
             <div className="flex items-center gap-4">
