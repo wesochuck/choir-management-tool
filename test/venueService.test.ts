@@ -34,6 +34,35 @@ test('checkVenueDependencies returns true if venue has linked events', async (t)
   }
 });
 
+test('checkVenueDependencies returns false if venue has no linked events', async (t) => {
+  const originalCollection = pb.collection;
+  const mockGetList = t.mock.fn(async (page: number, perPage: number, options: { filter: string }) => {
+    void page;
+    void perPage;
+    void options;
+    return { totalItems: 0 };
+  });
+
+  pb.collection = function (name: string) {
+    if (name === 'events') {
+      return { getList: mockGetList } as unknown as CollectionMock;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  try {
+    const hasEvents = await checkVenueDependencies('venue_2');
+    assert.equal(hasEvents, false);
+    assert.equal(mockGetList.mock.callCount(), 1);
+    const firstCall = mockGetList.mock.calls[0];
+    assert.equal(firstCall.arguments[0], 1);
+    assert.equal(firstCall.arguments[1], 1);
+    assert.equal(firstCall.arguments[2].filter, "venue='venue_2'");
+  } finally {
+    pb.collection = originalCollection;
+  }
+});
+
 test('venueService.createVenue sends status: "Active" by default', async (t) => {
   const originalCollection = pb.collection;
   const mockCreate = t.mock.fn(async (data: Partial<Venue>) => {
