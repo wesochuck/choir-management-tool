@@ -1,4 +1,4 @@
-export type FormationStrategyType = 'vertical_column' | 'horizontal_row';
+type FormationStrategyType = 'vertical_column' | 'horizontal_row';
 
 export const calculateAutoPaint = (
   rowCounts: number[],
