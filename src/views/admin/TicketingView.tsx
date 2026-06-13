@@ -11,6 +11,7 @@ import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { Modal, Button, FormField, Badge, EmptyState, Select } from '../../components/ui';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 import { settingsService } from '../../services/settingsService';
+import { chunkArray, mapWithConcurrency } from '../../lib/networkSafety';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -73,12 +74,9 @@ export default function TicketingView() {
       let allEvents = [...eventsEnabled];
 
       if (missingEventIds.length > 0) {
-        const chunks: string[][] = [];
-        for (let i = 0; i < missingEventIds.length; i += 50) {
-          chunks.push(missingEventIds.slice(i, i + 50));
-        }
+        const chunks = chunkArray(missingEventIds, 50);
 
-        const missingEventsPromises = chunks.map(chunk => {
+        const missingEventsResults = await mapWithConcurrency(chunks, async (chunk) => {
           const filterStr = chunk.map((_, idx) => `id = {:id_${idx}}`).join(' || ');
           const placeholders = chunk.reduce((acc, id, idx) => {
             acc[`id_${idx}`] = id;
@@ -87,9 +85,8 @@ export default function TicketingView() {
           return pb.collection('events').getFullList<Event>({
             filter: pb.filter(filterStr, placeholders)
           });
-        });
+        }, { concurrency: 4 });
 
-        const missingEventsResults = await Promise.all(missingEventsPromises);
         const missingEvents = missingEventsResults.flat();
         allEvents = [...allEvents, ...missingEvents];
       }
