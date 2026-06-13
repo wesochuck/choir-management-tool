@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, getProfileEmail, type Profile } from '../src/services/profileService.ts';
+import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, getProfileEmail, type Profile, generateRandomPassword } from '../src/services/profileService.ts';
 
 
 type CollectionMock = ReturnType<typeof pb.collection>;
@@ -70,6 +70,108 @@ test('updateProfilePhoto calls pocketbase with FormData', async (t) => {
     assert.equal((firstCall.arguments as unknown[])[1], formData);
   } finally {
     pb.collection = originalCollection;
+  }
+});
+
+test('generateRandomPassword generates a default 12-character password', () => {
+  const password = generateRandomPassword();
+  assert.equal(password.length, 12);
+  assert.ok(/^[a-zA-Z0-9!@#$%^&*]+$/.test(password));
+});
+
+test('generateRandomPassword generates a password of specified length', () => {
+  const password = generateRandomPassword(20);
+  assert.equal(password.length, 20);
+  assert.ok(/^[a-zA-Z0-9!@#$%^&*]+$/.test(password));
+});
+
+test('generateRandomPassword uses crypto.getRandomValues if available', () => {
+  const originalCrypto = globalThis.crypto;
+
+  let called = false;
+  Object.defineProperty(globalThis, 'crypto', {
+    value: {
+      getRandomValues: (array: Uint32Array) => {
+        called = true;
+        for (let i = 0; i < array.length; i++) {
+          array[i] = i; // Predictable values
+        }
+        return array;
+      }
+    },
+    configurable: true
+  });
+
+  try {
+    const password = generateRandomPassword(5);
+    assert.equal(called, true);
+    assert.equal(password.length, 5);
+    assert.equal(password, 'abcde'); // "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"[0...4]
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: originalCrypto,
+      configurable: true
+    });
+  }
+});
+
+test('generateRandomPassword falls back to Math.random if crypto is unavailable', () => {
+  const originalCrypto = globalThis.crypto;
+  const originalMathRandom = Math.random;
+
+  Object.defineProperty(globalThis, 'crypto', {
+    value: undefined,
+    configurable: true
+  });
+
+  let called = false;
+  Math.random = () => {
+    called = true;
+    return 0; // Always returns 0, so should always pick first char 'a'
+  };
+
+  try {
+    const password = generateRandomPassword(5);
+    assert.equal(called, true);
+    assert.equal(password.length, 5);
+    assert.equal(password, 'aaaaa');
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: originalCrypto,
+      configurable: true
+    });
+    Math.random = originalMathRandom;
+  }
+});
+
+test('generateRandomPassword falls back to Math.random if crypto.getRandomValues is not a function', () => {
+  const originalCrypto = globalThis.crypto;
+  const originalMathRandom = Math.random;
+
+  Object.defineProperty(globalThis, 'crypto', {
+    value: {
+      randomUUID: () => 'uuid'
+    },
+    configurable: true
+  });
+
+  let called = false;
+  Math.random = () => {
+    called = true;
+    return 0; // Always returns 0, so should always pick first char 'a'
+  };
+
+  try {
+    const password = generateRandomPassword(5);
+    assert.equal(called, true);
+    assert.equal(password.length, 5);
+    assert.equal(password, 'aaaaa');
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: originalCrypto,
+      configurable: true
+    });
+    Math.random = originalMathRandom;
   }
 });
 
