@@ -6,6 +6,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
+import { LandingPageSettingsPanel } from '../../components/admin/LandingPageSettingsPanel';
 import { Button, Select } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
@@ -58,6 +59,7 @@ export default function SettingsView() {
   const [initialLogoUrl, setInitialLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLogoRemoved, setIsLogoRemoved] = useState(false);
+  const [landingDirty, setLandingDirty] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -90,8 +92,8 @@ export default function SettingsView() {
       { choirName, timezone, homepageUrl }
     );
     const logoDirty = logoFile !== null || isLogoRemoved;
-    return fieldsDirty || logoDirty;
-  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl, logoFile, isLogoRemoved]);
+    return fieldsDirty || logoDirty || landingDirty;
+  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl, logoFile, isLogoRemoved, landingDirty]);
 
   const handleGlobalDiscard = () => {
     setChoirName(initialChoirName);
@@ -283,6 +285,12 @@ export default function SettingsView() {
             </p>
           </div>
         </AppCard>
+
+        <LandingPageSettingsPanel
+          onDirtyChange={(dirty) => setLandingDirty(dirty)}
+          onSave={async () => {}}
+          onDiscard={() => setLandingDirty(false)}
+        />
 
         <QueueWebhookSettings />
       </div>
