@@ -27,7 +27,7 @@ test('reportService', async (t) => {
       if (name === 'events') {
         return { getFullList } as unknown as CollectionMock;
       }
-      return originalCollection(name);
+      return originalCollection.call(pb, name);
     };
 
     const result = await reportService.getPerformances();
@@ -51,7 +51,7 @@ test('reportService', async (t) => {
       if (name === 'events') {
         return { getOne, getFullList } as unknown as CollectionMock;
       }
-      return originalCollection(name);
+      return originalCollection.call(pb, name);
     };
 
     const result = await reportService.getConcertSummary('perf_1');
@@ -84,25 +84,27 @@ test('reportService', async (t) => {
       if (name === 'events') {
         return { getOne, getFullList } as unknown as CollectionMock;
       }
-      return originalCollection(name);
+      return originalCollection.call(pb, name);
     };
 
-    const getEventRosterMock = t.mock.method(rosterService, 'getEventRoster');
-    getEventRosterMock.mock.mockImplementation(async (eventId: string) => {
-      if (eventId === 'reh_1') {
-        return [
-          { profile: 'prof_1', attendance: 'Present' },
-          { profile: 'prof_2', attendance: 'Absent' },
-          { profile: 'prof_3', attendance: 'Pending' }, // Does not count for presence/absence
-        ];
-      } else if (eventId === 'reh_2') {
-        return [
-          { profile: 'prof_1', attendance: 'Absent' },
-          { profile: 'prof_2', attendance: 'Absent' },
-          { profile: 'prof_4', attendance: 'Present' },
-        ];
+    const getEventRostersBatchMock = t.mock.method(rosterService, 'getEventRostersBatch');
+    getEventRostersBatchMock.mock.mockImplementation(async (eventIds: string[]) => {
+      const rosters: any[] = [];
+      if (eventIds.includes('reh_1')) {
+        rosters.push(
+          { event: 'reh_1', profile: 'prof_1', attendance: 'Present' },
+          { event: 'reh_1', profile: 'prof_2', attendance: 'Absent' },
+          { event: 'reh_1', profile: 'prof_3', attendance: 'Pending' }, // Does not count for presence/absence
+        );
       }
-      return [];
+      if (eventIds.includes('reh_2')) {
+        rosters.push(
+          { event: 'reh_2', profile: 'prof_1', attendance: 'Absent' },
+          { event: 'reh_2', profile: 'prof_2', attendance: 'Absent' },
+          { event: 'reh_2', profile: 'prof_4', attendance: 'Present' },
+        );
+      }
+      return rosters;
     });
 
     const getProfilesMock = t.mock.method(profileService, 'getProfiles');
