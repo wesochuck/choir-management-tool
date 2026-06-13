@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
 import { reportService } from '../src/services/reportService.ts';
 import { rosterService } from '../src/services/rosterService.ts';
-import { profileService } from '../src/services/profileService.ts';
+import { profileService, type Profile } from '../src/services/profileService.ts';
 
 type CollectionMock = ReturnType<typeof pb.collection>;
 
@@ -21,7 +21,7 @@ test('reportService', async (t) => {
       { id: 'perf_1', name: 'Spring Concert' }
     ];
 
-    const getFullList = t.mock.fn(async () => performances);
+    const getFullList = t.mock.fn(async (_options?: any) => performances);
 
     pb.collection = function (name: string) {
       if (name === 'events') {
@@ -43,8 +43,8 @@ test('reportService', async (t) => {
   await t.test('getConcertSummary returns early when no rehearsals', async (t) => {
     const performance = { id: 'perf_1', type: 'Performance', name: 'Spring Concert' };
 
-    const getOne = t.mock.fn(async () => performance);
-    const getFullList = t.mock.fn(async () => []); // No rehearsals
+    const getOne = t.mock.fn(async (_id?: string) => performance);
+    const getFullList = t.mock.fn(async (_options?: any) => []); // No rehearsals
     pb.filter = t.mock.fn((str, params) => `${str}_${JSON.stringify(params)}`);
 
     pb.collection = function (name: string) {
@@ -113,7 +113,7 @@ test('reportService', async (t) => {
       { id: 'prof_2', name: 'Bob', voicePart: 'Tenor' },
       { id: 'prof_3', name: 'Charlie', voicePart: 'Bass' },
       // prof_4 missing to test Unknown fallback
-    ]);
+    ] as unknown as Profile[]);
 
     const result = await reportService.getConcertSummary('perf_1');
 
