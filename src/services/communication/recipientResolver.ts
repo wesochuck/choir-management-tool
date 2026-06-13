@@ -7,7 +7,7 @@ import type {
   CommunicationRecipient,
 } from './types';
 
-export function profileToRecipient(profile: Profile): CommunicationRecipient {
+function profileToRecipient(profile: Profile): CommunicationRecipient {
   return {
     id: profile.id,
     name: profile.name,
