@@ -126,25 +126,23 @@ export default function AttendanceView() {
           allRosters.push(...chunkRosters);
         }
 
-        const rostersLists = pastRehearsals.map((reh) =>
-          allRosters.filter((r) => r.event === reh.id)
-        );
-
-        const rosterMaps = rostersLists.map((rosters) => {
-          const map = new Map();
-          for (const r of rosters) {
-            map.set(r.profile, r);
+        const eventRosterMap = new Map<string, Map<string, EventRoster>>();
+        for (const r of allRosters) {
+          let eventMap = eventRosterMap.get(r.event);
+          if (!eventMap) {
+            eventMap = new Map();
+            eventRosterMap.set(r.event, eventMap);
           }
-          return map;
-        });
+          eventMap.set(r.profile, r);
+        }
 
         const counts: Record<string, number> = {};
 
         performingProfileIds.forEach((profileId) => {
           let missCount = 0;
-          pastRehearsals.forEach((_, index) => {
-            const rosterMap = rosterMaps[index];
-            const r = rosterMap.get(profileId);
+          pastRehearsals.forEach((reh) => {
+            const eventMap = eventRosterMap.get(reh.id);
+            const r = eventMap?.get(profileId);
 
             const wasDeclined = r?.rsvp === 'No';
             const wasAbsent = r?.attendance === 'Absent';
