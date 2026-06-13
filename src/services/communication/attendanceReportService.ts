@@ -233,25 +233,25 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
           return map;
         });
 
-        for (const profile of activeProfiles) {
-          if (performingProfileIds.has(profile.id)) {
-            let missCount = 0;
-            pastRehearsals.forEach((_, index) => {
-              const rehRostersMap = pastRehearsalsRostersMaps[index];
-              const r = rehRostersMap.get(profile.id);
-              
-              const wasDeclined = r?.rsvp === 'No';
-              const wasAbsent = r?.attendance === 'Absent';
-              const notMarkedPresent = r?.attendance !== 'Present';
+        const performingProfiles = activeProfiles.filter(p => performingProfileIds.has(p.id));
 
-              if (wasDeclined || wasAbsent || notMarkedPresent) {
-                missCount++;
-              }
-            });
+        for (const profile of performingProfiles) {
+          let missCount = 0;
+          pastRehearsals.forEach((_, index) => {
+            const rehRostersMap = pastRehearsalsRostersMaps[index];
+            const r = rehRostersMap.get(profile.id);
 
-            if (missCount > maxRehearsalMisses) {
-              exceededSingers.push({ name: profile.name, missCount });
+            const wasDeclined = r?.rsvp === 'No';
+            const wasAbsent = r?.attendance === 'Absent';
+            const notMarkedPresent = r?.attendance !== 'Present';
+
+            if (wasDeclined || wasAbsent || notMarkedPresent) {
+              missCount++;
             }
+          });
+
+          if (missCount > maxRehearsalMisses) {
+            exceededSingers.push({ name: profile.name, missCount });
           }
         }
 
