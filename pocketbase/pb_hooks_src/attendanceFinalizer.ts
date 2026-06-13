@@ -20,63 +20,73 @@ export function finalizeUnmarkedAttendanceForEvent(app: PocketBaseApp, event: Po
 
     const activeProfiles = app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
 
-    activeProfiles.forEach(profile => {
-        let perfRsvpYes = false;
-        try {
-            const perfRosters = app.findRecordsByFilter(
-                "eventRosters",
-                "event = {:perfId} && profile = {:profileId}",
-                "",
-                1,
-                0,
-                { perfId: linkedPerfId, profileId: profile.id }
-            );
-            if (perfRosters && perfRosters.length > 0 && perfRosters[0].get("rsvp") === "Yes") {
-                perfRsvpYes = true;
-            }
-        } catch {
-            // ignore
+    // Batch: fetch all RSVP'd rosters for the linked performance at once
+    const performingProfileIds: Record<string, boolean> = {};
+    try {
+        const perfRosters = app.findRecordsByFilter(
+            "eventRosters",
+            "event = {:perfId}",
+            "",
+            1000,
+            0,
+            { perfId: linkedPerfId }
+        );
+        if (perfRosters) {
+            perfRosters.forEach(r => {
+                if (r.get("rsvp") === "Yes") {
+                    performingProfileIds[r.get("profile") as string] = true;
+                }
+            });
         }
+    } catch {
+        // ignore
+    }
 
-        if (perfRsvpYes) {
-            let rosterRecord = null;
+    // Batch: fetch all existing rosters for the current event at once
+    const existingRostersByProfile: Record<string, PocketBaseRecord> = {};
+    try {
+        const existingRosters = app.findRecordsByFilter(
+            "eventRosters",
+            "event = {:eventId}",
+            "",
+            1000,
+            0,
+            { eventId: event.id }
+        );
+        if (existingRosters) {
+            existingRosters.forEach(r => {
+                existingRostersByProfile[r.get("profile") as string] = r;
+            });
+        }
+    } catch {
+        // ignore
+    }
+
+    for (const profile of activeProfiles || []) {
+        if (!performingProfileIds[profile.id]) continue;
+
+        let rosterRecord = existingRostersByProfile[profile.id] || null;
+
+        if (!rosterRecord) {
+            const rosterCollection = app.findCollectionByNameOrId("eventRosters");
+            rosterRecord = new Record(rosterCollection, {
+                event: event.id,
+                profile: profile.id,
+                rsvp: "Pending",
+                attendance: "Absent"
+            });
             try {
-                const rosters = app.findRecordsByFilter(
-                    "eventRosters",
-                    "event = {:eventId} && profile = {:profileId}",
-                    "",
-                    1,
-                    0,
-                    { eventId: event.id, profileId: profile.id }
-                );
-                if (rosters && rosters.length > 0) {
-                    rosterRecord = rosters[0];
-                }
-            } catch {
-                // ignore
+                app.save(rosterRecord);
+            } catch (e) {
+                console.log("Failed to auto-create Absent roster record: " + e);
             }
-
-            if (!rosterRecord) {
-                const rosterCollection = app.findCollectionByNameOrId("eventRosters");
-                rosterRecord = new Record(rosterCollection, {
-                    event: event.id,
-                    profile: profile.id,
-                    rsvp: "Pending",
-                    attendance: "Absent"
-                });
-                try {
-                    app.save(rosterRecord);
-                } catch (e) {
-                    console.log("Failed to auto-create Absent roster record: " + e);
-                }
-            } else if (rosterRecord.get("attendance") === "Pending" || rosterRecord.get("attendance") === "") {
-                rosterRecord.set("attendance", "Absent");
-                try {
-                    app.save(rosterRecord);
-                } catch (e) {
-                    console.log("Failed to auto-update roster record to Absent: " + e);
-                }
+        } else if (rosterRecord.get("attendance") === "Pending" || rosterRecord.get("attendance") === "") {
+            rosterRecord.set("attendance", "Absent");
+            try {
+                app.save(rosterRecord);
+            } catch (e) {
+                console.log("Failed to auto-update roster record to Absent: " + e);
             }
         }
-    });
+    }
 }

@@ -417,38 +417,45 @@ events.forEach(event => {
                 const activeProfiles = $app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
                 const exceededSingers = [];
 
-                // Fetch rosters for past rehearsals
+                // Batch: fetch all rosters for past rehearsals at once
                 const pastRehearsalRosters = [];
-                pastRehearsalIds.forEach(rehId => {
-                    try {
-                        const rList = $app.findRecordsByFilter("eventRosters", "event = {:rehId}", "", 1000, 0, { rehId });
-                        pastRehearsalRosters.push(rList || []);
-                    } catch (e) {
-                        pastRehearsalRosters.push([]);
+                const filterParts = pastRehearsalIds.map((_, i) => "event = {:rid" + i + "}").join(" || ");
+                const filterParams = {};
+                pastRehearsalIds.forEach((id, i) => { filterParams["rid" + i] = id; });
+                try {
+                    const allRosters = $app.findRecordsByFilter("eventRosters", filterParts, "", 5000, 0, filterParams);
+                    pastRehearsalRosters.push(...(allRosters || []));
+                } catch (e) {}
+
+                // Batch: fetch all RSVP'd rosters for the linked performance at once
+                const performingProfileIds = {};
+                try {
+                    const perfRosters = $app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
+                    if (perfRosters) {
+                        perfRosters.forEach(r => {
+                            if (r.get("rsvp") === "Yes") {
+                                performingProfileIds[r.get("profile")] = true;
+                            }
+                        });
                     }
+                } catch (e) {}
+
+                // Build a map of rehearsal rosters by profile for quick lookup
+                const pastRostersByProfile = {};
+                pastRehearsalRosters.forEach(r => {
+                    const profileId = r.get("profile");
+                    if (!pastRostersByProfile[profileId]) {
+                        pastRostersByProfile[profileId] = [];
+                    }
+                    pastRostersByProfile[profileId].push(r);
                 });
 
                 activeProfiles.forEach(profile => {
-                    let perfRsvpYes = false;
-                    try {
-                        const perfRosters = $app.findRecordsByFilter(
-                            "eventRosters",
-                            "event = {:perfId} && profile = {:profileId}",
-                            "",
-                            1,
-                            0,
-                            { perfId: linkedPerfId, profileId: profile.id }
-                        );
-                        if (perfRosters && perfRosters.length > 0 && perfRosters[0].get("rsvp") === "Yes") {
-                            perfRsvpYes = true;
-                        }
-                    } catch (e) {}
-
-                    if (perfRsvpYes) {
-                        let missCount = 0;
-                        pastRehearsals.forEach((reh, index) => {
-                            const rosters = pastRehearsalRosters[index];
-                            const r = rosters.find(x => x.get("profile") === profile.id);
+                    if (!performingProfileIds[profile.id]) return;
+                    const profileRosters = pastRostersByProfile[profile.id] || [];
+                    let missCount = 0;
+                    pastRehearsals.forEach(reh => {
+                        const r = profileRosters.find(x => x.get("event") === reh.id);
                             
                             const wasDeclined = r ? r.get("rsvp") === "No" : false;
                             const wasAbsent = r ? r.get("attendance") === "Absent" : false;

@@ -221,25 +221,25 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
 
         const exceededSingers: { name: string; missCount: number }[] = [];
 
-        const pastRehearsalsRosters = await Promise.all(
-          pastRehearsalIds.map(rehId => rosterService.getEventRoster(rehId))
-        );
+        const pastRehearsalsRosters = await rosterService.getEventRostersBatch(pastRehearsalIds);
 
-        const pastRehearsalsRostersMaps = pastRehearsalsRosters.map(rehRosters => {
-          const map = new Map();
-          for (const r of rehRosters) {
-            map.set(r.profile, r);
+        const pastRehearsalsRostersByEvent = new Map<string, Map<string, EventRoster>>();
+        for (const r of pastRehearsalsRosters) {
+          let eventMap = pastRehearsalsRostersByEvent.get(r.event);
+          if (!eventMap) {
+            eventMap = new Map();
+            pastRehearsalsRostersByEvent.set(r.event, eventMap);
           }
-          return map;
-        });
+          eventMap.set(r.profile, r);
+        }
 
         for (const profile of activeProfiles) {
           if (performingProfileIds.has(profile.id)) {
             let missCount = 0;
-            pastRehearsals.forEach((_, index) => {
-              const rehRostersMap = pastRehearsalsRostersMaps[index];
-              const r = rehRostersMap.get(profile.id);
-              
+            for (const reh of pastRehearsals) {
+              const rehRostersMap = pastRehearsalsRostersByEvent.get(reh.id);
+              const r = rehRostersMap?.get(profile.id);
+
               const wasDeclined = r?.rsvp === 'No';
               const wasAbsent = r?.attendance === 'Absent';
               const notMarkedPresent = r?.attendance !== 'Present';
@@ -247,7 +247,7 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
               if (wasDeclined || wasAbsent || notMarkedPresent) {
                 missCount++;
               }
-            });
+            }
 
             if (missCount > maxRehearsalMisses) {
               exceededSingers.push({ name: profile.name, missCount });
