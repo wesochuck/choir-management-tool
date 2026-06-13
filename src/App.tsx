@@ -160,7 +160,7 @@ export default function App() {
 
           <Route path="/admin/roster" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Roster Management" backTo="/">
+              <PageLayout title="Roster Management" backTo="/dashboard">
                 <RosterView />
               </PageLayout>
             </ProtectedRoute>
@@ -168,7 +168,7 @@ export default function App() {
 
           <Route path="/admin/events" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Event Management" backTo="/">
+              <PageLayout title="Event Management" backTo="/dashboard">
                 <EventsView />
               </PageLayout>
             </ProtectedRoute>
@@ -184,7 +184,7 @@ export default function App() {
 
           <Route path="/admin/setlists" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Set Lists" backTo="/">
+              <PageLayout title="Set Lists" backTo="/dashboard">
                 <SetListView />
               </PageLayout>
             </ProtectedRoute>
@@ -192,7 +192,7 @@ export default function App() {
 
           <Route path="/admin/venues" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Venue Templates" backTo="/">
+              <PageLayout title="Venue Templates" backTo="/dashboard">
                 <VenuesView />
               </PageLayout>
             </ProtectedRoute>
@@ -200,7 +200,7 @@ export default function App() {
 
           <Route path="/admin/seating" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Seating Charts" backTo="/" maxWidth="1400px">
+              <PageLayout title="Seating Charts" backTo="/dashboard" maxWidth="1400px">
                 <SeatingView />
               </PageLayout>
             </ProtectedRoute>
@@ -208,7 +208,7 @@ export default function App() {
 
           <Route path="/admin/attendance" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Attendance Check-in" backTo="/">
+              <PageLayout title="Attendance Check-in" backTo="/dashboard">
                 <AttendanceView />
               </PageLayout>
             </ProtectedRoute>
@@ -216,7 +216,7 @@ export default function App() {
 
           <Route path="/admin/rsvp" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Event RSVPs" backTo="/">
+              <PageLayout title="Event RSVPs" backTo="/dashboard">
                 <RsvpDashboardView />
               </PageLayout>
             </ProtectedRoute>
@@ -224,7 +224,7 @@ export default function App() {
 
           <Route path="/admin/polls" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Engagement Polls" backTo="/">
+              <PageLayout title="Engagement Polls" backTo="/dashboard">
                 <PollsDashboardView />
               </PageLayout>
             </ProtectedRoute>
@@ -232,7 +232,7 @@ export default function App() {
 
           <Route path="/admin/auditions" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Auditions" backTo="/">
+              <PageLayout title="Auditions" backTo="/dashboard">
                 <AuditionsView />
               </PageLayout>
             </ProtectedRoute>
@@ -240,7 +240,7 @@ export default function App() {
 
           <Route path="/admin/reports" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Reports & Insights" backTo="/">
+              <PageLayout title="Reports & Insights" backTo="/dashboard">
                 <ReportsView />
               </PageLayout>
             </ProtectedRoute>
@@ -248,7 +248,7 @@ export default function App() {
 
           <Route path="/admin/library" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Music Library" backTo="/">
+              <PageLayout title="Music Library" backTo="/dashboard">
                 <MusicLibraryView />
               </PageLayout>
             </ProtectedRoute>
@@ -256,7 +256,7 @@ export default function App() {
 
           <Route path="/admin/settings" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="System Settings" backTo="/">
+              <PageLayout title="System Settings" backTo="/dashboard">
                 <SettingsView />
               </PageLayout>
             </ProtectedRoute>
@@ -264,7 +264,7 @@ export default function App() {
 
           <Route path="/admin/communications" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Communications" backTo="/">
+              <PageLayout title="Communications" backTo="/dashboard">
                 <CommunicationView />
               </PageLayout>
             </ProtectedRoute>
@@ -272,7 +272,7 @@ export default function App() {
 
           <Route path="/admin/resources" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Singer Resources" backTo="/">
+              <PageLayout title="Singer Resources" backTo="/dashboard">
                 <ResourcesView />
               </PageLayout>
             </ProtectedRoute>
@@ -280,7 +280,7 @@ export default function App() {
 
           <Route path="/admin/tickets" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Ticketing" backTo="/">
+              <PageLayout title="Ticketing" backTo="/dashboard">
                 <AdminTicketingView />
               </PageLayout>
             </ProtectedRoute>
@@ -288,7 +288,7 @@ export default function App() {
 
           <Route path="/admin/donations" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Donations" backTo="/">
+              <PageLayout title="Donations" backTo="/dashboard">
                 <DonationsView />
               </PageLayout>
             </ProtectedRoute>
@@ -296,7 +296,7 @@ export default function App() {
 
           <Route path="/admin/patrons" element={
             <ProtectedRoute adminOnly>
-              <PageLayout title="Patrons" backTo="/">
+              <PageLayout title="Patrons" backTo="/dashboard">
                 <PatronsView />
               </PageLayout>
             </ProtectedRoute>
