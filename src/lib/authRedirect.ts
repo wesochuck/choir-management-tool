@@ -1,4 +1,6 @@
 const PUBLIC_ROUTE_PREFIXES = [
+  '/',
+  '/history',
   '/login',
   '/reset-password',
   '/auditions',

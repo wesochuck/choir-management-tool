@@ -209,7 +209,7 @@ export default function ProfileView() {
   if (!profile) return <div className="container p-5 text-red-600">{error || 'Profile not found'}</div>;
 
   return (
-    <PageLayout title="My Profile" backTo="/" maxWidth="500px">
+    <PageLayout title="My Profile" backTo="/dashboard" maxWidth="500px">
       <div className="flex flex-col items-center gap-8 py-8">
 
         {/* Photo / Avatar */}

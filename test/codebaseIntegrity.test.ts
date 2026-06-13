@@ -273,7 +273,8 @@ test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
         const nextNextLine = idx < lines.length - 2 ? lines[idx + 2] : '';
 
         const isBypassed = prevLine.includes('@allow-dangerouslySetInnerHTML') || currentLine.includes('@allow-dangerouslySetInnerHTML');
-        const isSanitized = currentLine.includes('sanitizeHtml(') || nextLine.includes('sanitizeHtml(') || nextNextLine.includes('sanitizeHtml(');
+        const isSanitized = currentLine.includes('sanitizeHtml(') || nextLine.includes('sanitizeHtml(') || nextNextLine.includes('sanitizeHtml(') ||
+          currentLine.includes('DOMPurify.sanitize(') || nextLine.includes('DOMPurify.sanitize(') || nextNextLine.includes('DOMPurify.sanitize(');
 
         if (!isBypassed && !isSanitized) {
           const relPath = path.relative(srcDir, file);
@@ -285,9 +286,9 @@ test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
 
   if (violations.length > 0) {
     assert.fail(
-      `CRITICAL ERROR: Found dangerouslySetInnerHTML usage without sanitizeHtml or safety comment annotation:\n` +
+      `CRITICAL ERROR: Found dangerouslySetInnerHTML usage without sanitizeHtml/DOMPurify.sanitize or safety comment annotation:\n` +
       violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nTo resolve, either wrap the input in 'sanitizeHtml(...)' OR add a preceding comment:\n` +
+      `\n\nTo resolve, wrap the input in 'sanitizeHtml(...)' or 'DOMPurify.sanitize(...)' OR add a preceding comment:\n` +
       `// @allow-dangerouslySetInnerHTML - [explanation of safety, use with caution]`
     );
   }

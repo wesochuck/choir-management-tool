@@ -91,6 +91,16 @@ export const eventService = {
     });
   },
 
+  async getPastPerformances(): Promise<Event[]> {
+    const result = await pb.collection('events').getList<Event>(1, 5, {
+      filter: 'type = "Performance" && date < @now && isArchived != true',
+      sort: '-date',
+      fields: 'id,collectionId,collectionName,title,date,venue,publicDetails,eventGraphic,expand.venue',
+      expand: 'venue',
+    });
+    return result.items;
+  },
+
   async getRehearsalsForPerformance(performanceId: string) {
     return await pb.collection('events').getFullList<Event>({
       filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', { performanceId }),

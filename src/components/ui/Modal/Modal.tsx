@@ -82,6 +82,26 @@ export function Modal({
     firstInput?.focus();
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const activeModals = document.body.getAttribute('data-active-modals') || '0';
+    const count = parseInt(activeModals, 10) + 1;
+    document.body.setAttribute('data-active-modals', count.toString());
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      const activeModalsAfter = document.body.getAttribute('data-active-modals') || '1';
+      const countAfter = Math.max(0, parseInt(activeModalsAfter, 10) - 1);
+      if (countAfter === 0) {
+        document.body.removeAttribute('data-active-modals');
+        document.body.style.overflow = '';
+      } else {
+        document.body.setAttribute('data-active-modals', countAfter.toString());
+      }
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -90,7 +110,7 @@ export function Modal({
 
   return createPortal(
     <div className="no-print fixed inset-0 z-[1000] flex animate-modal-fade-in items-center justify-center bg-black/40 p-4" role="presentation" onMouseDown={handleOverlayClick}>
-      <div ref={modalRef} className="flex w-full animate-modal-slide-up flex-col gap-4 rounded-lg border border-border bg-surface p-6 shadow-md" role="dialog" aria-modal="true"
+      <div ref={modalRef} className="flex w-full max-h-[calc(100vh-2rem)] max-h-[calc(100dvh-2rem)] animate-modal-slide-up flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-6 shadow-md" role="dialog" aria-modal="true"
         aria-labelledby={title ? titleId : undefined}
         // @allow-inline-style - dynamic maxWidth from props
         style={{ maxWidth }}>
@@ -102,7 +122,7 @@ export function Modal({
             </button>
           </div>
         )}
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1">{children}</div>
         {footer && <div className="flex justify-end gap-2 border-t border-border pt-2">{footer}</div>}
       </div>
     </div>,

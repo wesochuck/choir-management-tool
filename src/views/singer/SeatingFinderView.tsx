@@ -225,7 +225,7 @@ export default function SeatingFinderView() {
     <PageLayout 
       title="Find Your Seat" 
       subtitle={event.title || venue?.name || ''}
-      backTo="/"
+      backTo="/dashboard"
       maxWidth="1100px"
     >
       <div className="flex flex-col gap-4 py-8">
