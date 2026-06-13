@@ -202,6 +202,70 @@ test('communicationService.getMessagesPaginated calls pocketbase with expected l
   }
 });
 
+test('communicationService.resolveTicketBuyerRecipients filters and maps correctly', async () => {
+  const { ticketService } = await import('../src/services/ticketService.ts');
+  const originalGetPurchases = ticketService.getPurchasesForEvent;
+
+  ticketService.getPurchasesForEvent = async (eventId: string) => {
+    if (eventId === 'event-123') {
+      return [
+        {
+          id: 'p1',
+          status: 'paid',
+          buyerName: 'Alice',
+          buyerEmail: 'alice@example.com',
+          quantity: 2,
+        },
+        {
+          id: 'p2',
+          status: 'pending',
+          buyerName: 'Bob',
+          buyerEmail: 'bob@example.com',
+          quantity: 1,
+        },
+        {
+          id: 'p3',
+          status: 'paid',
+          buyerName: 'Charlie',
+          buyerEmail: 'charlie@example.com',
+          quantity: 4,
+        },
+        {
+          id: 'p4',
+          status: 'refunded',
+          buyerName: 'David',
+          buyerEmail: 'david@example.com',
+          quantity: 1,
+        },
+      ] as unknown as import('../src/services/ticketService.ts').TicketPurchase[];
+    }
+    return [];
+  };
+
+  try {
+    const recipients = await communicationService.resolveTicketBuyerRecipients('event-123');
+
+    assert.equal(recipients.length, 2);
+
+    assert.equal(recipients[0].id, 'p1');
+    assert.equal(recipients[0].email, 'alice@example.com');
+    assert.equal(recipients[0].name, 'Alice <alice@example.com> (Qty: 2)');
+    assert.equal(recipients[0].phone, '');
+    assert.equal(recipients[0].voicePart, 'Ticket Buyer');
+    assert.equal(recipients[0].globalStatus, 'Paid');
+
+    assert.equal(recipients[1].id, 'p3');
+    assert.equal(recipients[1].email, 'charlie@example.com');
+    assert.equal(recipients[1].name, 'Charlie <charlie@example.com> (Qty: 4)');
+    assert.equal(recipients[1].phone, '');
+    assert.equal(recipients[1].voicePart, 'Ticket Buyer');
+    assert.equal(recipients[1].globalStatus, 'Paid');
+
+  } finally {
+    ticketService.getPurchasesForEvent = originalGetPurchases;
+  }
+});
+
 test('communicationService.wasMessageSent uses parameterized filters and returns correct boolean', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalCollection = pb.collection;
