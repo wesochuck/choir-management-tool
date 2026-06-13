@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { useAuth } from '../contexts/AuthContext';
+import { pb } from '../lib/pocketbase';
 import { settingsService, type LandingPageSettings } from '../services/settingsService';
 import { eventService, type Event } from '../services/eventService';
 import { useChoirName } from '../hooks/useDocumentTitle';
@@ -19,19 +20,22 @@ function PublicLandingView() {
   const [settings, setSettings] = useState<LandingPageSettings | null>(null);
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const [performances, setPerformances] = useState<Event[]>([]);
+  const [timezone, setTimezone] = useState<string>('America/New_York');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [s, imgUrl, perfs] = await Promise.all([
+        const [s, imgUrl, perfs, tz] = await Promise.all([
           settingsService.getLandingSettings(),
           settingsService.getHeroImageUrl(),
           eventService.getPastPerformances(),
+          settingsService.getTimezone(),
         ]);
         setSettings(s);
         setHeroImageUrl(imgUrl);
         setPerformances(perfs);
+        setTimezone(tz);
       } catch (err: unknown) {
         console.error('Failed to load landing page data', err);
         setError('Unable to load page content. Please try again later.');
@@ -124,13 +128,11 @@ function PublicLandingView() {
                 const venueName = perf.expand?.venue && typeof perf.expand.venue === 'object' && 'name' in perf.expand.venue
                   ? (perf.expand.venue as { name: string }).name
                   : '';
-                const graphicUrl = perf.eventGraphic
-                  ? `${import.meta.env.VITE_POCKETBASE_URL}/api/files/${perf.collectionName}/${perf.id}/${perf.eventGraphic}`
-                  : null;
+                const graphicUrl = perf.eventGraphic ? pb.files.getURL(perf, perf.eventGraphic) : null;
 
                 return (
                   <AppCard key={perf.id} title={perf.title}>
-                    <p className="text-sm text-text-muted mb-2">{formatInTimezone(perf.date, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    <p className="text-sm text-text-muted mb-2">{formatInTimezone(perf.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                     {graphicUrl && (
                       <img src={graphicUrl} alt={perf.title} className="w-full h-40 object-cover rounded mb-3" />
                     )}

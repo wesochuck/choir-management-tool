@@ -1,21 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { MarkdownEditor } from '../common/MarkdownEditor';
 import { AppCard } from '../common/AppCard';
 import { Button } from '../ui/Button/Button';
 import { settingsService, type LandingPageSettings, DEFAULT_LANDING_SETTINGS } from '../../services/settingsService';
 import type EasyMDE from 'easymde';
 
-interface LandingPageSettingsPanelProps {
-  onDirtyChange: (isDirty: boolean) => void;
-  onSave: () => Promise<void>;
-  onDiscard: () => void;
+export interface LandingPageSettingsPanelHandle {
+  getSettings: () => LandingPageSettings;
+  getHeroImageChanges: () => { file: File | null; removed: boolean };
+  markSaved: (savedSettings: LandingPageSettings, savedHeroImageUrl: string | null) => void;
+  reset: () => void;
 }
 
-export function LandingPageSettingsPanel({
+interface LandingPageSettingsPanelProps {
+  onDirtyChange: (isDirty: boolean) => void;
+}
+
+export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandle, LandingPageSettingsPanelProps>(function LandingPageSettingsPanel({
   onDirtyChange,
-  onSave,
-  onDiscard,
-}: LandingPageSettingsPanelProps) {
+}, ref) {
   const [settings, setSettings] = useState<LandingPageSettings>({ ...DEFAULT_LANDING_SETTINGS });
   const [initialSettings, setInitialSettings] = useState<LandingPageSettings>({ ...DEFAULT_LANDING_SETTINGS });
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
@@ -23,10 +26,18 @@ export function LandingPageSettingsPanel({
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [heroImageRemoved, setHeroImageRemoved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [heroError, setHeroError] = useState<string | null>(null);
   const aboutRef = useRef<EasyMDE | null>(null);
   const historyRef = useRef<EasyMDE | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const activeBlobUrlRef = useRef<string | null>(null);
+
+  const revokeActiveBlob = () => {
+    if (activeBlobUrlRef.current) {
+      URL.revokeObjectURL(activeBlobUrlRef.current);
+      activeBlobUrlRef.current = null;
+    }
+  };
 
   useEffect(() => {
     async function load() {
@@ -49,6 +60,12 @@ export function LandingPageSettingsPanel({
   }, []);
 
   useEffect(() => {
+    return () => {
+      revokeActiveBlob();
+    };
+  }, []);
+
+  useEffect(() => {
     const dirty =
       settings.heroHeadline !== initialSettings.heroHeadline ||
       settings.heroSubtitle !== initialSettings.heroSubtitle ||
@@ -60,6 +77,31 @@ export function LandingPageSettingsPanel({
       heroImageUrl !== initialHeroImageUrl;
     onDirtyChange(dirty);
   }, [settings, initialSettings, heroImageFile, heroImageRemoved, heroImageUrl, initialHeroImageUrl, onDirtyChange]);
+
+  useImperativeHandle(ref, () => ({
+    getSettings: () => settings,
+    getHeroImageChanges: () => ({ file: heroImageFile, removed: heroImageRemoved }),
+    markSaved: (savedSettings, savedHeroImageUrl) => {
+      revokeActiveBlob();
+      setInitialSettings({ ...savedSettings });
+      setInitialHeroImageUrl(savedHeroImageUrl);
+      setHeroImageUrl(savedHeroImageUrl);
+      setHeroImageFile(null);
+      setHeroImageRemoved(false);
+      setHeroError(null);
+    },
+    reset: () => {
+      revokeActiveBlob();
+      setSettings({ ...initialSettings });
+      setHeroImageUrl(initialHeroImageUrl);
+      setHeroImageFile(null);
+      setHeroImageRemoved(false);
+      setHeroError(null);
+      aboutRef.current?.value(initialSettings.aboutUsText);
+      historyRef.current?.value(initialSettings.historyText);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    },
+  }), [settings, initialSettings, heroImageUrl, initialHeroImageUrl, heroImageFile, heroImageRemoved]);
 
   const handleChange = (field: keyof LandingPageSettings, value: string) => {
     setSettings(prev => ({ ...prev, [field]: value }));
@@ -73,48 +115,21 @@ export function LandingPageSettingsPanel({
       return;
     }
     setHeroError(null);
+    revokeActiveBlob();
+    const blobUrl = URL.createObjectURL(file);
+    activeBlobUrlRef.current = blobUrl;
     setHeroImageFile(file);
     setHeroImageRemoved(false);
-    setHeroImageUrl(URL.createObjectURL(file));
+    setHeroImageUrl(blobUrl);
   };
 
   const handleRemoveHero = () => {
     setHeroError(null);
+    revokeActiveBlob();
     setHeroImageFile(null);
     setHeroImageRemoved(true);
     setHeroImageUrl(null);
-    const fileInput = document.getElementById('hero-image-input') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await settingsService.saveLandingSettings(settings);
-      if (heroImageRemoved) {
-        await settingsService.saveHeroImage(null);
-      } else if (heroImageFile) {
-        await settingsService.saveHeroImage(heroImageFile);
-      }
-      setInitialSettings({ ...settings });
-      setInitialHeroImageUrl(heroImageUrl);
-      setHeroImageFile(null);
-      setHeroImageRemoved(false);
-      await onSave();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDiscard = () => {
-    setSettings({ ...initialSettings });
-    setHeroImageUrl(initialHeroImageUrl);
-    setHeroImageFile(null);
-    setHeroImageRemoved(false);
-    setHeroError(null);
-    aboutRef.current?.value(initialSettings.aboutUsText);
-    historyRef.current?.value(initialSettings.historyText);
-    onDiscard();
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   if (loading) return null;
@@ -131,14 +146,14 @@ export function LandingPageSettingsPanel({
           )}
           <div className="flex gap-2">
             <input
-              id="hero-image-input"
+              ref={fileInputRef}
               type="file"
               accept="image/png,image/jpeg,image/svg+xml,image/webp"
               onChange={handleHeroFileChange}
               className="text-sm"
             />
             {heroImageUrl && (
-              <Button variant="secondary" onClick={handleRemoveHero} disabled={saving}>
+              <Button variant="secondary" onClick={handleRemoveHero}>
                 Remove
               </Button>
             )}
@@ -197,16 +212,7 @@ export function LandingPageSettingsPanel({
             placeholder="contact@example.com"
           />
         </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-border">
-          <Button variant="secondary" onClick={handleDiscard} disabled={saving}>
-            Discard
-          </Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
-        </div>
       </div>
     </AppCard>
   );
-}
+});

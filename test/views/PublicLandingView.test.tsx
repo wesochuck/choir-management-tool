@@ -20,6 +20,7 @@ describe('PublicLandingView', () => {
       contactEmail: 'test@example.com',
     }));
     mock.method(settingsService, 'getHeroImageUrl', async () => null);
+    mock.method(settingsService, 'getTimezone', async () => 'America/New_York');
     mock.method(eventService, 'getPastPerformances', async () => []);
 
     const mod = await import('../../src/views/PublicLandingView');
@@ -30,12 +31,16 @@ describe('PublicLandingView', () => {
     mock.restoreAll();
   });
 
-  it('renders without crashing', () => {
-    render(
+  it('renders without crashing', async () => {
+    const { container } = render(
       <MemoryRouter>
         <PublicLandingView />
       </MemoryRouter>
     );
+
+    await waitFor(() => {
+      assert.ok(container.querySelector('h1'));
+    }, { timeout: 5000 });
   });
 
   it('renders navigation links', async () => {

@@ -1,29 +1,20 @@
 // @vitest-environment jsdom
-import { vi } from 'vitest';
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-vi.mock('../../src/lib/pocketbase', () => ({
-  pb: {
-    authStore: {
-      onChange: () => undefined,
-      token: '',
+if (typeof window !== 'undefined' && typeof window.localStorage?.getItem !== 'function') {
+  Object.defineProperty(window, 'localStorage', {
+    value: {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
       clear: () => {},
-      record: null,
+      length: 0,
+      key: () => null,
     },
-    collection: () => ({
-      getFirstListItem: async () => { throw { status: 404 }; },
-      update: async () => ({}),
-      create: async () => ({}),
-    }),
-    filter: (s: string) => s,
-    files: { getURL: () => '' },
-    autoCancellation: () => {},
-    beforeSend: (url: string) => ({ url, options: {} }),
-    afterSend: async (r: unknown) => r,
-  },
-  formatPocketBaseError: (err: unknown) => 'error',
-}));
+    writable: true,
+  });
+}
 
 describe('LandingPageSettings', () => {
   describe('DEFAULT_LANDING_SETTINGS', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { AppCard } from '../../components/common/AppCard';
 import { pb } from '../../lib/pocketbase';
 import { settingsService, queueSettingsService } from '../../services/settingsService';
@@ -7,6 +7,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { LandingPageSettingsPanel } from '../../components/admin/LandingPageSettingsPanel';
+import type { LandingPageSettingsPanelHandle } from '../../components/admin/LandingPageSettingsPanel';
 import { Button, Select } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
@@ -60,6 +61,10 @@ export default function SettingsView() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLogoRemoved, setIsLogoRemoved] = useState(false);
   const [landingDirty, setLandingDirty] = useState(false);
+  const landingPanelRef = useRef<LandingPageSettingsPanelHandle>(null);
+  const handleLandingDirtyChange = useCallback((dirty: boolean) => {
+    setLandingDirty(dirty);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -103,6 +108,8 @@ export default function SettingsView() {
     setLogoUrl(initialLogoUrl);
     setLogoFile(null);
     setIsLogoRemoved(false);
+    landingPanelRef.current?.reset();
+    setLandingDirty(false);
   };
 
   const handleSave = async () => {
@@ -110,6 +117,9 @@ export default function SettingsView() {
     setMessage('');
 
     try {
+      const landingSettings = landingPanelRef.current?.getSettings();
+      const heroChanges = landingPanelRef.current?.getHeroImageChanges();
+
       await Promise.all([
         choirName ? settingsService.saveChoirName(choirName) : Promise.resolve(),
         settingsService.saveTimezone(timezone),
@@ -118,8 +128,20 @@ export default function SettingsView() {
           ? settingsService.saveLogo(logoFile)
           : isLogoRemoved
             ? settingsService.saveLogo(null)
-            : Promise.resolve()
+            : Promise.resolve(),
+        landingSettings ? settingsService.saveLandingSettings(landingSettings) : Promise.resolve(),
+        heroChanges?.removed
+          ? settingsService.saveHeroImage(null)
+          : heroChanges?.file
+            ? settingsService.saveHeroImage(heroChanges.file)
+            : Promise.resolve(),
       ]);
+
+      const [newLogoUrl, newHeroUrl] = await Promise.all([
+        logoFile ? settingsService.getLogoUrl() : Promise.resolve(logoUrl),
+        heroChanges?.file || heroChanges?.removed ? settingsService.getHeroImageUrl() : Promise.resolve(null),
+      ]);
+
       setContextChoirName(choirName);
       setContextTimezone(timezone);
       setInitialChoirName(choirName);
@@ -127,15 +149,20 @@ export default function SettingsView() {
       setInitialHomepageUrl(homepageUrl);
       if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
       if (logoFile) {
-        const newUrl = await settingsService.getLogoUrl();
-        setLogoUrl(newUrl);
-        setInitialLogoUrl(newUrl);
+        setLogoUrl(newLogoUrl);
+        setInitialLogoUrl(newLogoUrl);
       } else if (isLogoRemoved) {
         setLogoUrl(null);
         setInitialLogoUrl(null);
       }
       setLogoFile(null);
       setIsLogoRemoved(false);
+
+      landingPanelRef.current?.markSaved(
+        landingSettings ?? await settingsService.getLandingSettings(),
+        newHeroUrl,
+      );
+
       setMessage('System settings saved.');
       dialog.showToast('System settings saved successfully.');
     } catch (err: unknown) {
@@ -287,9 +314,8 @@ export default function SettingsView() {
         </AppCard>
 
         <LandingPageSettingsPanel
-          onDirtyChange={(dirty) => setLandingDirty(dirty)}
-          onSave={async () => {}}
-          onDiscard={() => setLandingDirty(false)}
+          ref={landingPanelRef}
+          onDirtyChange={handleLandingDirtyChange}
         />
 
         <QueueWebhookSettings />

@@ -88,7 +88,7 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
   if (!user) return <Navigate to="/login" replace />;
 
   const role = user.role || 'singer';
-  if (adminOnly && role !== 'admin') return <Navigate to="/" replace />;
+  if (adminOnly && role !== 'admin') return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
 }
