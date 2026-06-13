@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pb } from '../src/lib/pocketbase.ts';
-import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, getProfileEmail, type Profile } from '../src/services/profileService.ts';
+import { exportToCSV, updateProfilePhoto, deleteProfilePhoto, getProfileEmail, generateRandomPassword, type Profile } from '../src/services/profileService.ts';
 
 
 type CollectionMock = ReturnType<typeof pb.collection>;
@@ -70,6 +70,95 @@ test('updateProfilePhoto calls pocketbase with FormData', async (t) => {
     assert.equal((firstCall.arguments as unknown[])[1], formData);
   } finally {
     pb.collection = originalCollection;
+  }
+});
+
+test('generateRandomPassword generates a password of default length 12', () => {
+  const pwd = generateRandomPassword();
+  assert.equal(pwd.length, 12);
+});
+
+test('generateRandomPassword generates a password of specified length', () => {
+  const pwd = generateRandomPassword(20);
+  assert.equal(pwd.length, 20);
+});
+
+test('generateRandomPassword only contains valid characters', () => {
+  const validCharsRegex = /^[a-zA-Z0-9!@#$%^&*]+$/;
+  const pwd = generateRandomPassword(50);
+  assert.match(pwd, validCharsRegex);
+});
+
+test('generateRandomPassword uses Web Crypto API when available', (t) => {
+  const originalCrypto = globalThis.crypto;
+  let getRandomValuesCalled = false;
+
+  const mockCrypto = {
+    getRandomValues: t.mock.fn((array: Uint32Array) => {
+      getRandomValuesCalled = true;
+      for (let i = 0; i < array.length; i++) {
+        array[i] = i; // Predictable values for testing
+      }
+      return array;
+    })
+  };
+
+  Object.defineProperty(globalThis, 'crypto', {
+    value: mockCrypto,
+    configurable: true,
+    writable: true,
+  });
+
+  try {
+    const pwd = generateRandomPassword(5);
+    assert.equal(getRandomValuesCalled, true);
+    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 1);
+    // Based on chars: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+    // length is 70.
+    // i=0 -> chars[0] = 'a'
+    // i=1 -> chars[1] = 'b'
+    // i=2 -> chars[2] = 'c'
+    // i=3 -> chars[3] = 'd'
+    // i=4 -> chars[4] = 'e'
+    assert.equal(pwd, 'abcde');
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: originalCrypto,
+      configurable: true,
+      writable: true,
+    });
+  }
+});
+
+test('generateRandomPassword falls back to Math.random when Web Crypto API is unavailable', (t) => {
+  const originalCrypto = globalThis.crypto;
+
+  Object.defineProperty(globalThis, 'crypto', {
+    value: undefined,
+    configurable: true,
+    writable: true,
+  });
+
+  const originalMathRandom = Math.random;
+  let mathRandomCalled = false;
+  Math.random = t.mock.fn(() => {
+    mathRandomCalled = true;
+    return 0.5; // Always return middle of range
+  });
+
+  try {
+    const pwd = generateRandomPassword(4);
+    assert.equal(mathRandomCalled, true);
+    // if random is 0.5, 0.5 * 70 = 35 -> floor is 35
+    // chars[35] = 'J' (a-z is 26, A-Z starts at 26. 26 + 9 = 35 -> 'J')
+    assert.equal(pwd, 'JJJJ');
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: originalCrypto,
+      configurable: true,
+      writable: true,
+    });
+    Math.random = originalMathRandom;
   }
 });
 
