@@ -6,6 +6,8 @@ import {
 } from '../src/lib/authRedirect.ts';
 
 test('auth redirect: public routes are recognized', () => {
+  assert.equal(isPublicRoute('/'), true);
+  assert.equal(isPublicRoute('/history'), true);
   assert.equal(isPublicRoute('/login'), true);
   assert.equal(isPublicRoute('/reset-password'), true);
   assert.equal(isPublicRoute('/auditions'), true);
@@ -18,7 +20,6 @@ test('auth redirect: public routes are recognized', () => {
 });
 
 test('auth redirect: protected routes are not public', () => {
-  assert.equal(isPublicRoute('/'), false);
   assert.equal(isPublicRoute('/admin/roster'), false);
   assert.equal(isPublicRoute('/admin/settings'), false);
   assert.equal(isPublicRoute('/profile'), false);
