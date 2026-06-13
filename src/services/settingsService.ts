@@ -75,6 +75,22 @@ export interface PollSettings {
   defaultAutoArchiveDays: number;
 }
 
+export interface LandingPageSettings {
+  heroHeadline: string;
+  heroSubtitle: string;
+  aboutUsText: string;
+  historyText: string;
+  contactEmail: string;
+}
+
+export const DEFAULT_LANDING_SETTINGS: LandingPageSettings = {
+  heroHeadline: 'Welcome to Our Choir',
+  heroSubtitle: 'Voices united in harmony.',
+  aboutUsText: '',
+  historyText: '',
+  contactEmail: '',
+};
+
 export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {
   enabled: true,
   slots: [],
@@ -333,6 +349,51 @@ export const settingsService = {
 
   async saveHomepageUrl(url: string) {
     return await upsertSetting('homepage_url', url, true);
+  },
+
+  async getLandingSettings(): Promise<LandingPageSettings> {
+    const stored = await getSetting<LandingPageSettings>('landingSettings');
+    return { ...DEFAULT_LANDING_SETTINGS, ...stored?.value };
+  },
+
+  async saveLandingSettings(value: LandingPageSettings): Promise<void> {
+    await upsertSetting('landingSettings', value, true);
+  },
+
+  async getHeroImageUrl(): Promise<string | null> {
+    try {
+      const record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
+        pb.filter('key = {:key}', { key: 'landingHeroImage' })
+      );
+      const filename = record['logo'] as string | undefined;
+      if (!filename) return null;
+      return pb.files.getURL(record, filename);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
+      throw err;
+    }
+  },
+
+  async saveHeroImage(file: File | null): Promise<void> {
+    const key = 'landingHeroImage';
+    let record: RecordModel;
+    try {
+      record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
+        pb.filter('key = {:key}', { key })
+      );
+    } catch (err: unknown) {
+      if (!(err && typeof err === 'object' && 'status' in err && err.status === 404)) {
+        throw err;
+      }
+      record = await pb.collection('appSettings').create({
+        key,
+        value: 'heroImage',
+        isPublic: true,
+      });
+    }
+    const formData = new FormData();
+    formData.append('logo', file ?? '');
+    await pb.collection('appSettings').update(record.id, formData);
   },
 
   async getLogoUrl(): Promise<string | null> {
