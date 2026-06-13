@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { getOfflineTrackUrl, revokeAllOfflineTrackUrls } from '../src/services/offlineMediaStore.ts';
+import { getOfflineTrackUrl, revokeAllOfflineTrackUrls, removeOfflineTrack } from '../src/services/offlineMediaStore.ts';
 
 describe('offlineMediaStore', () => {
   let objectURLMock: any;
   let revokeURLMock: any;
   let getRequestMock: any;
+  let deleteRequestMock: any;
 
   beforeEach(() => {
     mock.restoreAll();
@@ -28,6 +29,12 @@ describe('offlineMediaStore', () => {
       result: undefined
     };
 
+    deleteRequestMock = {
+      onsuccess: null,
+      onerror: null,
+      result: undefined
+    };
+
     const objectStoreMock = {
       get: mock.fn((trackId: string) => {
         // Return our mock request. In the test, we'll manually trigger onsuccess
@@ -41,6 +48,16 @@ describe('offlineMediaStore', () => {
           if (getRequestMock.onsuccess) getRequestMock.onsuccess();
         }, 0);
         return getRequestMock;
+      }),
+      delete: mock.fn((trackId: string) => {
+        setTimeout(() => {
+          if (deleteRequestMock.error && deleteRequestMock.onerror) {
+            deleteRequestMock.onerror();
+          } else if (deleteRequestMock.onsuccess) {
+            deleteRequestMock.onsuccess();
+          }
+        }, 0);
+        return deleteRequestMock;
       })
     };
 
@@ -95,5 +112,43 @@ describe('offlineMediaStore', () => {
     objectURLMock.mock.resetCalls();
     await getOfflineTrackUrl('track-1');
     assert.strictEqual(objectURLMock.mock.callCount(), 1, 'Should create a new object URL, meaning cache was cleared');
+  });
+
+  it('removeOfflineTrack should delete track from DB, revoke its URL, and remove it from activeUrls cache', async () => {
+    // 1. Populate activeUrls
+    const url1 = await getOfflineTrackUrl('track-1');
+    assert.ok(url1, 'Should return a url for track-1');
+
+    // 2. Clear revoke mock history to track our specific call
+    revokeURLMock.mock.resetCalls();
+
+    // 3. Call the function under test
+    await removeOfflineTrack('track-1');
+
+    // 4. Verify URL was revoked
+    assert.strictEqual(revokeURLMock.mock.callCount(), 1, 'revokeObjectURL should have been called once');
+
+    // Using simple property access since Vitest/Node compat calls array structure can vary
+    const callArgs = revokeURLMock.mock.calls[0]?.arguments || revokeURLMock.mock.calls[0];
+    assert.strictEqual(Array.isArray(callArgs) ? callArgs[0] : undefined, url1, 'Should have revoked the correct url');
+
+    // 5. Verify cache was cleared for this track by checking if getting it again creates a new URL
+    objectURLMock.mock.resetCalls();
+    await getOfflineTrackUrl('track-1');
+    assert.strictEqual(objectURLMock.mock.callCount(), 1, 'Should create a new object URL, meaning cache was cleared');
+  });
+
+  it('removeOfflineTrack should reject if DB delete fails', async () => {
+    // 1. Setup mock to fail
+    const errorMsg = 'Failed to delete';
+    deleteRequestMock.error = new Error(errorMsg);
+    deleteRequestMock.onsuccess = null;
+
+    // 2. Call the function and expect it to reject
+    await assert.rejects(
+      removeOfflineTrack('track-1'),
+      (err: any) => err.message === errorMsg,
+      'Should reject with the DB error'
+    );
   });
 });
