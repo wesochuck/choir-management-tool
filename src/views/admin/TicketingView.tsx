@@ -73,24 +73,16 @@ export default function TicketingView() {
       let allEvents = [...eventsEnabled];
 
       if (missingEventIds.length > 0) {
-        const chunks: string[][] = [];
-        for (let i = 0; i < missingEventIds.length; i += 50) {
-          chunks.push(missingEventIds.slice(i, i + 50));
-        }
+        const filterStr = missingEventIds.map((_, idx) => `id = {:id_${idx}}`).join(' || ');
+        const placeholders = missingEventIds.reduce((acc, id, idx) => {
+          acc[`id_${idx}`] = id;
+          return acc;
+        }, {} as Record<string, string>);
 
-        const missingEventsPromises = chunks.map(chunk => {
-          const filterStr = chunk.map((_, idx) => `id = {:id_${idx}}`).join(' || ');
-          const placeholders = chunk.reduce((acc, id, idx) => {
-            acc[`id_${idx}`] = id;
-            return acc;
-          }, {} as Record<string, string>);
-          return pb.collection('events').getFullList<Event>({
-            filter: pb.filter(filterStr, placeholders)
-          });
+        const missingEvents = await pb.collection('events').getFullList<Event>({
+          filter: pb.filter(filterStr, placeholders)
         });
 
-        const missingEventsResults = await Promise.all(missingEventsPromises);
-        const missingEvents = missingEventsResults.flat();
         allEvents = [...allEvents, ...missingEvents];
       }
 

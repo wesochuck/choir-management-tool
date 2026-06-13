@@ -15,7 +15,6 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
 import type { EventRoster } from '../../services/rosterService';
-import { chunkArray } from '../../lib/networkSafety';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, Select } from '../../components/ui';
@@ -109,21 +108,15 @@ export default function AttendanceView() {
         const performingProfileIds = new Set(perfRosters.map((r) => r.profile));
 
         const rehearsalIds = pastRehearsals.map((reh) => reh.id);
-        const idChunks = chunkArray(rehearsalIds, 50);
 
-        const allRosters: EventRoster[] = [];
+        let allRosters: EventRoster[] = [];
 
-        const chunkPromises = idChunks.map((chunk) => {
-          const filterStr = chunk.map((_, i) => `event = {:id${i}}`).join(' || ');
-          const params = Object.fromEntries(chunk.map((id, i) => [`id${i}`, id]));
-          return pb.collection('eventRosters').getFullList<EventRoster>({
+        if (rehearsalIds.length > 0) {
+          const filterStr = rehearsalIds.map((_, i) => `event = {:id${i}}`).join(' || ');
+          const params = Object.fromEntries(rehearsalIds.map((id, i) => [`id${i}`, id]));
+          allRosters = await pb.collection('eventRosters').getFullList<EventRoster>({
             filter: pb.filter(filterStr, params),
           });
-        });
-
-        const chunkResults = await Promise.all(chunkPromises);
-        for (const chunkRosters of chunkResults) {
-          allRosters.push(...chunkRosters);
         }
 
         const eventRosterMap = new Map<string, Map<string, EventRoster>>();
