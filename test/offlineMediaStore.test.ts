@@ -7,9 +7,13 @@ describe('offlineMediaStore', () => {
   let objectURLMock: any;
   let revokeURLMock: any;
   let getRequestMock: any;
+  let customGetResultCb: ((trackId: string) => any) | null = null;
+  let customGetError: Error | null = null;
 
   beforeEach(() => {
     mock.restoreAll();
+    customGetResultCb = null;
+    customGetError = null;
 
     // Create a mock for URL.createObjectURL and URL.revokeObjectURL
     objectURLMock = mock.fn((blob: Blob) => {
@@ -33,12 +37,21 @@ describe('offlineMediaStore', () => {
         // Return our mock request. In the test, we'll manually trigger onsuccess
         // using setTimeout to simulate async behavior of IDBRequest
         setTimeout(() => {
-          // Setup result
-          getRequestMock.result = {
-            id: trackId,
-            blob: new Blob(['dummy audio data'], { type: 'audio/mpeg' }),
-          };
-          if (getRequestMock.onsuccess) getRequestMock.onsuccess();
+          if (customGetError) {
+            getRequestMock.error = customGetError;
+            if (getRequestMock.onerror) getRequestMock.onerror();
+          } else {
+            // Setup result
+            if (customGetResultCb) {
+              getRequestMock.result = customGetResultCb(trackId);
+            } else {
+              getRequestMock.result = {
+                id: trackId,
+                blob: new Blob(['dummy audio data'], { type: 'audio/mpeg' }),
+              };
+            }
+            if (getRequestMock.onsuccess) getRequestMock.onsuccess();
+          }
         }, 0);
         return getRequestMock;
       })
@@ -72,6 +85,40 @@ describe('offlineMediaStore', () => {
 
   afterEach(() => {
     mock.restoreAll();
+  });
+
+  describe('getOfflineTrackUrl', () => {
+    afterEach(() => {
+      revokeAllOfflineTrackUrls();
+    });
+
+    it('should return null when the track is not found in the database', async () => {
+      customGetResultCb = () => undefined;
+      const url = await getOfflineTrackUrl('missing-track');
+      assert.strictEqual(url, null);
+    });
+
+    it('should reject when a database error occurs', async () => {
+      const error = new Error('Database Error');
+      customGetError = error;
+      await assert.rejects(getOfflineTrackUrl('error-track'), error);
+    });
+
+    it('should query the database, create an object URL, and cache it', async () => {
+      const url = await getOfflineTrackUrl('track-1');
+      assert.ok(url);
+      assert.strictEqual(objectURLMock.mock.callCount(), 1);
+    });
+
+    it('should return the cached URL without querying the database', async () => {
+      const url1 = await getOfflineTrackUrl('track-1');
+      assert.ok(url1);
+      assert.strictEqual(objectURLMock.mock.callCount(), 1);
+
+      const url2 = await getOfflineTrackUrl('track-1');
+      assert.strictEqual(url1, url2);
+      assert.strictEqual(objectURLMock.mock.callCount(), 1, 'Should not call createObjectURL again');
+    });
   });
 
   it('revokeAllOfflineTrackUrls should revoke all active blob URLs and clear the cache', async () => {
