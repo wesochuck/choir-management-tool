@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { donationService, type DonationLevel } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
-import PublicLogo from '../components/common/PublicLogo';
+import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { Button, Select } from '../components/ui';
 
@@ -100,8 +100,7 @@ export default function PublicDonationView() {
   const effectiveAmount = getEffectiveAmount();
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
-      <PublicLogo />
+    <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
           <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">← Back to Concerts</Button>
@@ -256,6 +255,6 @@ export default function PublicDonationView() {
           </p>
         </form>
       </AppCard>
-    </div>
+    </PublicBrandingWrapper>
   );
 }

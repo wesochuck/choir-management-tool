@@ -7,7 +7,7 @@ import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
 import { Spinner } from '../components/ui/Spinner/Spinner';
-import PublicLogo from '../components/common/PublicLogo';
+import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 
@@ -58,8 +58,7 @@ export default function PublicTicketListView() {
   const hasContent = events.length > 0 || bundles.length > 0;
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
-      <PublicLogo />
+    <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-0.5">
@@ -166,6 +165,6 @@ export default function PublicTicketListView() {
           </div>
         </div>
       </AppCard>
-    </div>
+    </PublicBrandingWrapper>
   );
 }

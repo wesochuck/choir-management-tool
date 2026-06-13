@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button/Button';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { pb } from '../lib/pocketbase';
+import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 
 export default function PublicTicketSuccessView() {
   useDocumentTitle('Order Confirmation');
@@ -46,7 +47,7 @@ export default function PublicTicketSuccessView() {
   }
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-center p-4">
+    <PublicBrandingWrapper showLogo={false}>
       <AppCard className="w-full max-w-[480px] items-center gap-4 text-center">
         <div className="text-6xl text-success-text">✓</div>
         <h1 className="text-display m-0">Thank You!</h1>
@@ -115,6 +116,6 @@ export default function PublicTicketSuccessView() {
           Back to Events
         </Button>
       </AppCard>
-    </div>
+    </PublicBrandingWrapper>
   );
 }

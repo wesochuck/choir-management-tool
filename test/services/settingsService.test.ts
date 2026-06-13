@@ -25,6 +25,7 @@ describe('LandingPageSettings', () => {
       assert.strictEqual(DEFAULT_LANDING_SETTINGS.aboutUsText, '');
       assert.strictEqual(DEFAULT_LANDING_SETTINGS.historyText, '');
       assert.strictEqual(DEFAULT_LANDING_SETTINGS.contactEmail, '');
+      assert.strictEqual(DEFAULT_LANDING_SETTINGS.showBrandingHeaderFooter, false);
     });
 
     it('has the correct keys', async () => {
@@ -36,6 +37,7 @@ describe('LandingPageSettings', () => {
         'heroHeadline',
         'heroSubtitle',
         'historyText',
+        'showBrandingHeaderFooter',
       ]);
     });
   });

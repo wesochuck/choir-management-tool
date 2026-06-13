@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
-import PublicLogo from '../components/common/PublicLogo';
+import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { Button, Select } from '../components/ui';
 import { auditionService, type Audition } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
@@ -107,8 +107,7 @@ export default function PublicAuditionView() {
   }
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
-      <PublicLogo />
+    <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
           <Button as={Link} to="/login" variant="outline" size="small" className="self-start">Admin Login</Button>
@@ -262,6 +261,6 @@ export default function PublicAuditionView() {
           </div>
         )}
       </AppCard>
-    </div>
+    </PublicBrandingWrapper>
   );
 }

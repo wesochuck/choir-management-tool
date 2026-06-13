@@ -4,7 +4,7 @@ import { pb } from '../lib/pocketbase';
 import { eventService, type Event } from '../services/eventService';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
-import PublicLogo from '../components/common/PublicLogo';
+import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { sanitizeHtml } from '../lib/textSafety';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
@@ -100,8 +100,7 @@ export default function PublicTicketPurchaseView() {
   };
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
-      <PublicLogo />
+    <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
           <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">← Back to Events</Button>
@@ -253,6 +252,6 @@ export default function PublicTicketPurchaseView() {
           </Button>
         </form>
       </AppCard>
-    </div>
+    </PublicBrandingWrapper>
   );
 }

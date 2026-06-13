@@ -72,6 +72,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
       settings.aboutUsText !== initialSettings.aboutUsText ||
       settings.historyText !== initialSettings.historyText ||
       settings.contactEmail !== initialSettings.contactEmail ||
+      settings.showBrandingHeaderFooter !== initialSettings.showBrandingHeaderFooter ||
       heroImageFile !== null ||
       heroImageRemoved ||
       heroImageUrl !== initialHeroImageUrl;
@@ -103,7 +104,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
     },
   }), [settings, initialSettings, heroImageUrl, initialHeroImageUrl, heroImageFile, heroImageRemoved]);
 
-  const handleChange = (field: keyof LandingPageSettings, value: string) => {
+  const handleChange = <K extends keyof LandingPageSettings>(field: K, value: LandingPageSettings[K]) => {
     setSettings(prev => ({ ...prev, [field]: value }));
   };
 
@@ -211,6 +212,24 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
             className="w-full px-3 py-2 border border-border rounded-md bg-bg-input text-text"
             placeholder="contact@example.com"
           />
+        </div>
+
+        <div className="mt-4 flex flex-row items-center gap-4 rounded-lg border border-border bg-neutral-100 p-4">
+          <input
+            id="showBrandingHeaderFooter"
+            type="checkbox"
+            className="size-[18px] cursor-pointer accent-primary"
+            checked={!!settings.showBrandingHeaderFooter}
+            onChange={e => handleChange('showBrandingHeaderFooter', e.target.checked)}
+          />
+          <label htmlFor="showBrandingHeaderFooter" className="flex flex-1 cursor-pointer flex-col gap-0.5 select-none">
+            <span className="text-sm leading-tight font-semibold text-text">
+              Wrap Ticketing, Donations, and Auditions in Site Layout
+            </span>
+            <span className="text-xs leading-tight text-text-muted">
+              When checked, guest transactional pages will be decorated with the global header navigation and footer.
+            </span>
+          </label>
         </div>
       </div>
     </AppCard>

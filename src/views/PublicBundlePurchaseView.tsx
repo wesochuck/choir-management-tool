@@ -4,6 +4,7 @@ import { pb } from '../lib/pocketbase';
 import { ticketService, type TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
+import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { Button } from '../components/ui';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { sanitizeHtml } from '../lib/textSafety';
@@ -107,7 +108,7 @@ export default function PublicBundlePurchaseView() {
   const includedEvents = bundle.expand?.events || [];
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4">
+    <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
           <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">← Back to Tickets</Button>
@@ -249,6 +250,6 @@ export default function PublicBundlePurchaseView() {
           </Button>
         </form>
       </AppCard>
-    </div>
+    </PublicBrandingWrapper>
   );
 }

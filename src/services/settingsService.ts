@@ -81,6 +81,7 @@ export interface LandingPageSettings {
   aboutUsText: string;
   historyText: string;
   contactEmail: string;
+  showBrandingHeaderFooter?: boolean;
 }
 
 export const DEFAULT_LANDING_SETTINGS: LandingPageSettings = {
@@ -89,6 +90,7 @@ export const DEFAULT_LANDING_SETTINGS: LandingPageSettings = {
   aboutUsText: '',
   historyText: '',
   contactEmail: '',
+  showBrandingHeaderFooter: false,
 };
 
 export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {
