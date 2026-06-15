@@ -198,7 +198,7 @@ export default function PublicDonationView() {
             <label className="text-label">Tribute Information (Optional)</label>
             <div className="flex flex-col gap-4 md:flex-row">
               <Select 
-                className="h-11 flex-1 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                className="h-11 flex-1 rounded-md border border-border bg-surface px-3 focus:border-primary"
                 value={tributeType}
                 onChange={e => setTributeType(e.target.value as 'none' | 'memory' | 'honor')}
               >
