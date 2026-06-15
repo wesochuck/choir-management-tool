@@ -427,7 +427,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     </div>
                   )}
 
-                  <div className="flex flex-col items-start gap-1">
+                  <div className="flex w-full flex-col items-start gap-1">
                     <label className="text-label">Notes</label>
                     <Textarea 
                       value={formData.notes} 
@@ -542,7 +542,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               </Checkbox>
             </div>
 
-            <div className="flex flex-col items-start gap-1">
+            <div className="flex w-full flex-col items-start gap-1">
               <label className="text-label">Notes</label>
               <Textarea 
                 value={formData.notes} 
