@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
-import test from 'node:test';
+import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, cleanup } from '@testing-library/react';
 import { useMediaQuery } from './useMediaQuery';
+
+afterEach(() => {
+  cleanup();
+});
 
 test('useMediaQuery returns false when matchMedia reports no match', () => {
   Object.defineProperty(window, 'matchMedia', {

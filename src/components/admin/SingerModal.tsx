@@ -109,6 +109,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
 
   // Clear the custom validity message as the user types so the red error
   // disappears immediately on edit (matches native browser validation behavior).
+  // Empty deps: setFormData and emailInputRef are stable across renders.
   const handleEmailChange = useCallback((value: string) => {
     setFormData((prev) => ({ ...prev, email: value }));
     emailInputRef.current?.setCustomValidity('');
