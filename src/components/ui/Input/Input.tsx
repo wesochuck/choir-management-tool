@@ -16,6 +16,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       select: () => slRef.current?.select(),
       get value() { return slRef.current?.value || ''; },
       set value(val) { if (slRef.current) slRef.current.value = val; },
+      setCustomValidity: (message: string) => slRef.current?.setCustomValidity(message),
     } as unknown as HTMLInputElement));
 
     if (process.env.NODE_ENV === 'test') {

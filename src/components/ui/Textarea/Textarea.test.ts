@@ -22,3 +22,11 @@ test('Textarea passes through native props', () => {
   assert.equal(el.getAttribute('placeholder'), 'Enter bio');
   assert.equal(el.getAttribute('rows'), '4');
 });
+
+test('Textarea setCustomValidity sets validation message', () => {
+  const { container } = render(React.createElement(Textarea));
+  const el = container.firstElementChild as HTMLTextAreaElement;
+  assert.ok(el);
+  el.setCustomValidity('custom error');
+  assert.equal(el.validationMessage, 'custom error');
+});

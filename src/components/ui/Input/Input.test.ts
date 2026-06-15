@@ -36,3 +36,11 @@ test('Input merges className', () => {
   assert.ok(el, 'renders an element');
   assert.ok(el.classList.contains('custom-class'), 'has custom class');
 });
+
+test('Input setCustomValidity sets validation message', () => {
+  const { container } = render(React.createElement(Input));
+  const el = container.firstElementChild as HTMLInputElement;
+  assert.ok(el);
+  el.setCustomValidity('custom error');
+  assert.equal(el.validationMessage, 'custom error');
+});
