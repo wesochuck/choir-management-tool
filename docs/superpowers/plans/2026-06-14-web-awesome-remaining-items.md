@@ -664,7 +664,7 @@ rtk git commit -m "chore: post-migration verification"
 
 - **Spec coverage:** All three remaining plan items are addressed — old `TabPanel` removal (Task 2), mobile Drawer (Task 3), validation API (Tasks 4-6).
 - **Placeholder scan:** No `TODO`/`TBD` strings; every code change is fully written out.
-- **Type consistency:** The `useImperativeHandle` returns the same shape in test fallback and production paths (`focus`/`blur`/`select`/`setCustomValidity`/`value`). The `ref` callback pattern in the test fallback is consistent between `Input.tsx` and `Textarea.tsx`.
+- **Type consistency:** `useImperativeHandle` exposes a curated subset of methods (`focus`/`blur`/`select`/`setCustomValidity`/`reportValidity`/`value`) in both Input.tsx and Textarea.tsx. In the test fallback, the forwarded ref passes through to a native DOM element which has the full native API superset — this is intentional and the curated subset on the imperative handle covers the methods consumers need. The `ref` callback pattern in the test fallback is consistent between `Input.tsx` and `Textarea.tsx`.
 - **Open Question #2 deferred:** The plan asked whether *all* modals or only specific ones should auto-drawer. The implementation makes this opt-in via `asDrawer` prop so consumers can decide per-modal. SingerModal can be migrated to `asDrawer` in a follow-up PR once the user has tested the responsive behavior.
 
 ### Design Decisions (post-implementation review)
