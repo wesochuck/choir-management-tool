@@ -134,8 +134,7 @@ export function VoicePartEditor({
                     className="flex items-center gap-1"
                     title={`Click to view the ${count} singer(s) in this voice part`}
                   >
-                    <span className="font-bold">{count}</span>
-                    <span>singer{count === 1 ? '' : 's'}</span>
+                    <span className="font-bold">{count} singer{count === 1 ? '' : 's'}</span>
                   </Button>
                 ) : (
                   <div className="h-9" />
