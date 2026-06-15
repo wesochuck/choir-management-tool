@@ -3,6 +3,8 @@ import { resourceService, type SingerResource } from '../../services/resourceSer
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { Button, Input, FormField, Badge, Modal } from '../../components/ui';
+import SlRadioGroup from '@shoelace-style/shoelace/dist/react/radio-group/index.js';
+import SlRadio from '@shoelace-style/shoelace/dist/react/radio/index.js';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -278,26 +280,10 @@ export default function ResourcesView() {
 
           <FormField label="Resource Type">
             <div className="mt-1 flex items-center gap-6">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
-                <input
-                  type="radio"
-                  name="resourceType"
-                  checked={resourceType === 'file'}
-                  onChange={() => setResourceType('file')}
-                  className="size-4 accent-primary"
-                />
-                File Upload
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
-                <input
-                  type="radio"
-                  name="resourceType"
-                  checked={resourceType === 'link'}
-                  onChange={() => setResourceType('link')}
-                  className="size-4 accent-primary"
-                />
-                Link URL
-              </label>
+              <SlRadioGroup value={resourceType} onSlChange={(e: unknown) => setResourceType((e as CustomEvent).detail.value)}>
+                <SlRadio value="file">File Upload</SlRadio>
+                <SlRadio value="link">Link</SlRadio>
+              </SlRadioGroup>
             </div>
           </FormField>
 

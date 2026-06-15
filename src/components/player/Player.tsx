@@ -1,6 +1,7 @@
 import React from 'react';
 import type { PlayerMediaFile } from '../../services/playerService';
 import { useAudioPlayback } from '../../hooks/useAudioPlayback';
+import SlRange from '@shoelace-style/shoelace/dist/react/range/index.js';
 
 import {
   PlayIcon,
@@ -71,6 +72,26 @@ export const Player: React.FC<PlayerProps> = ({
     offlineMode,
   });
 
+  // Track whether scrubbing has started so handleSeekStart fires only once
+  const isScrubbingStartedRef = React.useRef(false);
+
+  const handleSlSeekInput = React.useCallback((e: unknown) => {
+    if (!isScrubbingStartedRef.current) {
+      handleSeekStart();
+      isScrubbingStartedRef.current = true;
+    }
+    handleSeekChange({ target: { value: String((e as CustomEvent).detail?.value ?? 0) } } as React.ChangeEvent<HTMLInputElement>);
+  }, [handleSeekStart, handleSeekChange]);
+
+  const handleSlSeekChange = React.useCallback((e: unknown) => {
+    handleSeekEnd({ target: { value: String((e as CustomEvent).detail?.value ?? 0) } } as unknown as React.MouseEvent<HTMLInputElement>);
+    isScrubbingStartedRef.current = false;
+  }, [handleSeekEnd]);
+
+  const handleSlVolumeInput = React.useCallback((e: unknown) => {
+    handleVolumeChange({ target: { value: String((e as CustomEvent).detail?.value ?? 0) } } as React.ChangeEvent<HTMLInputElement>);
+  }, [handleVolumeChange]);
+
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
@@ -83,16 +104,6 @@ export const Player: React.FC<PlayerProps> = ({
   const activeKey = currentTrack.trackKey || 'tutti';
   const isFallback = selectedVoicePart && selectedVoicePart !== 'tutti' && activeKey === 'tutti';
   const badgeLabel = activeKey.toUpperCase();
-
-  // Inline gradient fill for sliders (cross-browser filled-track)
-  const seekPct = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const seekStyle = {
-    background: `linear-gradient(to right, var(--accent-color) ${seekPct}%, var(--border-color) ${seekPct}%)`
-  };
-  const volPct = volume * 100;
-  const volStyle = {
-    background: `linear-gradient(to right, var(--accent-color) ${volPct}%, var(--border-color) ${volPct}%)`
-  };
 
   const ctrlBtnBase = 'bg-primary-light border border-border text-text w-12 h-12 p-0 rounded-lg cursor-pointer transition-all flex items-center justify-center shadow-sm hover:bg-border hover:shadow-md hover:-translate-y-0.5 disabled:opacity-35 disabled:cursor-default active:opacity-35 max-sm:w-10 max-sm:h-10';
 
@@ -155,19 +166,15 @@ export const Player: React.FC<PlayerProps> = ({
 
         <div className="mb-6 flex items-center gap-4 text-sm text-text-muted tabular-nums">
           <span>{formatTime(currentTime)}</span>
-          <input 
-            type="range" 
-            min="0" 
-            max={duration || 0} 
-            step="0.1"
-            value={currentTime} 
-            onMouseDown={handleSeekStart}
-            onTouchStart={handleSeekStart}
-            onChange={handleSeekChange} 
-            onMouseUp={handleSeekEnd}
-            onTouchEnd={handleSeekEnd}
-            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border outline-none"
-            style={seekStyle}
+          <SlRange
+            min={0}
+            max={duration || 0}
+            step={0.1}
+            value={currentTime}
+            // @allow-inline-style - CSS custom properties for Shoelace range track colors
+            style={{ '--track-color-active': 'var(--accent-color)', '--track-color-inactive': 'var(--border-color)', '--track-height': '6px' } as React.CSSProperties}
+            onSlInput={handleSlSeekInput}
+            onSlChange={handleSlSeekChange}
           />
           <span>{formatTime(duration)}</span>
         </div>
@@ -227,16 +234,15 @@ export const Player: React.FC<PlayerProps> = ({
 
           <div className="pointer-coarse:hidden flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden">
             <label htmlFor="volume-input" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Volume</label>
-            <input 
+            <SlRange
               id="volume-input"
-              type="range" 
-              min="0" 
-              max="1" 
-              step="0.01" 
-              value={volume} 
-              onChange={handleVolumeChange}
-              className="h-1 min-w-[80px] flex-1 cursor-pointer appearance-none rounded-full bg-border outline-none"
-              style={volStyle}
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              // @allow-inline-style - CSS custom properties for Shoelace range track colors
+              style={{ '--track-color-active': 'var(--accent-color)', '--track-color-inactive': 'var(--border-color)', '--track-height': '4px' } as React.CSSProperties}
+              onSlInput={handleSlVolumeInput}
             />
           </div>
           
