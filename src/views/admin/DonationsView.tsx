@@ -296,7 +296,7 @@ export default function DonationsView() {
           {activeTab === 'history' && (
             <Button
               variant="secondary"
-              className="px-3 font-semibold shadow-sm md:px-6"
+              className="px-3 font-semibold md:px-6"
               onClick={handleExportCSV}
               disabled={sortedDonations.length === 0}
               title="Export CSV"
@@ -314,7 +314,7 @@ export default function DonationsView() {
           {activeTab === 'levels' && (
             <Button
               variant="primary"
-              className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
+              className="animate-pulse-once px-3 font-semibold md:px-6"
               onClick={() => openLevelModal()}
               title="Add Level"
               icon={
@@ -573,7 +573,7 @@ export default function DonationsView() {
                               <Button 
                                 variant="danger" 
                                 size="small" 
-                                className="font-semibold shadow-sm"
+                                className="font-semibold"
                                 onClick={() => handleRefund(d.id)}
                               >
                                 Refund
@@ -657,7 +657,7 @@ export default function DonationsView() {
                             <Button 
                               variant="danger" 
                               size="small" 
-                              className="w-full py-1.5 text-xs font-semibold shadow-sm"
+                              className="w-full py-1.5 text-xs font-semibold"
                               onClick={() => handleRefund(d.id)}
                             >
                               Refund
@@ -706,7 +706,7 @@ export default function DonationsView() {
                 </FormField>
                 <Button
                   variant="primary"
-                  className="mt-2 w-full font-semibold shadow-sm"
+                  className="mt-2 w-full font-semibold"
                   onClick={handleSavePublicSettings}
                   disabled={saving || !donationButtonText.trim()}
                 >

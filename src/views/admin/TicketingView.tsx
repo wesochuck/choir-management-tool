@@ -497,7 +497,7 @@ export default function TicketingView() {
           {activeTab === 'bundles' && (
             <Button
               variant="primary"
-              className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
+              className="animate-pulse-once px-3 font-semibold md:px-6"
               onClick={handleOpenCreateModal}
               title="Create New Bundle"
               icon={
@@ -513,7 +513,7 @@ export default function TicketingView() {
           {activeTab === 'willcall' && selectedEventId && (
             <Button
               variant="secondary"
-              className="px-3 font-semibold shadow-sm md:px-6"
+              className="px-3 font-semibold md:px-6"
               onClick={handleExportCSV}
               disabled={activePurchases.length === 0}
               title="Export Will Call CSV"
@@ -828,7 +828,7 @@ export default function TicketingView() {
                                 <Button
                                   variant="danger"
                                   size="small"
-                                  className="font-semibold shadow-sm"
+                                  className="font-semibold"
                                   onClick={() => {
                                     if (p.bundle) {
                                       handleRefundBundle(p.stripePaymentIntentId);
@@ -921,7 +921,7 @@ export default function TicketingView() {
                               <Button
                                 variant="danger"
                                 size="small"
-                                className="w-full py-1.5 text-xs font-semibold shadow-sm"
+                                className="w-full py-1.5 text-xs font-semibold"
                                 onClick={() => {
                                   if (p.bundle) {
                                     handleRefundBundle(p.stripePaymentIntentId);
@@ -1030,7 +1030,7 @@ export default function TicketingView() {
                                 onClick={() => handleOpenEditModal(b)}
                                 variant="secondary"
                                 size="small"
-                                className="font-semibold shadow-sm"
+                                className="font-semibold"
                               >
                                 Edit
                               </Button>
@@ -1038,7 +1038,7 @@ export default function TicketingView() {
                                 onClick={() => handleDeleteBundle(b.id, b.events)}
                                 variant="danger"
                                 size="small"
-                                className="font-semibold shadow-sm"
+                                className="font-semibold"
                               >
                                 Delete
                               </Button>
@@ -1193,7 +1193,7 @@ export default function TicketingView() {
                                 onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
                                 variant="danger"
                                 size="small"
-                                className="font-semibold shadow-sm"
+                                className="font-semibold"
                               >
                                 Refund Bundle
                               </Button>
@@ -1256,7 +1256,7 @@ export default function TicketingView() {
                         {/* Row 3: Refund Actions */}
                         {order.status === 'paid' && (
                           <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
-                            <Button variant="danger" size="small" className="w-full py-1.5 text-xs font-semibold shadow-sm" onClick={() => handleRefundBundle(order.stripePaymentIntentId)}>
+                            <Button variant="danger" size="small" className="w-full py-1.5 text-xs font-semibold" onClick={() => handleRefundBundle(order.stripePaymentIntentId)}>
                               Refund Bundle
                             </Button>
                           </div>
@@ -1365,7 +1365,7 @@ export default function TicketingView() {
               form="bundle-form"
               variant="primary"
               disabled={saving}
-              className="font-semibold shadow-sm"
+              className="font-semibold"
               onClick={() => {
                 // Submit the form programmatically
                 const form = document.getElementById('bundle-form') as HTMLFormElement;

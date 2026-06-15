@@ -195,7 +195,7 @@ export default function EventsView(): React.JSX.Element {
             <Button
               onClick={handleBulkAdd}
               variant="secondary"
-              className="px-3 font-semibold shadow-sm md:px-6"
+              className="px-3 font-semibold md:px-6"
               title="Bulk Add Rehearsals"
               icon={
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -208,7 +208,7 @@ export default function EventsView(): React.JSX.Element {
             <Button
               onClick={handleAdd}
               variant="primary"
-              className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
+              className="animate-pulse-once px-3 font-semibold md:px-6"
               title="Single Event"
               icon={
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

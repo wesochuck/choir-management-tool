@@ -419,7 +419,7 @@ export default function PollsDashboardView() {
         <div className="flex items-center gap-2 pb-1.5">
           <Button
             variant="secondary"
-            className="px-3 font-semibold shadow-sm md:px-6"
+            className="px-3 font-semibold md:px-6"
             onClick={() => setIsSettingsModalOpen(true)}
             title="Settings"
             icon={
@@ -442,7 +442,7 @@ export default function PollsDashboardView() {
           </Button>
           <Button
             variant="primary"
-            className="animate-pulse-once px-3 font-semibold shadow-sm md:px-6"
+            className="animate-pulse-once px-3 font-semibold md:px-6"
             onClick={openQuickCreate}
             title="Start New Poll"
             icon={
@@ -598,7 +598,7 @@ export default function PollsDashboardView() {
                             <Button
                               variant="danger"
                               size="small"
-                              className="font-semibold shadow-sm"
+                              className="font-semibold"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeletePoll(poll.id);

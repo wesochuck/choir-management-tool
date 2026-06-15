@@ -330,7 +330,7 @@ export default function PatronsView() {
             <div className="flex items-center gap-2 pb-1.5">
               <Button
                 variant="primary"
-                className="px-3 font-semibold shadow-sm md:px-6"
+                className="px-3 font-semibold md:px-6"
                 onClick={handleSendMessage}
                 disabled={selectedIds.size === 0}
                 title="Send Message"
