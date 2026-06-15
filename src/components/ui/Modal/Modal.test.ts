@@ -53,6 +53,19 @@ test('Modal renders footer', () => {
   assert.ok(within(document.body).getByText('Save'));
 });
 
+test('Modal renders as drawer when asDrawer is true', () => {
+  renderModal({ isOpen: true, onClose: () => {}, title: 'Drawer Title', asDrawer: true },
+    React.createElement('p', null, 'drawer content')
+  );
+  const drawer = document.body.querySelector('[data-drawer="true"]');
+  assert.ok(drawer, 'drawer element should exist');
+  assert.equal(drawer?.getAttribute('role'), 'dialog');
+  assert.equal(drawer?.getAttribute('aria-modal'), 'true');
+  const body = within(document.body);
+  assert.ok(body.getByText('Drawer Title'));
+  assert.ok(body.getByText('drawer content'));
+});
+
 test('Modal calls onClose on Escape key', () => {
   let called = false;
   const onClose = () => { called = true; };

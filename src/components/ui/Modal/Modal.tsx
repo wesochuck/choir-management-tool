@@ -2,7 +2,10 @@ import { useContext, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import SlDialog from '@shoelace-style/shoelace/dist/react/dialog/index.js';
 import type SlDialogElement from '@shoelace-style/shoelace/dist/components/dialog/dialog.component.js';
+import SlDrawer from '@shoelace-style/shoelace/dist/react/drawer/index.js';
+import type SlDrawerElement from '@shoelace-style/shoelace/dist/components/drawer/drawer.component.js';
 import { DialogContext } from '../../../contexts/DialogContext';
+import { useMediaQuery } from '../../../hooks/useMediaQuery';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -12,20 +15,25 @@ export interface ModalProps {
   footer?: React.ReactNode;
   maxWidth?: string;
   isDirty?: boolean;
+  asDrawer?: boolean;
 }
 
 export function Modal({ 
-  isOpen, onClose, title, children, footer, maxWidth = '500px', isDirty = false 
+  isOpen, onClose, title, children, footer, maxWidth = '500px', isDirty = false, asDrawer = false 
 }: ModalProps) {
   const dialog = useContext(DialogContext);
   const dialogRef = useRef<SlDialogElement | null>(null);
+  const drawerRef = useRef<SlDrawerElement | null>(null);
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const isDrawerActive = asDrawer && isMobile;
 
   // Implement Ctrl+Enter / Cmd+Enter form submission for Shoelace component
   useEffect(() => {
     if (!isOpen || process.env.NODE_ENV === 'test') return;
+    const activeRef = isDrawerActive ? drawerRef : dialogRef;
     const handleKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        const submitButton = dialogRef.current?.querySelector<HTMLButtonElement>(
+        const submitButton = activeRef.current?.querySelector<HTMLButtonElement>(
           'button[type="submit"]:not([disabled]), sl-button[type="submit"]:not([disabled])'
         );
         if (submitButton) {
@@ -33,7 +41,7 @@ export function Modal({
           submitButton.click();
           return;
         }
-        const form = dialogRef.current?.querySelector<HTMLFormElement>('form');
+        const form = activeRef.current?.querySelector<HTMLFormElement>('form');
         if (form) {
           e.preventDefault();
           if (typeof form.requestSubmit === 'function') {
@@ -46,7 +54,7 @@ export function Modal({
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen]);
+  }, [isOpen, isDrawerActive]);
 
   const handleRequestClose = async (e: Event) => {
     if (isDirty) {
@@ -142,6 +150,33 @@ export function Modal({
   if (process.env.NODE_ENV === 'test') {
     if (!isOpen) return null;
 
+    if (asDrawer) {
+      return createPortal(
+        <div className="no-print fixed inset-0 z-[1000]" role="presentation">
+          <div
+            ref={testModalRef}
+            className="fixed right-0 top-0 h-full w-full max-w-md animate-modal-slide-up bg-surface shadow-lg"
+            role="dialog"
+            aria-modal="true"
+            aria-label={typeof title === 'string' ? title : undefined}
+            data-drawer="true"
+          >
+            {title && (
+              <div className="flex items-center justify-between border-b border-border p-4">
+                <h2 className="m-0 text-2xl font-semibold text-text">{title}</h2>
+                <button className="inline-flex size-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-xl text-text-muted hover:bg-primary-light hover:text-primary-deep" onClick={() => handleCloseAttemptRef.current()} aria-label="Close" type="button">
+                  ✕
+                </button>
+              </div>
+            )}
+            <div className="p-4 flex-1 min-h-0 overflow-y-auto">{children}</div>
+            {footer && <div className="flex justify-end gap-2 border-t border-border p-4">{footer}</div>}
+          </div>
+        </div>,
+        document.body
+      );
+    }
+
     const handleOverlayClick = (e: React.MouseEvent) => {
       if (e.target === e.currentTarget) handleCloseAttemptRef.current();
     };
@@ -165,6 +200,34 @@ export function Modal({
         </div>
       </div>,
       document.body
+    );
+  }
+
+  if (asDrawer && isMobile) {
+    return (
+      <SlDrawer
+        ref={drawerRef}
+        open={isOpen}
+        onSlRequestClose={handleRequestClose}
+        label={typeof title === 'string' ? title : undefined}
+        placement="end"
+      >
+        {title && typeof title !== 'string' && (
+          <div slot="label">
+            {title}
+          </div>
+        )}
+        
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+          {children}
+        </div>
+
+        {footer && (
+          <div slot="footer" className="flex justify-end gap-2 pt-2">
+            {footer}
+          </div>
+        )}
+      </SlDrawer>
     );
   }
 
