@@ -344,7 +344,7 @@ export default function RosterView() {
 
               {isDropdownOpen && (
                 <div className="absolute top-full left-0 z-100 mt-1 flex max-h-80 w-[240px] flex-col gap-0.5 overflow-y-auto rounded-lg border border-gray-200 bg-surface py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.06)]">
-                  <div className="px-2.5 py-0.5 text-[0.65rem] font-bold tracking-wider text-gray-500 uppercase">Sections</div>
+                  <div className="px-2.5 py-0.5 text-overline text-gray-500">Sections</div>
                   <div className="flex flex-col gap-0">
                     {configSectionsHook.map(sec => {
                       const isChecked = (filters.voiceParts || []).includes(sec.code);
@@ -364,7 +364,7 @@ export default function RosterView() {
 
                   <SlDivider />
 
-                  <div className="px-2.5 py-0.5 text-[0.65rem] font-bold tracking-wider text-gray-500 uppercase">Individual Parts</div>
+                  <div className="px-2.5 py-0.5 text-overline text-gray-500">Individual Parts</div>
                   <div className="flex flex-col gap-0">
                     {voicePartLabels.map(part => {
                       const isChecked = (filters.voiceParts || []).includes(part);

@@ -953,7 +953,7 @@ export function MusicPieceModal({
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+              <label className="text-label">
                 Title
               </label>
               <input
@@ -966,7 +966,7 @@ export function MusicPieceModal({
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Composer
                 </label>
                 <AutocompleteInput
@@ -978,7 +978,7 @@ export function MusicPieceModal({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Arranger
                 </label>
                 <AutocompleteInput
@@ -993,7 +993,7 @@ export function MusicPieceModal({
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Applies to Sections
                 </label>
                 <MultiSelectDropdown
@@ -1011,7 +1011,7 @@ export function MusicPieceModal({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Genres
                 </label>
                 <MultiSelectDropdown
@@ -1125,7 +1125,7 @@ export function MusicPieceModal({
             )}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Duration
                 </label>
                 <input
@@ -1153,7 +1153,7 @@ export function MusicPieceModal({
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Copies
                 </label>
                 <input
@@ -1164,7 +1164,7 @@ export function MusicPieceModal({
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Catalog ID
                 </label>
                 <input
@@ -1186,7 +1186,7 @@ export function MusicPieceModal({
                   )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                <label className="text-label">
                   Purchase Date
                 </label>
                 <input
@@ -1198,7 +1198,7 @@ export function MusicPieceModal({
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+              <label className="text-label">
                 Notes
               </label>
               <textarea
@@ -1215,7 +1215,7 @@ export function MusicPieceModal({
             {!piece && (
               <>
                 <div className="mt-2 flex flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  <label className="text-label">
                     Link to Past Performance (Optional)
                   </label>
                   <div className="flex min-h-[36px] flex-row flex-wrap gap-2 py-1">
@@ -1269,7 +1269,7 @@ export function MusicPieceModal({
                   </Select>
                 </div>
                 <div className="mt-2 flex flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  <label className="text-label">
                     Tutti Practice Track (Optional)
                   </label>
                   {tuttiFile ? (
@@ -1345,7 +1345,7 @@ export function MusicPieceModal({
         {piece && activeTab === 'performances' && (
           <>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+              <label className="text-label">
                 Linked Performances
               </label>
 
@@ -1421,7 +1421,7 @@ export function MusicPieceModal({
                 </h4>
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                    <label className="text-label">
                       Performance Title
                     </label>
                     <input
@@ -1434,7 +1434,7 @@ export function MusicPieceModal({
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                      <label className="text-label">
                         Date
                       </label>
                       <input
@@ -1445,7 +1445,7 @@ export function MusicPieceModal({
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                      <label className="text-label">
                         Venue
                       </label>
                       <Select
@@ -1610,7 +1610,7 @@ export function MusicPieceModal({
               <h4 className="m-0 mb-3 text-sm font-bold text-primary-deep">Add New Movement</h4>
               <div className="flex flex-row flex-wrap items-end gap-3">
                 <div className="flex flex-[2_1_200px] flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  <label className="text-label">
                     Movement Name (defaults sequentially)
                   </label>
                   <input
@@ -1627,7 +1627,7 @@ export function MusicPieceModal({
                   />
                 </div>
                 <div className="flex flex-[1_1_100px] flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                  <label className="text-label">
                     Duration (optional)
                   </label>
                   <input

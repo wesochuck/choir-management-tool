@@ -110,6 +110,11 @@
   --text-label--letter-spacing: 0.01em;
   --text-label--font-weight: 500;
 
+  --text-overline: 0.65rem;
+  --text-overline--letter-spacing: 0.05em;
+  --text-overline--font-weight: 700;
+  --text-overline--text-transform: uppercase;
+
   /* Animation Configurations */
   --animate-login-fade-in: login-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-toast-slide-in: toast-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;

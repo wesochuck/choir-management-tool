@@ -323,7 +323,7 @@ export default function AttendanceView() {
         actions={
           <div className="flex flex-row items-center gap-3">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+              <span className="text-overline text-text-muted">
                 Select Event
               </span>
               <Select
@@ -366,7 +366,7 @@ export default function AttendanceView() {
                   onClick={() => selectedEvent.details && setIsEventExpanded(!isEventExpanded)}
                 >
                   <div className="flex flex-col gap-1">
-                    <span className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                    <span className="text-overline text-text-muted">
                       Active Event
                     </span>
                     <div className="flex flex-row items-center gap-2.5">
@@ -376,7 +376,7 @@ export default function AttendanceView() {
                           'Untitled Event'}
                       </h2>
                       <span
-                        className={`inline-flex items-center rounded px-2 py-0.5 text-[0.625rem] font-bold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary/20 text-primary-deep'}`}
+                        className={`inline-flex items-center rounded px-2 py-0.5 text-overline ${selectedEvent.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary/20 text-primary-deep'}`}
                       >
                         {selectedEvent.type}
                       </span>
@@ -449,7 +449,7 @@ export default function AttendanceView() {
 
                 {isEventExpanded && selectedEvent.details && (
                   <div className="mt-3 border-t border-primary/10 pt-3 text-sm text-text-muted">
-                    <span className="mb-1.5 block text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">
+                    <span className="mb-1.5 block text-overline text-text-muted">
                       Details / Notes
                     </span>
                     <p className="m-0 leading-relaxed whitespace-pre-wrap text-slate-600">
@@ -472,7 +472,7 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                <div className="flex items-center justify-between text-overline text-slate-500">
                   <span>👥 Expected</span>
                   {filterStatus === '' && (
                     <span className="size-2 animate-pulse rounded-full bg-blue-500" />
@@ -493,7 +493,7 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                <div className="flex items-center justify-between text-overline text-slate-500">
                   <span>🟢 Present</span>
                   {filterStatus === 'Present' && (
                     <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
@@ -514,7 +514,7 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                <div className="flex items-center justify-between text-overline text-slate-500">
                   <span>🔴 Absent</span>
                   {filterStatus === 'Absent' && (
                     <span className="size-2 animate-pulse rounded-full bg-red-500" />
@@ -535,7 +535,7 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-[0.65rem] font-bold tracking-wider text-slate-500 uppercase">
+                <div className="flex items-center justify-between text-overline text-slate-500">
                   <span>⏳ Unmarked</span>
                   {filterStatus === 'Pending' && (
                     <span className="size-2 animate-pulse rounded-full bg-slate-500" />

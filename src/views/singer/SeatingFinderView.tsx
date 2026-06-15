@@ -451,7 +451,7 @@ export default function SeatingFinderView() {
               <div className={`flex items-center gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${leftNeighbor.status === 'empty' ? '' : ''}`}>
                 <div className={`flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-light text-xl font-extrabold text-primary-deep ${leftNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>◀</div>
                 <div className="flex min-w-0 flex-col gap-[2px]">
-                  <span className="text-[0.675rem] font-bold tracking-wider text-text-muted uppercase">Standing to your Left</span>
+                  <span className="text-overline text-text-muted">Standing to your Left</span>
                   <span className="truncate text-[0.925rem] font-bold text-text">{getNeighborName(leftNeighbor)}</span>
                   {getNeighborPart(leftNeighbor) && (
                     <span className="text-[0.725rem] font-semibold text-primary-deep">{getNeighborPart(leftNeighbor)}</span>
@@ -463,7 +463,7 @@ export default function SeatingFinderView() {
               <div className={`flex items-center gap-4 rounded-lg border border-border bg-surface p-4 shadow-sm transition-all duration-200 hover:border-primary hover:shadow-[0_4px_12px_rgba(74,124,89,0.06)] ${rightNeighbor.status === 'empty' ? '' : ''}`}>
                 <div className={`flex size-10 shrink-0 items-center justify-center rounded-md bg-primary-light text-xl font-extrabold text-primary-deep ${rightNeighbor.status === 'empty' ? 'bg-slate-100 text-slate-500' : ''}`}>▶</div>
                 <div className="flex min-w-0 flex-col gap-[2px]">
-                  <span className="text-[0.675rem] font-bold tracking-wider text-text-muted uppercase">Standing to your Right</span>
+                  <span className="text-overline text-text-muted">Standing to your Right</span>
                   <span className="truncate text-[0.925rem] font-bold text-text">{getNeighborName(rightNeighbor)}</span>
                   {getNeighborPart(rightNeighbor) && (
                     <span className="text-[0.725rem] font-semibold text-primary-deep">{getNeighborPart(rightNeighbor)}</span>

@@ -218,7 +218,7 @@ export const Player: React.FC<PlayerProps> = ({
         <div className="mb-2 flex flex-wrap items-center gap-4 border-t border-border py-4 max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-3">
           {/* START AT SETTING */}
           <div className="flex items-center gap-1.5">
-            <label htmlFor="skip-input" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Start At:</label>
+            <label htmlFor="skip-input" className="text-overline whitespace-nowrap text-text-muted">Start At:</label>
             <input 
               id="skip-input"
               type="number" 
@@ -233,7 +233,7 @@ export const Player: React.FC<PlayerProps> = ({
           </div>
 
           <div className="pointer-coarse:hidden flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden">
-            <label htmlFor="volume-input" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Volume</label>
+            <label htmlFor="volume-input" className="text-overline whitespace-nowrap text-text-muted">Volume</label>
             <SlRange
               id="volume-input"
               min={0}
@@ -248,7 +248,7 @@ export const Player: React.FC<PlayerProps> = ({
           
           {/* INTER-TRACK GAP SETTING */}
           <div className="flex items-center gap-1.5">
-            <label htmlFor="delay-select" className="text-xs font-bold tracking-wider whitespace-nowrap text-text-muted uppercase">Gap:</label>
+            <label htmlFor="delay-select" className="text-overline whitespace-nowrap text-text-muted">Gap:</label>
             <select
               id="delay-select"
               value={delaySetting}

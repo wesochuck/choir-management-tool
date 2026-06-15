@@ -488,7 +488,7 @@ export default function AuditionsView() {
 
                   {settings.adminNotifyEnabled && (
                     <div className="flex flex-col gap-1 pl-7">
-                      <span className="text-xs font-bold tracking-wider text-text-muted uppercase">Select Administrators to Notify</span>
+                      <span className="text-overline text-text-muted">Select Administrators to Notify</span>
                       <div className="mt-1 flex flex-col gap-2">
                         {admins.map((admin) => {
                           const isChecked = (settings.adminNotifyUsers || []).includes(admin.id);
@@ -533,7 +533,7 @@ export default function AuditionsView() {
 
                   <div className="bg-surface-muted rounded-xl border border-border p-5 shadow-sm">
                     <div className="flex flex-col gap-3">
-                      <span className="text-xs font-bold tracking-wider text-text-muted uppercase">Generate Slots</span>
+                      <span className="text-overline text-text-muted">Generate Slots</span>
                       <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] items-end gap-3">
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-medium text-text-muted">Date</span>
@@ -595,7 +595,7 @@ export default function AuditionsView() {
       <div className="flex flex-wrap items-end justify-between gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
         <div className="flex flex-1 flex-wrap items-center gap-4">
           <div className="flex min-w-[280px] flex-col gap-1">
-            <label className="text-xs font-bold tracking-wider text-text-muted uppercase">Filter by Performance</label>
+            <label className="text-label">Filter by Performance</label>
             <Select
               value={performanceFilter}
               onChange={(e) => setPerformanceFilter(e.target.value)}
@@ -608,7 +608,7 @@ export default function AuditionsView() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold tracking-wider text-text-muted uppercase">Filter by Status</label>
+            <label className="text-label">Filter by Status</label>
             <div className="flex h-[44px] flex-row flex-wrap items-center gap-4 rounded-md border border-border bg-surface px-4">
               {(['New', 'Scheduled', 'Closed'] as Audition['status'][]).map(status => {
                 const isChecked = statusFilter.includes(status);
@@ -646,7 +646,7 @@ export default function AuditionsView() {
               <tr className="border-b border-border bg-bg/50">
                 <th 
                   onClick={() => handleSort('name')}
-                  className="cursor-pointer p-4 text-xs font-bold tracking-wider text-text-muted uppercase transition-colors select-none hover:text-text"
+                  className="cursor-pointer p-4 text-overline text-text-muted transition-colors select-none hover:text-text"
                 >
                   <div className="flex flex-row items-center gap-1.5">
                     <span>Name / Contact</span>
@@ -655,10 +655,10 @@ export default function AuditionsView() {
                     )}
                   </div>
                 </th>
-                <th className="p-4 text-xs font-bold tracking-wider text-text-muted uppercase">Target Performance</th>
+                <th className="p-4 text-overline text-text-muted">Target Performance</th>
                 <th 
                   onClick={() => handleSort('scheduledTimeSlot')}
-                  className="cursor-pointer p-4 text-xs font-bold tracking-wider text-text-muted uppercase transition-colors select-none hover:text-text"
+                  className="cursor-pointer p-4 text-overline text-text-muted transition-colors select-none hover:text-text"
                 >
                   <div className="flex flex-row items-center gap-1.5">
                     <span>Audition Time</span>
@@ -667,8 +667,8 @@ export default function AuditionsView() {
                     )}
                   </div>
                 </th>
-                <th className="w-[120px] p-4 text-xs font-bold tracking-wider text-text-muted uppercase">Status</th>
-                <th className="p-4 text-right text-xs font-bold tracking-wider text-text-muted uppercase">Actions</th>
+                <th className="w-[120px] p-4 text-overline text-text-muted">Status</th>
+                <th className="p-4 text-right text-overline text-text-muted">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -814,7 +814,7 @@ export default function AuditionsView() {
           
           {schedulingAudition?.requestedSlots && schedulingAudition.requestedSlots.length > 0 && (
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold tracking-wider text-text-muted uppercase">Applicant's Preferred Times</label>
+              <label className="text-label">Applicant's Preferred Times</label>
               <div className="flex flex-row flex-wrap gap-2">
                 {schedulingAudition.requestedSlots.map((slot) => {
                   const isSlotPredefined = settings?.slots?.includes(slot);

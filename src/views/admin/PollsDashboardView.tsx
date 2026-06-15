@@ -577,7 +577,7 @@ export default function PollsDashboardView() {
                               <span className="text-lg leading-tight font-black text-primary">
                                 {stat.yes}
                               </span>
-                              <span className="text-[0.65rem] font-bold tracking-wider text-primary uppercase">
+                              <span className="text-overline text-primary">
                                 Yes
                               </span>
                             </div>
@@ -585,7 +585,7 @@ export default function PollsDashboardView() {
                               <span className="text-lg leading-tight font-black text-danger-text">
                                 {stat.no}
                               </span>
-                              <span className="text-[0.65rem] font-bold tracking-wider text-danger-text uppercase">
+                              <span className="text-overline text-danger-text">
                                 No
                               </span>
                             </div>
@@ -797,7 +797,7 @@ export default function PollsDashboardView() {
               </p>
               <div className="flex flex-col gap-4">
                 <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">
+                  <div className="mb-2 text-overline text-slate-400">
                     Poll Question
                   </div>
                   <strong className="text-lg font-extrabold tracking-tight text-slate-900">
@@ -805,7 +805,7 @@ export default function PollsDashboardView() {
                   </strong>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-                  <div className="mb-2 text-[0.6rem] font-black tracking-widest text-slate-400 uppercase">
+                  <div className="mb-2 text-overline text-slate-400">
                     Draft Preview
                   </div>
                   <div className="text-sm">

@@ -466,7 +466,7 @@ export const EventModal: React.FC<EventModalProps> = ({
         {activeTab === 'details' && (
           <>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
+              <label className="text-label">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
               <input 
                 ref={titleInputRef}
                 value={formData.title} 
@@ -478,7 +478,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Type</label>
+                <label className="text-label">Type</label>
                 <Select 
                   value={formData.type} 
                   onChange={(e) => {
@@ -508,7 +508,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 </Select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Date & Time</label>
+                <label className="text-label">Date & Time</label>
                 <input 
                   type="datetime-local"
                   value={formData.date} 
@@ -521,7 +521,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Duration</label>
+                <label className="text-label">Event Duration</label>
                 <Select 
                   value={formData.durationMinutes || getDefaultDurationMinutes(formData.type || 'Rehearsal')} 
                   onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
@@ -548,7 +548,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Call Time (Optional)</label>
+                <label className="text-label">Call Time (Optional)</label>
                 <input 
                   type="time"
                   value={formData.callTime || ''}
@@ -569,7 +569,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             </label>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Venue</label>
+              <label className="text-label">Venue</label>
               <Select
                 value={formData.venue || ''}
                 onChange={(e) => {
@@ -600,7 +600,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Venue Name</label>
+                    <label className="text-label">Venue Name</label>
                     <input 
                       value={newVenueName} 
                       onChange={(e) => setNewVenueName(e.target.value)}
@@ -609,7 +609,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Row Capacities (e.g. 10, 12, 14)</label>
+                    <label className="text-label">Row Capacities (e.g. 10, 12, 14)</label>
                     <input 
                       value={newVenueRows} 
                       onChange={(e) => setNewVenueRows(e.target.value)}
@@ -620,7 +620,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 </div>
 
                 <div className="flex w-full flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Venue Address (Optional, for Google Maps)</label>
+                  <label className="text-label">Venue Address (Optional, for Google Maps)</label>
                   <input 
                     value={newVenueAddress} 
                     onChange={(e) => setNewVenueAddress(e.target.value)}
@@ -687,7 +687,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                   <div className="flex flex-col gap-4 pt-2">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                       <div className="flex flex-col gap-1.5 md:col-span-1">
-                        <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Count</label>
+                        <label className="text-label">Count</label>
                         <input 
                           type="number" min="1" max="20"
                           value={bulkCount} onChange={(e) => setBulkCount(parseInt(e.target.value))}
@@ -695,7 +695,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                         />
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Day</label>
+                        <label className="text-label">Day</label>
                         <Select 
                           value={bulkDay} onChange={(e) => setBulkDay(parseInt(e.target.value))}
                           size="small" className="animate-none"
@@ -706,7 +706,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                         </Select>
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
-                        <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Time</label>
+                        <label className="text-label">Time</label>
                         <input 
                           type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
                           className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
@@ -714,7 +714,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </div>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Rehearsal Venue</label>
+                      <label className="text-label">Rehearsal Venue</label>
                       <Select 
                         value={bulkVenue} onChange={(e) => setBulkVenue(e.target.value)}
                         required
@@ -738,7 +738,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             {formData.type === 'Rehearsal' && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Linked Performance (Parent)</label>
+                <label className="text-label">Linked Performance (Parent)</label>
                 <Select 
                   value={formData.parentPerformanceId} 
                   onChange={(e) => setFormData({ ...formData, parentPerformanceId: e.target.value })}
@@ -753,7 +753,7 @@ export const EventModal: React.FC<EventModalProps> = ({
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Details / Notes</label>
+              <label className="text-label">Details / Notes</label>
               <textarea 
                 value={formData.details} 
                 onChange={(e) => setFormData({ ...formData, details: e.target.value })} 
@@ -811,7 +811,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               <div className="flex flex-col gap-6 pt-2">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Advance Price ($)</label>
+                    <label className="text-label">Advance Price ($)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -831,7 +831,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Day-Of Price ($)</label>
+                    <label className="text-label">Day-Of Price ($)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -859,7 +859,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Ticket Capacity</label>
+                    <label className="text-label">Ticket Capacity</label>
                     <input
                       type="number"
                       placeholder="e.g. 150"
@@ -869,7 +869,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Doors Open Time</label>
+                    <label className="text-label">Doors Open Time</label>
                     <input
                       type="text"
                       placeholder="e.g. 6:30 PM"
@@ -881,7 +881,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Event Graphic / Flyer Image</label>
+                  <label className="text-label">Event Graphic / Flyer Image</label>
                   <div className="flex items-center gap-4">
                     <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
                       {graphicPreviewUrl ? (
@@ -947,7 +947,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[0.65rem] font-bold tracking-wider text-text-muted uppercase">Public Details (HTML / Text)</label>
+                  <label className="text-label">Public Details (HTML / Text)</label>
                   <textarea
                     placeholder="Describe the concert program, parking info, dress code, etc."
                     value={formData.publicDetails || ''}
