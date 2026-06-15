@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import type { Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
 import { Button, Badge } from '../ui';
 import { AppCard } from '../common/AppCard';
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 interface EventListProps {
   events: Event[];
@@ -33,19 +34,9 @@ export const EventList: React.FC<EventListProps> = ({
 }) => {
   const { timezone } = useChoirSettings();
   const [activeDropdownId, setActiveDropdownId] = React.useState<string | null>(null);
+  const dropdownAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
-  React.useEffect(() => {
-    if (!activeDropdownId) return;
-    const handleOutsideClick = (ev: MouseEvent) => {
-      const target = ev.target as HTMLElement;
-      if (!target.closest('[data-event-overflow-anchor]')) {
-        setActiveDropdownId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [activeDropdownId]);
+  useClickOutside(dropdownAnchorRef, () => setActiveDropdownId(null), { enabled: !!activeDropdownId });
 
   if (events.length === 0) {
     return (
@@ -193,7 +184,7 @@ export const EventList: React.FC<EventListProps> = ({
                 RSVP Roster
               </Button>
 
-              <div className="relative" data-event-overflow-anchor>
+              <div ref={dropdownAnchorRef} className="relative">
                 <button
                   type="button"
                   className={`flex size-8 cursor-pointer items-center justify-center rounded-full border text-base font-extrabold transition-colors duration-150 ${

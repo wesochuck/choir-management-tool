@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
@@ -16,6 +16,7 @@ import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
+import { useClickOutside } from '../../hooks/useClickOutside';
 import { Button, Select } from '../../components/ui';
 
 export default function RosterView() {
@@ -36,6 +37,9 @@ export default function RosterView() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const voicePartDropdownRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(voicePartDropdownRef, () => setIsDropdownOpen(false), { enabled: isDropdownOpen });
 
   // Roster Sort user preference & fallback
   const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
@@ -133,18 +137,6 @@ export default function RosterView() {
       setFilter('voiceParts', [initialVoicePart]);
     }
   }, [initialVoicePart, setFilter]);
-
-  useEffect(() => {
-    if (!isDropdownOpen) return;
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('#voice-part-dropdown-container')) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [isDropdownOpen]);
 
   const sortedProfiles = useMemo(() => {
     return sortProfiles(profiles, sortBy, voicePartLabels);
@@ -327,7 +319,7 @@ export default function RosterView() {
               )}
             </div>
 
-            <div id="voice-part-dropdown-container" className="relative w-[200px]">
+            <div ref={voicePartDropdownRef} className="relative w-[200px]">
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
