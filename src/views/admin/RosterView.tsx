@@ -13,6 +13,7 @@ import { getVoicePartFilterLabel } from '../../lib/voicePartLabels';
 import { useDues } from '../../hooks/useDues';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
+import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
@@ -112,8 +113,6 @@ export default function RosterView() {
     isSavingConfig,
     configMessage,
     isConfigDirty,
-    activeColorPickerIndex,
-    setActiveColorPickerIndex,
     handleConfigSave,
     handleConfigDiscard,
   } = useRosterConfigForm({
@@ -363,7 +362,7 @@ export default function RosterView() {
                     })}
                   </div>
 
-                  <hr className="mx-2.5 my-0.5 h-px border-none bg-gray-200" />
+                  <SlDivider />
 
                   <div className="px-2.5 py-0.5 text-[0.65rem] font-bold tracking-wider text-gray-500 uppercase">Individual Parts</div>
                   <div className="flex flex-col gap-0">
@@ -469,8 +468,6 @@ export default function RosterView() {
           setConfigVoiceParts={setConfigVoiceParts}
           isSavingConfig={isSavingConfig}
           isConfigDirty={isConfigDirty}
-          activeColorPickerIndex={activeColorPickerIndex}
-          setActiveColorPickerIndex={setActiveColorPickerIndex}
           handleConfigSave={handleConfigSave}
           handleConfigDiscard={handleConfigDiscard}
           allProfiles={allProfiles}

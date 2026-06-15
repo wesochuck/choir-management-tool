@@ -13,6 +13,7 @@ import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
 import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { useDialog } from '../../contexts/DialogContext';
+import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -702,7 +703,7 @@ export default function SetListView() {
                 {selectedEvent.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
               </p>
             </div>
-            <hr className="mb-6 border-t-2 border-gray-900" />
+            <SlDivider />
             <div className="flex flex-col gap-2">
               {(() => {
                 let songIndex = 1;

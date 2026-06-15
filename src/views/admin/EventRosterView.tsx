@@ -5,6 +5,7 @@ import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, Modal, Select } from '../../components/ui';
+import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
@@ -415,17 +416,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           <div className="text-sm font-semibold text-gray-500">
             {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
           </div>
-          <div className="mt-1 h-2 w-full overflow-hidden rounded bg-gray-200">
-            <div 
-              // @allow-inline-style - dynamic progress width
-              style={{ 
-                width: bulkProgress ? `${(bulkProgress.current / bulkProgress.total) * 100}%` : '0%', 
-                height: '100%', 
-                backgroundColor: 'var(--color-primary)', 
-                transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)' 
-              }} 
-            />
-          </div>
+          <SlProgressBar value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="mt-1 h-2 w-full [&::part(base)]:rounded" />
         </div>
       </Modal>
     </AppCard>

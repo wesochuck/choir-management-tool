@@ -4,6 +4,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
 import { Button, Badge } from '../ui';
+import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
 import { AppCard } from '../common/AppCard';
 import { useClickOutside } from '../../hooks/useClickOutside';
 
@@ -224,7 +225,7 @@ export const EventList: React.FC<EventListProps> = ({
                         {item.label}
                       </button>
                     ))}
-                    <hr className="my-1 border-0 border-t border-border" />
+                    <SlDivider />
                     <button
                       type="button"
                       className="flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-semibold text-primary-deep transition-colors duration-100 hover:bg-primary-light"

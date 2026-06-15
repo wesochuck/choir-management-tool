@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Modal, Button, Select } from '../ui';
+import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService, generateRandomPassword } from '../../services/profileService';
 import {
@@ -504,15 +505,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             </span>
           </div>
 
-          <div className="mt-[10px] h-3 w-full overflow-hidden rounded-full bg-border">
-            <div 
-              className="h-full bg-primary transition-[width] duration-100 ease-out"
-              // @allow-inline-style - dynamic progress bar width
-              style={{
-                width: `${importProgress}%`,
-              }}
-            />
-          </div>
+          <SlProgressBar value={importProgress} className="mt-[10px] h-3 w-full [&::part(base)]:rounded-full" />
 
           <div className="flex gap-5 text-sm text-text-muted">
             <span>Successes: <strong className="text-primary-deep">{successCount}</strong></span>

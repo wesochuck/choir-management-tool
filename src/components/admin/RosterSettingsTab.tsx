@@ -27,8 +27,6 @@ interface RosterSettingsTabProps {
   setConfigVoiceParts: (voiceParts: VoicePartDef[]) => void;
   isSavingConfig: boolean;
   isConfigDirty: boolean;
-  activeColorPickerIndex: number | null;
-  setActiveColorPickerIndex: (index: number | null) => void;
   handleConfigSave: () => Promise<void>;
   handleConfigDiscard: () => void;
   allProfiles: Profile[];
@@ -60,8 +58,6 @@ export function RosterSettingsTab({
   setConfigVoiceParts,
   isSavingConfig,
   isConfigDirty,
-  activeColorPickerIndex,
-  setActiveColorPickerIndex,
   handleConfigSave,
   handleConfigDiscard,
   allProfiles,
@@ -107,8 +103,6 @@ export function RosterSettingsTab({
         configSections={configSections}
         setConfigSections={setConfigSections}
         configVoiceParts={configVoiceParts}
-        activeColorPickerIndex={activeColorPickerIndex}
-        setActiveColorPickerIndex={setActiveColorPickerIndex}
       />
 
       <VoicePartEditor

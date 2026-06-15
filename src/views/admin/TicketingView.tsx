@@ -9,6 +9,7 @@ import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { Modal, Button, FormField, Badge, EmptyState, Select } from '../../components/ui';
+import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 import { settingsService } from '../../services/settingsService';
 
@@ -1003,13 +1004,7 @@ export default function TicketingView() {
                           <td className="px-6 py-4 text-sm whitespace-nowrap">
                             <div className="flex flex-col gap-1">
                               <span className="font-medium text-slate-800">{sold} / {b.capacity} sold</span>
-                              <div className="h-1.5 w-[100px] overflow-hidden rounded bg-slate-100">
-                                <div 
-                                  className="h-full bg-primary" 
-                                  // @allow-inline-style - progress bar width
-                                  style={{ width: `${Math.min(100, (sold / b.capacity) * 100)}%` }} 
-                                />
-                              </div>
+                              <SlProgressBar value={Math.min(100, (sold / b.capacity) * 100)} className="h-1.5 w-[100px] [&::part(base)]:rounded" />
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">

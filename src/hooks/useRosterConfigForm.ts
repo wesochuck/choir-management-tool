@@ -93,7 +93,6 @@ export function useRosterConfigForm({
   const [initialConfigState, setInitialConfigState] = useState<RosterConfigState | null>(null);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [configMessage, setConfigMessage] = useState('');
-  const [activeColorPickerIndex, setActiveColorPickerIndex] = useState<number | null>(null);
 
   const loadConfig = useCallback(async () => {
     try {
@@ -248,8 +247,6 @@ export function useRosterConfigForm({
     configMessage,
     setConfigMessage,
     isConfigDirty,
-    activeColorPickerIndex,
-    setActiveColorPickerIndex,
     loadConfig,
     handleConfigSave,
     handleConfigDiscard,

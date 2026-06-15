@@ -1,22 +1,19 @@
 import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
-import { PALETTE_COLORS, isColorTooClose, getContrastColor } from '../../lib/colorUtils';
+import { isColorTooClose, getContrastColor } from '../../lib/colorUtils';
 import { Button } from '../ui';
+import SlColorPicker from '@shoelace-style/shoelace/dist/react/color-picker/index.js';
 
 interface SectionBucketEditorProps {
   configSections: SectionDef[];
   setConfigSections: (sections: SectionDef[]) => void;
   configVoiceParts: VoicePartDef[];
-  activeColorPickerIndex: number | null;
-  setActiveColorPickerIndex: (index: number | null) => void;
 }
 
 export function SectionBucketEditor({
   configSections,
   setConfigSections,
   configVoiceParts,
-  activeColorPickerIndex,
-  setActiveColorPickerIndex,
 }: SectionBucketEditorProps) {
   const isSectionReferenced = (code: string) => {
     return configVoiceParts.some(vp => vp.sectionCode === code);
@@ -64,13 +61,21 @@ export function SectionBucketEditor({
                 />
                 
                 <div className="relative flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveColorPickerIndex(activeColorPickerIndex === index ? null : index)}
-                    className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-slate-200 shadow-sm transition-transform duration-100 hover:scale-105 active:scale-95"
-                    // @allow-inline-style - dynamic color background
-                    style={{ backgroundColor: hexBg }}
-                    title="Choose color"
+                  <SlColorPicker
+                    value={hexBg}
+                    onSlChange={(e: unknown) => {
+                      const val = (e as CustomEvent).detail.value;
+                      const newSecs = [...configSections];
+                      newSecs[index] = {
+                        ...newSecs[index],
+                        color: val,
+                        colorBg: val,
+                        colorText: getContrastColor(val)
+                      };
+                      setConfigSections(newSecs);
+                    }}
+                    size="small"
+                    label=""
                   />
 
                   <input
@@ -105,66 +110,6 @@ export function SectionBucketEditor({
                     </span>
                   )}
 
-                  {activeColorPickerIndex === index && (
-                    <>
-                      <div 
-                        onClick={() => setActiveColorPickerIndex(null)}
-                        // @allow-inline-style - full screen click handler
-                        className="fixed inset-0 z-[100] cursor-default"
-                      />
-                      <div className="absolute top-full left-0 z-50 mt-2 flex w-48 flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
-                        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Presets</span>
-                        <div className="grid grid-cols-5 gap-1.5">
-                          {PALETTE_COLORS.map(c => {
-                            const isSelected = hexBg.toUpperCase() === c.toUpperCase();
-                            return (
-                              <button
-                                key={c}
-                                type="button"
-                                onClick={() => {
-                                  const newSecs = [...configSections];
-                                  newSecs[index] = { 
-                                    ...newSecs[index], 
-                                    color: c,
-                                    colorBg: c,
-                                    colorText: getContrastColor(c)
-                                  };
-                                  setConfigSections(newSecs);
-                                  setActiveColorPickerIndex(null);
-                                }}
-                                className={`size-6 cursor-pointer rounded border border-slate-200 transition-transform hover:scale-105 active:scale-95 ${isSelected ? 'ring-2 ring-primary ring-offset-1' : ''}`}
-                                // @allow-inline-style - dynamic background preset color
-                                style={{ backgroundColor: c }}
-                                title={c}
-                              />
-                            );
-                          })}
-                        </div>
-                        
-                        <div className="my-1 h-px bg-slate-100" />
-                        
-                        <label className="relative flex cursor-pointer items-center justify-center gap-2 rounded border border-slate-200 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50">
-                          <span className="text-sm">🎨</span> Custom Color
-                          <input 
-                            type="color"
-                            value={hexBg}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              const newSecs = [...configSections];
-                              newSecs[index] = {
-                                ...newSecs[index],
-                                color: val,
-                                colorBg: val,
-                                colorText: getContrastColor(val)
-                              };
-                              setConfigSections(newSecs);
-                            }}
-                            className="pointer-events-none absolute inset-0 size-0 opacity-0"
-                          />
-                        </label>
-                      </div>
-                    </>
-                  )}
                 </div>
 
                 <Button

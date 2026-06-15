@@ -12,7 +12,7 @@ import { SeatingFormationsEditor } from '../../components/admin/SeatingFormation
 import { ChartCopyDropdown } from '../../components/admin/ChartCopyDropdown';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
-import { Modal, Select } from '../../components/ui';
+import { Modal, Select, Button } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -497,12 +497,12 @@ export default function SeatingView() {
           <AppCard className="w-full min-w-0 flex-1 flex flex-col p-4">
             <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-primary-light p-1.5 px-3 shadow-sm">
                <div className="flex flex-row gap-1">
-                  <button onClick={handleClear} className="font-medium tracking-wide text-muted inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs whitespace-nowrap">
-                    🧹 Clear
-                  </button>
-                  <button onClick={handleReset} className="font-medium tracking-wide inline-flex h-8 items-center justify-center gap-2 rounded-md bg-[var(--color-danger-bg)] px-2.5 text-xs whitespace-nowrap text-[var(--color-danger-text)]">
-                    💥 Reset
-                  </button>
+                   <Button variant="outline" size="small" onClick={handleClear}>
+                     🧹 Clear
+                   </Button>
+                   <Button variant="danger" size="small" onClick={handleReset}>
+                     💥 Reset
+                   </Button>
                </div>
                
                <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-border bg-surface p-0.5">
@@ -548,9 +548,9 @@ export default function SeatingView() {
                  onCopy={handleCopy}
                />
 
-               <button onClick={handlePrint} className="font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-2.5 text-xs whitespace-nowrap text-surface">
-                  🖨️ Print
-               </button>
+                <Button variant="primary" size="small" onClick={handlePrint}>
+                   🖨️ Print
+                </Button>
                <div className="flex flex-row items-center gap-1">
                  <SavingIndicator isSaving={isSaving} error={saveError} />
                  <span className="text-muted mr-1 text-xs font-medium whitespace-nowrap">
@@ -750,24 +750,25 @@ export default function SeatingView() {
         maxWidth="400px"
         footer={
           <>
-            <button 
-              type="button"
-              className="font-medium tracking-wide text-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-6 whitespace-nowrap" 
+            <Button 
+              variant="outline"
+              className="px-6 whitespace-nowrap" 
               onClick={() => {
                 setIsNewChartModalOpen(false);
                 setNewChartName('');
               }}
             >
               Cancel
-            </button>
-            <button 
+            </Button>
+            <Button 
+              variant="primary"
+              className="px-6 whitespace-nowrap"
+              disabled={!newChartName.trim()}
               type="submit"
               form="new-chart-form"
-              className="font-medium tracking-wide inline-flex h-11 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-6 whitespace-nowrap text-surface" 
-              disabled={!newChartName.trim()}
             >
               Create
-            </button>
+            </Button>
           </>
         }
       >
@@ -807,9 +808,9 @@ export default function SeatingView() {
         maxWidth="400px"
         footer={
           <>
-            <button 
-              type="button"
-              className="font-medium tracking-wide text-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-6 whitespace-nowrap" 
+            <Button 
+              variant="outline"
+              className="px-6 whitespace-nowrap" 
               onClick={() => {
                 setIsRenameChartModalOpen(false);
                 setRenameChartName('');
@@ -817,15 +818,16 @@ export default function SeatingView() {
               }}
             >
               Cancel
-            </button>
-            <button 
+            </Button>
+            <Button 
+              variant="primary"
+              className="px-6 whitespace-nowrap"
+              disabled={!renameChartName.trim()}
               type="submit"
               form="rename-chart-form"
-              className="font-medium tracking-wide inline-flex h-11 items-center justify-center gap-2 rounded-md border border-primary bg-primary px-6 whitespace-nowrap text-surface" 
-              disabled={!renameChartName.trim()}
             >
               Save
-            </button>
+            </Button>
           </>
         }
       >

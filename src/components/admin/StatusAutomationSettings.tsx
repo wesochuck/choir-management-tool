@@ -1,4 +1,5 @@
 import { AppCard } from '../common/AppCard';
+import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
 
 interface StatusAutomationSettingsProps {
   configAutomationEnabled: boolean;
@@ -69,7 +70,7 @@ export function StatusAutomationSettings({
           </div>
         )}
 
-        <hr className="my-2 border-t border-slate-100" />
+        <SlDivider />
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-semibold text-slate-700">Maximum Rehearsal Miss Limit</label>

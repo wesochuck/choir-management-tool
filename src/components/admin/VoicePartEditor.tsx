@@ -3,6 +3,7 @@ import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import type { Profile } from '../../services/profileService';
 import { getContrastColor } from '../../lib/colorUtils';
 import { Button, Select } from '../ui';
+import SlColorPicker from '@shoelace-style/shoelace/dist/react/color-picker/index.js';
 
 interface VoicePartEditorProps {
   configVoiceParts: VoicePartDef[];
@@ -83,24 +84,22 @@ export function VoicePartEditor({
                 </Select>
 
                 <div className="flex items-center gap-1.5">
-                  <div className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-slate-200 shadow-sm transition-transform hover:scale-105">
-                    <input
-                      type="color"
-                      value={vp.color || defaultColor}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const newParts = [...configVoiceParts];
-                        newParts[index] = {
-                          ...newParts[index],
-                          color: val,
-                          colorBg: val,
-                          colorText: getContrastColor(val)
-                        };
-                        setConfigVoiceParts(newParts);
-                      }}
-                      className="absolute -inset-2 size-12 cursor-pointer border-none bg-transparent p-0"
-                    />
-                  </div>
+                  <SlColorPicker
+                    value={vp.color || defaultColor}
+                    onSlChange={(e: unknown) => {
+                      const val = (e as CustomEvent).detail.value;
+                      const newParts = [...configVoiceParts];
+                      newParts[index] = {
+                        ...newParts[index],
+                        color: val,
+                        colorBg: val,
+                        colorText: getContrastColor(val)
+                      };
+                      setConfigVoiceParts(newParts);
+                    }}
+                    size="small"
+                    label=""
+                  />
                   <input
                     type="text"
                     value={vp.color || ''}

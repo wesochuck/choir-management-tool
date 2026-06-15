@@ -416,29 +416,29 @@ export const EventModal: React.FC<EventModalProps> = ({
       footer={
         <>
           {initialData && initialData.id && onDelete && (
-            <button 
-              type="button" 
+            <Button
+              variant="danger"
               onClick={handleDelete}
-              className="mr-auto flex h-10 items-center justify-center rounded-md bg-danger-bg px-4 text-sm font-bold text-danger-text shadow-xs transition-colors hover:bg-red-200 active:scale-95"
+              className="mr-auto"
             >
               Delete
-            </button>
+            </Button>
           )}
-          <button 
-            type="button" 
-            onClick={handleClose} 
-            className="flex h-10 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:scale-95"
+          <Button
+            variant="outline"
+            onClick={handleClose}
           >
             Cancel
-          </button>
-          <button 
-            type="submit" 
-            form="event-form"
+          </Button>
+          <Button
+            variant="primary"
+            loading={isSubmitting}
             disabled={isSubmitting}
-            className="flex h-10 items-center justify-center rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+            type="submit"
+            form="event-form"
           >
-            {isSubmitting ? 'Saving...' : 'Save Event'}
-          </button>
+            Save Event
+          </Button>
         </>
       }
     >
@@ -630,21 +630,22 @@ export const EventModal: React.FC<EventModalProps> = ({
                 </div>
 
                 <div className="flex w-full flex-row justify-end gap-3 pt-2">
-                  <button 
-                    type="button" 
+                  <Button
+                    variant="outline"
+                    size="small"
                     onClick={() => setIsAddingNewVenue(false)}
-                    className="flex h-9 items-center justify-center rounded-md border border-border bg-surface px-4 text-xs font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:scale-95"
                   >
                     Cancel
-                  </button>
-                  <button 
-                    type="button" 
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="small"
                     onClick={handleCreateVenueInline}
                     disabled={isSavingVenue || !newVenueName.trim() || !newVenueRows.trim()}
-                    className="flex h-9 items-center justify-center rounded-md bg-primary px-4 text-xs font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
+                    loading={isSavingVenue}
                   >
-                    {isSavingVenue ? 'Adding...' : 'Add & Select Venue'}
-                  </button>
+                    Add & Select Venue
+                  </Button>
                 </div>
               </div>
             )}
@@ -916,16 +917,16 @@ export const EventModal: React.FC<EventModalProps> = ({
                         </label>
 
                         {(eventGraphicFile || (initialData?.eventGraphic && !isGraphicRemoved)) && (
-                          <button
-                            type="button"
+                          <Button
+                            variant="danger"
+                            size="small"
                             onClick={() => {
                               setEventGraphicFile(null);
                               setIsGraphicRemoved(true);
                             }}
-                            className="inline-flex h-9 items-center justify-center rounded-md bg-danger-bg px-4 text-xs font-semibold text-danger-text shadow-xs transition-colors hover:bg-red-200 active:scale-95"
                           >
                             Remove Image
-                          </button>
+                          </Button>
                         )}
                       </div>
                       <span className="text-[10px] text-text-muted">
