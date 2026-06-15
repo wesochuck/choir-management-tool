@@ -30,3 +30,12 @@ test('Textarea setCustomValidity sets validation message', () => {
   el.setCustomValidity('custom error');
   assert.equal(el.validationMessage, 'custom error');
 });
+
+test('Textarea ref exposes setCustomValidity as a function (smoke test)', () => {
+  const ref = React.createRef<HTMLTextAreaElement>();
+  render(React.createElement(Textarea, { ref }));
+  assert.ok(ref.current, 'ref should be attached');
+  assert.equal(typeof ref.current.setCustomValidity, 'function', 'ref must expose setCustomValidity');
+  // Verify the method is callable and the call does not throw.
+  assert.doesNotThrow(() => ref.current.setCustomValidity('test'));
+});

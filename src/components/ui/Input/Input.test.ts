@@ -44,3 +44,12 @@ test('Input setCustomValidity sets validation message', () => {
   el.setCustomValidity('custom error');
   assert.equal(el.validationMessage, 'custom error');
 });
+
+test('Input ref exposes setCustomValidity as a function (smoke test)', () => {
+  const ref = React.createRef<HTMLInputElement>();
+  render(React.createElement(Input, { ref }));
+  assert.ok(ref.current, 'ref should be attached');
+  assert.equal(typeof ref.current.setCustomValidity, 'function', 'ref must expose setCustomValidity');
+  // Verify the method is callable and the call does not throw.
+  assert.doesNotThrow(() => ref.current.setCustomValidity('test'));
+});
