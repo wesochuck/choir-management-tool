@@ -220,6 +220,8 @@ export function Modal({
         onSlRequestClose={handleRequestClose}
         label={typeof title === 'string' ? title : undefined}
         placement="end"
+        // @allow-inline-style - dynamic max-width for drawer --size custom property (Shoelace uses --size for drawer width with placement="end"/"start")
+        style={{ '--size': maxWidth } as React.CSSProperties}
       >
         {title && typeof title !== 'string' && (
           <div slot="label">
