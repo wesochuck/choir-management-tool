@@ -297,6 +297,14 @@ sl-tab-panel {
   border: none;
 }
 
+/* Shoelace form inputs use :host { display: block } but shrink to intrinsic width
+   inside flex containers with align-items other than stretch. Force full width. */
+sl-input,
+sl-select,
+sl-textarea {
+  width: 100%;
+}
+
 /* Custom Shoelace overrides for project aesthetics */
 sl-dialog::part(panel) {
   background-color: var(--color-surface);
