@@ -4,7 +4,7 @@ import { donationService, type DonationLevel } from '../services/donationService
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
-import { Button, Select } from '../components/ui';
+import { Button, Select, Input } from '../components/ui';
 
 export default function PublicDonationView() {
   useDocumentTitle('Support Our Music');
@@ -144,13 +144,13 @@ export default function PublicDonationView() {
           {selectedLevelId === 'custom' && (
             <div className="flex flex-col gap-1">
               <label className="text-label">Custom Donation Amount ($)</label>
-              <input
+              <Input
                 type="number"
                 min="5"
                 step="0.01"
                 required
                 placeholder="0.00"
-                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                
                 value={customAmount}
                 onChange={e => setCustomAmount(e.target.value)}
               />
@@ -159,11 +159,11 @@ export default function PublicDonationView() {
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Your Name</label>
-            <input
+            <Input
               type="text"
               required
               placeholder="Full Name"
-              className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              
               value={name}
               onChange={e => setName(e.target.value)}
             />
@@ -172,22 +172,22 @@ export default function PublicDonationView() {
           <div className="flex flex-col gap-4 md:flex-row">
             <div className="flex flex-1 flex-col gap-1">
               <label className="text-label">Email Address</label>
-              <input
+              <Input
                 type="email"
                 required
                 placeholder="email@example.com"
-                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
             <div className="flex flex-1 flex-col gap-1">
               <label className="text-label">Confirm Email</label>
-              <input
+              <Input
                 type="email"
                 required
                 placeholder="Confirm Email"
-                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                
                 value={confirmEmail}
                 onChange={e => setConfirmEmail(e.target.value)}
               />
@@ -207,11 +207,11 @@ export default function PublicDonationView() {
                 <option value="honor">In Honor Of</option>
               </Select>
               {tributeType !== 'none' && (
-                <input
+                <Input
                   type="text"
                   required
                   placeholder="Honoree Name"
-                  className="h-11 flex-[2] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                  className="flex-[2]"
                   value={tributeName}
                   onChange={e => setTributeName(e.target.value)}
                 />

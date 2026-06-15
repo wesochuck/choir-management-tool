@@ -1,7 +1,7 @@
 import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import { isColorTooClose, getContrastColor } from '../../lib/colorUtils';
-import { Button } from '../ui';
+import { Button, Input } from '../ui';
 import SlColorPicker from '@shoelace-style/shoelace/dist/react/color-picker/index.js';
 
 interface SectionBucketEditorProps {
@@ -38,7 +38,7 @@ export function SectionBucketEditor({
 
             return (
               <div key={index} className="grid w-full grid-cols-[80px_1fr_180px_85px] items-center gap-4">
-                <input
+                <Input
                   value={sec.code}
                   onChange={(e) => {
                     const newSecs = [...configSections];
@@ -49,7 +49,7 @@ export function SectionBucketEditor({
                   disabled={isTied}
                   className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
                 />
-                <input
+                <Input
                   value={sec.name}
                   onChange={(e) => {
                     const newSecs = [...configSections];
@@ -78,7 +78,7 @@ export function SectionBucketEditor({
                     label=""
                   />
 
-                  <input
+                  <Input
                     type="text"
                     value={sec.color || sec.colorBg || '#e0e0e0'}
                     onChange={(e) => {

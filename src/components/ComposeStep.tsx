@@ -1,6 +1,6 @@
 import React from 'react';
 import { MarkdownEditor } from './common/MarkdownEditor';
-import { Select } from './ui';
+import { Select, Input } from './ui';
 import EasyMDE from 'easymde';
 
 import { type ValidationWarning } from '../utils/communicationValidation';
@@ -34,8 +34,9 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
       <div className="flex flex-row flex-wrap items-center gap-2">
         <div className="flex flex-col gap-1">
           <label className="text-label">Subject</label>
-          <input
-            className={`h-10 w-full max-w-md rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary ${subjectWarning ? 'border-red-200' : ''}`}
+          <Input
+            className="max-w-md"
+            invalid={!!subjectWarning}
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
             disabled={messageType === 'SMS'}

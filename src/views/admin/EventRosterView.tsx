@@ -4,7 +4,7 @@ import { profileService, type Profile, type ProfileInput } from '../../services/
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, Modal, Select } from '../../components/ui';
+import { Button, Modal, Select, Input } from '../../components/ui';
 import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -296,35 +296,34 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
         <div className="mt-1 flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-[280px] flex-[1_1_520px] flex-wrap items-center gap-2">
-            <div className="relative min-w-[240px] flex-[1_1_280px]">
-              <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-gray-500" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <Input
+              type="text"
+              placeholder="Search active singers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="min-w-[240px] flex-[1_1_280px]"
+            >
+              <span slot="prefix" className="flex items-center text-gray-500">
+                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               </span>
-              <input
-                type="text"
-                placeholder="Search active singers..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-11 w-full rounded-lg border border-gray-200 bg-surface px-[42px] pl-[38px] text-gray-800"
-              />
               {searchQuery && (
                 <button
+                  slot="suffix"
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-none bg-none p-1 text-gray-500 hover:bg-black/5"
-                  title="Clear search"
+                  className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
                   aria-label="Clear search"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               )}
-            </div>
+            </Input>
 
             <Select
               value={sortBy}

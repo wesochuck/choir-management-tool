@@ -4,7 +4,7 @@ import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Pagination } from '../common/Pagination';
-import { Button, Select } from '../ui';
+import { Button, Select, Input } from '../ui';
 
 export type SourceFilter = 'all' | 'manual' | 'automated';
 
@@ -67,9 +67,9 @@ export function MessageHistory({
     <div className="flex flex-col gap-4">
       <div className="mb-1 flex gap-2">
         <div className="relative flex-1">
-          <input
+          <Input
             type="text"
-            className="h-10 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+            
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

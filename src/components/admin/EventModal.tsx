@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal, Select, Button } from '../ui';
+import { Modal, Select, Button, Input, Textarea } from '../ui';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
@@ -467,12 +467,12 @@ export const EventModal: React.FC<EventModalProps> = ({
           <>
             <div className="flex flex-col gap-1.5">
               <label className="text-label">Event Title {formData.type === 'Performance' ? '(Concert Title)' : '(Optional)'}</label>
-              <input 
+              <Input 
                 ref={titleInputRef}
                 value={formData.title} 
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
                 placeholder={formData.type === 'Performance' ? 'e.g. Spring Gala 2026' : 'e.g. Mid-week Rehearsal'}
-                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                
               />
             </div>
 
@@ -509,12 +509,12 @@ export const EventModal: React.FC<EventModalProps> = ({
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-label">Date & Time</label>
-                <input 
+                <Input 
                   type="datetime-local"
                   value={formData.date} 
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })} 
                   required
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
               </div>
             </div>
@@ -549,11 +549,11 @@ export const EventModal: React.FC<EventModalProps> = ({
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-label">Call Time (Optional)</label>
-                <input 
+                <Input 
                   type="time"
                   value={formData.callTime || ''}
                   onChange={(e) => setFormData({ ...formData, callTime: e.target.value })}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
               </div>
             </div>
@@ -601,31 +601,31 @@ export const EventModal: React.FC<EventModalProps> = ({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label">Venue Name</label>
-                    <input 
+                    <Input 
                       value={newVenueName} 
                       onChange={(e) => setNewVenueName(e.target.value)}
                       placeholder="e.g. Grace Hall"
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label">Row Capacities (e.g. 10, 12, 14)</label>
-                    <input 
+                    <Input 
                       value={newVenueRows} 
                       onChange={(e) => setNewVenueRows(e.target.value)}
                       placeholder="e.g. 8, 10, 12"
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      
                     />
                   </div>
                 </div>
 
                 <div className="flex w-full flex-col gap-1.5">
                   <label className="text-label">Venue Address (Optional, for Google Maps)</label>
-                  <input 
+                  <Input 
                     value={newVenueAddress} 
                     onChange={(e) => setNewVenueAddress(e.target.value)}
                     placeholder="e.g. 123 Main St, Anytown, ST 12345"
-                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    
                   />
                 </div>
 
@@ -688,10 +688,10 @@ export const EventModal: React.FC<EventModalProps> = ({
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
                       <div className="flex flex-col gap-1.5 md:col-span-1">
                         <label className="text-label">Count</label>
-                        <input 
+                        <Input 
                           type="number" min="1" max="20"
                           value={bulkCount} onChange={(e) => setBulkCount(parseInt(e.target.value))}
-                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                          
                         />
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
@@ -707,9 +707,9 @@ export const EventModal: React.FC<EventModalProps> = ({
                       </div>
                       <div className="flex flex-col gap-1.5 md:col-span-2">
                         <label className="text-label">Time</label>
-                        <input 
+                        <Input 
                           type="time" value={bulkTime} onChange={(e) => setBulkTime(e.target.value)}
-                          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                          
                         />
                       </div>
                     </div>
@@ -754,10 +754,10 @@ export const EventModal: React.FC<EventModalProps> = ({
 
             <div className="flex flex-col gap-1.5">
               <label className="text-label">Details / Notes</label>
-              <textarea 
+              <Textarea 
                 value={formData.details} 
                 onChange={(e) => setFormData({ ...formData, details: e.target.value })} 
-                className="min-h-[100px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                className="min-h-[100px]"
               />
             </div>
           </>
@@ -812,7 +812,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label">Advance Price ($)</label>
-                    <input
+                    <Input
                       type="number"
                       step="0.01"
                       placeholder="e.g. 15.00"
@@ -827,12 +827,12 @@ export const EventModal: React.FC<EventModalProps> = ({
                           setFormData(prev => ({ ...prev, advancePriceCents: Math.round(parsed * 100) }));
                         }
                       }}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label">Day-Of Price ($)</label>
-                    <input
+                    <Input
                       type="number"
                       step="0.01"
                       placeholder="e.g. 20.00"
@@ -847,7 +847,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                           setFormData(prev => ({ ...prev, dayOfPriceCents: Math.round(parsed * 100) }));
                         }
                       }}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      
                     />
                     {dayOfLiveText && (
                       <div className="mt-1 text-[0.7rem] font-bold tracking-tight text-primary">
@@ -860,22 +860,22 @@ export const EventModal: React.FC<EventModalProps> = ({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label">Ticket Capacity</label>
-                    <input
+                    <Input
                       type="number"
                       placeholder="e.g. 150"
                       value={formData.ticketCapacity === undefined ? '' : formData.ticketCapacity}
                       onChange={(e) => setFormData({ ...formData, ticketCapacity: e.target.value === '' ? undefined : Number(e.target.value) })}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-label">Doors Open Time</label>
-                    <input
+                    <Input
                       type="text"
                       placeholder="e.g. 6:30 PM"
                       value={formData.doorsOpenTime || ''}
                       onChange={(e) => setFormData({ ...formData, doorsOpenTime: e.target.value })}
-                      className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      
                     />
                   </div>
                 </div>
@@ -948,11 +948,11 @@ export const EventModal: React.FC<EventModalProps> = ({
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-label">Public Details (HTML / Text)</label>
-                  <textarea
+                  <Textarea
                     placeholder="Describe the concert program, parking info, dress code, etc."
                     value={formData.publicDetails || ''}
                     onChange={(e) => setFormData({ ...formData, publicDetails: e.target.value })}
-                    className="min-h-[120px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    className="min-h-[120px]"
                   />
                 </div>
               </div>

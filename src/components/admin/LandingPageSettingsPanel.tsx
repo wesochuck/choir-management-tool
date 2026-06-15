@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } f
 import { MarkdownEditor } from '../common/MarkdownEditor';
 import { AppCard } from '../common/AppCard';
 import { Button } from '../ui/Button/Button';
+import { Input } from '../ui';
 import { settingsService, type LandingPageSettings, DEFAULT_LANDING_SETTINGS } from '../../services/settingsService';
 import type EasyMDE from 'easymde';
 
@@ -146,7 +147,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
             </div>
           )}
           <div className="flex gap-2">
-            <input
+            <Input
               ref={fileInputRef}
               type="file"
               accept="image/png,image/jpeg,image/svg+xml,image/webp"
@@ -165,7 +166,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
 
         <div>
           <label className="block text-sm font-medium mb-1">Hero Headline</label>
-          <input
+          <Input
             type="text"
             value={settings.heroHeadline}
             onChange={e => handleChange('heroHeadline', e.target.value)}
@@ -175,7 +176,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
 
         <div>
           <label className="block text-sm font-medium mb-1">Hero Subtitle</label>
-          <input
+          <Input
             type="text"
             value={settings.heroSubtitle}
             onChange={e => handleChange('heroSubtitle', e.target.value)}
@@ -205,7 +206,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
 
         <div>
           <label className="block text-sm font-medium mb-1">Contact Email</label>
-          <input
+          <Input
             type="email"
             value={settings.contactEmail}
             onChange={e => handleChange('contactEmail', e.target.value)}

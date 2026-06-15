@@ -18,6 +18,7 @@ import type { EventRoster } from '../../services/rosterService';
 import { chunkArray } from '../../lib/networkSafety';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { AppCard } from '../../components/common/AppCard';
+import { Input } from '../../components/ui';
 import { Button, Select } from '../../components/ui';
 import { matchesVoiceParts } from '../../lib/voicePartUtils';
 
@@ -553,56 +554,34 @@ export default function AttendanceView() {
                 {/* Row 1 — Search + filter selects inline on desktop */}
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Search input — grows to fill remaining space */}
-                  <div className="relative min-w-[200px] flex-1">
-                    <span
-                      className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-gray-500"
-                      aria-hidden="true"
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                  <Input
+                    type="text"
+                    placeholder="Search active singers..."
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    className="min-w-[200px] flex-1"
+                  >
+                    <span slot="prefix" className="flex items-center text-gray-500">
+                      <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
                       </svg>
                     </span>
-                    <input
-                      type="text"
-                      placeholder="Search active singers..."
-                      value={filterName}
-                      onChange={(e) => setFilterName(e.target.value)}
-                      className="h-11 w-full rounded-lg border border-gray-200 bg-surface px-[42px] pl-[38px] text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
-                    />
                     {filterName && (
                       <button
+                        slot="suffix"
                         type="button"
                         onClick={() => setFilterName('')}
-                        className="absolute top-1/2 right-2 inline-flex size-7.5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-none bg-none p-1 text-gray-500 hover:bg-black/5"
-                        title="Clear search"
+                        className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
                         aria-label="Clear search"
                       >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
                       </button>
                     )}
-                  </div>
+                  </Input>
 
                   {/* Sort By — wrapper constrains w-full select to content width */}
                   <div className="shrink-0">

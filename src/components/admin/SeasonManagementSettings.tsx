@@ -1,4 +1,5 @@
 import { AppCard } from '../common/AppCard';
+import { Input } from '../ui';
 
 interface SeasonManagementSettingsProps {
   configSeason: string;
@@ -13,7 +14,7 @@ export function SeasonManagementSettings({
     <AppCard title="Season Management">
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-slate-700">Current Season</label>
-        <input
+        <Input
           type="text"
           value={configSeason}
           onChange={(event) => setConfigSeason(event.target.value)}

@@ -8,7 +8,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
-import { Modal, Button, FormField, Badge, EmptyState, Select } from '../../components/ui';
+import { Modal, Button, FormField, Badge, EmptyState, Select, Input } from '../../components/ui';
 import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 import { settingsService } from '../../services/settingsService';
@@ -698,21 +698,19 @@ export default function TicketingView() {
               <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
                 <div className="md:col-span-2">
                   <FormField label="Search">
-                    <div className="relative">
-                      <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-slate-400" aria-hidden="true">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <Input
+                      type="text"
+                      placeholder="Search buyer name or email..."
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    >
+                      <span slot="prefix" className="flex items-center text-slate-400">
+                        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <circle cx="11" cy="11" r="8" />
                           <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
                       </span>
-                      <input 
-                        type="text" 
-                        placeholder="Search buyer name or email..." 
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="block w-full rounded-lg border border-slate-200 bg-white py-2 pr-3.5 pl-9 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
+                    </Input>
                   </FormField>
                 </div>
                 <div className="md:col-span-1">
@@ -1390,7 +1388,7 @@ export default function TicketingView() {
           )}
 
           <FormField label="Bundle Title" required>
-            <input
+            <Input
               type="text"
               required
               placeholder="e.g. 2026-2027 Season Pass"
@@ -1403,7 +1401,7 @@ export default function TicketingView() {
           <div className="flex flex-wrap gap-4">
             <div className="min-w-[150px] flex-1">
               <FormField label="Price (USD)" required>
-                <input
+                <Input
                   type="number"
                   required
                   min="0.01"
@@ -1416,7 +1414,7 @@ export default function TicketingView() {
             </div>
             <div className="min-w-[150px] flex-1">
               <FormField label="Capacity Limit" required>
-                <input
+                <Input
                   type="number"
                   required
                   min="1"
@@ -1429,7 +1427,7 @@ export default function TicketingView() {
           </div>
 
           <FormField label="Sale End Date" required>
-            <input
+            <Input
               type="datetime-local"
               required
               className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"

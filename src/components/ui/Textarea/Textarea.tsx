@@ -86,6 +86,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         onSlInput={handleInput}
         onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLTextAreaElement>) : undefined}
         onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLTextAreaElement>) : undefined}
+        // @allow-inline-style - dynamic invalid border color override
         style={invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined}
         {...(rest as Record<string, unknown>)}
       >

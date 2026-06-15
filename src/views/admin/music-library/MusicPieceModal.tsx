@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Modal, Select } from '../../../components/ui';
+import { Modal, Select, Input, Textarea } from '../../../components/ui';
 import { useDialog } from '../../../contexts/DialogContext';
 import {
   musicLibraryService,
@@ -956,12 +956,12 @@ export function MusicPieceModal({
               <label className="text-label">
                 Title
               </label>
-              <input
+              <Input
                 ref={titleInputRef}
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                
               />
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -974,7 +974,7 @@ export function MusicPieceModal({
                   onChange={setComposer}
                   suggestions={uniqueComposers}
                   placeholder="e.g. Ludwig van Beethoven"
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -986,7 +986,7 @@ export function MusicPieceModal({
                   onChange={setArranger}
                   suggestions={uniqueArrangers}
                   placeholder="e.g. Alice Parker"
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
               </div>
             </div>
@@ -1087,7 +1087,7 @@ export function MusicPieceModal({
                     )}
 
                     <div className="mt-1 flex flex-row items-center gap-2">
-                      <input
+                      <Input
                         type="text"
                         placeholder={`Name (e.g. Movement ${localMovementsList.length + 1})`}
                         value={stagingMovTitle}
@@ -1097,9 +1097,9 @@ export function MusicPieceModal({
                             handleAddStagingMovement(e);
                           }
                         }}
-                        className="h-9 flex-[2] rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                        className="flex-[2]"
                       />
-                      <input
+                      <Input
                         type="text"
                         placeholder="e.g. 2:45"
                         value={stagingMovDuration}
@@ -1109,7 +1109,7 @@ export function MusicPieceModal({
                             handleAddStagingMovement(e);
                           }
                         }}
-                        className="h-9 flex-1 rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                        className="flex-1"
                       />
                       <button
                         type="button"
@@ -1128,11 +1128,11 @@ export function MusicPieceModal({
                 <label className="text-label">
                   Duration
                 </label>
-                <input
+                <Input
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
                   placeholder="e.g. 3:30"
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
                 {suggestedDuration && !duration.trim() && (
                   <div className="mt-2 flex flex-row items-center justify-between gap-2 rounded-lg border border-dashed border-primary/30 bg-primary-light p-2.5 px-3">
@@ -1156,21 +1156,21 @@ export function MusicPieceModal({
                 <label className="text-label">
                   Copies
                 </label>
-                <input
+                <Input
                   type="number"
                   value={copies}
                   onChange={(e) => setCopies(e.target.value)}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-label">
                   Catalog ID
                 </label>
-                <input
+                <Input
                   value={catalogId}
                   onChange={(e) => setCatalogId(e.target.value)}
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
                 {catalogId.trim() &&
                   catalogLookupTemplate &&
@@ -1189,11 +1189,11 @@ export function MusicPieceModal({
                 <label className="text-label">
                   Purchase Date
                 </label>
-                <input
+                <Input
                   value={purchaseDateInput}
                   onChange={(e) => setPurchaseDateInput(e.target.value)}
                   placeholder="mm/yyyy"
-                  className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                  
                 />
               </div>
             </div>
@@ -1201,11 +1201,11 @@ export function MusicPieceModal({
               <label className="text-label">
                 Notes
               </label>
-              <textarea
+              <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. A cappella, performance instructions, etc."
-                className="min-h-[80px] w-full resize-y rounded-md border border-border bg-surface p-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                className="min-h-[80px]"
               />
               <span className="mt-1 text-xs text-text-muted">
                 If this is a medley, please list the names of the different pieces here.
@@ -1322,7 +1322,7 @@ export function MusicPieceModal({
                           Drag and drop a Tutti MP3 track here, or{' '}
                           <span className="font-bold text-primary underline">browse</span>
                         </span>
-                        <input
+                        <Input
                           type="file"
                           accept="audio/*"
                           onChange={(e) => {
@@ -1424,11 +1424,11 @@ export function MusicPieceModal({
                     <label className="text-label">
                       Performance Title
                     </label>
-                    <input
+                    <Input
                       value={quickTitle}
                       onChange={(e) => setQuickTitle(e.target.value)}
                       placeholder="e.g. Spring Concert 2018"
-                      className="h-9 w-full rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                      
                     />
                   </div>
 
@@ -1437,11 +1437,11 @@ export function MusicPieceModal({
                       <label className="text-label">
                         Date
                       </label>
-                      <input
+                      <Input
                         type="datetime-local"
                         value={quickDate}
                         onChange={(e) => setQuickDate(e.target.value)}
-                        className="h-9 w-full rounded-md border border-border bg-surface px-3 text-xs shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                        
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -1613,7 +1613,7 @@ export function MusicPieceModal({
                   <label className="text-label">
                     Movement Name (defaults sequentially)
                   </label>
-                  <input
+                  <Input
                     type="text"
                     placeholder={`e.g. Movement ${movements.length + 1}`}
                     value={newMovementTitle}
@@ -1623,14 +1623,14 @@ export function MusicPieceModal({
                         handleAddMovement(e);
                       }
                     }}
-                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    
                   />
                 </div>
                 <div className="flex flex-[1_1_100px] flex-col gap-1.5">
                   <label className="text-label">
                     Duration (optional)
                   </label>
-                  <input
+                  <Input
                     type="text"
                     placeholder="e.g. 2:45"
                     value={newMovementDuration}
@@ -1640,7 +1640,7 @@ export function MusicPieceModal({
                         handleAddMovement(e);
                       }
                     }}
-                    className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm shadow-sm transition-colors focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden"
+                    
                   />
                 </div>
                 <button

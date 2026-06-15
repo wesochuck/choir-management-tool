@@ -9,7 +9,7 @@ import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { safeLocalStorage } from '../../lib/storage';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, FormField, Badge, EmptyState, Select } from '../../components/ui';
+import { Button, FormField, Badge, EmptyState, Select, Input } from '../../components/ui';
 
 const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
@@ -250,27 +250,25 @@ export default function PatronsView() {
           <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
             <div className="md:col-span-1">
               <FormField label="Search">
-                <div className="relative">
-                  <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-slate-400" aria-hidden="true">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <Input
+                  type="text"
+                  placeholder="Search patron name or email..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                >
+                  <span slot="prefix" className="flex items-center text-slate-400">
+                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="11" cy="11" r="8" />
                       <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
                   </span>
-                  <input 
-                    type="text" 
-                    placeholder="Search patron name or email..." 
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="block w-full rounded-lg border border-slate-200 bg-white py-2 pr-3.5 pl-9 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
-                  />
-                </div>
+                </Input>
               </FormField>
             </div>
             <div className="flex flex-row gap-4 md:col-span-2">
               <div className="min-w-0 flex-1">
                 <FormField label="From Date">
-                  <input 
+                  <Input 
                     type="date" 
                     value={startDate}
                     onChange={e => handleSetStartDate(e.target.value)}
@@ -280,7 +278,7 @@ export default function PatronsView() {
               </div>
               <div className="min-w-0 flex-1">
                 <FormField label="To Date">
-                  <input 
+                  <Input 
                     type="date" 
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}

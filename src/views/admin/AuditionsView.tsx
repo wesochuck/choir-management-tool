@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppCard } from '../../components/common/AppCard';
 import { AuditionModal } from '../../components/admin/AuditionModal';
@@ -10,7 +10,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
 import { type UserAccount } from '../../services/profileService';
-import { Button, Select, Input, Badge, Modal } from '../../components/ui';
+import { Button, Select, Input, Badge, Modal, Textarea } from '../../components/ui';
 
 export default function AuditionsView() {
   const dialog = useDialog();
@@ -464,10 +464,10 @@ export default function AuditionsView() {
 
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-semibold text-text">Confirmation Message</label>
-                  <textarea
+                  <Textarea
                     value={settings.confirmationMessage}
-                    onChange={(e) => setSettings({ ...settings, confirmationMessage: e.target.value })}
-                    className="min-h-[80px] resize-y rounded-md border border-border bg-surface p-3 text-sm text-text transition-[border-color,box-shadow] duration-200 outline-none focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]"
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setSettings({ ...settings, confirmationMessage: e.target.value })}
+                    className="min-h-[80px]"
                   />
                 </div>
 

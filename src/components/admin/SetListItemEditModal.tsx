@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Input, Textarea } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { isValidDurationString } from '../../lib/musicPieceUtils';
 import type { SetListItem } from '../../services/eventService';
@@ -126,21 +126,21 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
 
         <div className="flex flex-col gap-1">
           <label className="text-label">Title</label>
-          <input
+          <Input
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+            
           />
         </div>
 
         {type === 'song' && (
           <div className="flex flex-col gap-1">
             <label className="text-label">Composer/Arranger</label>
-            <input
+            <Input
               value={composer}
               onChange={(e) => setComposer(e.target.value)}
-              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              
             />
           </div>
         )}
@@ -163,20 +163,20 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
 
         <div className="flex flex-col gap-1">
           <label className="text-label">Duration</label>
-          <input
+          <Input
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="e.g. 3:30"
-            className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+            
           />
         </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-label">Notes</label>
-          <textarea
+          <Textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="min-h-[80px] resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
+            className="min-h-[80px]"
           />
         </div>
       </form>

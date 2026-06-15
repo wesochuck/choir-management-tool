@@ -4,7 +4,7 @@ import { profileService, type Profile, type CalendarFeedUrls } from '../../servi
 import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, Select } from '../../components/ui';
+import { Button, Select, Input } from '../../components/ui';
 import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
@@ -222,22 +222,20 @@ export default function ProfileView() {
         <form onSubmit={handleSave} className="w-full flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-label">Name</label>
-            <input
+            <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
             />
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Email</label>
-            <input
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
             />
           </div>
 
@@ -288,10 +286,9 @@ export default function ProfileView() {
             <>
               <div className="flex flex-col gap-1">
                 <label className="text-label">Phone</label>
-                <input
+                <Input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
                 />
               </div>
 
@@ -358,10 +355,10 @@ export default function ProfileView() {
                   <div className="flex flex-col gap-1">
                     <label className="text-label">Google Calendar Setup</label>
                     <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-1">
-                      <input
+                      <Input
                         readOnly
                         value={calendarFeedUrls.httpsUrl}
-                        className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors outline-none focus:border-primary sm:flex-1"
+                        className="sm:flex-1"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <SlCopyButton

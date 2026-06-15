@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { MessageTemplate } from '../types/Communication';
+import { Input } from './ui';
 
 const CalendarIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -111,32 +112,34 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({ templates, selectedT
   return (
     <div className="flex w-full flex-col gap-4">
       {/* Search Input */}
-      <div className="relative w-full max-w-md">
-        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-text-muted">
-          <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <Input
+        type="text"
+        placeholder="Search templates..."
+        value={searchQuery}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+        className="max-w-md"
+      >
+        <span slot="prefix" className="flex items-center text-text-muted">
+          <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
         </span>
-        <input
-          type="text"
-          placeholder="Search templates..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-lg border border-border bg-surface py-2 pr-8 pl-9 text-sm text-text focus:border-primary focus:bg-white focus:ring-1 focus:ring-primary focus:outline-none"
-        />
         {searchQuery && (
           <button
+            slot="suffix"
+            type="button"
             onClick={() => setSearchQuery('')}
-            className="absolute inset-y-0 right-0 flex cursor-pointer items-center pr-3 text-text-muted hover:text-text"
+            className="flex items-center rounded-full p-0.5 text-text-muted hover:text-text"
+            aria-label="Clear search"
           >
-            <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         )}
-      </div>
+      </Input>
 
       {/* Grouped Lists */}
       {categories.map(cat => {

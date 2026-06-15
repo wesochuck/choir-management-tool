@@ -7,7 +7,7 @@ import { settingsService, getVoicePartsAndSections, type SectionDef, type VoiceP
 import { AppCard } from '../common/AppCard';
 import { FloatingSaveBar } from './FloatingSaveBar';
 import { useDialog } from '../../contexts/DialogContext';
-import { Button, Select } from '../ui';
+import { Button, Select, Input } from '../ui';
 import { toggleAccordion } from '../../lib/seatingFormationsUtils';
 
 
@@ -161,7 +161,7 @@ function FormationRow({
       >
         {/* Row 1: name input + strategy select */}
         <div className="grid grid-cols-[1fr_170px] items-center gap-2">
-          <input
+          <Input
             value={formation.name}
             onChange={(e) => {
               setCustomSeatingSettings((prev) => {

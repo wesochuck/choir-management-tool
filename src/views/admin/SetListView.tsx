@@ -20,7 +20,7 @@ import { resolveInitialEventId } from '../../lib/eventUtils';
 import { resolveSetListDisplayRows, calculateSetListDurationTotals, getDefaultPlayableTrackKey, createSetListItemFromMusicPiece, getPerformanceIdForSetListLibraryLink, buildSetListPlainText } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
-import { Modal } from '../../components/ui';
+import { Modal, Input } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { Button, Select, Spinner } from '../../components/ui';
@@ -521,7 +521,7 @@ export default function SetListView() {
               <div className="flex flex-col">
                 <span className="mb-2 block text-sm font-bold tracking-wider text-text-muted uppercase">Singer Visibility</span>
                 <label className="flex h-11 cursor-pointer items-center gap-2.5 rounded-md border border-border bg-slate-50 px-4 text-sm font-medium transition-colors select-none hover:bg-slate-100/70">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={localApproved}
                     onChange={(e) => handleToggleApproved(e.target.checked)}
@@ -582,7 +582,7 @@ export default function SetListView() {
                     <span>⏸️ Intermissions: <span className="text-slate-900">{durationTotals.intermissions}</span></span>
                     <span className="flex flex-row items-center gap-2">
                       📢 Gaps:
-                      <input
+                      <Input
                         type="number"
                         className="h-7 w-12 rounded border border-border bg-white text-center text-sm font-bold text-slate-800 focus:border-primary focus:outline-none"
                         min={0}

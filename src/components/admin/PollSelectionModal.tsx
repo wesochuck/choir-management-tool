@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Button, Select } from '../ui';
+import { Modal, Button, Select, Input } from '../ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import type { RecordModel } from 'pocketbase';
@@ -134,8 +134,8 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
           <form onSubmit={handleCreate} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
               <label className="text-label">Poll Question</label>
-              <input
-                className="h-11 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              <Input
+                
                 autoFocus
                 required
                 value={question}

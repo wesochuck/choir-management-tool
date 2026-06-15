@@ -14,6 +14,7 @@ import { useDues } from '../../hooks/useDues';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
+import { Input } from '../../components/ui';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
@@ -296,27 +297,28 @@ export default function RosterView() {
           />
 
           <div className="flex flex-row flex-wrap items-end gap-4">
-            <div className="relative min-w-[250px] flex-1">
-              <input
-                type="text"
-                placeholder="Search by name or email..."
-                value={filters.name || ''}
-                onChange={(e) => setFilter('name', e.target.value)}
-                className="h-11 w-full rounded-md border border-border bg-surface pr-8 text-base transition-colors outline-none focus:border-primary"
-              />
+            <Input
+              type="text"
+              placeholder="Search by name or email..."
+              value={filters.name || ''}
+              onChange={(e) => setFilter('name', e.target.value)}
+              className="min-w-[250px] flex-1"
+            >
               {filters.name && (
                 <button
+                  slot="suffix"
+                  type="button"
                   onClick={() => setFilter('name', '')}
-                  className="absolute top-1/2 right-3 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-none bg-none p-1 text-gray-500 hover:bg-black/5"
-                  title="Clear search"
+                  className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
+                  aria-label="Clear search"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                 </button>
               )}
-            </div>
+            </Input>
 
             <div ref={voicePartDropdownRef} className="relative w-[200px]">
               <button

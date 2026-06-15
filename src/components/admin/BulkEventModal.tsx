@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal, Button, Select } from '../ui';
+import { Modal, Button, Select, Input } from '../ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone, zonedInputValueToUtc } from '../../lib/timezone';
 
@@ -239,22 +239,22 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
         <div className="flex flex-row gap-4">
           <div className="flex-1 flex flex-col gap-1">
             <label className="text-label">Count</label>
-            <input 
+            <Input 
               type="number" 
               value={count} 
               onChange={(e) => setCount(parseInt(e.target.value))} 
               min="1" max="20"
-              className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
+              
             />
           </div>
           <div className="flex-1 flex flex-col gap-1">
              <label className="text-label">Time</label>
-             <input 
+             <Input 
               type="time" 
               value={time} 
               onChange={(e) => setTime(e.target.value)} 
               required
-              className="h-11 w-full rounded-md border border-border bg-surface px-3 text-text transition-colors outline-none focus:border-primary"
+              
             />
           </div>
         </div>

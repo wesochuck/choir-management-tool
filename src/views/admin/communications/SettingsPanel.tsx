@@ -6,7 +6,7 @@ import type { TemplateRecord } from '../../../services/communicationService';
 import { useDialog } from '../../../contexts/DialogContext';
 import { TemplatesPanel } from './TemplatesPanel';
 
-import { Button } from '../../../components/ui';
+import { Button, Input } from '../../../components/ui';
 
 export interface SettingsPanelProps {
   commSettings: CommunicationSettings;
@@ -110,8 +110,8 @@ export function SettingsPanel({
                 outgoing mail delivery is working.
               </p>
               <div className="flex flex-wrap items-center gap-4">
-                <input
-                  className="h-10 w-full max-w-[300px] flex-1 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                <Input
+                  className="max-w-[300px] flex-1"
                   type="email"
                   value={testEmailAddress}
                   onChange={(e) => setTestEmailAddress(e.target.value)}
@@ -168,8 +168,8 @@ function Field({
   return (
     <div className="flex flex-col gap-1">
       <label className="text-label">{label}</label>
-      <input
-        className="h-10 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+      <Input
+        
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

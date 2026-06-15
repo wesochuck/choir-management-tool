@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Modal, Button, Select } from '../ui';
+import { Modal, Button, Select, Input, Textarea } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Audition, AuditionInput } from '../../services/auditionService';
 import { type Event } from '../../services/eventService';
@@ -170,7 +170,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
         }}>
           <div className="flex flex-col gap-1">
             <label className="text-label">Name</label>
-            <input
+            <Input
               className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -181,7 +181,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Email or Phone</label>
-            <input
+            <Input
               className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
               value={formData.contact}
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
@@ -227,8 +227,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Experience / Musical Background</label>
-            <textarea
-              className="min-h-20 resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
+            <Textarea
+              className="min-h-[80px]"
               value={formData.experience}
               onChange={(event) => setFormData({ ...formData, experience: event.target.value })}
               placeholder="Describe background..."
@@ -237,8 +237,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Internal Notes</label>
-            <textarea
-              className="min-h-20 resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
+            <Textarea
+              className="min-h-[80px]"
               value={formData.notes}
               onChange={(event) => setFormData({ ...formData, notes: event.target.value })}
               placeholder="Add internal notes..."

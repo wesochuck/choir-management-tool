@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import { profileService } from '../../services/profileService';
-import { Modal, Button } from '../ui';
+import { Modal, Button, Input } from '../ui';
 
 interface SingerLookupModalProps {
   isOpen: boolean;
@@ -63,12 +63,12 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
       footer={<Button type="button" onClick={onClose} variant="outline">Cancel</Button>}
     >
       <div className="flex flex-col gap-3">
-        <input
+        <Input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search singers..."
-          className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors outline-none focus:border-primary"
+          
           autoFocus
         />
 

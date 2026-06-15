@@ -12,7 +12,7 @@ import { SeatingFormationsEditor } from '../../components/admin/SeatingFormation
 import { ChartCopyDropdown } from '../../components/admin/ChartCopyDropdown';
 import { seatingService, type SeatingChart } from '../../services/seatingService';
 import { AppCard } from '../../components/common/AppCard';
-import { Modal, Select, Button } from '../../components/ui';
+import { Modal, Select, Button, Input } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -531,7 +531,7 @@ export default function SeatingView() {
 
                   {printMode === 'text' && (
                     <label className="text-muted ml-2 flex cursor-pointer items-center gap-1 text-[0.8125rem] leading-none font-semibold select-none">
-                      <input 
+                      <Input 
                         type="checkbox" 
                         checked={showVoicePartsInList} 
                         onChange={(e) => setShowVoicePartsInList(e.target.checked)}
@@ -785,8 +785,8 @@ export default function SeatingView() {
         >
           <div className="flex flex-col gap-1">
             <label className="text-label font-semibold">Chart Name</label>
-            <input 
-              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" 
+            <Input 
+               
               value={newChartName} 
               onChange={(e) => setNewChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir, Combined Finale"
@@ -845,8 +845,8 @@ export default function SeatingView() {
         >
           <div className="flex flex-col gap-1">
             <label className="text-label font-semibold">New Chart Name</label>
-            <input 
-              className="h-11 w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary" 
+            <Input 
+               
               value={renameChartName} 
               onChange={(e) => setRenameChartName(e.target.value)} 
               placeholder="e.g. Chamber Choir"

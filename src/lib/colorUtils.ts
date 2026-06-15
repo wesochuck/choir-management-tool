@@ -1,17 +1,3 @@
-// Section Palette Colors
-export const PALETTE_COLORS = [
-  'var(--section-red)',
-  'var(--section-orange)',
-  'var(--section-amber)',
-  'var(--section-green)',
-  'var(--section-cyan)',
-  'var(--section-blue)',
-  'var(--section-indigo)',
-  'var(--section-purple)',
-  'var(--section-pink)',
-  'var(--section-slate)',
-];
-
 export function isColorTooClose(hex1: string, hex2: string): boolean {
   if (!hex1 || !hex2 || !hex1.startsWith('#') || !hex2.startsWith('#')) return false;
   const r1 = parseInt(hex1.substring(1, 3), 16);

@@ -2,6 +2,7 @@ import React from 'react';
 import type { PlayerMediaFile } from '../../services/playerService';
 import { useAudioPlayback } from '../../hooks/useAudioPlayback';
 import SlRange from '@shoelace-style/shoelace/dist/react/range/index.js';
+import { Input, Select } from '../ui';
 
 import {
   PlayIcon,
@@ -219,7 +220,7 @@ export const Player: React.FC<PlayerProps> = ({
           {/* START AT SETTING */}
           <div className="flex items-center gap-1.5">
             <label htmlFor="skip-input" className="text-overline whitespace-nowrap text-text-muted">Start At:</label>
-            <input 
+            <Input 
               id="skip-input"
               type="number" 
               min="0"
@@ -249,17 +250,17 @@ export const Player: React.FC<PlayerProps> = ({
           {/* INTER-TRACK GAP SETTING */}
           <div className="flex items-center gap-1.5">
             <label htmlFor="delay-select" className="text-overline whitespace-nowrap text-text-muted">Gap:</label>
-            <select
+            <Select
               id="delay-select"
               value={delaySetting}
               onChange={(e) => setDelaySetting(Number(e.target.value))}
-              className="h-auto w-auto cursor-pointer rounded-lg border border-border bg-primary-light px-2 py-1.5 text-sm font-semibold text-text outline-none focus:border-primary"
+              className="w-auto"
             >
               <option value={0}>None</option>
               <option value={2}>2s</option>
               <option value={5}>5s</option>
               <option value={10}>10s</option>
-            </select>
+            </Select>
           </div>
         </div>
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { pb } from '../lib/pocketbase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { Button } from '../components/ui';
+import { Button, Input } from '../components/ui';
 
 type LoginMode = 'otp' | 'password';
 type OtpStep = 'request' | 'verify';
@@ -189,7 +189,7 @@ export default function LoginView() {
 
             <div className="flex flex-col gap-1">
               <label className="text-label" htmlFor="forgot-email">Email Address</label>
-              <input
+              <Input
                 id="forgot-email"
                 type="email"
                 value={email}
@@ -231,7 +231,7 @@ export default function LoginView() {
                     </p>
                     <div className="flex flex-col gap-1">
                       <label className="text-label" htmlFor="otp-email">Email Address</label>
-                      <input
+                      <Input
                         id="otp-email"
                         type="email"
                         value={email}
@@ -261,7 +261,7 @@ export default function LoginView() {
 
                     <div className="mb-2 flex flex-col gap-1">
                       <label className="text-label" htmlFor="otp-code">Enter 6-Digit Login Code</label>
-                      <input
+                      <Input
                         id="otp-code"
                         type="text"
                         maxLength={6}
@@ -336,7 +336,7 @@ export default function LoginView() {
               <form onSubmit={handlePasswordSubmit} className="flex animate-login-fade-in flex-col gap-6">
                 <div className="flex flex-col gap-1">
                   <label className="text-label" htmlFor="login-email">Email Address</label>
-                  <input
+                  <Input
                     id="login-email"
                     type="email"
                     value={email}
@@ -361,7 +361,7 @@ export default function LoginView() {
                       Forgot Password?
                     </button>
                   </div>
-                  <input
+                  <Input
                     id="login-password"
                     type="password"
                     value={password}

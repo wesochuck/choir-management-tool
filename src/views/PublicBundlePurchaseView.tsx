@@ -5,7 +5,7 @@ import { ticketService, type TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
-import { Button } from '../components/ui';
+import { Button, Input } from '../components/ui';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
 import { sanitizeHtml } from '../lib/textSafety';
 
@@ -159,10 +159,10 @@ export default function PublicBundlePurchaseView() {
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Your Name (for Will Call)</label>
-            <input
+            <Input
               type="text"
               required
-              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              
               value={name}
               onChange={e => setName(e.target.value)}
             />
@@ -171,20 +171,20 @@ export default function PublicBundlePurchaseView() {
           <div className="flex flex-col gap-4 md:flex-row">
             <div className="flex flex-1 flex-col gap-1">
               <label className="text-label">Email Address</label>
-              <input
+              <Input
                 type="email"
                 required
-                className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
             <div className="flex flex-1 flex-col gap-1">
               <label className="text-label">Confirm Email</label>
-              <input
+              <Input
                 type="email"
                 required
-                className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+                
                 value={confirmEmail}
                 onChange={e => setConfirmEmail(e.target.value)}
               />
@@ -193,12 +193,12 @@ export default function PublicBundlePurchaseView() {
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Pass Quantity</label>
-            <input
+            <Input
               type="number"
               min="1"
               max="10"
               required
-              className="h-10 rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              
               value={quantity}
               onChange={e => setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))}
             />
@@ -223,7 +223,7 @@ export default function PublicBundlePurchaseView() {
           </div>
 
           <div className="mt-1 flex flex-row items-start gap-4 rounded-lg border border-border bg-neutral-100 p-4">
-            <input
+            <Input
               id="marketingOptIn"
               type="checkbox"
               className="size-[18px] cursor-pointer accent-primary"

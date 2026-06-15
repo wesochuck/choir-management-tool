@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useClickOutside } from '../../../hooks/useClickOutside';
 import { CHIP_COLORS, getChipColor } from '../../../lib/chipColorUtils';
-import { Button } from '../../../components/ui';
+import { Button, Input } from '../../../components/ui';
 
 interface MultiSelectOption {
     id: string;
@@ -257,11 +257,10 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
                     {/* Search/filter input */}
                     {searchable && (
-                        <div className="relative flex items-center border-b border-gray-200 px-3 py-2">
-                            <input
+                        <div className="border-b border-gray-200 px-3 py-2">
+                            <Input
                                 ref={searchInputRef}
                                 type="text"
-                                className="h-7.5 w-full rounded border border-gray-200 bg-white px-2.5 pr-7 text-xs transition-colors duration-150 outline-none placeholder:text-gray-400 focus:border-primary"
                                 placeholder="Filter..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
@@ -275,17 +274,19 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                         }
                                     }
                                 }}
-                            />
-                            {searchQuery && (
-                                <button
-                                    type="button"
-                                    className="absolute top-1/2 right-[18px] -translate-y-1/2 cursor-pointer border-none bg-none px-0.5 text-base leading-none text-gray-400 transition-colors duration-150 hover:text-gray-800"
-                                    onClick={() => setSearchQuery('')}
-                                    aria-label="Clear search"
-                                >
-                                    ×
-                                </button>
-                            )}
+                            >
+                                {searchQuery && (
+                                    <button
+                                        slot="suffix"
+                                        type="button"
+                                        className="flex items-center px-0.5 text-base leading-none text-gray-400 hover:text-gray-800"
+                                        onClick={() => setSearchQuery('')}
+                                        aria-label="Clear search"
+                                    >
+                                        ×
+                                    </button>
+                                )}
+                            </Input>
                         </div>
                     )}
 
@@ -358,10 +359,10 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
 
                     {allowCreate && onCreateOption && (
                         <div className="flex items-center gap-2 border-t border-gray-200 bg-gray-50 px-3.5 py-2.5">
-                            <input
+                            <Input
                                 ref={inputRef}
                                 type="text"
-                                className="h-8 flex-1 rounded border border-border bg-surface px-2.5 text-xs transition-colors duration-150 outline-none focus:border-primary"
+                                className="flex-1"
                                 placeholder="Add new..."
                                 value={newOptionLabel}
                                 onChange={e => setNewOptionLabel(e.target.value)}

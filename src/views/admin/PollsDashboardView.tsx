@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, FormField, Badge, Modal, EmptyState } from '../../components/ui';
+import { Button, FormField, Badge, Modal, EmptyState, Input } from '../../components/ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
@@ -748,7 +748,7 @@ export default function PollsDashboardView() {
                 Create a poll and jump straight to Communications Review with a prefilled message.
               </p>
               <FormField label="Poll Question">
-                <input
+                <Input
                   id="quick-poll-question"
                   type="text"
                   className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -759,7 +759,7 @@ export default function PollsDashboardView() {
                 />
               </FormField>
               <FormField label="Auto-Archive Poll in (Days)">
-                <input
+                <Input
                   id="quick-poll-days"
                   type="number"
                   min="1"
@@ -847,7 +847,7 @@ export default function PollsDashboardView() {
             Configure global default settings for quick engagement polls.
           </p>
           <FormField label="Default Auto-Archive (Days)">
-            <input
+            <Input
               id="settings-default-days"
               type="number"
               min="1"

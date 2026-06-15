@@ -8,7 +8,7 @@ import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { LandingPageSettingsPanel } from '../../components/admin/LandingPageSettingsPanel';
 import type { LandingPageSettingsPanelHandle } from '../../components/admin/LandingPageSettingsPanel';
-import { Button, Select } from '../../components/ui';
+import { Button, Select, Input } from '../../components/ui';
 import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
 
 const COMMON_TIMEZONES = [
@@ -195,7 +195,7 @@ export default function SettingsView() {
       <div className="flex flex-col gap-6">
         <AppCard title="Choir Name">
           <div className="flex flex-col gap-2">
-            <input
+            <Input
               id="choir-name"
               type="text"
               value={choirName}
@@ -229,7 +229,7 @@ export default function SettingsView() {
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                   {logoUrl ? 'Replace Logo' : 'Upload Logo'}
-                  <input
+                  <Input
                     type="file"
                     accept="image/png,image/jpeg,image/svg+xml,image/webp"
                     className="hidden"
@@ -271,7 +271,7 @@ export default function SettingsView() {
 
         <AppCard title="Public Homepage URL">
           <div className="flex flex-col gap-2">
-            <input
+            <Input
               id="homepage-url"
               type="url"
               value={homepageUrl}
@@ -388,7 +388,7 @@ function QueueWebhookSettings() {
         <div className="flex flex-col gap-2">
           <label className="text-xs font-semibold text-slate-700" htmlFor="webhook-url">Target Webhook URL</label>
           <div className="flex items-center gap-2">
-            <input
+            <Input
               id="webhook-url"
               type="text"
               readOnly

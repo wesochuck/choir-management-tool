@@ -1,4 +1,5 @@
 import { AppCard } from '../common/AppCard';
+import { Input } from '../ui';
 import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
 
 interface StatusAutomationSettingsProps {
@@ -42,7 +43,7 @@ export function StatusAutomationSettings({
           <div className="mt-2 ml-6 flex flex-col gap-4 border-l border-slate-100 pl-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-slate-700">Consecutive Misses Threshold</label>
-              <input
+              <Input
                 type="number"
                 min={1}
                 max={10}
@@ -74,7 +75,7 @@ export function StatusAutomationSettings({
 
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-semibold text-slate-700">Maximum Rehearsal Miss Limit</label>
-          <input
+          <Input
             type="number"
             min={0}
             max={20}

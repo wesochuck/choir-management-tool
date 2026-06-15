@@ -2,7 +2,7 @@ import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import type { Profile } from '../../services/profileService';
 import { getContrastColor } from '../../lib/colorUtils';
-import { Button, Select } from '../ui';
+import { Button, Select, Input } from '../ui';
 import SlColorPicker from '@shoelace-style/shoelace/dist/react/color-picker/index.js';
 
 interface VoicePartEditorProps {
@@ -46,7 +46,7 @@ export function VoicePartEditor({
             const defaultColor = section?.color || '#e0e0e0';
             return (
               <div key={index} className="grid w-full grid-cols-[90px_1fr_150px_130px_100px_80px] items-center gap-4">
-                <input
+                <Input
                   value={vp.label}
                   onChange={(e) => {
                     const newParts = [...configVoiceParts];
@@ -58,7 +58,7 @@ export function VoicePartEditor({
                   className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
                   title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
                 />
-                <input
+                <Input
                   value={vp.fullName}
                   onChange={(e) => {
                     const newParts = [...configVoiceParts];
@@ -100,7 +100,7 @@ export function VoicePartEditor({
                     size="small"
                     label=""
                   />
-                  <input
+                  <Input
                     type="text"
                     value={vp.color || ''}
                     onChange={(e) => {
