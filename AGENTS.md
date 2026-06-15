@@ -82,11 +82,13 @@ Default tests run in the Node environment. Component or hook tests requiring DOM
 
 Use Tailwind utility classes for layout, spacing, colors, sizing, typography, and micro-adjustments. Do not add standalone component CSS unless Tailwind cannot express the requirement, such as complex animations or print styles.
 
-Inline styles are allowed only for truly dynamic values such as drag position, animation values, or canvas calculations. Mark each exception:
+Inline styles are allowed only for truly dynamic values such as drag position, animation values, or canvas calculations. Mark each exception with a JSX comment:
 
 ```tsx
-// @allow-inline-style - explanation
+{/* @allow-inline-style - explanation */}
 ```
+
+Use `{/* */}` syntax, not `//`. A `//` comment inside JSX renders as visible text in the DOM (see `PhotoUploader.tsx:717` for a real fix). The `{/* */}` JSX comment is stripped at build time and never reaches the browser.
 
 Use app dialogs from `useDialog()`:
 
