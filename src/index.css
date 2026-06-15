@@ -273,6 +273,30 @@
   page: landscape-canvas;
 }
 
+/* Prevent Tailwind v4 preflight from adding borders to Shoelace custom elements.
+   Shoelace renders its own borders inside the shadow DOM; the host element should be borderless. */
+sl-button,
+sl-input,
+sl-select,
+sl-textarea,
+sl-checkbox,
+sl-radio,
+sl-switch,
+sl-tag,
+sl-alert,
+sl-card,
+sl-details,
+sl-dialog,
+sl-drawer,
+sl-dropdown,
+sl-menu,
+sl-menu-item,
+sl-tab,
+sl-tab-group,
+sl-tab-panel {
+  border: none;
+}
+
 /* Custom Shoelace overrides for project aesthetics */
 sl-dialog::part(panel) {
   background-color: var(--color-surface);
