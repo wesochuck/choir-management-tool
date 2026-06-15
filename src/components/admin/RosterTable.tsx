@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { Profile } from '../../services/profileService';
 import type { SeasonalDue } from '../../services/duesService';
 import { pb } from '../../lib/pocketbase';
 import { Pagination } from '../common/Pagination';
 import { AppCard } from '../common/AppCard';
 import { getGlobalStatusDisplay } from '../../lib/statusDisplay';
-import { Button, Badge } from '../ui';
+import { Button, Badge, Modal } from '../ui';
 
 interface RosterTableProps {
   profiles: Profile[];
@@ -44,18 +44,6 @@ export const RosterTable: React.FC<RosterTableProps> = ({
   onPageChange
 }) => {
   const [activePhoto, setActivePhoto] = useState<{ url: string; name: string; voicePart?: string } | null>(null);
-
-  // Close lightbox on Escape key
-  useEffect(() => {
-    if (!activePhoto) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setActivePhoto(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activePhoto]);
 
   return (
     <AppCard noPadding>
@@ -198,27 +186,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         </div>
       )}
 
-      {/* Lightbox Preview Modal */}
-      {activePhoto && (
-        <div 
-          className="fixed inset-0 z-[100] flex animate-modal-fade-in items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-opacity duration-300"
-          onClick={() => setActivePhoto(null)}
-        >
-          <div 
-            className="relative flex w-full max-w-sm transform animate-modal-slide-up flex-col items-center gap-4 rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl transition-all"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setActivePhoto(null)}
-              className="absolute top-4 right-4 cursor-pointer rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-              aria-label="Close preview"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-
+      <Modal
+        isOpen={!!activePhoto}
+        onClose={() => setActivePhoto(null)}
+        title={activePhoto?.name}
+        maxWidth="360px"
+      >
+        {activePhoto && (
+          <div className="flex flex-col items-center gap-4">
             <div className="size-48 overflow-hidden rounded-full border-4 border-slate-100 shadow-md">
               <img
                 src={activePhoto.url}
@@ -226,18 +201,14 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 className="size-full object-cover select-none"
               />
             </div>
-
-            <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-900">{activePhoto.name}</h3>
-              {activePhoto.voicePart && (
-                <span className="mt-1.5 inline-flex items-center rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary-deep">
-                  {activePhoto.voicePart}
-                </span>
-              )}
-            </div>
+            {activePhoto.voicePart && (
+              <span className="inline-flex items-center rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary-deep">
+                {activePhoto.voicePart}
+              </span>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </AppCard>
   );
 };
