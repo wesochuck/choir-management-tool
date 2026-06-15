@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
 import { Modal, Button, Select, Input, Checkbox, Textarea } from '../ui';
@@ -33,6 +33,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   const [formData, setFormData] = useState<ProfileInput>({ ...defaultProfileInput });
   const [isSubmitting, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   // Password reset state
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
@@ -96,17 +97,24 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
+  const validateEmailField = useCallback(() => {
+    const email = formData.email?.trim();
+    if (email && !isValidEmail(email)) {
+      emailInputRef.current?.setCustomValidity('Please enter a valid email address.');
+      return false;
+    }
+    emailInputRef.current?.setCustomValidity('');
+    return true;
+  }, [formData.email]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     const email = formData.email || '';
     if (email.trim() && !isValidEmail(email.trim())) {
-      await dialog.showMessage({
-        title: 'Invalid Email Format',
-        message: 'Please enter a valid email address.',
-        variant: 'danger',
-      });
+      emailInputRef.current?.setCustomValidity('Please enter a valid email address.');
+      emailInputRef.current?.reportValidity?.();
       setIsLoading(false);
       return;
     }
@@ -265,9 +273,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                     <div className="flex flex-col items-start gap-1">
                       <label className="text-label">Login Email (Optional)</label>
                       <Input
+                        ref={emailInputRef}
                         type="email"
                         value={formData.email || ''}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onBlur={validateEmailField}
                         placeholder="e.g. singer@example.com"
                       />
                       <p className="text-muted m-0 text-xs">
@@ -455,9 +465,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <div className="flex flex-col items-start gap-1">
                 <label className="text-label">Login Email (Optional)</label>
                 <Input
+                  ref={emailInputRef}
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onBlur={validateEmailField}
                   placeholder="e.g. singer@example.com"
                 />
                 <p className="text-muted m-0 text-xs">
