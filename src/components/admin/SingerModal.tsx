@@ -107,13 +107,18 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     return true;
   }, [formData.email]);
 
+  // Clear the custom validity message as the user types so the red error
+  // disappears immediately on edit (matches native browser validation behavior).
+  const handleEmailChange = useCallback((value: string) => {
+    setFormData((prev) => ({ ...prev, email: value }));
+    emailInputRef.current?.setCustomValidity('');
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const email = formData.email || '';
-    if (email.trim() && !isValidEmail(email.trim())) {
-      emailInputRef.current?.setCustomValidity('Please enter a valid email address.');
+    if (!validateEmailField()) {
       emailInputRef.current?.reportValidity?.();
       setIsLoading(false);
       return;
@@ -276,7 +281,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                         ref={emailInputRef}
                         type="email"
                         value={formData.email || ''}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) => handleEmailChange(e.target.value)}
                         onBlur={validateEmailField}
                         placeholder="e.g. singer@example.com"
                       />
@@ -468,7 +473,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   ref={emailInputRef}
                   type="email"
                   value={formData.email || ''}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                   onBlur={validateEmailField}
                   placeholder="e.g. singer@example.com"
                 />
