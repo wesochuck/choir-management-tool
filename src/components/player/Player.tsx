@@ -138,9 +138,18 @@ export const Player: React.FC<PlayerProps> = ({
 
         {/* SKIP NOTIFICATION */}
         {showSkipNotify && (
-          <div className="mb-4 flex items-center justify-center gap-3 rounded-lg p-3 px-4 text-sm font-semibold" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>
+          <div
+            className="mb-4 flex items-center justify-center gap-3 rounded-lg p-3 px-4 text-sm font-semibold"
+            // @allow-inline-style - CSS variables for dynamic theme colors
+            style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+          >
             <span>Skipped first {skipStart}s of track</span>
-            <button onClick={() => setShowSkipNotify(false)} className="cursor-pointer rounded-lg border-none px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors" style={{ background: 'var(--border-color)', color: 'var(--text-primary)' }}>Dismiss</button>
+            <button
+              onClick={() => setShowSkipNotify(false)}
+              className="cursor-pointer rounded-lg border-none px-3 py-1.5 text-xs font-semibold tracking-wider uppercase transition-colors"
+              // @allow-inline-style - CSS variables for dynamic theme colors
+              style={{ background: 'var(--border-color)', color: 'var(--text-primary)' }}
+            >Dismiss</button>
           </div>
         )}
 
