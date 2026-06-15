@@ -2,12 +2,21 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, TabPanel, FormField, Badge, Modal, EmptyState, Select } from '../../components/ui';
+import { Button, FormField, Badge, Modal, EmptyState, Select, Input, Textarea } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { safeLocalStorage } from '../../lib/storage';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
+import SlTabGroup from '@shoelace-style/shoelace/dist/react/tab-group/index.js';
+import SlTab from '@shoelace-style/shoelace/dist/react/tab/index.js';
+import SlTabPanel from '@shoelace-style/shoelace/dist/react/tab-panel/index.js';
+
+const TabGroup = SlTabGroup as unknown as React.ComponentType<
+  React.ComponentProps<typeof SlTabGroup> & {
+    value?: string;
+  }
+>;
 
 const STORAGE_KEY_START_DATE = 'donations_view_filter_start_date';
 
@@ -273,43 +282,17 @@ export default function DonationsView() {
   return (
     <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-          Donations & Giving
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Monitor your choir's incoming donations, analyze giving statistics, and manage public donation portal settings and recognition tiers.
-        </p>
-      </div>
-
-      {/* Tabs / Actions Navigation Bar */}
-      <div className="flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
-        <div className="flex gap-3 md:gap-6">
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'history'
-                ? 'border-primary font-bold text-primary'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('history')}
-          >
-            Donation History
-          </button>
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'levels'
-                ? 'border-primary font-bold text-primary'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('levels')}
-          >
-            Tiers & Page Settings
-          </button>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+            Donations & Giving
+          </h1>
+          <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
+            Monitor your choir's incoming donations, analyze giving statistics, and manage public donation portal settings and recognition tiers.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 pb-1.5">
+        <div className="flex items-center gap-2 shrink-0">
           {activeTab === 'history' && (
             <Button
               variant="secondary"
@@ -347,8 +330,22 @@ export default function DonationsView() {
         </div>
       </div>
 
-      {/* History Tab Content */}
-      <TabPanel tabId="history" activeTab={activeTab}>
+      <TabGroup
+        value={activeTab}
+        onSlTabShow={(e: unknown) => {
+          const customEvent = e as CustomEvent;
+          setActiveTab(customEvent.detail.name as 'history' | 'levels');
+        }}
+      >
+        <SlTab slot="nav" panel="history">
+          Donation History
+        </SlTab>
+        <SlTab slot="nav" panel="levels">
+          Tiers & Page Settings
+        </SlTab>
+
+        {/* History Tab Content */}
+        <SlTabPanel name="history">
         <div className="flex flex-col gap-6">
           {/* Stats Analytics Dashboard */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -427,41 +424,34 @@ export default function DonationsView() {
               <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-100 bg-slate-50/60 p-4 md:grid-cols-4">
                 <div className="md:col-span-1">
                   <FormField label="Search">
-                    <div className="relative">
-                      <span className="pointer-events-none absolute top-1/2 left-3 flex -translate-y-1/2 text-slate-400" aria-hidden="true">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="11" cy="11" r="8" />
-                          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                        </svg>
-                      </span>
-                      <input 
-                        type="text" 
-                        placeholder="Donor name or email..." 
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="block w-full rounded-lg border border-slate-200 bg-white py-2 pr-3.5 pl-9 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
-                      />
-                    </div>
+                    <Input 
+                      placeholder="Donor name or email..." 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    >
+                      <svg slot="prefix" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                    </Input>
                   </FormField>
                 </div>
                 <div className="flex flex-row gap-4 md:col-span-2">
                   <div className="min-w-0 flex-1">
                     <FormField label="From Date">
-                      <input 
+                      <Input 
                         type="date" 
                         value={startDate}
                         onChange={e => handleSetStartDate(e.target.value)}
-                        className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </FormField>
                   </div>
                   <div className="min-w-0 flex-1">
                     <FormField label="To Date">
-                      <input 
+                      <Input 
                         type="date" 
                         value={endDate}
                         onChange={e => setEndDate(e.target.value)}
-                        className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                       />
                     </FormField>
                   </div>
@@ -682,10 +672,10 @@ export default function DonationsView() {
             </div>
           </AppCard>
         </div>
-      </TabPanel>
+        </SlTabPanel>
 
-      {/* Levels & Portal Settings Tab Content */}
-      <TabPanel tabId="levels" activeTab={activeTab}>
+        {/* Levels & Portal Settings Tab Content */}
+        <SlTabPanel name="levels">
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
           {/* Public Portal Configuration Card */}
           <div className="flex flex-col gap-6 lg:col-span-1">
@@ -698,19 +688,17 @@ export default function DonationsView() {
                   Customize the heading text and detailed descriptive message shown to users on your public-facing checkout/donation webpage.
                 </p>
                 <FormField label="Call-to-Action Heading" required>
-                  <input
+                  <Input
                     type="text"
                     value={donationButtonText}
                     onChange={e => setDonationButtonText(e.target.value)}
                     placeholder="e.g. Support our Music"
-                    className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                     required
                   />
                 </FormField>
                 <FormField label="Portal Description">
-                  <textarea
+                  <Textarea
                     rows={5}
-                    className="block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
                     value={donationDescription}
                     onChange={e => setDonationDescription(e.target.value)}
                     placeholder="e.g. Your contribution helps us keep the music playing..."
@@ -815,8 +803,8 @@ export default function DonationsView() {
                     ))}
 
                     {/* interactive "+ Add Level" trigger card */}
-                    <button
-                      type="button"
+                    <Button
+                      variant="outline"
                       onClick={() => openLevelModal()}
                       className="group flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/20 p-5 text-center transition-all hover:border-primary hover:bg-slate-50"
                     >
@@ -829,14 +817,15 @@ export default function DonationsView() {
                       <span className="mt-3 text-sm font-bold text-slate-500 transition-colors group-hover:text-primary">
                         + Add Donor Level
                       </span>
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>
             </div>
           </div>
         </div>
-      </TabPanel>
+        </SlTabPanel>
+      </TabGroup>
 
       {/* Levels CRUD Modal */}
       <Modal
@@ -867,30 +856,27 @@ export default function DonationsView() {
       >
         <div className="flex flex-col gap-4">
           <FormField label="Level Label" required>
-            <input 
+            <Input 
               type="text" 
               value={levelLabel} 
               onChange={e => setLevelLabel(e.target.value)}
               placeholder="e.g. Bronze, Gold, Supporter..."
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               required
             />
           </FormField>
           <FormField label="Minimum Amount ($)" required>
-            <input 
+            <Input 
               type="number" 
               min={1}
               value={levelAmount || ''} 
               onChange={e => setLevelAmount(Math.max(0, Number(e.target.value)))}
               placeholder="e.g. 50"
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               required
             />
           </FormField>
           <FormField label="Benefit / Perks (Optional)">
-            <textarea 
+            <Textarea 
               rows={3}
-              className="block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
               value={levelBenefit} 
               onChange={e => setLevelBenefit(e.target.value)}
               placeholder="e.g. Mention in concert program, early access..."

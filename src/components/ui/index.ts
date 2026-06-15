@@ -15,3 +15,8 @@ export { TabPanel } from './TabPanel/TabPanel';
 export { FormField } from './FormField/FormField';
 
 export { EmptyState } from './EmptyState/EmptyState';
+
+export { Checkbox } from './Checkbox/Checkbox';
+
+export { Textarea } from './Textarea/Textarea';
+

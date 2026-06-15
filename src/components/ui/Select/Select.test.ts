@@ -44,18 +44,21 @@ test('Select merges className', () => {
 test('Select applies default size class', () => {
   const { container } = render(React.createElement(Select, null));
   const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
   assert.ok(el.classList.contains('h-[44px]'), 'default size has 44px height');
 });
 
 test('Select applies small size class', () => {
   const { container } = render(React.createElement(Select, { size: 'small' }));
   const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
   assert.ok(el.classList.contains('h-10'), 'small size has h-10 height');
 });
 
 test('Select applies compact size class', () => {
   const { container } = render(React.createElement(Select, { size: 'compact' }));
   const el = container.firstElementChild;
+  assert.ok(el, 'renders an element');
   assert.ok(el.classList.contains('h-8'), 'compact size has h-8 height');
 });
 

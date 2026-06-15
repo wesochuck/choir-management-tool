@@ -17,12 +17,12 @@ function getDialog() {
 }
 
 function renderModal(
-  props: ModalProps,
+  props: Omit<ModalProps, 'children'>,
   children: React.ReactNode = React.createElement('p', null, 'content')
 ) {
   return render(
     React.createElement(DialogProvider, null,
-      React.createElement(Modal, props, children)
+      React.createElement(Modal, { ...props, children })
     )
   );
 }
