@@ -4,6 +4,7 @@ import type { Event } from '../../../services/eventService';
 import { playerService } from '../../../services/playerService';
 
 import { Button } from '../../../components/ui';
+import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
 
 interface UseEventPlayerLinkArgs {
   dialog: ReturnType<typeof useDialog>;
@@ -26,15 +27,9 @@ export function useEventPlayerLink({ dialog }: UseEventPlayerLinkArgs) {
               {url}
             </div>
             <div className="flex flex-row gap-2">
-              <Button
-                variant="primary"
-                size="small"
-                onClick={() => {
-                  navigator.clipboard.writeText(url);
-                }}
-              >
+              <SlCopyButton value={url}>
                 Copy Link
-              </Button>
+              </SlCopyButton>
               <Button
                 variant="secondary"
                 size="small"

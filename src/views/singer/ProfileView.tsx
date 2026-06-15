@@ -5,6 +5,7 @@ import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, Select } from '../../components/ui';
+import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -21,7 +22,6 @@ export default function ProfileView() {
   // Calendar sync states
   const [calendarFeedUrls, setCalendarFeedUrls] = useState<CalendarFeedUrls | null>(null);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
 
   const loadCalendarFeed = useCallback(async (profileId: string) => {
     if (!profileId) return;
@@ -35,17 +35,6 @@ export default function ProfileView() {
       setIsCalendarLoading(false);
     }
   }, []);
-
-  const handleCopyGoogleLink = async () => {
-    if (!calendarFeedUrls) return;
-    try {
-      await navigator.clipboard.writeText(calendarFeedUrls.httpsUrl);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch {
-      // ignore
-    }
-  };
 
   const handleResetLink = async () => {
     const confirmReset = await dialog.confirm({
@@ -375,14 +364,12 @@ export default function ProfileView() {
                         className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm transition-colors outline-none focus:border-primary sm:flex-1"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
-                      <Button
-                        type="button"
-                        onClick={handleCopyGoogleLink}
-                        variant="primary"
-                        className={`flex h-10 w-full min-w-[180px] items-center justify-center px-4 sm:w-auto ${isCopied ? '!border-transparent !bg-success-bg !text-success-text' : ''}`}
+                      <SlCopyButton
+                        value={calendarFeedUrls.httpsUrl}
+                        className="h-10 w-full min-w-[180px] sm:w-auto"
                       >
-                        {isCopied ? 'Copied! ✓' : 'Copy Google Calendar URL'}
-                      </Button>
+                        Copy Google Calendar URL
+                      </SlCopyButton>
                     </div>
                     <span className="text-muted text-xs">
                       For Google Calendar, copy the HTTPS URL and add it with Other calendars → From URL.

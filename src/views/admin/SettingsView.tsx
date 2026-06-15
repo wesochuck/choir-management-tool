@@ -9,6 +9,7 @@ import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { LandingPageSettingsPanel } from '../../components/admin/LandingPageSettingsPanel';
 import type { LandingPageSettingsPanelHandle } from '../../components/admin/LandingPageSettingsPanel';
 import { Button, Select } from '../../components/ui';
+import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
 
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -335,7 +336,6 @@ function QueueWebhookSettings() {
   const dialog = useDialog();
   const [token, setToken] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [copied, setCopied] = useState<boolean>(false);
 
   const loadSettings = async () => {
     try {
@@ -376,12 +376,6 @@ function QueueWebhookSettings() {
   const pbBaseUrl = (pb.baseUrl || window.location.origin).replace(/\/+$/, '');
   const webhookUrl = `${pbBaseUrl}/api/queue/process?token=${token}`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(webhookUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   if (isLoading) return <div className="text-xs text-slate-400">Loading queue configurations...</div>;
 
   return (
@@ -401,27 +395,13 @@ function QueueWebhookSettings() {
               value={token ? webhookUrl : 'No token generated yet.'}
               className="block w-full max-w-lg flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-500 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-primary"
             />
-            <Button
-              type="button"
+            <SlCopyButton
+              value={webhookUrl}
               disabled={!token}
-              onClick={handleCopy}
-              variant="outline"
-              size="small"
-              icon={
-                copied ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-emerald-600">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                )
-              }
+              className={`${!token ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {copied ? 'Copied!' : 'Copy Link'}
-            </Button>
+              Copy Link
+            </SlCopyButton>
           </div>
         </div>
 

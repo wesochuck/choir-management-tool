@@ -23,6 +23,7 @@ import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { Button, Select, Spinner } from '../../components/ui';
+import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
 
 export default function SetListView() {
   const { timezone } = useChoirSettings();
@@ -76,9 +77,8 @@ export default function SetListView() {
 
   // Print Modal state
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
 
-  const getPlainText = () => {
+  const plainText = useMemo(() => {
     if (!selectedEvent) return '';
     return buildSetListPlainText(
       selectedEvent.title || selectedEvent.type,
@@ -87,19 +87,7 @@ export default function SetListView() {
       selectedEvent.expand?.venue?.name || '',
       itemsWithDetails
     );
-  };
-
-  const handleCopyList = async () => {
-    const text = getPlainText();
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
-    } catch (err: unknown) {
-      console.error('Failed to copy text: ', err);
-    }
-  };
+  }, [selectedEvent, timezone, itemsWithDetails]);
 
   const handlePrintList = () => {
     window.print();
@@ -136,15 +124,9 @@ export default function SetListView() {
               {url}
             </div>
             <div className="flex flex-row gap-2">
-              <Button 
-                variant="primary"
-                size="small"
-                onClick={() => {
-                  navigator.clipboard.writeText(url);
-                }}
-              >
+              <SlCopyButton value={url}>
                 Copy Link
-              </Button>
+              </SlCopyButton>
               <Button 
                 variant="secondary"
                 size="small"
@@ -277,7 +259,6 @@ export default function SetListView() {
   useEffect(() => {
     return () => {
       if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
-      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
     };
   }, []);
 
@@ -343,7 +324,6 @@ export default function SetListView() {
   };
 
   const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const selectedEventIdRef = useRef(selectedEventId);
 
   const handleAnnouncementGapChange = useCallback((seconds: number) => {
@@ -801,13 +781,9 @@ export default function SetListView() {
             >
               Close
             </Button>
-            <Button 
-              variant="secondary"
-              className="flex items-center gap-[6px]" 
-              onClick={handleCopyList}
-            >
-              {copied ? '✓ Copied!' : '📋 Copy Plain Text'}
-            </Button>
+            <SlCopyButton value={plainText} className="flex items-center gap-[6px]">
+              📋 Copy Plain Text
+            </SlCopyButton>
             <Button 
               variant="primary"
               className="flex items-center gap-[6px]" 

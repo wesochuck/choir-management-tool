@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import QRCode from 'qrcode';
 import { Button } from '../ui';
+import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
 
 interface QRCodeShareCardProps {
   title: string;
@@ -31,7 +32,6 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
   logoSize,
 }) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
-  const [copied, setCopied] = useState<boolean>(false);
   const [generationError, setGenerationError] = useState<boolean>(false);
 
   // Get absolute URL if relative
@@ -116,16 +116,6 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
     };
   }, [absoluteUrl, logoUrl, effectiveLogoSize]);
 
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(absoluteUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy text', err);
-    }
-  };
-
   const handleDownloadPNG = () => {
     if (!qrCodeUrl) return;
     const link = document.createElement('a');
@@ -189,16 +179,9 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
           
           {/* Actions */}
           <div className="mt-2 flex flex-wrap gap-2.5">
-            <Button
-              onClick={handleCopyLink}
-              variant={copied ? 'secondary' : 'outline'}
-              size="small"
-              className={`min-w-[100px] font-bold shadow-xs transition-all duration-150 ${
-                copied ? '!bg-emerald-50 !text-emerald-700 !border-emerald-200' : ''
-              }`}
-            >
-              {copied ? '✓ Copied' : '🔗 Copy Link'}
-            </Button>
+            <SlCopyButton value={absoluteUrl} className="min-w-[100px] font-bold shadow-xs transition-all duration-150">
+              🔗 Copy Link
+            </SlCopyButton>
             
             <Button
               onClick={handleDownloadPNG}
