@@ -1,13 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal, Button, Select } from '../ui';
+import { Modal, Button, Select, Input, Checkbox, Textarea } from '../ui';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
 import { SingerRsvpHistoryTab } from './SingerRsvpHistoryTab';
 import { SingerPatronageHistoryTab } from './SingerPatronageHistoryTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import SlTabGroup from '@shoelace-style/shoelace/dist/react/tab-group/index.js';
+import SlTab from '@shoelace-style/shoelace/dist/react/tab/index.js';
+import SlTabPanel from '@shoelace-style/shoelace/dist/react/tab-panel/index.js';
+import SlIcon from '@shoelace-style/shoelace/dist/react/icon/index.js';
+
+const TabGroup = SlTabGroup as unknown as React.ComponentType<
+  React.ComponentProps<typeof SlTabGroup> & {
+    value?: string;
+  }
+>;
 
 interface SingerModalProps {
   isOpen: boolean;
@@ -23,6 +33,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
   const [formData, setFormData] = useState<ProfileInput>({ ...defaultProfileInput });
   const [isSubmitting, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const emailInputRef = useRef<HTMLInputElement>(null);
 
   // Password reset state
   const [resetFeedback, setResetFeedback] = useState<string | null>(null);
@@ -86,17 +97,30 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr);
   };
 
+  const validateEmailField = useCallback(() => {
+    const email = formData.email?.trim();
+    if (email && !isValidEmail(email)) {
+      emailInputRef.current?.setCustomValidity('Please enter a valid email address.');
+      return false;
+    }
+    emailInputRef.current?.setCustomValidity('');
+    return true;
+  }, [formData.email]);
+
+  // Clear the custom validity message as the user types so the red error
+  // disappears immediately on edit (matches native browser validation behavior).
+  // Empty deps: setFormData and emailInputRef are stable across renders.
+  const handleEmailChange = useCallback((value: string) => {
+    setFormData((prev) => ({ ...prev, email: value }));
+    emailInputRef.current?.setCustomValidity('');
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    const email = formData.email || '';
-    if (email.trim() && !isValidEmail(email.trim())) {
-      await dialog.showMessage({
-        title: 'Invalid Email Format',
-        message: 'Please enter a valid email address.',
-        variant: 'danger',
-      });
+    if (!validateEmailField()) {
+      emailInputRef.current?.reportValidity?.();
       setIsLoading(false);
       return;
     }
@@ -205,264 +229,330 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       }
     >
       <div className="flex flex-col gap-4">
-        {initialData && (
-        <div className="mb-4 flex flex-row gap-4 border-b border-border">
-          <button
-            type="button"
-            onClick={() => setActiveTab('profile')}
-            className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'profile' ? 'border-b-2 border-primary font-semibold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
+        {initialData ? (
+          <TabGroup
+            value={activeTab}
+            onSlTabShow={(e: unknown) => {
+              const customEvent = e as CustomEvent;
+              setActiveTab(customEvent.detail.name as 'profile' | 'rsvps' | 'patronage');
+            }}
           >
-            Profile Info
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('rsvps')}
-            className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'rsvps' ? 'border-b-2 border-primary font-semibold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
-          >
-            Performance RSVPs
-          </button>
-          {isAdmin && (
-            <button
-              type="button"
-              onClick={() => setActiveTab('patronage')}
-              className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${activeTab === 'patronage' ? 'border-b-2 border-primary font-semibold text-primary' : 'border-b-2 border-transparent font-medium text-text-muted'}`}
-            >
-              Patronage
-            </button>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'profile' ? (
-        <form id="singer-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col items-center gap-1">
-            {initialData ? (
-              <>
-                <PhotoUploader
-                  profileId={initialData.id}
-                  profileName={initialData.name}
-                  currentPhotoUrl={initialData.photo ? pb.files.getURL(initialData, initialData.photo) : undefined}
-                  size="md"
-                  onSuccess={(updated) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      photo: updated.photo
-                    }));
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <div className="flex size-24 items-center justify-center rounded-full border-2 border-dashed border-border bg-bg text-4xl text-text-muted">
-                  ?
-                </div>
-                <span className="text-muted text-xs">Save first to add a photo</span>
-              </>
+            <SlTab slot="nav" panel="profile">
+              Profile Info
+            </SlTab>
+            <SlTab slot="nav" panel="rsvps">
+              Performance RSVPs
+            </SlTab>
+            {isAdmin && (
+              <SlTab slot="nav" panel="patronage">
+                Patronage
+              </SlTab>
             )}
-          </div>
 
-          <div className="flex flex-col items-start gap-1">
-            <label className="text-label">Name</label>
-            <input 
-              value={formData.name || ''} 
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-              required
-              className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col items-start gap-1">
-              <label className="text-label">Login Email (Optional)</label>
-              <input
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
-                placeholder="e.g. singer@example.com"
-              />
-              <p className="text-muted m-0 text-xs">
-                {initialData?.user 
-                  ? "Clearing this removes their login account." 
-                  : "Provides portal access via password reset email."}
-              </p>
-              {initialData?.user && formData.email && (
-                <div className="mt-[6px] flex flex-col items-start gap-1">
-                  <Button
-                    type="button"
-                    onClick={handleResetPassword}
-                    disabled={isResettingPassword}
-                    variant="secondary"
-                    size="tiny"
-                    className="cursor-pointer font-semibold"
-                    loading={isResettingPassword}
-                  >
-                    🔑 Reset Password
-                  </Button>
-                  {resetFeedback && (
-                    <span 
-                      className="text-[11px] font-semibold"
-                      // @allow-inline-style - dynamic feedback color from server response
-                      style={{
-                        color: resetFeedback.startsWith('Error') ? 'var(--color-danger-text, #ef4444)' : 'var(--color-success-text, #22c55e)'
+            <SlTabPanel name="profile">
+              <div className="pt-4 flex flex-col gap-4">
+                <form id="singer-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+                  <div className="flex flex-col items-center gap-1">
+                    <PhotoUploader
+                      profileId={initialData.id}
+                      profileName={initialData.name}
+                      currentPhotoUrl={initialData.photo ? pb.files.getURL(initialData, initialData.photo) : undefined}
+                      size="md"
+                      onSuccess={(updated) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          photo: updated.photo
+                        }));
                       }}
+                    />
+                  </div>
+
+                  <div className="flex flex-col items-start gap-1 w-full">
+                    <label className="text-label">Name</label>
+                    <Input 
+                      value={formData.name || ''} 
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col items-start gap-1">
+                      <label className="text-label">Login Email (Optional)</label>
+                      <Input
+                        ref={emailInputRef}
+                        type="email"
+                        value={formData.email || ''}
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        onBlur={validateEmailField}
+                        placeholder="e.g. singer@example.com"
+                      />
+                      <p className="text-muted m-0 text-xs">
+                        {initialData.user 
+                          ? "Clearing this removes their login account." 
+                          : "Provides portal access via password reset email."}
+                      </p>
+                      {initialData.user && formData.email && (
+                        <div className="mt-[6px] flex flex-col items-start gap-1">
+                          <Button
+                            type="button"
+                            onClick={handleResetPassword}
+                            disabled={isResettingPassword}
+                            variant="secondary"
+                            size="tiny"
+                            className="cursor-pointer font-semibold inline-flex items-center gap-1"
+                            loading={isResettingPassword}
+                          >
+                            <SlIcon name="key" className="text-xs" /> Reset Password
+                          </Button>
+                          {resetFeedback && (
+                            <span 
+                              className="text-[11px] font-semibold"
+                              // @allow-inline-style - dynamic feedback color from server response
+                              style={{
+                                color: resetFeedback.startsWith('Error') ? 'var(--color-danger-text, #ef4444)' : 'var(--color-success-text, #22c55e)'
+                              }}
+                            >
+                              {resetFeedback}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-start gap-1">
+                      <label className="text-label">Phone (Optional)</label>
+                      <Input 
+                        value={formData.phone || ''} 
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                        placeholder="e.g. 555-123-4567"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex flex-col items-start gap-1">
+                      <label className="text-label">Voice Part</label>
+                      <Select 
+                        value={formData.voicePart} 
+                        onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
+                        required={formData.role !== 'admin'}
+                        size="small"
+                      >
+                        {formData.role === 'admin' ? (
+                          <option value="">-- Not Applicable (Admin) --</option>
+                        ) : (
+                          <option value="" disabled>-- Please Select --</option>
+                        )}
+                        {voiceParts.map(v => (
+                          <option key={v.label} value={v.label}>
+                            {v.label} {v.fullName ? `(${v.fullName})` : ''}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="flex flex-col items-start gap-1">
+                      <label className="text-label">Status</label>
+                      <Select 
+                        value={formData.globalStatus} 
+                        onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
+                        size="small"
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Idle">Idle</option>
+                        <option value="Inactive">Inactive</option>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 gap-x-4">
+                    <Checkbox
+                      checked={formData.doNotEmail}
+                      onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
                     >
-                      {resetFeedback}
-                    </span>
+                      Do Not Email
+                    </Checkbox>
+                    <Checkbox
+                      checked={formData.statusIsManual}
+                      onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
+                    >
+                      Lock Status (Disable Automation)
+                    </Checkbox>
+                    <Checkbox
+                      checked={Boolean(formData.isSectionLeader)}
+                      onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
+                    >
+                      Section Leader
+                    </Checkbox>
+                    {formData.role === 'admin' && (
+                      <>
+                        <Checkbox
+                          checked={formData.receiveAttendanceReports !== false}
+                          onChange={(e) => setFormData({ ...formData, receiveAttendanceReports: e.target.checked })}
+                        >
+                          Receive Attendance Reports
+                        </Checkbox>
+                        <Checkbox
+                          checked={Boolean(formData.receiveRsvpDeclineNotices)}
+                          onChange={(e) => setFormData({ ...formData, receiveRsvpDeclineNotices: e.target.checked })}
+                        >
+                          Receive RSVP Decline Notices
+                        </Checkbox>
+                        <Checkbox
+                          checked={formData.receiveAdminNotifications !== false}
+                          onChange={(e) => setFormData({ ...formData, receiveAdminNotifications: e.target.checked })}
+                        >
+                          Receive General Admin Notifications
+                        </Checkbox>
+                      </>
+                    )}
+                    {formData.email?.trim() ? (
+                      <Checkbox
+                        checked={formData.role === 'admin'}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.checked ? 'admin' : 'singer' })}
+                        disabled={Boolean(isSelf)}
+                        title={isSelf ? "You cannot remove your own administrator permissions to prevent accidental lockout." : undefined}
+                        className={isSelf ? 'opacity-60 cursor-not-allowed' : ''}
+                      >
+                        Administrator
+                      </Checkbox>
+                    ) : <div />}
+                  </div>
+
+                  {initialData.statusLastChangedAt && (
+                    <div className="flex flex-row flex-wrap justify-between gap-[4px_12px] rounded-xl border border-border bg-bg p-[6px_10px] shadow-none">
+                      <div className="text-muted m-0 text-xs">
+                        <strong>Status Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleDateString()}
+                      </div>
+                      <div className="text-muted m-0 text-xs">
+                        <strong>Reason:</strong> {initialData.statusChangeReason || 'Manual update'}
+                      </div>
+                    </div>
                   )}
+
+                  <div className="flex flex-col items-start gap-1">
+                    <label className="text-label">Notes</label>
+                    <Textarea 
+                      value={formData.notes} 
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
+                    />
+                  </div>
+                </form>
+              </div>
+            </SlTabPanel>
+            <SlTabPanel name="rsvps">
+              <div className="pt-4">
+                <SingerRsvpHistoryTab singerId={initialData.id} isOpen={isOpen} isActive={activeTab === 'rsvps'} />
+              </div>
+            </SlTabPanel>
+            {isAdmin && (
+              <SlTabPanel name="patronage">
+                <div className="pt-4">
+                  <SingerPatronageHistoryTab profileId={initialData.id} isOpen={isOpen} isActive={activeTab === 'patronage'} />
                 </div>
-              )}
+              </SlTabPanel>
+            )}
+          </TabGroup>
+        ) : (
+          <form id="singer-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col items-center gap-1">
+              <div className="flex size-24 items-center justify-center rounded-full border-2 border-dashed border-border bg-bg text-4xl text-text-muted">
+                ?
+              </div>
+              <span className="text-muted text-xs">Save first to add a photo</span>
             </div>
-            <div className="flex flex-col items-start gap-1">
-              <label className="text-label">Phone (Optional)</label>
-              <input 
-                value={formData.phone || ''} 
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
-                className="h-[38px] min-h-[38px] w-full rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
-                placeholder="e.g. 555-123-4567"
+
+            <div className="flex flex-col items-start gap-1 w-full">
+              <label className="text-label">Name</label>
+              <Input 
+                value={formData.name || ''} 
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                required
               />
             </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col items-start gap-1">
-              <label className="text-label">Voice Part</label>
-              <Select 
-                value={formData.voicePart} 
-                onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
-                required={formData.role !== 'admin'}
-                size="small"
-              >
-                {formData.role === 'admin' ? (
-                  <option value="">-- Not Applicable (Admin) --</option>
-                ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col items-start gap-1">
+                <label className="text-label">Login Email (Optional)</label>
+                <Input
+                  ref={emailInputRef}
+                  type="email"
+                  value={formData.email || ''}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onBlur={validateEmailField}
+                  placeholder="e.g. singer@example.com"
+                />
+                <p className="text-muted m-0 text-xs">
+                  Provides portal access via password reset email.
+                </p>
+              </div>
+              <div className="flex flex-col items-start gap-1">
+                <label className="text-label">Phone (Optional)</label>
+                <Input 
+                  value={formData.phone || ''} 
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })} 
+                  placeholder="e.g. 555-123-4567"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex flex-col items-start gap-1">
+                <label className="text-label">Voice Part</label>
+                <Select 
+                  value={formData.voicePart} 
+                  onChange={(e) => setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })}
+                  required={formData.role !== 'admin'}
+                  size="small"
+                >
                   <option value="" disabled>-- Please Select --</option>
-                )}
-                {voiceParts.map(v => (
-                  <option key={v.label} value={v.label}>
-                    {v.label} {v.fullName ? `(${v.fullName})` : ''}
-                  </option>
-                ))}
-              </Select>
+                  {voiceParts.map(v => (
+                    <option key={v.label} value={v.label}>
+                      {v.label} {v.fullName ? `(${v.fullName})` : ''}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="flex flex-col items-start gap-1">
+                <label className="text-label">Status</label>
+                <Select 
+                  value={formData.globalStatus} 
+                  onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
+                  size="small"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Idle">Idle</option>
+                  <option value="Inactive">Inactive</option>
+                </Select>
+              </div>
             </div>
-            <div className="flex flex-col items-start gap-1">
-              <label className="text-label">Status</label>
-              <Select 
-                value={formData.globalStatus} 
-                onChange={(e) => setFormData({ ...formData, globalStatus: e.target.value as Profile['globalStatus'] })}
-                size="small"
-              >
-                <option value="Active">Active</option>
-                <option value="Idle">Idle</option>
-                <option value="Inactive">Inactive</option>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2 gap-x-4">
-            <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
-              <input
-                type="checkbox"
+                        <div className="grid grid-cols-2 gap-2 gap-x-4">
+              <Checkbox
                 checked={formData.doNotEmail}
                 onChange={(e) => setFormData({ ...formData, doNotEmail: e.target.checked })}
-                className="size-4 min-h-auto shrink-0 cursor-pointer accent-primary"
-              />
-              <span className="text-label">Do Not Email</span>
-            </label>
-            <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
-              <input
-                type="checkbox"
+              >
+                Do Not Email
+              </Checkbox>
+              <Checkbox
                 checked={formData.statusIsManual}
                 onChange={(e) => setFormData({ ...formData, statusIsManual: e.target.checked })}
-                className="size-4 min-h-auto shrink-0 cursor-pointer accent-primary"
-              />
-              <span className="text-label">Lock Status (Disable Automation)</span>
-            </label>
-            <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
-              <input
-                type="checkbox"
+              >
+                Lock Status (Disable Automation)
+              </Checkbox>
+              <Checkbox
                 checked={Boolean(formData.isSectionLeader)}
                 onChange={(e) => setFormData({ ...formData, isSectionLeader: e.target.checked })}
-                className="size-4 min-h-auto shrink-0 cursor-pointer accent-primary"
-              />
-              <span className="text-label">Section Leader</span>
-            </label>
-            {formData.role === 'admin' && (
-              <>
-                <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.receiveAttendanceReports !== false}
-                    onChange={(e) => setFormData({ ...formData, receiveAttendanceReports: e.target.checked })}
-                    className="size-4 min-h-auto shrink-0 cursor-pointer accent-primary"
-                  />
-                  <span className="text-label">Receive Attendance Reports</span>
-                </label>
-                <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(formData.receiveRsvpDeclineNotices)}
-                    onChange={(e) => setFormData({ ...formData, receiveRsvpDeclineNotices: e.target.checked })}
-                    className="size-4 min-h-auto shrink-0 cursor-pointer accent-primary"
-                  />
-                  <span className="text-label">Receive RSVP Decline Notices</span>
-                </label>
-                <label className="min-h-auto cursor-pointer flex flex-row items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.receiveAdminNotifications !== false}
-                    onChange={(e) => setFormData({ ...formData, receiveAdminNotifications: e.target.checked })}
-                    className="size-4 min-h-auto shrink-0 cursor-pointer accent-primary"
-                  />
-                  <span className="text-label">Receive General Admin Notifications</span>
-                </label>
-              </>
-            )}
-            {formData.email?.trim() ? (
-              <label
-                className={`min-h-auto cursor-pointer flex flex-row items-center gap-2${isSelf ? ' opacity-60' : ''}`}
-                title={isSelf ? "You cannot remove your own administrator permissions to prevent accidental lockout." : undefined}
               >
-                  <input
-                    type="checkbox"
-                    checked={formData.role === 'admin'}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.checked ? 'admin' : 'singer' })}
-                    disabled={Boolean(isSelf)}
-                    className={`size-4 min-h-auto shrink-0 accent-primary ${isSelf ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                  />
-                <span className="text-label">Administrator</span>
-              </label>
-            ) : <div />}
-          </div>
-
-          {initialData?.statusLastChangedAt && (
-            <div className="flex flex-row flex-wrap justify-between gap-[4px_12px] rounded-xl border border-border bg-bg p-[6px_10px] shadow-none">
-              <div className="text-muted m-0 text-xs">
-                <strong>Status Changed:</strong> {new Date(initialData.statusLastChangedAt).toLocaleDateString()}
-              </div>
-              <div className="text-muted m-0 text-xs">
-                <strong>Reason:</strong> {initialData.statusChangeReason || 'Manual update'}
-              </div>
+                Section Leader
+              </Checkbox>
             </div>
-          )}
 
-          <div className="flex flex-col items-start gap-1">
-            <label className="text-label">Notes</label>
-            <textarea 
-              value={formData.notes} 
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
-              className="h-[60px] min-h-[60px] w-full resize-y rounded-md border border-border bg-surface p-3 transition-colors outline-none focus:border-primary"
-            />
-          </div>
-        </form>
-      ) : activeTab === 'rsvps' ? (
-        initialData && (
-          <SingerRsvpHistoryTab singerId={initialData.id} isOpen={isOpen} isActive={activeTab === 'rsvps'} />
-        )
-      ) : (
-        initialData && (
-          <SingerPatronageHistoryTab profileId={initialData.id} isOpen={isOpen} isActive={activeTab === 'patronage'} />
-        )
-      )}
+            <div className="flex flex-col items-start gap-1">
+              <label className="text-label">Notes</label>
+              <Textarea 
+                value={formData.notes} 
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })} 
+              />
+            </div>
+          </form>
+        )}
       </div>
+
     </Modal>
   );
 };

@@ -17,12 +17,12 @@ function getDialog() {
 }
 
 function renderModal(
-  props: ModalProps,
+  props: Omit<ModalProps, 'children'>,
   children: React.ReactNode = React.createElement('p', null, 'content')
 ) {
   return render(
     React.createElement(DialogProvider, null,
-      React.createElement(Modal, props, children)
+      React.createElement(Modal, { ...props, children })
     )
   );
 }
@@ -51,6 +51,24 @@ test('Modal renders footer', () => {
   const footerEl = React.createElement('button', null, 'Save');
   renderModal({ isOpen: true, onClose: () => {}, footer: footerEl });
   assert.ok(within(document.body).getByText('Save'));
+});
+
+test('Modal renders as drawer when asDrawer is true', () => {
+  renderModal({ isOpen: true, onClose: () => {}, title: 'Drawer Title', asDrawer: true },
+    React.createElement('p', null, 'drawer content')
+  );
+  const drawer = document.body.querySelector('[data-drawer="true"]');
+  assert.ok(drawer, 'drawer element should exist');
+  assert.equal(drawer?.getAttribute('role'), 'dialog');
+  assert.equal(drawer?.getAttribute('aria-modal'), 'true');
+  const body = within(document.body);
+  assert.ok(body.getByText('Drawer Title'));
+  assert.ok(body.getByText('drawer content'));
+  // Structural assertions: confirm the drawer's interactive shape (close button,
+  // header, body) is intact, not just the data attribute.
+  assert.ok(body.getByRole('button', { name: 'Close' }), 'close button should be present');
+  assert.ok(drawer?.querySelector('h2'), 'should have a heading element');
+  assert.ok(drawer?.querySelector('p'), 'should render body content');
 });
 
 test('Modal calls onClose on Escape key', () => {

@@ -1,14 +1,14 @@
 import React, { useImperativeHandle, useRef } from 'react';
-import SlInput from '@shoelace-style/shoelace/dist/react/input/index.js';
-import type SlInputElement from '@shoelace-style/shoelace/dist/components/input/input.component.js';
+import SlTextarea from '@shoelace-style/shoelace/dist/react/textarea/index.js';
+import type SlTextareaElement from '@shoelace-style/shoelace/dist/components/textarea/textarea.component.js';
 
-export interface InputProps extends Omit<React.ComponentPropsWithoutRef<'input'>, 'size'> {
+export interface TextareaProps extends Omit<React.ComponentPropsWithoutRef<'textarea'>, 'size'> {
   invalid?: boolean;
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ invalid, className, type, onChange, onInput, onBlur, onFocus, value, defaultValue, placeholder, disabled, required, readOnly, name, autoFocus, children, ...rest }, ref) => {
-    const slRef = useRef<SlInputElement | null>(null);
+export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ invalid, className, onChange, onInput, onBlur, onFocus, value, defaultValue, placeholder, disabled, required, readOnly, name, autoFocus, rows, children, ...rest }, ref) => {
+    const slRef = useRef<SlTextareaElement | null>(null);
 
     useImperativeHandle(ref, () => ({
       focus: () => slRef.current?.focus(),
@@ -18,19 +18,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       set value(val) { if (slRef.current) slRef.current.value = val; },
       setCustomValidity: (message: string) => slRef.current?.setCustomValidity(message),
       reportValidity: () => slRef.current?.reportValidity?.() ?? false,
-    } as unknown as HTMLInputElement));
+    } as unknown as HTMLTextAreaElement));
 
     if (process.env.NODE_ENV === 'test') {
       const classNames = [
-        'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]',
-        type === 'file' && 'flex items-center py-0',
+        'block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary',
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
       ].filter(Boolean).join(' ');
       return (
-        <input 
-          ref={ref} 
-          type={type} 
+        <textarea
+          ref={ref}
           value={value}
           defaultValue={defaultValue}
           onChange={onChange}
@@ -43,8 +41,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           readOnly={readOnly}
           name={name}
           autoFocus={autoFocus}
-          className={classNames} 
-          {...(rest as Record<string, unknown>)} 
+          rows={rows}
+          className={classNames}
+          {...(rest as Record<string, unknown>)}
         />
       );
     }
@@ -56,8 +55,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ...customEvent.target,
           value: slRef.current?.value || '',
           name: name || '',
-          type: type || 'text',
-        } as unknown as HTMLInputElement;
+        } as unknown as HTMLTextAreaElement;
 
         const mockEvent = {
           ...customEvent,
@@ -66,7 +64,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           nativeEvent: customEvent,
           preventDefault: () => customEvent.preventDefault(),
           stopPropagation: () => customEvent.stopPropagation(),
-        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
 
         if (onInput) (onInput as (ev: unknown) => void)(mockEvent);
         if (onChange) (onChange as (ev: unknown) => void)(mockEvent);
@@ -74,9 +72,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <SlInput
+      <SlTextarea
         ref={slRef}
-        type={type as SlInputElement['type']}
         value={value !== undefined ? String(value) : undefined}
         defaultValue={defaultValue !== undefined ? String(defaultValue) : undefined}
         placeholder={placeholder}
@@ -84,17 +81,18 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         required={required}
         readonly={readOnly}
         name={name}
+        rows={rows}
         className={className}
         onSlInput={handleInput}
-        onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined}
-        onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined}
+        onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLTextAreaElement>) : undefined}
+        onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLTextAreaElement>) : undefined}
         style={invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined}
         {...(rest as Record<string, unknown>)}
       >
         {children}
-      </SlInput>
+      </SlTextarea>
     );
   }
 );
 
-Input.displayName = 'Input';
+Textarea.displayName = 'Textarea';

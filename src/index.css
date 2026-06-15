@@ -1,10 +1,24 @@
 @import "tailwindcss";
+@import "@shoelace-style/shoelace/dist/themes/light.css";
+@import "@shoelace-style/shoelace/dist/themes/dark.css";
 
-/* ----------------------------------------------------
-   Tailwind CSS v4 Custom Theme Configuration
-   ---------------------------------------------------- */
-@theme {
-  /* Branding & Semantic Colors */
+/* Map custom brand colors to Shoelace/Web Awesome design tokens */
+:root, .sl-theme-light {
+  --sl-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --sl-color-primary-50: #f4f7f5;
+  --sl-color-primary-100: #e9f0eb; /* matches --color-primary-light */
+  --sl-color-primary-200: #d2e1d7;
+  --sl-color-primary-300: #adc7b6;
+  --sl-color-primary-400: #81a68d;
+  --sl-color-primary-500: #5c8b6d;
+  --sl-color-primary-600: #4a7c59; /* matches --color-primary */
+  --sl-color-primary-700: #3b6347;
+  --sl-color-primary-800: #345940; /* matches --color-primary-deep */
+  --sl-color-primary-900: #2a4934;
+  --sl-color-primary-950: #1b3021;
+
+  /* Global light theme overrides */
   --color-primary: #4a7c59;
   --color-primary-light: #e9f0eb;
   --color-primary-deep: #345940;
@@ -14,6 +28,48 @@
   --color-muted: var(--color-slate-500);
   --color-text-muted: var(--color-slate-500);
   --color-border: var(--color-slate-200);
+  --color-surface-muted: var(--color-slate-50);
+}
+
+.sl-theme-dark, .dark {
+  --sl-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --sl-color-primary-50: #1b3021;
+  --sl-color-primary-100: #2a4934;
+  --sl-color-primary-200: #345940;
+  --sl-color-primary-300: #3b6347;
+  --sl-color-primary-400: #4a7c59;
+  --sl-color-primary-500: #5c8b6d;
+  --sl-color-primary-600: #81a68d;
+  --sl-color-primary-700: #adc7b6;
+  --sl-color-primary-800: #d2e1d7;
+  --sl-color-primary-900: #e9f0eb;
+  --sl-color-primary-950: #f4f7f5;
+
+  /* Global dark theme overrides */
+  --color-primary: #81a68d;
+  --color-primary-light: #2a4934;
+  --color-primary-deep: #adc7b6;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-text: #f8fafc;
+  --color-muted: var(--color-slate-400);
+  --color-text-muted: var(--color-slate-400);
+  --color-border: var(--color-slate-800);
+  --color-surface-muted: #1e293b;
+}
+
+@theme {
+  /* Branding & Semantic Colors mapping dynamic properties */
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-deep: var(--color-primary-deep);
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-text: var(--color-text);
+  --color-muted: var(--color-muted);
+  --color-text-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
   --color-danger-bg: var(--color-red-100);
   --color-danger-text: var(--color-red-800);
   --color-danger: var(--color-red-600);
@@ -22,7 +78,7 @@
   --color-warning-bg: var(--color-amber-100);
   --color-warning-text: var(--color-amber-800);
   --color-warning-border: var(--color-amber-200);
-  --color-surface-muted: var(--color-slate-50);
+  --color-surface-muted: var(--color-surface-muted);
 
   /* Section Representation Colors */
   --color-section-red: #EF4444;
@@ -216,3 +272,40 @@
 @utility print-landscape {
   page: landscape-canvas;
 }
+
+/* Custom Shoelace overrides for project aesthetics */
+sl-dialog::part(panel) {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem; /* rounded-lg */
+}
+
+sl-dialog::part(header) {
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.25rem 1.5rem;
+}
+
+sl-dialog::part(title) {
+  font-family: var(--default-font-family);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--color-text);
+}
+
+sl-dialog::part(body) {
+  padding: 1.25rem 1.5rem;
+  font-family: var(--default-font-family);
+}
+
+sl-dialog::part(footer) {
+  border-top: 1px solid var(--color-border);
+  padding: 1rem 1.5rem;
+}
+
+sl-dialog::part(close-button) {
+  color: var(--color-text-muted);
+}
+sl-dialog::part(close-button__base):hover {
+  color: var(--color-primary-deep);
+}
+

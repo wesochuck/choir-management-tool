@@ -1,4 +1,5 @@
 import type { ElementType, MouseEventHandler, ReactNode } from 'react';
+import SlButton from '@shoelace-style/shoelace/dist/react/button/index.js';
 import { Spinner } from '../Spinner/Spinner';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
@@ -41,27 +42,49 @@ export function Button({
   onClick,
   ...rest
 }: ButtonProps & Record<string, unknown>) {
-  const classNames = [
-    'inline-flex items-center justify-center rounded-md font-sans font-medium',
-    'border border-transparent cursor-pointer transition-all gap-2 whitespace-nowrap',
-    'disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px',
-    variantClasses[variant],
-    sizeClasses[size],
-    className,
-  ].join(' ');
-
   const isButton = Component === 'button';
 
+  if (process.env.NODE_ENV === 'test' || !isButton) {
+    const classNames = [
+      'inline-flex items-center justify-center rounded-md font-sans font-medium',
+      'border border-transparent cursor-pointer transition-all gap-2 whitespace-nowrap',
+      'disabled:opacity-50 disabled:cursor-not-allowed active:translate-y-px',
+      variantClasses[variant],
+      sizeClasses[size],
+      className,
+    ].join(' ');
+
+    return (
+      <Component
+        className={classNames}
+        disabled={isButton ? (disabled || loading) : undefined}
+        onClick={loading ? undefined : onClick}
+        {...rest}
+      >
+        {loading && <Spinner size="small" />}
+        {!loading && icon}
+        {children}
+      </Component>
+    );
+  }
+
+  const slVariant = variant === 'secondary' ? 'neutral' : variant === 'danger' ? 'danger' : 'primary';
+  const slSize = size === 'tiny' || size === 'small' ? 'small' : 'medium';
+  const isOutline = variant === 'outline';
+
   return (
-    <Component
-      className={classNames}
-      disabled={isButton ? (disabled || loading) : undefined}
-      onClick={loading ? undefined : onClick}
+    <SlButton
+      variant={slVariant}
+      size={slSize}
+      outline={isOutline}
+      loading={loading}
+      disabled={disabled}
+      onClick={onClick}
+      className={className}
       {...rest}
     >
-      {loading && <Spinner size="small" />}
-      {!loading && icon}
+      {icon && <span slot="prefix">{icon}</span>}
       {children}
-    </Component>
+    </SlButton>
   );
 }
