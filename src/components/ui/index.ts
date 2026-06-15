@@ -10,8 +10,6 @@ export { Badge } from './Badge/Badge';
 
 export { Modal } from './Modal/Modal';
 
-export { TabPanel } from './TabPanel/TabPanel';
-
 export { FormField } from './FormField/FormField';
 
 export { EmptyState } from './EmptyState/EmptyState';
