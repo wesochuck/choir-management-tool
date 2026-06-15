@@ -24,15 +24,24 @@ export function Modal({
   const dialog = useContext(DialogContext);
   const dialogRef = useRef<SlDialogElement | null>(null);
   const drawerRef = useRef<SlDrawerElement | null>(null);
+  // Breakpoint aligned with Tailwind's `md` boundary (768px): screens ≤ 767px are mobile.
   const isMobile = useMediaQuery('(max-width: 767px)');
   const isDrawerActive = asDrawer && isMobile;
+
+  // Refs keep the keydown effect stable across viewport flips so the listener
+  // doesn't churn on every resize across 767px. The handler reads the current
+  // ref via these refs, picking the active dialog/drawer at fire time.
+  const isDrawerActiveRef = useRef(isDrawerActive);
+  useEffect(() => {
+    isDrawerActiveRef.current = isDrawerActive;
+  }, [isDrawerActive]);
 
   // Implement Ctrl+Enter / Cmd+Enter form submission for Shoelace component
   useEffect(() => {
     if (!isOpen || process.env.NODE_ENV === 'test') return;
-    const activeRef = isDrawerActive ? drawerRef : dialogRef;
     const handleKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        const activeRef = isDrawerActiveRef.current ? drawerRef : dialogRef;
         const submitButton = activeRef.current?.querySelector<HTMLButtonElement>(
           'button[type="submit"]:not([disabled]), sl-button[type="submit"]:not([disabled])'
         );
@@ -54,7 +63,7 @@ export function Modal({
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, isDrawerActive]);
+  }, [isOpen]);
 
   const handleRequestClose = async (e: Event) => {
     if (isDirty) {

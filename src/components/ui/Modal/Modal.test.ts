@@ -64,6 +64,11 @@ test('Modal renders as drawer when asDrawer is true', () => {
   const body = within(document.body);
   assert.ok(body.getByText('Drawer Title'));
   assert.ok(body.getByText('drawer content'));
+  // Structural assertions: confirm the drawer's interactive shape (close button,
+  // header, body) is intact, not just the data attribute.
+  assert.ok(body.getByRole('button', { name: 'Close' }), 'close button should be present');
+  assert.ok(drawer?.querySelector('h2'), 'should have a heading element');
+  assert.ok(drawer?.querySelector('p'), 'should render body content');
 });
 
 test('Modal calls onClose on Escape key', () => {
