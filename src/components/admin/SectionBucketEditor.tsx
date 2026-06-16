@@ -57,7 +57,6 @@ export function SectionBucketEditor({
                     setConfigSections(newSecs);
                   }}
                   placeholder="Name"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
                 
                 <div className="relative flex items-center gap-2">
@@ -98,7 +97,7 @@ export function SectionBucketEditor({
                       setConfigSections(newSecs);
                     }}
                     placeholder="#FFFFFF"
-                    className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 font-mono text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                    className="w-24 font-mono"
                   />
 
                   {tooClose && (

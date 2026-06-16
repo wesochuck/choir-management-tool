@@ -14,7 +14,7 @@ export function RosterDisplayOptionsSettings({
     <AppCard title="Roster Display Options">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-slate-700">Default Status Filter</label>
+          <label className="text-label">Default Status Filter</label>
           <Select
             value={configDefaultStatus}
             onChange={(event) => setConfigDefaultStatus(event.target.value)}

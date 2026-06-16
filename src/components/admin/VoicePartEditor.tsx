@@ -66,7 +66,6 @@ export function VoicePartEditor({
                     setConfigVoiceParts(newParts);
                   }}
                   placeholder="Full Name"
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
                 />
                 <Select
                   value={vp.sectionCode}
@@ -117,7 +116,7 @@ export function VoicePartEditor({
                       setConfigVoiceParts(newParts);
                     }}
                     placeholder="Inherit"
-                    className="h-10 w-20 rounded-lg border border-slate-200 bg-white px-2 font-mono text-xs text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                    className="w-20 font-mono text-xs"
                   />
                 </div>
 
