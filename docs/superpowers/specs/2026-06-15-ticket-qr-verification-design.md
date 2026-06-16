@@ -84,7 +84,7 @@ Failure returns `{ valid: false, reason }` where reason is one of: `malformed`, 
   - `status === "paid"` → 409 otherwise (refund race with success-page load).
 - **Response (200):** `{ token, qrDataUri, buyerName, eventTitle, eventDate, isBundlePass }`
 - **Rate limit:** Light in-memory per-IP limit (e.g., 10 req/min). PocketHost-friendly, swappable to a collection-backed limiter later.
-- **QR image fallback:** Also serves the QR PNG at `GET /api/tickets/qr-image?token=<encoded>` (admin-auth) as a fallback for email clients that strip data URIs and for the scanner's manual-entry "preview" UX.
+- **QR image fallback:** No separate QR image endpoint needed. Email clients that strip SVG (notably Gmail) show a prominent "View your ticket QR" button alongside the QR. This button links to the success page, which renders the QR in the browser using the existing `qrcode.toDataURL()` code path from `QRCodeShareCard.tsx:65`.
 
 ### 3.3 Route registration
 
@@ -115,17 +115,27 @@ Add `{{TICKET_QR}}` to the three ticket email templates via a new forward migrat
 
 Extend the placeholder-protection block (lines 202-220) with a `%%TICKETQR%%` sentinel to shield `{{TICKET_QR}}` from the markdown renderer. After the existing `{{EVENT_INFO}}` substitution block, add:
 
-- Read `filters.ticketToken` and `filters.qrDataUri` from the queue record's metadata.
-- If both present, substitute `{{TICKET_QR}}` with a styled `<img>` tag:
-  ```html
-  <img src="data:image/png;base64,..."
-       style="display:block; margin:20px auto; max-width:240px;
-              border:1px solid #e2e8f0; border-radius:8px;
-              padding:8px; background:#fff"
-       alt="Ticket QR Code" />
-  ```
-- For bundle emails, prepend a styled caption `<p style='text-align:center; color:#475569; font-size:13px; margin:8px 0 0;'>Valid for any of the included performances</p>` above the img.
-- For plain-text: replace `{{TICKET_QR}}` with `[QR code included in HTML view — open this email in a client that displays images]`.
+- Read `filters.ticketToken`, `filters.qrSvgSrc`, and `filters.ticketScanUrl` from the queue record's metadata.
+- If all three are present, substitute `{{TICKET_QR}}` with an HTML block containing:
+  1. A styled inline SVG data URI `<img>` tag (visible in Apple Mail, Outlook desktop, iOS Mail, and most mobile clients):
+     ```html
+     <img src="data:image/svg+xml,<encoded-svg>"
+          style="display:block; margin:20px auto; max-width:280px;
+                 border:1px solid #e2e8f0; border-radius:8px;
+                 padding:8px; background:#fff"
+          alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+     ```
+  2. A prominent button-link for Gmail and webmail clients where SVG is stripped:
+     ```html
+     <a href="<success-page-url>" style="display:block; margin:12px auto; padding:12px 24px;
+            background:#4a7c59; color:white; text-align:center; border-radius:8px;
+            font-weight:bold; text-decoration:none; max-width:320px">
+       View your ticket QR
+     </a>
+     ```
+  3. A caption: "Pro tip: open this email on your phone for quick scanning at the door."
+- For bundle emails, prepend a styled caption `<p style='text-align:center; color:#475569; font-size:13px; margin:8px 0 0;'>Valid for any of the included performances</p>` above the QR block.
+- For plain-text: replace `{{TICKET_QR}}` with a line `[View your ticket QR: <success-page-url>]`.
 
 ### 4.3 Stripe webhook (`checkoutEndpoints.ts`)
 
@@ -134,23 +144,34 @@ At the existing email-enqueue blocks (line 622 for single, line 740 for bundle, 
 ```ts
 const token = generateSignedTicketToken($app, record.id);
 const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-const qrDataUri = fetchQrPngDataUri(scanUrl, 480);
-// Include ticketToken and qrDataUri in the queue record's filters JSON.
+const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+const qrSvg = renderQrSvg(scanUrl);
+const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+// Include ticketToken, qrSvgSrc, and ticketScanUrl in the queue record's filters JSON.
 ```
 
 - `baseUrl` is the existing computed base URL from `appSettings` (reused).
-- `fetchQrPngDataUri(url, sizePx)` calls `$http.send` to a third-party QR service (`api.qrserver.com/v1/create-qr-code/?data=...&size=480x480`), reads the PNG response body, and base64-encodes it to `data:image/png;base64,...`. At 480px with error correction H the payload is ~6-8KB. The HTTP call happens once per purchase at fulfillment time — one call, not fan-out.
+- `renderQrSvg(url)` calls the existing `qrcode` package's `toString(url, { type: 'svg', errorCorrectionLevel: 'H', margin: 2 })` to produce an SVG string. QR generation stays in-process — no `$http.send`, no external service.
+- `encodeURIComponent` wraps the SVG for embedding in a data URI. The `<img>` tag in the email loads it inline (no remote image blocking).
+- `successUrl` is the fallback link for clients that strip SVG (Gmail).
 
-### 4.4 Why third-party QR service (not a vendored encoder)
+### 4.4 Why SVG works in Goja
 
-PocketBase's Goja engine lacks `canvas`, `Buffer`, `zlib`/`deflate`, and native PNG encoding — all required to render a QR code matrix to a PNG data URI from scratch. A pure-JS QR encoder can build the module matrix, but it cannot serialize it to PNG bytes without these APIs. By fetching the PNG from a service, we get a clean, reliable image with no Goja compatibility workarounds. The trade-off is an external HTTP call at fulfillment time; if the service is unreachable, the email is still enqueued and sent (just without the QR image — the success page QR covers this gap). A self-hosted QR endpoint can replace this later if needed.
+| Capability | Needed for QR in email | Goja support |
+|-----------|----------------------|-------------|
+| QR matrix generation | Yes (mathematical dot pattern) | ✅ `qrcode` core is pure JS math |
+| SVG string rendering | Yes (`toString({ type: 'svg' })`) | ✅ String concatenation, no native APIs |
+| PNG rendering (`toDataURL`) | No (browser canvas only) | ❌ No DOM canvas |
+| PNG binary encoding | No (not using PNG) | ❌ No deflate/zlib |
+
+The `qrcode` package's `toString({ type: 'svg' })` method outputs an SVG string directly from the QR matrix — no canvas, no `Buffer`, no native code. This is pure JS string-building, which Goja handles natively. The only Goja limitation is the lack of DOM canvas, which prevents `toDataURL()` — but the success page provides that fallback in the browser for clients that need it.
 
 ### 4.5 QR helper module
 
 A single small file `pocketbase/pb_hooks_src/email/qrHelper.ts` containing:
 
-- `fetchQrPngDataUri(url: string, sizePx: number): string` — calls the QR service, returns a `data:image/png;base64,...` string. Returns empty string on failure (graceful degradation).
-- Used by the webhook (for email enqueue) and by `GET /api/tickets/qr-image` (for the hosted-image fallback).
+- `renderQrSvg(url: string): string` — calls the `qrcode` package's `toString(url, { type: 'svg', errorCorrectionLevel: 'H', margin: 2 })` to produce an SVG string. (The `qrcode` package is already a `package.json` dependency at `^1.5.4`.)
+- Used by the webhook (for email enqueue) to produce the inline SVG.
 
 ---
 
@@ -198,7 +219,7 @@ Add a "Scan Tickets" button or tab on the admin `TicketingView` dashboard linkin
 
 | File | Purpose |
 |------|---------|
-| `pocketbase/pb_hooks_src/email/qrHelper.ts` | `fetchQrPngDataUri` helper wrapping the third-party QR service |
+| `pocketbase/pb_hooks_src/email/qrHelper.ts` | `renderQrSvg` helper using the existing `qrcode` package's `toString({ type: 'svg' })` |
 | `pocketbase/pb_hooks_src/ticketScan/ticketValidation.ts` | `handleValidateScan` and `handleGetScanContext` handlers |
 | `pocketbase/pb_migrations/1720000000_add_qr_placeholder_to_ticket_emails.js` | Forward migration updating the three email templates |
 | `src/views/admin/TicketScanView.tsx` | Scanner view |
@@ -226,8 +247,8 @@ Add a "Scan Tickets" button or tab on the admin `TicketingView` dashboard linkin
 ## 7. Dependencies
 
 - **jsQR** (~43KB, MIT, zero peer deps) — added to `package.json`. Used in the admin scanner view for camera-based QR decoding.
-- **qrcode** — already a dependency. Not used for the email QR (server-side uses the third-party service); `QRCodeShareCard.tsx` continues using it for the existing marketing QRs.
-- **Third-party QR service** — `api.qrserver.com` called via `$http.send` at fulfillment time. Free, no API key required. For email-inline QRs and the hosted-image fallback endpoint.
+- **qrcode** (already at `^1.5.4`) — reused for the email SVG generation via `toString({ type: 'svg' })` (Goja-compatible, pure JS) and for the success-page browser PNG via `toDataURL()` (same code path as `QRCodeShareCard.tsx:65`). No new QR dependencies.
+- **No external services** — QR generation is in-process. No `$http.send` calls for QR rendering, no api.qrserver.com dependency.
 
 ---
 
@@ -260,7 +281,7 @@ rtk npm run typecheck
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Token per purchase | One HMAC token per `ticketPurchases` row | No per-attendee records exist; `quantity` field captures group size |
-| QR rendering in email | Inline base64 data URI via third-party QR service | Goja lacks canvas/zlib/PNG encoding; fetching PNG via `$http.send` is the simplest reliable path. No external deps installed, one HTTP call per purchase. Fallback: the success page QR covers cases where the service is unreachable at fulfillment time. |
+| QR rendering in email | Inline SVG data URI via `qrcode.toString({ type: 'svg' })` with "View your ticket QR" button fallback | Goja lacks canvas/zlib for PNG but handles pure-JS SVG string output natively. Reuses the existing `qrcode` dep. Gmail strips SVG — the prominent button fallback opens the success page where the browser renders a PNG via `toDataURL()`. No external service, no new deps. |
 | Scanner UI | Camera + manual-entry fallback, admin-only | Rear camera for phones; manual paste for laptops and camera-blocked browsers |
 | Bundle handling | Single QR covers all events in the bundle | `POST /api/tickets/validate` checks `bundle.events[]` membership dynamically |
 | QR on success page | `GET /api/tickets/scan-context` public endpoint gated by `session_id` | Avoids leaking HMAC secret to the URL; proof-of-payment via Stripe session_id match |
@@ -279,6 +300,6 @@ rtk npm run typecheck
 - [ ] PocketBase rules: new public endpoint validates `session_id` match before returning token.
 - [ ] Secrets: `HMAC_SECRET` never logged or returned to clients.
 - [ ] Token contract: `t=<id>&s=<sig>` payload matches AGENTS.md §6 canonical format.
-- [ ] Network safety: single `$http.send` calls, no fan-out.
+- [ ] Network safety: no fan-out; `scan-context` endpoint has per-IP rate limit.
 - [ ] Email images: inline data URI, no remote image blocking.
 - [ ] AGENTS.md prefix rule: all shell commands use `rtk`.
