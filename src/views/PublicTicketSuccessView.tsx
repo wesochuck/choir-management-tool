@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { ticketService, type TicketPurchase } from '../services/ticketService';
+import { ticketService, type TicketPurchase, type ScanContext } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
 import { Spinner } from '../components/ui/Spinner/Spinner';
@@ -14,6 +14,7 @@ export default function PublicTicketSuccessView() {
   const sessionId = searchParams.get('session_id') || '';
   const [loading, setLoading] = useState(true);
   const [purchase, setPurchase] = useState<TicketPurchase | null>(null);
+  const [scanContext, setScanContext] = useState<ScanContext | null>(null);
 
   useEffect(() => {
     async function verifyOrder() {
@@ -32,6 +33,19 @@ export default function PublicTicketSuccessView() {
     }
     verifyOrder();
   }, [sessionId]);
+
+  useEffect(() => {
+    async function fetchScanContext() {
+      if (!purchase || !sessionId) return;
+      try {
+        const ctx = await ticketService.getScanContext(sessionId, purchase.id);
+        setScanContext(ctx);
+      } catch {
+        // scan context unavailable — non-critical
+      }
+    }
+    fetchScanContext();
+  }, [purchase, sessionId]);
 
   if (loading) {
     return (
@@ -108,6 +122,20 @@ export default function PublicTicketSuccessView() {
           <div className="w-full rounded-lg bg-neutral-100 p-4">
             <p className="m-0 text-sm text-text-muted">
               We're finishing up enqueuing your confirmation email. You can safely navigate away. Your tickets are secured.
+            </p>
+          </div>
+        )}
+
+        {scanContext && (
+          <div className="flex w-full flex-col items-center gap-3 rounded-xl border border-border bg-white p-4 shadow-sm">
+            <h3 className="m-0 text-sm font-bold uppercase text-text-muted">Your Ticket QR</h3>
+            <img
+              src={scanContext.qrDataUri}
+              alt="Your ticket QR code"
+              className="max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
+            />
+            <p className="m-0 text-center text-xs text-text-muted">
+              Screenshot this — you'll need it at the door.
             </p>
           </div>
         )}
