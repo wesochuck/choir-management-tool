@@ -101,7 +101,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     },
     hmacTokens: {
         files: ['hmacTokens.ts'],
-        symbols: ['getHmacSecret', 'getPlayerPayload', 'getEventRecipientPayload', 'generateSignedPlayerToken', 'generateSignedEventRecipientToken', 'parseSignedToken'],
+        symbols: ['getHmacSecret', 'getPlayerPayload', 'getEventRecipientPayload', 'generateSignedPlayerToken', 'generateSignedEventRecipientToken', 'generateSignedTicketToken', 'parseSignedToken'],
         dependsOn: ['hookJson'],
     },
     timezone: {
@@ -559,6 +559,19 @@ try {
     if (val) choirName = val;
 } catch (e) {}
 
+let baseUrl = "http://localhost:5173";
+try {
+    const commRecord = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+    const comms = parseJsonField(commRecord.get("value"));
+    if (comms && comms.frontendUrl) baseUrl = comms.frontendUrl;
+} catch (e) {}
+if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+    const meta = $app.settings()?.meta;
+    const url = meta?.appUrl || meta?.appURL || "";
+    if (url) baseUrl = url;
+}
+baseUrl = baseUrl.trim().replace(/\/+$/g, "");
+
 events.forEach(event => {
     const purchases = $app.findRecordsByFilter(
         "ticketPurchases",
@@ -591,6 +604,13 @@ events.forEach(event => {
 
         const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
 
+        const stripeSessionId = purchase.get("stripeSessionId") || "";
+        const ticketToken = generateSignedTicketToken($app, purchase.id);
+        const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
+        const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrSvgSrc = "data:image/svg+xml," + encodeURIComponent(qrSvg);
+
         try {
             const queueCollection = $app.findCollectionByNameOrId("emailQueue");
             const mailRecord = new Record(queueCollection, {
@@ -603,7 +623,10 @@ events.forEach(event => {
                 attempts: 0,
                 filters: JSON.stringify({
                     eventId: event.id,
-                    type: "Ticket Buyer Reminder"
+                    type: "Ticket Buyer Reminder",
+                    ticketToken: ticketToken,
+                    qrSvgSrc: qrSvgSrc,
+                    successUrl: successUrl
                 })
             });
             $app.save(mailRecord);
