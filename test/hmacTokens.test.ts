@@ -1,15 +1,31 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+const globalRecord = globalThis as Record<string, unknown>;
+globalRecord.$security = {
+  hs256: (payload: string, secret: string) => `sig_${payload}_${secret}`
+};
+
 describe('hmacTokens', () => {
   it('getTicketPayload returns t=<purchaseId>', async () => {
     const { getTicketPayload } = await import('../pocketbase/pb_hooks_src/hmacTokens.ts');
     assert.equal(getTicketPayload('purchase_123'), 't=purchase_123');
   });
 
-  it('generateSignedTicketToken produces t=<id>&s=<sig>', async () => {
-    const { generateSignedTicketToken } = await import('../pocketbase/pb_hooks_src/hmacTokens.ts');
-    assert.equal(typeof generateSignedTicketToken, 'function');
+  it('generateSignedTicketToken produces valid signed token with secretOverride', async () => {
+    const { generateSignedTicketToken, parseSignedToken } = await import('../pocketbase/pb_hooks_src/hmacTokens.ts');
+    const mockApp = {} as never;
+    const secret = 'test-secret-for-tickets';
+
+    const token = generateSignedTicketToken(mockApp, 'purchase_xyz', secret);
+
+    assert.ok(token.startsWith('t=purchase_xyz&s='));
+    assert.ok(token.length > 't=purchase_xyz&s='.length);
+
+    const parsed = parseSignedToken(token, ['t', 's']);
+    assert.ok(parsed);
+    assert.equal(parsed.t, 'purchase_xyz');
+    assert.ok(parsed.s.length > 0);
   });
 
   it('parseSignedToken accepts t key and requires it when specified', async () => {
