@@ -13,8 +13,8 @@ const HISTORY_SIZE = 5;
 function extractToken(input: string): string {
   try {
     const url = new URL(input);
-    const t = url.searchParams.get('t');
-    if (t) return t;
+    const token = url.searchParams.get('token');
+    if (token) return token;
   } catch {
     // not a URL, use raw input
   }
@@ -173,7 +173,7 @@ export default function TicketScanView() {
       const code = jsQR(imageData.data, imageData.width, imageData.height);
 
       if (code && code.data && !validatingRef.current) {
-        handleValidateToken(code.data);
+        handleValidateToken(extractToken(code.data));
       }
     }, 150);
   }, [handleValidateToken]);
