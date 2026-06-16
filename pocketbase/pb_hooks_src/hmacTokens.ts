@@ -39,6 +39,20 @@ export function getAuditionPayload(auditionId: string): string {
     return `a=${auditionId}`;
 }
 
+/**
+ * Enforces strict payload property serialization order for Ticket validation links.
+ */
+export function getTicketPayload(purchaseId: string): string {
+    return `t=${purchaseId}`;
+}
+
+export function generateSignedTicketToken(app: PocketBaseApp, purchaseId: string, secretOverride?: string): string {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getTicketPayload(purchaseId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
+
 export function generateSignedPlayerToken(app: PocketBaseApp, eventId: string, secretOverride?: string): string {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -63,7 +77,7 @@ export function generateSignedAuditionToken(app: PocketBaseApp, auditionId: stri
 export function parseSignedToken(token: string, requiredKeys: string[]): Record<string, string> | null {
     if (!token || typeof token !== "string") return null;
     const parts: Record<string, string> = {};
-    const allowed: Record<string, boolean> = { s: true, e: true, p: true, a: true, c: true };
+    const allowed: Record<string, boolean> = { s: true, e: true, p: true, a: true, c: true, t: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0) return;
