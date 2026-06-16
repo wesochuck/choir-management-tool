@@ -58,7 +58,7 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 overflow-x-hidden overflow-y-auto pr-1">
+      <div className="flex flex-col gap-4 overflow-x-hidden overflow-y-auto px-1">
         {categories.map(cat => {
           const items = visiblePlaceholders.filter(p => p.category === cat);
           return (

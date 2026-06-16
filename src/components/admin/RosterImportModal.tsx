@@ -357,7 +357,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             Align the columns in your CSV with our system database fields. Smart auto-matches have been pre-selected.
           </p>
 
-          <div className="max-h-[350px] flex flex-col gap-2 overflow-y-auto pr-1">
+          <div className="max-h-[350px] flex flex-col gap-2 overflow-y-auto px-1">
             {fieldsConfig.map(field => {
               const selectedIndex = mapping[field.key];
               

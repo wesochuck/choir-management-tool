@@ -307,7 +307,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             Align the columns in your CSV with our music library database fields. Smart auto-matches have been pre-selected.
           </p>
 
-          <div className="flex max-h-[350px] flex-col gap-2 overflow-y-auto pr-1">
+          <div className="flex max-h-[350px] flex-col gap-2 overflow-y-auto px-1">
             {fieldsConfig.map(field => {
               const selectedIndex = mapping[field.key];
               const isRequiredMissing = field.required && selectedIndex === -1;

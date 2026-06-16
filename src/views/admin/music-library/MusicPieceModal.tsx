@@ -1083,7 +1083,7 @@ export function MusicPieceModal({
                     </div>
 
                     {localMovementsList.length > 0 && (
-                      <div className="flex max-h-[120px] flex-col gap-1 overflow-y-auto pr-1">
+                      <div className="flex max-h-[120px] flex-col gap-1 overflow-y-auto px-1">
                         {localMovementsList.map((m, idx) => (
                           <div
                             key={m.id}

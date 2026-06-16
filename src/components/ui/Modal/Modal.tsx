@@ -204,7 +204,7 @@ export function Modal({
               </button>
             </div>
           )}
-          <div className="flex-1 min-h-0 overflow-y-auto pr-1">{children}</div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-1">{children}</div>
           {footer && <div className="flex justify-end gap-2 border-t border-border pt-2">{footer}</div>}
         </div>
       </div>,
@@ -229,7 +229,7 @@ export function Modal({
           </div>
         )}
         
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        <div className="flex-1 min-h-0 overflow-y-auto px-1">
           {children}
         </div>
 
@@ -257,7 +257,7 @@ export function Modal({
         </div>
       )}
       
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+      <div className="flex-1 min-h-0 overflow-y-auto px-1">
         {children}
       </div>
 

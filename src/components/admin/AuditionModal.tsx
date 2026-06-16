@@ -271,7 +271,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               <p className="text-muted m-0 text-sm">
                 Select the potential time slots this applicant requested or is available for:
               </p>
-              <div className="max-h-[250px] flex flex-col gap-[10px] overflow-y-auto pr-1">
+              <div className="max-h-[250px] flex flex-col gap-[10px] overflow-y-auto px-1">
                 {(settings?.slots || []).map((slot) => {
                   const isChecked = formData.requestedSlots?.includes(slot);
                   return (

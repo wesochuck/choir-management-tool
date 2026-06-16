@@ -910,7 +910,7 @@ export default function PollsDashboardView() {
           </Button>
         }
       >
-        <div className="flex max-h-[400px] flex-col gap-2 overflow-y-auto pr-2 text-left">
+        <div className="flex max-h-[400px] flex-col gap-2 overflow-y-auto px-2 text-left">
           {recipientModal.recipients.map((r) => (
             <div
               key={r.id}

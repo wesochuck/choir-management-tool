@@ -694,7 +694,7 @@ export default function SeatingView() {
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
+                <div className="flex-1 flex flex-col gap-2 overflow-y-auto px-1">
                   {activeProfiles
                     .filter(p => !Object.values(optimisticAssignments).includes(p.id))
                     .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
