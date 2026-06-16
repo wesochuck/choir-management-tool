@@ -142,7 +142,22 @@ When creating new Shoelace-wrapped components, follow this same test-vs-producti
 
 - **Do not pass `undefined` or `null` children to Shoelace components.** Shoelace may iterate over `this.children` internally. An empty string or fragment is safer.
 
-- **Shoelace `SlButton` drops the `form` attribute.** The React adapter does not forward `form="some-id"` to the inner `<button>`. Never rely on `type="submit" form="..."` on a Shoelace `<Button>` when the button sits outside the `<form>` (e.g., inside a `Modal` footer). Use `onClick={() => document.getElementById('form-id')?.requestSubmit()}` as the trigger instead.
+- **Shoelace `SlButton` drops the `form` attribute.** The React adapter does not forward `form="some-id"` to the inner `<button>`. Never rely on `type="submit" form="..."` on a Shoelace `<Button>` when the button sits outside the `<form>` (e.g., inside a `Modal` footer).
+
+- **Do not use `requestSubmit()` as a workaround.** `document.getElementById('id')?.requestSubmit()` is fragile — it can silently fail because Shoelace form validation runs inside Shadow DOM and validation errors may not propagate correctly across the boundary. The correct pattern is to call the component's submit handler directly from the button's `onClick`. Make the handler's event parameter optional so it works from both contexts:
+
+  ```tsx
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
+    // ... save logic
+  };
+
+  // In the form (Enter key still works):
+  <form onSubmit={handleSubmit}>...</form>
+
+  // In the Modal footer (button outside <form>):
+  <Button onClick={() => handleSubmit()}>Save</Button>
+  ```
 
 - **Shoelace `SlButton` props pass through React first, then Lit's lifecycle.** React sets the attribute/property, then Lit's `updated()` runs. Timing issues can cause double renders. Use the wrapper's `className` / `variant` / `size` props rather than raw Shoelace attributes.
 

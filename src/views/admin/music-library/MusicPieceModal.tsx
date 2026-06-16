@@ -716,8 +716,8 @@ export function MusicPieceModal({
     };
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     setIsSaving(true);
     try {
       const normalizedDuration = duration.trim();
@@ -874,12 +874,11 @@ export function MusicPieceModal({
               <Button variant="outline" onClick={handleClose}>Cancel</Button>
             </div>
             <Button
-              type="submit"
-              form="music-piece-form"
               variant="primary"
               disabled={isSaving}
               loading={isSaving}
               className="w-full sm:w-auto"
+              onClick={() => handleSubmit()}
             >
               Save Piece
             </Button>
@@ -898,12 +897,11 @@ export function MusicPieceModal({
               </Button>
             </div>
             <Button
-              type="submit"
-              form="music-piece-form"
               variant="primary"
               disabled={isSaving}
               loading={isSaving}
               className="w-full sm:w-auto"
+              onClick={() => handleSubmit()}
             >
               Save Piece
             </Button>
@@ -912,11 +910,10 @@ export function MusicPieceModal({
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleClose}>Cancel</Button>
             <Button
-              type="submit"
-              form="music-piece-form"
               variant="primary"
               disabled={isSaving}
               loading={isSaving}
+              onClick={() => handleSubmit()}
             >
               Save Piece
             </Button>

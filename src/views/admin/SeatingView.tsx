@@ -764,8 +764,13 @@ export default function SeatingView() {
               variant="primary"
               className="px-6 whitespace-nowrap"
               disabled={!newChartName.trim()}
-              type="submit"
-              form="new-chart-form"
+              onClick={async () => {
+                if (newChartName.trim()) {
+                  await createChart(newChartName.trim());
+                  setIsNewChartModalOpen(false);
+                  setNewChartName('');
+                }
+              }}
             >
               Create
             </Button>
@@ -823,8 +828,14 @@ export default function SeatingView() {
               variant="primary"
               className="px-6 whitespace-nowrap"
               disabled={!renameChartName.trim()}
-              type="submit"
-              form="rename-chart-form"
+              onClick={async () => {
+                if (chartToRename && renameChartName.trim()) {
+                  await renameChart(chartToRename.id, renameChartName.trim());
+                  setIsRenameChartModalOpen(false);
+                  setRenameChartName('');
+                  setChartToRename(null);
+                }
+              }}
             >
               Save
             </Button>

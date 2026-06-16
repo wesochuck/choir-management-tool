@@ -279,8 +279,8 @@ export const EventModal: React.FC<EventModalProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     setIsLoading(true);
     try {
       const bulkConfig: BulkRehearsalConfig | undefined = shouldBulkAdd && formData.type === 'Performance' 
@@ -434,9 +434,8 @@ export const EventModal: React.FC<EventModalProps> = ({
               variant="primary"
               loading={isSubmitting}
               disabled={isSubmitting}
-              type="submit"
-              form="event-form"
               className="w-full sm:w-auto"
+              onClick={() => handleSubmit()}
             >
               Save Event
             </Button>
@@ -453,8 +452,7 @@ export const EventModal: React.FC<EventModalProps> = ({
               variant="primary"
               loading={isSubmitting}
               disabled={isSubmitting}
-              type="submit"
-              form="event-form"
+              onClick={() => handleSubmit()}
             >
               Save Event
             </Button>

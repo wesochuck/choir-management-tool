@@ -350,8 +350,8 @@ export default function TicketingView() {
     setIsModalOpen(true);
   };
 
-  const handleSaveBundle = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveBundle = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     if (!title.trim() || price <= 0 || capacity <= 0 || selectedEventIds.length === 0 || !saleEndDate) {
       dialog.showToast('Please fill out all required fields and select at least one event.');
       return;
@@ -1364,17 +1364,10 @@ export default function TicketingView() {
               Cancel
             </Button>
             <Button
-              form="bundle-form"
               variant="primary"
               disabled={saving}
               className="font-semibold"
-              onClick={() => {
-                // Submit the form programmatically
-                const form = document.getElementById('bundle-form') as HTMLFormElement;
-                if (form) {
-                  form.requestSubmit();
-                }
-              }}
+              onClick={() => handleSaveBundle()}
             >
               {saving ? "Saving..." : "Save Bundle"}
             </Button>

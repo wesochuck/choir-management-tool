@@ -115,8 +115,8 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
     emailInputRef.current?.setCustomValidity('');
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     setIsLoading(true);
 
     if (!validateEmailField()) {
@@ -213,12 +213,11 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
                 </div>
                 <Button
-                  type="submit"
-                  form="singer-form"
                   disabled={isSubmitting}
                   variant="primary"
                   loading={isSubmitting}
                   className="w-full sm:w-auto"
+                  onClick={() => handleSubmit()}
                 >
                   Save Changes
                 </Button>
@@ -227,11 +226,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
               <div className="flex justify-end gap-2">
                 <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
                 <Button
-                  type="submit"
-                  form="singer-form"
                   disabled={isSubmitting}
                   variant="primary"
                   loading={isSubmitting}
+                  onClick={() => handleSubmit()}
                 >
                   Save Changes
                 </Button>

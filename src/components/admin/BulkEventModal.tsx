@@ -118,8 +118,8 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     const performance = performances.find(p => p.id === selectedPerformanceId);
     if (!performance) {
       await dialog.showMessage({
@@ -187,11 +187,10 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
           <Button 
-            type="submit" 
-            form="bulk-event-form"
             disabled={isSubmitting}
             variant="primary"
             loading={isSubmitting}
+            onClick={() => handleSubmit()}
           >
             Generate Rehearsals
           </Button>
