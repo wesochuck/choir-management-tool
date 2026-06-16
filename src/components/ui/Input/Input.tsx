@@ -6,31 +6,69 @@ export interface InputProps extends Omit<React.ComponentPropsWithoutRef<'input'>
   invalid?: boolean;
 }
 
+const baseInputClasses =
+  'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]';
+
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ invalid, className, type, onChange, onInput, onBlur, onFocus, value, defaultValue, placeholder, disabled, required, readOnly, name, autoFocus, children, ...rest }, ref) => {
     const slRef = useRef<SlInputElement | null>(null);
+    const nativeRef = useRef<HTMLInputElement | null>(null);
 
-    useImperativeHandle(ref, () => ({
-      focus: () => slRef.current?.focus(),
-      blur: () => slRef.current?.blur(),
-      select: () => slRef.current?.select(),
-      get value() { return slRef.current?.value || ''; },
-      set value(val) { if (slRef.current) slRef.current.value = val; },
-      setCustomValidity: (message: string) => slRef.current?.setCustomValidity(message),
-      reportValidity: () => slRef.current?.reportValidity?.() ?? false,
-    } as unknown as HTMLInputElement));
+    useImperativeHandle(ref, () => {
+      if (type === 'file') {
+        return nativeRef.current as unknown as HTMLInputElement;
+      }
+      return {
+        focus: () => slRef.current?.focus(),
+        blur: () => slRef.current?.blur(),
+        select: () => slRef.current?.select(),
+        get value() { return slRef.current?.value || ''; },
+        set value(val) { if (slRef.current) slRef.current.value = val; },
+        setCustomValidity: (message: string) => slRef.current?.setCustomValidity(message),
+        reportValidity: () => slRef.current?.reportValidity?.() ?? false,
+      } as unknown as HTMLInputElement;
+    });
 
-    if (process.env.NODE_ENV === 'test') {
+    // File inputs must use a native <input>: SlInput's internal live(value) binding
+    // sets the inner input's .value on every render, which throws InvalidStateError
+    // for file inputs (browsers only allow setting .value to '').
+    if (type === 'file') {
       const classNames = [
-        'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]',
-        type === 'file' && 'flex items-center py-0',
+        baseInputClasses,
+        'flex items-center py-0',
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
       ].filter(Boolean).join(' ');
       return (
-        <input 
-          ref={ref} 
-          type={type} 
+        <input
+          ref={nativeRef}
+          type={type}
+          onChange={onChange}
+          onInput={onInput}
+          onBlur={onBlur}
+          onFocus={onFocus}
+          placeholder={placeholder}
+          disabled={disabled}
+          required={required}
+          readOnly={readOnly}
+          name={name}
+          autoFocus={autoFocus}
+          className={classNames}
+          {...(rest as Record<string, unknown>)}
+        />
+      );
+    }
+
+    if (process.env.NODE_ENV === 'test') {
+      const classNames = [
+        baseInputClasses,
+        invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
+        className,
+      ].filter(Boolean).join(' ');
+      return (
+        <input
+          ref={ref}
+          type={type}
           value={value}
           defaultValue={defaultValue}
           onChange={onChange}
@@ -43,8 +81,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           readOnly={readOnly}
           name={name}
           autoFocus={autoFocus}
-          className={classNames} 
-          {...(rest as Record<string, unknown>)} 
+          className={classNames}
+          {...(rest as Record<string, unknown>)}
         />
       );
     }
