@@ -272,7 +272,7 @@ export default function PatronsView() {
                     type="date" 
                     value={startDate}
                     onChange={e => handleSetStartDate(e.target.value)}
-                    className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
                   />
                 </FormField>
               </div>
@@ -282,7 +282,7 @@ export default function PatronsView() {
                     type="date" 
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
                   />
                 </FormField>
               </div>

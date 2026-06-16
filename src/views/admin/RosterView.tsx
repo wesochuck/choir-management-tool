@@ -257,7 +257,7 @@ export default function RosterView() {
               <Button
                 onClick={() => setIsImportModalOpen(true)}
                 variant="secondary"
-                className="px-3 font-semibold md:px-6"
+                className=""
                 title="Import CSV"
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -399,7 +399,7 @@ export default function RosterView() {
             <Select 
               value={filters.status} 
               onChange={(e) => setFilter('status', e.target.value)}
-              className="!w-[200px] !text-base"
+              className="!w-[200px]"
             >
               <option value="">All Statuses</option>
               <option value="Active">Active</option>
@@ -410,7 +410,7 @@ export default function RosterView() {
             <Select 
               value={sortBy} 
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              className="!w-[200px] !text-base"
+              className="!w-[200px]"
             >
               <option value="lastName">Last Name</option>
               <option value="voicePart">Voice Part + Last Name</option>
@@ -424,7 +424,7 @@ export default function RosterView() {
                   setFilter('status', '');
                 }}
                 variant="secondary"
-                className="flex items-center gap-1 whitespace-nowrap"
+                className="flex items-center gap-1"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>

@@ -716,7 +716,7 @@ export default function AttendanceView() {
                       }
                     }}
                     variant="primary"
-                    className="font-bold"
+                    className=""
                   >
                     Mark Present
                   </Button>
@@ -744,7 +744,7 @@ export default function AttendanceView() {
                       }
                     }}
                     variant="danger"
-                    className="font-bold"
+                    className=""
                     disabled={remainingUnmarkedProfileIds.length === 0}
                   >
                     Mark Remaining Absent
@@ -778,7 +778,7 @@ export default function AttendanceView() {
                       }
                     }}
                     variant="secondary"
-                    className="font-bold"
+                    className=""
                   >
                     Reset All
                   </Button>
@@ -859,7 +859,7 @@ export default function AttendanceView() {
                           disabled={!selectedDeclinedProfileId}
                           onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
                           variant="danger"
-                          className="font-bold whitespace-nowrap"
+                          className=""
                         >
                           + Add Back
                         </Button>

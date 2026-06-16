@@ -365,7 +365,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
       return hasTitle || hasDetails || hasVenue || hasParent || hasRsvp || hasCallTime || isDurationChanged || isTypeChanged || hasBulkAdd || hasInlineVenue || hasTicketing;
     }
-  }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, eventGraphicFile]);
+  }, [formData, initialData, timezone, shouldBulkAdd, newVenueName, newVenueRows, newVenueAddress, eventGraphicFile, isGraphicRemoved]);
 
   const handleClose = async () => {
     if (isDirty) {

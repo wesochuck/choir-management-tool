@@ -40,6 +40,7 @@ export default defineConfig([
             'director-indicator',
             'seating-row-action-btn',
             'seating-toolbar',
+            'prose',
           ],
         },
       ],

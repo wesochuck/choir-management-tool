@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @import "@shoelace-style/shoelace/dist/themes/light.css";
 @import "@shoelace-style/shoelace/dist/themes/dark.css";
 

@@ -525,7 +525,7 @@ export default function SetListView() {
                     type="checkbox"
                     checked={localApproved}
                     onChange={(e) => handleToggleApproved(e.target.checked)}
-                    className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
+                    className="size-4 cursor-pointer rounded focus:ring-primary/25"
                   />
                   <span>Approved for Singers</span>
                 </label>

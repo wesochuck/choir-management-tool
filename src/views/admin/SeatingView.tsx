@@ -321,7 +321,7 @@ export default function SeatingView() {
             <Select
               value={performanceId}
               onChange={(e) => setPerformanceId(e.target.value)}
-              size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+              size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
             >
               <option value="">-- Select Performance --</option>
               {performances.map(p => (
@@ -336,7 +336,7 @@ export default function SeatingView() {
               <Select
                 value={venueId}
                 onChange={(e) => setVenueId(e.target.value)}
-                size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+                size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
               >
                 <option value="">-- Select Venue --</option>
                 {venues.map(v => (
@@ -397,7 +397,7 @@ export default function SeatingView() {
 
                 await updateChart({ formationId: selectedId, assignments: {} });
               }}
-              size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+              size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
             >
               {seatingSettings.formations?.map(formation => (
                 <option key={formation.id} value={formation.id}>{formation.name}</option>
@@ -416,7 +416,7 @@ export default function SeatingView() {
                     setActiveChartId(e.target.value);
                   }
                 }}
-                size="small" className="text-slate-900 focus:!border-primary focus:!ring-1 focus:!ring-primary"
+                size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
               >
                 {chartList.map((c, index) => (
                   <option key={c.id} value={c.id}>{`${index + 1}. ${c.name}`}</option>

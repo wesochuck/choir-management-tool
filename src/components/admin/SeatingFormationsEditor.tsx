@@ -171,7 +171,7 @@ function FormationRow({
               });
             }}
             placeholder="Formation Name"
-            className="h-[38px] w-full rounded-md border border-border bg-surface px-2 transition-colors outline-none focus:border-primary"
+            className="h-[38px] w-full transition-colors outline-none"
           />
           <Select
             value={formation.strategy}

@@ -103,7 +103,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
       historyRef.current?.value(initialSettings.historyText);
       if (fileInputRef.current) fileInputRef.current.value = '';
     },
-  }), [settings, initialSettings, heroImageUrl, initialHeroImageUrl, heroImageFile, heroImageRemoved]);
+  }), [settings, initialSettings, initialHeroImageUrl, heroImageFile, heroImageRemoved]);
 
   const handleChange = <K extends keyof LandingPageSettings>(field: K, value: LandingPageSettings[K]) => {
     setSettings(prev => ({ ...prev, [field]: value }));
@@ -170,7 +170,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
             type="text"
             value={settings.heroHeadline}
             onChange={e => handleChange('heroHeadline', e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-md bg-bg-input text-text"
+            className="w-full"
           />
         </div>
 
@@ -180,7 +180,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
             type="text"
             value={settings.heroSubtitle}
             onChange={e => handleChange('heroSubtitle', e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-md bg-bg-input text-text"
+            className="w-full"
           />
         </div>
 
@@ -210,7 +210,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
             type="email"
             value={settings.contactEmail}
             onChange={e => handleChange('contactEmail', e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-md bg-bg-input text-text"
+            className="w-full"
             placeholder="contact@example.com"
           />
         </div>

@@ -123,7 +123,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   });
                   onClose();
                 }}
-                className="!h-auto !min-h-0 !p-0 font-semibold text-primary underline hover:text-primary-deep"
+                className="!h-auto !min-h-0"
               >
                 {formData.contact}
               </Button>

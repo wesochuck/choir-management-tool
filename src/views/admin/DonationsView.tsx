@@ -806,7 +806,7 @@ export default function DonationsView() {
                     <Button
                       variant="outline"
                       onClick={() => openLevelModal()}
-                      className="group flex min-h-[150px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/20 p-5 text-center transition-all hover:border-primary hover:bg-slate-50"
+                      className="group flex min-h-[150px] cursor-pointer flex-col items-center justify-center transition-all"
                     >
                       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-2.5 text-slate-400 shadow-sm transition-colors group-hover:border-primary/40 group-hover:text-primary">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

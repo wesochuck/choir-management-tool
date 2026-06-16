@@ -753,7 +753,7 @@ export default function TicketingView() {
                     <Button 
                       variant="outline" 
                       onClick={() => setSearchQuery('')}
-                      className="flex h-10 items-center justify-center px-3 font-semibold"
+                      className="flex h-10 items-center justify-center"
                       title="Reset search"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1046,7 +1046,7 @@ export default function TicketingView() {
                                 onClick={() => handleOpenEditModal(b)}
                                 variant="secondary"
                                 size="small"
-                                className="font-semibold"
+                                className=""
                               >
                                 Edit
                               </Button>
@@ -1054,7 +1054,7 @@ export default function TicketingView() {
                                 onClick={() => handleDeleteBundle(b.id, b.events)}
                                 variant="danger"
                                 size="small"
-                                className="font-semibold"
+                                className=""
                               >
                                 Delete
                               </Button>
@@ -1209,7 +1209,7 @@ export default function TicketingView() {
                                 onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
                                 variant="danger"
                                 size="small"
-                                className="font-semibold"
+                                className=""
                               >
                                 Refund Bundle
                               </Button>
