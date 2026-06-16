@@ -16,13 +16,12 @@ cronAdd("post_event_report", "0 * * * *", () => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -38,7 +37,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -276,54 +275,63 @@ cronAdd("post_event_report", "0 * * * *", () => {
         if (!linkedPerformance)
             return;
         const activeProfiles = app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
-        activeProfiles.forEach(profile => {
-            let perfRsvpYes = false;
-            try {
-                const perfRosters = app.findRecordsByFilter("eventRosters", "event = {:perfId} && profile = {:profileId}", "", 1, 0, { perfId: linkedPerfId, profileId: profile.id });
-                if (perfRosters && perfRosters.length > 0 && perfRosters[0].get("rsvp") === "Yes") {
-                    perfRsvpYes = true;
-                }
+        // Batch: fetch all RSVP'd rosters for the linked performance at once
+        const performingProfileIds = {};
+        try {
+            const perfRosters = app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
+            if (perfRosters) {
+                perfRosters.forEach(r => {
+                    if (r.get("rsvp") === "Yes") {
+                        performingProfileIds[r.get("profile")] = true;
+                    }
+                });
             }
-            catch (_a) {
-                // ignore
+        }
+        catch (_b) {
+            // ignore
+        }
+        // Batch: fetch all existing rosters for the current event at once
+        const existingRostersByProfile = {};
+        try {
+            const existingRosters = app.findRecordsByFilter("eventRosters", "event = {:eventId}", "", 1000, 0, { eventId: event.id });
+            if (existingRosters) {
+                existingRosters.forEach(r => {
+                    existingRostersByProfile[r.get("profile")] = r;
+                });
             }
-            if (perfRsvpYes) {
-                let rosterRecord = null;
+        }
+        catch (_c) {
+            // ignore
+        }
+        for (const profile of activeProfiles || []) {
+            if (!performingProfileIds[profile.id])
+                continue;
+            let rosterRecord = existingRostersByProfile[profile.id] || null;
+            if (!rosterRecord) {
+                const rosterCollection = app.findCollectionByNameOrId("eventRosters");
+                rosterRecord = new Record(rosterCollection, {
+                    event: event.id,
+                    profile: profile.id,
+                    rsvp: "Pending",
+                    attendance: "Absent"
+                });
                 try {
-                    const rosters = app.findRecordsByFilter("eventRosters", "event = {:eventId} && profile = {:profileId}", "", 1, 0, { eventId: event.id, profileId: profile.id });
-                    if (rosters && rosters.length > 0) {
-                        rosterRecord = rosters[0];
-                    }
+                    app.save(rosterRecord);
                 }
-                catch (_b) {
-                    // ignore
-                }
-                if (!rosterRecord) {
-                    const rosterCollection = app.findCollectionByNameOrId("eventRosters");
-                    rosterRecord = new Record(rosterCollection, {
-                        event: event.id,
-                        profile: profile.id,
-                        rsvp: "Pending",
-                        attendance: "Absent"
-                    });
-                    try {
-                        app.save(rosterRecord);
-                    }
-                    catch (e) {
-                        console.log("Failed to auto-create Absent roster record: " + e);
-                    }
-                }
-                else if (rosterRecord.get("attendance") === "Pending" || rosterRecord.get("attendance") === "") {
-                    rosterRecord.set("attendance", "Absent");
-                    try {
-                        app.save(rosterRecord);
-                    }
-                    catch (e) {
-                        console.log("Failed to auto-update roster record to Absent: " + e);
-                    }
+                catch (e) {
+                    console.log("Failed to auto-create Absent roster record: " + e);
                 }
             }
-        });
+            else if (rosterRecord.get("attendance") === "Pending" || rosterRecord.get("attendance") === "") {
+                rosterRecord.set("attendance", "Absent");
+                try {
+                    app.save(rosterRecord);
+                }
+                catch (e) {
+                    console.log("Failed to auto-update roster record to Absent: " + e);
+                }
+            }
+        }
     }
 
     // --- Utility source: rsvpValidation.ts ---
@@ -495,38 +503,45 @@ cronAdd("post_event_report", "0 * * * *", () => {
                     const activeProfiles = $app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
                     const exceededSingers = [];
 
-                    // Fetch rosters for past rehearsals
+                    // Batch: fetch all rosters for past rehearsals at once
                     const pastRehearsalRosters = [];
-                    pastRehearsalIds.forEach(rehId => {
-                        try {
-                            const rList = $app.findRecordsByFilter("eventRosters", "event = {:rehId}", "", 1000, 0, { rehId });
-                            pastRehearsalRosters.push(rList || []);
-                        } catch (e) {
-                            pastRehearsalRosters.push([]);
+                    const filterParts = pastRehearsalIds.map((_, i) => "event = {:rid" + i + "}").join(" || ");
+                    const filterParams = {};
+                    pastRehearsalIds.forEach((id, i) => { filterParams["rid" + i] = id; });
+                    try {
+                        const allRosters = $app.findRecordsByFilter("eventRosters", filterParts, "", 5000, 0, filterParams);
+                        pastRehearsalRosters.push(...(allRosters || []));
+                    } catch (e) {}
+
+                    // Batch: fetch all RSVP'd rosters for the linked performance at once
+                    const performingProfileIds = {};
+                    try {
+                        const perfRosters = $app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
+                        if (perfRosters) {
+                            perfRosters.forEach(r => {
+                                if (r.get("rsvp") === "Yes") {
+                                    performingProfileIds[r.get("profile")] = true;
+                                }
+                            });
                         }
+                    } catch (e) {}
+
+                    // Build a map of rehearsal rosters by profile for quick lookup
+                    const pastRostersByProfile = {};
+                    pastRehearsalRosters.forEach(r => {
+                        const profileId = r.get("profile");
+                        if (!pastRostersByProfile[profileId]) {
+                            pastRostersByProfile[profileId] = [];
+                        }
+                        pastRostersByProfile[profileId].push(r);
                     });
 
                     activeProfiles.forEach(profile => {
-                        let perfRsvpYes = false;
-                        try {
-                            const perfRosters = $app.findRecordsByFilter(
-                                "eventRosters",
-                                "event = {:perfId} && profile = {:profileId}",
-                                "",
-                                1,
-                                0,
-                                { perfId: linkedPerfId, profileId: profile.id }
-                            );
-                            if (perfRosters && perfRosters.length > 0 && perfRosters[0].get("rsvp") === "Yes") {
-                                perfRsvpYes = true;
-                            }
-                        } catch (e) {}
-
-                        if (perfRsvpYes) {
-                            let missCount = 0;
-                            pastRehearsals.forEach((reh, index) => {
-                                const rosters = pastRehearsalRosters[index];
-                                const r = rosters.find(x => x.get("profile") === profile.id);
+                        if (!performingProfileIds[profile.id]) return;
+                        const profileRosters = pastRostersByProfile[profile.id] || [];
+                        let missCount = 0;
+                        pastRehearsals.forEach(reh => {
+                            const r = profileRosters.find(x => x.get("event") === reh.id);
                                 
                                 const wasDeclined = r ? r.get("rsvp") === "No" : false;
                                 const wasAbsent = r ? r.get("attendance") === "Absent" : false;
@@ -586,13 +601,12 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -608,7 +622,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -1000,6 +1014,15 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -1022,7 +1045,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -1207,6 +1230,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                             .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                             .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                             .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -1216,6 +1240,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                             .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                             .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                             .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                     }
                     let subject = record.get("subject") || "";
@@ -1390,6 +1415,29 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                     // Clear setlist placeholder when no event
                     if (!event) {
                         htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -1472,6 +1520,20 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
             console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
         }
     }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
     // --- END CALLBACK-LOCAL UTILITIES ---
 
     const now = new Date();
@@ -1511,6 +1573,19 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
         if (val) choirName = val;
     } catch (e) {}
 
+    let baseUrl = "http://localhost:5173";
+    try {
+        const commRecord = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+        const comms = parseJsonField(commRecord.get("value"));
+        if (comms && comms.frontendUrl) baseUrl = comms.frontendUrl;
+    } catch (e) {}
+    if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        const meta = $app.settings()?.meta;
+        const url = meta?.appUrl || meta?.appURL || "";
+        if (url) baseUrl = url;
+    }
+    baseUrl = baseUrl.trim().replace(//+$/g, "");
+
     events.forEach(event => {
         const purchases = $app.findRecordsByFilter(
             "ticketPurchases",
@@ -1543,6 +1618,13 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
 
             const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
 
+            const stripeSessionId = purchase.get("stripeSessionId") || "";
+            const ticketToken = generateSignedTicketToken($app, purchase.id);
+            const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
+            const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
+            const qrSvg = await renderQrSvg(scanUrl);
+            const qrSvgSrc = "data:image/svg+xml," + encodeURIComponent(qrSvg);
+
             try {
                 const queueCollection = $app.findCollectionByNameOrId("emailQueue");
                 const mailRecord = new Record(queueCollection, {
@@ -1555,7 +1637,10 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                     attempts: 0,
                     filters: JSON.stringify({
                         eventId: event.id,
-                        type: "Ticket Buyer Reminder"
+                        type: "Ticket Buyer Reminder",
+                        ticketToken: ticketToken,
+                        qrSvgSrc: qrSvgSrc,
+                        successUrl: successUrl
                     })
                 });
                 $app.save(mailRecord);
@@ -1590,13 +1675,12 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -1612,7 +1696,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -2004,6 +2088,15 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -2026,7 +2119,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -2211,6 +2304,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                             .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                             .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -2220,6 +2314,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                             .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                             .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                     }
                     let subject = record.get("subject") || "";
@@ -2394,6 +2489,29 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     // Clear setlist placeholder when no event
                     if (!event) {
                         htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -2488,13 +2606,12 @@ onRecordAfterCreateSuccess((e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -2510,7 +2627,7 @@ onRecordAfterCreateSuccess((e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -2984,6 +3101,15 @@ onRecordAfterCreateSuccess((e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -3006,7 +3132,7 @@ onRecordAfterCreateSuccess((e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -3191,6 +3317,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                             .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                             .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -3200,6 +3327,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                             .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                             .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                     }
                     let subject = record.get("subject") || "";
@@ -3374,6 +3502,29 @@ onRecordAfterCreateSuccess((e) => {
                     // Clear setlist placeholder when no event
                     if (!event) {
                         htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -3477,13 +3628,12 @@ onRecordAfterUpdateSuccess((e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -3499,7 +3649,7 @@ onRecordAfterUpdateSuccess((e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -3973,6 +4123,15 @@ onRecordAfterUpdateSuccess((e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -3995,7 +4154,7 @@ onRecordAfterUpdateSuccess((e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -4180,6 +4339,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                             .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                             .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -4189,6 +4349,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                             .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                             .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                     }
                     let subject = record.get("subject") || "";
@@ -4363,6 +4524,29 @@ onRecordAfterUpdateSuccess((e) => {
                     // Clear setlist placeholder when no event
                     if (!event) {
                         htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -4468,13 +4652,12 @@ onRecordAfterCreateSuccess((e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -4490,7 +4673,7 @@ onRecordAfterCreateSuccess((e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -4882,6 +5065,15 @@ onRecordAfterCreateSuccess((e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -4904,7 +5096,7 @@ onRecordAfterCreateSuccess((e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -5089,6 +5281,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                             .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                             .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -5098,6 +5291,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                             .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                             .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                     }
                     let subject = record.get("subject") || "";
@@ -5272,6 +5466,29 @@ onRecordAfterCreateSuccess((e) => {
                     // Clear setlist placeholder when no event
                     if (!event) {
                         htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -5526,13 +5743,12 @@ onRecordAfterUpdateSuccess((e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -5548,7 +5764,7 @@ onRecordAfterUpdateSuccess((e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -5940,6 +6156,15 @@ onRecordAfterUpdateSuccess((e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -5962,7 +6187,7 @@ onRecordAfterUpdateSuccess((e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -6147,6 +6372,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                             .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                             .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -6156,6 +6382,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                             .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                             .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                     }
                     let subject = record.get("subject") || "";
@@ -6330,6 +6557,29 @@ onRecordAfterUpdateSuccess((e) => {
                     // Clear setlist placeholder when no event
                     if (!event) {
                         htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -6515,13 +6765,12 @@ routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
-function decodeGoBytes(val) {
+const decodeGoBytes = (val) => {
     if (!val)
         return "";
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
                 let str = "";
@@ -6537,7 +6786,7 @@ function decodeGoBytes(val) {
         return val;
     }
     return String(val);
-}
+};
 function parseJsonField(val) {
     if (!val)
         return null;
@@ -6576,6 +6825,15 @@ function getEventRecipientPayload(eventId, recipientId) {
 function getAuditionPayload(auditionId) {
     return `a=${auditionId}`;
 }
+function getTicketPayload(purchaseId) {
+    return `t=${purchaseId}`;
+}
+function generateSignedTicketToken(app, purchaseId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getTicketPayload(purchaseId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -6598,7 +6856,7 @@ function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
         return null;
     const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0)
@@ -6644,13 +6902,12 @@ routerAdd("POST", "/api/rsvp-details", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
-function decodeGoBytes(val) {
+const decodeGoBytes = (val) => {
     if (!val)
         return "";
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
                 let str = "";
@@ -6666,7 +6923,7 @@ function decodeGoBytes(val) {
         return val;
     }
     return String(val);
-}
+};
 function parseJsonField(val) {
     if (!val)
         return null;
@@ -6705,6 +6962,15 @@ function getEventRecipientPayload(eventId, recipientId) {
 function getAuditionPayload(auditionId) {
     return `a=${auditionId}`;
 }
+function getTicketPayload(purchaseId) {
+    return `t=${purchaseId}`;
+}
+function generateSignedTicketToken(app, purchaseId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getTicketPayload(purchaseId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -6727,7 +6993,7 @@ function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
         return null;
     const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0)
@@ -6972,13 +7238,12 @@ routerAdd("POST", "/api/quick-rsvp", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
-function decodeGoBytes(val) {
+const decodeGoBytes = (val) => {
     if (!val)
         return "";
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
                 let str = "";
@@ -6994,7 +7259,7 @@ function decodeGoBytes(val) {
         return val;
     }
     return String(val);
-}
+};
 function parseJsonField(val) {
     if (!val)
         return null;
@@ -7386,6 +7651,15 @@ function getEventRecipientPayload(eventId, recipientId) {
 function getAuditionPayload(auditionId) {
     return `a=${auditionId}`;
 }
+function getTicketPayload(purchaseId) {
+    return `t=${purchaseId}`;
+}
+function generateSignedTicketToken(app, purchaseId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getTicketPayload(purchaseId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -7408,7 +7682,7 @@ function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
         return null;
     const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0)
@@ -7593,6 +7867,7 @@ function processEmailQueue(app) {
                         .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                         .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                         .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                        .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                         .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                     htmlBody = renderMarkdown(protectedContent);
                     // Restore protected placeholders
@@ -7602,6 +7877,7 @@ function processEmailQueue(app) {
                         .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                         .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                         .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                        .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                         .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                 }
                 let subject = record.get("subject") || "";
@@ -7776,6 +8052,29 @@ function processEmailQueue(app) {
                 // Clear setlist placeholder when no event
                 if (!event) {
                     htmlBody = htmlBody.replace(/{setlist}/g, "");
+                }
+                // Resolve ticket QR code placeholder
+                if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    const isBundle = !!filters.bundleId;
+                    const caption = isBundle
+                        ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                        : '';
+                    const ticketQrHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    ${caption}
+    <img src="${filters.qrSvgSrc}"
+         style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+         alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+    <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+       style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+        View your ticket QR
+    </a>
+    <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+</div>`.trim();
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                }
+                else {
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                 }
                 // Resolve poll links: {{POLL_LINK:pollId}}
                 if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -8180,13 +8479,12 @@ routerAdd("POST", "/api/unsubscribe", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
-function decodeGoBytes(val) {
+const decodeGoBytes = (val) => {
     if (!val)
         return "";
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
                 let str = "";
@@ -8202,7 +8500,7 @@ function decodeGoBytes(val) {
         return val;
     }
     return String(val);
-}
+};
 function parseJsonField(val) {
     if (!val)
         return null;
@@ -8241,6 +8539,15 @@ function getEventRecipientPayload(eventId, recipientId) {
 function getAuditionPayload(auditionId) {
     return `a=${auditionId}`;
 }
+function getTicketPayload(purchaseId) {
+    return `t=${purchaseId}`;
+}
+function generateSignedTicketToken(app, purchaseId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getTicketPayload(purchaseId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -8263,7 +8570,7 @@ function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
         return null;
     const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0)
@@ -8485,13 +8792,12 @@ routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
-function decodeGoBytes(val) {
+const decodeGoBytes = (val) => {
     if (!val)
         return "";
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
                 let str = "";
@@ -8507,7 +8813,7 @@ function decodeGoBytes(val) {
         return val;
     }
     return String(val);
-}
+};
 function parseJsonField(val) {
     if (!val)
         return null;
@@ -8841,6 +9147,15 @@ function getEventRecipientPayload(eventId, recipientId) {
 function getAuditionPayload(auditionId) {
     return `a=${auditionId}`;
 }
+function getTicketPayload(purchaseId) {
+    return `t=${purchaseId}`;
+}
+function generateSignedTicketToken(app, purchaseId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getTicketPayload(purchaseId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -8863,7 +9178,7 @@ function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
         return null;
     const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0)
@@ -9111,13 +9426,12 @@ routerAdd("POST", "/api/singer/rsvp", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
-function decodeGoBytes(val) {
+const decodeGoBytes = (val) => {
     if (!val)
         return "";
     if (typeof val === 'string')
         return val;
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
                 let str = "";
@@ -9133,7 +9447,7 @@ function decodeGoBytes(val) {
         return val;
     }
     return String(val);
-}
+};
 function parseJsonField(val) {
     if (!val)
         return null;
@@ -9525,6 +9839,15 @@ function getEventRecipientPayload(eventId, recipientId) {
 function getAuditionPayload(auditionId) {
     return `a=${auditionId}`;
 }
+function getTicketPayload(purchaseId) {
+    return `t=${purchaseId}`;
+}
+function generateSignedTicketToken(app, purchaseId, secretOverride) {
+    const secret = secretOverride || getHmacSecret(app);
+    const payload = getTicketPayload(purchaseId);
+    const signature = $security.hs256(payload, secret);
+    return `${payload}&s=${signature}`;
+}
 function generateSignedPlayerToken(app, eventId, secretOverride) {
     const secret = secretOverride || getHmacSecret(app);
     const payload = getPlayerPayload(eventId);
@@ -9547,7 +9870,7 @@ function parseSignedToken(token, requiredKeys) {
     if (!token || typeof token !== "string")
         return null;
     const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true };
+    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
     token.split("&").forEach(segment => {
         const idx = segment.indexOf("=");
         if (idx <= 0)
@@ -9732,6 +10055,7 @@ function processEmailQueue(app) {
                         .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                         .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                         .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                        .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                         .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                     htmlBody = renderMarkdown(protectedContent);
                     // Restore protected placeholders
@@ -9741,6 +10065,7 @@ function processEmailQueue(app) {
                         .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                         .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                         .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                        .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                         .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                 }
                 let subject = record.get("subject") || "";
@@ -9915,6 +10240,29 @@ function processEmailQueue(app) {
                 // Clear setlist placeholder when no event
                 if (!event) {
                     htmlBody = htmlBody.replace(/{setlist}/g, "");
+                }
+                // Resolve ticket QR code placeholder
+                if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    const isBundle = !!filters.bundleId;
+                    const caption = isBundle
+                        ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                        : '';
+                    const ticketQrHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    ${caption}
+    <img src="${filters.qrSvgSrc}"
+         style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+         alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+    <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+       style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+        View your ticket QR
+    </a>
+    <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+</div>`.trim();
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                }
+                else {
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                 }
                 // Resolve poll links: {{POLL_LINK:pollId}}
                 if (htmlBody.includes("{{POLL_LINK:") && secret) {
@@ -10350,13 +10698,12 @@ routerAdd("POST", "/api/queue/process", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -10372,7 +10719,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -10764,6 +11111,15 @@ routerAdd("POST", "/api/queue/process", (e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -10786,7 +11142,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -10971,6 +11327,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                             .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                             .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -10980,6 +11337,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                             .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                             .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                     }
                     let subject = record.get("subject") || "";
@@ -11155,6 +11513,29 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     if (!event) {
                         htmlBody = htmlBody.replace(/{setlist}/g, "");
                     }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                    }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes("{{POLL_LINK:") && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
@@ -11269,13 +11650,12 @@ routerAdd("GET", "/api/admin/queue-settings", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -11291,7 +11671,7 @@ routerAdd("GET", "/api/admin/queue-settings", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -11369,13 +11749,12 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -11391,7 +11770,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -11430,6 +11809,15 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -11452,7 +11840,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -11895,13 +12283,12 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
 
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -11917,7 +12304,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -11932,6 +12319,285 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         catch (_a) {
             return null;
         }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
     }
 
     // --- Utility source: checkoutEndpoints.ts ---
@@ -12334,12 +13000,12 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         }
     }
     function handleStripeWebhook(e) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_c) {
+        catch (_e) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -12379,7 +13045,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_d) {
+        catch (_f) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -12409,7 +13075,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_e) {
+                catch (_g) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -12437,7 +13103,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_f) {
+                catch (_h) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 // Enqueue Ticket Confirmation email
@@ -12454,7 +13120,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_j) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -12464,7 +13130,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_k) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -12479,6 +13145,14 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -12490,6 +13164,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -12519,7 +13196,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_j) {
+                catch (_l) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -12550,7 +13227,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     const bundleEventsVal = targetBundle.get("events");
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_k) {
+                catch (_m) {
                     return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -12567,7 +13244,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_l) {
+                    catch (_o) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -12577,7 +13254,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_m) {
+                    catch (_p) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -12603,6 +13280,14 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -12614,6 +13299,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -12645,7 +13333,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     record.set("status", "paid");
                     record.set("stripePaymentIntentId", session.payment_intent || "");
                 }
-                catch (_o) {
+                catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId("pbc_donations_001");
@@ -12675,7 +13363,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_r) {
                         // default
                     }
                     let tributeSection = "";
@@ -12717,7 +13405,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_q) {
+                        catch (_s) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -12734,7 +13422,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             }
         }
         else if (eventObj.type === "charge.refunded") {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -13166,13 +13854,12 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
 
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -13188,7 +13875,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -13203,6 +13890,285 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         catch (_a) {
             return null;
         }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
     }
 
     // --- Utility source: checkoutEndpoints.ts ---
@@ -13605,12 +14571,12 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         }
     }
     function handleStripeWebhook(e) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_c) {
+        catch (_e) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -13650,7 +14616,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_d) {
+        catch (_f) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -13680,7 +14646,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_e) {
+                catch (_g) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -13708,7 +14674,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_f) {
+                catch (_h) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 // Enqueue Ticket Confirmation email
@@ -13725,7 +14691,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_j) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -13735,7 +14701,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_k) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -13750,6 +14716,14 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -13761,6 +14735,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -13790,7 +14767,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_j) {
+                catch (_l) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -13821,7 +14798,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     const bundleEventsVal = targetBundle.get("events");
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_k) {
+                catch (_m) {
                     return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -13838,7 +14815,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_l) {
+                    catch (_o) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -13848,7 +14825,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_m) {
+                    catch (_p) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -13874,6 +14851,14 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -13885,6 +14870,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -13916,7 +14904,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     record.set("status", "paid");
                     record.set("stripePaymentIntentId", session.payment_intent || "");
                 }
-                catch (_o) {
+                catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId("pbc_donations_001");
@@ -13946,7 +14934,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_r) {
                         // default
                     }
                     let tributeSection = "";
@@ -13988,7 +14976,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_q) {
+                        catch (_s) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -14005,7 +14993,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             }
         }
         else if (eventObj.type === "charge.refunded") {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -14437,13 +15425,12 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
 
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -14459,7 +15446,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -14474,6 +15461,285 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         catch (_a) {
             return null;
         }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
     }
 
     // --- Utility source: checkoutEndpoints.ts ---
@@ -14876,12 +16142,12 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         }
     }
     function handleStripeWebhook(e) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_c) {
+        catch (_e) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -14921,7 +16187,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_d) {
+        catch (_f) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -14951,7 +16217,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_e) {
+                catch (_g) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -14979,7 +16245,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_f) {
+                catch (_h) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 // Enqueue Ticket Confirmation email
@@ -14996,7 +16262,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_j) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -15006,7 +16272,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_k) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -15021,6 +16287,14 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -15032,6 +16306,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -15061,7 +16338,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_j) {
+                catch (_l) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -15092,7 +16369,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     const bundleEventsVal = targetBundle.get("events");
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_k) {
+                catch (_m) {
                     return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -15109,7 +16386,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_l) {
+                    catch (_o) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -15119,7 +16396,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_m) {
+                    catch (_p) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -15145,6 +16422,14 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -15156,6 +16441,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -15187,7 +16475,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     record.set("status", "paid");
                     record.set("stripePaymentIntentId", session.payment_intent || "");
                 }
-                catch (_o) {
+                catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId("pbc_donations_001");
@@ -15217,7 +16505,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_r) {
                         // default
                     }
                     let tributeSection = "";
@@ -15259,7 +16547,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_q) {
+                        catch (_s) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -15276,7 +16564,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             }
         }
         else if (eventObj.type === "charge.refunded") {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -15708,13 +16996,12 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
 
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -15730,7 +17017,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -15745,6 +17032,285 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         catch (_a) {
             return null;
         }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
     }
 
     // --- Utility source: checkoutEndpoints.ts ---
@@ -16147,12 +17713,12 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         }
     }
     function handleStripeWebhook(e) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_c) {
+        catch (_e) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -16192,7 +17758,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_d) {
+        catch (_f) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -16222,7 +17788,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_e) {
+                catch (_g) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -16250,7 +17816,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_f) {
+                catch (_h) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 // Enqueue Ticket Confirmation email
@@ -16267,7 +17833,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_j) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -16277,7 +17843,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_k) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -16292,6 +17858,14 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -16303,6 +17877,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -16332,7 +17909,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_j) {
+                catch (_l) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -16363,7 +17940,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     const bundleEventsVal = targetBundle.get("events");
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_k) {
+                catch (_m) {
                     return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -16380,7 +17957,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_l) {
+                    catch (_o) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -16390,7 +17967,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_m) {
+                    catch (_p) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -16416,6 +17993,14 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -16427,6 +18012,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -16458,7 +18046,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     record.set("status", "paid");
                     record.set("stripePaymentIntentId", session.payment_intent || "");
                 }
-                catch (_o) {
+                catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId("pbc_donations_001");
@@ -16488,7 +18076,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_r) {
                         // default
                     }
                     let tributeSection = "";
@@ -16530,7 +18118,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_q) {
+                        catch (_s) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -16547,7 +18135,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             }
         }
         else if (eventObj.type === "charge.refunded") {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -16979,13 +18567,12 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
 
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -17001,7 +18588,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -17016,6 +18603,285 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         catch (_a) {
             return null;
         }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
     }
 
     // --- Utility source: checkoutEndpoints.ts ---
@@ -17418,12 +19284,12 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         }
     }
     function handleStripeWebhook(e) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_c) {
+        catch (_e) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -17463,7 +19329,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_d) {
+        catch (_f) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -17493,7 +19359,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_e) {
+                catch (_g) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -17521,7 +19387,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_f) {
+                catch (_h) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 // Enqueue Ticket Confirmation email
@@ -17538,7 +19404,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_j) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -17548,7 +19414,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_k) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -17563,6 +19429,14 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -17574,6 +19448,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -17603,7 +19480,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_j) {
+                catch (_l) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -17634,7 +19511,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     const bundleEventsVal = targetBundle.get("events");
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_k) {
+                catch (_m) {
                     return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -17651,7 +19528,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_l) {
+                    catch (_o) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -17661,7 +19538,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_m) {
+                    catch (_p) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -17687,6 +19564,14 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -17698,6 +19583,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -17729,7 +19617,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     record.set("status", "paid");
                     record.set("stripePaymentIntentId", session.payment_intent || "");
                 }
-                catch (_o) {
+                catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId("pbc_donations_001");
@@ -17759,7 +19647,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_r) {
                         // default
                     }
                     let tributeSection = "";
@@ -17801,7 +19689,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_q) {
+                        catch (_s) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -17818,7 +19706,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             }
         }
         else if (eventObj.type === "charge.refunded") {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -18250,13 +20138,12 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
 
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -18272,7 +20159,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -18287,6 +20174,285 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         catch (_a) {
             return null;
         }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
     }
 
     // --- Utility source: checkoutEndpoints.ts ---
@@ -18689,12 +20855,12 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         }
     }
     function handleStripeWebhook(e) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_c) {
+        catch (_e) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -18734,7 +20900,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_d) {
+        catch (_f) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -18764,7 +20930,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_e) {
+                catch (_g) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -18792,7 +20958,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_f) {
+                catch (_h) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 // Enqueue Ticket Confirmation email
@@ -18809,7 +20975,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_j) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -18819,7 +20985,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_k) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -18834,6 +21000,14 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -18845,6 +21019,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -18874,7 +21051,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_j) {
+                catch (_l) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -18905,7 +21082,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     const bundleEventsVal = targetBundle.get("events");
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_k) {
+                catch (_m) {
                     return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -18922,7 +21099,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_l) {
+                    catch (_o) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -18932,7 +21109,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_m) {
+                    catch (_p) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -18958,6 +21135,14 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -18969,6 +21154,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -19000,7 +21188,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     record.set("status", "paid");
                     record.set("stripePaymentIntentId", session.payment_intent || "");
                 }
-                catch (_o) {
+                catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId("pbc_donations_001");
@@ -19030,7 +21218,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_r) {
                         // default
                     }
                     let tributeSection = "";
@@ -19072,7 +21260,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_q) {
+                        catch (_s) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -19089,7 +21277,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             }
         }
         else if (eventObj.type === "charge.refunded") {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -19521,13 +21709,12 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
 
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -19543,7 +21730,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -19558,6 +21745,285 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         catch (_a) {
             return null;
         }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
     }
 
     // --- Utility source: checkoutEndpoints.ts ---
@@ -19960,12 +22426,12 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         }
     }
     function handleStripeWebhook(e) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_c) {
+        catch (_e) {
             return e.json(400, { error: "Failed to read request body" });
         }
         const sig = e.request.header.get("Stripe-Signature") || "";
@@ -20005,7 +22471,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_d) {
+        catch (_f) {
             return e.json(400, { error: "Invalid JSON body" });
         }
         if (eventObj.type === "checkout.session.completed") {
@@ -20035,7 +22501,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_e) {
+                catch (_g) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -20063,7 +22529,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 try {
                     targetEvent = $app.findRecordById("events", eventId);
                 }
-                catch (_f) {
+                catch (_h) {
                     return e.json(400, { error: "Event not found during webhook processing" });
                 }
                 // Enqueue Ticket Confirmation email
@@ -20080,7 +22546,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_g) {
+                    catch (_j) {
                         // default
                     }
                     let choirName = "Choir Management Tool";
@@ -20090,7 +22556,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_h) {
+                    catch (_k) {
                         // default
                     }
                     const eventTitle = targetEvent.get("title") || "";
@@ -20105,6 +22571,14 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -20116,6 +22590,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -20145,7 +22622,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     record.set("stripeCustomerId", session.customer || "");
                     record.set("fulfilledAt", new Date().toISOString());
                 }
-                catch (_j) {
+                catch (_l) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
                     const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
@@ -20176,7 +22653,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     const bundleEventsVal = targetBundle.get("events");
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_k) {
+                catch (_m) {
                     return e.json(400, { error: "Bundle not found during webhook processing" });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -20193,7 +22670,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_l) {
+                    catch (_o) {
                         // Use default America/New_York timezone
                     }
                     let choirName = "Choir Management Tool";
@@ -20203,7 +22680,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_m) {
+                    catch (_p) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
@@ -20229,6 +22706,14 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
+                    const ticketToken = generateSignedTicketToken($app, record.id);
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                    const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                    const qrSvg = await renderQrSvg(scanUrl);
+                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
                     const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: "buyer_" + stripeSessionId,
@@ -20240,6 +22725,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
+                            ticketToken: ticketToken,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
                             type: "Automated Confirmation"
                         })
                     });
@@ -20271,7 +22759,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     record.set("status", "paid");
                     record.set("stripePaymentIntentId", session.payment_intent || "");
                 }
-                catch (_o) {
+                catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId("pbc_donations_001");
@@ -20301,7 +22789,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_r) {
                         // default
                     }
                     let tributeSection = "";
@@ -20343,7 +22831,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                             duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
                             duesRecord.set("paid", true);
                         }
-                        catch (_q) {
+                        catch (_s) {
                             const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -20360,7 +22848,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             }
         }
         else if (eventObj.type === "charge.refunded") {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -20487,17 +22975,16 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
     return handleAdminRefundDonation(e);
 });
 
-routerAdd("GET", "/api/player-playlist", (e) => {
+routerAdd("POST", "/api/tickets/validate", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -20513,7 +23000,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -20552,6 +23039,15 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -20574,7 +23070,1013 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleValidateScan(e);
+});
+
+routerAdd("GET", "/api/tickets/scan-context", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split("&").forEach(segment => {
+            const idx = segment.indexOf("=");
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
+    // --- Utility source: email/qrHelper.ts ---
+    "use strict";
+    async function renderQrSvg(url) {
+        return await QRCode.toString(url, {
+            type: 'svg',
+            errorCorrectionLevel: 'H',
+            margin: 2,
+            color: {
+                dark: '#0f172a',
+                light: '#ffffff'
+            }
+        });
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getHmacSecretFromApp(app) {
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            const comms = parseJsonField(record.get("value"));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, "");
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            if (url)
+                return url.replace(/\/+$/, "");
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return "http://localhost:5173";
+    }
+    function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: "Missing token or eventId" });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get("role") !== "admin") {
+            return e.json(403, { error: "Admin access required" });
+        }
+        const parsed = parseSignedToken(token, ["t", "s"]);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get("buyerName") || "");
+        const quantity = Number(purchase.get("quantity") || 0);
+        const purchaseEventId = purchase.get("event");
+        if (purchaseEventId === eventId) {
+            let eventTitle = "";
+            let eventDate = "";
+            try {
+                const event = $app.findRecordById("events", eventId);
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get("bundle");
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                const bundleEvents = bundle.get("events");
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = "";
+                    let eventDate = "";
+                    try {
+                        const scannedEvent = $app.findRecordById("events", eventId);
+                        eventTitle = String(scannedEvent.get("title") || "");
+                        eventDate = String(scannedEvent.get("date") || "");
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get("title") || ""),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
+        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: "Missing session_id or purchase_id" });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: "Purchase not found" });
+        }
+        if (purchase.get("status") !== "paid") {
+            return e.json(409, { error: "Purchase is not yet paid" });
+        }
+        const secret = getHmacSecretFromApp($app);
+        if (!secret) {
+            return e.json(500, { error: "Server configuration error" });
+        }
+        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const qrSvg = await renderQrSvg(scanUrl);
+        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const buyerName = String(purchase.get("buyerName") || "");
+        const bundleId = purchase.get("bundle");
+        const isBundlePass = !!bundleId;
+        let eventTitle = "";
+        let eventDate = "";
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById("ticketBundles", bundleId);
+                bundleTitle = String(bundle.get("title") || "");
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
+                eventTitle = String(event.get("title") || "");
+                eventDate = String(event.get("date") || "");
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            qrDataUri,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleGetScanContext(e);
+});
+
+routerAdd("GET", "/api/player-playlist", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret(app) {
+        try {
+            const appInstance = app || $app;
+            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get("value"));
+            return parsed && parsed.secret ? parsed.secret : "";
+        }
+        catch (_a) {
+            return "";
+        }
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(app, eventId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(app, auditionId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== "string")
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -20716,13 +24218,12 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -20738,7 +24239,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -21001,6 +24502,15 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -21023,7 +24533,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -21509,13 +25019,12 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -21531,7 +25040,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -21794,6 +25303,15 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -21816,7 +25334,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -22302,13 +25820,12 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -22324,7 +25841,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -22587,6 +26104,15 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -22609,7 +26135,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -23095,13 +26621,12 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -23117,7 +26642,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;
@@ -23380,6 +26905,15 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     function getAuditionPayload(auditionId) {
         return `a=${auditionId}`;
     }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(app, purchaseId, secretOverride) {
+        const secret = secretOverride || getHmacSecret(app);
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
     function generateSignedPlayerToken(app, eventId, secretOverride) {
         const secret = secretOverride || getHmacSecret(app);
         const payload = getPlayerPayload(eventId);
@@ -23402,7 +26936,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!token || typeof token !== "string")
             return null;
         const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true };
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
         token.split("&").forEach(segment => {
             const idx = segment.indexOf("=");
             if (idx <= 0)
@@ -23888,13 +27422,12 @@ routerAdd("GET", "/api/singer/seating-profiles", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
-    function decodeGoBytes(val) {
+    const decodeGoBytes = (val) => {
         if (!val)
             return "";
         if (typeof val === 'string')
             return val;
         if (typeof val === 'object') {
-            // Check if it's a byte array (only numbers)
             if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
                 try {
                     let str = "";
@@ -23910,7 +27443,7 @@ routerAdd("GET", "/api/singer/seating-profiles", (e) => {
             return val;
         }
         return String(val);
-    }
+    };
     function parseJsonField(val) {
         if (!val)
             return null;

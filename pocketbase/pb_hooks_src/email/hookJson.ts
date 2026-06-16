@@ -2,12 +2,11 @@
  * Safely converts Go byte slices (uint8 arrays) to JS strings.
  * Defensive against already-parsed JS objects or arrays.
  */
-export function decodeGoBytes(val: unknown): string | unknown {
+export const decodeGoBytes = (val: unknown): string | unknown => {
     if (!val) return "";
     if (typeof val === 'string') return val;
 
     if (typeof val === 'object') {
-        // Check if it's a byte array (only numbers)
         if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
             try {
                 let str = "";
@@ -23,7 +22,7 @@ export function decodeGoBytes(val: unknown): string | unknown {
     }
 
     return String(val);
-}
+};
 
 /**
  * Safely parses a JSON field from a PocketBase record.

@@ -1114,7 +1114,11 @@ ${renderRoute('GET', '/api/singer/seating-profiles', 'return handleSingerSeating
 }
 
 function isMainModule(): boolean {
-    return process.argv[1] === fileURLToPath(import.meta.url);
+    try {
+        return process.argv[1] === fileURLToPath(import.meta.url) || process.argv[1]?.endsWith('generate-main-pb-js.ts');
+    } catch {
+        return false;
+    }
 }
 
 if (isMainModule()) {
