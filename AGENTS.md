@@ -108,6 +108,42 @@ Empty states in dashboards or lists must include a call-to-action button inside 
 
 For new route modules or lazy-loaded views, use `lazyWithReload(...)` from `src/App.tsx`. Do not use plain React `lazy(...)` for new route modules.
 
+### Shoelace and Web Components
+
+This codebase uses Shoelace (`@shoelace-style/shoelace`) — Lit-based Web Components — wrapped by React adapters under `src/components/ui/`.
+
+**Do not import raw Shoelace components directly.** Always use the wrapper from `src/components/ui/`:
+
+```tsx
+// correct
+import { Button } from './components/ui/Button/Button';
+
+// wrong
+import SlButton from '@shoelace-style/shoelace/dist/react/button/index.js';
+```
+
+**How the `Button` wrapper works (the canonical pattern):**
+
+`src/components/ui/Button/Button.tsx` has three code paths:
+
+- **Test mode** (`process.env.NODE_ENV === 'test'`): renders a plain `<button>` or `<Component>` with Tailwind classes. Shoelace is completely bypassed.
+- **`as={Link}` or any non-button element**: renders the requested component with Tailwind classes. No Shoelace.
+- **Production button** (`Component === 'button'`): renders `<SlButton>` from Shoelace.
+
+When creating new Shoelace-wrapped components, follow this same test-vs-production duality so tests work in jsdom without Web Component registration.
+
+**Gotchas:**
+
+- **Shoelace errors are NOT caught by React Error Boundaries.** Shoelace renders inside its own Shadow DOM. A crash like `Cannot read properties of undefined (reading 'length')` at `zs.render` is a Shoelace internal error — the root cause is almost always a prop the React wrapper passed as `undefined` or `null` that Shoelace expected to be iterable. Check the wrapper's prop mapping, not Shoelace's internals.
+
+- **Shoelace variant names differ from the app's conventions.** `SlButton` expects `'primary' | 'neutral' | 'danger'`, not `'secondary'`. The wrapper handles this mapping (`slVariant` at `Button.tsx:71`). New wrappers must map their own values.
+
+- **jsdom does not fully support Custom Elements or Shadow DOM.** Components using Shoelace directly can't render correctly in tests. Always test through the React wrapper or gate Shoelace rendering behind `process.env.NODE_ENV === 'test'`.
+
+- **Do not pass `undefined` or `null` children to Shoelace components.** Shoelace may iterate over `this.children` internally. An empty string or fragment is safer.
+
+- **Shoelace `SlButton` props pass through React first, then Lit's lifecycle.** React sets the attribute/property, then Lit's `updated()` runs. Timing issues can cause double renders. Use the wrapper's `className` / `variant` / `size` props rather than raw Shoelace attributes.
+
 ## 4. PocketBase Rules
 
 Always assume PocketBase `0.36.9` is currently installed. Verify against `package.json` and the hosted instance before relying on SDK features.
