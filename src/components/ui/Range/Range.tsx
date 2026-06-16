@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import SlRange from '@shoelace-style/shoelace/dist/react/range/index.js';
 
 export interface RangeProps {
@@ -9,7 +10,7 @@ export interface RangeProps {
   onChange?: (value: number) => void;
   className?: string;
   id?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }
 
 export function Range({ value, min, max, step, onInput, onChange, className, id, style }: RangeProps) {
