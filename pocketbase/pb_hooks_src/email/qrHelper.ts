@@ -5,8 +5,8 @@ import QRCode from 'qrcode';
  * Uses error correction level H for maximum scan reliability.
  * Compatible with PocketBase's Goja engine (pure JS string output, no canvas/Buffer).
  */
-export function renderQrSvg(url: string): string {
-    return QRCode.toString(url, {
+export async function renderQrSvg(url: string): Promise<string> {
+    return await QRCode.toString(url, {
         type: 'svg',
         errorCorrectionLevel: 'H',
         margin: 2,
