@@ -1,0 +1,4 @@
+## 2024-06-16 - Prevent Insecure Password Generation Fallback
+**Vulnerability:** `src/services/profileService.ts` used `Math.random()` as a fallback when generating passwords if `window.crypto` / `globalThis.crypto` was unavailable. `Math.random()` is not a cryptographically secure pseudorandom number generator (CSPRNG), making generated passwords predictable and insecure.
+**Learning:** This codebase previously favored having a non-secure password fallback over throwing an error, likely to prevent crashes in testing or old environments. However, for a security-critical function like password generation, failing insecurely is a severe risk.
+**Prevention:** Always fail securely. If a CSPRNG is required but unavailable, throw an explicit error (`throw new Error('Secure random number generation is not supported in this environment.')`) rather than silently falling back to a predictable algorithm like `Math.random()`.

@@ -130,7 +130,7 @@ test('generateRandomPassword uses Web Crypto API when available', (t) => {
   }
 });
 
-test('generateRandomPassword falls back to Math.random when Web Crypto API is unavailable', (t) => {
+test('generateRandomPassword throws an Error when Web Crypto API is unavailable', (t) => {
   const originalCrypto = globalThis.crypto;
 
   Object.defineProperty(globalThis, 'crypto', {
@@ -139,26 +139,17 @@ test('generateRandomPassword falls back to Math.random when Web Crypto API is un
     writable: true,
   });
 
-  const originalMathRandom = Math.random;
-  let mathRandomCalled = false;
-  Math.random = t.mock.fn(() => {
-    mathRandomCalled = true;
-    return 0.5; // Always return middle of range
-  });
-
   try {
-    const pwd = generateRandomPassword(4);
-    assert.equal(mathRandomCalled, true);
-    // if random is 0.5, 0.5 * 70 = 35 -> floor is 35
-    // chars[35] = 'J' (a-z is 26, A-Z starts at 26. 26 + 9 = 35 -> 'J')
-    assert.equal(pwd, 'JJJJ');
+    assert.throws(
+      () => generateRandomPassword(4),
+      /Secure random number generation is not supported in this environment\./
+    );
   } finally {
     Object.defineProperty(globalThis, 'crypto', {
       value: originalCrypto,
       configurable: true,
       writable: true,
     });
-    Math.random = originalMathRandom;
   }
 });
 
