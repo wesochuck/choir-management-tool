@@ -1,47 +1,23 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../services/settingsService';
 
-/**
- * Hook to fetch and manage the list of voice parts and sections from settings.
- * Returns both the full definitions and a convenience list of labels.
- */
 export function useVoiceParts() {
-  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
-  const [sections, setSections] = useState<SectionDef[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const isMountedRef = useRef(true);
+  const query = useQuery({
+    queryKey: queryKeys.voiceParts.list(),
+    queryFn: () => getVoicePartsAndSections(),
+    staleTime: 30 * 60_000,
+  });
 
-  const fetchData = useCallback(async () => {
-    try {
-      const data = await getVoicePartsAndSections();
-      if (isMountedRef.current) {
-        setVoiceParts(data.voiceParts);
-        setSections(data.sections);
-        setIsLoading(false);
-      }
-    } catch {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    void fetchData();
-
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [fetchData]);
-
+  const voiceParts: VoicePartDef[] = query.data?.voiceParts ?? [];
+  const sections: SectionDef[] = query.data?.sections ?? [];
   const labels = voiceParts.map(vp => vp.label);
 
   return {
     voiceParts,
     sections,
     labels,
-    isLoading,
-    refresh: fetchData,
+    isLoading: query.isLoading,
+    refresh: async () => { await query.refetch(); },
   };
 }

@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { eventService, type Event } from '../services/eventService';
 import { rosterService, type EventRoster } from '../services/rosterService';
 
@@ -9,77 +11,47 @@ interface UseSingerRsvpHistoryParams {
 }
 
 export function useSingerRsvpHistory({ isOpen, singerId, isActive }: UseSingerRsvpHistoryParams) {
-  const [performances, setPerformances] = useState<Event[]>([]);
-  const [rosters, setRosters] = useState<EventRoster[]>([]);
-  const [loadingRsvps, setLoadingRsvps] = useState(false);
+  const queryClient = useQueryClient();
   const [rsvpSaveErrors, setRsvpSaveErrors] = useState<Record<string, string>>({});
   const [savingRsvpId, setSavingRsvpId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setPerformances([]);
-      setRosters([]);
-      setRsvpSaveErrors({});
-      setSavingRsvpId(null);
-    }
-  }, [isOpen]);
+  const rsvpQuery = useQuery({
+    queryKey: queryKeys.singerRsvps.bySingerId(singerId ?? ''),
+    queryFn: async () => {
+      const [allEvents, allRosters] = await Promise.all([
+        eventService.getEvents(),
+        rosterService.getSingerRosters(singerId!),
+      ]);
+      return {
+        performances: allEvents.filter((eventItem) => eventItem.type === 'Performance'),
+        rosters: allRosters,
+      };
+    },
+    enabled: !!isOpen && !!singerId && isActive,
+  });
 
-  useEffect(() => {
-    if (!isOpen || !singerId || !isActive) {
-      return;
-    }
-
-    const loadRsvps = async () => {
-      setLoadingRsvps(true);
-      try {
-        const [allEvents, allRosters] = await Promise.all([
-          eventService.getEvents(),
-          rosterService.getSingerRosters(singerId),
-        ]);
-        setPerformances(allEvents.filter((eventItem) => eventItem.type === 'Performance'));
-        setRosters(allRosters);
-      } catch (err: unknown) {
-        console.error('Failed to load RSVP history:', err);
-      } finally {
-        setLoadingRsvps(false);
-      }
-    };
-
-    loadRsvps();
-  }, [isOpen, singerId, isActive]);
-
-  const onRsvpChange = async (eventId: string, newRsvp: EventRoster['rsvp']) => {
-    if (!singerId) return;
-
-    setSavingRsvpId(eventId);
-    try {
-      const updated = await rosterService.updateRSVP(eventId, singerId, newRsvp);
-      setRosters((prev) => {
-        const existingIndex = prev.findIndex((roster) => roster.event === eventId);
-        if (existingIndex === -1) {
-          return [...prev, updated];
-        }
-
-        const next = [...prev];
-        next[existingIndex] = { ...next[existingIndex], rsvp: newRsvp };
-        return next;
-      });
-
-      setRsvpSaveErrors((prev) => {
+  const rsvpMutation = useMutation({
+    mutationFn: ({ eventId, newRsvp }: { eventId: string; newRsvp: EventRoster['rsvp'] }) =>
+      rosterService.updateRSVP(eventId, singerId!, newRsvp),
+    onMutate: ({ eventId }) => {
+      setSavingRsvpId(eventId);
+      setRsvpSaveErrors(prev => {
         const next = { ...prev };
         delete next[eventId];
         return next;
       });
-    } catch (err: unknown) {
-      console.error('Failed to update RSVP:', err);
-      setRsvpSaveErrors((prev) => ({
-        ...prev,
-        [eventId]: 'Failed to save',
-      }));
-    } finally {
+    },
+    onError: (_err, { eventId }) => {
+      setRsvpSaveErrors(prev => ({ ...prev, [eventId]: 'Failed to save' }));
+    },
+    onSettled: () => {
       setSavingRsvpId(null);
-    }
-  };
+      queryClient.invalidateQueries({ queryKey: queryKeys.singerRsvps.bySingerId(singerId ?? '') });
+    },
+  });
+
+  const performances = rsvpQuery.data?.performances ?? [];
+  const rosters = rsvpQuery.data?.rosters ?? [];
 
   const { upcomingPerformances, pastPerformances } = useMemo(() => {
     const now = new Date();
@@ -101,8 +73,13 @@ export function useSingerRsvpHistory({ isOpen, singerId, isActive }: UseSingerRs
     return { upcomingPerformances: upcoming, pastPerformances: past };
   }, [performances]);
 
+  const onRsvpChange = async (eventId: string, newRsvp: EventRoster['rsvp']) => {
+    if (!singerId) return;
+    await rsvpMutation.mutateAsync({ eventId, newRsvp });
+  };
+
   return {
-    loadingRsvps,
+    loadingRsvps: rsvpQuery.isLoading,
     savingRsvpId,
     rsvpSaveErrors,
     rosters,

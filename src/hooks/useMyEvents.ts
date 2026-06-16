@@ -1,48 +1,66 @@
-import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { eventService, type Event } from '../services/eventService';
 import { rosterService, type EventRoster } from '../services/rosterService';
 import { profileService, type Profile } from '../services/profileService';
 
 export const useMyEvents = () => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [myRosters, setMyRosters] = useState<Record<string, EventRoster>>({});
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
+  const eventsQuery = useQuery({
+    queryKey: queryKeys.myEvents.list(),
+    queryFn: async () => {
       const [allEvents, rosters, profile] = await Promise.all([
         eventService.getEvents(),
         rosterService.getMyRosters(),
-        profileService.getMyProfile().catch(() => null), // If no profile exists yet
+        profileService.getMyProfile().catch(() => null),
       ]);
+      return { allEvents, rosters, profile };
+    },
+  });
 
-      setEvents(allEvents);
-      setMyProfile(profile);
-      
-      const rosterMap: Record<string, EventRoster> = {};
-      rosters.forEach(r => rosterMap[r.event] = r);
-      setMyRosters(rosterMap);
-      
-      setError(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
-    } finally {
-      setIsLoading(false);
+  const myProfile = eventsQuery.data?.profile ?? null;
+  const events = eventsQuery.data?.allEvents ?? [];
+
+  const myRosters: Record<string, EventRoster> = {};
+  if (eventsQuery.data?.rosters) {
+    for (const r of eventsQuery.data.rosters) {
+      myRosters[r.event] = r;
     }
-  };
+  }
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const updateRSVPMutation = useMutation({
+    mutationFn: ({ eventId, rsvp, rsvpNote }: { eventId: string; rsvp: 'Yes' | 'No'; rsvpNote?: string }) =>
+      rosterService.updateMyRSVP(eventId, rsvp, rsvpNote),
+    onMutate: async ({ eventId, rsvp }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.myEvents.all });
+      const previous = queryClient.getQueryData(queryKeys.myEvents.list());
+      queryClient.setQueryData(queryKeys.myEvents.list(), (old) => {
+        if (!old || typeof old !== 'object' || !('rosters' in old)) return old;
+        const typed = old as { allEvents: Event[]; rosters: EventRoster[]; profile: Profile | null };
+        return {
+          ...typed,
+          rosters: typed.rosters.map(r =>
+            r.event === eventId ? { ...r, rsvp } : r
+          ),
+        };
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.myEvents.list(), context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myEvents.all });
+    },
+  });
 
   const updateRSVP = async (eventId: string, rsvp: 'Yes' | 'No', rsvpNote = '') => {
     if (!myProfile) throw new Error('No profile found for current user');
     try {
-      const updated = await rosterService.updateMyRSVP(eventId, rsvp, rsvpNote);
-      setMyRosters(prev => ({ ...prev, [eventId]: updated }));
+      await updateRSVPMutation.mutateAsync({ eventId, rsvp, rsvpNote });
     } catch (err: unknown) {
       throw new Error(err instanceof Error ? err.message : 'Failed to update RSVP');
     }
@@ -52,9 +70,11 @@ export const useMyEvents = () => {
     events,
     myRosters,
     myProfile,
-    isLoading,
-    error,
+    isLoading: eventsQuery.isLoading,
+    error: eventsQuery.error
+      ? (eventsQuery.error instanceof Error ? eventsQuery.error.message : 'Failed to fetch dashboard data')
+      : null,
     updateRSVP,
-    refresh: fetchData,
+    refresh: async () => { await eventsQuery.refetch(); },
   };
 };

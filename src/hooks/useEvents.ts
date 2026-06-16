@@ -1,79 +1,92 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { eventService, type Event, type BulkRehearsalConfig } from '../services/eventService';
 
-export const useEvents = () => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function toErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
 
-  const fetchEvents = async () => {
-    setIsLoading(true);
-    try {
-      const data = await eventService.getEvents();
-      setEvents(data);
-      setError(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch events');
-    } finally {
-      setIsLoading(false);
-    }
+export const useEvents = () => {
+  const queryClient = useQueryClient();
+
+  const eventsQuery = useQuery({
+    queryKey: queryKeys.events.list(),
+    queryFn: () => eventService.getEvents(),
+  });
+
+  const invalidate = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
   };
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
+  const addEventMutation = useMutation({
+    mutationFn: ({ data, bulkConfig }: { data: Partial<Event> | FormData; bulkConfig?: BulkRehearsalConfig }) =>
+      eventService.createEventWithRehearsals(data, bulkConfig),
+    onSuccess: invalidate,
+  });
+
+  const editEventMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Event> | FormData }) =>
+      eventService.updateEvent(id, data),
+    onSuccess: invalidate,
+  });
+
+  const removeEventMutation = useMutation({
+    mutationFn: (id: string) => eventService.deleteEvent(id),
+    onSuccess: invalidate,
+  });
+
+  const bulkAddMutation = useMutation({
+    mutationFn: ({ performance, config }: { performance: Event; config: BulkRehearsalConfig }) =>
+      eventService.bulkCreateRehearsals(performance, config),
+    onSuccess: invalidate,
+  });
 
   const addEvent = async (data: Partial<Event> | FormData, bulkConfig?: BulkRehearsalConfig) => {
     try {
-      const record = await eventService.createEventWithRehearsals(data, bulkConfig);
-      await fetchEvents();
-      return record;
+      return await addEventMutation.mutateAsync({ data, bulkConfig });
     } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to add event');
+      throw new Error(toErrorMessage(err, 'Failed to add event'));
     }
   };
 
   const editEvent = async (id: string, data: Partial<Event> | FormData) => {
     try {
-      const updated = await eventService.updateEvent(id, data);
-      await fetchEvents();
-      return updated;
+      return await editEventMutation.mutateAsync({ id, data });
     } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to update event');
+      throw new Error(toErrorMessage(err, 'Failed to update event'));
     }
   };
 
   const removeEvent = async (id: string) => {
     try {
-      await eventService.deleteEvent(id);
-      await fetchEvents();
+      await removeEventMutation.mutateAsync(id);
     } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to delete event');
+      throw new Error(toErrorMessage(err, 'Failed to delete event'));
     }
   };
 
   const bulkAddRehearsals = async (performance: Event, config: BulkRehearsalConfig) => {
     try {
-      await eventService.bulkCreateRehearsals(performance, config);
-      await fetchEvents();
+      await bulkAddMutation.mutateAsync({ performance, config });
     } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to bulk create rehearsals');
+      throw new Error(toErrorMessage(err, 'Failed to bulk create rehearsals'));
     }
   };
 
   const performances = useMemo(() => {
-    return events.filter(e => e.type === 'Performance');
-  }, [events]);
+    return (eventsQuery.data ?? []).filter(e => e.type === 'Performance');
+  }, [eventsQuery.data]);
 
   return {
-    events,
+    events: eventsQuery.data ?? [],
     performances,
-    isLoading,
-    error,
+    isLoading: eventsQuery.isLoading,
+    error: eventsQuery.error ? toErrorMessage(eventsQuery.error, 'Failed to fetch events') : null,
     addEvent,
     editEvent,
     removeEvent,
     bulkAddRehearsals,
-    refresh: fetchEvents,
+    refresh: async () => { await eventsQuery.refetch(); },
   };
 };

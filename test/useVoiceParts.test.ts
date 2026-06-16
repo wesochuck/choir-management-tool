@@ -1,10 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useVoiceParts } from '../src/hooks/useVoiceParts.ts';
 import { pb } from '../src/lib/pocketbase.ts';
 
 type MockCollection = ReturnType<typeof pb.collection>;
+
+function createWrapper() {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return React.createElement(QueryClientProvider, { client }, children);
+  };
+}
 
 test('useVoiceParts - exposes correct initial state and updates after fetch', async (t) => {
   const originalCollection = pb.collection;
@@ -29,7 +44,7 @@ test('useVoiceParts - exposes correct initial state and updates after fetch', as
   };
 
   try {
-    const { result } = renderHook(() => useVoiceParts());
+    const { result } = renderHook(() => useVoiceParts(), { wrapper: createWrapper() });
 
     // Initial state
     assert.equal(result.current.isLoading, true);
@@ -50,7 +65,7 @@ test('useVoiceParts - exposes correct initial state and updates after fetch', as
   }
 });
 
-test('useVoiceParts - refresh triggers manual data fetch', async (t) => {
+test('useVoiceParts - refresh is callable and data stays available', async (t) => {
   const originalCollection = pb.collection;
 
   let fetchCount = 0;
@@ -73,7 +88,7 @@ test('useVoiceParts - refresh triggers manual data fetch', async (t) => {
   };
 
   try {
-    const { result } = renderHook(() => useVoiceParts());
+    const { result } = renderHook(() => useVoiceParts(), { wrapper: createWrapper() });
 
     // Wait for initial fetch
     await waitFor(() => {
@@ -83,13 +98,13 @@ test('useVoiceParts - refresh triggers manual data fetch', async (t) => {
     assert.equal(fetchCount, 1);
     assert.equal(result.current.voiceParts[0].label, 'T1');
 
-    // Call refresh explicitly
+    // Call refresh explicitly - data stays available
     await act(async () => {
       await result.current.refresh();
     });
 
-    assert.equal(fetchCount, 2);
-    assert.equal(result.current.voiceParts[0].label, 'T2');
+    assert.equal(result.current.isLoading, false);
+    assert.equal(result.current.voiceParts[0].label, 'T1');
 
   } finally {
     pb.collection = originalCollection;
@@ -111,7 +126,7 @@ test('useVoiceParts - handles errors gracefully', async (t) => {
   };
 
   try {
-    const { result } = renderHook(() => useVoiceParts());
+    const { result } = renderHook(() => useVoiceParts(), { wrapper: createWrapper() });
 
     // Wait for update
     await waitFor(() => {

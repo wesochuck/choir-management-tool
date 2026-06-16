@@ -1,56 +1,70 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { duesService, type SeasonalDue } from '../services/duesService';
 import { settingsService } from '../services/settingsService';
 
 export function useDues() {
-  const [duesMap, setDuesMap] = useState<Record<string, SeasonalDue>>({});
-  const [currentSeason, setCurrentSeason] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const settings = await settingsService.getRosterSettings();
-      const season = settings?.currentSeason || '';
-      setCurrentSeason(season);
+  const seasonQuery = useQuery({
+    queryKey: ['settings', 'roster'] as const,
+    queryFn: () => settingsService.getRosterSettings(),
+    staleTime: 5 * 60_000,
+  });
 
-      if (season) {
-        const duesList = await duesService.getDuesForSeason(season);
-        const map: Record<string, SeasonalDue> = {};
-        for (const d of duesList) {
-          map[d.profile] = d;
-        }
-        setDuesMap(map);
-      } else {
-        setDuesMap({});
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
+  const currentSeason = seasonQuery.data?.currentSeason ?? '';
+
+  const duesQuery = useQuery({
+    queryKey: queryKeys.dues.bySeason(currentSeason),
+    queryFn: () => duesService.getDuesForSeason(currentSeason),
+    enabled: !!currentSeason,
+  });
+
+  const duesMap = useMemo(() => {
+    if (!duesQuery.data) return {} as Record<string, SeasonalDue>;
+    const map: Record<string, SeasonalDue> = {};
+    for (const d of duesQuery.data) {
+      map[d.profile] = d;
     }
-  }, []);
+    return map;
+  }, [duesQuery.data]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const toggleDuesMutation = useMutation({
+    mutationFn: ({ profileId, paid }: { profileId: string; paid: boolean }) =>
+      duesService.updateDues(profileId, currentSeason, paid),
+    onMutate: async ({ profileId, paid }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.dues.bySeason(currentSeason) });
+      const previous = queryClient.getQueryData<SeasonalDue[]>(queryKeys.dues.bySeason(currentSeason));
+      queryClient.setQueryData<SeasonalDue[]>(queryKeys.dues.bySeason(currentSeason), (old) => {
+        if (!old) return old;
+        return old.map(d => d.profile === profileId ? { ...d, paid } : d);
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.dues.bySeason(currentSeason), context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.dues.bySeason(currentSeason) });
+    },
+  });
 
   const toggleDues = async (profileId: string, paid: boolean) => {
     if (!currentSeason) return;
-    try {
-      // Optimistic update
-      setDuesMap(prev => ({
-        ...prev,
-        [profileId]: { ...prev[profileId], profile: profileId, season: currentSeason, paid } as SeasonalDue
-      }));
-      
-      const updated = await duesService.updateDues(profileId, currentSeason, paid);
-      setDuesMap(prev => ({ ...prev, [profileId]: updated }));
-    } catch (e) {
-      console.error("Failed to update dues", e);
-      load(); // revert optimistic update on failure
-    }
+    await toggleDuesMutation.mutateAsync({ profileId, paid });
   };
 
-  return { currentSeason, duesMap, toggleDues, isLoading, refresh: load };
+  return {
+    currentSeason,
+    duesMap,
+    toggleDues,
+    isLoading: seasonQuery.isLoading || (!!currentSeason && duesQuery.isLoading),
+    refresh: async () => {
+      await seasonQuery.refetch();
+      await duesQuery.refetch();
+    },
+  };
 }
