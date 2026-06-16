@@ -42,7 +42,7 @@ const ALL_SYSTEM_TIMEZONES = (() => {
   }
 })();
 
-const inputClasses = "block w-full max-w-lg rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition-colors outline-none focus:border-primary focus:ring-primary";
+const inputClasses = "max-w-lg";
 
 export default function SettingsView() {
   const dialog = useDialog();
@@ -392,7 +392,7 @@ function QueueWebhookSettings() {
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="block w-full max-w-lg flex-1 shadow-sm transition-colors outline-none focus:ring-primary"
+              className="block w-full max-w-lg flex-1"
             />
             <CopyButton
               value={webhookUrl}

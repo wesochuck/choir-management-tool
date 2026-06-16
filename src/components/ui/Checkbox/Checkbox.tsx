@@ -1,6 +1,7 @@
 import React, { useImperativeHandle, useRef } from 'react';
 import SlCheckbox from '@shoelace-style/shoelace/dist/react/checkbox/index.js';
 import type SlCheckboxElement from '@shoelace-style/shoelace/dist/components/checkbox/checkbox.component.js';
+import { layoutOnly } from '../shared';
 
 export type CheckboxProps = Omit<React.ComponentPropsWithoutRef<'input'>, 'size'>;
 
@@ -72,7 +73,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         required={required}
         name={name}
         value={value !== undefined ? String(value) : undefined}
-        className={className}
+        className={layoutOnly(className)}
         onSlChange={handleChange}
         onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined}
         onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined}

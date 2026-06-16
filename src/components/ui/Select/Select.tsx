@@ -2,6 +2,7 @@ import React, { useImperativeHandle, useRef } from 'react';
 import SlSelect from '@shoelace-style/shoelace/dist/react/select/index.js';
 import SlOption from '@shoelace-style/shoelace/dist/react/option/index.js';
 import type SlSelectElement from '@shoelace-style/shoelace/dist/components/select/select.component.js';
+import { layoutOnly } from '../shared';
 
 export type SelectSize = 'default' | 'small' | 'compact';
 
@@ -153,7 +154,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         name={rest.name}
         onSlChange={handleChange}
         onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLSelectElement>) : undefined}
-        className={className}
+        className={layoutOnly(className)}
         // @allow-inline-style - dynamic invalid border color override
         style={invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined}
       >

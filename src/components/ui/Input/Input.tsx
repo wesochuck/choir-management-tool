@@ -1,13 +1,13 @@
 import React, { useImperativeHandle, useRef } from 'react';
 import SlInput from '@shoelace-style/shoelace/dist/react/input/index.js';
 import type SlInputElement from '@shoelace-style/shoelace/dist/components/input/input.component.js';
+import { layoutOnly } from '../shared';
 
 export interface InputProps extends Omit<React.ComponentPropsWithoutRef<'input'>, 'size'> {
   invalid?: boolean;
 }
 
-const baseInputClasses =
-  'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]';
+const baseInputClasses = 'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]';
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ invalid, className, type, onChange, onInput, onBlur, onFocus, value, defaultValue, placeholder, disabled, required, readOnly, name, autoFocus, children, ...rest }, ref) => {
@@ -122,7 +122,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         required={required}
         readonly={readOnly}
         name={name}
-        className={className}
+        className={layoutOnly(className)}
         onSlInput={handleInput}
         onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined}
         onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined}

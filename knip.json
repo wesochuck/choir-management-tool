@@ -10,10 +10,10 @@
     "pocketbase/pb_hooks_src/rsvpEndpoints.ts",
     "pocketbase/pb_hooks_src/singerSeatingEndpoint.ts",
     "pocketbase/pb_hooks_src/stripeService.ts",
-    "pocketbase/pb_hooks_src/generate-main-pb-js.ts",
     "pocketbase/pb_hooks_src/hmacTokens.ts",
     "pocketbase/pb_hooks_src/rsvpValidation.ts",
-    "pocketbase/pb_hooks_src/email/emailTypes.ts"
+    "pocketbase/pb_hooks_src/email/emailTypes.ts",
+    "pocketbase/pb_hooks_src/ticketScan/ticketValidation.ts"
   ],
   "ignoreExportsUsedInFile": {
     "type": true
