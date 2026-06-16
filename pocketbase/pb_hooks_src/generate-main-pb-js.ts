@@ -25,7 +25,8 @@ export type UtilityBundleName =
     | 'attendanceFinalizer'
     | 'playerEndpoints'
     | 'stripeService'
-    | 'checkoutEndpoints';
+    | 'checkoutEndpoints'
+    | 'qrHelper';
 
 export type UtilityBundle = {
     files: string[];
@@ -140,7 +141,11 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
             'handleCreateDonationSession',
             'handleAdminRefundDonation'
         ],
-        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson'],
+        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson', 'qrHelper'],
+    },
+    qrHelper: {
+        files: ['email/qrHelper.ts'],
+        symbols: ['renderQrSvg'],
     },
 };
 
