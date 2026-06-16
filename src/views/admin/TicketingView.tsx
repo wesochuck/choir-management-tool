@@ -495,6 +495,15 @@ export default function TicketingView() {
         </div>
 
         <div className="flex items-center gap-2 pb-1.5">
+          <Button
+            as={Link}
+            to="/admin/tickets/scan"
+            variant="primary"
+            size="small"
+            className="no-underline"
+          >
+            Scan Tickets
+          </Button>
           {activeTab === 'bundles' && (
             <Button
               variant="primary"
