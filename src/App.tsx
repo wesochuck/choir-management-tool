@@ -70,6 +70,7 @@ const PublicHistoryView = lazyWithReload(() => import('./views/PublicHistoryView
 const AdminTicketingView = lazyWithReload(() => import('./views/admin/TicketingView'));
 const DonationsView = lazyWithReload(() => import('./views/admin/DonationsView'));
 const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
+const TicketScanView = lazyWithReload(() => import('./views/admin/TicketScanView'));
 
 
 
@@ -282,6 +283,14 @@ export default function App() {
             <ProtectedRoute adminOnly>
               <PageLayout title="Ticketing" backTo="/dashboard">
                 <AdminTicketingView />
+              </PageLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/tickets/scan" element={
+            <ProtectedRoute adminOnly>
+              <PageLayout title="Ticket Scanner" backTo="/admin/tickets">
+                <TicketScanView />
               </PageLayout>
             </ProtectedRoute>
           } />
