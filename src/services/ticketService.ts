@@ -15,6 +15,29 @@ export interface TicketBundle extends RecordModel {
   };
 }
 
+export interface ValidationResult {
+  valid: boolean;
+  buyerName?: string;
+  quantity?: number;
+  eventId?: string;
+  eventTitle?: string;
+  eventDate?: string;
+  isBundlePass?: boolean;
+  bundleTitle?: string;
+  bundleEvents?: { id: string; title: string; date: string }[];
+  reason?: string;
+}
+
+export interface ScanContext {
+  token: string;
+  qrDataUri: string;
+  buyerName: string;
+  eventTitle: string;
+  eventDate: string;
+  isBundlePass: boolean;
+  bundleTitle?: string;
+}
+
 export interface TicketPurchase extends RecordModel {
   event: string;
   profile?: string;
@@ -107,5 +130,19 @@ export const ticketService = {
       method: 'POST',
       body: { paymentIntentId }
     });
-  }
+  },
+
+  async validateScan(token: string, eventId: string): Promise<ValidationResult> {
+    return await pb.send<ValidationResult>('/api/tickets/validate', {
+      method: 'POST',
+      body: { token, eventId }
+    });
+  },
+
+  async getScanContext(sessionId: string, purchaseId: string): Promise<ScanContext> {
+    return await pb.send<ScanContext>(
+      `/api/tickets/scan-context?session_id=${encodeURIComponent(sessionId)}&purchase_id=${encodeURIComponent(purchaseId)}`,
+      { method: 'GET' }
+    );
+  },
 };

@@ -229,3 +229,54 @@ test('ticketService.adminRefundBundle calls pb.send', async (t) => {
     pb.send = originalSend;
   }
 });
+
+test('ticketService.validateScan calls pb.send correctly', async (t) => {
+  const originalSend = pb.send;
+  const mockSend = t.mock.fn(async () => ({
+    valid: true,
+    buyerName: 'Jane Doe',
+    quantity: 2,
+    eventId: 'evt_1',
+    eventTitle: 'Spring Concert',
+    eventDate: '2026-05-15T19:30:00Z',
+    isBundlePass: false,
+  }));
+  pb.send = mockSend as unknown as typeof pb.send;
+
+  try {
+    const res = await ticketService.validateScan('token_abc', 'evt_1');
+    assert.equal(res.valid, true);
+    assert.equal(res.buyerName, 'Jane Doe');
+    assert.equal(mockSend.mock.callCount(), 1);
+    assert.equal(mockSend.mock.calls[0].arguments[0], '/api/tickets/validate');
+    assert.deepEqual(mockSend.mock.calls[0].arguments[1], {
+      method: 'POST',
+      body: { token: 'token_abc', eventId: 'evt_1' }
+    });
+  } finally {
+    pb.send = originalSend;
+  }
+});
+
+test('ticketService.getScanContext calls pb.send correctly', async (t) => {
+  const originalSend = pb.send;
+  const mockSend = t.mock.fn(async () => ({
+    token: 't=pur_1&s=sig',
+    qrDataUri: 'data:image/svg+xml,...',
+    buyerName: 'Jane Doe',
+    eventTitle: 'Spring Concert',
+    eventDate: '2026-05-15T19:30:00Z',
+    isBundlePass: false,
+  }));
+  pb.send = mockSend as unknown as typeof pb.send;
+
+  try {
+    const res = await ticketService.getScanContext('sess_1', 'pur_1');
+    assert.equal(res.token, 't=pur_1&s=sig');
+    assert.equal(mockSend.mock.callCount(), 1);
+    assert.equal(mockSend.mock.calls[0].arguments[0], '/api/tickets/scan-context?session_id=sess_1&purchase_id=pur_1');
+    assert.deepEqual(mockSend.mock.calls[0].arguments[1], { method: 'GET' });
+  } finally {
+    pb.send = originalSend;
+  }
+});
