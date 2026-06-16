@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const appCss = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
+const appCss = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
 
 test('seating list print mode keeps navigation and editor controls out of the printed page', () => {
   const printRules = appCss.match(/@media print\s*\{[\s\S]*\n\}/)?.[0] || '';
@@ -67,7 +68,7 @@ test('seating grid print mode prints only the visual grid surface', () => {
 
 
 test('visual print seat typography uses semantic seat classes', () => {
-  const grid = readFileSync(new URL('../src/components/admin/SeatingGrid.tsx', import.meta.url), 'utf8');
+  const grid = readFileSync(resolve(process.cwd(), 'src/components/admin/SeatingGrid.tsx'), 'utf8');
 
   assert.match(grid, /grid-print/, 'SeatingGrid should use grid-print class for print layout identifier');
   assert.match(grid, /className=.*\btext-xs\b/, 'print seats should have readable font sizing via Tailwind');

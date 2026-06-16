@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const panel = readFileSync(new URL('../src/views/admin/communications/AutomatedTasksPanel.tsx', import.meta.url), 'utf8');
-const commView = readFileSync(new URL('../src/views/admin/CommunicationView.tsx', import.meta.url), 'utf8');
+const panel = readFileSync(resolve(process.cwd(), 'src/views/admin/communications/AutomatedTasksPanel.tsx'), 'utf8');
+const commView = readFileSync(resolve(process.cwd(), 'src/views/admin/CommunicationView.tsx'), 'utf8');
 
 test('AutomatedTasksPanel uses Tailwind table layout', () => {
   assert.match(panel, /table/, 'should use table');

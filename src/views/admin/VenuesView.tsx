@@ -107,7 +107,7 @@ export default function VenuesView() {
         footer={
           <div className="flex flex-row gap-4">
             <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button variant="primary" onClick={() => document.getElementById('venue-form')?.requestSubmit()}>Save Template</Button>
+            <Button variant="primary" onClick={() => (document.getElementById('venue-form') as HTMLFormElement | null)?.requestSubmit()}>Save Template</Button>
           </div>
         }
       >

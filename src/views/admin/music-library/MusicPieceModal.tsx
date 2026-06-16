@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Modal, Select, Input, Textarea } from '../../../components/ui';
+import { Button, Modal, Select, Input, Textarea } from '../../../components/ui';
 import { useDialog } from '../../../contexts/DialogContext';
 import {
   musicLibraryService,
@@ -862,45 +862,66 @@ export function MusicPieceModal({
       title={piece ? 'Edit Piece' : 'Add Piece'}
       maxWidth="640px"
       footer={
-        <>
-          {onDelete && (
-            <button
-              type="button"
-              className="mr-auto flex h-10 cursor-pointer items-center justify-center rounded-md bg-danger-bg px-4 text-sm font-bold text-danger-text shadow-xs transition-colors hover:bg-red-200 active:scale-95"
-              onClick={() => {
-                onClose();
-                onDelete();
-              }}
-            >
-              Delete
-            </button>
-          )}
-          <button
-            type="button"
-            className="flex h-10 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-bold text-text-muted shadow-xs transition-colors hover:bg-gray-50 active:scale-95"
-            onClick={handleClose}
-          >
-            Cancel
-          </button>
-          {!piece && onSaveAndAddAnother && (
-            <button
-              type="button"
-              className="flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary-light px-4 text-sm font-bold text-primary-deep shadow-xs transition-colors hover:bg-emerald-100 active:scale-95 disabled:opacity-50"
+        onDelete ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <div className="flex justify-between gap-2 sm:mr-auto">
+              <Button
+                variant="danger"
+                onClick={() => { onClose(); onDelete(); }}
+              >
+                Delete
+              </Button>
+              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            </div>
+            <Button
+              type="submit"
+              form="music-piece-form"
+              variant="primary"
               disabled={isSaving}
-              onClick={handleSaveAndAddAnother}
+              loading={isSaving}
+              className="w-full sm:w-auto"
             >
-              {isSaving ? 'Saving...' : 'Save & Add Another'}
-            </button>
-          )}
-          <button
-            type="submit"
-            form="music-piece-form"
-            className="flex h-10 cursor-pointer items-center justify-center rounded-md bg-primary px-6 text-sm font-bold text-white shadow-md transition-all enabled:hover:bg-primary-deep enabled:active:scale-95 disabled:opacity-50"
-            disabled={isSaving}
-          >
-            {isSaving ? 'Saving...' : 'Save Piece'}
-          </button>
-        </>
+              Save Piece
+            </Button>
+          </div>
+        ) : !piece && onSaveAndAddAnother ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <div className="flex justify-between gap-2 sm:mr-auto">
+              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button
+                variant="secondary"
+                disabled={isSaving}
+                loading={isSaving}
+                onClick={handleSaveAndAddAnother}
+              >
+                Save & Add Another
+              </Button>
+            </div>
+            <Button
+              type="submit"
+              form="music-piece-form"
+              variant="primary"
+              disabled={isSaving}
+              loading={isSaving}
+              className="w-full sm:w-auto"
+            >
+              Save Piece
+            </Button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={handleClose}>Cancel</Button>
+            <Button
+              type="submit"
+              form="music-piece-form"
+              variant="primary"
+              disabled={isSaving}
+              loading={isSaving}
+            >
+              Save Piece
+            </Button>
+          </div>
+        )
       }
     >
       <div className="flex flex-col gap-4">

@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const seatingView = readFileSync(new URL('../src/views/admin/SeatingView.tsx', import.meta.url), 'utf8');
-const seatingGrid = readFileSync(new URL('../src/components/admin/SeatingGrid.tsx', import.meta.url), 'utf8');
-const seatingBottomDock = readFileSync(new URL('../src/components/admin/SeatingBottomDock.tsx', import.meta.url), 'utf8');
-const singerLookupModal = readFileSync(new URL('../src/components/admin/SingerLookupModal.tsx', import.meta.url), 'utf8');
-const indexCss = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
+const seatingView = readFileSync(resolve(process.cwd(), 'src/views/admin/SeatingView.tsx'), 'utf8');
+const seatingGrid = readFileSync(resolve(process.cwd(), 'src/components/admin/SeatingGrid.tsx'), 'utf8');
+const seatingBottomDock = readFileSync(resolve(process.cwd(), 'src/components/admin/SeatingBottomDock.tsx'), 'utf8');
+const singerLookupModal = readFileSync(resolve(process.cwd(), 'src/components/admin/SingerLookupModal.tsx'), 'utf8');
+const indexCss = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
 
 test('seating wide layout is reserved for actual fullscreen mode', () => {
   assert.match(

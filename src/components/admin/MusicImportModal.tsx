@@ -214,10 +214,12 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
         );
       case 'MAP':
         return (
-          <div className="flex w-full justify-end gap-2">
-            <Button onClick={handleReset} variant="outline" className="mr-auto">Restart</Button>
-            <Button onClick={() => setStep('UPLOAD')} variant="outline">Back</Button>
-            <Button onClick={handleApplyMapping} variant="primary">Preview & Validate</Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <div className="flex justify-between gap-2 sm:mr-auto">
+              <Button onClick={handleReset} variant="outline">Restart</Button>
+              <Button onClick={() => setStep('UPLOAD')} variant="outline">Back</Button>
+            </div>
+            <Button onClick={handleApplyMapping} variant="primary" className="w-full sm:w-auto">Preview & Validate</Button>
           </div>
         );
       case 'PREVIEW':

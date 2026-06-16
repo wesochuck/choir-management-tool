@@ -97,7 +97,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       footer={
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
-          <Button variant="primary" onClick={() => document.getElementById('edit-item-form')?.requestSubmit()}>Update Item</Button>
+          <Button variant="primary" onClick={() => (document.getElementById('edit-item-form') as HTMLFormElement | null)?.requestSubmit()}>Update Item</Button>
         </div>
       }
     >

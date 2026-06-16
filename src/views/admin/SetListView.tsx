@@ -775,24 +775,28 @@ export default function SetListView() {
         title="Printable Set List"
         maxWidth="600px"
         footer={
-          <>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsPrintModalOpen(false)}
-            >
-              Close
-            </Button>
-            <SlCopyButton value={plainText} className="flex items-center gap-[6px]">
-              📋 Copy Plain Text
-            </SlCopyButton>
-            <Button 
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <div className="flex justify-between gap-2 sm:mr-auto sm:items-center">
+              <Button
+                variant="outline"
+                onClick={() => setIsPrintModalOpen(false)}
+              >
+                Close
+              </Button>
+              <div className="flex-1 sm:flex-none">
+                <SlCopyButton value={plainText} className="flex w-full items-center gap-[6px]">
+                  📋 Copy Plain Text
+                </SlCopyButton>
+              </div>
+            </div>
+            <Button
               variant="primary"
-              className="flex items-center gap-[6px]" 
+              className="w-full sm:w-auto"
               onClick={handlePrintList}
             >
               🖨️ Print List
             </Button>
-          </>
+          </div>
         }
       >
         <div className="rounded-md border border-border bg-white p-6 font-[Georgia,serif] text-gray-800 shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">

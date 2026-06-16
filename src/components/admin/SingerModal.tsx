@@ -198,30 +198,45 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
       footer={
         <>
           {activeTab === 'profile' ? (
-            <>
-              {initialData && onDelete && (
+            initialData && onDelete ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <div className="flex justify-between gap-2 sm:mr-auto">
+                  <Button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={isDeleting || isSubmitting}
+                    variant="danger"
+                    loading={isDeleting}
+                  >
+                    Delete Singer
+                  </Button>
+                  <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
+                </div>
                 <Button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={isDeleting || isSubmitting}
-                  variant="danger"
-                  className="mr-auto"
-                  loading={isDeleting}
+                  type="submit"
+                  form="singer-form"
+                  disabled={isSubmitting}
+                  variant="primary"
+                  loading={isSubmitting}
+                  className="w-full sm:w-auto"
                 >
-                  Delete Singer
+                  Save Changes
                 </Button>
-              )}
-              <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
-              <Button 
-                type="submit" 
-                form="singer-form"
-                disabled={isSubmitting}
-                variant="primary"
-                loading={isSubmitting}
-              >
-                Save Changes
-              </Button>
-            </>
+              </div>
+            ) : (
+              <div className="flex justify-end gap-2">
+                <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
+                <Button
+                  type="submit"
+                  form="singer-form"
+                  disabled={isSubmitting}
+                  variant="primary"
+                  loading={isSubmitting}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            )
           ) : (
             <Button type="button" onClick={handleClose} variant="primary">Close</Button>
           )}

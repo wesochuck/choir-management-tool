@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { pb } from '../src/lib/pocketbase.ts';
 import { rosterService } from '../src/services/rosterService.ts';
 import { ClientResponseError } from 'pocketbase';
@@ -158,7 +159,7 @@ test('bulkUpdateRSVP handles empty updates array without calling backend API', a
 });
 
 test('event roster bulk actions operate on the currently shown singers', () => {
-  const source = readFileSync(new URL('../src/views/admin/event-roster/useRsvpBulkActions.ts', import.meta.url), 'utf8');
+  const source = readFileSync(resolve(process.cwd(), 'src/views/admin/event-roster/useRsvpBulkActions.ts'), 'utf8');
 
   assert.match(
     source,

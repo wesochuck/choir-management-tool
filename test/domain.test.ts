@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { calendarUtils } from '../src/lib/calendar.ts';
 import { calculateAutoPaint } from '../src/lib/seatingAlgorithm.ts';
 import { renderCommunicationTemplate } from '../src/lib/messageTemplates.ts';
@@ -95,12 +96,12 @@ test('core color pairs meet WCAG AA contrast for normal text', () => {
 });
 
 test('button system keeps accessible minimum touch target height', () => {
-  const btnSource = readFileSync(new URL('../src/components/ui/Button/Button.tsx', import.meta.url), 'utf8');
+  const btnSource = readFileSync(resolve(process.cwd(), 'src/components/ui/Button/Button.tsx'), 'utf8');
   assert.match(btnSource, /'h-11 px-6 text-sm'/);
 });
 
 test('singer card name allows full name text with flexible width', () => {
-  const comp = readFileSync(new URL('../src/components/admin/SeatingBottomDock.tsx', import.meta.url), 'utf8');
+  const comp = readFileSync(resolve(process.cwd(), 'src/components/admin/SeatingBottomDock.tsx'), 'utf8');
   assert.match(comp, /flex-1/, 'should have flex-1 for flexible width');
   assert.match(comp, /min-w-0/, 'should have min-w-0 for flexible width');
 });

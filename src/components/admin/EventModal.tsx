@@ -414,32 +414,52 @@ export const EventModal: React.FC<EventModalProps> = ({
       onClose={handleClose}
       title={initialData && initialData.id ? 'Edit Event' : 'Schedule Event'}
       footer={
-        <>
-          {initialData && initialData.id && onDelete && (
+        initialData && initialData.id && onDelete ? (
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <div className="flex justify-between gap-2 sm:mr-auto">
+              <Button
+                variant="danger"
+                onClick={handleDelete}
+              >
+                Delete
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleClose}
+              >
+                Cancel
+              </Button>
+            </div>
             <Button
-              variant="danger"
-              onClick={handleDelete}
-              className="mr-auto"
+              variant="primary"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              type="submit"
+              form="event-form"
+              className="w-full sm:w-auto"
             >
-              Delete
+              Save Event
             </Button>
-          )}
-          <Button
-            variant="outline"
-            onClick={handleClose}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            loading={isSubmitting}
-            disabled={isSubmitting}
-            type="submit"
-            form="event-form"
-          >
-            Save Event
-          </Button>
-        </>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={handleClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              type="submit"
+              form="event-form"
+            >
+              Save Event
+            </Button>
+          </div>
+        )
       }
     >
       <div className="flex flex-col gap-4">
