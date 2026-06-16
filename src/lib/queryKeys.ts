@@ -36,6 +36,10 @@ export const queryKeys = {
     main: (selectedEventId: string) => [...queryKeys.ticketing.all, 'main', selectedEventId] as const,
     logoUrl: ['ticketing', 'logoUrl'] as const,
   },
+  eventRoster: {
+    all: ['eventRoster'] as const,
+    byEventId: (eventId: string) => [...queryKeys.eventRoster.all, eventId] as const,
+  },
   tickets: {
     all: ['tickets'] as const,
     scanContext: (sessionId: string, purchaseId: string) => [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,
