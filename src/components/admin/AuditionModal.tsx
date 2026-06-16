@@ -61,8 +61,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
     onClose();
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (event?: React.FormEvent) => {
+    event?.preventDefault?.();
 
     if (!formData.name.trim() || !formData.contact.trim()) {
       return;
@@ -92,7 +92,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
       footer={
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button variant="primary" disabled={isSubmitting} loading={isSubmitting} onClick={() => (document.getElementById('audition-form') as HTMLFormElement | null)?.requestSubmit()}>
+          <Button variant="primary" disabled={isSubmitting} loading={isSubmitting} onClick={() => handleSubmit()}>
             {audition ? 'Save Audition' : 'Add Audition'}
           </Button>
         </div>

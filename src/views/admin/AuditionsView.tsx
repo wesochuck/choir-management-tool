@@ -124,8 +124,8 @@ export default function AuditionsView() {
     }
   };
 
-  const confirmSchedule = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const confirmSchedule = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     if (!schedulingAudition) return;
     const finalSlot = schedSlot === '__custom__' ? schedCustom.trim() : schedSlot.trim();
     if (!finalSlot) return;
@@ -803,7 +803,7 @@ export default function AuditionsView() {
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setSchedulingAudition(null)}>Cancel</Button>
-            <Button variant="primary" onClick={() => (document.getElementById('schedule-form') as HTMLFormElement | null)?.requestSubmit()}>Confirm & Send Email</Button>
+            <Button variant="primary" onClick={() => confirmSchedule()}>Confirm & Send Email</Button>
           </div>
         }
       >

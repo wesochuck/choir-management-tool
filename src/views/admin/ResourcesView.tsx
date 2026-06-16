@@ -88,8 +88,8 @@ export default function ResourcesView() {
     setIsAdding(false);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     if (!title.trim()) return;
 
     setIsSaving(true);
@@ -262,7 +262,7 @@ export default function ResourcesView() {
         footer={
           <div className="flex flex-row gap-4">
             <Button type="button" onClick={resetForm} disabled={isSaving} variant="outline">Cancel</Button>
-            <Button disabled={isSaving} variant="primary" onClick={() => (document.getElementById('resource-form') as HTMLFormElement | null)?.requestSubmit()}>
+            <Button disabled={isSaving} variant="primary" onClick={() => handleSave()}>
               {isSaving ? 'Saving...' : 'Save Resource'}
             </Button>
           </div>

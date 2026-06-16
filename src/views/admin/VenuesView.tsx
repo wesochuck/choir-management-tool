@@ -34,8 +34,8 @@ export default function VenuesView() {
     setIsAdding(false);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     const rowCounts = isOpenSeating ? [] : rowCountsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
 
     try {
@@ -107,7 +107,7 @@ export default function VenuesView() {
         footer={
           <div className="flex flex-row gap-4">
             <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button variant="primary" onClick={() => (document.getElementById('venue-form') as HTMLFormElement | null)?.requestSubmit()}>Save Template</Button>
+            <Button variant="primary" onClick={() => handleSave()}>Save Template</Button>
           </div>
         }
       >

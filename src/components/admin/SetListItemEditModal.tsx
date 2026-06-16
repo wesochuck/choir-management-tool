@@ -61,8 +61,8 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault?.();
     if (!item) return;
     if (!title.trim()) return;
 
@@ -97,7 +97,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       footer={
         <div className="flex justify-end gap-2">
           <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
-          <Button variant="primary" onClick={() => (document.getElementById('edit-item-form') as HTMLFormElement | null)?.requestSubmit()}>Update Item</Button>
+          <Button variant="primary" onClick={() => handleSubmit()}>Update Item</Button>
         </div>
       }
     >
