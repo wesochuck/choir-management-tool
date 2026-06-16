@@ -21,6 +21,7 @@
 | `pocketbase/pb_migrations/1720000000_add_qr_placeholder_to_ticket_emails.js` | Forward migration adding `{{TICKET_QR}}` to three email templates |
 | `src/views/admin/TicketScanView.tsx` | Admin scanner view (event selector, camera, manual entry, result panel) |
 | `src/components/admin/ScanResultCard.tsx` | Green/red validation result card component |
+| `src/hooks/useTicketValidation.ts` | TanStack Query hooks for `validateScan` (mutation) and `getScanContext` (query) |
 | `test/ticketScanValidation.test.ts` | Tests for the validation endpoint handler logic |
 
 ### Modified files
@@ -32,12 +33,15 @@
 | `pocketbase/pb_hooks_src/checkoutEndpoints.ts` | Import `renderQrSvg`; generate token + QR at enqueue time (single, bundle, reminder) |
 | `pocketbase/pb_hooks_src/email/queueProcessor.ts` | Protect `{{TICKET_QR}}` from markdown; substitute with SVG img + fallback button |
 | `src/services/ticketService.ts` | Add `ValidationResult`, `ScanContext` types; add `validateScan`, `getScanContext` methods |
+| `src/hooks/useTicketValidation.ts` | TanStack Query wrapper: `useValidateScan` mutation, `useScanContext` query |
+| `src/lib/queryKeys.ts` | Add `tickets` query key factory |
 | `src/views/PublicTicketSuccessView.tsx` | Call `getScanContext`; render QR inline with "Screenshot this" hint |
 | `src/views/admin/TicketingView.tsx` | Add "Scan Tickets" entry point linking to `/admin/tickets/scan` |
 | `src/App.tsx` | Add `TicketScanView` lazy import; register `/admin/tickets/scan` route |
 | `package.json` | Add `jsQR` dependency |
 | `test/hmacTokens.test.ts` | Add tests for `getTicketPayload`, `generateSignedTicketToken`, `parseSignedToken` with `t` key |
 | `test/ticketService.test.ts` | Add tests for `validateScan`, `getScanContext` |
+| `test/useTicketValidation.test.tsx` | Tests for `useValidateScan`, `useScanContext` hooks |
 
 ---
 
@@ -608,11 +612,14 @@ rtk git commit -m "feat: add ticket validation and scan-context endpoints"
 
 ---
 
-## Task 4: Frontend Service + Tests
+## Task 4: Frontend Service + TanStack Query Hooks + Tests
 
 **Files:**
 - Modify: `src/services/ticketService.ts`
+- Modify: `src/lib/queryKeys.ts`
+- Create: `src/hooks/useTicketValidation.ts`
 - Modify: `test/ticketService.test.ts`
+- Create: `test/useTicketValidation.test.tsx`
 
 ### Step 4.1: Write failing tests
 
@@ -733,6 +740,91 @@ Expected: PASS
 ```bash
 rtk git add src/services/ticketService.ts test/ticketService.test.ts
 rtk git commit -m "feat: add validateScan and getScanContext to ticketService"
+```
+
+### Step 4.6: Add ticket query keys
+
+Add to `src/lib/queryKeys.ts`:
+
+```ts
+tickets: {
+    all: ['tickets'] as const,
+    scanContext: (sessionId: string, purchaseId: string) => [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,
+},
+```
+
+### Step 4.7: Create TanStack Query hook
+
+Create `src/hooks/useTicketValidation.ts`:
+
+```ts
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { ticketService, type ValidationResult, type ScanContext } from '../services/ticketService';
+import { queryKeys } from '../lib/queryKeys';
+
+function toErrorMessage(err: unknown, fallback: string): string {
+    return err instanceof Error ? err.message : fallback;
+}
+
+export function useValidateScan() {
+    return useMutation<ValidationResult, Error, { token: string; eventId: string }>({
+        mutationFn: ({ token, eventId }) => ticketService.validateScan(token, eventId),
+    });
+}
+
+export function useScanContext(sessionId: string | null, purchaseId: string | null) {
+    return useQuery<ScanContext | null, Error>({
+        queryKey: queryKeys.tickets.scanContext(sessionId || '', purchaseId || ''),
+        queryFn: () =>
+            sessionId && purchaseId
+                ? ticketService.getScanContext(sessionId, purchaseId)
+                : null,
+        enabled: !!sessionId && !!purchaseId,
+        // scan context never changes for a given purchase — cache forever
+        staleTime: Infinity,
+    });
+}
+```
+
+### Step 4.8: Write hook tests
+
+Create `test/useTicketValidation.test.tsx`:
+
+```ts
+// @vitest-environment jsdom
+import { describe, it, mock } from 'node:test';
+import assert from 'node:assert/strict';
+
+describe('useTicketValidation', () => {
+    it('useValidateScan calls ticketService.validateScan with correct args', async () => {
+        const { useValidateScan } = await import('../src/hooks/useTicketValidation');
+        const mutation = useValidateScan();
+        assert.equal(typeof mutation.mutate, 'function');
+        assert.equal(typeof mutation.mutateAsync, 'function');
+    });
+
+    it('useScanContext returns enabled=false when args are null', async () => {
+        const { useScanContext } = await import('../src/hooks/useTicketValidation');
+        const query = useScanContext(null, null);
+        assert.equal(query.data, undefined);
+    });
+});
+```
+
+### Step 4.9: Run tests
+
+```bash
+rtk npx vitest run test/ticketService.test.ts
+rtk npx vitest run test/useTicketValidation.test.tsx
+```
+
+Expected: PASS
+
+### Step 4.10: Commit hooks
+
+```bash
+rtk git add src/hooks/useTicketValidation.ts src/lib/queryKeys.ts test/useTicketValidation.test.tsx
+rtk git commit -m "feat: add TanStack Query hooks for ticket scan validation"
 ```
 
 ---
@@ -1522,6 +1614,7 @@ rtk git commit -m "fix: address lint/typecheck issues from QR verification featu
 | `rtk npx vitest run test/hmacTokens.test.ts` | Required | After Task 1 |
 | `rtk npx vitest run test/ticketScanValidation.test.ts` | Required | After Task 3 |
 | `rtk npx vitest run test/ticketService.test.ts` | Required | After Task 4 |
+| `rtk npx vitest run test/useTicketValidation.test.tsx` | Required | After Task 4 |
 | `rtk npm run typecheck` | Required | After Tasks 7, 8, 9 |
 | `rtk npm run lint` | Required | Final |
 | TypeScript safety | No `any`, no `as any` | Verified in all new code |
