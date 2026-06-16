@@ -573,8 +573,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         type="file"
         accept="image/*"
         onChange={handleFileChange}
-        // @allow-inline-style - hidden file input
-        style={{ display: 'none' }}
+        className="hidden"
       />
 
       {/* In-app Webcam Modal (Desktop/Laptop webcam capture) */}

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import type { MusicPiece } from '../../../../types/musicLibrary';
 import type { MusicGenreDef } from '../../../../services/settingsService';
 import { MultiMovementBadge, MovementBadge } from './MusicLibraryBadges';
-import { CHIP_COLORS, getChipColor } from '../../../../lib/chipColorUtils';
+import { CHIP_CLASSES, getChipClass } from '../../../../lib/chipColorUtils';
 
 interface MusicLibraryTitleCellProps {
   piece: MusicPiece;
@@ -25,11 +25,11 @@ export function MusicLibraryTitleCell({
 }: MusicLibraryTitleCellProps) {
   const isChild = isChildMovement;
 
-  const chipColorMap = useMemo(() => {
-    const map = new Map<string, { bg: string; border: string; text: string }>();
+  const chipClassMap = useMemo(() => {
+    const map = new Map<string, string>();
     const sorted = [...genres].sort((a, b) => a.label.localeCompare(b.label));
     sorted.forEach((genre, idx) => {
-      map.set(genre.id, getChipColor(idx));
+      map.set(genre.id, getChipClass(idx));
     });
     return map;
   }, [genres]);
@@ -65,17 +65,11 @@ export function MusicLibraryTitleCell({
         <div className="mt-[2px] flex flex-row flex-wrap items-center gap-[6px]">
           {piece.genres?.map((id) => {
             const found = genres.find((g) => g.id === id);
-            const color = chipColorMap.get(id) || CHIP_COLORS[0];
+            const chipClass = chipClassMap.get(id) || CHIP_CLASSES[0];
             return (
               <span
                 key={id}
-                className="inline-flex rounded-[4px] border px-[5px] py-[1px] text-[9px] font-medium"
-                // @allow-inline-style - Genre tag colors match the modal's stable palette.
-                style={{
-                    backgroundColor: color.bg,
-                    borderColor: color.border,
-                    color: color.text,
-                }}
+                className={`inline-flex rounded-[4px] border px-[5px] py-[1px] text-[9px] font-medium ${chipClass}`}
               >
                 {found ? found.label : id}
               </span>

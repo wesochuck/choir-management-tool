@@ -387,10 +387,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
                   return (
                     <tr 
                       key={idx} 
-                      // @allow-inline-style - conditional error/warning background
-                      style={{ 
-                        backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
-                      }}
+                      className={hasErrors ? 'bg-red-50' : hasWarnings ? 'bg-amber-50' : ''}
                     >
                       <td className="text-muted w-[60px] text-center text-[0.8rem]">
                         {piece.rowNumber}

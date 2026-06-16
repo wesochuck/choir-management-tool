@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { AuditionModal } from '../../components/admin/AuditionModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { auditionService, type Audition, type AuditionInput } from '../../services/auditionService';
 import { settingsService, type AuditionSettings } from '../../services/settingsService';
-import { eventService, type Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
 import { type UserAccount } from '../../services/profileService';
@@ -15,7 +17,9 @@ import { Button, Select, Input, Badge, Modal, Textarea } from '../../components/
 export default function AuditionsView() {
   const dialog = useDialog();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { timezone } = useChoirSettings();
+  const { performances } = useEvents();
 
   const handleEmailClick = (email: string, name: string, voicePart: string) => {
     navigate('/admin/communications', {
@@ -34,16 +38,13 @@ export default function AuditionsView() {
     });
   };
 
-  const [auditions, setAuditions] = useState<Audition[]>([]);
-  const [performances, setPerformances] = useState<Event[]>([]);
-  const [settings, setSettings] = useState<AuditionSettings | null>(null);
-  const [admins, setAdmins] = useState<UserAccount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'slots'>('general');
-  const [backupSettings, setBackupSettings] = useState<AuditionSettings | null>(null);
-  const [error, setError] = useState('');
+  // Form draft: only populated when the settings modal is open. Read-only
+  // display (status banner, schedule modal) reads settingsQuery.data directly.
+  const [settingsDraft, setSettingsDraft] = useState<AuditionSettings | null>(null);
+  const [backupDraft, setBackupDraft] = useState<AuditionSettings | null>(null);
   const [editingAudition, setEditingAudition] = useState<Audition | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [performanceFilter, setPerformanceFilter] = useState('all');
@@ -55,15 +56,36 @@ export default function AuditionsView() {
   const [genEnd, setGenEnd] = useState('20:00');
   const [genInterval, setGenInterval] = useState('15');
 
+  // ── Data queries ──
+  const auditionsQuery = useQuery({
+    queryKey: queryKeys.auditions.list,
+    queryFn: auditionService.getAuditions,
+  });
+
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.auditions.settings,
+    queryFn: settingsService.getAuditionSettings,
+  });
+
+  const adminsQuery = useQuery({
+    queryKey: queryKeys.users.admins,
+    queryFn: () => pb.collection('users').getFullList<UserAccount>({ filter: 'role = "admin"' }),
+    staleTime: 60000,
+  });
+
+  const auditions = auditionsQuery.data ?? [];
+  const admins = adminsQuery.data ?? [];
+  const isLoading = auditionsQuery.isLoading || settingsQuery.isLoading || adminsQuery.isLoading;
+
   const generateSlots = () => {
     if (!genDate || !genStart || !genEnd || !genInterval) return;
-    
+
     const startStr = `${genDate}T${genStart}`;
     const endStr = `${genDate}T${genEnd}`;
-    
+
     const startUtc = new Date(zonedInputValueToUtc(startStr, timezone));
     const endUtc = new Date(zonedInputValueToUtc(endStr, timezone));
-    
+
     if (startUtc >= endUtc) {
       dialog.showToast('End time must be after start time.');
       return;
@@ -71,25 +93,37 @@ export default function AuditionsView() {
 
     const intervalMs = parseInt(genInterval) * 60 * 1000;
     const newSlots: string[] = [];
-    
+
     let current = startUtc;
     while (current < endUtc) {
       newSlots.push(current.toISOString());
       current = new Date(current.getTime() + intervalMs);
     }
 
-    if (settings) {
-      const merged = [...(settings.slots || []), ...newSlots];
+    if (settingsDraft) {
+      const merged = [...(settingsDraft.slots || []), ...newSlots];
       // deduplicate and sort
       const uniqueSorted = Array.from(new Set(merged)).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-      setSettings({ ...settings, slots: uniqueSorted });
+      setSettingsDraft({ ...settingsDraft, slots: uniqueSorted });
     }
   };
 
   const removeSlot = (slotToRemove: string) => {
-    if (settings) {
-      setSettings({ ...settings, slots: settings.slots.filter(s => s !== slotToRemove) });
+    if (settingsDraft) {
+      setSettingsDraft({ ...settingsDraft, slots: settingsDraft.slots.filter(s => s !== slotToRemove) });
     }
+  };
+
+  // Snapshot the current query data into a fresh draft so the user can edit
+  // without mutating the cached server state.
+  const openSettings = () => {
+    if (settingsQuery.data) {
+      const snapshot = JSON.parse(JSON.stringify(settingsQuery.data)) as AuditionSettings;
+      setSettingsDraft(snapshot);
+      setBackupDraft(snapshot);
+    }
+    setSettingsTab('general');
+    setShowSettings(true);
   };
 
   // Scheduling Modal State
@@ -99,15 +133,17 @@ export default function AuditionsView() {
 
   const openScheduleModal = (audition: Audition) => {
     setSchedulingAudition(audition);
-    
+
+    // Read from the query (saved settings) — not the in-progress draft.
+    const savedSlots = settingsQuery.data?.slots ?? [];
     const prefSlots = audition.requestedSlots || [];
-    const matchingSlot = prefSlots.find(s => settings?.slots?.includes(s));
-    
+    const matchingSlot = prefSlots.find(s => savedSlots.includes(s));
+
     if (matchingSlot) {
       setSchedSlot(matchingSlot);
       setSchedCustom('');
     } else if (audition.scheduledTimeSlot) {
-      const isPredefined = settings?.slots?.includes(audition.scheduledTimeSlot);
+      const isPredefined = savedSlots.includes(audition.scheduledTimeSlot);
       if (isPredefined) {
         setSchedSlot(audition.scheduledTimeSlot);
         setSchedCustom('');
@@ -115,8 +151,8 @@ export default function AuditionsView() {
         setSchedSlot('__custom__');
         setSchedCustom(audition.scheduledTimeSlot);
       }
-    } else if (settings?.slots && settings.slots.length > 0) {
-      setSchedSlot(settings.slots[0]);
+    } else if (savedSlots.length > 0) {
+      setSchedSlot(savedSlots[0]);
       setSchedCustom('');
     } else {
       setSchedSlot('__custom__');
@@ -131,55 +167,45 @@ export default function AuditionsView() {
     if (!finalSlot) return;
 
     try {
-      const updated = await auditionService.updateAudition(schedulingAudition.id, { 
+      await auditionService.updateAudition(schedulingAudition.id, { 
         status: 'Scheduled', 
         scheduledTimeSlot: finalSlot 
       });
-      setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
       dialog.showToast('Audition scheduled and confirmation email sent.');
       setSchedulingAudition(null);
+      refresh();
     } catch {
       dialog.showMessage({ title: 'Error', message: 'Failed to schedule audition.', variant: 'danger' });
     }
   };
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [auditionList, allEvents, auditionSettings, adminList] = await Promise.all([
-        auditionService.getAuditions(),
-        eventService.getEvents(),
-        settingsService.getAuditionSettings(),
-        pb.collection('users').getFullList<UserAccount>({ filter: 'role = "admin"' })
-      ]);
-      setAuditions(auditionList);
-      setPerformances(allEvents.filter(e => e.type === 'Performance'));
-      setSettings(auditionSettings);
-      setAdmins(adminList);
-      // Auto-expand settings to guide user if no audition times are set
-      if (!auditionSettings.slots || auditionSettings.slots.length === 0) {
-        setBackupSettings(JSON.parse(JSON.stringify(auditionSettings)));
-        setSettingsTab('general');
-        setShowSettings(true);
-      }
-      setError('');
-    } catch {
-      setError('Could not load auditions data.');
-    } finally {
-      setIsLoading(false);
-    }
+  const refresh = () => {
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.auditions.list }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.auditions.settings }),
+    ]);
   };
 
+  // Auto-expand settings to guide user if no audition time slots are set.
+  // Only fires while the modal is closed so a background refetch does not
+  // re-open it after the user has dismissed it.
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!showSettings && settingsQuery.data && !settingsQuery.data.slots?.length) {
+      const snapshot = JSON.parse(JSON.stringify(settingsQuery.data)) as AuditionSettings;
+      setSettingsDraft(snapshot);
+      setBackupDraft(snapshot);
+      setSettingsTab('general');
+      setShowSettings(true);
+    }
+  }, [settingsQuery.data, showSettings]);
 
   const handleSaveSettings = async () => {
-    if (!settings) return;
+    if (!settingsDraft) return;
     setIsSavingSettings(true);
     try {
-      await settingsService.saveAuditionSettings(settings);
-      setBackupSettings(null);
+      await settingsService.saveAuditionSettings(settingsDraft);
+      setSettingsDraft(null);
+      setBackupDraft(null);
       setShowSettings(false);
       dialog.showToast('Audition settings updated.');
     } catch {
@@ -190,23 +216,20 @@ export default function AuditionsView() {
   };
 
   const handleCancelSettings = () => {
-    if (backupSettings) {
-      setSettings(backupSettings);
-      setBackupSettings(null);
-    }
+    setSettingsDraft(null);
+    setBackupDraft(null);
     setShowSettings(false);
   };
 
   const updateStatus = async (audition: Audition, status: Audition['status']) => {
-    const updated = await auditionService.updateAudition(audition.id, { status });
-    setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
+    await auditionService.updateAudition(audition.id, { status });
+    refresh();
   };
 
   const handleSaveAudition = async (id: string | null, data: Partial<Audition>) => {
     try {
       if (id) {
-        const updated = await auditionService.updateAudition(id, data);
-        setAuditions((current) => current.map((item) => item.id === updated.id ? updated : item));
+        await auditionService.updateAudition(id, data);
         dialog.showToast('Audition updated.');
       } else {
         const payload: AuditionInput = {
@@ -220,11 +243,11 @@ export default function AuditionsView() {
           notes: data.notes,
           status: data.status,
         };
-        const created = await auditionService.createAudition(payload);
-        setAuditions((current) => [created, ...current]);
+        await auditionService.createAudition(payload);
         dialog.showToast('Audition created successfully.');
       }
       setIsModalOpen(false);
+      refresh();
     } catch (err: unknown) {
       dialog.showMessage({
         title: 'Error',
@@ -245,7 +268,7 @@ export default function AuditionsView() {
     try {
       await auditionService.convertAuditionToSinger(audition.id);
       dialog.showToast(`${audition.name} has been added to the choir roster.`);
-      await fetchData();
+      refresh();
     } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Conversion Failed',
@@ -265,7 +288,7 @@ export default function AuditionsView() {
     if (!shouldDelete) return;
 
     await auditionService.deleteAudition(audition.id);
-    setAuditions((current) => current.filter((item) => item.id !== audition.id));
+    refresh();
   };
 
   const [sortField, setSortField] = useState<'scheduledTimeSlot' | 'name'>('scheduledTimeSlot');
@@ -309,7 +332,7 @@ export default function AuditionsView() {
   }, [filteredAuditions, sortField, sortDirection]);
 
   if (isLoading) return <div className="p-8">Loading auditions...</div>;
-  if (error) return <div className="p-8 text-danger-text">{error}</div>;
+  if (auditionsQuery.error) return <div className="p-8 text-danger-text">{auditionsQuery.error instanceof Error ? auditionsQuery.error.message : 'Could not load auditions data.'}</div>;
 
   return (
     <div className="flex flex-col gap-8 py-8">
@@ -321,27 +344,27 @@ export default function AuditionsView() {
       </div>
 
       {/* Status Banner */}
-      {!isLoading && settings && (
+      {!isLoading && settingsQuery.data && (
         <div className={`flex items-center justify-between rounded-xl border p-5 shadow-sm transition-all duration-200 ${
-          settings.enabled && settings.defaultPerformanceId 
-            ? 'border-primary/30 bg-primary/5' 
+          settingsQuery.data.enabled && settingsQuery.data.defaultPerformanceId
+            ? 'border-primary/30 bg-primary/5'
             : 'bg-surface-muted border-border'
         }`}>
           <div className="flex flex-row items-center gap-4">
             <div className="flex size-8 items-center justify-center rounded-full bg-surface text-base shadow-sm select-none">
-              {settings.enabled && settings.defaultPerformanceId ? '🟢' : '⚪'}
+              {settingsQuery.data.enabled && settingsQuery.data.defaultPerformanceId ? '🟢' : '⚪'}
             </div>
             <div className="flex flex-col">
               <div className={`text-sm font-bold tracking-wide ${
-                settings.enabled && settings.defaultPerformanceId ? 'text-primary-deep' : 'text-text-muted'
+                settingsQuery.data.enabled && settingsQuery.data.defaultPerformanceId ? 'text-primary-deep' : 'text-text-muted'
               }`}>
-                PUBLIC AUDITIONS: {settings.enabled && settings.defaultPerformanceId ? 'OPEN' : 'CLOSED'}
+                PUBLIC AUDITIONS: {settingsQuery.data.enabled && settingsQuery.data.defaultPerformanceId ? 'OPEN' : 'CLOSED'}
               </div>
               <div className="mt-0.5 text-xs text-text-muted">
-                {settings.enabled && settings.defaultPerformanceId 
+                {settingsQuery.data.enabled && settingsQuery.data.defaultPerformanceId
                   ? (
                     <>
-                      Accepting requests for: {performances.find(p => p.id === settings.defaultPerformanceId)?.title || 'Selected Performance'}
+                      Accepting requests for: {performances.find(p => p.id === settingsQuery.data.defaultPerformanceId)?.title || 'Selected Performance'}
                       <br />
                       <span className="mt-1 inline-flex items-center gap-1 text-sm">
                         <span>🔗</span>
@@ -351,19 +374,15 @@ export default function AuditionsView() {
                       </span>
                     </>
                   )
-                  : !settings.enabled 
+                  : !settingsQuery.data.enabled
                     ? 'The public form is currently disabled.'
                     : 'A target performance must be selected to open the form.'}
               </div>
             </div>
           </div>
-          <Button 
-            variant={settings.enabled && settings.defaultPerformanceId ? "secondary" : "primary"} 
-            onClick={() => {
-              setBackupSettings(JSON.parse(JSON.stringify(settings)));
-              setSettingsTab('general');
-              setShowSettings(true);
-            }}
+          <Button
+            variant={settingsQuery.data.enabled && settingsQuery.data.defaultPerformanceId ? "secondary" : "primary"}
+            onClick={openSettings}
           >
             Configure
           </Button>
@@ -375,11 +394,11 @@ export default function AuditionsView() {
         onClose={handleCancelSettings}
         title="Audition Settings"
         maxWidth="640px"
-        isDirty={backupSettings !== null && JSON.stringify(settings) !== JSON.stringify(backupSettings)}
+        isDirty={backupDraft !== null && JSON.stringify(settingsDraft) !== JSON.stringify(backupDraft)}
         footer={
           <div className="flex w-full items-center justify-between gap-4">
             <div className="text-left">
-              {(!settings || !settings.slots || settings.slots.length === 0) && (
+              {(!settingsDraft || !settingsDraft.slots || settingsDraft.slots.length === 0) && (
                 <span className="text-xs font-semibold text-danger-text">
                   ⚠️ Configure at least one time slot to save.
                 </span>
@@ -389,10 +408,10 @@ export default function AuditionsView() {
               <Button variant="outline" onClick={handleCancelSettings}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleSaveSettings} 
+              <Button
+                onClick={handleSaveSettings}
                 loading={isSavingSettings}
-                disabled={!settings || !settings.slots || settings.slots.length === 0}
+                disabled={!settingsDraft || !settingsDraft.slots || settingsDraft.slots.length === 0}
               >
                 Save Settings
               </Button>
@@ -400,7 +419,7 @@ export default function AuditionsView() {
           </div>
         }
       >
-        {settings && (
+        {settingsDraft && (
           <div className="flex flex-col gap-4">
             {/* Tabs Header */}
             <div className="mb-2 flex flex-row gap-4 border-b border-border">
@@ -425,7 +444,7 @@ export default function AuditionsView() {
                 }`}
               >
                 Time Slots
-                {(!settings.slots || settings.slots.length === 0) && (
+                {(!settingsDraft.slots || settingsDraft.slots.length === 0) && (
                   <span className="ml-1.5 inline-flex items-center justify-center text-xs font-bold text-danger-text" title="No time slots configured">
                     ⚠️
                   </span>
@@ -439,8 +458,8 @@ export default function AuditionsView() {
                 <label className="flex cursor-pointer flex-row items-center gap-2 self-start select-none">
                   <input
                     type="checkbox"
-                    checked={settings.enabled}
-                    onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
+                    checked={settingsDraft.enabled}
+                    onChange={(e) => setSettingsDraft({ ...settingsDraft, enabled: e.target.checked })}
                     className="size-5 cursor-pointer rounded border-border text-primary accent-primary transition-all duration-200 focus:ring-primary"
                   />
                   <span className="text-sm font-semibold text-text">Accept public audition requests</span>
@@ -449,8 +468,8 @@ export default function AuditionsView() {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-semibold text-text">Target Performance</label>
                   <Select
-                    value={settings.defaultPerformanceId || ''}
-                    onChange={(e) => setSettings({ ...settings, defaultPerformanceId: e.target.value })}
+                    value={settingsDraft.defaultPerformanceId || ''}
+                    onChange={(e) => setSettingsDraft({ ...settingsDraft, defaultPerformanceId: e.target.value })}
                   >
                     <option value="">-- No performance assigned --</option>
                     {performances.map(p => (
@@ -465,44 +484,44 @@ export default function AuditionsView() {
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-semibold text-text">Confirmation Message</label>
                   <Textarea
-                    value={settings.confirmationMessage}
-                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setSettings({ ...settings, confirmationMessage: e.target.value })}
+                    value={settingsDraft.confirmationMessage}
+                    onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setSettingsDraft({ ...settingsDraft, confirmationMessage: e.target.value })}
                     className="min-h-[80px]"
                   />
                 </div>
 
                 <div className="flex flex-col gap-2 border-t border-border pt-4">
                   <label className="flex cursor-pointer flex-row items-center gap-2 self-start select-none">
-                    <input
-                      type="checkbox"
-                      checked={settings.adminNotifyEnabled || false}
-                      onChange={(e) => setSettings({ 
-                        ...settings, 
-                        adminNotifyEnabled: e.target.checked,
-                        adminNotifyUsers: settings.adminNotifyUsers || []
-                      })}
-                      className="size-5 cursor-pointer rounded border-border text-primary accent-primary transition-all duration-200 focus:ring-primary"
-                    />
+                  <input
+                    type="checkbox"
+                    checked={settingsDraft.adminNotifyEnabled || false}
+                    onChange={(e) => setSettingsDraft({
+                      ...settingsDraft,
+                      adminNotifyEnabled: e.target.checked,
+                      adminNotifyUsers: settingsDraft.adminNotifyUsers || []
+                    })}
+                    className="size-5 cursor-pointer rounded border-border text-primary accent-primary transition-all duration-200 focus:ring-primary"
+                  />
                     <span className="text-sm font-semibold text-text">Notify administrators of new submissions</span>
                   </label>
 
-                  {settings.adminNotifyEnabled && (
+                  {settingsDraft.adminNotifyEnabled && (
                     <div className="flex flex-col gap-1 pl-7">
                       <span className="text-overline text-text-muted">Select Administrators to Notify</span>
                       <div className="mt-1 flex flex-col gap-2">
                         {admins.map((admin) => {
-                          const isChecked = (settings.adminNotifyUsers || []).includes(admin.id);
+                          const isChecked = (settingsDraft.adminNotifyUsers || []).includes(admin.id);
                           return (
                             <label key={admin.id} className="flex cursor-pointer flex-row items-center gap-2 select-none">
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={(e) => {
-                                  const currentUsers = settings.adminNotifyUsers || [];
+                                  const currentUsers = settingsDraft.adminNotifyUsers || [];
                                   const updatedUsers = e.target.checked
                                     ? [...currentUsers, admin.id]
                                     : currentUsers.filter(id => id !== admin.id);
-                                  setSettings({ ...settings, adminNotifyUsers: updatedUsers });
+                                  setSettingsDraft({ ...settingsDraft, adminNotifyUsers: updatedUsers });
                                 }}
                                 className="size-4 cursor-pointer rounded border-border text-primary accent-primary transition-all duration-200 focus:ring-primary"
                               />
@@ -526,7 +545,7 @@ export default function AuditionsView() {
                 <div className="flex flex-col gap-1">
                   <label className="flex items-center gap-1.5 text-sm font-semibold text-text">
                     <span>Available Audition Times</span>
-                    {(!settings.slots || settings.slots.length === 0) && (
+                    {(!settingsDraft.slots || settingsDraft.slots.length === 0) && (
                       <span className="inline-flex items-center rounded bg-danger-bg px-1.5 py-0.5 text-xs font-semibold tracking-wider text-danger-text uppercase">Required</span>
                     )}
                   </label>
@@ -564,7 +583,7 @@ export default function AuditionsView() {
                   </div>
 
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {settings.slots?.map(slot => (
+                    {settingsDraft.slots?.map(slot => (
                       <div key={slot} className="flex w-full items-center justify-between gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-sm shadow-sm transition-colors hover:border-primary/50">
                         <span className="font-medium text-text">{formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
                         <button 
@@ -579,7 +598,7 @@ export default function AuditionsView() {
                     ))}
                   </div>
 
-                  {(!settings.slots || settings.slots.length === 0) && (
+                  {(!settingsDraft.slots || settingsDraft.slots.length === 0) && (
                     <p className="m-0 mt-3 text-xs font-medium text-danger-text">
                       ⚠️ Generate at least one audition time slot so applicants can schedule their audition.
                     </p>
@@ -791,7 +810,7 @@ export default function AuditionsView() {
         isOpen={isModalOpen}
         onClose={() => { setEditingAudition(null); setIsModalOpen(false); }}
         onSave={handleSaveAudition}
-        settings={settings}
+        settings={settingsQuery.data ?? null}
         performances={performances}
       />
 
@@ -817,7 +836,7 @@ export default function AuditionsView() {
               <label className="text-label">Applicant's Preferred Times</label>
               <div className="flex flex-row flex-wrap gap-2">
                 {schedulingAudition.requestedSlots.map((slot) => {
-                  const isSlotPredefined = settings?.slots?.includes(slot);
+                  const isSlotPredefined = (settingsQuery.data?.slots ?? []).includes(slot);
                   const isSelected = schedSlot === slot || (schedSlot === '__custom__' && schedCustom === slot);
                   return (
                     <button
@@ -852,7 +871,7 @@ export default function AuditionsView() {
               value={schedSlot}
               onChange={(e) => setSchedSlot(e.target.value)}
             >
-              {settings?.slots?.map((slot) => (
+              {(settingsQuery.data?.slots ?? []).map((slot) => (
                 <option key={slot} value={slot}>
                   {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
                 </option>

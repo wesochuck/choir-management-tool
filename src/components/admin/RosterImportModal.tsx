@@ -364,11 +364,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               return (
                 <div 
                   key={field.key} 
-                  className="flex flex-row items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3 px-4" 
-                  // @allow-inline-style - conditional field validation border
-                  style={{
-                    borderColor: field.required && selectedIndex === -1 ? 'var(--red-light)' : undefined,
-                  }}
+                  className={`flex flex-row items-center justify-between gap-3 rounded-xl border bg-surface p-3 px-4 ${field.required && selectedIndex === -1 ? 'border-red-300' : 'border-border'}`}
                 >
                   <div className="flex-1 flex flex-col gap-0.5">
                     <div className="flex items-center gap-[6px]">
@@ -388,10 +384,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
                     size="small" className="!w-[200px]"
-                    // @allow-inline-style - conditional match border
-                    style={{
-                      borderColor: selectedIndex !== -1 ? 'var(--color-primary)' : undefined,
-                    }}
+                    // @allow-inline-style - Shoelace CSS custom property for input border color (must be inline; cannot be expressed via className)
+                    style={selectedIndex !== -1 ? { '--sl-input-border-color': 'var(--color-primary)' } as React.CSSProperties : undefined}
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
                     {csvData.headers.map((hdr, idx) => (
@@ -444,10 +438,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   return (
                     <tr 
                       key={idx} 
-                      // @allow-inline-style - error/warning status background
-                      style={{
-                        backgroundColor: hasErrors ? 'rgba(239, 83, 80, 0.05)' : hasWarnings ? 'rgba(255, 202, 40, 0.04)' : undefined 
-                      }}
+                      className={hasErrors ? 'bg-red-50' : hasWarnings ? 'bg-amber-50' : ''}
                     >
                       <td className="text-center text-xs text-text-muted">
                         {singer.rowNumber}
@@ -557,11 +548,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               </strong>
               <div className="max-h-[150px] overflow-y-auto rounded-lg border border-border bg-surface-muted p-[8px_12px] text-xs">
                 {errorsList.map((err, i) => (
-                  <div key={i} className="p-[4px_0] text-gray-600" 
-                    // @allow-inline-style - Dynamic border based on position in list
-                    style={{
-                      borderBottom: i < errorsList.length - 1 ? '1px solid var(--color-border)' : undefined 
-                    }}>
+                  <div key={i} className={`p-[4px_0] text-gray-600 ${i < errorsList.length - 1 ? 'border-b border-border' : ''}`}>
                     Row {err.row} (<strong>{err.name}</strong>): <span className="text-danger-text">{err.error}</span>
                   </div>
                 ))}

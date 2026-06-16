@@ -18,10 +18,10 @@ test('layoutOnly returns undefined when every class is a visual class', () => {
   assert.equal(layoutOnly('bg-red-500 text-white border rounded'), undefined);
 });
 
-test('layoutOnly strips visual classes and keeps layout classes', () => {
+test('layoutOnly strips visual classes and keeps layout classes, including padding', () => {
   assert.equal(
     layoutOnly('w-full flex bg-red-500 p-2'),
-    'w-full flex',
+    'w-full flex p-2',
   );
 });
 

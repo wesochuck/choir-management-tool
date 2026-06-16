@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { Button, FormField, Badge, Modal, EmptyState, Input } from '../../components/ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
@@ -39,11 +41,50 @@ interface PollResponseRecord extends RecordModel {
 export default function PollsDashboardView() {
   const dialog = useDialog();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { events } = useEvents();
   const { timezone } = useChoirSettings();
-  const [polls, setPolls] = useState<PollRecord[]>([]);
-  const [responses, setResponses] = useState<PollResponseRecord[]>([]);
-  const [pollMessages, setPollMessages] = useState<MessageRecord[]>([]);
+
+  // ── Data queries ──
+  const pollsQuery = useQuery({
+    queryKey: queryKeys.polls.list,
+    queryFn: () => pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
+  });
+
+  const responsesQuery = useQuery({
+    queryKey: queryKeys.polls.responses,
+    queryFn: () => pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
+  });
+
+  const pollMessagesQuery = useQuery({
+    queryKey: queryKeys.polls.messages,
+    queryFn: () => pb.collection('messages').getFullList<MessageRecord>({
+      filter: 'status = "Sent" && content ~ "{{POLL_LINK:"',
+    }),
+  });
+
+  const pollSettingsQuery = useQuery({
+    queryKey: queryKeys.polls.settings,
+    queryFn: () => settingsService.getPollSettings(),
+  });
+
+  const refresh = () => {
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.polls.list }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.polls.responses }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.polls.messages }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.polls.settings }),
+    ]);
+  };
+
+  const polls = useMemo(() => pollsQuery.data ?? [], [pollsQuery.data]);
+  const responses = useMemo(() => responsesQuery.data ?? [], [responsesQuery.data]);
+  const pollMessages = pollMessagesQuery.data ?? [];
+  const isLoading = pollsQuery.isLoading || responsesQuery.isLoading || pollMessagesQuery.isLoading || pollSettingsQuery.isLoading;
+  const firstError = pollsQuery.error || responsesQuery.error || pollMessagesQuery.error || pollSettingsQuery.error;
+  const loadError = firstError
+    ? (firstError instanceof Error ? firstError.message : 'Unable to load polls.')
+    : null;
   const [recipientModal, setRecipientModal] = useState<{
     isOpen: boolean;
     recipients: CommunicationRecipient[];
@@ -53,8 +94,6 @@ export default function PollsDashboardView() {
     recipients: [],
     title: '',
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
@@ -72,38 +111,14 @@ export default function PollsDashboardView() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  const loadData = async () => {
-    setIsLoading(true);
-    setLoadError(null);
-    try {
-      const [pollList, responseList, loadedSettings, messagesList] = await Promise.all([
-        pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
-        pb
-          .collection('pollResponses')
-          .getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
-        settingsService.getPollSettings(),
-        pb.collection('messages').getFullList<MessageRecord>({
-          filter: 'status = "Sent" && content ~ "{{POLL_LINK:"',
-        }),
-      ]);
-      setPolls(pollList);
-      setResponses(responseList);
-      setPollSettings(loadedSettings);
-      setGlobalDefaultDays(loadedSettings.defaultAutoArchiveDays);
-      setPollMessages(messagesList);
-    } catch (err) {
-      console.error('Failed to load poll dashboard data', err);
-      setLoadError(
-        'Unable to load polls. Check PocketBase collection fields, API rules, and browser console.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Initialize local settings state from query (only when modal is closed, to avoid
+  // overwriting in-progress edits if a background refetch lands).
   useEffect(() => {
-    void loadData();
-  }, []);
+    if (pollSettingsQuery.data && !isSettingsModalOpen) {
+      setPollSettings(pollSettingsQuery.data);
+      setGlobalDefaultDays(pollSettingsQuery.data.defaultAutoArchiveDays);
+    }
+  }, [pollSettingsQuery.data, isSettingsModalOpen]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -166,8 +181,7 @@ export default function PollsDashboardView() {
 
     try {
       await pb.collection('polls').delete(id);
-      setPolls((prev) => prev.filter((p) => p.id !== id));
-      setResponses((prev) => prev.filter((r) => r.pollId !== id));
+      refresh();
       dialog.showToast('Poll deleted.');
     } catch {
       await dialog.showMessage({
@@ -225,8 +239,8 @@ export default function PollsDashboardView() {
         filters: { eventId: '', rsvp: 'All', voiceParts: [], globalStatus: 'Active' },
       });
 
-      setPolls((prev) => [poll, ...prev]);
       setIsQuickCreateOpen(false);
+      refresh();
 
       // 4. Navigate to Communications → Drafts tab, passing the draft ID and poll question
       // so the preview can show the actual question without the fallback text.

@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
-import { reportService, type ConcertSummary } from '../../services/reportService';
-import { eventService, type Event } from '../../services/eventService';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
+import { reportService } from '../../services/reportService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
+import { useEvents } from '../../hooks/useEvents';
 import { Button, Select } from '../../components/ui';
 
 type ReportTab = 'attendance' | 'repertoire';
@@ -15,53 +17,35 @@ interface RepertoireStats {
 
 export default function ReportsView() {
   const [tab, setTab] = useState<ReportTab>('attendance');
-
-  // Attendance State
-  const [performances, setPerformances] = useState<Event[]>([]);
   const [selectedPerformanceId, setSelectedPerformanceId] = useState<string>('');
-  const [summary, setSummary] = useState<ConcertSummary | null>(null);
-  const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Repertoire State
-  const [library, setLibrary] = useState<MusicPiece[]>([]);
-  const [allEvents, setAllEvents] = useState<Event[]>([]);
-  const [isRepertoireLoading, setIsRepertoireLoading] = useState(false);
+  // ── Attendance queries ──
+  const performancesQuery = useQuery({
+    queryKey: queryKeys.reports.performances,
+    queryFn: reportService.getPerformances,
+  });
 
-  useEffect(() => {
-    reportService.getPerformances()
-      .then(setPerformances)
-      .catch(() => setError('Failed to load performances.'));
-  }, []);
+  const concertSummaryQuery = useQuery({
+    queryKey: queryKeys.reports.concertSummary(selectedPerformanceId),
+    queryFn: () => reportService.getConcertSummary(selectedPerformanceId),
+    enabled: !!selectedPerformanceId,
+  });
 
-  useEffect(() => {
-    if (!selectedPerformanceId) {
-      setSummary(null);
-      return;
-    }
+  // ── Repertoire queries ──
+  const { events: allEvents } = useEvents();
 
-    setIsAttendanceLoading(true);
-    setError(null);
-    reportService.getConcertSummary(selectedPerformanceId)
-      .then(setSummary)
-      .catch(() => setError('Failed to load concert summary.'))
-      .finally(() => setIsAttendanceLoading(false));
-  }, [selectedPerformanceId]);
+  const libraryQuery = useQuery({
+    queryKey: queryKeys.reports.musicLibrary,
+    queryFn: musicLibraryService.getLibrary,
+    enabled: tab === 'repertoire',
+  });
 
-  useEffect(() => {
-    if (tab === 'repertoire' && library.length === 0) {
-      setIsRepertoireLoading(true);
-      Promise.all([
-        musicLibraryService.getLibrary(),
-        eventService.getEvents()
-      ])
-      .then(([libData, eventData]) => {
-        setLibrary(libData);
-        setAllEvents(eventData.filter(e => e.type === 'Performance'));
-      })
-      .finally(() => setIsRepertoireLoading(false));
-    }
-  }, [tab, library.length]);
+  const performances = performancesQuery.data ?? [];
+  const concertSummary = concertSummaryQuery.data ?? null;
+  const library = useMemo(() => libraryQuery.data ?? [], [libraryQuery.data]);
+  const isAttendanceLoading = performancesQuery.isLoading;
+  const isRepertoireLoading = libraryQuery.isLoading || performancesQuery.isLoading;
+  const error = performancesQuery.error ? (performancesQuery.error instanceof Error ? performancesQuery.error.message : 'Failed to load') : null;
 
   const repertoireStats = useMemo(() => {
     if (library.length === 0) return [];
@@ -114,9 +98,9 @@ export default function ReportsView() {
 
   const handleExportCSV = () => {
     if (tab === 'attendance') {
-        if (!summary) return;
+        if (!concertSummary) return;
         const headers = ['Singer', 'Voice Part', 'Absences', 'Presence Count', 'Total Rehearsals', 'Attendance Rate %'];
-        const rows = summary.singerReports.map(r => [
+        const rows = concertSummary.singerReports.map(r => [
         r.name,
         r.voicePart,
         r.absences,
@@ -126,7 +110,7 @@ export default function ReportsView() {
         ]);
 
         const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        downloadCSV(csvContent, `attendance_report_${summary.performance.title.replace(/\s+/g, '_')}.csv`);
+        downloadCSV(csvContent, `attendance_report_${concertSummary.performance.title.replace(/\s+/g, '_')}.csv`);
     } else {
         const headers = ['Title', 'Composer', 'Arranger', 'Catalog ID', 'Total Performances', 'Last Performed'];
         const rows = repertoireStats.map(s => [
@@ -190,7 +174,7 @@ export default function ReportsView() {
                 </Select>
               </div>
 
-              {summary && (
+              {concertSummary && (
                 <div className="flex flex-row gap-2">
                   <Button onClick={handleExportCSV} variant="secondary" size="small">
                     📥 Download CSV
@@ -211,26 +195,26 @@ export default function ReportsView() {
             </div>
           )}
 
-          {!isAttendanceLoading && summary && (
+          {!isAttendanceLoading && concertSummary && (
             <>
               {/* KPI Cards */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6">
                 <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Rehearsals</div>
-                  <div className="text-display text-primary">{summary.totalRehearsals}</div>
+                  <div className="text-display text-primary">{concertSummary.totalRehearsals}</div>
                 </div>
                 <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Avg Attendance</div>
-                  <div className="text-display text-primary">{summary.avgAttendanceRate.toFixed(1)}%</div>
+                  <div className="text-display text-primary">{concertSummary.avgAttendanceRate.toFixed(1)}%</div>
                 </div>
                 <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Total Singers</div>
-                  <div className="text-display text-primary">{summary.singerReports.length}</div>
+                  <div className="text-display text-primary">{concertSummary.singerReports.length}</div>
                 </div>
                 <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">2+ Absences</div>
                   <div className="text-display text-danger-text">
-                    {summary.singerReports.filter(r => r.absences >= 2).length}
+                    {concertSummary.singerReports.filter(r => r.absences >= 2).length}
                   </div>
                 </div>
               </div>
@@ -254,7 +238,7 @@ export default function ReportsView() {
                       </tr>
                     </thead>
                     <tbody>
-                      {summary.singerReports.map(report => (
+                      {concertSummary.singerReports.map(report => (
                         <tr 
                           key={report.profileId} 
                           className={report.absences >= 2 ? 'bg-danger-bg text-danger-text' : ''}
@@ -276,8 +260,8 @@ export default function ReportsView() {
               </div>
 
               <div className="hidden print:block">
-                <h2 className="text-center">Attendance Report: {summary.performance.title}</h2>
-                <p className="text-center">Date: {new Date(summary.performance.date).toLocaleDateString()}</p>
+                <h2 className="text-center">Attendance Report: {concertSummary.performance.title}</h2>
+                <p className="text-center">Date: {new Date(concertSummary.performance.date).toLocaleDateString()}</p>
               </div>
             </>
           )}

@@ -9,9 +9,13 @@
  * The native test path (and the visuallyHidden path in Select) intentionally
  * uses the full className: native inputs and the bare overlay need every
  * primitive the consumer supplies.
+ *
+ * Padding classes (p-, px-, py-, pt-, pb-, pl-, pr-) are omitted from the
+ * strip list — they are layout/spacing, not visual styling, consistent with
+ * margin classes already passing through.
  */
 const visualClassPrefixes = [
-  'border', 'rounded', 'bg-', 'p-', 'px-', 'py-', 'pt-', 'pb-', 'pl-', 'pr-',
+  'border', 'rounded', 'bg-',
   'text-', 'shadow-', 'outline-', 'placeholder:', 'focus:', 'transition-', 'ring-',
 ];
 

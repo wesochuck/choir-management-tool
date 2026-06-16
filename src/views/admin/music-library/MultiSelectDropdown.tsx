@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useClickOutside } from '../../../hooks/useClickOutside';
-import { CHIP_COLORS, getChipColor } from '../../../lib/chipColorUtils';
+import { CHIP_CLASSES, getChipClass } from '../../../lib/chipColorUtils';
 import { Button, Input } from '../../../components/ui';
 
 interface MultiSelectOption {
@@ -117,12 +117,12 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
         }
     };
 
-    // Build a stable color map based on sorted option ids
-    const chipColorMap = useMemo(() => {
-        const map = new Map<string, { bg: string; border: string; text: string }>();
+    // Build a stable class map based on sorted option ids
+    const chipClassMap = useMemo(() => {
+        const map = new Map<string, string>();
         const sorted = [...options].sort((a, b) => a.label.localeCompare(b.label));
         sorted.forEach((opt, idx) => {
-            map.set(opt.id, getChipColor(idx));
+            map.set(opt.id, getChipClass(idx));
         });
         return map;
     }, [options]);
@@ -187,17 +187,11 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                     ) : (
                         <span className="flex flex-1 flex-wrap items-center gap-1">
                             {selectedOptions.map(opt => {
-                                const color = chipColorMap.get(opt.id) || CHIP_COLORS[0];
+                                const chipClass = chipClassMap.get(opt.id) || CHIP_CLASSES[0];
                                 return (
                                     <span
                                         key={opt.id}
-                                        className="inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11.5px] leading-tight font-semibold whitespace-nowrap transition-opacity duration-150"
-                                        // @allow-inline-style - Chip colors are dynamic and stable based on option mapping.
-                                        style={{
-                                            backgroundColor: color.bg,
-                                            borderColor: color.border,
-                                            color: color.text,
-                                        }}
+                                        className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11.5px] leading-tight font-semibold whitespace-nowrap transition-opacity duration-150 ${chipClass}`}
                                     >
                                         {opt.label}
                                         <span
@@ -297,21 +291,15 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                                     <div className="flex flex-wrap gap-1.5 p-2.5 px-3.5">
                                         {filteredOptions.map(option => {
                                             const isChecked = selectedIds.includes(option.id);
-                                            const color = chipColorMap.get(option.id) || CHIP_COLORS[0];
+                                            const chipClass = chipClassMap.get(option.id) || CHIP_CLASSES[0];
                                             return (
                                                 <button
                                                     key={option.id}
                                                     type="button"
-                                                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] bg-white px-3 py-1 text-xs font-medium text-gray-500 transition-all duration-180 ease-in-out outline-none select-none hover:border-primary hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--color-primary-light)] ${isChecked ? 'font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : ''}`}
+                                                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] bg-white px-3 py-1 text-xs font-medium text-gray-500 transition-all duration-180 ease-in-out outline-none select-none hover:border-primary hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--color-primary-light)] ${isChecked ? `font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${chipClass}` : ''}`}
                                                     role="option"
                                                     aria-selected={isChecked}
                                                     onClick={() => handleOptionToggle(option.id)}
-                                                    // @allow-inline-style - Chip colors are dynamic and stable based on option mapping.
-                                                    style={isChecked ? {
-                                                        backgroundColor: color.bg,
-                                                        borderColor: color.border,
-                                                        color: color.text,
-                                                    } : undefined}
                                                 >
                                                     {isChecked && <span className="text-[10px] leading-none font-bold" aria-hidden="true">✓</span>}
                                                     {option.label}

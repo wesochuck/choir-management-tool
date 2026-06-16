@@ -274,8 +274,7 @@ export default function TicketScanView() {
                     className="block w-full"
                   />
                 </div>
-                {/* @allow-inline-style - hidden canvas for frame capture */}
-                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                <canvas ref={canvasRef} className="hidden" />
                 <div className="flex justify-center">
                   <Button variant="outline" size="small" onClick={stopCamera}>
                     Stop Camera

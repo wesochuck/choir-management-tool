@@ -164,10 +164,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
         </div>
 
         {/* Tab 1: Information Form Fields */}
-        // @allow-inline-style - dynamic display for tab visibility
-        <div className="flex flex-col gap-4" style={{
-          display: activeTab === 'info' ? 'flex' : 'none' 
-        }}>
+        <div className={`flex-col gap-4 ${activeTab === 'info' ? 'flex' : 'hidden'}`}>
           <div className="flex flex-col gap-1">
             <label className="text-label">Name</label>
             <Input
@@ -280,12 +277,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                   return (
                     <label 
                       key={slot} 
-                      className="m-0 cursor-pointer flex flex-row items-center gap-3 rounded-xl p-3 shadow-none"
-                      // @allow-inline-style - checkbox checked state
-                      style={{
-                        border: isChecked ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                        backgroundColor: isChecked ? 'var(--color-primary-light)' : 'var(--color-bg)',
-                      }}
+                      className={`m-0 cursor-pointer flex flex-row items-center gap-3 rounded-xl p-3 shadow-none border ${isChecked ? 'border-primary bg-primary-light' : 'border-border bg-bg'}`}
                     >
                       <input 
                         type="checkbox" 

@@ -49,4 +49,34 @@ export const queryKeys = {
     data: (performanceId: string, venueId: string) => [...queryKeys.seating.all, 'data', performanceId, venueId] as const,
     settings: ['seating', 'settings'] as const,
   },
+  reports: {
+    all: ['reports'] as const,
+    performances: ['reports', 'performances'] as const,
+    concertSummary: (performanceId: string) => [...queryKeys.reports.all, 'concertSummary', performanceId] as const,
+    musicLibrary: ['reports', 'musicLibrary'] as const,
+  },
+  polls: {
+    all: ['polls'] as const,
+    list: ['polls', 'list'] as const,
+    responses: ['polls', 'responses'] as const,
+    settings: ['polls', 'settings'] as const,
+    messages: ['polls', 'messages'] as const,
+  },
+  auditions: {
+    all: ['auditions'] as const,
+    list: ['auditions', 'list'] as const,
+    settings: ['auditions', 'settings'] as const,
+  },
+  users: {
+    all: ['users'] as const,
+    admins: ['users', 'admins'] as const,
+  },
+  donations: {
+    all: ['donations'] as const,
+    paid: ['donations', 'paid'] as const,
+  },
+  purchases: {
+    all: ['purchases'] as const,
+    list: ['purchases', 'list'] as const,
+  },
 } as const;

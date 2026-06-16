@@ -86,17 +86,10 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
         {sectionsList.map((sec: SectionDef) => {
           const isSelected = selectedVoiceParts.includes(sec.code);
           return (
-            <div 
-              key={sec.code} 
-              className={`cursor-pointer flex-col border-2 text-center transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]' : 'border-transparent'}`}
+            <div
+              key={sec.code}
+              className={`cursor-pointer flex-col border-2 text-center transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm p-3.5 rounded-lg bg-primary-light gap-1 ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]' : 'border-transparent'}`}
               onClick={() => onVoicePartToggle?.(sec.code)}
-              // @allow-inline-style - dynamic padding based on selection state
-              style={{ 
-                padding: '14px', 
-                borderRadius: '8px', 
-                backgroundColor: 'var(--color-primary-light)',
-                gap: '4px'
-              }}
             >
               <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
                 {sec.name}
@@ -114,15 +107,8 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           return (
             <div 
               key={vp.label} 
-              className={`cursor-pointer flex-col border text-center transition-all duration-200 hover:-translate-y-px hover:border-primary-deep hover:bg-primary-light ${isSelected ? 'border-primary bg-primary-light' : 'border-border bg-bg'}`}
+              className={`cursor-pointer flex-col text-center transition-all duration-200 hover:-translate-y-px hover:border-primary-deep hover:bg-primary-light rounded gap-0.5 ${isSelected ? 'border-primary bg-primary-light border-2 p-[7px]' : 'border-border bg-bg border p-2'}`}
               onClick={() => onVoicePartToggle?.(vp.label)}
-              // @allow-inline-style - dynamic padding based on selection state
-              style={{ 
-                borderRadius: '4px', 
-                gap: '2px',
-                borderWidth: isSelected ? '2px' : '1px',
-                padding: isSelected ? '7px' : '8px'
-              }}
             >
               <div className="text-muted text-xs font-bold">{vp.label}</div>
               <div className="text-label font-bold">{partCounts[vp.label] || 0}</div>

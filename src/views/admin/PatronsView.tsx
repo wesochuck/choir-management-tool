@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { donationService } from '../../services/donationService';
 import { ticketService } from '../../services/ticketService';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useProfiles } from '../../hooks/useProfiles';
 import { formatInTimezone } from '../../lib/timezone';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { safeLocalStorage } from '../../lib/storage';
@@ -24,8 +27,8 @@ interface PatronData {
 export default function PatronsView() {
   useDocumentTitle('Patrons');
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [patrons, setPatrons] = useState<PatronData[]>([]);
+  const queryClient = useQueryClient();
+  const { profiles } = useProfiles();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ltv' | 'name' | 'lastDate'>('ltv');
@@ -52,60 +55,65 @@ export default function PatronsView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPatron, setSelectedPatron] = useState<Profile | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [profiles, donations, purchases] = await Promise.all([
-        profileService.getProfiles(),
-        donationService.getDonations('status = "paid"'),
-        ticketService.getAllPurchases()
-      ]);
+  // ── Data queries ──
+  const donationsQuery = useQuery({
+    queryKey: queryKeys.donations.paid,
+    queryFn: () => donationService.getDonations('status = "paid"'),
+  });
 
-      const paidPurchases = purchases.filter(p => p.status === 'paid');
+  const purchasesQuery = useQuery({
+    queryKey: queryKeys.purchases.list,
+    queryFn: ticketService.getAllPurchases,
+  });
 
-      // Map profiles to their transactions
-      const patronMap = new Map<string, PatronData>();
+  const patronData = useMemo(() => {
+    const donations = donationsQuery.data ?? [];
+    const purchases = purchasesQuery.data ?? [];
 
-      const processTransaction = (profileId: string | undefined, amountCents: number, date: string) => {
-        if (!profileId) return;
-        const profile = profiles.find(p => p.id === profileId);
-        if (!profile) return;
+    const paidPurchases = purchases.filter(p => p.status === 'paid');
+    const patronMap = new Map<string, PatronData>();
 
-        const existing = patronMap.get(profileId);
-        if (existing) {
-          existing.ltvCents += amountCents;
-          existing.transactionCount += 1;
-          if (new Date(date) > new Date(existing.lastTransactionDate)) {
-            existing.lastTransactionDate = date;
-          }
-        } else {
-          patronMap.set(profileId, {
-            profile,
-            ltvCents: amountCents,
-            lastTransactionDate: date,
-            transactionCount: 1,
-            isSinger: !!profile.voicePart
-          });
+    const processTransaction = (profileId: string | undefined, amountCents: number, date: string) => {
+      if (!profileId) return;
+      const profile = profiles.find(p => p.id === profileId);
+      if (!profile) return;
+
+      const existing = patronMap.get(profileId);
+      if (existing) {
+        existing.ltvCents += amountCents;
+        existing.transactionCount += 1;
+        if (new Date(date) > new Date(existing.lastTransactionDate)) {
+          existing.lastTransactionDate = date;
         }
-      };
+      } else {
+        patronMap.set(profileId, {
+          profile,
+          ltvCents: amountCents,
+          lastTransactionDate: date,
+          transactionCount: 1,
+          isSinger: !!profile.voicePart
+        });
+      }
+    };
 
-      donations.forEach(d => processTransaction(d.profile, d.amountPaidCents, d.created));
-      paidPurchases.forEach(p => processTransaction(p.profile, p.amountPaidCents, p.created));
+    donations.forEach(d => processTransaction(d.profile, d.amountPaidCents, d.created));
+    paidPurchases.forEach(p => processTransaction(p.profile, p.amountPaidCents, p.created));
 
-      setPatrons(Array.from(patronMap.values()));
-    } catch (err) {
-      console.error('Failed to fetch patrons data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    return Array.from(patronMap.values());
+  }, [profiles, donationsQuery.data, purchasesQuery.data]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const refresh = useCallback(() => {
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.donations.paid }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.purchases.list }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
+    ]);
+  }, [queryClient]);
+
+  const isLoading = donationsQuery.isLoading || purchasesQuery.isLoading;
 
   const filteredPatrons = useMemo(() => {
-    const result = patrons.filter(p => {
+    const result = patronData.filter(p => {
       const search = searchQuery.toLowerCase();
       const matchesSearch =
         p.profile.name.toLowerCase().includes(search) ||
@@ -133,7 +141,7 @@ export default function PatronsView() {
     });
 
     return result;
-  }, [patrons, searchQuery, sortBy, startDate, endDate]);
+  }, [patronData, searchQuery, sortBy, startDate, endDate]);
 
   const filteredStats = useMemo(() => {
     const count = filteredPatrons.length;
@@ -173,13 +181,13 @@ export default function PatronsView() {
   const handleSaveProfile = async (data: ProfileInput) => {
     if (selectedPatron) {
       await profileService.updateProfile(selectedPatron.id, data);
-      await fetchData();
+      refresh();
     }
   };
 
   const handleDeleteProfile = async (profile: Profile) => {
     await profileService.deleteProfile(profile.id);
-    await fetchData();
+    refresh();
   };
 
   return (
@@ -367,7 +375,7 @@ export default function PatronsView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
-                {loading ? (
+                {isLoading ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-sm font-medium text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
@@ -442,7 +450,7 @@ export default function PatronsView() {
           {/* Responsive Register View - Mobile Card List */}
           <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
             <div className="divide-y divide-slate-100">
-              {loading ? (
+              {isLoading ? (
                 <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
                   <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
                   Loading patrons...

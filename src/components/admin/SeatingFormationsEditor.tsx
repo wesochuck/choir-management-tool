@@ -218,14 +218,7 @@ function FormationRow({
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={dndItems} strategy={horizontalListSortingStrategy}>
               <div
-                // @allow-inline-style - row vs grid layout toggle
-                style={{
-                  display: 'flex',
-                  flexDirection: isRows ? 'column' : 'row',
-                  gap: isRows ? '4px' : '6px',
-                  flexWrap: isRows ? 'nowrap' : 'wrap',
-                  alignItems: isRows ? 'stretch' : 'center',
-                }}
+                className={`flex ${isRows ? 'flex-col flex-nowrap items-stretch gap-1' : 'flex-row flex-wrap items-center gap-1.5'}`}
               >
                 {formation.sectionOrder.map((code, secIdx) => {
                   const itemDndId = `${formation.id}::${code}::${secIdx}`;

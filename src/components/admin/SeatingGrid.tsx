@@ -242,15 +242,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
         return (
           <div key={rowIndex}
+            className="flex flex-row items-center justify-center w-full"
             // @allow-inline-style - dynamic gap computed from grid width
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: `${gridGap}px`,
-              justifyContent: 'center',
-              width: '100%'
-            }}>
+            style={{ gap: `${gridGap}px` }}>
             <div className="seating-row-label flex flex-col items-end justify-center pr-4 text-right font-bold text-text"
               // @allow-inline-style - dynamic width based on compact mode
               style={{ width: `${rowLabelWidth}px` }}
@@ -439,9 +433,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 >
                   {activeDragOver === seatKey && (
                     <div className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center rounded-[inherit] bg-blue-500/18">
-                      <span className="inline-block animate-bounce-subtle leading-none"
-                        // @allow-inline-style - dynamic font size based on compact mode
-                        style={{ fontSize: isCompact ? '1.125rem' : '1.5rem' }}>
+                      <span className={`inline-block animate-bounce-subtle leading-none ${isCompact ? 'text-lg' : 'text-2xl'}`}>
                         {assignedProfile ? '🔄' : '📥'}
                       </span>
                     </div>
@@ -537,9 +529,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     }
                   </div>
                   {assignedProfile ? (
-                    <div className="flex flex-col"
-                      // @allow-inline-style - dynamic gap based on compact mode
-                      style={{ gap: '1px', alignItems: 'center' }}>
+                    <div className="flex flex-col gap-px items-center">
                       <div
                         className="leading-tight font-extrabold text-sm"
                         // @allow-inline-style - dynamic color from computed styles

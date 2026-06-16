@@ -149,11 +149,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
               <button
                 type="button"
                 onClick={() => handleAddItem()}
-                className="flex w-full flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary transition-colors hover:bg-primary-light hover:text-primary-deep focus:bg-primary-light focus:text-primary-deep focus:outline-none"
-                // @allow-inline-style - conditional border when library has results
-                style={{ 
-                  borderTop: filteredLibrary.length > 0 ? '1px solid var(--color-border)' : 'none'
-                }}
+                className={`flex w-full flex-row items-center gap-1 rounded px-3 py-2 text-left text-sm font-semibold text-primary transition-colors hover:bg-primary-light hover:text-primary-deep focus:bg-primary-light focus:text-primary-deep focus:outline-none ${filteredLibrary.length > 0 ? 'border-t border-border' : 'border-t-0'}`}
               >
                 <span>"{query.trim()}"</span>
                 <span className="text-xs font-normal text-text-muted">

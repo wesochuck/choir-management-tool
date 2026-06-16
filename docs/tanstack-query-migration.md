@@ -28,7 +28,7 @@ This app uses TanStack Query for server state and keeps React Router for routing
 | 9 | `src/views/admin/TicketingView.tsx` | Done |
 | 10 | `src/hooks/useEventRosterData.ts` | Done |
 | 11 | `src/hooks/useSeatingChart.ts` | Done |
-| 12 | Dashboard views (after shared hooks) | Not started |
+| 12 | Dashboard views (after shared hooks) | Done |
 
 ## Query Key Pattern
 
