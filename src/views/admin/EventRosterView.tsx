@@ -4,8 +4,7 @@ import { profileService, type Profile, type ProfileInput } from '../../services/
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, Modal, Select, Input } from '../../components/ui';
-import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
+import { Button, Modal, Select, Input, ProgressBar } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
@@ -415,7 +414,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           <div className="text-sm font-semibold text-gray-500">
             {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
           </div>
-          <SlProgressBar value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="mt-1 h-2 w-full [&::part(base)]:rounded" />
+          <ProgressBar value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="mt-1 h-2 w-full [&::part(base)]:rounded" />
         </div>
       </Modal>
     </AppCard>

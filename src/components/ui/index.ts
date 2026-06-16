@@ -17,4 +17,12 @@ export { EmptyState } from './EmptyState/EmptyState';
 export { Checkbox } from './Checkbox/Checkbox';
 
 export { Textarea } from './Textarea/Textarea';
+export { Divider } from './Divider/Divider';
+export { Icon } from './Icon/Icon';
+export { CopyButton } from './CopyButton/CopyButton';
+export { ProgressBar } from './ProgressBar/ProgressBar';
+export { RadioGroup, Radio } from './RadioGroup/RadioGroup';
+export { ColorPicker } from './ColorPicker/ColorPicker';
+export { TabGroup, Tab, TabPanel } from './TabGroup/TabGroup';
+export { Range } from './Range/Range';
 

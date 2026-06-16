@@ -1,23 +1,13 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Modal, Button, Select, Input, Checkbox, Textarea } from '../ui';
+import { Modal, Button, Select, Input, Checkbox, Textarea, Icon, TabGroup, Tab, TabPanel } from '../ui';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../../lib/profileForm';
 import { SingerRsvpHistoryTab } from './SingerRsvpHistoryTab';
 import { SingerPatronageHistoryTab } from './SingerPatronageHistoryTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
-import SlTabGroup from '@shoelace-style/shoelace/dist/react/tab-group/index.js';
-import SlTab from '@shoelace-style/shoelace/dist/react/tab/index.js';
-import SlTabPanel from '@shoelace-style/shoelace/dist/react/tab-panel/index.js';
-import SlIcon from '@shoelace-style/shoelace/dist/react/icon/index.js';
-
-const TabGroup = SlTabGroup as unknown as React.ComponentType<
-  React.ComponentProps<typeof SlTabGroup> & {
-    value?: string;
-  }
->;
 
 interface SingerModalProps {
   isOpen: boolean;
@@ -245,24 +235,21 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
         {initialData ? (
           <TabGroup
             value={activeTab}
-            onSlTabShow={(e: unknown) => {
-              const customEvent = e as CustomEvent;
-              setActiveTab(customEvent.detail.name as 'profile' | 'rsvps' | 'patronage');
-            }}
+            onTabChange={(name) => setActiveTab(name as 'profile' | 'rsvps' | 'patronage')}
           >
-            <SlTab slot="nav" panel="profile">
+            <Tab panel="profile">
               Profile Info
-            </SlTab>
-            <SlTab slot="nav" panel="rsvps">
+            </Tab>
+            <Tab panel="rsvps">
               Performance RSVPs
-            </SlTab>
+            </Tab>
             {isAdmin && (
-              <SlTab slot="nav" panel="patronage">
+              <Tab panel="patronage">
                 Patronage
-              </SlTab>
+              </Tab>
             )}
 
-            <SlTabPanel name="profile">
+            <TabPanel name="profile">
               <div className="pt-4 flex flex-col gap-4">
                 <form id="singer-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
                   <div className="flex flex-col items-center gap-1">
@@ -315,7 +302,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                             className="cursor-pointer inline-flex items-center gap-1"
                             loading={isResettingPassword}
                           >
-                            <SlIcon name="key" className="text-xs" /> Reset Password
+                            <Icon name="key" className="text-xs" /> Reset Password
                           </Button>
                           {resetFeedback && (
                             <span 
@@ -449,18 +436,18 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                   </div>
                 </form>
               </div>
-            </SlTabPanel>
-            <SlTabPanel name="rsvps">
+            </TabPanel>
+            <TabPanel name="rsvps">
               <div className="pt-4">
                 <SingerRsvpHistoryTab singerId={initialData.id} isOpen={isOpen} isActive={activeTab === 'rsvps'} />
               </div>
-            </SlTabPanel>
+            </TabPanel>
             {isAdmin && (
-              <SlTabPanel name="patronage">
+              <TabPanel name="patronage">
                 <div className="pt-4">
                   <SingerPatronageHistoryTab profileId={initialData.id} isOpen={isOpen} isActive={activeTab === 'patronage'} />
                 </div>
-              </SlTabPanel>
+              </TabPanel>
             )}
           </TabGroup>
         ) : (

@@ -1,8 +1,7 @@
 import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import { isColorTooClose, getContrastColor } from '../../lib/colorUtils';
-import { Button, Input } from '../ui';
-import SlColorPicker from '@shoelace-style/shoelace/dist/react/color-picker/index.js';
+import { Button, Input, ColorPicker } from '../ui';
 
 interface SectionBucketEditorProps {
   configSections: SectionDef[];
@@ -60,10 +59,9 @@ export function SectionBucketEditor({
                 />
                 
                 <div className="relative flex items-center gap-2">
-                  <SlColorPicker
+                  <ColorPicker
                     value={hexBg}
-                    onSlChange={(e: unknown) => {
-                      const val = (e as CustomEvent).detail.value;
+                    onChange={(val) => {
                       const newSecs = [...configSections];
                       newSecs[index] = {
                         ...newSecs[index],

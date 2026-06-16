@@ -2,21 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, FormField, Badge, Modal, EmptyState, Select, Input, Textarea } from '../../components/ui';
+import { Button, FormField, Badge, Modal, EmptyState, Select, Input, Textarea, TabGroup, Tab, TabPanel } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { safeLocalStorage } from '../../lib/storage';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
-import SlTabGroup from '@shoelace-style/shoelace/dist/react/tab-group/index.js';
-import SlTab from '@shoelace-style/shoelace/dist/react/tab/index.js';
-import SlTabPanel from '@shoelace-style/shoelace/dist/react/tab-panel/index.js';
-
-const TabGroup = SlTabGroup as unknown as React.ComponentType<
-  React.ComponentProps<typeof SlTabGroup> & {
-    value?: string;
-  }
->;
 
 const STORAGE_KEY_START_DATE = 'donations_view_filter_start_date';
 
@@ -332,20 +323,17 @@ export default function DonationsView() {
 
       <TabGroup
         value={activeTab}
-        onSlTabShow={(e: unknown) => {
-          const customEvent = e as CustomEvent;
-          setActiveTab(customEvent.detail.name as 'history' | 'levels');
-        }}
+        onTabChange={(name) => setActiveTab(name as 'history' | 'levels')}
       >
-        <SlTab slot="nav" panel="history">
+        <Tab panel="history">
           Donation History
-        </SlTab>
-        <SlTab slot="nav" panel="levels">
+        </Tab>
+        <Tab panel="levels">
           Tiers & Page Settings
-        </SlTab>
+        </Tab>
 
         {/* History Tab Content */}
-        <SlTabPanel name="history">
+        <TabPanel name="history">
         <div className="flex flex-col gap-6">
           {/* Stats Analytics Dashboard */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -672,10 +660,10 @@ export default function DonationsView() {
             </div>
           </AppCard>
         </div>
-        </SlTabPanel>
+        </TabPanel>
 
         {/* Levels & Portal Settings Tab Content */}
-        <SlTabPanel name="levels">
+        <TabPanel name="levels">
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
           {/* Public Portal Configuration Card */}
           <div className="flex flex-col gap-6 lg:col-span-1">
@@ -824,7 +812,7 @@ export default function DonationsView() {
             </div>
           </div>
         </div>
-        </SlTabPanel>
+        </TabPanel>
       </TabGroup>
 
       {/* Levels CRUD Modal */}

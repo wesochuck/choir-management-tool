@@ -4,9 +4,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
-import { Button, Input, FormField, Badge, Modal } from '../../components/ui';
-import SlRadioGroup from '@shoelace-style/shoelace/dist/react/radio-group/index.js';
-import SlRadio from '@shoelace-style/shoelace/dist/react/radio/index.js';
+import { Button, Input, FormField, Badge, Modal, RadioGroup, Radio } from '../../components/ui';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -296,10 +294,10 @@ export default function ResourcesView() {
 
           <FormField label="Resource Type">
             <div className="mt-1 flex items-center gap-6">
-              <SlRadioGroup value={resourceType} onSlChange={(e: unknown) => setResourceType((e as CustomEvent).detail.value)}>
-                <SlRadio value="file">File Upload</SlRadio>
-                <SlRadio value="link">Link</SlRadio>
-              </SlRadioGroup>
+              <RadioGroup value={resourceType} onChange={(value) => setResourceType(value as 'file' | 'link')}>
+                <Radio value="file">File Upload</Radio>
+                <Radio value="link">Link</Radio>
+              </RadioGroup>
             </div>
           </FormField>
 

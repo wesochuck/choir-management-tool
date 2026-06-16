@@ -2,8 +2,7 @@ import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import type { Profile } from '../../services/profileService';
 import { getContrastColor } from '../../lib/colorUtils';
-import { Button, Select, Input } from '../ui';
-import SlColorPicker from '@shoelace-style/shoelace/dist/react/color-picker/index.js';
+import { Button, Select, Input, ColorPicker } from '../ui';
 
 interface VoicePartEditorProps {
   configVoiceParts: VoicePartDef[];
@@ -83,10 +82,9 @@ export function VoicePartEditor({
                 </Select>
 
                 <div className="flex items-center gap-1.5">
-                  <SlColorPicker
+                  <ColorPicker
                     value={vp.color || defaultColor}
-                    onSlChange={(e: unknown) => {
-                      const val = (e as CustomEvent).detail.value;
+                    onChange={(val) => {
                       const newParts = [...configVoiceParts];
                       newParts[index] = {
                         ...newParts[index],

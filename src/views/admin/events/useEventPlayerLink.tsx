@@ -3,8 +3,7 @@ import type { useDialog } from '../../../contexts/DialogContext';
 import type { Event } from '../../../services/eventService';
 import { playerService } from '../../../services/playerService';
 
-import { Button } from '../../../components/ui';
-import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
+import { Button, CopyButton } from '../../../components/ui';
 
 interface UseEventPlayerLinkArgs {
   dialog: ReturnType<typeof useDialog>;
@@ -27,9 +26,9 @@ export function useEventPlayerLink({ dialog }: UseEventPlayerLinkArgs) {
               {url}
             </div>
             <div className="flex flex-row gap-2">
-              <SlCopyButton value={url}>
+              <CopyButton value={url}>
                 Copy Link
-              </SlCopyButton>
+              </CopyButton>
               <Button
                 variant="secondary"
                 size="small"

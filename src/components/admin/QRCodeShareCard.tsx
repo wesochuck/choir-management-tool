@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import QRCode from 'qrcode';
-import { Button } from '../ui';
-import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
+import { Button, CopyButton } from '../ui';
 
 interface QRCodeShareCardProps {
   title: string;
@@ -179,9 +178,9 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
           
           {/* Actions */}
           <div className="mt-2 flex flex-wrap gap-2.5">
-            <SlCopyButton value={absoluteUrl} className="min-w-[100px] font-bold shadow-xs transition-all duration-150">
+            <CopyButton value={absoluteUrl} className="min-w-[100px] font-bold shadow-xs transition-all duration-150">
               🔗 Copy Link
-            </SlCopyButton>
+            </CopyButton>
             
             <Button
               onClick={handleDownloadPNG}

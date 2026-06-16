@@ -4,8 +4,7 @@ import { profileService, type Profile, type CalendarFeedUrls } from '../../servi
 import { PhotoUploader } from '../../components/common/PhotoUploader';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, Select, Input } from '../../components/ui';
-import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
+import { Button, Select, Input, CopyButton } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 
@@ -361,12 +360,12 @@ export default function ProfileView() {
                         className="sm:flex-1"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
-                      <SlCopyButton
+                      <CopyButton
                         value={calendarFeedUrls.httpsUrl}
                         className="h-10 w-full min-w-[180px] sm:w-auto"
                       >
                         Copy Google Calendar URL
-                      </SlCopyButton>
+                      </CopyButton>
                     </div>
                     <span className="text-muted text-xs">
                       For Google Calendar, copy the HTTPS URL and add it with Other calendars → From URL.

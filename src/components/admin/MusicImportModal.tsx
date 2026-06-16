@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Modal, Button, Select } from '../ui';
-import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
+import { Modal, Button, Select, ProgressBar } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService, type MusicPieceInput } from '../../services/musicLibraryService';
 import { parseCSV, type CSVData } from '../../lib/rosterImportUtils';
@@ -451,7 +450,7 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
             </span>
           </div>
 
-          <SlProgressBar value={importProgress} className="mt-[10px] h-3 w-full [&::part(base)]:rounded-md" />
+          <ProgressBar value={importProgress} className="mt-[10px] h-3 w-full [&::part(base)]:rounded-md" />
 
           <div className="text-muted flex gap-5 text-[0.9rem]">
             <span>Successes: <strong className="text-primary-deep">{successCount}</strong></span>

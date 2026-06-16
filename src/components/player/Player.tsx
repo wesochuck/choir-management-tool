@@ -1,8 +1,7 @@
 import React from 'react';
 import type { PlayerMediaFile } from '../../services/playerService';
 import { useAudioPlayback } from '../../hooks/useAudioPlayback';
-import SlRange from '@shoelace-style/shoelace/dist/react/range/index.js';
-import { Input, Select } from '../ui';
+import { Input, Select, Range } from '../ui';
 
 import {
   PlayIcon,
@@ -167,15 +166,15 @@ export const Player: React.FC<PlayerProps> = ({
 
         <div className="mb-6 flex items-center gap-4 text-sm text-text-muted tabular-nums">
           <span>{formatTime(currentTime)}</span>
-          <SlRange
+          <Range
             min={0}
             max={duration || 0}
             step={0.1}
             value={currentTime}
             // @allow-inline-style - CSS custom properties for Shoelace range track colors
             style={{ '--track-color-active': 'var(--accent-color)', '--track-color-inactive': 'var(--border-color)', '--track-height': '6px' } as React.CSSProperties}
-            onSlInput={handleSlSeekInput}
-            onSlChange={handleSlSeekChange}
+            onInput={handleSlSeekInput}
+            onChange={handleSlSeekChange}
           />
           <span>{formatTime(duration)}</span>
         </div>
@@ -235,7 +234,7 @@ export const Player: React.FC<PlayerProps> = ({
 
           <div className="pointer-coarse:hidden flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden">
             <label htmlFor="volume-input" className="text-overline whitespace-nowrap text-text-muted">Volume</label>
-            <SlRange
+            <Range
               id="volume-input"
               min={0}
               max={1}
@@ -243,7 +242,7 @@ export const Player: React.FC<PlayerProps> = ({
               value={volume}
               // @allow-inline-style - CSS custom properties for Shoelace range track colors
               style={{ '--track-color-active': 'var(--accent-color)', '--track-color-inactive': 'var(--border-color)', '--track-height': '4px' } as React.CSSProperties}
-              onSlInput={handleSlVolumeInput}
+              onInput={handleSlVolumeInput}
             />
           </div>
           

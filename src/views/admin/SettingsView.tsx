@@ -8,8 +8,7 @@ import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { LandingPageSettingsPanel } from '../../components/admin/LandingPageSettingsPanel';
 import type { LandingPageSettingsPanelHandle } from '../../components/admin/LandingPageSettingsPanel';
-import { Button, Select, Input } from '../../components/ui';
-import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
+import { Button, Select, Input, CopyButton } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -395,13 +394,13 @@ function QueueWebhookSettings() {
               value={token ? webhookUrl : 'No token generated yet.'}
               className="block w-full max-w-lg flex-1 shadow-sm transition-colors outline-none focus:ring-primary"
             />
-            <SlCopyButton
+            <CopyButton
               value={webhookUrl}
               disabled={!token}
               className={`${!token ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               Copy Link
-            </SlCopyButton>
+            </CopyButton>
           </div>
         </div>
 

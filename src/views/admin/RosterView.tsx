@@ -13,8 +13,7 @@ import { getVoicePartFilterLabel } from '../../lib/voicePartLabels';
 import { useDues } from '../../hooks/useDues';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
-import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
-import { Input } from '../../components/ui';
+import { Input, Divider } from '../../components/ui';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
@@ -364,7 +363,7 @@ export default function RosterView() {
                     })}
                   </div>
 
-                  <SlDivider />
+                  <Divider />
 
                   <div className="px-2.5 py-0.5 text-overline text-gray-500">Individual Parts</div>
                   <div className="flex flex-col gap-0">

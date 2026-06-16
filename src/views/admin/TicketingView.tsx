@@ -10,8 +10,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
-import { Modal, Button, FormField, Badge, EmptyState, Select, Input } from '../../components/ui';
-import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
+import { Modal, Button, FormField, Badge, EmptyState, Select, Input, ProgressBar } from '../../components/ui';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 import { settingsService } from '../../services/settingsService';
 
@@ -1025,7 +1024,7 @@ export default function TicketingView() {
                           <td className="px-6 py-4 text-sm whitespace-nowrap">
                             <div className="flex flex-col gap-1">
                               <span className="font-medium text-slate-800">{sold} / {b.capacity} sold</span>
-                              <SlProgressBar value={Math.min(100, (sold / b.capacity) * 100)} className="h-1.5 w-[100px] [&::part(base)]:rounded" />
+                              <ProgressBar value={Math.min(100, (sold / b.capacity) * 100)} className="h-1.5 w-[100px] [&::part(base)]:rounded" />
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">

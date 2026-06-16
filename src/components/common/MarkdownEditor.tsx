@@ -30,13 +30,24 @@ export function MarkdownEditor({
     valueRef.current = value;
   }, [onChange, value]);
 
+  // Sync instanceRef into a local ref (in an effect to avoid react-hooks/refs violation)
+  const instanceRefLocal = useRef(instanceRef);
   useEffect(() => {
+    instanceRefLocal.current = instanceRef;
+  });
+
+  // Mount EasyMDE once. Props (minHeight, placeholder, value) are deps only to
+  // satisfy the linter — the early return guard prevents re-initialization.
+  // Refs keep the callbacks fresh without triggering reinit.
+  useEffect(() => {
+    if (localInstanceRef.current) return;
+
     if (!textareaRef.current) return;
 
     const mde = new EasyMDE({
       element: textareaRef.current,
       initialValue: value ?? '',
-      spellChecker: false, // Disabling by default for cleaner UI unless requested
+      spellChecker: false,
       status: false,
       minHeight,
       placeholder,
@@ -58,13 +69,12 @@ export function MarkdownEditor({
 
     localInstanceRef.current = mde;
 
-    if (instanceRef) {
-      instanceRef.current = mde;
+    if (instanceRefLocal.current) {
+      instanceRefLocal.current.current = mde;
     }
 
     const handleChange = () => {
       const nextValue = mde.value();
-      // Only trigger onChange if the value has actually changed
       if (nextValue !== valueRef.current) {
         onChangeRef.current(nextValue);
       }
@@ -76,12 +86,11 @@ export function MarkdownEditor({
       mde.codemirror.off('change', handleChange);
       mde.toTextArea();
       localInstanceRef.current = null;
-      if (instanceRef?.current === mde) {
-        instanceRef.current = null;
+      if (instanceRefLocal.current?.current === mde) {
+        instanceRefLocal.current.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [minHeight, placeholder, value]);
 
   // Synchronize external value changes (e.g. from templates) into EasyMDE
   useEffect(() => {

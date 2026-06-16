@@ -13,7 +13,6 @@ import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
 import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { useDialog } from '../../contexts/DialogContext';
-import SlDivider from '@shoelace-style/shoelace/dist/react/divider/index.js';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -23,8 +22,7 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { Modal, Input } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
-import { Button, Select, Spinner } from '../../components/ui';
-import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
+import { Button, Select, Spinner, Divider, CopyButton } from '../../components/ui';
 
 export default function SetListView() {
   const { timezone } = useChoirSettings();
@@ -125,9 +123,9 @@ export default function SetListView() {
               {url}
             </div>
             <div className="flex flex-row gap-2">
-              <SlCopyButton value={url}>
+              <CopyButton value={url}>
                 Copy Link
-              </SlCopyButton>
+              </CopyButton>
               <Button 
                 variant="secondary"
                 size="small"
@@ -703,7 +701,7 @@ export default function SetListView() {
                 {selectedEvent.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
               </p>
             </div>
-            <SlDivider />
+            <Divider />
             <div className="flex flex-col gap-2">
               {(() => {
                 let songIndex = 1;
@@ -784,9 +782,9 @@ export default function SetListView() {
                 Close
               </Button>
               <div className="flex-1 sm:flex-none">
-                <SlCopyButton value={plainText} className="flex w-full items-center gap-[6px]">
+                <CopyButton value={plainText} className="flex w-full items-center gap-[6px]">
                   📋 Copy Plain Text
-                </SlCopyButton>
+                </CopyButton>
               </div>
             </div>
             <Button
