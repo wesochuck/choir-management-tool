@@ -55,7 +55,7 @@ export function VoicePartEditor({
                   }}
                   placeholder="Label"
                   disabled={isTied}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                 
                   title={isTied ? "Cannot change the label of a voice part with assigned singers" : undefined}
                 />
                 <Input

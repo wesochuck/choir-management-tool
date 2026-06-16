@@ -88,7 +88,7 @@ export default function ResetPasswordView() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+               
                 disabled={isLoading || !!success}
               />
             </FormField>
@@ -100,7 +100,7 @@ export default function ResetPasswordView() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+               
                 disabled={isLoading || !!success}
               />
             </FormField>

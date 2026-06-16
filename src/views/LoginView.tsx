@@ -195,7 +195,7 @@ export default function LoginView() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+               
                 placeholder="e.g. singer@choir.org"
               />
             </div>
@@ -237,7 +237,7 @@ export default function LoginView() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                       
                         placeholder="singer@choir.org"
                       />
                     </div>
@@ -271,7 +271,7 @@ export default function LoginView() {
                         onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                         required
                         placeholder="000000"
-                        className="h-12 w-full rounded-lg border border-border bg-bg px-4 text-center font-mono text-xl font-bold tracking-widest text-text transition-all focus:border-primary focus:bg-surface focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                        className="text-center font-mono text-xl font-bold tracking-widest"
                       />
                       
                       <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
@@ -342,7 +342,7 @@ export default function LoginView() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                   
                     placeholder="e.g. singer@choir.org"
                   />
                 </div>
@@ -367,7 +367,7 @@ export default function LoginView() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-11 w-full rounded-lg border border-border bg-surface px-3 font-sans text-base text-text transition-all focus:border-primary focus:shadow-[0_0_0_3px_rgba(109,40,217,0.15)] focus:outline-none"
+                   
                   />
                 </div>
                 {error && <p className="m-0 text-xs text-danger-text">{error}</p>}

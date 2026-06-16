@@ -49,7 +49,7 @@ export function StatusAutomationSettings({
                 max={10}
                 value={configAutomationMissThreshold}
                 onChange={(e) => setConfigAutomationMissThreshold(Math.max(1, parseInt(e.target.value) || 1))}
-                className="h-10 w-24 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                className="w-24"
               />
               <p className="text-xs text-slate-500">
                 Mark a singer as Inactive after this many consecutive absences or 'No' RSVPs.

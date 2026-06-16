@@ -19,7 +19,6 @@ export function SeasonManagementSettings({
           value={configSeason}
           onChange={(event) => setConfigSeason(event.target.value)}
           placeholder="e.g. Fall 2026"
-          className="h-10 w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-800 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
         />
         <p className="text-xs text-slate-500">
           Set the active season for tracking dues in the roster view. Leave blank to disable dues tracking.
