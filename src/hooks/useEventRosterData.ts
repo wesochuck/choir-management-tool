@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { eventService, type Event } from '../services/eventService';
@@ -35,6 +35,12 @@ interface EventRosterQueryData {
   pastRehearsals: Event[];
   pastRosters: EventRoster[];
 }
+
+const EMPTY_PROFILES: Profile[] = [];
+const EMPTY_ROSTERS: EventRoster[] = [];
+const EMPTY_VOICE_PARTS: VoicePartDef[] = [];
+const EMPTY_SECTIONS: SectionDef[] = [];
+const EMPTY_EVENTS: Event[] = [];
 
 export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOptions) {
   const navigate = useNavigate();
@@ -98,31 +104,34 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
     }
   }, [eventId, isInline, navigate]);
 
+  const lastShownErrorRef = useRef<unknown>(null);
+
   useEffect(() => {
-    if (eventRosterQuery.error) {
-      console.error('Failed to load roster data', eventRosterQuery.error);
-      dialog
-        .showMessage({
-          title: 'Event Not Found',
-          message: 'The requested event or its RSVP roster could not be loaded.',
-          variant: 'danger',
-        })
-        .then(() => {
-          if (!isInline) {
-            navigate('/admin/events');
-          }
-        });
-    }
-  }, [eventRosterQuery.error]); // eslint-disable-line react-hooks/exhaustive-deps
+    const error = eventRosterQuery.error;
+    if (!error || error === lastShownErrorRef.current) return;
+    lastShownErrorRef.current = error;
+    console.error('Failed to load roster data', error);
+    dialog
+      .showMessage({
+        title: 'Event Not Found',
+        message: 'The requested event or its RSVP roster could not be loaded.',
+        variant: 'danger',
+      })
+      .then(() => {
+        if (!isInline) {
+          navigate('/admin/events');
+        }
+      });
+  }, [eventRosterQuery.error, dialog, navigate, isInline]);
 
   const data = eventRosterQuery.data;
   const event = data?.event ?? null;
-  const activeProfiles = data?.activeProfiles ?? [];
-  const eventRoster = data?.eventRoster ?? [];
-  const voiceParts = data?.voiceParts ?? [];
-  const sections = data?.sections ?? [];
-  const pastRehearsals = data?.pastRehearsals ?? [];
-  const pastRosters = data?.pastRosters ?? [];
+  const activeProfiles = data?.activeProfiles ?? EMPTY_PROFILES;
+  const eventRoster = data?.eventRoster ?? EMPTY_ROSTERS;
+  const voiceParts = data?.voiceParts ?? EMPTY_VOICE_PARTS;
+  const sections = data?.sections ?? EMPTY_SECTIONS;
+  const pastRehearsals = data?.pastRehearsals ?? EMPTY_EVENTS;
+  const pastRosters = data?.pastRosters ?? EMPTY_ROSTERS;
   const defaultSort = data?.defaultSort ?? 'lastName';
   const maxRehearsalMisses = data?.maxRehearsalMisses ?? 3;
 
@@ -186,7 +195,8 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
   }, [activeProfiles, pastRehearsals, pastRosters]);
 
   const invalidate = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId ?? '') });
+    if (!eventId) return;
+    await queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
   }, [queryClient, eventId]);
 
   const refreshProfiles = invalidate;
@@ -194,7 +204,8 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
 
   const setEventRoster = useCallback(
     (rosters: EventRoster[]) => {
-      queryClient.setQueryData(queryKeys.eventRoster.byEventId(eventId ?? ''), (old: EventRosterQueryData | undefined) => {
+      if (!eventId) return;
+      queryClient.setQueryData(queryKeys.eventRoster.byEventId(eventId), (old: EventRosterQueryData | undefined) => {
         if (!old) return old;
         return { ...old, eventRoster: rosters };
       });

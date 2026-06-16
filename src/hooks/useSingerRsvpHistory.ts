@@ -4,6 +4,9 @@ import { queryKeys } from '../lib/queryKeys';
 import { eventService, type Event } from '../services/eventService';
 import { rosterService, type EventRoster } from '../services/rosterService';
 
+const EMPTY_PERFORMANCES: Event[] = [];
+const EMPTY_ROSTERS: EventRoster[] = [];
+
 interface UseSingerRsvpHistoryParams {
   isOpen: boolean;
   singerId?: string;
@@ -50,8 +53,8 @@ export function useSingerRsvpHistory({ isOpen, singerId, isActive }: UseSingerRs
     },
   });
 
-  const performances = rsvpQuery.data?.performances ?? [];
-  const rosters = rsvpQuery.data?.rosters ?? [];
+  const performances = rsvpQuery.data?.performances ?? EMPTY_PERFORMANCES;
+  const rosters = rsvpQuery.data?.rosters ?? EMPTY_ROSTERS;
 
   const { upcomingPerformances, pastPerformances } = useMemo(() => {
     const now = new Date();

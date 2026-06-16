@@ -23,6 +23,11 @@ interface TicketingData {
   tz: string;
 }
 
+const EMPTY_EVENTS: Event[] = [];
+const EMPTY_PURCHASES: TicketPurchase[] = [];
+const EMPTY_BUNDLES: TicketBundle[] = [];
+const FALLBACK_TZ = 'America/New_York';
+
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
   const queryClient = useQueryClient();
@@ -80,16 +85,16 @@ export default function TicketingView() {
     },
   });
 
-  const events = ticketingQuery.data?.allEvents ?? [];
-  const purchases = ticketingQuery.data?.purchases ?? [];
-  const allPurchases = ticketingQuery.data?.allPurchases ?? [];
-  const bundles = ticketingQuery.data?.bundles ?? [];
-  const timezone = ticketingQuery.data?.tz ?? 'America/New_York';
+  const events = ticketingQuery.data?.allEvents ?? EMPTY_EVENTS;
+  const purchases = ticketingQuery.data?.purchases ?? EMPTY_PURCHASES;
+  const allPurchases = ticketingQuery.data?.allPurchases ?? EMPTY_PURCHASES;
+  const bundles = ticketingQuery.data?.bundles ?? EMPTY_BUNDLES;
+  const timezone = ticketingQuery.data?.tz ?? FALLBACK_TZ;
   const loading = ticketingQuery.isLoading;
 
   const logoQuery = useQuery({
     queryKey: queryKeys.ticketing.logoUrl,
-    queryFn: () => settingsService.getLogoUrl().then(url => url ?? null).catch(() => null),
+    queryFn: () => settingsService.getLogoUrl().catch(() => null),
   });
   const logoUrl = logoQuery.data ?? null;
 
@@ -386,11 +391,9 @@ export default function TicketingView() {
 
       if (editingBundle) {
         data.id = editingBundle.id;
-        dialog.showToast('Bundle updated successfully.');
-      } else {
-        dialog.showToast('Bundle created successfully.');
       }
       await saveBundleMutation.mutateAsync(data);
+      dialog.showToast(editingBundle ? 'Bundle updated successfully.' : 'Bundle created successfully.');
       setIsModalOpen(false);
     } catch (err: unknown) {
       console.error(err);
@@ -512,7 +515,6 @@ export default function TicketingView() {
             as={Link}
             to="/admin/tickets/scan"
             variant="primary"
-            size="small"
             className="no-underline"
           >
             Scan Tickets
@@ -520,7 +522,7 @@ export default function TicketingView() {
           {activeTab === 'bundles' && (
             <Button
               variant="primary"
-              className="animate-pulse-once px-3 font-semibold md:px-6"
+              className="animate-pulse-once"
               onClick={handleOpenCreateModal}
               title="Create New Bundle"
               icon={
@@ -536,7 +538,6 @@ export default function TicketingView() {
           {activeTab === 'willcall' && selectedEventId && (
             <Button
               variant="secondary"
-              className="px-3 font-semibold md:px-6"
               onClick={handleExportCSV}
               disabled={activePurchases.length === 0}
               title="Export Will Call CSV"

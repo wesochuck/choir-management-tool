@@ -17,18 +17,18 @@ This app uses TanStack Query for server state and keeps React Router for routing
 
 | # | Target | Status |
 |---|--------|--------|
-| 1 | `src/hooks/useVenues.ts` | ✅ Done |
-| 2 | `src/hooks/useVoiceParts.ts` | ✅ Done |
-| 3 | `src/hooks/useDues.ts` | ✅ Done |
-| 4 | `src/hooks/useEvents.ts` | ✅ Done |
-| 5 | `src/hooks/useProfiles.ts` | ✅ Done |
-| 6 | `src/hooks/useMyEvents.ts` | ✅ Done |
-| 7 | `src/hooks/useSingerRsvpHistory.ts` | ✅ Done |
-| 8 | `src/views/admin/ResourcesView.tsx` | ✅ Done |
-| 9 | `src/views/admin/TicketingView.tsx` | ✅ Done |
-| 10 | `src/hooks/useEventRosterData.ts` | ⬜ Not started |
-| 11 | `src/hooks/useSeatingChart.ts` | ⬜ Not started |
-| 12 | Dashboard views (after shared hooks) | ⬜ Not started |
+| 1 | `src/hooks/useVenues.ts` | Done |
+| 2 | `src/hooks/useVoiceParts.ts` | Done |
+| 3 | `src/hooks/useDues.ts` | Done |
+| 4 | `src/hooks/useEvents.ts` | Done |
+| 5 | `src/hooks/useProfiles.ts` | Done |
+| 6 | `src/hooks/useMyEvents.ts` | Done |
+| 7 | `src/hooks/useSingerRsvpHistory.ts` | Done |
+| 8 | `src/views/admin/ResourcesView.tsx` | Done |
+| 9 | `src/views/admin/TicketingView.tsx` | Done |
+| 10 | `src/hooks/useEventRosterData.ts` | Done |
+| 11 | `src/hooks/useSeatingChart.ts` | Not started |
+| 12 | Dashboard views (after shared hooks) | Not started |
 
 ## Query Key Pattern
 

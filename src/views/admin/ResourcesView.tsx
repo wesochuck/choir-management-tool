@@ -11,6 +11,8 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type D
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const EMPTY_RESOURCES: SingerResource[] = [];
+
 function SortableResourceRow({
   resource,
   children,
@@ -27,7 +29,13 @@ function SortableResourceRow({
     opacity: isDragging ? 0.5 : 1,
   };
   return (
-    <tr ref={setNodeRef} {...attributes} style={style} className="transition-colors hover:bg-slate-50/50">
+    <tr
+      ref={setNodeRef}
+      {...attributes}
+      // @allow-inline-style - dnd-kit drag transform, transition, and opacity
+      style={style}
+      className="transition-colors hover:bg-slate-50/50"
+    >
       <td className="w-10 px-2 py-4 text-center" {...listeners}>
         {dragHandle}
       </td>
@@ -44,7 +52,7 @@ export default function ResourcesView() {
     queryKey: queryKeys.resources.list(),
     queryFn: () => resourceService.getResources(),
   });
-  const resources = resourcesQuery.data ?? [];
+  const resources = resourcesQuery.data ?? EMPTY_RESOURCES;
   const isLoading = resourcesQuery.isLoading;
 
   const [isAdding, setIsAdding] = useState(false);

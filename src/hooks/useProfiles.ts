@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
-import { profileService, getProfileEmail, type ProfileInput } from '../services/profileService';
+import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../services/profileService';
 import { getVoiceParts, type VoicePartDef } from '../services/settingsService';
 import { matchesVoiceParts } from '../lib/voicePartUtils';
 import { getHttpStatus, type Retry429Options } from '../lib/networkSafety';
+
+const EMPTY_PROFILES: Profile[] = [];
 
 interface UseProfilesOptions {
   onRateLimitRetry?: Retry429Options['onRetry'];
@@ -35,7 +37,7 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
     getVoiceParts().then(setVoiceParts).catch(() => undefined);
   }, []);
 
-  const profiles = profilesQuery.data ?? [];
+  const profiles = profilesQuery.data ?? EMPTY_PROFILES;
 
   const unfilteredByVoicePartProfiles = useMemo(() => {
     const query = filters.name.trim().toLowerCase();
