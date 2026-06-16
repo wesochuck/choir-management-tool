@@ -26,7 +26,8 @@ export type UtilityBundleName =
     | 'playerEndpoints'
     | 'stripeService'
     | 'checkoutEndpoints'
-    | 'qrHelper';
+    | 'qrHelper'
+    | 'ticketScanValidation';
 
 export type UtilityBundle = {
     files: string[];
@@ -141,11 +142,16 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
             'handleCreateDonationSession',
             'handleAdminRefundDonation'
         ],
-        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson'],
+        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson', 'qrHelper', 'ticketScanValidation'],
     },
     qrHelper: {
         files: ['email/qrHelper.ts'],
         symbols: ['renderQrSvg'],
+    },
+    ticketScanValidation: {
+        files: ['ticketScan/ticketValidation.ts'],
+        symbols: ['handleValidateScan', 'handleGetScanContext'],
+        dependsOn: ['hmacTokens', 'hookJson', 'hookText', 'qrHelper'],
     },
 };
 
@@ -1062,6 +1068,10 @@ ${renderRoute('POST', '/api/admin/refund-ticket', 'return handleAdminRefundTicke
 ${renderRoute('POST', '/api/admin/refund-bundle', 'return handleAdminRefundBundle(e);')}
 
 ${renderRoute('POST', '/api/admin/refund-donation', 'return handleAdminRefundDonation(e);')}
+
+${renderRoute('POST', '/api/tickets/validate', 'return handleValidateScan(e);')}
+
+${renderRoute('GET', '/api/tickets/scan-context', 'return handleGetScanContext(e);')}
 
 ${renderRoute('GET', '/api/player-playlist', 'return handlePlayerPlaylist(e);')}
 
