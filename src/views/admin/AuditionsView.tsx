@@ -803,7 +803,7 @@ export default function AuditionsView() {
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setSchedulingAudition(null)}>Cancel</Button>
-            <Button variant="primary" type="submit" form="schedule-form">Confirm & Send Email</Button>
+            <Button variant="primary" onClick={() => document.getElementById('schedule-form')?.requestSubmit()}>Confirm & Send Email</Button>
           </div>
         }
       >

@@ -262,7 +262,7 @@ export default function ResourcesView() {
         footer={
           <div className="flex flex-row gap-4">
             <Button type="button" onClick={resetForm} disabled={isSaving} variant="outline">Cancel</Button>
-            <Button type="submit" form="resource-form" disabled={isSaving} variant="primary">
+            <Button disabled={isSaving} variant="primary" onClick={() => document.getElementById('resource-form')?.requestSubmit()}>
               {isSaving ? 'Saving...' : 'Save Resource'}
             </Button>
           </div>

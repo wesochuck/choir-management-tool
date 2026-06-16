@@ -92,7 +92,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
       footer={
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button type="submit" form="audition-form" variant="primary" disabled={isSubmitting} loading={isSubmitting}>
+          <Button variant="primary" disabled={isSubmitting} loading={isSubmitting} onClick={() => document.getElementById('audition-form')?.requestSubmit()}>
             {audition ? 'Save Audition' : 'Add Audition'}
           </Button>
         </div>
