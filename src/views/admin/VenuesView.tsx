@@ -45,10 +45,11 @@ export default function VenuesView() {
         await addVenue({ name, rowCounts, address, isOpenSeating });
       }
       resetForm();
-    } catch {
+    } catch (err: unknown) {
+      console.error('[VenuesView] Save failed:', err);
       await dialog.showMessage({
         title: 'Could Not Save Venue',
-        message: 'Error saving venue',
+        message: err instanceof Error ? err.message : 'Error saving venue',
         variant: 'danger',
       });
     }

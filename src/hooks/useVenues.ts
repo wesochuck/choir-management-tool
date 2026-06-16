@@ -20,6 +20,9 @@ export const useVenues = () => {
   const addVenueMutation = useMutation({
     mutationFn: (data: Partial<Venue>) => venueService.createVenue(data),
     onSuccess: invalidateVenues,
+    onError: (err: unknown) => {
+      console.error('[useVenues.addVenueMutation] onError:', err);
+    },
   });
 
   const editVenueMutation = useMutation({
@@ -36,6 +39,7 @@ export const useVenues = () => {
     try {
       return await addVenueMutation.mutateAsync(data);
     } catch (err: unknown) {
+      console.error('[useVenues.addVenue] mutation failed:', err);
       throw new Error(toErrorMessage(err, 'Failed to add venue'));
     }
   };
