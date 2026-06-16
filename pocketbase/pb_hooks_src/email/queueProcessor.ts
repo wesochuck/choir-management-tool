@@ -206,6 +206,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                         .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
                         .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
                         .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
+                        .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
                         .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
 
                     htmlBody = renderMarkdown(protectedContent);
@@ -217,6 +218,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                         .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
                         .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
                         .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
+                        .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
                         .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
                 }
 
@@ -406,6 +408,29 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 // Clear setlist placeholder when no event
                 if (!event) {
                     htmlBody = htmlBody.replace(/{setlist}/g, "");
+                }
+
+                // Resolve ticket QR code placeholder
+                if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    const isBundle = !!filters.bundleId;
+                    const caption = isBundle
+                        ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                        : '';
+                    const ticketQrHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    ${caption}
+    <img src="${filters.qrSvgSrc}"
+         style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+         alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+    <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+       style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+        View your ticket QR
+    </a>
+    <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+</div>`.trim();
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                } else {
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
                 }
 
                 // Resolve poll links: {{POLL_LINK:pollId}}
