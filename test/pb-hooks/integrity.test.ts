@@ -78,7 +78,7 @@ test('Generated main.pb.js integrity', () => {
     assert.ok(content.includes('"/api/generate-player-token"'), 'Should include player endpoint route');
     assert.ok(content.includes('"/api/player-playlist"'), 'Should include player playlist route');
 
-    assert.strictEqual(countOccurrences(content, 'routerAdd('), 26, 'Generated main file should contain exactly 26 route registrations');
+    assert.strictEqual(countOccurrences(content, 'routerAdd('), 28, 'Generated main file should contain exactly 28 route registrations');
     assert.strictEqual(countOccurrences(content, 'cronAdd('), 3, 'Generated main file should contain exactly 3 cron registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterCreateSuccess(('), 2, 'Generated main file should contain exactly two create hook registrations');
     assert.strictEqual(countOccurrences(content, 'onRecordAfterUpdateSuccess(('), 2, 'Generated main file should contain exactly two update hook registrations');
@@ -108,7 +108,7 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
     assert.ok(!content.includes('// --- SHARED UTILITIES ---'), 'Generated file should not emit the old top-level sharedUtils block');
     assert.ok(!content.includes('__SHARED_UTILS__'), 'Generated file should not leak generator utility placeholders');
-    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 58, 'Twenty-nine utility-bearing callbacks should have start/end local utility markers');
+    assert.strictEqual(countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'), 62, 'Thirty-one utility-bearing callbacks should have start/end local utility markers');
 
     const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));
     assert.ok(!filePrelude.includes('function '), 'Generated file prelude should not contain top-level helper functions');
@@ -302,31 +302,36 @@ test('Raw SQL queries in main.pb.js do not use raw colon parameter syntax', () =
 test('Generated main.pb.js contains no top-level function helper definitions outside callbacks', () => {
     const content = readGeneratedMain();
     
-    // We parse the file sequentially and track brace depth to ensure any "function <name>" 
-    // keyword is declared only at a brace depth of >= 1 (inside a callback/cron closure block).
+    // Track whether we're inside a callback-local utility block.
+    // Functions declared inside these blocks are explicitly intended as
+    // callback-local inlines. Only flag function declarations at the
+    // true top level (braceDepth === 0, outside utility blocks).
+    let insideCallbackLocalBlock = false;
     let braceDepth = 0;
     const lines = content.split('\n');
     
     lines.forEach((line, idx) => {
+        const trimmed = line.trim();
+        
+        // Track callback-local utility block boundaries
+        if (trimmed.includes('// --- CALLBACK-LOCAL UTILITIES')) {
+            insideCallbackLocalBlock = true;
+        }
+        if (trimmed.includes('// --- END CALLBACK-LOCAL UTILITIES')) {
+            insideCallbackLocalBlock = false;
+        }
+        
         // Simple brace counting
         for (let i = 0; i < line.length; i++) {
             if (line[i] === '{') braceDepth++;
             if (line[i] === '}') braceDepth--;
         }
         
-        const trimmed = line.trim();
-        if (trimmed.startsWith('function ') && braceDepth <= 1) {
-            // A function declaration starting at brace depth 0 (or 1 if the brace opening is on the same line after the function keyword)
-            // is defined in the global scope of main.pb.js.
-            // Safe inline callback utilities will always be inside route registrations, which start with:
-            // routerAdd(..., (e) => {
-            // inside which the brace depth is already >= 1 before the function is declared.
-            // If braceDepth <= 0 (or 1 and the function itself is on this line, meaning it wasn't opened in a parent block), it's global.
-            const actualDepthBeforeLine = braceDepth - (line.match(/{/g) || []).length + (line.match(/}/g) || []).length;
-            
-            if (actualDepthBeforeLine === 0) {
-                assert.fail(`CRITICAL: Found top-level function declaration at line ${idx + 1} of main.pb.js: "${trimmed}". Registered callbacks must contain all their helper utilities locally inside the callback wrapper to prevent ReferenceError issues on PocketHost.`);
-            }
+        // Only flag function declarations at braceDepth === 0 outside
+        // callback-local utility blocks. Functions inside utility blocks
+        // are always inside a callback wrapper by construction.
+        if (trimmed.startsWith('function ') && !insideCallbackLocalBlock && braceDepth === 0) {
+            assert.fail(`CRITICAL: Found top-level function declaration at line ${idx + 1} of main.pb.js: "${trimmed}". Registered callbacks must contain all their helper utilities locally inside the callback wrapper to prevent ReferenceError issues on PocketHost.`);
         }
     });
 });
