@@ -138,7 +138,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             <Button 
               variant="secondary"
               size="small"
-              className="font-semibold"
+              className=""
               onClick={() => {
                 const query = new URLSearchParams({
                   eventId: event.id,
@@ -181,7 +181,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                   onClick={handleExportCSV}
                   variant="secondary"
                   size="small"
-                  className="font-bold"
+                  className=""
                 >
                   📥 Export CSV
                 </Button>

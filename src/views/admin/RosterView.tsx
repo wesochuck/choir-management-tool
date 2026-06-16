@@ -242,7 +242,7 @@ export default function RosterView() {
               <Button
                 onClick={handleExportCSV}
                 variant="secondary"
-                className="px-3 font-semibold md:px-6"
+                className=""
                 title="Export Roster"
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -272,7 +272,7 @@ export default function RosterView() {
               <Button
                 onClick={handleAdd}
                 variant="primary"
-                className="px-3 font-semibold md:px-6"
+                className=""
                 title="Add Singer"
                 icon={
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

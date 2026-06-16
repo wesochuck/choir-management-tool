@@ -296,7 +296,7 @@ export default function DonationsView() {
           {activeTab === 'history' && (
             <Button
               variant="secondary"
-              className="px-3 font-semibold md:px-6"
+              className=""
               onClick={handleExportCSV}
               disabled={sortedDonations.length === 0}
               title="Export CSV"
@@ -314,7 +314,7 @@ export default function DonationsView() {
           {activeTab === 'levels' && (
             <Button
               variant="primary"
-              className="animate-pulse-once px-3 font-semibold md:px-6"
+              className="animate-pulse-once"
               onClick={() => openLevelModal()}
               title="Add Level"
               icon={
@@ -474,7 +474,7 @@ export default function DonationsView() {
                     <Button 
                       variant="outline" 
                       onClick={handleClearFilters}
-                      className="flex h-10 items-center justify-center px-3 font-semibold"
+                      className="flex h-10 items-center justify-center"
                       title="Reset filters"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -573,7 +573,7 @@ export default function DonationsView() {
                               <Button 
                                 variant="danger" 
                                 size="small" 
-                                className="font-semibold"
+                                className=""
                                 onClick={() => handleRefund(d.id)}
                               >
                                 Refund
@@ -657,7 +657,7 @@ export default function DonationsView() {
                             <Button 
                               variant="danger" 
                               size="small" 
-                              className="w-full py-1.5 text-xs font-semibold"
+                              className="w-full"
                               onClick={() => handleRefund(d.id)}
                             >
                               Refund
@@ -706,7 +706,7 @@ export default function DonationsView() {
                 </FormField>
                 <Button
                   variant="primary"
-                  className="mt-2 w-full font-semibold"
+                  className="mt-2 w-full"
                   onClick={handleSavePublicSettings}
                   disabled={saving || !donationButtonText.trim()}
                 >
@@ -751,7 +751,7 @@ export default function DonationsView() {
                         <Button
                           variant="primary"
                           size="small"
-                          className="font-semibold"
+                          className=""
                           onClick={() => openLevelModal()}
                         >
                           + Create First Level
@@ -785,7 +785,7 @@ export default function DonationsView() {
                           <Button 
                             variant="outline" 
                             size="small" 
-                            className="h-8 border-none font-bold"
+                            className="h-8"
                             onClick={() => openLevelModal(l)}
                           >
                             Edit
@@ -793,7 +793,7 @@ export default function DonationsView() {
                           <Button 
                             variant="danger" 
                             size="small" 
-                            className="h-8 border-none font-bold"
+                            className="h-8"
                             onClick={() => handleDeleteLevel(l.id)}
                           >
                             Delete
@@ -835,12 +835,12 @@ export default function DonationsView() {
         maxWidth="500px"
         footer={
           <div className="flex w-full justify-end gap-2">
-            <Button variant="outline" className="font-semibold" onClick={() => setIsModalOpen(false)} disabled={saving}>
+            <Button variant="outline" className="" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </Button>
             <Button 
               variant="primary" 
-              className="font-semibold"
+              className=""
               onClick={handleSaveLevel} 
               disabled={saving || !levelLabel.trim() || levelAmount <= 0}
             >

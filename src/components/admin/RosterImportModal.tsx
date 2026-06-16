@@ -543,7 +543,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
               <Button 
                 onClick={handleDownloadCredentials} 
                 variant="primary"
-                className="flex h-10 items-center gap-[6px] whitespace-nowrap"
+                className="flex h-10 items-center gap-[6px]"
               >
                 📥 Download CSV
               </Button>

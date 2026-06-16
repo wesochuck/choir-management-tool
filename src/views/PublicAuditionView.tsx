@@ -200,7 +200,7 @@ export default function PublicAuditionView() {
               <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Voice Part</label>
-                  <Select className="h-11 rounded-md border border-border bg-surface px-3 focus:border-primary" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
+                  <Select className="h-11" value={voicePart} onChange={(e) => setVoicePart(e.target.value)}>
                     <option value="">Not sure yet</option>
                     {voicePartLabels.map((part) => (
                       <option key={part} value={part}>{part}</option>

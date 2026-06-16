@@ -312,7 +312,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({ isOpen, onClose, onSav
                             disabled={isResettingPassword}
                             variant="secondary"
                             size="tiny"
-                            className="cursor-pointer font-semibold inline-flex items-center gap-1"
+                            className="cursor-pointer inline-flex items-center gap-1"
                             loading={isResettingPassword}
                           >
                             <SlIcon name="key" className="text-xs" /> Reset Password

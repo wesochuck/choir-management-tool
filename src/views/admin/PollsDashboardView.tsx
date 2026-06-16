@@ -419,7 +419,7 @@ export default function PollsDashboardView() {
         <div className="flex items-center gap-2 pb-1.5">
           <Button
             variant="secondary"
-            className="px-3 font-semibold md:px-6"
+            className=""
             onClick={() => setIsSettingsModalOpen(true)}
             title="Settings"
             icon={
@@ -442,7 +442,7 @@ export default function PollsDashboardView() {
           </Button>
           <Button
             variant="primary"
-            className="animate-pulse-once px-3 font-semibold md:px-6"
+            className="animate-pulse-once"
             onClick={openQuickCreate}
             title="Start New Poll"
             icon={
@@ -598,7 +598,7 @@ export default function PollsDashboardView() {
                             <Button
                               variant="danger"
                               size="small"
-                              className="font-semibold"
+                              className=""
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeletePoll(poll.id);
@@ -702,7 +702,7 @@ export default function PollsDashboardView() {
                           <Button
                             variant="secondary"
                             size="small"
-                            className="flex-1 font-semibold"
+                            className="flex-1"
                             onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
                           >
                             {isExpanded ? '▲ Hide Names' : '▼ View Names'}
@@ -710,7 +710,7 @@ export default function PollsDashboardView() {
                           <Button
                             variant="danger"
                             size="small"
-                            className="font-semibold"
+                            className=""
                             onClick={() => handleDeletePoll(poll.id)}
                           >
                             Delete
@@ -751,7 +751,7 @@ export default function PollsDashboardView() {
                 <Input
                   id="quick-poll-question"
                   type="text"
-                  className="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
                   value={quickPollQuestion}
                   onChange={(e) => setQuickPollQuestion(e.target.value)}
                   placeholder="e.g. Who can help with setup?"
@@ -764,7 +764,7 @@ export default function PollsDashboardView() {
                   type="number"
                   min="1"
                   max="365"
-                  className="block w-[120px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="block w-[120px] shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
                   value={quickPollDays}
                   onChange={(e) => setQuickPollDays(parseInt(e.target.value) || 1)}
                   required
@@ -852,7 +852,7 @@ export default function PollsDashboardView() {
               type="number"
               min="1"
               max="365"
-              className="block w-[120px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-[120px] shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
               value={globalDefaultDays}
               onChange={(e) => setGlobalDefaultDays(parseInt(e.target.value) || 1)}
               required

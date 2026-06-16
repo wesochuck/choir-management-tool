@@ -584,7 +584,7 @@ export default function SetListView() {
                       📢 Gaps:
                       <Input
                         type="number"
-                        className="h-7 w-12 rounded border border-border bg-white text-center text-sm font-bold text-slate-800 focus:border-primary focus:outline-none"
+                        className="h-7 w-12 rounded focus:outline-none"
                         min={0}
                         step={1}
                         value={localGapSeconds}

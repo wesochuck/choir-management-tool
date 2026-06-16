@@ -649,7 +649,7 @@ export default function AttendanceView() {
                     <Button
                       onClick={handleResetFilters}
                       variant="secondary"
-                      className="flex h-11 shrink-0 items-center gap-1 font-bold whitespace-nowrap"
+                      className="flex h-11 shrink-0 items-center gap-1"
                     >
                       <svg
                         width="14"

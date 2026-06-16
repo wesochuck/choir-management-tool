@@ -171,7 +171,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex flex-col gap-1">
             <label className="text-label">Name</label>
             <Input
-              className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              className="h-[44px] transition-colors outline-none"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
@@ -182,7 +182,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
           <div className="flex flex-col gap-1">
             <label className="text-label">Email or Phone</label>
             <Input
-              className="h-[44px] rounded-md border border-border bg-surface px-3 transition-colors outline-none focus:border-primary"
+              className="h-[44px] transition-colors outline-none"
               value={formData.contact}
               onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
               required

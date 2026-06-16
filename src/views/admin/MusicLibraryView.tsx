@@ -557,7 +557,7 @@ export default function MusicLibraryView() {
             <>
               <Button
                 variant="secondary"
-                className="px-3 font-semibold md:px-6"
+                className=""
                 onClick={handleExportCSV}
                 title="Export CSV"
                 icon={
@@ -581,7 +581,7 @@ export default function MusicLibraryView() {
               </Button>
               <Button
                 variant="secondary"
-                className="px-3 font-semibold md:px-6"
+                className=""
                 onClick={() => setIsImportModalOpen(true)}
                 title="Import CSV"
                 icon={
@@ -605,7 +605,7 @@ export default function MusicLibraryView() {
               </Button>
               <Button
                 variant="primary"
-                className="px-3 font-semibold md:px-6"
+                className=""
                 onClick={() => {
                   setEditingPiece(null);
                   setIsModalOpen(true);

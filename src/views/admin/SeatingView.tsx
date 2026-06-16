@@ -752,7 +752,7 @@ export default function SeatingView() {
           <>
             <Button 
               variant="outline"
-              className="px-6 whitespace-nowrap" 
+              className="" 
               onClick={() => {
                 setIsNewChartModalOpen(false);
                 setNewChartName('');
@@ -762,7 +762,7 @@ export default function SeatingView() {
             </Button>
             <Button 
               variant="primary"
-              className="px-6 whitespace-nowrap"
+              className=""
               disabled={!newChartName.trim()}
               onClick={async () => {
                 if (newChartName.trim()) {
@@ -815,7 +815,7 @@ export default function SeatingView() {
           <>
             <Button 
               variant="outline"
-              className="px-6 whitespace-nowrap" 
+              className="" 
               onClick={() => {
                 setIsRenameChartModalOpen(false);
                 setRenameChartName('');
@@ -826,7 +826,7 @@ export default function SeatingView() {
             </Button>
             <Button 
               variant="primary"
-              className="px-6 whitespace-nowrap"
+              className=""
               disabled={!renameChartName.trim()}
               onClick={async () => {
                 if (chartToRename && renameChartName.trim()) {

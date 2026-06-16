@@ -152,7 +152,7 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
               type="file"
               accept="image/png,image/jpeg,image/svg+xml,image/webp"
               onChange={handleHeroFileChange}
-              className="text-sm"
+              className=""
             />
             {heroImageUrl && (
               <Button variant="secondary" onClick={handleRemoveHero}>

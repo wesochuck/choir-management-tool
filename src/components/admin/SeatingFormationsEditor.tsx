@@ -318,7 +318,7 @@ function FormationRow({
               type="button"
               variant="secondary"
               size="tiny"
-              className="pointer-events-none border border-dashed border-border bg-transparent"
+              className="pointer-events-none"
             >
               {isVoice ? "+ Add Voice Part" : "+ Add Section"}
             </Button>

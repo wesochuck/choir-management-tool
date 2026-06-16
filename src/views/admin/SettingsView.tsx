@@ -393,7 +393,7 @@ function QueueWebhookSettings() {
               type="text"
               readOnly
               value={token ? webhookUrl : 'No token generated yet.'}
-              className="block w-full max-w-lg flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm text-slate-500 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-primary"
+              className="block w-full max-w-lg flex-1 shadow-sm transition-colors outline-none focus:ring-primary"
             />
             <SlCopyButton
               value={webhookUrl}

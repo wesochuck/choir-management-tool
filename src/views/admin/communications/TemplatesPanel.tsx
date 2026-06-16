@@ -119,7 +119,7 @@ export function TemplatesPanel({
                   type="button"
                   variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
                   size="small"
-                  className="h-[30px] px-2.5 py-1"
+                  className="h-[30px]"
                   onClick={() => setPreviewDevice('desktop')}
                 >
                   🖥️ Desktop
@@ -128,7 +128,7 @@ export function TemplatesPanel({
                   type="button"
                   variant={previewDevice === 'mobile' ? 'secondary' : 'outline'}
                   size="small"
-                  className="h-[30px] px-2.5 py-1"
+                  className="h-[30px]"
                   onClick={() => setPreviewDevice('mobile')}
                 >
                   📱 Mobile
@@ -306,7 +306,7 @@ export function TemplatesPanel({
                             type="button"
                             variant="outline"
                             size="small"
-                            className="text-red-500"
+                            className=""
                             onClick={async () => {
                               if (
                                 await dialog.confirm({

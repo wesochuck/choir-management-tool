@@ -173,7 +173,7 @@ export function MessageHistory({
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-auto min-h-0 cursor-pointer border-0 bg-transparent p-0 text-xs text-primary underline"
+                        className="h-auto min-h-0 cursor-pointer"
                         onClick={() =>
                           onViewRecipients(
                             message.recipients,

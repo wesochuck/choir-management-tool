@@ -305,7 +305,7 @@ export default function PatronsView() {
                 <Button 
                   variant="outline" 
                   onClick={handleClearFilters}
-                  className="flex h-10 items-center justify-center px-3 font-semibold"
+                  className="flex h-10 items-center justify-center"
                   title="Reset filters"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -328,7 +328,7 @@ export default function PatronsView() {
             <div className="flex items-center gap-2 pb-1.5">
               <Button
                 variant="primary"
-                className="px-3 font-semibold md:px-6"
+                className=""
                 onClick={handleSendMessage}
                 disabled={selectedIds.size === 0}
                 title="Send Message"

@@ -188,7 +188,7 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
               disabled={!qrCodeUrl}
               variant="primary"
               size="small"
-              className="font-bold shadow-xs transition-all duration-150"
+              className="shadow-xs transition-all duration-150"
             >
               📥 Download PNG
             </Button>

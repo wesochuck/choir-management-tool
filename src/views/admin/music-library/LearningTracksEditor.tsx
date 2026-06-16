@@ -117,7 +117,7 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                                     type="button" 
                                     variant="outline"
                                     size="tiny"
-                                    className="!m-0 !h-auto min-h-auto cursor-pointer !border-none !bg-none !p-[4px_6px] !text-[var(--danger)]" 
+                                    className="!m-0 !h-auto min-h-auto cursor-pointer" 
                                     onClick={() => onDelete(partLabel)}
                                     title="Delete track"
                                 >

@@ -122,7 +122,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
                 type="button"
                 variant={activeTab === 'email' ? 'secondary' : 'outline'}
                 size="small"
-                className="h-[30px] px-2.5 py-1"
+                className="h-[30px]"
                 onClick={() => setActiveTab('email')}
               >
                 Email View
@@ -131,7 +131,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
                 type="button"
                 variant={activeTab === 'sms' ? 'secondary' : 'outline'}
                 size="small"
-                className="h-[30px] px-2.5 py-1"
+                className="h-[30px]"
                 onClick={() => setActiveTab('sms')}
               >
                 SMS View
@@ -144,7 +144,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
                 type="button"
                 variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
                 size="small"
-                className="h-[30px] px-2.5 py-1"
+                className="h-[30px]"
                 onClick={() => setPreviewDevice('desktop')}
               >
                 🖥️ Desktop
@@ -153,7 +153,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
                 type="button"
                 variant={previewDevice === 'mobile' ? 'secondary' : 'outline'}
                 size="small"
-                className="h-[30px] px-2.5 py-1"
+                className="h-[30px]"
                 onClick={() => setPreviewDevice('mobile')}
               >
                 📱 Mobile

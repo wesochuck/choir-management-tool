@@ -850,7 +850,7 @@ export default function TicketingView() {
                                 <Button
                                   variant="danger"
                                   size="small"
-                                  className="font-semibold"
+                                  className=""
                                   onClick={() => {
                                     if (p.bundle) {
                                       handleRefundBundle(p.stripePaymentIntentId);
@@ -943,7 +943,7 @@ export default function TicketingView() {
                               <Button
                                 variant="danger"
                                 size="small"
-                                className="w-full py-1.5 text-xs font-semibold"
+                                className="w-full"
                                 onClick={() => {
                                   if (p.bundle) {
                                     handleRefundBundle(p.stripePaymentIntentId);
@@ -991,7 +991,7 @@ export default function TicketingView() {
                     description="Create recognition tiers or pass bundles to offer discount packages to your ticket buyers."
                     icon="🎟️"
                     action={
-                      <Button variant="primary" size="small" className="font-semibold" onClick={handleOpenCreateModal}>
+                      <Button variant="primary" size="small" className="" onClick={handleOpenCreateModal}>
                         + Create New Bundle
                       </Button>
                     }
@@ -1083,7 +1083,7 @@ export default function TicketingView() {
                       description="Create recognition tiers or pass bundles to offer discount packages to your ticket buyers."
                       icon="🎟️"
                       action={
-                        <Button variant="primary" size="small" className="font-semibold" onClick={handleOpenCreateModal}>
+                        <Button variant="primary" size="small" className="" onClick={handleOpenCreateModal}>
                           + Create New Bundle
                         </Button>
                       }
@@ -1272,7 +1272,7 @@ export default function TicketingView() {
                         {/* Row 3: Refund Actions */}
                         {order.status === 'paid' && (
                           <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
-                            <Button variant="danger" size="small" className="w-full py-1.5 text-xs font-semibold" onClick={() => handleRefundBundle(order.stripePaymentIntentId)}>
+                            <Button variant="danger" size="small" className="w-full" onClick={() => handleRefundBundle(order.stripePaymentIntentId)}>
                               Refund Bundle
                             </Button>
                           </div>
@@ -1380,7 +1380,7 @@ export default function TicketingView() {
             <Button
               variant="primary"
               disabled={saving}
-              className="font-semibold"
+              className=""
               onClick={() => handleSaveBundle()}
             >
               {saving ? "Saving..." : "Save Bundle"}
@@ -1408,7 +1408,7 @@ export default function TicketingView() {
               type="text"
               required
               placeholder="e.g. 2026-2027 Season Pass"
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
               value={bundleTitle}
               onChange={e => setBundleTitle(e.target.value)}
             />
@@ -1422,7 +1422,7 @@ export default function TicketingView() {
                   required
                   min="0.01"
                   step="0.01"
-                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
                   value={price || ''}
                   onChange={e => setPrice(Number(e.target.value))}
                 />
@@ -1434,7 +1434,7 @@ export default function TicketingView() {
                   type="number"
                   required
                   min="1"
-                  className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
                   value={capacity || ''}
                   onChange={e => setCapacity(Number(e.target.value))}
                 />
@@ -1446,7 +1446,7 @@ export default function TicketingView() {
             <Input
               type="datetime-local"
               required
-              className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
+              className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
               value={saleEndDate}
               onChange={e => setSaleEndDate(e.target.value)}
             />
