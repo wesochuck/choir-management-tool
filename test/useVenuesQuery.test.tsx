@@ -77,6 +77,86 @@ describe('useVenues with TanStack Query', () => {
     assert.deepEqual(createVenue.mock.calls[0].arguments, [{ name: 'Side Chapel' }]);
   });
 
+  it('invalidates and refreshes after editing a venue', async () => {
+    const updated = { ...sampleVenue, name: 'Updated Hall' };
+    const getVenues = mock.method(venueService, 'getVenues', async () => [sampleVenue]);
+    const updateVenue = mock.method(venueService, 'updateVenue', async () => updated);
+
+    const { result } = renderHook(() => useVenues(), { wrapper: createWrapper() });
+
+    await waitFor(() => assert.equal(result.current.isLoading, false));
+
+    await act(async () => {
+      await result.current.editVenue('venue_1', { name: 'Updated Hall' });
+    });
+
+    assert.equal(updateVenue.mock.callCount(), 1);
+    assert.deepStrictEqual(updateVenue.mock.calls[0].arguments, [
+      'venue_1',
+      { name: 'Updated Hall' },
+    ]);
+
+    await waitFor(() => assert.equal(getVenues.mock.callCount() >= 2, true));
+  });
+
+  it('invalidates and refreshes after removing a venue', async () => {
+    const getVenues = mock.method(venueService, 'getVenues', async () => [sampleVenue]);
+    const deleteVenue = mock.method(venueService, 'deleteVenue', async () => undefined);
+
+    const { result } = renderHook(() => useVenues(), { wrapper: createWrapper() });
+
+    await waitFor(() => assert.equal(result.current.isLoading, false));
+
+    await act(async () => {
+      await result.current.removeVenue('venue_1');
+    });
+
+    assert.equal(deleteVenue.mock.callCount(), 1);
+    assert.deepStrictEqual(deleteVenue.mock.calls[0].arguments, ['venue_1']);
+
+    await waitFor(() => assert.equal(getVenues.mock.callCount() >= 2, true));
+  });
+
+  it('surfaces edit errors', async () => {
+    mock.method(venueService, 'getVenues', async () => [sampleVenue]);
+    mock.method(venueService, 'updateVenue', async () => {
+      throw new Error('Venue not found');
+    });
+
+    const { result } = renderHook(() => useVenues(), { wrapper: createWrapper() });
+
+    await waitFor(() => assert.equal(result.current.isLoading, false));
+
+    let thrown: Error | null = null;
+    try {
+      await result.current.editVenue('venue_1', { name: 'Bad' });
+    } catch (err: unknown) {
+      thrown = err instanceof Error ? err : new Error(String(err));
+    }
+    assert.ok(thrown, 'expected editVenue to throw');
+    assert.ok(thrown.message.includes('Venue not found'));
+  });
+
+  it('surfaces remove errors', async () => {
+    mock.method(venueService, 'getVenues', async () => [sampleVenue]);
+    mock.method(venueService, 'deleteVenue', async () => {
+      throw new Error('Cannot delete active venue');
+    });
+
+    const { result } = renderHook(() => useVenues(), { wrapper: createWrapper() });
+
+    await waitFor(() => assert.equal(result.current.isLoading, false));
+
+    let thrown: Error | null = null;
+    try {
+      await result.current.removeVenue('venue_1');
+    } catch (err: unknown) {
+      thrown = err instanceof Error ? err : new Error(String(err));
+    }
+    assert.ok(thrown, 'expected removeVenue to throw');
+    assert.ok(thrown.message.includes('Cannot delete active venue'));
+  });
+
   it('surfaces load errors as strings', async () => {
     mock.method(venueService, 'getVenues', async () => {
       throw new Error('PocketBase unavailable');
