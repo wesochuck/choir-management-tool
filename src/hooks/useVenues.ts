@@ -1,63 +1,68 @@
-import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { venueService, type Venue } from '../services/venueService';
 
-export const useVenues = () => {
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function toErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
+}
 
-  const fetchVenues = async () => {
-    setIsLoading(true);
-    try {
-      const data = await venueService.getVenues();
-      setVenues(data);
-      setError(null);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch venues');
-    } finally {
-      setIsLoading(false);
-    }
+export const useVenues = () => {
+  const queryClient = useQueryClient();
+  const venuesQuery = useQuery({
+    queryKey: queryKeys.venues.list(),
+    queryFn: () => venueService.getVenues(),
+  });
+
+  const invalidateVenues = async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.venues.all });
   };
 
-  useEffect(() => {
-    fetchVenues();
-  }, []);
+  const addVenueMutation = useMutation({
+    mutationFn: (data: Partial<Venue>) => venueService.createVenue(data),
+    onSuccess: invalidateVenues,
+  });
+
+  const editVenueMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Venue> }) => venueService.updateVenue(id, data),
+    onSuccess: invalidateVenues,
+  });
+
+  const removeVenueMutation = useMutation({
+    mutationFn: (id: string) => venueService.deleteVenue(id),
+    onSuccess: invalidateVenues,
+  });
 
   const addVenue = async (data: Partial<Venue>) => {
     try {
-      const record = await venueService.createVenue(data);
-      await fetchVenues();
-      return record;
+      return await addVenueMutation.mutateAsync(data);
     } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to add venue');
+      throw new Error(toErrorMessage(err, 'Failed to add venue'));
     }
   };
 
   const editVenue = async (id: string, data: Partial<Venue>) => {
     try {
-      await venueService.updateVenue(id, data);
-      await fetchVenues();
+      await editVenueMutation.mutateAsync({ id, data });
     } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to update venue');
+      throw new Error(toErrorMessage(err, 'Failed to update venue'));
     }
   };
 
   const removeVenue = async (id: string) => {
     try {
-      await venueService.deleteVenue(id);
-      await fetchVenues();
+      await removeVenueMutation.mutateAsync(id);
     } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to delete venue');
+      throw new Error(toErrorMessage(err, 'Failed to delete venue'));
     }
   };
 
   return {
-    venues,
-    isLoading,
-    error,
+    venues: venuesQuery.data ?? [],
+    isLoading: venuesQuery.isLoading,
+    error: venuesQuery.error ? toErrorMessage(venuesQuery.error, 'Failed to fetch venues') : null,
     addVenue,
     editVenue,
     removeVenue,
-    refresh: fetchVenues,
+    refresh: venuesQuery.refetch,
   };
 };
