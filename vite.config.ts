@@ -19,7 +19,7 @@ export default defineConfig({
             'src/components/admin/**/*.test.{ts,tsx}',
             'src/hooks/**/*.test.{ts,tsx}',
             'test/views/**/*.test.{ts,tsx}',
-            'test/**/*.test.{ts,tsx}',
+            'test/**/*.test.tsx',
             'test/eventCardSetList.test.ts',
             'test/useVoiceParts.test.ts',
             'test/attendanceRsvpSync.test.ts',

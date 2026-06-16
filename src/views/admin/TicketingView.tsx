@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { ticketService, type TicketPurchase, type TicketBundle } from '../../services/ticketService';
 import { pb } from '../../lib/pocketbase';
 import type { Event } from '../../services/eventService';
+import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
@@ -13,46 +15,29 @@ import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/inde
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 import { settingsService } from '../../services/settingsService';
 
+interface TicketingData {
+  allEvents: Event[];
+  purchases: TicketPurchase[];
+  allPurchases: TicketPurchase[];
+  bundles: TicketBundle[];
+  tz: string;
+}
+
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
+  const queryClient = useQueryClient();
   const dialog = useDialog();
   const [now] = useState(() => Date.now());
   const [activeTab, setActiveTab] = useState<'willcall' | 'bundles' | 'orders' | 'share'>('willcall');
 
-  const [events, setEvents] = useState<Event[]>([]);
   const [showPastAndInactive, setShowPastAndInactive] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState('');
-  const [purchases, setPurchases] = useState<TicketPurchase[]>([]);
-  const [allPurchases, setAllPurchases] = useState<TicketPurchase[]>([]);
-  const [bundles, setBundles] = useState<TicketBundle[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [timezone, setTimezone] = useState('America/New_York');
   const [sortBy, setSortBy] = useState<'lastName' | 'firstName' | 'saleDate'>('lastName');
 
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  useEffect(() => {
-    settingsService.getLogoUrl()
-      .then(url => setLogoUrl(url ?? null))
-      .catch(() => setLogoUrl(null));
-  }, []);
-
-  // Bundle CRUD modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingBundle, setEditingBundle] = useState<TicketBundle | null>(null);
-  const [title, setTitle] = useState('');
-  const [price, setPrice] = useState(0);
-  const [capacity, setCapacity] = useState(0);
-  const [saleEndDate, setSaleEndDate] = useState('');
-  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
-  const selectedEventIdsSet = useMemo(() => new Set(selectedEventIds), [selectedEventIds]);
-  const [isActive, setIsActive] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [publicDetails, setPublicDetails] = useState('');
-
-  const reloadData = useCallback(async () => {
-    setLoading(true);
-    try {
+  const ticketingQuery = useQuery({
+    queryKey: queryKeys.ticketing.main(selectedEventId),
+    queryFn: async (): Promise<TicketingData> => {
       const [eventsEnabled, purchasesRes, allPurchasesRes, bundlesRes, tz] = await Promise.all([
         pb.collection('events').getFullList<Event>({
           filter: 'isTicketingEnabled = true',
@@ -70,15 +55,12 @@ export default function TicketingView() {
       const enabledIds = new Set(eventsEnabled.map(e => e.id));
       const eventIdsWithPurchases = Array.from(new Set(allPurchasesRes.map(p => p.event)));
       const missingEventIds = eventIdsWithPurchases.filter(id => !enabledIds.has(id));
-
       let allEvents = [...eventsEnabled];
-
       if (missingEventIds.length > 0) {
         const chunks: string[][] = [];
         for (let i = 0; i < missingEventIds.length; i += 50) {
           chunks.push(missingEventIds.slice(i, i + 50));
         }
-
         const missingEventsPromises = chunks.map(chunk => {
           const filterStr = chunk.map((_, idx) => `id = {:id_${idx}}`).join(' || ');
           const placeholders = chunk.reduce((acc, id, idx) => {
@@ -89,31 +71,27 @@ export default function TicketingView() {
             filter: pb.filter(filterStr, placeholders)
           });
         });
-
         const missingEventsResults = await Promise.all(missingEventsPromises);
         const missingEvents = missingEventsResults.flat();
         allEvents = [...allEvents, ...missingEvents];
       }
-
       allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setEvents(allEvents);
-      setAllPurchases(allPurchasesRes);
-      setBundles(bundlesRes);
-      setTimezone(tz);
+      return { allEvents, purchases: purchasesRes, allPurchases: allPurchasesRes, bundles: bundlesRes, tz };
+    },
+  });
 
-      if (selectedEventId) {
-        setPurchases(purchasesRes);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedEventId]);
+  const events = ticketingQuery.data?.allEvents ?? [];
+  const purchases = ticketingQuery.data?.purchases ?? [];
+  const allPurchases = ticketingQuery.data?.allPurchases ?? [];
+  const bundles = ticketingQuery.data?.bundles ?? [];
+  const timezone = ticketingQuery.data?.tz ?? 'America/New_York';
+  const loading = ticketingQuery.isLoading;
 
-  useEffect(() => {
-    reloadData();
-  }, [reloadData]);
+  const logoQuery = useQuery({
+    queryKey: queryKeys.ticketing.logoUrl,
+    queryFn: () => settingsService.getLogoUrl().then(url => url ?? null).catch(() => null),
+  });
+  const logoUrl = logoQuery.data ?? null;
 
   const visibleEvents = useMemo(() => {
     const cutoffTime = now - 3 * 60 * 60 * 1000;
@@ -137,6 +115,7 @@ export default function TicketingView() {
     return bundles.filter(b => b.isActive);
   }, [bundles]);
 
+  // Auto-select first event
   useEffect(() => {
     if (visibleEvents.length > 0) {
       const alreadySelected = visibleEvents.some(e => e.id === selectedEventId);
@@ -155,28 +134,49 @@ export default function TicketingView() {
   const eventCapacity = selectedEvent?.ticketCapacity || 0;
   const showWarning = eventCapacity > 0 && totalTicketsSold >= (eventCapacity * 0.9);
 
-  const handleRefund = async (purchaseId: string) => {
-    const confirmed = await dialog.confirm({
-      title: 'Refund Ticket',
-      message: 'Are you sure you want to refund this ticket? This will void the ticket on Will Call and issue a refund on Stripe.',
-      confirmLabel: 'Refund',
-      variant: 'danger',
-    });
-    
-    if (!confirmed) return;
+  const invalidateTicketing = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.ticketing.all });
 
-    try {
-      dialog.showToast('Processing refund...');
-      await ticketService.adminRefundTicket(purchaseId);
+  const refundMutation = useMutation({
+    mutationFn: (purchaseId: string) => ticketService.adminRefundTicket(purchaseId),
+    onSuccess: () => {
       dialog.showToast('Refund processed successfully.');
-      reloadData();
-    } catch {
+      invalidateTicketing();
+    },
+    onError: async () => {
       await dialog.showMessage({
         title: 'Refund Failed',
         message: 'Could not process the refund. Please verify the Stripe Dashboard.',
         variant: 'danger'
       });
-    }
+    },
+  });
+
+  const refundBundleMutation = useMutation({
+    mutationFn: (paymentIntentId: string) => ticketService.adminRefundBundle(paymentIntentId),
+    onSuccess: () => {
+      dialog.showToast('Bundle refunded successfully.');
+      invalidateTicketing();
+    },
+    onError: async () => {
+      await dialog.showMessage({
+        title: 'Refund Failed',
+        message: 'Could not process the bundle refund. Please verify the Stripe Dashboard.',
+        variant: 'danger'
+      });
+    },
+  });
+
+  const handleRefund = async (purchaseId: string) => {
+    const confirmed = await dialog.confirm({
+      title: 'Refund Ticket',
+      message: 'This will void the ticket on Will Call and issue a refund on Stripe.',
+      confirmLabel: 'Refund',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+    dialog.showToast('Processing refund...');
+    await refundMutation.mutateAsync(purchaseId);
   };
 
   const sortPurchases = (list: TicketPurchase[]) => {
@@ -287,6 +287,34 @@ export default function TicketingView() {
     return Array.from(map.values()).sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime());
   }, [allPurchases]);
 
+  // Bundle CRUD state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingBundle, setEditingBundle] = useState<TicketBundle | null>(null);
+  const [bundleTitle, setBundleTitle] = useState('');
+  const [price, setPrice] = useState(0);
+  const [capacity, setCapacity] = useState(0);
+  const [saleEndDate, setSaleEndDate] = useState('');
+  const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
+  const selectedEventIdsSet = useMemo(() => new Set(selectedEventIds), [selectedEventIds]);
+  const [bundleIsActive, setBundleIsActive] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [publicDetails, setPublicDetails] = useState('');
+
+  const saveBundleMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      data.id
+        ? pb.collection('ticketBundles').update(data.id as string, data)
+        : pb.collection('ticketBundles').create(data),
+    onSuccess: () => {
+      invalidateTicketing();
+    },
+  });
+
+  const deleteBundleMutation = useMutation({
+    mutationFn: (bundleId: string) => pb.collection('ticketBundles').delete(bundleId),
+    onSuccess: invalidateTicketing,
+  });
+
   // Bundle refund handler
   const handleRefundBundle = async (paymentIntentId: string) => {
     const confirmed = await dialog.confirm({
@@ -295,43 +323,30 @@ export default function TicketingView() {
       confirmLabel: 'Refund Bundle',
       variant: 'danger',
     });
-
     if (!confirmed) return;
-
-    try {
-      dialog.showToast('Processing bundle refund...');
-      await ticketService.adminRefundBundle(paymentIntentId);
-      dialog.showToast('Bundle refunded successfully.');
-      reloadData();
-    } catch {
-      await dialog.showMessage({
-        title: 'Refund Failed',
-        message: 'Could not process the bundle refund. Please verify the Stripe Dashboard.',
-        variant: 'danger'
-      });
-    }
+    dialog.showToast('Processing bundle refund...');
+    await refundBundleMutation.mutateAsync(paymentIntentId);
   };
 
   // Bundle CRUD handlers
   const handleOpenCreateModal = () => {
     setEditingBundle(null);
-    setTitle('');
+    setBundleTitle('');
     setPrice(0);
     setCapacity(0);
     setSaleEndDate('');
     setSelectedEventIds([]);
-    setIsActive(false);
+    setBundleIsActive(false);
     setPublicDetails('');
     setIsModalOpen(true);
   };
 
   const handleOpenEditModal = (bundle: TicketBundle) => {
     setEditingBundle(bundle);
-    setTitle(bundle.title);
+    setBundleTitle(bundle.title);
     setPrice(bundle.priceCents / 100);
     setCapacity(bundle.capacity);
     
-    // Format timezone date for datetime-local: YYYY-MM-DDTHH:mm
     if (bundle.saleEndDate) {
       const dateObj = new Date(bundle.saleEndDate);
       const year = dateObj.getFullYear();
@@ -345,39 +360,38 @@ export default function TicketingView() {
     }
 
     setSelectedEventIds(bundle.events || []);
-    setIsActive(bundle.isActive);
+    setBundleIsActive(bundle.isActive);
     setPublicDetails(bundle.publicDetails || '');
     setIsModalOpen(true);
   };
 
   const handleSaveBundle = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
-    if (!title.trim() || price <= 0 || capacity <= 0 || selectedEventIds.length === 0 || !saleEndDate) {
+    if (!bundleTitle.trim() || price <= 0 || capacity <= 0 || selectedEventIds.length === 0 || !saleEndDate) {
       dialog.showToast('Please fill out all required fields and select at least one event.');
       return;
     }
 
     setSaving(true);
     try {
-      const data = {
-        title: title.trim(),
+      const data: Record<string, unknown> = {
+        title: bundleTitle.trim(),
         priceCents: Math.round(price * 100),
         capacity: Number(capacity),
         events: selectedEventIds,
         saleEndDate: new Date(saleEndDate).toISOString(),
-        isActive,
+        isActive: bundleIsActive,
         publicDetails: publicDetails.trim()
       };
 
       if (editingBundle) {
-        await pb.collection('ticketBundles').update(editingBundle.id, data);
+        data.id = editingBundle.id;
         dialog.showToast('Bundle updated successfully.');
       } else {
-        await pb.collection('ticketBundles').create(data);
         dialog.showToast('Bundle created successfully.');
       }
+      await saveBundleMutation.mutateAsync(data);
       setIsModalOpen(false);
-      reloadData();
     } catch (err: unknown) {
       console.error(err);
       dialog.showToast('Failed to save bundle.');
@@ -407,9 +421,8 @@ export default function TicketingView() {
     if (!confirmed) return;
 
     try {
-      await pb.collection('ticketBundles').delete(bundleId);
+      await deleteBundleMutation.mutateAsync(bundleId);
       dialog.showToast('Bundle deleted successfully.');
-      reloadData();
     } catch (err) {
       console.error(err);
       dialog.showToast('Failed to delete bundle.');
@@ -1395,8 +1408,8 @@ export default function TicketingView() {
               required
               placeholder="e.g. 2026-2027 Season Pass"
               className="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary"
-              value={title}
-              onChange={e => setTitle(e.target.value)}
+              value={bundleTitle}
+              onChange={e => setBundleTitle(e.target.value)}
             />
           </FormField>
 
@@ -1491,9 +1504,9 @@ export default function TicketingView() {
           <label className="mt-2 flex cursor-pointer flex-row items-center gap-2">
             <input
               type="checkbox"
-              checked={isActive}
+              checked={bundleIsActive}
               className="rounded border-slate-300 text-primary focus:ring-primary/25"
-              onChange={e => setIsActive(e.target.checked)}
+              onChange={e => setBundleIsActive(e.target.checked)}
             />
             <span className="text-sm font-semibold text-slate-800">Active and visible to the public</span>
           </label>

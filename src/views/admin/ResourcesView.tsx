@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
@@ -35,9 +37,16 @@ function SortableResourceRow({
 }
 
 export default function ResourcesView() {
+  const queryClient = useQueryClient();
   const dialog = useDialog();
-  const [resources, setResources] = useState<SingerResource[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const resourcesQuery = useQuery({
+    queryKey: queryKeys.resources.list(),
+    queryFn: () => resourceService.getResources(),
+  });
+  const resources = resourcesQuery.data ?? [];
+  const isLoading = resourcesQuery.isLoading;
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -48,21 +57,24 @@ export default function ResourcesView() {
   const [file, setFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const loadResources = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await resourceService.getResources();
-      setResources(data);
-    } catch (err) {
-      console.error('Failed to load resources', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const invalidateResources = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
 
-  useEffect(() => {
-    loadResources();
-  }, [loadResources]);
+  const createMutation = useMutation({
+    mutationFn: (formData: FormData) => resourceService.createResource(formData),
+    onSuccess: invalidateResources,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
+      resourceService.updateResource(id, data),
+    onSuccess: invalidateResources,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => resourceService.deleteResource(id),
+    onSuccess: invalidateResources,
+  });
 
   const handleEdit = (r: SingerResource) => {
     setEditingId(r.id);
@@ -102,7 +114,6 @@ export default function ResourcesView() {
         if (file) {
           formData.append('file', file);
         }
-        // Explicitly clear URL field
         formData.append('url', '');
       } else {
         let formattedUrl = url.trim();
@@ -110,12 +121,11 @@ export default function ResourcesView() {
           formattedUrl = `https://${formattedUrl}`;
         }
         formData.append('url', formattedUrl);
-        // Explicitly clear File field if switching to link
         formData.append('file', '');
       }
 
       if (editingId) {
-        await resourceService.updateResource(editingId, formData);
+        await updateMutation.mutateAsync({ id: editingId, data: formData });
       } else {
         if (resourceType === 'file' && !file) {
           await dialog.showMessage({
@@ -135,12 +145,11 @@ export default function ResourcesView() {
           setIsSaving(false);
           return;
         }
-        await resourceService.createResource(formData);
+        await createMutation.mutateAsync(formData);
       }
 
       dialog.showToast(editingId ? 'Resource updated!' : 'Resource added!');
       resetForm();
-      await loadResources();
     } catch (err) {
       console.error('Failed to save resource', err);
       await dialog.showMessage({
@@ -163,9 +172,8 @@ export default function ResourcesView() {
     if (!shouldDelete) return;
 
     try {
-      await resourceService.deleteResource(r.id);
+      await deleteMutation.mutateAsync(r.id);
       dialog.showToast('Resource deleted.');
-      await loadResources();
     } catch (err) {
       console.error('Failed to delete resource', err);
       await dialog.showMessage({
@@ -196,14 +204,14 @@ export default function ResourcesView() {
     if (oldIndex === -1 || newIndex === -1) return;
 
     const reordered = arrayMove(resources, oldIndex, newIndex);
-    setResources(reordered);
+    queryClient.setQueryData(queryKeys.resources.list(), reordered);
     try {
       await Promise.all(
         reordered.map((r, i) => resourceService.updateResource(r.id, { sortOrder: i }))
       );
     } catch (err) {
       console.error('Failed to save reorder', err);
-      await loadResources();
+      await invalidateResources();
     }
   };
 

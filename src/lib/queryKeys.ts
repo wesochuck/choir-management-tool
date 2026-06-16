@@ -27,6 +27,15 @@ export const queryKeys = {
     all: ['singerRsvps'] as const,
     bySingerId: (singerId: string) => [...queryKeys.singerRsvps.all, singerId] as const,
   },
+  resources: {
+    all: ['resources'] as const,
+    list: () => [...queryKeys.resources.all, 'list'] as const,
+  },
+  ticketing: {
+    all: ['ticketing'] as const,
+    main: (selectedEventId: string) => [...queryKeys.ticketing.all, 'main', selectedEventId] as const,
+    logoUrl: ['ticketing', 'logoUrl'] as const,
+  },
   tickets: {
     all: ['tickets'] as const,
     scanContext: (sessionId: string, purchaseId: string) => [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,

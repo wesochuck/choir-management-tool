@@ -38,4 +38,15 @@ describe('queryKeys', () => {
     assert.deepEqual(queryKeys.singerRsvps.all, ['singerRsvps']);
     assert.deepEqual(queryKeys.singerRsvps.bySingerId('singer1'), ['singerRsvps', 'singer1']);
   });
+
+  it('uses stable tuple keys for resources', () => {
+    assert.deepEqual(queryKeys.resources.all, ['resources']);
+    assert.deepEqual(queryKeys.resources.list(), ['resources', 'list']);
+  });
+
+  it('uses stable tuple keys for ticketing', () => {
+    assert.deepEqual(queryKeys.ticketing.all, ['ticketing']);
+    assert.deepEqual(queryKeys.ticketing.main('evt1'), ['ticketing', 'main', 'evt1']);
+    assert.deepEqual(queryKeys.ticketing.logoUrl, ['ticketing', 'logoUrl']);
+  });
 });
