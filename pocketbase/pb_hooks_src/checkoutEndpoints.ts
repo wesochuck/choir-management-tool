@@ -2,6 +2,8 @@ import { parseJsonField } from './email/hookJson';
 import { formatInTimezone } from './email/hookText';
 import { createCheckoutSession, refundPaymentIntent } from './stripeService';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
+import { generateSignedTicketToken } from './hmacTokens';
+import { renderQrSvg } from './email/qrHelper';
 
 declare const $app: PocketBaseApp & {
     findAuthRecordByEmail(collectionName: string, email: string): PocketBaseRecord;
@@ -661,6 +663,15 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                     .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                     .replace(/{choirName}/g, choirName);
 
+                const ticketToken = generateSignedTicketToken($app, record.id);
+                const meta = $app.settings()?.meta;
+                const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || "";
+                const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                const qrSvg = await renderQrSvg(scanUrl);
+                const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+
                 const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                 const mailRecord = new Record(emailQueueCollection, {
                     recipientId: "buyer_" + stripeSessionId,
@@ -672,6 +683,9 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                     attempts: 0,
                     filters: JSON.stringify({
                         eventId: eventId,
+                        ticketToken: ticketToken,
+                        qrSvgSrc: qrSvgSrc,
+                        successUrl: successUrl,
                         type: "Automated Confirmation"
                     })
                 });
@@ -789,6 +803,15 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                     .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                     .replace(/{choirName}/g, choirName);
 
+                const ticketToken = generateSignedTicketToken($app, record.id);
+                const meta = $app.settings()?.meta;
+                const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || "";
+                const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+                const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+                const qrSvg = await renderQrSvg(scanUrl);
+                const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+
                 const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
                 const mailRecord = new Record(emailQueueCollection, {
                     recipientId: "buyer_" + stripeSessionId,
@@ -800,6 +823,9 @@ export function handleStripeWebhook(e: TicketingRequestEvent): unknown {
                     attempts: 0,
                     filters: JSON.stringify({
                         bundleId: bundleId,
+                        ticketToken: ticketToken,
+                        qrSvgSrc: qrSvgSrc,
+                        successUrl: successUrl,
                         type: "Automated Confirmation"
                     })
                 });

@@ -142,7 +142,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
             'handleCreateDonationSession',
             'handleAdminRefundDonation'
         ],
-        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson', 'qrHelper', 'ticketScanValidation'],
+        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson', 'qrHelper', 'hmacTokens', 'ticketScanValidation'],
     },
     qrHelper: {
         files: ['email/qrHelper.ts'],
