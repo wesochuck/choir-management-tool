@@ -1,49 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { pb } from '../lib/pocketbase';
-import { ticketService, type TicketBundle } from '../services/ticketService';
+import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
-import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
+import { usePublicBundle } from '../hooks/usePublicBundle';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { Button, Input } from '../components/ui';
-import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
+import { formatInTimezone } from '../lib/timezone';
 import { sanitizeHtml } from '../lib/textSafety';
 
 export default function PublicBundlePurchaseView() {
   useDocumentTitle('Purchase Season Tickets');
-  const { choirName } = useChoirName();
+  const { choirName, timezone } = useChoirSettings();
   const { bundleId } = useParams<{ bundleId: string }>();
-  const [bundle, setBundle] = useState<TicketBundle | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data: bundle, isLoading, isError } = usePublicBundle(bundleId);
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [timezone, setTimezone] = useState('America/New_York');
+  const [formError, setFormError] = useState('');
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        if (!bundleId) return;
-        const [res, tz] = await Promise.all([
-          pb.collection('ticketBundles').getOne<TicketBundle>(bundleId, { expand: 'events' }),
-          fetchChoirTimezone().catch(() => 'America/New_York')
-        ]);
-        setBundle(res);
-        setTimezone(tz);
-      } catch {
-        setError('Season Ticket Bundle not found.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [bundleId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen w-screen flex-col items-center justify-center">
         <p className="text-text-muted">Loading details...</p>
@@ -51,12 +30,14 @@ export default function PublicBundlePurchaseView() {
     );
   }
 
-  if (error || !bundle || !bundle.isActive) {
+  if (isError || !bundle || !bundle.isActive) {
     return (
       <div className="flex min-h-screen w-screen flex-col items-center justify-center p-4">
         <AppCard className="w-full max-w-[480px] text-center">
           <p className="m-0 text-danger-text">
-            {error || 'This season ticket bundle is not currently active for purchase.'}
+            {isError
+              ? 'Season Ticket Bundle not found.'
+              : 'This season ticket bundle is not currently active for purchase.'}
           </p>
           <Button as={Link} to="/tickets" variant="outline" className="no-underline">Back to Concerts</Button>
         </AppCard>
@@ -86,11 +67,11 @@ export default function PublicBundlePurchaseView() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim() !== confirmEmail.trim()) {
-      setError("Email addresses must match.");
+      setFormError("Email addresses must match.");
       return;
     }
     setSubmitting(true);
-    setError('');
+    setFormError('');
     try {
       const session = await ticketService.createBundleCheckoutSession(bundle.id, quantity, email.trim(), name.trim());
       if (session.url) {
@@ -100,7 +81,7 @@ export default function PublicBundlePurchaseView() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || 'Stripe redirection failed.');
+      setFormError(msg || 'Stripe redirection failed.');
       setSubmitting(false);
     }
   };
@@ -155,7 +136,7 @@ export default function PublicBundlePurchaseView() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {error && <p className="m-0 text-danger-text">{error}</p>}
+          {formError && <p className="m-0 text-danger-text">{formError}</p>}
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Your Name (for Will Call)</label>

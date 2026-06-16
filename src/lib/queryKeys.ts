@@ -14,6 +14,8 @@ export const queryKeys = {
   events: {
     all: ['events'] as const,
     list: () => [...queryKeys.events.all, 'list'] as const,
+    publicList: ['events', 'publicList'] as const,
+    publicById: (eventId: string) => [...queryKeys.events.all, 'publicById', eventId] as const,
   },
   profiles: {
     all: ['profiles'] as const,
@@ -43,6 +45,8 @@ export const queryKeys = {
   tickets: {
     all: ['tickets'] as const,
     scanContext: (sessionId: string, purchaseId: string) => [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,
+    publicBundle: (bundleId: string) => [...queryKeys.tickets.all, 'publicBundle', bundleId] as const,
+    publicBundles: ['tickets', 'publicBundles'] as const,
   },
   seating: {
     all: ['seating'] as const,
@@ -74,9 +78,20 @@ export const queryKeys = {
   donations: {
     all: ['donations'] as const,
     paid: ['donations', 'paid'] as const,
+    settings: ['donations', 'settings'] as const,
   },
   purchases: {
     all: ['purchases'] as const,
     list: ['purchases', 'list'] as const,
+  },
+  dashboard: {
+    all: ['dashboard'] as const,
+    activeSingers: ['dashboard', 'activeSingers'] as const,
+    upcomingEvents: ['dashboard', 'upcomingEvents'] as const,
+    pendingAuditions: ['dashboard', 'pendingAuditions'] as const,
+  },
+  publicLanding: {
+    all: ['publicLanding'] as const,
+    settings: ['publicLanding', 'settings'] as const,
   },
 } as const;

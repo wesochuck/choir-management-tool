@@ -1,50 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
-import { eventService, type Event } from '../services/eventService';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { sanitizeHtml } from '../lib/textSafety';
-import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
-import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
+import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
+import { usePublicEvent } from '../hooks/usePublicEvent';
+import { formatInTimezone } from '../lib/timezone';
 import { Button, Input } from '../components/ui';
 
 export default function PublicTicketPurchaseView() {
   useDocumentTitle('Purchase Tickets');
-  const { choirName } = useChoirName();
+  const { choirName, timezone } = useChoirSettings();
   const { eventId } = useParams<{ eventId: string }>();
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data: event, isLoading, isError } = usePublicEvent(eventId);
   const [quantity, setQuantity] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [timezone, setTimezone] = useState('America/New_York');
+  const [formError, setFormError] = useState('');
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        if (!eventId) return;
-        const [res, tz] = await Promise.all([
-          eventService.getPublicEventById(eventId),
-          fetchChoirTimezone().catch(() => 'America/New_York')
-        ]);
-        setEvent(res);
-        setTimezone(tz);
-      } catch {
-        setError('Event not found.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [eventId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen w-screen flex-col items-center justify-center">
         <p className="text-text-muted">Loading details...</p>
@@ -52,12 +31,12 @@ export default function PublicTicketPurchaseView() {
     );
   }
 
-  if (error || !event || !event.isTicketingEnabled || event.isArchived) {
+  if (isError || !event || !event.isTicketingEnabled || event.isArchived) {
     return (
       <div className="flex min-h-screen w-screen flex-col items-center justify-center p-4">
         <AppCard className="w-full max-w-[480px] text-center">
           <p className="m-0 text-danger-text">
-            {error || (!event ? 'Event not found.' : 'Ticket sales are closed for this event.')}
+            {(isError || !event) ? 'Event not found.' : 'Ticket sales are closed for this event.'}
           </p>
           <Button as={Link} to="/tickets" variant="outline" className="no-underline">Back to Events</Button>
         </AppCard>
@@ -80,11 +59,11 @@ export default function PublicTicketPurchaseView() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim() !== confirmEmail.trim()) {
-      setError("Email addresses must match.");
+      setFormError("Email addresses must match.");
       return;
     }
     setSubmitting(true);
-    setError('');
+    setFormError('');
     try {
       const session = await ticketService.createCheckoutSession(event.id, quantity, email.trim(), name.trim());
       if (session.url) {
@@ -94,7 +73,7 @@ export default function PublicTicketPurchaseView() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || 'Stripe redirection failed.');
+      setFormError(msg || 'Stripe redirection failed.');
       setSubmitting(false);
     }
   };
@@ -157,7 +136,7 @@ export default function PublicTicketPurchaseView() {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          {error && <p className="m-0 text-danger-text">{error}</p>}
+          {formError && <p className="m-0 text-danger-text">{formError}</p>}
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Your Name (for Will Call)</label>

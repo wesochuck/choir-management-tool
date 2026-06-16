@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { settingsService } from '../../services/settingsService';
+import React from 'react';
+import { usePublicBranding } from '../../hooks/usePublicBranding';
 import { PublicLayout } from './PublicLayout';
 import PublicLogo from './PublicLogo';
 
@@ -9,25 +9,9 @@ interface PublicBrandingWrapperProps {
 }
 
 export function PublicBrandingWrapper({ children, showLogo = true }: PublicBrandingWrapperProps) {
-  const [useBranding, setUseBranding] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { data: useBranding = false, isLoading } = usePublicBranding();
 
-  useEffect(() => {
-    async function loadBrandingSetting() {
-      try {
-        const settings = await settingsService.getLandingSettings();
-        setUseBranding(!!settings.showBrandingHeaderFooter);
-      } catch (err) {
-        console.error('Failed to load branding setting', err);
-        setUseBranding(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadBrandingSetting();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-bg">
         <div className="size-10 animate-spin rounded-full border-4 border-border border-t-primary" role="status" aria-label="Loading" />

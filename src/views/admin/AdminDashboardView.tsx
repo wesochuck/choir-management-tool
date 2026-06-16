@@ -1,50 +1,50 @@
-import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { pb } from '../../lib/pocketbase';
+import { useDashboardCounts } from '../../hooks/useDashboardCounts';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { pb } from '../../lib/pocketbase';
 import { Button } from '../../components/ui';
 
 const dashboardSections = [
   {
     title: "People & membership",
-    dotColor: "var(--section-green)",
+    dotClassName: "bg-section-green",
     links: [
-      { to: '/admin/roster', icon: '👥', iconClass: 'ic-green', label: 'Manage Roster', desc: 'Add singers and track status' },
-      { to: '/admin/auditions', icon: '🎵', iconClass: 'ic-sage', label: 'Auditions', desc: 'Review public audition requests' },
-      { to: '/admin/communications', icon: '✉️', iconClass: 'ic-slate', label: 'Communications', desc: 'Send announcements and review history' },
-      { to: '/admin/polls', icon: '📊', iconClass: 'ic-pink', label: 'Engagement Polls', desc: 'Review volunteer responses and counts' },
-      { to: '/admin/donations', icon: '🎁', iconClass: 'ic-pink', label: 'Donations', desc: 'Track giving and manage donor levels' },
-      { to: '/admin/patrons', icon: '💎', iconClass: 'ic-teal', label: 'Patrons Dashboard', desc: 'View donor/buyer LTV and message patrons' }
+      { to: '/admin/roster', icon: '👥', colorClass: 'bg-emerald-500/10 text-emerald-500', label: 'Manage Roster', desc: 'Add singers and track status' },
+      { to: '/admin/auditions', icon: '🎵', colorClass: 'bg-primary/10 text-primary', label: 'Auditions', desc: 'Review public audition requests' },
+      { to: '/admin/communications', icon: '✉️', colorClass: 'bg-slate-500/10 text-slate-500', label: 'Communications', desc: 'Send announcements and review history' },
+      { to: '/admin/polls', icon: '📊', colorClass: 'bg-pink-500/10 text-pink-500', label: 'Engagement Polls', desc: 'Review volunteer responses and counts' },
+      { to: '/admin/donations', icon: '🎁', colorClass: 'bg-pink-500/10 text-pink-500', label: 'Donations', desc: 'Track giving and manage donor levels' },
+      { to: '/admin/patrons', icon: '💎', colorClass: 'bg-cyan-500/10 text-cyan-500', label: 'Patrons Dashboard', desc: 'View donor/buyer LTV and message patrons' }
     ]
   },
   {
     title: "Events & attendance",
-    dotColor: "var(--section-amber)",
+    dotClassName: "bg-section-amber",
     links: [
-      { to: '/admin/events', icon: '📅', iconClass: 'ic-amber', label: 'Manage Events', desc: 'Schedule performances and rehearsals' },
-      { to: '/admin/tickets', icon: '🎟️', iconClass: 'ic-amber', label: 'Ticket Sales', desc: 'Track sales and process refunds' },
-      { to: '/admin/rsvp', icon: '🗓️', iconClass: 'ic-amber', label: 'Event RSVPs', desc: 'Track responses and roster balances' },
-      { to: '/admin/attendance', icon: '✅', iconClass: 'ic-green', label: 'Take Attendance', desc: 'Track check-ins for events' },
-      { to: '/admin/venues', icon: '🏛️', iconClass: 'ic-slate', label: 'Manage Venues', desc: 'Configure venue capacities' },
-      { to: '/admin/seating', icon: '🪑', iconClass: 'ic-sage', label: 'Seating Charts', desc: 'Design layouts and assign seats' }
+      { to: '/admin/events', icon: '📅', colorClass: 'bg-amber-500/10 text-amber-500', label: 'Manage Events', desc: 'Schedule performances and rehearsals' },
+      { to: '/admin/tickets', icon: '🎟️', colorClass: 'bg-amber-500/10 text-amber-500', label: 'Ticket Sales', desc: 'Track sales and process refunds' },
+      { to: '/admin/rsvp', icon: '🗓️', colorClass: 'bg-amber-500/10 text-amber-500', label: 'Event RSVPs', desc: 'Track responses and roster balances' },
+      { to: '/admin/attendance', icon: '✅', colorClass: 'bg-emerald-500/10 text-emerald-500', label: 'Take Attendance', desc: 'Track check-ins for events' },
+      { to: '/admin/venues', icon: '🏛️', colorClass: 'bg-slate-500/10 text-slate-500', label: 'Manage Venues', desc: 'Configure venue capacities' },
+      { to: '/admin/seating', icon: '🪑', colorClass: 'bg-primary/10 text-primary', label: 'Seating Charts', desc: 'Design layouts and assign seats' }
     ]
   },
   {
     title: "Music & performance",
-    dotColor: "var(--section-teal)",
+    dotClassName: "bg-section-cyan",
     links: [
-      { to: '/admin/library', icon: '🎼', iconClass: 'ic-teal', label: 'Music Library', desc: 'Catalog, repertoire, and CSV import' },
-      { to: '/admin/setlists', icon: '📋', iconClass: 'ic-teal', label: 'Set Lists', desc: 'Build and reorder event music' },
-      { to: '/admin/resources', icon: '📂', iconClass: 'ic-teal', label: 'Singer Resources', desc: 'Upload documents and links for singers' }
+      { to: '/admin/library', icon: '🎼', colorClass: 'bg-cyan-500/10 text-cyan-500', label: 'Music Library', desc: 'Catalog, repertoire, and CSV import' },
+      { to: '/admin/setlists', icon: '📋', colorClass: 'bg-cyan-500/10 text-cyan-500', label: 'Set Lists', desc: 'Build and reorder event music' },
+      { to: '/admin/resources', icon: '📂', colorClass: 'bg-cyan-500/10 text-cyan-500', label: 'Singer Resources', desc: 'Upload documents and links for singers' }
     ]
   },
   {
     title: "Admin",
-    dotColor: "var(--section-slate)",
+    dotClassName: "bg-section-slate",
     links: [
-      { to: '/admin/reports', icon: '📈', iconClass: 'ic-slate', label: 'Reports & Insights', desc: 'Attendance trends and concert summaries' },
-      { to: '/admin/settings', icon: '⚙️', iconClass: 'ic-slate', label: 'System Settings', desc: 'Configure global preferences' }
+      { to: '/admin/reports', icon: '📈', colorClass: 'bg-slate-500/10 text-slate-500', label: 'Reports & Insights', desc: 'Attendance trends and concert summaries' },
+      { to: '/admin/settings', icon: '⚙️', colorClass: 'bg-slate-500/10 text-slate-500', label: 'System Settings', desc: 'Configure global preferences' }
     ]
   }
 ];
@@ -54,33 +54,7 @@ export default function AdminDashboardView() {
   const navigate = useNavigate();
   useDocumentTitle("Choir Admin");
 
-  const [activeSingers, setActiveSingers] = useState<number | null>(null);
-  const [upcomingEvents, setUpcomingEvents] = useState<number | null>(null);
-  const [pendingAuditions, setPendingAuditions] = useState<number | null>(null);
-
-  useEffect(() => {
-    // 1. Fetch active singers count (globalStatus = "Active" AND voicePart != "")
-    pb.collection('profiles').getList(1, 1, {
-      filter: pb.filter('globalStatus = {:status} && voicePart != ""', { status: 'Active' })
-    })
-    .then(res => setActiveSingers(res.totalItems))
-    .catch(err => console.error('Failed to fetch active singers count:', err));
-
-    // 2. Fetch upcoming events count (date >= today in ISO representation)
-    const todayStr = new Date().toISOString();
-    pb.collection('events').getList(1, 1, {
-      filter: pb.filter('date >= {:todayStr}', { todayStr })
-    })
-    .then(res => setUpcomingEvents(res.totalItems))
-    .catch(err => console.error('Failed to fetch upcoming events count:', err));
-
-    // 3. Fetch pending auditions count (status != Closed)
-    pb.collection('auditions').getList(1, 1, {
-      filter: pb.filter('status != {:status}', { status: 'Closed' })
-    })
-    .then(res => setPendingAuditions(res.totalItems))
-    .catch(err => console.error('Failed to fetch pending auditions count:', err));
-  }, []);
+  const { activeSingers, upcomingEvents, pendingAuditions, errorMessage } = useDashboardCounts();
 
   const handleLogout = () => {
     pb.authStore.clear();
@@ -124,24 +98,32 @@ export default function AdminDashboardView() {
             <Link to="/admin/roster" className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15">
               <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">Active Singers</span>
               <span className="text-xl font-bold text-section-amber">
-                {activeSingers !== null ? activeSingers : '...'}
+                {activeSingers !== undefined ? activeSingers : '...'}
               </span>
             </Link>
             <Link to="/admin/events" className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15">
               <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">Upcoming Events</span>
               <span className="text-xl font-bold text-section-amber">
-                {upcomingEvents !== null ? upcomingEvents : '...'}
+                {upcomingEvents !== undefined ? upcomingEvents : '...'}
               </span>
             </Link>
             <Link to="/admin/auditions" className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15">
               <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">Pending Auditions</span>
               <span className="text-xl font-bold text-section-amber">
-                {pendingAuditions !== null ? pendingAuditions : '...'}
+                {pendingAuditions !== undefined ? pendingAuditions : '...'}
               </span>
             </Link>
           </div>
         </div>
       </section>
+
+      {errorMessage && (
+        <div className="mx-auto mb-4 w-full max-w-[1200px] px-6">
+          <div className="rounded-md border border-danger-text/30 bg-danger-bg p-3 text-sm text-danger-text">
+            {errorMessage}
+          </div>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="mx-auto w-full max-w-[1200px] px-6">
@@ -171,22 +153,18 @@ export default function AdminDashboardView() {
         {dashboardSections.map((section) => (
           <section key={section.title}>
             <div className="mt-8 mb-4 flex items-center gap-2">
-              <div 
-                className="size-2.5 flex-shrink-0 rounded-full" 
-                // @allow-inline-style - dynamic dot color from section config
-                style={{ backgroundColor: section.dotColor }}
-              />
+              <div className={`size-2.5 flex-shrink-0 rounded-full ${section.dotClassName}`} />
               <h2 className="m-0 text-sm font-bold tracking-widest text-gray-500 uppercase">{section.title}</h2>
             </div>
 
             <div className="mb-8 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
               {section.links.map((link) => (
-                <Link 
-                  key={link.to} 
-                  to={link.to} 
+                <Link
+                  key={link.to}
+                  to={link.to}
                   className="group relative flex min-h-[180px] cursor-pointer flex-col items-start rounded-xl border border-gray-200 bg-surface p-6 no-underline shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                 >
-                  <div className={`mb-4 flex size-12 items-center justify-center rounded-lg text-2xl transition-transform duration-200 group-hover:scale-105 ${link.iconClass === 'ic-green' ? 'bg-[rgba(16,185,129,0.1)] text-section-green' : link.iconClass === 'ic-sage' ? 'bg-[rgba(74,124,89,0.1)] text-primary' : link.iconClass === 'ic-slate' ? 'bg-[rgba(100,116,139,0.1)] text-section-slate' : link.iconClass === 'ic-pink' ? 'bg-[rgba(236,72,153,0.1)] text-section-pink' : link.iconClass === 'ic-amber' ? 'bg-[rgba(245,158,11,0.1)] text-section-amber' : link.iconClass === 'ic-teal' ? 'bg-[rgba(6,182,212,0.1)] text-section-cyan' : ''}`}>
+                  <div className={`mb-4 flex size-12 items-center justify-center rounded-lg text-2xl transition-transform duration-200 group-hover:scale-105 ${link.colorClass}`}>
                     {link.icon}
                   </div>
                   <h3 className="m-0 mb-1 text-lg font-semibold text-gray-800">{link.label}</h3>

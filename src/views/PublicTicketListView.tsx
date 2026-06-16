@@ -1,52 +1,47 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { pb } from '../lib/pocketbase';
 import { donationService, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../services/donationService';
-import { eventService, type Event } from '../services/eventService';
+import { eventService } from '../services/eventService';
 import type { TicketBundle } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
-import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
-import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
+import { formatInTimezone } from '../lib/timezone';
+import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
+import { queryKeys } from '../lib/queryKeys';
 
 export default function PublicTicketListView() {
   useDocumentTitle('Ticket Sales');
-  const { choirName } = useChoirName();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [bundles, setBundles] = useState<TicketBundle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [timezone, setTimezone] = useState('America/New_York');
-  const [donationSettings, setDonationSettings] = useState<DonationSettings | null>(null);
+  const { choirName, timezone } = useChoirSettings();
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [eventsRes, bundlesRes, tz] = await Promise.all([
-          eventService.getPublicEvents(),
-          pb.collection('ticketBundles').getFullList<TicketBundle>({
-            filter: 'isActive = true && saleEndDate >= @now',
-            sort: 'saleEndDate',
-            expand: 'events',
-          }),
-          fetchChoirTimezone().catch(() => 'America/New_York')
-        ]);
-        setEvents(eventsRes);
-        setBundles(bundlesRes);
-        setTimezone(tz);
-        const ds = await donationService.getDonationSettings().catch(() => null);
-        setDonationSettings(ds);
-      } catch (err) {
-        console.error("Failed to load ticket data", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+  const eventsQuery = useQuery({
+    queryKey: queryKeys.events.publicList,
+    queryFn: () => eventService.getPublicEvents(),
+  });
 
-  if (loading) {
+  const bundlesQuery = useQuery({
+    queryKey: queryKeys.tickets.publicBundles,
+    queryFn: () => pb.collection('ticketBundles').getFullList<TicketBundle>({
+      filter: 'isActive = true && saleEndDate >= @now',
+      sort: 'saleEndDate',
+      expand: 'events',
+    }),
+  });
+
+  const donationSettingsQuery = useQuery({
+    queryKey: queryKeys.donations.settings,
+    queryFn: () => donationService.getDonationSettings(),
+  });
+
+  const events = eventsQuery.data ?? [];
+  const bundles = bundlesQuery.data ?? [];
+  const donationSettings: DonationSettings | null = donationSettingsQuery.data ?? null;
+  const isLoading =
+    eventsQuery.isLoading || bundlesQuery.isLoading || donationSettingsQuery.isLoading;
+
+  if (isLoading) {
     return (
       <div className="flex min-h-screen w-screen flex-col items-center justify-center">
         <Spinner size="medium" />
