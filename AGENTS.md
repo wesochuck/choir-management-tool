@@ -161,6 +161,58 @@ When creating new Shoelace-wrapped components, follow this same test-vs-producti
 
 - **Shoelace `SlButton` props pass through React first, then Lit's lifecycle.** React sets the attribute/property, then Lit's `updated()` runs. Timing issues can cause double renders. Use the wrapper's `className` / `variant` / `size` props rather than raw Shoelace attributes.
 
+### TanStack Query
+
+This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state. Migration progress and the basic `useQuery` / `useMutation` pattern live in `docs/tanstack-query-migration.md`. The points below are non-obvious gotchas observed during hook migrations.
+
+- **Shared query keys live in `src/lib/queryKeys.ts`.** Do not inline ad-hoc key arrays at call sites.
+
+- **`useMutation`'s returned object is not referentially stable across renders.** Only the underlying observer methods (`mutate`, `mutateAsync`) are stable, but TanStack re-spreads its result object every render (see `node_modules/@tanstack/react-query/build/modern/useMutation.js:40`). Depending on `.mutateAsync` in a `useCallback` / `useEffect` dep array triggers `react-hooks/exhaustive-deps` warnings the lint rule cannot see through. Per the no-`eslint-disable` rule, **include the whole mutation object in deps**:
+
+  ```ts
+  // correct
+  const createThing = useCallback(async () => {
+    await thingMutation.mutateAsync(...);
+  }, [thingMutation]);
+
+  // wrong — triggers exhaustive-deps warning
+  }, [thingMutation.mutateAsync]);
+  ```
+
+  The per-render `useCallback` recomputation cost is negligible compared to introducing warnings or ref-juggling boilerplate.
+
+- **`refresh` helpers must return the invalidation Promise.** When migrating from a manual `async fetchData()` to TanStack Query, the equivalent `refresh` must return `queryClient.invalidateQueries(...)`'s Promise so existing `await refresh()` call sites still wait for the refetch:
+
+  ```ts
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: queryKeys.foo.list() }),
+    [queryClient],
+  );
+  ```
+
+  Returning `Promise<void>` lets consumers `await refresh()` after a mutation to read consistent data. A non-returning `refresh` is a silent behavioral regression — `await undefined` resolves immediately.
+
+- **Do not `void serviceFn(...)` inside an effect when a `useMutation` for the same call already exists.** Bypassing the mutation pipeline loses `isPending`, error propagation, and lifecycle tracking. Use `mutation.mutateAsync(...)` and guard repeat invocations with a ref keyed on the relevant inputs:
+
+  ```ts
+  const didAutoCreateRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!shouldCreate) return;
+    const guardKey = `${a}::${b}`;
+    if (didAutoCreateRef.current === guardKey) return;
+    didAutoCreateRef.current = guardKey;
+
+    thingMutation.mutateAsync(payload)
+      .then(() => refresh())
+      .catch(() => { didAutoCreateRef.current = null; });
+  }, [shouldCreate, a, b, refresh, thingMutation]);
+  ```
+
+- **Do not add `onError: (err) => setError(err.message)` to a mutation that is also driven by a debounced or context-aware pipeline.** The unconditional `onError` fires even for stale-context responses and overwrites the careful error handling inside the pipeline. Keep error handling at the call site (try/catch around `mutateAsync`) for user-triggered actions, and inside the pipeline for debounced flows.
+
+- **Hook tests need `// @vitest-environment jsdom` and a `QueryClientProvider` wrapper.** Use `retry: false` on both `queries` and `mutations`. The canonical pattern is `test/useVenuesQuery.test.tsx`; the in-place pattern is `src/hooks/useEventRosterData.test.ts`.
+
 ## 4. PocketBase Rules
 
 Always assume PocketBase `0.36.9` is currently installed. Verify against `package.json` and the hosted instance before relying on SDK features.

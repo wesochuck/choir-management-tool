@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { seatingService, type SeatingChart } from '../services/seatingService';
-import { profileService, type Profile } from '../services/profileService';
+import { profileService } from '../services/profileService';
 import { type Venue } from '../services/venueService';
 import {
   mergeSeatingResponseWithDirtyState,
-  seatingContextId,
   seatingContextKey,
   shouldApplySeatingResponse,
   type SeatingSyncContext,
   filterProfilesByRsvpYes,
 } from '../lib/seatingSync';
 import { rosterService } from '../services/rosterService';
-import { settingsService, getVoicePartsAndSections, type SeatingSettings, DEFAULT_SEATING_SETTINGS, DEFAULT_SECTIONS, DEFAULT_VOICE_PARTS, type VoicePartSettings, type SeatingFormationDef } from '../services/settingsService';
+import { settingsService, getVoicePartsAndSections, DEFAULT_SEATING_SETTINGS, DEFAULT_SECTIONS, DEFAULT_VOICE_PARTS, type SeatingFormationDef } from '../services/settingsService';
 
 interface SyncOptions {
   performanceId?: string;
@@ -25,34 +26,25 @@ interface SyncOptions {
 
 export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   const venueId = venue?.id || '';
-  const [activeChartId, setActiveChartId] = useState<string>('');
-  const [charts, setCharts] = useState<SeatingChart[]>([]);
-  
-  const contextKey = `${seatingContextKey(performanceId, venueId)}-${activeChartId}`;
-  const [chart, setChart] = useState<SeatingChart | null>(null);
-  const [optimisticAssignments, setOptimisticAssignments] = useState<Record<string, string>>({});
-  const [activeProfiles, setActiveProfiles] = useState<Profile[]>([]);
-  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
-  const [seatingSettings, setSeatingSettings] = useState<SeatingSettings>(DEFAULT_SEATING_SETTINGS);
-  const [voicePartSettings, setVoicePartSettings] = useState<VoicePartSettings | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentVenueId, setCurrentVenueId] = useState(venueId);
-  const [currentPerformanceId, setCurrentPerformanceId] = useState(performanceId);
-  const [error, setError] = useState<string | null>(null);
-  const [isSyncPending, setIsSyncPending] = useState(false);
-  const [activeRequestsCount, setActiveRequestsCount] = useState(0);
-  const [isDirty, setIsDirty] = useState(false);
-  const [contextState, setContextState] = useState({ key: contextKey, sessionId: 0 });
+  const queryClient = useQueryClient();
 
+  // ── UI state ──
+  const [activeChartId, setActiveChartId] = useState<string>('');
+  const [optimisticAssignments, setOptimisticAssignments] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+
+  // ── Auto-save / dirty tracking refs ──
   const chartRef = useRef<SeatingChart | null>(null);
   const optimisticAssignmentsRef = useRef<Record<string, string>>({});
   const dirtyPayloadRef = useRef<Partial<SeatingChart> | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
+  const errorRef = useRef<string | null>(null);
   const syncSequenceRef = useRef(0);
   const lastEditIdRef = useRef(0);
   const lastAppliedIdRef = useRef(0);
-  const loadedContextKeyRef = useRef<string | null>(null);
+  const didAutoCreateRef = useRef<string | null>(null);
   const currentContextRef = useRef<SeatingSyncContext>({
     performanceId,
     venueId,
@@ -60,14 +52,148 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   });
   const syncWithServerRef = useRef<(options?: SyncOptions) => Promise<void>>(async () => undefined);
 
-  // Sync performanceId and venueId when they change to trigger reloading charts list
+  // ── Queries ──
+  const contextKey = `${seatingContextKey(performanceId, venueId)}-${activeChartId}`;
+
+  const dataQuery = useQuery({
+    queryKey: queryKeys.seating.data(performanceId, venueId),
+    queryFn: async () => {
+      const [profiles, roster, sSettings, vpSettings] = await Promise.all([
+        profileService.getActiveProfiles(),
+        rosterService.getEventRoster(performanceId),
+        settingsService.getSeatingSettings(),
+        getVoicePartsAndSections(),
+      ]);
+
+      const loadedCharts = await seatingService.getChartsForPerformance(performanceId, venueId || null);
+
+      return {
+        profiles,
+        roster,
+        settings: sSettings,
+        voiceParts: vpSettings,
+        charts: loadedCharts,
+      };
+    },
+    enabled: !!performanceId,
+  });
+
+  // ── Derived data ──
+  const charts = useMemo(() => dataQuery.data?.charts ?? [], [dataQuery.data?.charts]);
+  const allProfiles = useMemo(() => dataQuery.data?.profiles ?? [], [dataQuery.data?.profiles]);
+  const seatingSettings = dataQuery.data?.settings ?? DEFAULT_SEATING_SETTINGS;
+  const voicePartSettings = dataQuery.data?.voiceParts ?? null;
+  const isLoading = dataQuery.isLoading;
+  const queryError = dataQuery.error;
+
   useEffect(() => {
-    if (performanceId !== currentPerformanceId || venueId !== currentVenueId) {
-      setCurrentPerformanceId(performanceId);
-      setCurrentVenueId(venueId);
-      setActiveChartId('');
+    if (queryError instanceof Error && !isDirtyRef.current) {
+      setError(queryError.message);
     }
-  }, [performanceId, venueId, currentPerformanceId, currentVenueId]);
+  }, [queryError]);
+
+  // Active chart selection
+  useEffect(() => {
+    if (charts.length === 0) return;
+    const activeChart = charts.find(c => c.id === activeChartId) ?? charts[0] ?? null;
+    if (activeChart && activeChart.id !== activeChartId) {
+      setActiveChartId(activeChart.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeChartId intentionally omitted so user selection is not overridden
+  }, [charts]);
+
+  // Active profiles derived from roster filter
+  const activeProfiles = useMemo(() =>
+    filterProfilesByRsvpYes(allProfiles, dataQuery.data?.roster ?? []),
+    [allProfiles, dataQuery.data?.roster],
+  );
+
+  // ── Chart state (server data + optimistic local state) ──
+  const activeChart = useMemo(() =>
+    charts.find(c => c.id === activeChartId) ?? charts[0] ?? null,
+    [charts, activeChartId],
+  );
+
+  useEffect(() => {
+    errorRef.current = error;
+  }, [error]);
+
+  const [chart, setChart] = useState<SeatingChart | null>(null);
+
+  useEffect(() => {
+    if (!activeChart) {
+      chartRef.current = null;
+      optimisticAssignmentsRef.current = {};
+      setOptimisticAssignments({});
+      setChart(null);
+      return;
+    }
+
+    if (!isDirtyRef.current || !dirtyPayloadRef.current) {
+      chartRef.current = activeChart;
+      optimisticAssignmentsRef.current = activeChart.assignments ?? {};
+      setOptimisticAssignments(activeChart.assignments ?? {});
+      setChart(activeChart);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- watch only id + assignments so unrelated activeChart fields do not re-sync local state
+  }, [activeChart?.id, activeChart?.assignments]);
+
+  // ── Mutations ──
+  // saveChartMutation intentionally omits onError because it is also driven by the debounced
+  // syncWithServer pipeline, which applies its own context-aware error handling. User-triggered
+  // callers (createChart, renameChart) catch errors themselves.
+  const saveChartMutation = useMutation({
+    mutationFn: (chartData: Partial<SeatingChart>) => seatingService.saveChart(chartData),
+  });
+
+  const deleteChartMutation = useMutation({
+    mutationFn: (chartId: string) => seatingService.deleteChart(chartId),
+    onSuccess: (_data, deletedId) => {
+      if (activeChartId === deletedId) setActiveChartId('');
+      queryClient.invalidateQueries({ queryKey: queryKeys.seating.data(performanceId, venueId) });
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const reorderChartsMutation = useMutation({
+    mutationFn: (orderedIds: string[]) => seatingService.reorderCharts(orderedIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.seating.data(performanceId, venueId) });
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: queryKeys.seating.data(performanceId, venueId) }),
+    [queryClient, performanceId, venueId],
+  );
+
+  // Auto-create default chart when none exist. Guarded by a ref so the effect cannot fire twice
+  // for the same performance+venue while the create+invalidate round trip is in flight.
+  useEffect(() => {
+    if (!performanceId || !venueId) return;
+    const loaded = dataQuery.data?.charts;
+    if (!loaded || loaded.length > 0) return;
+    const guardKey = `${performanceId}::${venueId}`;
+    if (didAutoCreateRef.current === guardKey) return;
+    didAutoCreateRef.current = guardKey;
+
+    saveChartMutation.mutateAsync({
+      performance: performanceId,
+      venue: venueId,
+      name: 'Main Seating Chart',
+      formationId: dataQuery.data?.settings?.defaultFormationId,
+      assignments: {},
+      layoutOverride: null,
+    })
+      .then(() => refresh())
+      .catch(() => {
+        didAutoCreateRef.current = null;
+      });
+  }, [dataQuery.data?.charts, dataQuery.data?.settings?.defaultFormationId, performanceId, venueId, refresh, saveChartMutation]);
+
+  // ── Session context ──
+  const [contextState, setContextState] = useState({ key: contextKey, sessionId: 0 });
 
   const currentSessionId = contextState.key === contextKey
     ? contextState.sessionId
@@ -87,20 +213,12 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     }
   }, [contextKey, contextState.key, currentContext, currentSessionId]);
 
+  // ── Auto-save ──
   const clearSaveTimer = useCallback(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
-  }, []);
-
-  const resetDirtyTracking = useCallback(() => {
-    dirtyPayloadRef.current = null;
-    isDirtyRef.current = false;
-    lastEditIdRef.current = 0;
-    lastAppliedIdRef.current = 0;
-    setIsDirty(false);
-    setIsSyncPending(false);
   }, []);
 
   const syncWithServer = useCallback(async (options: SyncOptions = {}) => {
@@ -126,13 +244,11 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
     if (trackInCurrentUi) {
       clearSaveTimer();
-      setIsSyncPending(false);
-      setActiveRequestsCount((current) => current + 1);
       setError(null);
     }
 
     try {
-      const updated = await seatingService.saveChart({
+      const updated = await saveChartMutation.mutateAsync({
         ...(baseChart || {}),
         ...payload,
         performance: targetPerformanceId,
@@ -146,21 +262,18 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
         if (lastEditIdRef.current === requestId) {
           chartRef.current = updated;
-          optimisticAssignmentsRef.current = updated.assignments || {};
+          optimisticAssignmentsRef.current = updated.assignments ?? {};
           dirtyPayloadRef.current = null;
           isDirtyRef.current = false;
+          setIsDirty(false);
 
           setChart(updated);
-          setOptimisticAssignments(updated.assignments || {});
-          
-          // Update in local list
-          setCharts(prev => prev.map(c => c.id === updated.id ? updated : c));
-          setIsDirty(false);
+          setOptimisticAssignments(updated.assignments ?? {});
           setError(null);
         } else {
           const merged = mergeSeatingResponseWithDirtyState(
             updated,
-            dirtyPayloadRef.current || {},
+            dirtyPayloadRef.current ?? {},
             optimisticAssignmentsRef.current,
             performanceId,
             venueId,
@@ -168,7 +281,6 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
           chartRef.current = merged;
           setChart(merged);
-          setCharts(prev => prev.map(c => c.id === merged.id ? merged : c));
           setError(null);
         }
       }
@@ -177,30 +289,24 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         setError(err instanceof Error ? err.message : 'Failed to save seating chart');
       }
     } finally {
-      if (trackInCurrentUi) {
-        setActiveRequestsCount((current) => Math.max(0, current - 1));
-      }
-
       if (shouldTrackInCurrentUi() && isDirtyRef.current && lastEditIdRef.current !== requestId) {
-        setIsSyncPending(true);
         saveTimeoutRef.current = setTimeout(() => {
           saveTimeoutRef.current = null;
           void syncWithServerRef.current();
         }, 0);
       }
     }
-  }, [clearSaveTimer, currentContext.sessionId, performanceId, venueId]);
+  }, [clearSaveTimer, currentContext.sessionId, performanceId, saveChartMutation, venueId]);
 
   useEffect(() => {
     syncWithServerRef.current = syncWithServer;
   }, [syncWithServer]);
 
+  // Flush dirty state on unmount or context change
   useEffect(() => {
     const capturedContext = currentContext;
-
     return () => {
       if (!isDirtyRef.current || !dirtyPayloadRef.current || !capturedContext.venueId) return;
-
       void syncWithServerRef.current({
         performanceId: capturedContext.performanceId,
         venueId: capturedContext.venueId,
@@ -211,11 +317,11 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         updateCurrentState: false,
       });
     };
-  }, [contextKey, currentContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentContext only changes alongside contextKey, so capturing it here is safe
+  }, [contextKey]);
 
   const scheduleSync = useCallback((delay = 1000) => {
     clearSaveTimer();
-    setIsSyncPending(true);
     saveTimeoutRef.current = setTimeout(() => {
       saveTimeoutRef.current = null;
       void syncWithServerRef.current();
@@ -226,103 +332,144 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     return () => clearSaveTimer();
   }, [clearSaveTimer]);
 
-  const fetchData = useCallback(async () => {
-    if (!performanceId) return;
-    const requestContext = currentContext;
-    const requestContextId = seatingContextId(requestContext);
-    const contextChanged = loadedContextKeyRef.current !== contextKey;
+  const queueChartSave = useCallback((updates: Partial<SeatingChart>) => {
+    if (!venue || !performanceId) return undefined;
 
-    setIsLoading(true);
+    lastEditIdRef.current += 1;
+    isDirtyRef.current = true;
+    setIsDirty(true);
 
-    if (contextChanged) {
-      clearSaveTimer();
-      resetDirtyTracking();
-      setError(null);
+    const baseChart = chartRef.current;
+    const nextChart = {
+      ...(baseChart ?? {}),
+      performance: performanceId,
+      venue: venueId,
+      ...updates,
+    } as SeatingChart;
+
+    chartRef.current = nextChart;
+
+    if (updates.assignments) {
+      optimisticAssignmentsRef.current = updates.assignments;
+      setOptimisticAssignments(updates.assignments);
     }
 
-    try {
-      const [profiles, roster, sSettings, vpSettings] = await Promise.all([
-        profileService.getActiveProfiles(), // Filtered for Active (Current/Future)
-        rosterService.getEventRoster(performanceId),
-        settingsService.getSeatingSettings(),
-        getVoicePartsAndSections(),
-      ]);
+    dirtyPayloadRef.current = {
+      ...(dirtyPayloadRef.current ?? {}),
+      ...updates,
+      performance: performanceId,
+      venue: venueId,
+    };
 
-      let loadedCharts = await seatingService.getChartsForPerformance(performanceId, venueId || null);
-      
-      // Auto-create default chart if none exist
-      if (loadedCharts.length === 0 && performanceId && venueId) {
-        const defaultChart = await seatingService.saveChart({
-          performance: performanceId,
-          venue: venueId,
-          name: 'Main Seating Chart',
-          formationId: sSettings.defaultFormationId,
-          assignments: {},
-          layoutOverride: null,
+    setChart(nextChart);
+    setError(null);
+    scheduleSync();
+
+    return nextChart;
+  }, [performanceId, scheduleSync, venue, venueId]);
+
+  // ── Actions ──
+  const assignSinger = useCallback(async (seatKey: string, profileId: string, fromSeatKey?: string) => {
+    if (!venue || !performanceId) return;
+
+    const newAssignments: Record<string, string> = { ...optimisticAssignmentsRef.current };
+
+    if (profileId) {
+      if (fromSeatKey && newAssignments[seatKey] && newAssignments[seatKey] !== profileId) {
+        const occupantId = newAssignments[seatKey];
+        newAssignments[fromSeatKey] = occupantId;
+      } else {
+        Object.keys(newAssignments).forEach(key => {
+          if (newAssignments[key] === profileId) {
+            delete newAssignments[key];
+          }
         });
-        loadedCharts = [defaultChart];
       }
-
-      setCharts(loadedCharts);
-
-      const activeChart = loadedCharts.find(c => c.id === activeChartId) || loadedCharts[0] || null;
-      if (activeChart && activeChart.id !== activeChartId) {
-        setActiveChartId(activeChart.id);
-      }
-
-      // Strictly filter for Active and RSVP'd Yes as per user request for seating chart
-      const activeCurrent = filterProfilesByRsvpYes(profiles, roster);
-      if (seatingContextId(currentContextRef.current) !== requestContextId) return;
-
-      const mergedChart = !contextChanged && isDirtyRef.current && dirtyPayloadRef.current
-        ? mergeSeatingResponseWithDirtyState(
-          activeChart,
-          dirtyPayloadRef.current,
-          optimisticAssignmentsRef.current,
-          performanceId,
-          venueId,
-        )
-        : activeChart;
-      const assignments = mergedChart?.assignments || {};
-
-      setChart(mergedChart);
-      chartRef.current = mergedChart;
-      optimisticAssignmentsRef.current = assignments;
-      setOptimisticAssignments(assignments);
-      setActiveProfiles(activeCurrent);
-      setAllProfiles(profiles);
-      setSeatingSettings(sSettings);
-      setVoicePartSettings(vpSettings);
-      setError(null);
-      loadedContextKeyRef.current = contextKey;
-    } catch (err: unknown) {
-      if (seatingContextId(currentContextRef.current) === requestContextId) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch seating data');
-      }
-    } finally {
-      if (seatingContextId(currentContextRef.current) === requestContextId) {
-        setIsLoading(false);
-      }
+      newAssignments[seatKey] = profileId;
+    } else {
+      delete newAssignments[seatKey];
     }
-  }, [clearSaveTimer, contextKey, currentContext, performanceId, resetDirtyTracking, venueId, activeChartId]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    queueChartSave({ assignments: newAssignments });
+  }, [performanceId, queueChartSave, venue]);
 
-  const rowCounts = useMemo(() => {
-    return chart?.layoutOverride || venue?.rowCounts || [];
-  }, [chart, venue]);
+  const updateChart = useCallback(async (updates: Partial<SeatingChart>) => {
+    if (!venue || !performanceId) return;
+    return queueChartSave(updates);
+  }, [performanceId, queueChartSave, venue]);
+
+  const copyFromPerformance = useCallback(async (sourceChart: SeatingChart) => {
+    return updateChart({
+      assignments: sourceChart.assignments,
+      layoutOverride: sourceChart.layoutOverride,
+      formationId: sourceChart.formationId,
+    });
+  }, [updateChart]);
+
+  const forceSave = useCallback(async () => {
+    if (errorRef.current && !isDirtyRef.current) {
+      await refresh();
+      return;
+    }
+    if (lastEditIdRef.current <= lastAppliedIdRef.current && !dirtyPayloadRef.current) return;
+    await syncWithServer();
+  }, [refresh, syncWithServer]);
+
+  const createChart = useCallback(async (name: string) => {
+    if (!venue || !performanceId) return;
+    const maxSortOrder = (charts ?? []).reduce((max, c) => Math.max(max, c.sortOrder ?? 0), 0);
+    try {
+      const newChart = await saveChartMutation.mutateAsync({
+        performance: performanceId,
+        venue: venueId,
+        name,
+        formationId: seatingSettings.defaultFormationId,
+        assignments: {},
+        layoutOverride: null,
+        sortOrder: maxSortOrder + 1,
+      });
+      await refresh();
+      setActiveChartId(newChart.id);
+      return newChart;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create seating chart');
+      throw err;
+    }
+  }, [charts, performanceId, refresh, saveChartMutation, seatingSettings.defaultFormationId, venue, venueId]);
+
+  const renameChart = useCallback(async (id: string, name: string) => {
+    try {
+      await saveChartMutation.mutateAsync({ id, name } as Partial<SeatingChart>);
+      await refresh();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to rename seating chart');
+      throw err;
+    }
+  }, [refresh, saveChartMutation]);
+
+  const deleteChart = useCallback(async (id: string) => {
+    await deleteChartMutation.mutateAsync(id);
+  }, [deleteChartMutation]);
+
+  const reorderCharts = useCallback(async (orderedIds: string[]) => {
+    await reorderChartsMutation.mutateAsync(orderedIds);
+  }, [reorderChartsMutation]);
+
+  // ── Computed values ──
+  const rowCounts = useMemo(() =>
+    chart?.layoutOverride ?? venue?.rowCounts ?? [],
+    [chart, venue],
+  );
 
   const currentFormation = useMemo((): SeatingFormationDef => {
-    const fId = chart?.formationId || seatingSettings.defaultFormationId;
+    const fId = chart?.formationId ?? seatingSettings.defaultFormationId;
     const found = seatingSettings.formations.find((f: SeatingFormationDef) => f.id === fId);
-    return found || seatingSettings.formations[0] || DEFAULT_SEATING_SETTINGS.formations[0];
+    return found ?? seatingSettings.formations[0] ?? DEFAULT_SEATING_SETTINGS.formations[0];
   }, [chart?.formationId, seatingSettings]);
 
   const sectionCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    const order = currentFormation?.sectionOrder || [];
+    const order = currentFormation?.sectionOrder ?? [];
     const hasOrder = order.length > 0;
 
     if (currentFormation?.isVoicePartLayout) {
@@ -334,7 +481,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
           counts[vp.label] = 0;
         }
       });
-      
+
       activeProfiles.forEach(p => {
         if (!hasOrder || order.includes(p.voicePart)) {
           if (counts[p.voicePart] !== undefined) {
@@ -356,10 +503,10 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
           counts[s.code] = 0;
         }
       });
-      
+
       activeProfiles.forEach(p => {
         const voicePart = vParts.find(vp => vp.label === p.voicePart);
-        const sectionCode = voicePart?.sectionCode || (p.voicePart && p.voicePart[0]);
+        const sectionCode = voicePart?.sectionCode ?? (p.voicePart && p.voicePart[0]);
         if (!hasOrder || order.includes(sectionCode)) {
           if (counts[sectionCode] !== undefined) {
             counts[sectionCode]++;
@@ -372,144 +519,23 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     return counts;
   }, [activeProfiles, voicePartSettings, currentFormation]);
 
-  const formationType = useMemo((): 'Column' | 'Row' => {
-    return currentFormation.strategy === 'horizontal_row' ? 'Row' : 'Column';
-  }, [currentFormation]);
+  const formationType = useMemo((): 'Column' | 'Row' =>
+    currentFormation.strategy === 'horizontal_row' ? 'Row' : 'Column',
+    [currentFormation],
+  );
 
-  const sectionOrder = useMemo((): string[] => {
-    return currentFormation.sectionOrder;
-  }, [currentFormation]);
+  const sectionOrder = useMemo((): string[] =>
+    currentFormation.sectionOrder,
+    [currentFormation],
+  );
 
-  const suggestions = useMemo(() => {
-    return seatingService.calculateAutoPaint(rowCounts, sectionCounts, sectionOrder, currentFormation.strategy);
-  }, [rowCounts, sectionCounts, sectionOrder, currentFormation.strategy]);
+  const suggestions = useMemo(() =>
+    seatingService.calculateAutoPaint(rowCounts, sectionCounts, sectionOrder, currentFormation.strategy),
+    [rowCounts, sectionCounts, sectionOrder, currentFormation.strategy],
+  );
 
-  const queueChartSave = useCallback((updates: Partial<SeatingChart>) => {
-    if (!venue || !performanceId) return undefined;
-
-    lastEditIdRef.current += 1;
-    isDirtyRef.current = true;
-
-    const baseChart = chartRef.current;
-    const nextChart = {
-      ...(baseChart || {}),
-      performance: performanceId,
-      venue: venueId,
-      ...updates,
-    } as SeatingChart;
-
-    chartRef.current = nextChart;
-
-    if (updates.assignments) {
-      optimisticAssignmentsRef.current = updates.assignments;
-      setOptimisticAssignments(updates.assignments);
-    }
-
-    dirtyPayloadRef.current = {
-      ...(dirtyPayloadRef.current || {}),
-      ...updates,
-      performance: performanceId,
-      venue: venueId,
-    };
-
-    setChart(nextChart);
-    setIsDirty(lastEditIdRef.current > lastAppliedIdRef.current);
-    setError(null);
-    scheduleSync();
-
-    return nextChart;
-  }, [performanceId, scheduleSync, venue, venueId]);
-
-  const assignSinger = async (seatKey: string, profileId: string, fromSeatKey?: string) => {
-    if (!venue || !performanceId) return;
-    
-    const newAssignments = { ...optimisticAssignmentsRef.current };
-    
-    if (profileId) {
-      // If target seat is already occupied by a different singer and we dragged from another seat:
-      if (fromSeatKey && newAssignments[seatKey] && newAssignments[seatKey] !== profileId) {
-        const occupantId = newAssignments[seatKey];
-        newAssignments[fromSeatKey] = occupantId; // Move occupant to the source seat (Swap!)
-      } else {
-        // Normal duplicate prevention (remove singer from any other seat)
-        Object.keys(newAssignments).forEach(key => {
-          if (newAssignments[key] === profileId) {
-            delete newAssignments[key];
-          }
-        });
-      }
-      newAssignments[seatKey] = profileId;
-    } else {
-      // Unassign target seat
-      delete newAssignments[seatKey];
-    }
-
-    queueChartSave({ assignments: newAssignments });
-  };
-
-  const updateChart = async (updates: Partial<SeatingChart>) => {
-    if (!venue || !performanceId) return;
-    return queueChartSave(updates);
-  };
-
-  const copyFromPerformance = async (sourceChart: SeatingChart) => {
-    return updateChart({
-      assignments: sourceChart.assignments,
-      layoutOverride: sourceChart.layoutOverride,
-      formationId: sourceChart.formationId,
-    });
-  };
-
-  const forceSave = useCallback(async () => {
-    if (error && !isDirtyRef.current) {
-      await fetchData();
-      return;
-    }
-
-    if (lastEditIdRef.current <= lastAppliedIdRef.current && !dirtyPayloadRef.current) return;
-    await syncWithServer();
-  }, [error, fetchData, syncWithServer]);
-
-  const createChart = async (name: string) => {
-    if (!venue || !performanceId) return;
-    const maxSortOrder = (charts || []).reduce((max, c) => Math.max(max, c.sortOrder || 0), 0);
-    const newChart = await seatingService.saveChart({
-      performance: performanceId,
-      venue: venueId,
-      name,
-      formationId: seatingSettings.defaultFormationId,
-      assignments: {},
-      layoutOverride: null,
-      sortOrder: maxSortOrder + 1,
-    });
-    await fetchData();
-    setActiveChartId(newChart.id);
-    return newChart;
-  };
-
-  const renameChart = async (id: string, name: string) => {
-    await seatingService.saveChart({ id, name } as Partial<SeatingChart>);
-    await fetchData();
-  };
-
-  const deleteChart = async (id: string) => {
-    await seatingService.deleteChart(id);
-    if (activeChartId === id) {
-      setActiveChartId('');
-    }
-    await fetchData();
-  };
-
-  const reorderCharts = async (orderedIds: string[]) => {
-    try {
-      await seatingService.reorderCharts(orderedIds);
-      await fetchData();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to reorder seating charts');
-    }
-  };
-
-  const isSaving = isSyncPending || activeRequestsCount > 0;
+  // ── Derived status ──
+  const isSaving = saveChartMutation.isPending || deleteChartMutation.isPending || reorderChartsMutation.isPending;
 
   return {
     chart,
@@ -540,6 +566,6 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     updateChart,
     copyFromPerformance,
     forceSave,
-    refresh: fetchData,
+    refresh,
   };
 };

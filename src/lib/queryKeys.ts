@@ -44,4 +44,9 @@ export const queryKeys = {
     all: ['tickets'] as const,
     scanContext: (sessionId: string, purchaseId: string) => [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,
   },
+  seating: {
+    all: ['seating'] as const,
+    data: (performanceId: string, venueId: string) => [...queryKeys.seating.all, 'data', performanceId, venueId] as const,
+    settings: ['seating', 'settings'] as const,
+  },
 } as const;
