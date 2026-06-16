@@ -147,15 +147,15 @@ export default function TicketScanView() {
   /* Camera helpers */
   const startFrameCapture = useCallback(async () => {
     scanningRef.current = true;
-    let jsqrModule: { default: (data: Uint8ClampedArray, width: number, height: number) => { data: string } | null } | null = null;
+    let jsQR: ((data: Uint8ClampedArray, width: number, height: number) => { data: string } | null) | null = null;
     try {
-      jsqrModule = await import('jsqr');
+      jsQR = (await import('jsqr')).default;
     } catch {
       setCameraError('QR scanner library failed to load');
       return;
     }
 
-    const jsQR = jsqrModule.default;
+    if (!jsQR) return;
 
     intervalRef.current = setInterval(() => {
       if (!scanningRef.current || !videoRef.current || !canvasRef.current) return;
