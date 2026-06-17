@@ -49,26 +49,26 @@ export const RosterTable: React.FC<RosterTableProps> = ({
     voicePart?: string;
   } | null>(null);
 
-  const duesColumn: ColumnDef<Profile> = {
-    id: 'dues',
-    header: 'Dues Paid',
-    cell: (_, row) => (
-      <div onClick={(e) => e.stopPropagation()}>
-        <input
-          type="checkbox"
-          checked={duesMap?.[row.id]?.paid || false}
-          onChange={(e) => onToggleDues?.(row.id, e.target.checked)}
-          className="text-primary focus:ring-primary size-4 cursor-pointer rounded border-slate-300 focus:ring-offset-2"
-        />
-      </div>
-    ),
-    cardSection: 1,
-    cardSide: 'right',
-    cardLabel: 'Dues',
-  };
+  const columns: ColumnDef<Profile>[] = useMemo(() => {
+    const duesColumn: ColumnDef<Profile> = {
+      id: 'dues',
+      header: 'Dues Paid',
+      cell: (_, row) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={duesMap?.[row.id]?.paid || false}
+            onChange={(e) => onToggleDues?.(row.id, e.target.checked)}
+            className="text-primary focus:ring-primary size-4 cursor-pointer rounded border-slate-300 focus:ring-offset-2"
+          />
+        </div>
+      ),
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Dues',
+    };
 
-  const columns: ColumnDef<Profile>[] = useMemo(
-    () => [
+    return [
       {
         id: 'name',
         header: 'Name',
@@ -91,7 +91,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 }`}
               >
                 {photoUrl ? (
-                  <img src={photoUrl} alt={row.name} className="size-full rounded-full object-cover" />
+                  <img
+                    src={photoUrl}
+                    alt={row.name}
+                    className="size-full rounded-full object-cover"
+                  />
                 ) : (
                   <span className="text-sm font-semibold text-slate-500 uppercase">{initials}</span>
                 )}
@@ -169,9 +173,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         cardSection: 1,
         cardSide: 'right',
       },
-    ],
-    [currentSeason, duesMap, onEdit, onToggleDues],
-  );
+    ];
+  }, [currentSeason, duesMap, onEdit, onToggleDues]);
 
   return (
     <AppCard noPadding>

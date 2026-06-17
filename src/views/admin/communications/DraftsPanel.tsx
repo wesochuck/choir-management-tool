@@ -1,4 +1,4 @@
-import { Button } from '../../../components/ui';
+import { Button, DataTable, type ColumnDef } from '../../../components/ui';
 import type { MessageRecord } from '../../../services/communicationService';
 
 interface DraftsPanelProps {
@@ -8,57 +8,97 @@ interface DraftsPanelProps {
 }
 
 export function DraftsPanel({ drafts, onResumeDraft, onDeleteDraft }: DraftsPanelProps) {
+  const columns: ColumnDef<MessageRecord>[] = [
+    {
+      id: 'updated',
+      header: 'Last Updated',
+      cell: (_, draft) => (
+        <span className="whitespace-nowrap">{new Date(draft.updated).toLocaleString()}</span>
+      ),
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Updated',
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      cell: (_, draft) => (
+        <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+          {draft.type}
+        </span>
+      ),
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'subject',
+      header: 'Subject',
+      cell: (_, draft) => (
+        <span className="max-w-[300px] truncate font-semibold">
+          {draft.subject || '(No Subject)'}
+        </span>
+      ),
+      cardSection: 0,
+      cardSide: 'right',
+    },
+    {
+      id: 'content',
+      header: 'Content',
+      cell: (_, draft) => (
+        <span className="text-muted max-w-[400px] truncate">
+          {draft.content.substring(0, 100)}...
+        </span>
+      ),
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Preview',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      align: 'right',
+      cell: (_, draft) => (
+        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button variant="outline" size="small" onClick={() => onDeleteDraft(draft)}>
+            Delete
+          </Button>
+          <Button variant="primary" size="small" onClick={() => onResumeDraft(draft)}>
+            Resume Draft
+          </Button>
+        </div>
+      ),
+      cardSection: 1,
+      cardSide: 'right',
+    },
+  ];
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[700px] border-collapse text-left">
-        <thead>
-          <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-            <th className="p-3 px-4 text-left">Last Updated</th>
-            <th className="p-3 px-4 text-left">Type</th>
-            <th className="p-3 px-4 text-left">Subject</th>
-            <th className="p-3 px-4 text-left">Content</th>
-            <th className="p-3 px-4 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {drafts.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="p-8 text-center text-gray-500">
-                No saved drafts.
-              </td>
-            </tr>
-          ) : (
-            drafts.map((draft) => (
-              <tr key={draft.id} className="border-b border-gray-200 text-sm">
-                <td className="p-3 px-4 whitespace-nowrap">
-                  {new Date(draft.updated).toLocaleString()}
-                </td>
-                <td className="p-3 px-4">
-                  <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-                    {draft.type}
-                  </span>
-                </td>
-                <td className="max-w-[300px] truncate p-3 px-4 font-semibold">
-                  {draft.subject || '(No Subject)'}
-                </td>
-                <td className="text-muted max-w-[400px] truncate p-3 px-4">
-                  {draft.content.substring(0, 100)}...
-                </td>
-                <td className="p-3 px-4 text-right whitespace-nowrap">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="small" onClick={() => onDeleteDraft(draft)}>
-                      Delete
-                    </Button>
-                    <Button variant="primary" size="small" onClick={() => onResumeDraft(draft)}>
-                      Resume Draft
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      data={drafts}
+      isLoading={false}
+      emptyState={{
+        title: 'No saved drafts.',
+        icon: (
+          <svg
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-text-muted"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+        ),
+      }}
+      hidePagination
+    />
   );
 }

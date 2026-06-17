@@ -95,6 +95,7 @@ export function DataTable<T>({
 
   const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length;
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns: tanStackColumns,
@@ -192,12 +193,8 @@ export function DataTable<T>({
                   return (
                     <th
                       key={header.id}
-                      className={`whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)} ${sortable ? 'cursor-pointer select-none hover:text-slate-700' : ''}`}
-                      onClick={
-                        sortable
-                          ? header.column.getToggleSortingHandler()
-                          : undefined
-                      }
+                      className={`px-4 py-3 text-xs font-semibold tracking-wider whitespace-nowrap text-slate-500 uppercase ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)} ${sortable ? 'cursor-pointer select-none hover:text-slate-700' : ''}`}
+                      onClick={sortable ? header.column.getToggleSortingHandler() : undefined}
                     >
                       <span className="inline-flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -241,7 +238,7 @@ export function DataTable<T>({
                     return (
                       <td
                         key={cell.id}
-                        className={`whitespace-nowrap px-4 py-2.5 text-sm ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)}`}
+                        className={`px-4 py-2.5 text-sm whitespace-nowrap ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)}`}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
@@ -262,113 +259,113 @@ export function DataTable<T>({
               </div>
             ))
           : rows.map((row) => {
-          const cells = row.getVisibleCells();
-          const section0Left = cells.filter(
-            (c) => getCellMeta(c)?.cardSection === 0 && getCellMeta(c)?.cardSide === 'left',
-          );
-          const section0Right = cells.filter(
-            (c) => getCellMeta(c)?.cardSection === 0 && getCellMeta(c)?.cardSide === 'right',
-          );
-          const section1Left = cells.filter(
-            (c) => getCellMeta(c)?.cardSection === 1 && getCellMeta(c)?.cardSide === 'left',
-          );
-          const section1Right = cells.filter(
-            (c) => getCellMeta(c)?.cardSection === 1 && getCellMeta(c)?.cardSide === 'right',
-          );
-          const hasSection0 = section0Left.length > 0 || section0Right.length > 0;
-          const hasSection1 = section1Left.length > 0 || section1Right.length > 0;
+              const cells = row.getVisibleCells();
+              const section0Left = cells.filter(
+                (c) => getCellMeta(c)?.cardSection === 0 && getCellMeta(c)?.cardSide === 'left'
+              );
+              const section0Right = cells.filter(
+                (c) => getCellMeta(c)?.cardSection === 0 && getCellMeta(c)?.cardSide === 'right'
+              );
+              const section1Left = cells.filter(
+                (c) => getCellMeta(c)?.cardSection === 1 && getCellMeta(c)?.cardSide === 'left'
+              );
+              const section1Right = cells.filter(
+                (c) => getCellMeta(c)?.cardSection === 1 && getCellMeta(c)?.cardSide === 'right'
+              );
+              const hasSection0 = section0Left.length > 0 || section0Right.length > 0;
+              const hasSection1 = section1Left.length > 0 || section1Right.length > 0;
 
-          return (
-            <div
-              key={row.id}
-              className={`border-b border-slate-100 px-4 py-3 last:border-b-0 ${
-                onRowClick ? 'cursor-pointer' : ''
-              } ${getRowClassName?.(row.original) ?? ''}`}
-              onClick={() => onRowClick?.(row.original)}
-            >
-              {hasSection0 && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    {enableSelection && (
-                      <input
-                        type="checkbox"
-                        checked={row.getIsSelected()}
-                        onChange={row.getToggleSelectedHandler()}
-                      />
-                    )}
-                    {section0Left.map((cell) => (
-                      <span key={cell.id} className="text-sm font-medium text-slate-900">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    {section0Right.map((cell) => (
-                      <span key={cell.id} className="text-sm text-slate-600">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {hasSection1 && hasSection0 && (
-                <div className="mt-2 border-t border-slate-100 pt-2" />
-              )}
-
-              {hasSection1 && (
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
-                    {!hasSection0 && enableSelection && (
-                      <div className="mb-1">
-                        <input
-                          type="checkbox"
-                          checked={row.getIsSelected()}
-                          onChange={row.getToggleSelectedHandler()}
-                        />
+              return (
+                <div
+                  key={row.id}
+                  className={`border-b border-slate-100 px-4 py-3 last:border-b-0 ${
+                    onRowClick ? 'cursor-pointer' : ''
+                  } ${getRowClassName?.(row.original) ?? ''}`}
+                  onClick={() => onRowClick?.(row.original)}
+                >
+                  {hasSection0 && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {enableSelection && (
+                          <input
+                            type="checkbox"
+                            checked={row.getIsSelected()}
+                            onChange={row.getToggleSelectedHandler()}
+                          />
+                        )}
+                        {section0Left.map((cell) => (
+                          <span key={cell.id} className="text-sm font-medium text-slate-900">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    {section1Left.map((cell) => {
-                      const meta = getCellMeta(cell);
-                      return (
-                        <div key={cell.id} className="flex items-center gap-1">
-                          {meta?.cardLabel && (
-                            <span className="text-[10px] font-medium text-slate-400">
-                              {meta.cardLabel}
-                            </span>
-                          )}
-                          <span className="text-sm text-slate-900">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        {section0Right.map((cell) => (
+                          <span key={cell.id} className="text-sm text-slate-600">
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div
-                    className="flex shrink-0 flex-col items-end gap-0.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {section1Right.map((cell) => {
-                      const meta = getCellMeta(cell);
-                      return (
-                        <div key={cell.id} className="flex items-center gap-1">
-                          {meta?.cardLabel && (
-                            <span className="text-[10px] font-medium text-slate-400">
-                              {meta.cardLabel}
-                            </span>
-                          )}
-                          <span className="text-sm text-slate-600">
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {hasSection1 && hasSection0 && (
+                    <div className="mt-2 border-t border-slate-100 pt-2" />
+                  )}
+
+                  {hasSection1 && (
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
+                        {!hasSection0 && enableSelection && (
+                          <div className="mb-1">
+                            <input
+                              type="checkbox"
+                              checked={row.getIsSelected()}
+                              onChange={row.getToggleSelectedHandler()}
+                            />
+                          </div>
+                        )}
+                        {section1Left.map((cell) => {
+                          const meta = getCellMeta(cell);
+                          return (
+                            <div key={cell.id} className="flex items-center gap-1">
+                              {meta?.cardLabel && (
+                                <span className="text-[10px] font-medium text-slate-400">
+                                  {meta.cardLabel}
+                                </span>
+                              )}
+                              <span className="text-sm text-slate-900">
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div
+                        className="flex shrink-0 flex-col items-end gap-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {section1Right.map((cell) => {
+                          const meta = getCellMeta(cell);
+                          return (
+                            <div key={cell.id} className="flex items-center gap-1">
+                              {meta?.cardLabel && (
+                                <span className="text-[10px] font-medium text-slate-400">
+                                  {meta.cardLabel}
+                                </span>
+                              )}
+                              <span className="text-sm text-slate-600">
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
       </div>
 
       {!hidePagination && <DataTablePagination table={table} />}

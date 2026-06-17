@@ -3,17 +3,30 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const panel = readFileSync(resolve(process.cwd(), 'src/views/admin/communications/AutomatedTasksPanel.tsx'), 'utf8');
-const commView = readFileSync(resolve(process.cwd(), 'src/views/admin/CommunicationView.tsx'), 'utf8');
+const panel = readFileSync(
+  resolve(process.cwd(), 'src/views/admin/communications/AutomatedTasksPanel.tsx'),
+  'utf8'
+);
+const commView = readFileSync(
+  resolve(process.cwd(), 'src/views/admin/CommunicationView.tsx'),
+  'utf8'
+);
 
-test('AutomatedTasksPanel uses Tailwind table layout', () => {
-  assert.match(panel, /table/, 'should use table');
-  assert.match(panel, /border-collapse/, 'should use border-collapse');
+test('AutomatedTasksPanel uses DataTable', () => {
+  assert.match(panel, /DataTable/, 'should use DataTable');
 });
 
-test('AutomatedTasksPanel uses row components for task items', () => {
-  assert.match(panel, /tr/, 'should use tr elements');
-  assert.match(panel, /gap-/, 'should use Tailwind gap utilities');
+test('AutomatedTasksPanel imports DataTable and ColumnDef', () => {
+  assert.match(panel, /DataTable[\s\S]*ColumnDef/, 'should import DataTable and ColumnDef');
+});
+
+test('AutomatedTasksPanel defines columns with id and header', () => {
+  assert.match(panel, /id: 'date',\s*header: 'Date'/, 'should have Date column');
+  assert.match(panel, /id: 'type',\s*header: 'Type'/, 'should have Type column');
+  assert.match(panel, /id: 'event',\s*header: 'Event'/, 'should have Event column');
+  assert.match(panel, /id: 'eventDate',\s*header: 'Event Date'/, 'should have Event Date column');
+  assert.match(panel, /id: 'status',\s*header: 'Status'/, 'should have Status column');
+  assert.match(panel, /id: 'actions',\s*header: 'Actions'/, 'should have Actions column');
 });
 
 test('CommunicationView references AutomatedTasksPanel component', () => {
