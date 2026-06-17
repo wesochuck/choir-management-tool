@@ -2,9 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { resourceService, type SingerResource } from '../../services/resourceService';
-import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
-import { Button, Input, FormField, Badge, Modal, RadioGroup, Radio } from '../../components/ui';
+import { Button, Input, FormField, Badge, Modal, RadioGroup, Radio, DataTable, type ColumnDef } from '../../components/ui';
 import {
   DndContext,
   closestCenter,
@@ -22,39 +21,6 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 const EMPTY_RESOURCES: SingerResource[] = [];
-
-function SortableResourceRow({
-  resource,
-  children,
-  dragHandle,
-}: {
-  resource: SingerResource;
-  children: React.ReactNode;
-  dragHandle: React.ReactNode;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: resource.id,
-  });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition: isDragging ? 'none' : transition || undefined,
-    opacity: isDragging ? 0.5 : 1,
-  };
-  return (
-    <tr
-      ref={setNodeRef}
-      {...attributes}
-      // @allow-inline-style - dnd-kit drag transform, transition, and opacity
-      style={style}
-      className="transition-colors hover:bg-slate-50/50"
-    >
-      <td className="w-10 px-2 py-4 text-center" {...listeners}>
-        {dragHandle}
-      </td>
-      {children}
-    </tr>
-  );
-}
 
 export default function ResourcesView() {
   const queryClient = useQueryClient();
@@ -247,6 +213,122 @@ export default function ResourcesView() {
     }
   };
 
+  const columns: ColumnDef<SingerResource>[] = [
+    {
+      id: 'dragHandle',
+      header: '',
+      cell: () => null,
+    },
+    {
+      id: 'title',
+      header: 'Resource Title',
+      accessorKey: 'title',
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      cell: (_, row) => (
+        <Badge tone={row.url ? 'neutral' : 'rehearsal'}>
+          {row.url ? 'Link' : 'File'}
+        </Badge>
+      ),
+      cardSection: 0,
+      cardSide: 'right',
+    },
+    {
+      id: 'destination',
+      header: 'Destination / Link',
+      cell: (_, row) =>
+        row.url ? (
+          <a href={row.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            {row.url}
+          </a>
+        ) : (
+          <a href={resourceService.getResourceFileUrl(row, row.file || '')}
+             target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            {row.file || 'Download File'}
+          </a>
+        ),
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Link',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (_, row) => (
+        <div className="flex justify-end gap-2">
+          <Button onClick={() => handleEdit(row)} variant="outline" size="small">
+            Edit
+          </Button>
+          <Button onClick={() => handleDelete(row)} variant="danger" size="small">
+            Delete
+          </Button>
+        </div>
+      ),
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+    },
+  ];
+
+  function SortableRow({ row }: { row: SingerResource }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+      id: row.id,
+    });
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition: isDragging ? 'none' : transition || undefined,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <tr
+        ref={setNodeRef}
+        {...attributes}
+        // @allow-inline-style - dnd-kit transform/transition/opacity
+        style={style}
+        className="border-b border-slate-100 transition-colors hover:bg-slate-50/50"
+      >
+        <td className="w-10 px-4 py-2.5 text-center" {...listeners}>
+          <div className="inline-flex cursor-grab items-center p-1 text-slate-400 select-none hover:text-slate-600">
+            <span className="text-lg leading-none">⣿</span>
+          </div>
+        </td>
+        <td className="px-4 py-2.5 text-sm font-semibold text-slate-900">{row.title}</td>
+        <td className="px-4 py-2.5 text-sm">
+          <Badge tone={row.url ? 'neutral' : 'rehearsal'}>
+            {row.url ? 'Link' : 'File'}
+          </Badge>
+        </td>
+        <td className="max-w-xs truncate px-4 py-2.5 text-sm text-slate-500">
+          {row.url ? (
+            <a href={row.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              {row.url}
+            </a>
+          ) : (
+            <a href={resourceService.getResourceFileUrl(row, row.file || '')}
+               target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              {row.file || 'Download File'}
+            </a>
+          )}
+        </td>
+        <td className="px-4 py-2.5 text-right text-sm">
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => handleEdit(row)} variant="outline" size="small">
+              Edit
+            </Button>
+            <Button onClick={() => handleDelete(row)} variant="danger" size="small">
+              Delete
+            </Button>
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-row items-start justify-between gap-4">
@@ -352,120 +434,41 @@ export default function ResourcesView() {
         </form>
       </Modal>
 
-      <AppCard>
-        <div className="overflow-x-auto">
-          <table className="divide-border min-w-full divide-y">
-            <thead className="bg-slate-50/50">
-              <tr>
-                <th className="text-text-muted w-10 px-2 py-3 text-center text-xs font-semibold tracking-wide uppercase">
-                  <span className="text-slate-300">⣿</span>
-                </th>
-                <th className="text-text-muted px-6 py-3 text-left text-xs font-semibold tracking-wide uppercase">
-                  Resource Title
-                </th>
-                <th className="text-text-muted px-6 py-3 text-left text-xs font-semibold tracking-wide uppercase">
-                  Type
-                </th>
-                <th className="text-text-muted px-6 py-3 text-left text-xs font-semibold tracking-wide uppercase">
-                  Destination / Link
-                </th>
-                <th className="text-text-muted px-6 py-3 text-right text-xs font-semibold tracking-wide uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-border bg-surface divide-y">
-              {isLoading && resources.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-text-muted px-6 py-8 text-center text-sm">
-                    Loading resources...
-                  </td>
-                </tr>
-              ) : resources.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-text-muted px-6 py-8 text-center text-sm">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <span>No resources uploaded yet.</span>
-                      <Button onClick={() => setIsAdding(true)} variant="primary" size="small">
-                        + New Resource
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={resources.map((r) => r.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {resources.map((r) => (
-                      <SortableResourceRow
-                        key={r.id}
-                        resource={r}
-                        dragHandle={
-                          <div className="inline-flex cursor-grab items-center p-1 text-slate-400 select-none hover:text-slate-600">
-                            <span className="text-lg leading-none">⣿</span>
-                          </div>
-                        }
-                      >
-                        <td className="text-text px-6 py-4 text-sm font-semibold">{r.title}</td>
-                        <td className="px-6 py-4 text-sm">
-                          <Badge tone={r.url ? 'neutral' : 'rehearsal'}>
-                            {r.url ? 'Link' : 'File'}
-                          </Badge>
-                        </td>
-                        <td className="text-text-muted max-w-xs truncate px-6 py-4 text-sm">
-                          {r.url ? (
-                            <a
-                              href={r.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              {r.url}
-                            </a>
-                          ) : (
-                            <a
-                              href={resourceService.getResourceFileUrl(r, r.file || '')}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline"
-                            >
-                              {r.file || 'Download File'}
-                            </a>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm">
-                          <div className="flex justify-end gap-2">
-                            <Button onClick={() => handleEdit(r)} variant="outline" size="small">
-                              Edit
-                            </Button>
-                            <Button onClick={() => handleDelete(r)} variant="danger" size="small">
-                              Delete
-                            </Button>
-                          </div>
-                        </td>
-                      </SortableResourceRow>
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              )}
-            </tbody>
-          </table>
-          {resources.length > 0 && (
-            <div className="text-text-muted flex items-center justify-between px-4 py-2 text-xs">
-              <span className="italic">
-                Tip: Drag the ⣿ handle on any row to reorder resources. Changes are saved
-                automatically.
-              </span>
-            </div>
-          )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={resources.map((r) => r.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <DataTable
+            columns={columns}
+            data={resources}
+            isLoading={isLoading}
+            emptyState={{
+              title: 'No resources uploaded yet.',
+              icon: '📄',
+              action: (
+                <Button onClick={() => setIsAdding(true)} variant="primary">
+                  + New Resource
+                </Button>
+              ),
+            }}
+            manualPagination
+            renderRow={SortableRow}
+          />
+        </SortableContext>
+      </DndContext>
+      {resources.length > 0 && (
+        <div className="text-text-muted flex items-center justify-between px-4 py-2 text-xs">
+          <span className="italic">
+            Tip: Drag the ⣿ handle on any row to reorder resources. Changes are saved
+            automatically.
+          </span>
         </div>
-      </AppCard>
+      )}
     </div>
   );
 }

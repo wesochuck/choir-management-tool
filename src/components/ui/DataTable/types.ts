@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 export interface ColumnDef<T> {
   id: string;
@@ -9,8 +9,8 @@ export interface ColumnDef<T> {
   align?: 'left' | 'center' | 'right';
   enableSorting?: boolean;
   hideBelow?: 'sm' | 'md';
-  cardSection: 0 | 1;
-  cardSide: 'left' | 'right';
+  cardSection?: 0 | 1;
+  cardSide?: 'left' | 'right';
   cardLabel?: string;
 }
 
@@ -37,4 +37,5 @@ export interface DataTableProps<T> {
   getRowId?: (originalRow: T, index: number) => string;
   getRowClassName?: (row: T) => string;
   renderMobileCard?: (row: T) => ReactNode;
+  renderRow?: ComponentType<{ row: T }>;
 }

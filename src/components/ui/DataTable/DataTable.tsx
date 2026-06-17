@@ -18,8 +18,8 @@ import type { ColumnDef as OurColumnDef, DataTableProps } from './types';
 interface OurCellMeta {
   align?: 'left' | 'center' | 'right';
   hideBelow?: 'sm' | 'md';
-  cardSection: 0 | 1;
-  cardSide: 'left' | 'right';
+  cardSection?: 0 | 1;
+  cardSide?: 'left' | 'right';
   cardLabel?: string;
 }
 
@@ -80,6 +80,7 @@ export function DataTable<T>({
   renderMobileCard: renderMobileCardProp,
   getRowId,
   getRowClassName,
+  renderRow,
 }: DataTableProps<T>) {
   const tanStackColumns = useMemo(() => columns.map(toTanStackColumn), [columns]);
 
@@ -211,36 +212,42 @@ export function DataTable<T>({
             ))}
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                className={`border-b border-slate-100 transition-colors ${
-                  onRowClick ? 'cursor-pointer hover:bg-slate-50/40' : ''
-                } ${getRowClassName?.(row.original) ?? ''}`}
-                onClick={() => onRowClick?.(row.original)}
-              >
-                {enableSelection && (
-                  <td className="w-10 px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={row.getIsSelected()}
-                      onChange={row.getToggleSelectedHandler()}
-                    />
-                  </td>
-                )}
-                {row.getVisibleCells().map((cell) => {
-                  const meta = getCellMeta(cell);
-                  return (
-                    <td
-                      key={cell.id}
-                      className={`whitespace-nowrap px-4 py-2.5 text-sm ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)}`}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            {rows.map((dataRow) => {
+              if (renderRow) {
+                const RowComponent = renderRow;
+                return <RowComponent key={dataRow.id} row={dataRow.original} />;
+              }
+              return (
+                <tr
+                  key={dataRow.id}
+                  className={`border-b border-slate-100 transition-colors ${
+                    onRowClick ? 'cursor-pointer hover:bg-slate-50/40' : ''
+                  } ${getRowClassName?.(dataRow.original) ?? ''}`}
+                  onClick={() => onRowClick?.(dataRow.original)}
+                >
+                  {enableSelection && (
+                    <td className="w-10 px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={dataRow.getIsSelected()}
+                        onChange={dataRow.getToggleSelectedHandler()}
+                      />
                     </td>
-                  );
-                })}
-              </tr>
-            ))}
+                  )}
+                  {dataRow.getVisibleCells().map((cell) => {
+                    const meta = getCellMeta(cell);
+                    return (
+                      <td
+                        key={cell.id}
+                        className={`whitespace-nowrap px-4 py-2.5 text-sm ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)}`}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
