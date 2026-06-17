@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
-import { Button, FormField, Badge, Modal, EmptyState, Input } from '../../components/ui';
+import { Button, FormField, Badge, Modal, Input, DataTable } from '../../components/ui';
 import { pollService } from '../../services/pollService';
 import { communicationService } from '../../services/communicationService';
 import { useEvents } from '../../hooks/useEvents';
@@ -13,7 +13,6 @@ import { profileService } from '../../services/profileService';
 import type { CommunicationRecipient } from '../../services/communicationService';
 import type { RecordModel } from 'pocketbase';
 import { settingsService, type PollSettings } from '../../services/settingsService';
-import { Pagination } from '../../components/common/Pagination';
 
 interface PollRecord extends RecordModel {
   question: string;
@@ -108,7 +107,7 @@ export default function PollsDashboardView() {
     title: '',
   });
   const [showArchived, setShowArchived] = useState(false);
-  const [expandedPollId, setExpandedPollId] = useState<string | null>(null);
+  const [viewingPoll, setViewingPoll] = useState<PollRecord | null>(null);
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [quickCreateStep, setQuickCreateStep] = useState<1 | 2>(1);
   const [quickPollQuestion, setQuickPollQuestion] = useState('');
@@ -118,8 +117,6 @@ export default function PollsDashboardView() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   const [quickPollDays, setQuickPollDays] = useState(3);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
 
   // Initialize local settings state from query (only when modal is closed, to avoid
   // overwriting in-progress edits if a background refetch lands).
@@ -129,10 +126,6 @@ export default function PollsDashboardView() {
       setGlobalDefaultDays(pollSettingsQuery.data.defaultAutoArchiveDays);
     }
   }, [pollSettingsQuery.data, isSettingsModalOpen]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [showArchived, polls.length]);
 
   const filteredPolls = useMemo(() => {
     const now = new Date();
@@ -149,11 +142,6 @@ export default function PollsDashboardView() {
       return new Date(event.date) > now;
     });
   }, [polls, events, showArchived]);
-
-  const paginatedPolls = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredPolls.slice(startIndex, startIndex + pageSize);
-  }, [filteredPolls, currentPage, pageSize]);
 
   const pollStats = useMemo(() => {
     const stats: Record<
@@ -283,119 +271,6 @@ export default function PollsDashboardView() {
     }
   };
 
-  // Helper to render expanded poll details (shared between desktop and mobile)
-  const renderPollDetails = (poll: PollRecord, stat: (typeof pollStats)[string]) => {
-    const contactedSingers = (() => {
-      const contactedMap = new Map<string, CommunicationRecipient>();
-      const msgs = pollMessages.filter((msg) => msg.content.includes(`{{POLL_LINK:${poll.id}}}`));
-      msgs.forEach((msg) => {
-        if (Array.isArray(msg.recipients)) {
-          msg.recipients.forEach((rec) => {
-            contactedMap.set(rec.id, rec);
-          });
-        }
-      });
-      return Array.from(contactedMap.values());
-    })();
-
-    return (
-      <div className="flex flex-col gap-6 border-t border-slate-100 bg-slate-50/30 p-6 px-6 text-left md:px-8">
-        <div className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
-            <span>📨</span>
-            {contactedSingers.length > 0 ? (
-              <span>
-                Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''}{' '}
-                via Communications.
-              </span>
-            ) : (
-              <span>
-                No sent communications found yet.{' '}
-                <button
-                  type="button"
-                  className="text-primary hover:text-primary-deep font-semibold underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate('/admin/communications');
-                  }}
-                >
-                  Communications page
-                </button>
-              </span>
-            )}
-          </div>
-          {contactedSingers.length > 0 && (
-            <button
-              type="button"
-              className="text-primary hover:text-primary-deep text-left text-xs font-bold underline transition-colors sm:text-right"
-              onClick={() =>
-                setRecipientModal({
-                  isOpen: true,
-                  recipients: contactedSingers,
-                  title: `Contacted Singers — ${poll.question}`,
-                })
-              }
-            >
-              View Contacted List →
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-8 md:flex-row">
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <h4 className="border-primary/20 text-primary m-0 border-b-2 pb-1.5 text-sm font-black tracking-wider uppercase">
-              Volunteers ({stat.yes})
-            </h4>
-            {stat.volunteers.length === 0 ? (
-              <p className="m-0 text-sm font-medium text-slate-400 italic">No volunteers yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                {stat.volunteers.map((v) => (
-                  <div
-                    key={v.id}
-                    className="rounded-lg border border-slate-100 bg-white p-2.5 px-4 shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    <div className="text-sm font-bold text-slate-800">
-                      {v.expand?.profileId.name}
-                    </div>
-                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">
-                      {v.expand?.profileId.voicePart}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <h4 className="border-danger-text/20 text-danger-text m-0 border-b-2 pb-1.5 text-sm font-black tracking-wider uppercase">
-              Declined ({stat.no})
-            </h4>
-            {stat.decliners.length === 0 ? (
-              <p className="m-0 text-sm font-medium text-slate-400 italic">No decliners yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                {stat.decliners.map((v) => (
-                  <div
-                    key={v.id}
-                    className="border-danger-text/10 rounded-lg border bg-white p-2.5 px-4 opacity-90 shadow-sm transition-shadow hover:shadow-md"
-                  >
-                    <div className="text-sm font-bold text-slate-800">
-                      {v.expand?.profileId?.name ?? 'Unknown singer'}
-                    </div>
-                    <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">
-                      {v.expand?.profileId?.voicePart ?? ''}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   if (isLoading && polls.length === 0) {
     return (
       <div className="flex w-full flex-col p-6">
@@ -489,263 +364,245 @@ export default function PollsDashboardView() {
           </div>
         )}
 
-        {filteredPolls.length === 0 ? (
-          <EmptyState
-            title="No Active Polls Found"
-            description={
-              showArchived
-                ? 'No polls have been created yet.'
-                : "No active engagement polls are available. Check 'Show Archived' to view past polls."
-            }
-            icon="🗳️"
-            action={
+        <DataTable
+          columns={[
+            {
+              id: 'question',
+              header: 'Question',
+              cell: (_, row) => {
+                const event = row.eventId ? events.find((e) => e.id === row.eventId) : null;
+                const isArchived =
+                  (event ? new Date(event.date) < new Date() : false) ||
+                  (row.archiveAt ? new Date(row.archiveAt.replace(' ', 'T')) < new Date() : false);
+                const archiveLabel = row.archiveAt
+                  ? formatInTimezone(row.archiveAt, timezone, {
+                      month: 'short', day: 'numeric', year: 'numeric',
+                    })
+                  : null;
+                return (
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="truncate text-sm font-bold text-slate-900">{row.question}</span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-semibold text-slate-400">
+                      {archiveLabel && (
+                        <span className="flex items-center gap-1">
+                          <span>⏱️</span> {isArchived ? 'Archived' : 'Expires'} {archiveLabel}
+                        </span>
+                      )}
+                      {event && (
+                        <span className="flex items-center gap-1">
+                          <span>🎭</span> {event.title}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              },
+              cardSection: 0,
+              cardSide: 'left',
+            },
+            {
+              id: 'status',
+              header: 'Status',
+              cell: (_, row) => {
+                const event = row.eventId ? events.find((e) => e.id === row.eventId) : null;
+                const isArchived =
+                  (event ? new Date(event.date) < new Date() : false) ||
+                  (row.archiveAt ? new Date(row.archiveAt.replace(' ', 'T')) < new Date() : false);
+                return <Badge tone={isArchived ? 'neutral' : 'success'}>{isArchived ? 'Archived' : 'Active'}</Badge>;
+              },
+              cardSection: 0,
+              cardSide: 'right',
+            },
+            {
+              id: 'yes',
+              header: 'Yes',
+              align: 'center',
+              cell: (_, row) => {
+                const stat = pollStats[row.id];
+                return (
+                  <div className="border-primary/20 bg-primary/5 flex min-w-[48px] flex-col rounded-lg border p-1 text-center shadow-xs">
+                    <span className="text-primary text-sm leading-tight font-black">{stat?.yes ?? 0}</span>
+                    <span className="text-overline text-primary text-[10px]">Yes</span>
+                  </div>
+                );
+              },
+              cardSection: 1,
+              cardSide: 'right',
+              cardLabel: 'Yes',
+            },
+            {
+              id: 'no',
+              header: 'No',
+              align: 'center',
+              cell: (_, row) => {
+                const stat = pollStats[row.id];
+                return (
+                  <div className="border-danger-text/20 bg-danger-bg flex min-w-[48px] flex-col rounded-lg border p-1 text-center shadow-xs">
+                    <span className="text-danger-text text-sm leading-tight font-black">{stat?.no ?? 0}</span>
+                    <span className="text-overline text-danger-text text-[10px]">No</span>
+                  </div>
+                );
+              },
+              cardSection: 1,
+              cardSide: 'right',
+              cardLabel: 'No',
+            },
+          ]}
+          data={filteredPolls}
+          isLoading={isLoading && polls.length === 0}
+          emptyState={{
+            title: 'No Active Polls Found',
+            description: showArchived
+              ? 'No polls have been created yet.'
+              : "No active engagement polls are available. Check 'Show Archived' to view past polls.",
+            icon: '🗳️',
+            action: (
               <Button variant="primary" onClick={openQuickCreate} size="small">
                 + Start New Poll
               </Button>
-            }
-          />
-        ) : (
-          <div className="flex flex-col gap-6">
-            {/* Desktop View */}
-            <div className="hidden overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:block">
-              <div className="divide-y divide-slate-100">
-                {paginatedPolls.map((poll) => {
-                  const stat = pollStats[poll.id];
-                  const isExpanded = expandedPollId === poll.id;
-                  const event = poll.eventId ? events.find((e) => e.id === poll.eventId) : null;
-                  const isArchived =
-                    (event ? new Date(event.date) < new Date() : false) ||
-                    (poll.archiveAt
-                      ? new Date(poll.archiveAt.replace(' ', 'T')) < new Date()
-                      : false);
-                  const createdLabel = poll.created
-                    ? formatInTimezone(poll.created, timezone, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : null;
-                  const archiveLabel = poll.archiveAt
-                    ? formatInTimezone(poll.archiveAt, timezone, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : null;
-
-                  return (
-                    <div key={poll.id} className="transition-colors hover:bg-slate-50/20">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        className={`flex cursor-pointer items-center justify-between gap-6 p-4 px-6 transition-all duration-150 select-none focus-visible:bg-slate-50/40 focus-visible:outline-none ${isExpanded ? 'bg-slate-50/40' : ''}`}
-                        onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ')
-                            setExpandedPollId(isExpanded ? null : poll.id);
-                        }}
-                      >
-                        <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <h3 className="m-0 truncate text-base font-bold tracking-tight text-slate-900">
-                              {poll.question}
-                            </h3>
-                            {isArchived ? (
-                              <Badge tone="neutral">Archived</Badge>
-                            ) : (
-                              <Badge tone="success">Active</Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs font-semibold text-slate-400">
-                            {createdLabel && (
-                              <span className="flex items-center gap-1.5">
-                                <span>📅</span> Created {createdLabel}
-                              </span>
-                            )}
-                            {archiveLabel && (
-                              <span
-                                className="flex items-center gap-1.5"
-                                title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
-                              >
-                                <span>⏱️</span> {isArchived ? 'Archived' : 'Auto-archives'}{' '}
-                                {archiveLabel}
-                              </span>
-                            )}
-                            {event && (
-                              <span className="flex items-center gap-1.5">
-                                <span>🎭</span> {event.title} (
-                                {formatInTimezone(event.date, timezone, {
-                                  month: 'short',
-                                  day: 'numeric',
-                                })}
-                                )
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex flex-shrink-0 items-center gap-8">
-                          <div
-                            className="flex items-center gap-3"
-                            aria-label="Poll response counts"
-                          >
-                            <div className="border-primary/20 bg-primary/5 flex min-w-[56px] flex-col rounded-lg border p-1.5 text-center shadow-xs">
-                              <span className="text-primary text-lg leading-tight font-black">
-                                {stat.yes}
-                              </span>
-                              <span className="text-overline text-primary">Yes</span>
-                            </div>
-                            <div className="border-danger-text/20 bg-danger-bg flex min-w-[56px] flex-col rounded-lg border p-1.5 text-center shadow-xs">
-                              <span className="text-danger-text text-lg leading-tight font-black">
-                                {stat.no}
-                              </span>
-                              <span className="text-overline text-danger-text">No</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs font-bold text-slate-500 transition-colors hover:text-slate-900">
-                              {isExpanded ? '▲ Hide Details' : '▼ View Names'}
-                            </span>
-                            <Button
-                              variant="danger"
-                              size="small"
-                              className=""
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeletePoll(poll.id);
-                              }}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {isExpanded && renderPollDetails(poll, stat)}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Mobile View */}
-            <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
-              <div className="divide-y divide-slate-100">
-                {paginatedPolls.map((poll) => {
-                  const stat = pollStats[poll.id];
-                  const isExpanded = expandedPollId === poll.id;
-                  const event = poll.eventId ? events.find((e) => e.id === poll.eventId) : null;
-                  const isArchived =
-                    (event ? new Date(event.date) < new Date() : false) ||
-                    (poll.archiveAt
-                      ? new Date(poll.archiveAt.replace(' ', 'T')) < new Date()
-                      : false);
-                  const createdLabel = poll.created
-                    ? formatInTimezone(poll.created, timezone, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : null;
-                  const archiveLabel = poll.archiveAt
-                    ? formatInTimezone(poll.archiveAt, timezone, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })
-                    : null;
-
-                  return (
-                    <div key={poll.id} className="flex flex-col">
-                      <div className="flex flex-col gap-3 p-4 text-left transition-colors hover:bg-slate-50/40">
-                        {/* Row 1: Fine-grain dates and status badge */}
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex flex-col gap-0.5 text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-                            {createdLabel && <span>Created: {createdLabel}</span>}
-                            {archiveLabel && (
-                              <span
-                                title={`Auto-archives on ${formatInTimezone(poll.archiveAt!, timezone, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}`}
-                              >
-                                {isArchived ? 'Archived' : 'Expires'}: {archiveLabel}
-                              </span>
-                            )}
-                          </div>
-                          <Badge tone={isArchived ? 'neutral' : 'success'}>
-                            {isArchived ? 'Archived' : 'Active'}
-                          </Badge>
-                        </div>
-
-                        {/* Row 2: Question & Linked Event */}
-                        <div className="flex flex-col gap-1">
-                          <h3 className="text-sm leading-snug font-bold text-slate-900">
-                            {poll.question}
-                          </h3>
-                          {event && (
-                            <div className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
-                              <span>🎭</span> {event.title} (
-                              {formatInTimezone(event.date, timezone, {
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                              )
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Row 3: Response summary stats */}
-                        <div className="flex items-center gap-3">
-                          <div className="border-primary/20 bg-primary/5 text-primary flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-bold">
-                            <span>{stat.yes}</span>
-                            <span className="text-[10px] font-bold tracking-wider uppercase">
-                              Yes
-                            </span>
-                          </div>
-                          <div className="border-danger-text/20 bg-danger-bg text-danger-text flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-bold">
-                            <span>{stat.no}</span>
-                            <span className="text-[10px] font-bold tracking-wider uppercase">
-                              No
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Row 4: Primary Actions */}
-                        <div className="flex items-center gap-2 border-t border-slate-50 pt-1">
-                          <Button
-                            variant="secondary"
-                            size="small"
-                            className="flex-1"
-                            onClick={() => setExpandedPollId(isExpanded ? null : poll.id)}
-                          >
-                            {isExpanded ? '▲ Hide Names' : '▼ View Names'}
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="small"
-                            className=""
-                            onClick={() => handleDeletePoll(poll.id)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Expanded Section inside the mobile card */}
-                      {isExpanded && renderPollDetails(poll, stat)}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.max(1, Math.ceil(filteredPolls.length / pageSize))}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        )}
+            ),
+          }}
+          pageSize={10}
+          onRowClick={(poll) => setViewingPoll(poll)}
+          getRowId={(p) => p.id}
+        />
       </div>
+
+      <Modal
+        isOpen={!!viewingPoll}
+        onClose={() => setViewingPoll(null)}
+        title={viewingPoll?.question ?? ''}
+        maxWidth="640px"
+        footer={
+          <div className="flex w-full justify-between gap-4">
+            <Button variant="danger" size="small" onClick={() => {
+              if (viewingPoll) handleDeletePoll(viewingPoll.id);
+              setViewingPoll(null);
+            }}>
+              Delete Poll
+            </Button>
+            <Button variant="secondary" onClick={() => setViewingPoll(null)}>
+              Close
+            </Button>
+          </div>
+        }
+      >
+        {viewingPoll && (() => {
+          const poll = viewingPoll;
+          const stat = pollStats[poll.id];
+          const event = poll.eventId ? events.find((e) => e.id === poll.eventId) : null;
+          const isArchived =
+            (event ? new Date(event.date) < new Date() : false) ||
+            (poll.archiveAt ? new Date(poll.archiveAt.replace(' ', 'T')) < new Date() : false);
+          const createdLabel = poll.created
+            ? formatInTimezone(poll.created, timezone, {
+                month: 'short', day: 'numeric', year: 'numeric',
+              })
+            : null;
+          const archiveLabel = poll.archiveAt
+            ? formatInTimezone(poll.archiveAt, timezone, {
+                month: 'short', day: 'numeric', year: 'numeric',
+              })
+            : null;
+          const contactedSingers = (() => {
+            const contactedMap = new Map<string, CommunicationRecipient>();
+            const msgs = pollMessages.filter((msg) => msg.content.includes(`{{POLL_LINK:${poll.id}}}`));
+            msgs.forEach((msg) => {
+              if (Array.isArray(msg.recipients)) {
+                msg.recipients.forEach((rec) => contactedMap.set(rec.id, rec));
+              }
+            });
+            return Array.from(contactedMap.values());
+          })();
+
+          return (
+            <div className="flex flex-col gap-6">
+              {/* Status + Dates row */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Badge tone={isArchived ? 'neutral' : 'success'}>{isArchived ? 'Archived' : 'Active'}</Badge>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-400">
+                  {createdLabel && <span>📅 Created {createdLabel}</span>}
+                  {archiveLabel && <span>⏱️ {isArchived ? 'Archived' : 'Expires'} {archiveLabel}</span>}
+                </div>
+              </div>
+
+              {/* Event */}
+              {event && (
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                  <span>🎭</span>
+                  <span>{event.title} ({formatInTimezone(event.date, timezone, { month: 'short', day: 'numeric' })})</span>
+                </div>
+              )}
+
+              {/* Yes/No counts */}
+              <div className="flex items-center gap-4">
+                <div className="border-primary/20 bg-primary/5 flex min-w-[80px] flex-col rounded-lg border p-3 text-center shadow-xs">
+                  <span className="text-primary text-2xl leading-tight font-black">{stat?.yes ?? 0}</span>
+                  <span className="text-overline text-primary text-xs">Yes</span>
+                </div>
+                <div className="border-danger-text/20 bg-danger-bg flex min-w-[80px] flex-col rounded-lg border p-3 text-center shadow-xs">
+                  <span className="text-danger-text text-2xl leading-tight font-black">{stat?.no ?? 0}</span>
+                  <span className="text-overline text-danger-text text-xs">No</span>
+                </div>
+              </div>
+
+              {/* Contacted singers */}
+              <div className="flex items-center gap-3 border-t border-slate-100 pt-4 text-xs font-bold text-slate-500">
+                <span>📨</span>
+                {contactedSingers.length > 0 ? (
+                  <span>
+                    Sent to {contactedSingers.length} singer{contactedSingers.length !== 1 ? 's' : ''}.
+                    <button type="button" className="ml-1 text-primary hover:text-primary-deep font-semibold underline transition-colors cursor-pointer border-none bg-transparent p-0"
+                      onClick={() => setRecipientModal({ isOpen: true, recipients: contactedSingers, title: `Contacted Singers — ${poll.question}` })}>
+                      View Contacted List →
+                    </button>
+                  </span>
+                ) : (
+                  <span>No sent communications found yet.</span>
+                )}
+              </div>
+
+              {/* Volunteers */}
+              <div className="flex flex-col gap-8 md:flex-row">
+                <div className="flex min-w-0 flex-1 flex-col gap-3">
+                  <h4 className="border-primary/20 text-primary m-0 border-b-2 pb-1.5 text-xs font-black tracking-wider uppercase">
+                    Volunteers ({stat?.yes ?? 0})
+                  </h4>
+                  {!stat?.volunteers?.length ? (
+                    <p className="m-0 text-sm font-medium text-slate-400 italic">No volunteers yet.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {stat.volunteers.map((v) => (
+                        <div key={v.id} className="rounded-lg border border-slate-100 bg-white p-2.5 px-4 shadow-sm">
+                          <div className="text-sm font-bold text-slate-800">{v.expand?.profileId.name}</div>
+                          <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">{v.expand?.profileId.voicePart}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-3">
+                  <h4 className="border-danger-text/20 text-danger-text m-0 border-b-2 pb-1.5 text-xs font-black tracking-wider uppercase">
+                    Declined ({stat?.no ?? 0})
+                  </h4>
+                  {!stat?.decliners?.length ? (
+                    <p className="m-0 text-sm font-medium text-slate-400 italic">No decliners yet.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {stat.decliners.map((v) => (
+                        <div key={v.id} className="border-danger-text/10 rounded-lg border bg-white p-2.5 px-4 opacity-90 shadow-sm">
+                          <div className="text-sm font-bold text-slate-800">{v.expand?.profileId?.name ?? 'Unknown singer'}</div>
+                          <div className="text-[0.7rem] font-bold tracking-wide text-slate-400 uppercase">{v.expand?.profileId?.voicePart ?? ''}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
 
       <Modal
         isOpen={isQuickCreateOpen}
