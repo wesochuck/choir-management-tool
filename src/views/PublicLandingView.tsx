@@ -10,8 +10,10 @@ import { AppCard } from '../components/common/AppCard';
 import { formatInTimezone } from '../lib/timezone';
 import { PublicLayout } from '../components/common/PublicLayout';
 import { queryKeys } from '../lib/queryKeys';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 function PublicLandingView() {
+  useDocumentTitle('');
   const landingQuery = useQuery({
     queryKey: queryKeys.publicLanding.settings,
     queryFn: async () => {
