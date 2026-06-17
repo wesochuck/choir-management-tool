@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
 import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../services/profileService';
-import { getVoiceParts, type VoicePartDef } from '../services/settingsService';
 import { matchesVoiceParts } from '../lib/voicePartUtils';
 import { getHttpStatus, type Retry429Options } from '../lib/networkSafety';
+import { useVoiceParts } from './useVoiceParts';
 
 const EMPTY_PROFILES: Profile[] = [];
 
@@ -30,12 +30,8 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
       }),
   });
 
-  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
+  const { voiceParts } = useVoiceParts();
   const [filters, setFilters] = useState({ voiceParts: [] as string[], status: '', name: '' });
-
-  useEffect(() => {
-    getVoiceParts().then(setVoiceParts).catch(() => undefined);
-  }, []);
 
   const profiles = profilesQuery.data ?? EMPTY_PROFILES;
 

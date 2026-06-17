@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
 import { Button, Modal, Select, Input, Textarea } from '../../../components/ui';
 import { useDialog } from '../../../contexts/DialogContext';
 import {
@@ -14,6 +16,7 @@ import {
   type SectionDef,
   type MusicGenreDef,
 } from '../../../services/settingsService';
+import { useEvents } from '../../../hooks/useEvents';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
 import { pb } from '../../../lib/pocketbase';
 import {
@@ -140,6 +143,40 @@ export function MusicPieceModal({
   const parentPiece =
     piece?.parentId && allPieces ? allPieces.find((p) => p.id === piece.parentId) : undefined;
 
+  const queryClient = useQueryClient();
+  const { performances: eventsPerformances } = useEvents();
+
+  const venuesQuery = useQuery({
+    queryKey: queryKeys.venues.list(),
+    queryFn: () => venueService.getVenues(),
+    enabled: isOpen,
+  });
+
+  const voicePartsQuery = useQuery({
+    queryKey: queryKeys.voiceParts.list(),
+    queryFn: () => getVoicePartsAndSections(),
+    enabled: isOpen,
+  });
+
+  useEffect(() => {
+    if (isOpen && eventsPerformances.length > 0) {
+      setAllPerformances(eventsPerformances);
+    }
+  }, [isOpen, eventsPerformances]);
+
+  useEffect(() => {
+    if (venuesQuery.data) {
+      setVenues(venuesQuery.data);
+    }
+  }, [venuesQuery.data]);
+
+  useEffect(() => {
+    if (voicePartsQuery.data) {
+      setVoiceParts(voicePartsQuery.data.voiceParts);
+      setSections(voicePartsQuery.data.sections);
+    }
+  }, [voicePartsQuery.data]);
+
   useEffect(() => {
     if (piece) {
       setNewMovementTitle(`Movement ${movements.length + 1}`);
@@ -174,26 +211,6 @@ export function MusicPieceModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Load performances
-      eventService
-        .getEvents()
-        .then((events) => {
-          setAllPerformances(events.filter((e) => e.type === 'Performance'));
-        })
-        .catch(console.error);
-
-      // Load venues for quick add
-      venueService.getVenues().then(setVenues).catch(console.error);
-
-      // Load voice parts and sections
-      getVoicePartsAndSections()
-        .then((data) => {
-          setVoiceParts(data.voiceParts);
-          setSections(data.sections);
-        })
-        .catch(console.error);
-
-      // Focus the title field on open
       setTimeout(() => titleInputRef.current?.focus(), 50);
     }
   }, [isOpen]);
@@ -810,7 +827,7 @@ export function MusicPieceModal({
         details: 'Quick added from music library historic logs',
       });
 
-      // Update local performance selection list
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
       setAllPerformances((prev) => [newPerf, ...prev]);
       setSelectedPerformanceIds((prev) => [...prev, newPerf.id]);
 

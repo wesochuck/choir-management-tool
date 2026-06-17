@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { MarkdownEditor } from '../common/MarkdownEditor';
 import { AppCard } from '../common/AppCard';
 import { Button } from '../ui/Button/Button';
@@ -40,25 +42,25 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
     }
   };
 
+  const landingQuery = useQuery({
+    queryKey: queryKeys.appSettings.landing,
+    queryFn: () => settingsService.getLandingSettings(),
+  });
+
+  const heroImageQuery = useQuery({
+    queryKey: queryKeys.appSettings.heroImage,
+    queryFn: () => settingsService.getHeroImageUrl(),
+  });
+
   useEffect(() => {
-    async function load() {
-      try {
-        const [s, imgUrl] = await Promise.all([
-          settingsService.getLandingSettings(),
-          settingsService.getHeroImageUrl(),
-        ]);
-        setSettings(s);
-        setInitialSettings(s);
-        setHeroImageUrl(imgUrl);
-        setInitialHeroImageUrl(imgUrl);
-      } catch (err: unknown) {
-        console.error('Failed to load landing page settings', err);
-      } finally {
-        setLoading(false);
-      }
+    if (loading && landingQuery.data && !heroImageQuery.isLoading) {
+      setSettings(landingQuery.data);
+      setInitialSettings(landingQuery.data);
+      setHeroImageUrl(heroImageQuery.data ?? null);
+      setInitialHeroImageUrl(heroImageQuery.data ?? null);
+      setLoading(false);
     }
-    load();
-  }, []);
+  }, [loading, landingQuery.data, heroImageQuery.data, heroImageQuery.isLoading]);
 
   useEffect(() => {
     return () => {

@@ -191,22 +191,22 @@ export function SeatingBottomDock({
             const list = groupedSingers[key] || [];
             const secColor = color;
             const badgeStyle = secColor ? {
-              // @allow-inline-style - dynamic badge color matching section
               backgroundColor: secColor,
               color: getContrastColor(secColor),
               border: `1px solid ${secColor}`
             } : undefined;
             const labelStyle = secColor ? {
-              // @allow-inline-style - dynamic text color matching section
               color: secColor
             } : undefined;
 
             return (
               <section key={key} className="flex flex-col gap-1.5">
                 <div className="flex flex-row items-center gap-2">
+                  {/* @allow-inline-style - dynamic text color matching section */}
                   <span className="text-sm leading-tight font-bold" style={labelStyle}>
                     {label}
                   </span>
+                  {/* @allow-inline-style - dynamic badge color matching section */}
                   <span className="inline-flex items-center rounded-full bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase" style={badgeStyle}>
                     {list.length}
                   </span>

@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import type { Profile } from '../../services/profileService';
 import { profileService } from '../../services/profileService';
 import { Modal, Button, Input } from '../ui';
@@ -16,30 +18,13 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
   onSelect,
   excludeIds
 }) => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const loadProfiles = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const list = await profileService.getProfiles();
-        setProfiles(list);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setError(msg);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadProfiles();
-  }, [isOpen]);
+  const { data: profiles = [], isLoading, error: queryError } = useQuery({
+    queryKey: queryKeys.profiles.list(),
+    queryFn: () => profileService.getProfiles(),
+    enabled: isOpen,
+  });
+  const error = queryError ? (queryError instanceof Error ? queryError.message : String(queryError)) : null;
 
   const filtered = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

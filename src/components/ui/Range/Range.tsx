@@ -24,6 +24,7 @@ export function Range({ value, min, max, step, onInput, onChange, className, id,
         step={step}
         value={value}
         className={className}
+        // @allow-inline-style - forwards style prop in test mode
         style={style}
         onChange={(e) => {
           const val = parseFloat(e.target.value);

@@ -19,6 +19,8 @@ import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { Button, Select } from '../../components/ui';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 
 export default function RosterView() {
   const { user, updatePreferences } = useAuth();
@@ -43,7 +45,11 @@ export default function RosterView() {
   useClickOutside(voicePartDropdownRef, () => setIsDropdownOpen(false), { enabled: isDropdownOpen });
 
   // Roster Sort user preference & fallback
-  const [defaultSort, setDefaultSort] = useState<'lastName' | 'voicePart'>('lastName');
+  const { data: rosterSettings } = useQuery({
+    queryKey: queryKeys.appSettings.roster,
+    queryFn: () => settingsService.getRosterSettings(),
+  });
+  const defaultSort = rosterSettings?.defaultSort ?? 'lastName';
   const sortBy = user?.preferences?.rosterSort || defaultSort;
   const setSortBy = (val: 'lastName' | 'voicePart') => {
     updatePreferences({ rosterSort: val });
@@ -121,15 +127,7 @@ export default function RosterView() {
     refreshVoiceParts,
   });
 
-  useEffect(() => {
-    settingsService.getRosterSettings().then(settings => {
-      if (settings && settings.defaultSort !== undefined) {
-        setDefaultSort(settings.defaultSort);
-      }
-    }).catch(err => {
-      console.error('Failed to load roster settings:', err);
-    });
-  }, []);
+
 
   useEffect(() => {
     if (initialVoicePart) {

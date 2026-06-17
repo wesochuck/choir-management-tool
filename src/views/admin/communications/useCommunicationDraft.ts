@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import {
   communicationService,
@@ -101,32 +102,18 @@ export function useCommunicationDraft({
     return checkValidation(content, subject, messageType, filters.eventId);
   }, [content, subject, messageType, filters.eventId]);
 
-  // Recipient resolution logic
+  const resolvedRecipientsQuery = useQuery({
+    queryKey: ['communicationResolveRecipients', filters],
+    queryFn: () => communicationService.resolveRecipients(filters),
+    enabled: tab === 'compose' && !(lockInitialRecipients && recipients.length > 0),
+  });
+
   useEffect(() => {
-    if (tab !== 'compose') return;
-    if (lockInitialRecipients && recipients.length > 0) return;
-    let isCurrent = true;
-
-    communicationService
-      .resolveRecipients(filters)
-      .then((resolved) => {
-        if (!isCurrent) return;
-        setRecipients(resolved);
-        setSelectedIds(new Set(resolved.map((r) => r.id)));
-      })
-      .catch(() => {
-        if (!isCurrent) return;
-        setRecipients([]);
-        setSelectedIds(new Set());
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-    // recipients intentionally excluded from deps — including it creates a
-    // feedback loop on API failure: catch → setRecipients([]) → re-fires effect
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, tab, lockInitialRecipients]);
+    if (resolvedRecipientsQuery.data) {
+      setRecipients(resolvedRecipientsQuery.data);
+      setSelectedIds(new Set(resolvedRecipientsQuery.data.map((r) => r.id)));
+    }
+  }, [resolvedRecipientsQuery.data]);
 
   const updateFilter = useCallback(
     <K extends keyof CommunicationFilters>(

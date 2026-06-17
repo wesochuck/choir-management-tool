@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useAttendance, type AttendanceItem } from '../../hooks/useAttendance';
@@ -33,8 +35,6 @@ export default function AttendanceView() {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const hasDefaultedRef = useRef(false);
-  const [maxRehearsalMisses, setMaxRehearsalMisses] = useState(3);
-  const [missCounts, setMissCounts] = useState<Record<string, number>>({});
 
   // Filter States
   const [filterName, setFilterName] = useState('');
@@ -58,115 +58,92 @@ export default function AttendanceView() {
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
   const { voiceParts, sections } = useVoiceParts();
 
-  useEffect(() => {
-    settingsService
-      .getRosterSettings()
-      .then((settings) => {
-        if (settings?.maxRehearsalMisses !== undefined) {
-          setMaxRehearsalMisses(settings.maxRehearsalMisses);
-        }
-      })
-      .catch((err) => console.error('Failed to load roster settings:', err));
-  }, []);
+  const rosterSettingsQuery = useQuery({
+    queryKey: queryKeys.appSettings.roster,
+    queryFn: () => settingsService.getRosterSettings(),
+  });
+  const maxRehearsalMisses = rosterSettingsQuery.data?.maxRehearsalMisses ?? 3;
 
-  // Compute missed rehearsals count for each singer in the performance cycle
-  useEffect(() => {
-    if (!selectedEventId || events.length === 0) {
-      setMissCounts({});
-      return;
-    }
+  const missCountsQuery = useQuery({
+    queryKey: queryKeys.attendance.missCounts(selectedEventId),
+    queryFn: async () => {
+      const event = events.find((e) => e.id === selectedEventId);
+      if (!event) return {};
 
-    const event = events.find((e) => e.id === selectedEventId);
-    if (!event) return;
+      const isPerformance = event.type === 'Performance';
+      const linkedPerfId = isPerformance ? event.id : event.parentPerformanceId;
+      if (!linkedPerfId) return {};
 
-    const isPerformance = event.type === 'Performance';
-    const linkedPerfId = isPerformance ? event.id : event.parentPerformanceId;
+      const cycleRehearsals = events.filter(
+        (e) => e.type === 'Rehearsal' && e.parentPerformanceId === linkedPerfId
+      );
+      if (cycleRehearsals.length === 0) return {};
 
-    if (!linkedPerfId) {
-      setMissCounts({});
-      return;
-    }
+      const nowMs = Date.now();
+      const pastRehearsals = cycleRehearsals.filter(
+        (reh) => new Date(reh.date).getTime() < nowMs
+      );
 
-    const cycleRehearsals = events.filter(
-      (e) => e.type === 'Rehearsal' && e.parentPerformanceId === linkedPerfId
-    );
-    if (cycleRehearsals.length === 0) {
-      setMissCounts({});
-      return;
-    }
+      const perfRosters = linkedPerfId
+        ? await pb.collection('eventRosters').getFullList({
+            filter: pb.filter('event = {:linkedPerfId} && rsvp = "Yes"', { linkedPerfId }),
+          })
+        : [];
+      const performingProfileIds = new Set(perfRosters.map((r) => r.profile));
 
-    const fetchMissCounts = async () => {
-      try {
-        const nowMs = Date.now();
-        const pastRehearsals = cycleRehearsals.filter(
-          (reh) => new Date(reh.date).getTime() < nowMs
-        );
+      const rehearsalIds = pastRehearsals.map((reh) => reh.id);
+      const idChunks = chunkArray(rehearsalIds, 50);
 
-        const perfRosters = linkedPerfId
-          ? await pb.collection('eventRosters').getFullList({
-              filter: pb.filter('event = {:linkedPerfId} && rsvp = "Yes"', { linkedPerfId }),
-            })
-          : [];
-        const performingProfileIds = new Set(perfRosters.map((r) => r.profile));
+      const allRosters: EventRoster[] = [];
 
-        const rehearsalIds = pastRehearsals.map((reh) => reh.id);
-        const idChunks = chunkArray(rehearsalIds, 50);
-
-        const allRosters: EventRoster[] = [];
-
-        const chunkPromises = idChunks.map((chunk) => {
-          const filterStr = chunk.map((_, i) => `event = {:id${i}}`).join(' || ');
-          const params = Object.fromEntries(chunk.map((id, i) => [`id${i}`, id]));
-          return pb.collection('eventRosters').getFullList<EventRoster>({
-            filter: pb.filter(filterStr, params),
-          });
+      const chunkPromises = idChunks.map((chunk) => {
+        const filterStr = chunk.map((_, i) => `event = {:id${i}}`).join(' || ');
+        const params = Object.fromEntries(chunk.map((id, i) => [`id${i}`, id]));
+        return pb.collection('eventRosters').getFullList<EventRoster>({
+          filter: pb.filter(filterStr, params),
         });
+      });
 
-        const chunkResults = await Promise.all(chunkPromises);
-        for (const chunkRosters of chunkResults) {
-          allRosters.push(...chunkRosters);
-        }
-
-        const eventRosterMap = new Map<string, Map<string, EventRoster>>();
-        for (const r of allRosters) {
-          let eventMap = eventRosterMap.get(r.event);
-          if (!eventMap) {
-            eventMap = new Map();
-            eventRosterMap.set(r.event, eventMap);
-          }
-          eventMap.set(r.profile, r);
-        }
-
-        const counts: Record<string, number> = {};
-
-        performingProfileIds.forEach((profileId) => {
-          let missCount = 0;
-          pastRehearsals.forEach((reh) => {
-            const eventMap = eventRosterMap.get(reh.id);
-            const r = eventMap?.get(profileId);
-
-            const wasDeclined = r?.rsvp === 'No';
-            const wasAbsent = r?.attendance === 'Absent';
-            const notMarkedPresent = r?.attendance !== 'Present';
-
-            if (wasDeclined || wasAbsent || notMarkedPresent) {
-              missCount++;
-            }
-          });
-
-          if (missCount > 0) {
-            counts[profileId] = missCount;
-          }
-        });
-
-        setMissCounts(counts);
-      } catch (err) {
-        console.error('Failed to calculate rehearsal miss counts:', err);
+      const chunkResults = await Promise.all(chunkPromises);
+      for (const chunkRosters of chunkResults) {
+        allRosters.push(...chunkRosters);
       }
-    };
 
-    fetchMissCounts();
-  }, [selectedEventId, events]);
+      const eventRosterMap = new Map<string, Map<string, EventRoster>>();
+      for (const r of allRosters) {
+        let eventMap = eventRosterMap.get(r.event);
+        if (!eventMap) {
+          eventMap = new Map();
+          eventRosterMap.set(r.event, eventMap);
+        }
+        eventMap.set(r.profile, r);
+      }
+
+      const counts: Record<string, number> = {};
+      performingProfileIds.forEach((profileId) => {
+        let missCount = 0;
+        pastRehearsals.forEach((reh) => {
+          const eventMap = eventRosterMap.get(reh.id);
+          const roster = eventMap?.get(profileId);
+
+          const wasDeclined = roster?.rsvp === 'No';
+          const wasAbsent = roster?.attendance === 'Absent';
+          const notMarkedPresent = roster?.attendance !== 'Present';
+
+          if (wasDeclined || wasAbsent || notMarkedPresent) {
+            missCount++;
+          }
+        });
+        if (missCount > 0) {
+          counts[profileId] = missCount;
+        }
+      });
+
+      return counts;
+    },
+    enabled: !!selectedEventId && events.length > 0,
+  });
+  const missCounts = missCountsQuery.data ?? {};
 
   useEffect(() => {
     if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {

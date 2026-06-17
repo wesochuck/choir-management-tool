@@ -1,36 +1,27 @@
-import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { donationService, type DonationRecord } from '../services/donationService';
+import { useQuery } from '@tanstack/react-query';
+import { donationService } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
+import { queryKeys } from '../lib/queryKeys';
 
 export default function PublicDonationSuccessView() {
   useDocumentTitle('Donation Confirmation');
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id') || '';
-  const [loading, setLoading] = useState(true);
-  const [donation, setDonation] = useState<DonationRecord | null>(null);
 
-  useEffect(() => {
-    async function verifyDonation() {
-      if (!sessionId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const record = await donationService.pollForDonationRecord(sessionId);
-        setDonation(record);
-      } catch (err) {
-        console.error("Verification failed", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    verifyDonation();
-  }, [sessionId]);
+  const donationQuery = useQuery({
+    queryKey: queryKeys.donations.verify(sessionId),
+    queryFn: () => donationService.pollForDonationRecord(sessionId),
+    enabled: !!sessionId,
+    refetchInterval: (query) => (query.state.data ? false : 3000),
+  });
+
+  const donation = donationQuery.data ?? null;
+  const loading = !!sessionId && donationQuery.isPending;
 
   if (loading) {
     return (

@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { donationService, type DonationRecord, type DonationLevel, type DonationSettings, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
+import { donationService, type DonationRecord, type DonationLevel, DEFAULT_DONATION_SETTINGS } from '../../services/donationService';
 import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, FormField, Badge, Modal, EmptyState, Select, Input, Textarea, TabGroup, Tab, TabPanel } from '../../components/ui';
@@ -12,14 +14,11 @@ import { getFirstName, getLastName } from '../../lib/stringUtils';
 const STORAGE_KEY_START_DATE = 'donations_view_filter_start_date';
 
 export default function DonationsView() {
+  const queryClient = useQueryClient();
   useDocumentTitle('Donations');
   const dialog = useDialog();
   const [activeTab, setActiveTab] = useState<'history' | 'levels'>('history');
 
-  const [donations, setDonations] = useState<DonationRecord[]>([]);
-  const [settings, setSettings] = useState<DonationSettings | null>(null);
-  const [timezone, setTimezone] = useState('America/New_York');
-  const [loading, setLoading] = useState(true);
   const [donationButtonText, setDonationButtonText] = useState('');
   const [donationDescription, setDonationDescription] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,29 +50,32 @@ export default function DonationsView() {
   const [levelBenefit, setLevelBenefit] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const reloadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [donationsRes, settingsRes, timezoneRes] = await Promise.all([
-        donationService.getDonations(),
-        donationService.getDonationSettings(),
-        settingsService.getTimezone()
-      ]);
-      setDonations(donationsRes);
-      setSettings(settingsRes);
-      setDonationButtonText(settingsRes.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText);
-      setDonationDescription(settingsRes.description ?? DEFAULT_DONATION_SETTINGS.description);
-      setTimezone(timezoneRes);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const donationsQuery = useQuery({
+    queryKey: queryKeys.donations.paid,
+    queryFn: () => donationService.getDonations(),
+  });
+  const donations = useMemo(() => donationsQuery.data ?? [], [donationsQuery.data]);
+
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.donations.settings,
+    queryFn: () => donationService.getDonationSettings(),
+  });
+  const settings = settingsQuery.data ?? null;
+
+  const timezoneQuery = useQuery({
+    queryKey: queryKeys.choirSettings.all,
+    queryFn: () => settingsService.getTimezone(),
+  });
+  const timezone = timezoneQuery.data ?? 'America/New_York';
+
+  const loading = donationsQuery.isLoading || settingsQuery.isLoading || timezoneQuery.isLoading;
 
   useEffect(() => {
-    reloadData();
-  }, [reloadData]);
+    if (settingsQuery.data) {
+      setDonationButtonText(settingsQuery.data.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText);
+      setDonationDescription(settingsQuery.data.description ?? DEFAULT_DONATION_SETTINGS.description);
+    }
+  }, [settingsQuery.data]);
 
   const filteredDonations = useMemo(() => {
     return donations.filter(d => {
@@ -133,7 +135,7 @@ export default function DonationsView() {
       dialog.showToast('Processing refund...');
       await donationService.adminRefundDonation(donationId);
       dialog.showToast('Refund processed successfully.');
-      reloadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.donations.all });
     } catch {
       await dialog.showMessage({
         title: 'Refund Failed',
@@ -207,7 +209,7 @@ export default function DonationsView() {
         description: donationDescription,
       });
       dialog.showToast('Public donation settings saved.');
-      reloadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.donations.all });
     } catch (err) {
       console.error(err);
       dialog.showMessage({ title: 'Error', message: 'Failed to save public donation settings.', variant: 'danger' });
@@ -240,7 +242,7 @@ export default function DonationsView() {
       });
       dialog.showToast('Donation levels saved.');
       setIsModalOpen(false);
-      reloadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.donations.all });
     } catch (err) {
       console.error(err);
       dialog.showMessage({ title: 'Error', message: 'Failed to save donation levels.', variant: 'danger' });
@@ -263,7 +265,7 @@ export default function DonationsView() {
       const newLevels = settings.levels.filter(l => l.id !== levelId);
       await donationService.saveDonationSettings({ ...settings, levels: newLevels });
       dialog.showToast('Level deleted.');
-      reloadData();
+      queryClient.invalidateQueries({ queryKey: queryKeys.donations.all });
     } catch (err) {
       console.error(err);
       dialog.showMessage({ title: 'Error', message: 'Failed to delete level.', variant: 'danger' });

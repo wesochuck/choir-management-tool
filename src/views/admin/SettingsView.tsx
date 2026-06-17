@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { pb } from '../../lib/pocketbase';
 import { settingsService, queueSettingsService } from '../../services/settingsService';
@@ -50,7 +52,6 @@ export default function SettingsView() {
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
   const [homepageUrl, setHomepageUrl] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [initialChoirName, setInitialChoirName] = useState('');
@@ -66,30 +67,33 @@ export default function SettingsView() {
     setLandingDirty(dirty);
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.choirSettings.all,
+    queryFn: async () => {
       const [loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl] = await Promise.all([
         settingsService.getChoirName(),
         settingsService.getTimezone(),
         settingsService.getHomepageUrl(),
         settingsService.getLogoUrl()
       ]);
-      setChoirName(loadedChoirName);
-      setInitialChoirName(loadedChoirName);
-      setTimezone(loadedTimezone);
-      setInitialTimezone(loadedTimezone);
-      setHomepageUrl(loadedHomepageUrl);
-      setInitialHomepageUrl(loadedHomepageUrl);
-      setLogoUrl(loadedLogoUrl);
-      setInitialLogoUrl(loadedLogoUrl);
-      setIsLoading(false);
-    };
+      return { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl };
+    },
+  });
 
-    load().catch(() => {
-      setMessage('Could not load system settings.');
-      setIsLoading(false);
-    });
-  }, []);
+  useEffect(() => {
+    if (!settingsQuery.data) return;
+    const { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl } = settingsQuery.data;
+    setChoirName(loadedChoirName);
+    setInitialChoirName(loadedChoirName);
+    setTimezone(loadedTimezone);
+    setInitialTimezone(loadedTimezone);
+    setHomepageUrl(loadedHomepageUrl);
+    setInitialHomepageUrl(loadedHomepageUrl);
+    setLogoUrl(loadedLogoUrl);
+    setInitialLogoUrl(loadedLogoUrl);
+  }, [settingsQuery.data]);
+
+  const isLoading = settingsQuery.isLoading;
 
   const isDirty = useMemo(() => {
     const fieldsDirty = calculateSettingsDirty(
@@ -334,22 +338,20 @@ export default function SettingsView() {
 function QueueWebhookSettings() {
   const dialog = useDialog();
   const [token, setToken] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const loadSettings = async () => {
-    try {
-      const data = await queueSettingsService.getSettings();
-      setToken(data.secret);
-    } catch (err) {
-      console.error('Failed to load webhook settings', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const webhookQuery = useQuery({
+    queryKey: queryKeys.queueWebhookSettings.all,
+    queryFn: () => queueSettingsService.getSettings(),
+  });
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    if (webhookQuery.data) {
+      setToken(webhookQuery.data.secret);
+    }
+  }, [webhookQuery.data]);
+
+  const isLoading = webhookQuery.isLoading || isGenerating;
 
   const handleGenerate = async () => {
     const confirmed = await dialog.confirm({
@@ -361,14 +363,14 @@ function QueueWebhookSettings() {
 
     if (!confirmed) return;
 
-    setIsLoading(true);
+    setIsGenerating(true);
     try {
       const data = await queueSettingsService.generateToken();
       setToken(data.secret);
     } catch {
       await dialog.showMessage({ title: 'Error', message: 'Failed to generate token', variant: 'danger' });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 

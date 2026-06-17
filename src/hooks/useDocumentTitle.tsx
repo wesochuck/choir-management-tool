@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { settingsService } from '../services/settingsService';
 import { formatDocumentTitle } from '../lib/documentTitle';
 import { setCachedTimezone } from '../lib/timezone';
@@ -21,13 +23,20 @@ export function ChoirNameProvider({ children }: { children: ReactNode }) {
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezoneState] = useState('America/New_York');
 
-  useEffect(() => {
-    settingsService.getChoirName().then(setChoirName).catch(() => {});
-    settingsService.getTimezone().then(tz => {
+  useQuery({
+    queryKey: queryKeys.choirSettings.all,
+    queryFn: async () => {
+      const [name, tz] = await Promise.all([
+        settingsService.getChoirName(),
+        settingsService.getTimezone(),
+      ]);
+      setChoirName(name);
       setTimezoneState(tz);
       setCachedTimezone(tz);
-    }).catch(() => {});
-  }, []);
+      return { name, timezone: tz };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const setTimezone = (tz: string) => {
     setTimezoneState(tz);

@@ -1,51 +1,34 @@
-import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { ticketService, type TicketPurchase, type ScanContext } from '../services/ticketService';
+import { useQuery } from '@tanstack/react-query';
+import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { pb } from '../lib/pocketbase';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
+import { queryKeys } from '../lib/queryKeys';
 
 export default function PublicTicketSuccessView() {
   useDocumentTitle('Order Confirmation');
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id') || '';
-  const [loading, setLoading] = useState(true);
-  const [purchase, setPurchase] = useState<TicketPurchase | null>(null);
-  const [scanContext, setScanContext] = useState<ScanContext | null>(null);
 
-  useEffect(() => {
-    async function verifyOrder() {
-      if (!sessionId) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const record = await ticketService.pollForPurchaseRecord(sessionId);
-        setPurchase(record);
-      } catch (err) {
-        console.error("Verification failed", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    verifyOrder();
-  }, [sessionId]);
+  const purchaseQuery = useQuery({
+    queryKey: queryKeys.tickets.verify(sessionId),
+    queryFn: () => ticketService.pollForPurchaseRecord(sessionId),
+    enabled: !!sessionId,
+    refetchInterval: (query) => (query.state.data ? false : 3000),
+  });
 
-  useEffect(() => {
-    async function fetchScanContext() {
-      if (!purchase || !sessionId) return;
-      try {
-        const ctx = await ticketService.getScanContext(sessionId, purchase.id);
-        setScanContext(ctx);
-      } catch {
-        // scan context unavailable — non-critical
-      }
-    }
-    fetchScanContext();
-  }, [purchase, sessionId]);
+  const purchase = purchaseQuery.data ?? null;
+  const loading = !!sessionId && purchaseQuery.isPending;
+
+  const scanContextQuery = useQuery({
+    queryKey: queryKeys.tickets.scanContext(sessionId, purchase?.id ?? ''),
+    queryFn: () => ticketService.getScanContext(sessionId, purchase!.id),
+    enabled: !!purchase?.id,
+  });
 
   if (loading) {
     return (
@@ -126,11 +109,11 @@ export default function PublicTicketSuccessView() {
           </div>
         )}
 
-        {scanContext && (
+        {scanContextQuery.data && (
           <div className="flex w-full flex-col items-center gap-3 rounded-xl border border-border bg-white p-4 shadow-sm">
             <h3 className="m-0 text-sm font-bold uppercase text-text-muted">Your Ticket QR</h3>
             <img
-              src={scanContext.qrDataUri}
+              src={scanContextQuery.data.qrDataUri}
               alt="Your ticket QR code"
               className="max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
             />

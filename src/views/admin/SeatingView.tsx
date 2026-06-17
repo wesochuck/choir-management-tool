@@ -22,6 +22,8 @@ import { SingerModal } from '../../components/admin/SingerModal';
 import { SingerLookupModal } from '../../components/admin/SingerLookupModal';
 import { profileService } from '../../services/profileService';
 import { rosterService } from '../../services/rosterService';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
 
@@ -48,7 +50,11 @@ export default function SeatingView() {
   }, [performances, performanceId, searchParams]);
 
   const [venueId, setVenueId] = useState('');
-  const [allCharts, setAllCharts] = useState<SeatingChart[]>([]);
+  const { data: allCharts = [] } = useQuery({
+    queryKey: queryKeys.seating.all,
+    queryFn: () => seatingService.getAllCharts(),
+    enabled: !!performanceId,
+  });
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
   const [showVoicePartsInList, setShowVoicePartsInList] = useState(true);
   
@@ -135,8 +141,6 @@ export default function SeatingView() {
 
   useEffect(() => {
     if (performanceId) {
-      seatingService.getAllCharts().then(setAllCharts).catch(console.error);
-      
       const perf = performances.find(p => p.id === performanceId);
       if (perf && perf.venue) {
         setVenueId(perf.venue);

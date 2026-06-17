@@ -1,8 +1,9 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
-import { getVoicePartsAndSections, type VoicePartDef, type SectionDef } from '../../services/settingsService';
+import type { SectionDef } from '../../services/settingsService';
 import { getSectionFromVoicePart, getSectionsFromVoiceParts } from '../../lib/voicePartUtils';
 import { AppCard } from '../common/AppCard';
+import { useVoiceParts } from '../../hooks/useVoiceParts';
 
 interface RosterSummaryProps {
   profiles: Profile[];
@@ -15,15 +16,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
   selectedVoiceParts = [], 
   onVoicePartToggle 
 }) => {
-  const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>([]);
-  const [sections, setSections] = useState<SectionDef[]>([]);
-
-  useEffect(() => {
-    getVoicePartsAndSections().then((settings) => {
-      setVoiceParts(settings.voiceParts);
-      setSections(settings.sections);
-    }).catch(() => undefined);
-  }, []);
+  const { voiceParts, sections } = useVoiceParts();
 
   const { partCounts, sectionCounts, sectionsList } = useMemo(() => {
     const pc: Record<string, number> = {};

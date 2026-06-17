@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
@@ -31,7 +33,6 @@ export default function SeatingFinderView() {
 
   const { eventId } = useParams();
   const { events, myRosters, myProfile, isLoading: eventsLoading } = useMyEvents();
-  const [assignedSingerProfiles, setAssignedSingerProfiles] = useState<SeatingSingerProfile[]>([]);
   const [selectedSeat, setSelectedSeat] = useState<SelectedSeatInfo | null>(null);
 
   const event = events.find(e => e.id === eventId);
@@ -53,29 +54,15 @@ export default function SeatingFinderView() {
 
   const isLoading = eventsLoading || chartLoading;
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    if (!eventId || !chart?.id || isOpenSeating) {
-      setAssignedSingerProfiles([]);
-      return () => {
-        isCancelled = true;
-      };
-    }
-
-    seatingService.getSingerSeatingProfiles(eventId, chart.id)
-      .then(profiles => {
-        if (!isCancelled) setAssignedSingerProfiles(profiles);
-      })
-      .catch((err: unknown) => {
-        console.error('Failed to load seating profile names', err);
-        if (!isCancelled) setAssignedSingerProfiles([]);
-      });
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [chart?.id, eventId, isOpenSeating]);
+  const seatingProfilesQuery = useQuery({
+    queryKey: queryKeys.seatingProfiles.byEventAndChart(eventId ?? '', chart?.id ?? ''),
+    queryFn: () => seatingService.getSingerSeatingProfiles(eventId!, chart!.id),
+    enabled: !!eventId && !!chart?.id && !isOpenSeating,
+  });
+  const assignedSingerProfiles = useMemo(
+    () => seatingProfilesQuery.data ?? [],
+    [seatingProfilesQuery.data],
+  );
 
   // Build a profile lookup map from available profile records plus limited seating display summaries.
   const profilesById = useMemo(() => {

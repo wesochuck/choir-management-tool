@@ -23,12 +23,15 @@ import { Modal, Input } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { Button, Select, Spinner, Divider, CopyButton } from '../../components/ui';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 
 export default function SetListView() {
   const { timezone } = useChoirSettings();
   const { events, refresh } = useEvents();
   const [searchParams] = useSearchParams();
   const dialog = useDialog();
+  const queryClient = useQueryClient();
   const hasDefaultedRef = useRef(false);
   
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -46,7 +49,10 @@ export default function SetListView() {
   }, [selectedEvent, events]);
 
   const [items, setItems] = useState<SetListItem[]>([]);
-  const [library, setLibrary] = useState<MusicPiece[]>([]);
+  const { data: library = [], isLoading } = useQuery({
+    queryKey: queryKeys.musicLibrary.list(),
+    queryFn: () => musicLibraryService.getLibrary(),
+  });
 
   // Cumulative duration totals incorporating resolved library pieces
   const durationTotals = useMemo(() => {
@@ -59,7 +65,7 @@ export default function SetListView() {
   }, [items, library]);
 
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   
   // Library Piece Modal state
@@ -220,7 +226,7 @@ export default function SetListView() {
       setIsLibraryModalOpen(false);
       // Refresh library to reflect changes
       const updatedLib = await musicLibraryService.getLibrary();
-      setLibrary(updatedLib);
+      queryClient.setQueryData(queryKeys.musicLibrary.list(), updatedLib);
 
       if (pendingSetListAdd) {
         const newItem = createSetListItemFromMusicPiece(savedPiece);
@@ -240,7 +246,7 @@ export default function SetListView() {
       await musicLibraryService.deletePiece(libraryEditingPiece.id);
       setIsLibraryModalOpen(false);
       const updatedLib = await musicLibraryService.getLibrary();
-      setLibrary(updatedLib);
+      queryClient.setQueryData(queryKeys.musicLibrary.list(), updatedLib);
     } catch (err) {
       console.error(err);
       dialog.showMessage({
@@ -276,19 +282,17 @@ export default function SetListView() {
     }
   }, [events, selectedEventId, searchParams]);
 
-  useEffect(() => {
-    setIsLoading(true);
-    musicLibraryService.getLibrary()
-      .then(setLibrary)
-      .finally(() => setIsLoading(false));
-  }, []);
+  const { data: musicLibrarySettings } = useQuery({
+    queryKey: queryKeys.appSettings.musicLibrary,
+    queryFn: () => settingsService.getMusicLibrarySettings(),
+  });
 
   useEffect(() => {
-    settingsService.getMusicLibrarySettings().then(settings => {
-      setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
-      setConfiguredGenres(settings.genres || []);
-    }).catch(console.error);
-  }, []);
+    if (musicLibrarySettings) {
+      setCatalogLookupTemplate(musicLibrarySettings.catalogLookupUrlTemplate || '');
+      setConfiguredGenres(musicLibrarySettings.genres || []);
+    }
+  }, [musicLibrarySettings]);
 
   // Load event items when selectedEventId or events change
   useEffect(() => {
@@ -405,8 +409,7 @@ export default function SetListView() {
           if (!currentPerfs.includes(performanceIdToLink)) {
             const updatedPerfs = [...currentPerfs, performanceIdToLink];
             await musicLibraryService.updatePiece(piece.id, { performances: updatedPerfs });
-            const updatedLib = await musicLibraryService.getLibrary();
-            setLibrary(updatedLib);
+            await queryClient.invalidateQueries({ queryKey: queryKeys.musicLibrary.all });
           }
         }
       } catch (err) {

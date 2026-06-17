@@ -1,4 +1,6 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { ticketService } from '../../services/ticketService';
 import { donationService } from '../../services/donationService';
 import { formatInTimezone } from '../../lib/timezone';
@@ -20,52 +22,40 @@ interface PatronageHistoryItem {
 }
 
 export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps> = ({ profileId, isOpen, isActive }) => {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<PatronageHistoryItem[]>([]);
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey: queryKeys.purchases.byProfile(profileId),
+    queryFn: async () => {
+      const [purchases, donations] = await Promise.all([
+        ticketService.getPurchasesForProfile(profileId),
+        donationService.getDonations(pb.filter('profile = {:profileId}', { profileId }))
+      ]);
 
-  useEffect(() => {
-    if (isOpen && isActive) {
-      const fetchData = async () => {
-        setLoading(true);
-        try {
-          const [purchases, donations] = await Promise.all([
-            ticketService.getPurchasesForProfile(profileId),
-            donationService.getDonations(pb.filter('profile = {:profileId}', { profileId }))
-          ]);
+      const ticketItems: PatronageHistoryItem[] = purchases.map(p => ({
+        type: 'ticket',
+        id: p.id,
+        amountPaidCents: p.amountPaidCents,
+        date: p.created,
+        description: `Purchased ${p.quantity} ticket${p.quantity > 1 ? 's' : ''} for ${p.expand?.event?.title || 'Unknown Event'}`,
+        status: p.status
+      }));
 
-          const ticketItems: PatronageHistoryItem[] = purchases.map(p => ({
-            type: 'ticket',
-            id: p.id,
-            amountPaidCents: p.amountPaidCents,
-            date: p.created,
-            description: `Purchased ${p.quantity} ticket${p.quantity > 1 ? 's' : ''} for ${p.expand?.event?.title || 'Unknown Event'}`,
-            status: p.status
-          }));
+      const donationItems: PatronageHistoryItem[] = donations.map(d => ({
+        type: 'donation',
+        id: d.id,
+        amountPaidCents: d.amountPaidCents,
+        date: d.created,
+        description: `Donated $${(d.amountPaidCents / 100).toLocaleString()}`,
+        status: d.status
+      }));
 
-          const donationItems: PatronageHistoryItem[] = donations.map(d => ({
-            type: 'donation',
-            id: d.id,
-            amountPaidCents: d.amountPaidCents,
-            date: d.created,
-            description: `Donated $${(d.amountPaidCents / 100).toLocaleString()}`,
-            status: d.status
-          }));
+      const combined = [...ticketItems, ...donationItems].sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
 
-          const combined = [...ticketItems, ...donationItems].sort((a, b) => 
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
-
-          setItems(combined);
-        } catch (err) {
-          console.error('Failed to fetch patronage history:', err);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
-    }
-  }, [profileId, isOpen, isActive]);
+      return combined;
+    },
+    enabled: isOpen && isActive,
+  });
 
   const ltvCents = useMemo(() => {
     return items

@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import {
@@ -11,7 +13,6 @@ import { eventService } from '../../services/eventService';
 import {
   settingsService,
   getVoicePartsAndSections,
-  type SectionDef,
   type MusicGenreDef,
   type MusicLibrarySettings,
 } from '../../services/settingsService';
@@ -33,11 +34,9 @@ import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { Button, FormField, Input } from '../../components/ui';
 
 export default function MusicLibraryView() {
+  const queryClient = useQueryClient();
   const dialog = useDialog();
 
-  const [pieces, setPieces] = useState<MusicPiece[]>([]);
-  const [sections, setSections] = useState<SectionDef[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sectionFilters, setSectionFilters] = useState<string[]>([]);
   const [genreFilters, setGenreFilters] = useState<string[]>([]);
@@ -53,6 +52,53 @@ export default function MusicLibraryView() {
     genres: [],
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+
+  const libraryQuery = useQuery({
+    queryKey: queryKeys.musicLibrary.list(),
+    queryFn: () => musicLibraryService.getLibrary(),
+  });
+  const pieces = useMemo(() => libraryQuery.data ?? [], [libraryQuery.data]);
+
+  const settingsLibQuery = useQuery({
+    queryKey: queryKeys.appSettings.musicLibrary,
+    queryFn: () => settingsService.getMusicLibrarySettings(),
+  });
+
+  const voicePartsQuery = useQuery({
+    queryKey: queryKeys.voiceParts.list(),
+    queryFn: () => getVoicePartsAndSections(),
+  });
+  const sections = useMemo(
+    () => voicePartsQuery.data?.sections ?? [],
+    [voicePartsQuery.data],
+  );
+
+  const isLoading = libraryQuery.isLoading || settingsLibQuery.isLoading || voicePartsQuery.isLoading;
+
+  useEffect(() => {
+    if (!settingsLibQuery.data) return;
+    const settings = settingsLibQuery.data;
+    const sortedGenres = [...(settings.genres || [])].sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+    setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
+    setConfiguredGenres(sortedGenres);
+
+    const settingsState = {
+      catalogLookupUrlTemplate: settings.catalogLookupUrlTemplate || '',
+      genres: sortedGenres,
+    };
+    setMusicLibrarySettings(JSON.parse(JSON.stringify(settingsState)));
+    setInitialSettings(JSON.parse(JSON.stringify(settingsState)));
+  }, [settingsLibQuery.data]);
+
+  const invalidateLibrary = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.musicLibrary.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.musicLibrary }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceParts.all }),
+    ]);
+  };
 
   const isConfigDirty = useMemo(() => {
     if (!initialSettings) return false;
@@ -127,44 +173,6 @@ export default function MusicLibraryView() {
     document.body.removeChild(link);
   };
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [data, settings, sectionsData] = await Promise.all([
-        musicLibraryService.getLibrary(),
-        settingsService.getMusicLibrarySettings(),
-        getVoicePartsAndSections(),
-      ]);
-      const sortedGenres = [...(settings.genres || [])].sort((a, b) =>
-        a.label.localeCompare(b.label)
-      );
-      setPieces(data);
-      setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
-      setSections(sectionsData.sections);
-      setConfiguredGenres(sortedGenres);
-
-      const settingsState = {
-        catalogLookupUrlTemplate: settings.catalogLookupUrlTemplate || '',
-        genres: sortedGenres,
-      };
-      setMusicLibrarySettings(JSON.parse(JSON.stringify(settingsState)));
-      setInitialSettings(JSON.parse(JSON.stringify(settingsState)));
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'isAbort' in err && err.isAbort) return;
-      dialog.showMessage({
-        title: 'Error',
-        message: 'Could not load music library.',
-        variant: 'danger',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [dialog]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const handleConfigSave = async () => {
     setIsSavingConfig(true);
     try {
@@ -204,7 +212,7 @@ export default function MusicLibraryView() {
                   },
                 }))
               );
-              await loadData();
+              await invalidateLibrary();
               dialog.showToast('Successfully cleaned up deleted genres from all music pieces.');
             } catch (err: unknown) {
               console.error('Failed to clean up deleted genres from pieces:', err);
@@ -296,7 +304,7 @@ export default function MusicLibraryView() {
       }
 
       setIsModalOpen(false);
-      await loadData();
+      await invalidateLibrary();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -357,7 +365,7 @@ export default function MusicLibraryView() {
 
       setEditingPiece(null);
       dialog.showToast(`"${savedPiece.title}" saved. Ready to add another piece.`);
-      await loadData();
+      await invalidateLibrary();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -394,7 +402,7 @@ export default function MusicLibraryView() {
       }
 
       await musicLibraryService.deletePiece(id, { unlinkChildren });
-      await loadData();
+      await invalidateLibrary();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -502,7 +510,7 @@ export default function MusicLibraryView() {
       try {
         await musicLibraryService.bulkDelete(Array.from(selectedIds));
         setSelectedIds(new Set());
-        await loadData();
+        await invalidateLibrary();
       } catch {
         dialog.showMessage({
           title: 'Error',
@@ -855,7 +863,7 @@ export default function MusicLibraryView() {
         onSaveAndAddAnother={handleSaveAndAddAnother}
         onDelete={editingPiece ? () => handleDeletePiece(editingPiece.id) : undefined}
         catalogLookupTemplate={catalogLookupTemplate}
-        onRefresh={loadData}
+        onRefresh={invalidateLibrary}
         allPieces={pieces}
         allGenres={configuredGenres}
         onCreateGenre={handleCreateGenre}
@@ -865,7 +873,7 @@ export default function MusicLibraryView() {
       <MusicImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        onSuccess={loadData}
+        onSuccess={invalidateLibrary}
       />
 
       <FloatingAudioPlayer

@@ -1,32 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
-import { settingsService, type LandingPageSettings } from '../services/settingsService';
+import { settingsService } from '../services/settingsService';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { AppCard } from '../components/common/AppCard';
 import { PublicLayout } from '../components/common/PublicLayout';
+import { queryKeys } from '../lib/queryKeys';
 
 function PublicHistoryView() {
-  const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState<LandingPageSettings | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.publicLanding.settings,
+    queryFn: () => settingsService.getLandingSettings(),
+  });
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const s = await settingsService.getLandingSettings();
-        setSettings(s);
-      } catch (err: unknown) {
-        console.error('Failed to load history page data', err);
-        setError('Unable to load page content. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  if (loading) {
+  if (settingsQuery.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner />
@@ -34,13 +21,15 @@ function PublicHistoryView() {
     );
   }
 
-  if (error || !settings) {
+  if (settingsQuery.isError || !settingsQuery.data) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-text-muted">{error || 'Unable to load page.'}</p>
+        <p className="text-text-muted">{'Unable to load page content. Please try again later.'}</p>
       </div>
     );
   }
+
+  const settings = settingsQuery.data;
 
   return (
     <PublicLayout>

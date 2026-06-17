@@ -1,21 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { Button, Select, Input, Textarea } from '../components/ui';
 import { auditionService, type Audition } from '../services/auditionService';
-import { DEFAULT_AUDITION_SETTINGS, settingsService, type AuditionSettings } from '../services/settingsService';
-import { eventService, type Event } from '../services/eventService';
+import { DEFAULT_AUDITION_SETTINGS, settingsService } from '../services/settingsService';
+import { eventService } from '../services/eventService';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { useVoiceParts } from '../hooks/useVoiceParts';
 import { fetchChoirTimezone, formatInTimezone } from '../lib/timezone';
+import { queryKeys } from '../lib/queryKeys';
 
 export default function PublicAuditionView() {
   useDocumentTitle('Auditions');
-  const [settings, setSettings] = useState<AuditionSettings>(DEFAULT_AUDITION_SETTINGS);
-  const [timezone, setTimezone] = useState('America/New_York');
-  const [homepageUrl, setHomepageUrl] = useState('');
-  const [targetPerformance, setTargetPerformance] = useState<Event | null>(null);
-  const [rehearsals, setRehearsals] = useState<Event[]>([]);
   const [isScheduleExpanded, setIsScheduleExpanded] = useState(window.innerWidth > 640);
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
@@ -23,43 +20,39 @@ export default function PublicAuditionView() {
   const [voicePart, setVoicePart] = useState('');
   const [experience, setExperience] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const { labels: voicePartLabels } = useVoiceParts();
  
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const [loaded, tz, loadedHomepage] = await Promise.all([
-          settingsService.getAuditionSettings(),
-          fetchChoirTimezone().catch(() => 'America/New_York'),
-          settingsService.getHomepageUrl().catch(() => ''),
-        ]);
-        setSettings(loaded);
-        setTimezone(tz);
-        setHomepageUrl(loadedHomepage);
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.auditions.settings,
+    queryFn: async () => {
+      const [loaded, tz, loadedHomepage] = await Promise.all([
+        settingsService.getAuditionSettings(),
+        fetchChoirTimezone().catch(() => 'America/New_York'),
+        settingsService.getHomepageUrl().catch(() => ''),
+      ]);
+      return { settings: loaded, timezone: tz, homepageUrl: loadedHomepage };
+    },
+  });
 
-        if (loaded.defaultPerformanceId) {
-          try {
-            const performance = await eventService.getPublicEventById(loaded.defaultPerformanceId);
-            setTargetPerformance(performance);
+  const performanceId = settingsQuery.data?.settings.defaultPerformanceId;
+  const performanceQuery = useQuery({
+    queryKey: performanceId ? queryKeys.auditions.performance(performanceId) : queryKeys.auditions.list,
+    queryFn: async () => {
+      const performance = await eventService.getPublicEventById(performanceId!);
+      const rehearsalList = await eventService.getPublicRehearsalsForPerformance(performance.id);
+      return { performance, rehearsals: rehearsalList };
+    },
+    enabled: !!performanceId,
+  });
 
-            const rehearsalList = await eventService.getPublicRehearsalsForPerformance(performance.id);
-            setRehearsals(rehearsalList);
-          } catch (e) {
-            console.error('Failed to load performance details', e);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load settings', e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    init();
-  }, []);
+  const settings = settingsQuery.data?.settings ?? DEFAULT_AUDITION_SETTINGS;
+  const timezone = settingsQuery.data?.timezone ?? 'America/New_York';
+  const homepageUrl = settingsQuery.data?.homepageUrl ?? '';
+  const targetPerformance = performanceQuery.data?.performance ?? null;
+  const rehearsals = performanceQuery.data?.rehearsals ?? [];
+  const isLoading = settingsQuery.isLoading;
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

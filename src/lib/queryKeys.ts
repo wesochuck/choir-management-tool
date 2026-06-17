@@ -1,4 +1,14 @@
 export const queryKeys = {
+  choirSettings: {
+    all: ['choirSettings'] as const,
+  },
+  appSettings: {
+    all: ['appSettings'] as const,
+    landing: ['appSettings', 'landing'] as const,
+    roster: ['appSettings', 'roster'] as const,
+    musicLibrary: ['appSettings', 'musicLibrary'] as const,
+    heroImage: ['appSettings', 'heroImage'] as const,
+  },
   venues: {
     all: ['venues'] as const,
     list: () => [...queryKeys.venues.all, 'list'] as const,
@@ -20,10 +30,15 @@ export const queryKeys = {
   profiles: {
     all: ['profiles'] as const,
     list: () => [...queryKeys.profiles.all, 'list'] as const,
+    active: () => [...queryKeys.profiles.all, 'active'] as const,
   },
   myEvents: {
     all: ['myEvents'] as const,
     list: () => [...queryKeys.myEvents.all, 'list'] as const,
+  },
+  myProfile: {
+    all: ['myProfile'] as const,
+    calendarFeed: () => [...queryKeys.myProfile.all, 'calendarFeed'] as const,
   },
   singerRsvps: {
     all: ['singerRsvps'] as const,
@@ -32,6 +47,10 @@ export const queryKeys = {
   resources: {
     all: ['resources'] as const,
     list: () => [...queryKeys.resources.all, 'list'] as const,
+  },
+  announcements: {
+    all: ['announcements'] as const,
+    forProfile: (profileId: string) => [...queryKeys.announcements.all, profileId] as const,
   },
   ticketing: {
     all: ['ticketing'] as const,
@@ -47,6 +66,7 @@ export const queryKeys = {
     scanContext: (sessionId: string, purchaseId: string) => [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,
     publicBundle: (bundleId: string) => [...queryKeys.tickets.all, 'publicBundle', bundleId] as const,
     publicBundles: ['tickets', 'publicBundles'] as const,
+    verify: (sessionId: string) => [...queryKeys.tickets.all, 'verify', sessionId] as const,
   },
   seating: {
     all: ['seating'] as const,
@@ -62,6 +82,7 @@ export const queryKeys = {
   polls: {
     all: ['polls'] as const,
     list: ['polls', 'list'] as const,
+    active: ['polls', 'active'] as const,
     responses: ['polls', 'responses'] as const,
     settings: ['polls', 'settings'] as const,
     messages: ['polls', 'messages'] as const,
@@ -70,19 +91,36 @@ export const queryKeys = {
     all: ['auditions'] as const,
     list: ['auditions', 'list'] as const,
     settings: ['auditions', 'settings'] as const,
+    performance: (eventId: string) => [...queryKeys.auditions.all, 'performance', eventId] as const,
   },
   users: {
     all: ['users'] as const,
     admins: ['users', 'admins'] as const,
   },
+  seatingProfiles: {
+    all: ['seatingProfiles'] as const,
+    byEventAndChart: (eventId: string, chartId: string) =>
+      [...queryKeys.seatingProfiles.all, eventId, chartId] as const,
+  },
+  musicLibrary: {
+    all: ['musicLibrary'] as const,
+    list: () => [...queryKeys.musicLibrary.all, 'list'] as const,
+  },
+  playlist: {
+    all: ['playlist'] as const,
+    byToken: (token: string) => [...queryKeys.playlist.all, token] as const,
+    byEventId: (eventId: string) => [...queryKeys.playlist.all, 'event', eventId] as const,
+  },
   donations: {
     all: ['donations'] as const,
     paid: ['donations', 'paid'] as const,
     settings: ['donations', 'settings'] as const,
+    verify: (sessionId: string) => [...queryKeys.donations.all, 'verify', sessionId] as const,
   },
   purchases: {
     all: ['purchases'] as const,
     list: ['purchases', 'list'] as const,
+    byProfile: (profileId: string) => [...queryKeys.purchases.all, 'profile', profileId] as const,
   },
   dashboard: {
     all: ['dashboard'] as const,
@@ -93,5 +131,33 @@ export const queryKeys = {
   publicLanding: {
     all: ['publicLanding'] as const,
     settings: ['publicLanding', 'settings'] as const,
+  },
+  publicRsvp: {
+    all: ['publicRsvp'] as const,
+    details: (token: string) => [...queryKeys.publicRsvp.all, 'details', token] as const,
+    timezone: () => [...queryKeys.publicRsvp.all, 'timezone'] as const,
+  },
+  publicPoll: {
+    all: ['publicPoll'] as const,
+    details: (token: string) => [...queryKeys.publicPoll.all, 'details', token] as const,
+    timezone: () => [...queryKeys.publicPoll.all, 'timezone'] as const,
+  },
+  attendance: {
+    all: ['attendance'] as const,
+    missCounts: (eventId: string) => [...queryKeys.attendance.all, 'missCounts', eventId] as const,
+  },
+  queueWebhookSettings: {
+    all: ['queueWebhookSettings'] as const,
+  },
+  communications: {
+    all: ['communications'] as const,
+    history: () => [...queryKeys.communications.all, 'history'] as const,
+    historyPaginated: (page: number, query: string) => [...queryKeys.communications.all, 'history', page, query] as const,
+    drafts: () => [...queryKeys.communications.all, 'drafts'] as const,
+    templates: () => [...queryKeys.communications.all, 'templates'] as const,
+    settings: () => [...queryKeys.communications.all, 'settings'] as const,
+    config: () => [...queryKeys.communications.all, 'config'] as const,
+    choirName: () => [...queryKeys.communications.all, 'choirName'] as const,
+    automatedTasks: () => [...queryKeys.communications.all, 'automatedTasks'] as const,
   },
 } as const;

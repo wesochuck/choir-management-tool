@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import type { Event, BulkRehearsalConfig } from '../../services/eventService';
 import type { Venue } from '../../services/venueService';
 import { useDialog } from '../../contexts/DialogContext';
 import { Modal, Select, Button, Input, Textarea } from '../ui';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
+import { queryKeys } from '../../lib/queryKeys';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { utcToZonedInputValue, zonedInputValueToUtc } from '../../lib/timezone';
 
@@ -103,27 +105,27 @@ export const EventModal: React.FC<EventModalProps> = ({
   const [bulkVenue, setBulkVenue] = useState('');
 
   const [isSubmitting, setIsLoading] = useState(false);
-  const [isAuditionTarget, setIsAuditionTarget] = useState(false);
   const titleInputRef = React.useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<'details' | 'tickets'>('details');
   const [advancePriceInput, setAdvancePriceInput] = useState('');
   const [dayOfPriceInput, setDayOfPriceInput] = useState('');
-  const [hasPurchases, setHasPurchases] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && initialData?.id) {
-      pb.collection('ticketPurchases').getFirstListItem(
-        pb.filter('event = {:eventId} && status = "paid"', { eventId: initialData.id })
-      ).then(() => {
-        setHasPurchases(true);
-      }).catch(() => {
-        setHasPurchases(false);
-      });
-    } else {
-      setHasPurchases(false);
-    }
-  }, [isOpen, initialData]);
+  const { data: hasPurchases = false } = useQuery({
+    queryKey: [...queryKeys.tickets.all, 'hasPurchases', initialData?.id],
+    queryFn: async () => {
+      if (!initialData?.id) return false;
+      try {
+        await pb.collection('ticketPurchases').getFirstListItem(
+          pb.filter('event = {:eventId} && status = "paid"', { eventId: initialData.id })
+        );
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    enabled: isOpen && !!initialData?.id,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -227,15 +229,14 @@ export const EventModal: React.FC<EventModalProps> = ({
     }
   }, [formData.date, formData.durationMinutes]);
 
-  useEffect(() => {
-    if (isOpen && initialData?.type === 'Performance') {
-      settingsService.getAuditionSettings().then(settings => {
-        setIsAuditionTarget(settings.enabled && settings.defaultPerformanceId === initialData.id);
-      });
-    } else {
-      setIsAuditionTarget(false);
-    }
-  }, [initialData, isOpen]);
+  const enableAuditionCheck = isOpen && initialData?.type === 'Performance';
+  const { data: auditionSettings } = useQuery({
+    queryKey: queryKeys.auditions.settings,
+    queryFn: () => settingsService.getAuditionSettings(),
+    enabled: enableAuditionCheck,
+  });
+
+  const isAuditionTarget = enableAuditionCheck && auditionSettings?.enabled && auditionSettings?.defaultPerformanceId === initialData?.id;
 
   const handleCreateVenueInline = async () => {
     if (!newVenueName.trim() || !newVenueRows.trim()) return;

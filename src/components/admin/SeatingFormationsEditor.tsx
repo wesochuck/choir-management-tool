@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -42,8 +44,8 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
   return (
     <div
       ref={setNodeRef}
-      style={style}
       // @allow-inline-style - dynamic dnd-kit transform, transition, color, and row styling
+      style={style}
       className="flex cursor-grab items-center gap-1.5 rounded-sm text-[0.85rem] font-semibold shadow-sm select-none"
     >
       {/* drag handle */}
@@ -338,32 +340,38 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
   const [expandedFormationId, setExpandedFormationId] = useState<string | null>(null);
   const [allSections, setAllSections] = useState<SectionDef[]>([]);
   const [allVoiceParts, setAllVoiceParts] = useState<VoicePartDef[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  const loadTemplates = useCallback(async () => {
-    setIsLoading(true);
-    setMessage('');
-    try {
-      const [seating, voiceData] = await Promise.all([
-        settingsService.getSeatingSettings(),
-        getVoicePartsAndSections(),
-      ]);
-      setCustomSeatingSettings(JSON.parse(JSON.stringify(seating)));
-      setInitialSeatingSettings(JSON.parse(JSON.stringify(seating)));
-      setAllSections(voiceData.sections);
-      setAllVoiceParts(voiceData.voiceParts);
-    } catch {
-      setMessage('Could not load seating templates.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const seatingQuery = useQuery({
+    queryKey: queryKeys.seating.settings,
+    queryFn: () => settingsService.getSeatingSettings(),
+  });
+
+  const voicePartsQuery = useQuery({
+    queryKey: queryKeys.voiceParts.list(),
+    queryFn: () => getVoicePartsAndSections(),
+  });
 
   useEffect(() => {
-    void loadTemplates();
-  }, [loadTemplates]);
+    if (seatingQuery.data && !initialSeatingSettings) {
+      setCustomSeatingSettings(JSON.parse(JSON.stringify(seatingQuery.data)));
+      setInitialSeatingSettings(JSON.parse(JSON.stringify(seatingQuery.data)));
+    }
+  }, [seatingQuery.data, initialSeatingSettings]);
+
+  useEffect(() => {
+    if (voicePartsQuery.data) {
+      setAllSections(voicePartsQuery.data.sections);
+      setAllVoiceParts(voicePartsQuery.data.voiceParts);
+    }
+  }, [voicePartsQuery.data]);
+
+  useEffect(() => {
+    if (seatingQuery.error) {
+      setMessage('Could not load seating templates.');
+    }
+  }, [seatingQuery.error]);
 
   const isDirty = useMemo(() => {
     if (!initialSeatingSettings) return false;
@@ -443,7 +451,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
     }
   };
 
-  if (isLoading) {
+  if (seatingQuery.isLoading) {
     return <div className="p-8">Loading seating templates...</div>;
   }
 

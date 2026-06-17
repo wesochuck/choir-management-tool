@@ -1,46 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { pb } from '../lib/pocketbase';
-import { settingsService, type LandingPageSettings } from '../services/settingsService';
-import { eventService, type Event } from '../services/eventService';
+import { settingsService } from '../services/settingsService';
+import { eventService } from '../services/eventService';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { AppCard } from '../components/common/AppCard';
 import { formatInTimezone } from '../lib/timezone';
 import { PublicLayout } from '../components/common/PublicLayout';
+import { queryKeys } from '../lib/queryKeys';
 
 function PublicLandingView() {
-  const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState<LandingPageSettings | null>(null);
-  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
-  const [performances, setPerformances] = useState<Event[]>([]);
-  const [timezone, setTimezone] = useState<string>('America/New_York');
-  const [error, setError] = useState<string | null>(null);
+  const landingQuery = useQuery({
+    queryKey: queryKeys.publicLanding.settings,
+    queryFn: async () => {
+      const [s, imgUrl, tz] = await Promise.all([
+        settingsService.getLandingSettings(),
+        settingsService.getHeroImageUrl(),
+        settingsService.getTimezone(),
+      ]);
+      return { settings: s, heroImageUrl: imgUrl, timezone: tz };
+    },
+  });
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [s, imgUrl, perfs, tz] = await Promise.all([
-          settingsService.getLandingSettings(),
-          settingsService.getHeroImageUrl(),
-          eventService.getPastPerformances(),
-          settingsService.getTimezone(),
-        ]);
-        setSettings(s);
-        setHeroImageUrl(imgUrl);
-        setPerformances(perfs);
-        setTimezone(tz);
-      } catch (err: unknown) {
-        console.error('Failed to load landing page data', err);
-        setError('Unable to load page content. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+  const performancesQuery = useQuery({
+    queryKey: queryKeys.events.publicList,
+    queryFn: () => eventService.getPastPerformances(),
+  });
 
-  if (loading) {
+  const isLoading = landingQuery.isLoading || performancesQuery.isLoading;
+  const landingData = landingQuery.data;
+  const performanceList = performancesQuery.data ?? [];
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Spinner />
@@ -48,13 +40,15 @@ function PublicLandingView() {
     );
   }
 
-  if (error || !settings) {
+  if (landingQuery.isError || !landingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-text-muted">{error || 'Unable to load page.'}</p>
+        <p className="text-text-muted">{'Unable to load page content. Please try again later.'}</p>
       </div>
     );
   }
+
+  const { settings, heroImageUrl, timezone } = landingData;
 
   return (
     <PublicLayout>
@@ -89,11 +83,11 @@ function PublicLandingView() {
         </section>
       )}
 
-      {performances.length > 0 && (
+      {performanceList.length > 0 && (
         <section className="max-w-5xl mx-auto px-6 py-16">
           <h2 className="text-2xl font-bold text-text mb-6">Past Performances</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {performances.map((perf) => {
+            {performanceList.map((perf) => {
               const venueName = perf.expand?.venue && typeof perf.expand.venue === 'object' && 'name' in perf.expand.venue
                 ? (perf.expand.venue as { name: string }).name
                 : '';

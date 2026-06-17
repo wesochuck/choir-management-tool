@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
 import { communicationService } from '../../../services/communicationService';
 import type { Event } from '../../../services/eventService';
 import type { CommunicationSettings } from '../../../services/settingsService';
@@ -24,27 +26,28 @@ export function useAutomatedCommunicationTasks({
     'Communications status checks are rate-limited; retrying automatically...',
   );
 
+  const eventIds = useMemo(() => events.map((e) => e.id), [events]);
+
+  const automatedStatusQuery = useQuery({
+    queryKey: [...queryKeys.communications.automatedTasks(), eventIds],
+    queryFn: () =>
+      communicationService.getAutomatedTaskStatuses(eventIds, {
+        onRetry: onStatusRateLimitRetry,
+      }),
+    enabled: events.length > 0,
+  });
+
   useEffect(() => {
-    let isCurrent = true;
-    if (events.length === 0) return;
+    if (events.length > 0) {
+      resetStatusRateLimitToast();
+    }
+  }, [eventIds, events.length, resetStatusRateLimitToast]);
 
-    resetStatusRateLimitToast();
-
-    const checkStatuses = async () => {
-      const cache = await communicationService.getAutomatedTaskStatuses(
-        events.map((event) => event.id),
-        { onRetry: onStatusRateLimitRetry },
-      );
-
-      if (isCurrent) setAutomatedTaskStatus(cache);
-    };
-
-    void checkStatuses();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [events, onStatusRateLimitRetry, resetStatusRateLimitToast]);
+  useEffect(() => {
+    if (automatedStatusQuery.data) {
+      setAutomatedTaskStatus(automatedStatusQuery.data);
+    }
+  }, [automatedStatusQuery.data]);
 
   const { upcomingTasks, pastTasks } = useMemo(() => {
     const upcoming: AutomatedTask[] = [];

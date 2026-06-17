@@ -1,124 +1,105 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { useMyEvents } from '../../hooks/useMyEvents';
 import { EventCard } from '../../components/singer/EventCard';
 import PublicLogo from '../../components/common/PublicLogo';
 import { pb } from '../../lib/pocketbase';
 import { PageLayout } from '../../components/common/PageLayout';
 import { Link } from 'react-router-dom';
-import { pollService, type SingerPoll } from '../../services/pollService';
+import { pollService } from '../../services/pollService';
 import { AppCard } from '../../components/common/AppCard';
 import { communicationService, type MessageRecord } from '../../services/communicationService';
 import { sanitizeHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
-import { resourceService, type SingerResource } from '../../services/resourceService';
+import { resourceService } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
 import { Button, Modal } from '../../components/ui';
 
 
 export default function DashboardView() {
+  const queryClient = useQueryClient();
   const dialog = useDialog();
   const { events, myRosters, myProfile, isLoading, error, updateRSVP } = useMyEvents();
-  const [activePolls, setActivePolls] = useState<SingerPoll[]>([]);
-  const [announcements, setAnnouncements] = useState<MessageRecord[]>([]);
-  const [isAnnouncementsLoading, setIsAnnouncementsLoading] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<MessageRecord | null>(null);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
-  const [resources, setResources] = useState<SingerResource[]>([]);
-  const [isResourcesLoading, setIsResourcesLoading] = useState(false);
   const [submittingRsvpStatus, setSubmittingRsvpStatus] = useState<'Yes' | 'No' | null>(null);
-  const [maxRehearsalMisses, setMaxRehearsalMisses] = useState(3);
 
-  useEffect(() => {
-    if (myProfile?.id) {
-      const now = new Date();
-      pollService.getActivePollsForSinger(myProfile.id)
-        .then(list => {
-          // Client-side filter for active polls
-          const filtered = list.filter(poll => {
-            // Filter by archiveAt expiration
-            const isExpired = poll.archiveAt ? new Date(poll.archiveAt.replace(" ", "T")) < now : false;
-            if (isExpired) return false;
+  const pollsQuery = useQuery({
+    queryKey: queryKeys.polls.active,
+    queryFn: () => pollService.getActivePollsForSinger(myProfile!.id),
+    enabled: !!myProfile?.id,
+  });
 
-            if (!poll.eventId) return true;
-            const event = events.find(e => e.id === poll.eventId);
-            if (!event) return true;
-            return new Date(event.date) > now;
-          });
-          setActivePolls(filtered);
-        });
-    }
-  }, [myProfile?.id, events]);
+  const activePolls = useMemo(() => {
+    const now = new Date();
+    return (pollsQuery.data ?? []).filter(poll => {
+      const isExpired = poll.archiveAt ? new Date(poll.archiveAt.replace(' ', 'T')) < now : false;
+      if (isExpired) return false;
+      if (!poll.eventId) return true;
+      const event = events.find(e => e.id === poll.eventId);
+      if (!event) return true;
+      return new Date(event.date) > now;
+    });
+  }, [pollsQuery.data, events]);
 
-  useEffect(() => {
-    if (myProfile?.id) {
-      setIsAnnouncementsLoading(true);
-      communicationService.getMessages()
-        .then(async list => {
-          // Client-side filter to only show messages where the user is a recipient
-          const filtered = list.filter(msg => 
-            msg.recipients?.some(r => r.id === myProfile.id)
-          );
-
-          const recent = filtered.slice(0, 5);
-          const resolved = await Promise.all(
-            recent.map(async (msg) => {
-              let content = msg.content;
-              const eventId = msg.filters?.eventId as string | undefined;
-
-              try {
-                content = await communicationService.resolveSingerPlaceholders(content, eventId);
-              } catch (err) {
-                console.error('Failed to resolve placeholders for message', msg.id, err);
-              }
-
-              return {
-                ...msg,
-                content,
-              };
-            })
-          );
-
-          setAnnouncements(resolved);
+  const announcementsQuery = useQuery({
+    queryKey: queryKeys.announcements.forProfile(myProfile?.id ?? ''),
+    queryFn: async () => {
+      const list = await communicationService.getMessages();
+      const filtered = list.filter(msg =>
+        msg.recipients?.some(r => r.id === myProfile!.id)
+      );
+      const recent = filtered.slice(0, 5);
+      const resolved = await Promise.all(
+        recent.map(async (msg) => {
+          let content = msg.content;
+          const eventId = msg.filters?.eventId as string | undefined;
+          try {
+            content = await communicationService.resolveSingerPlaceholders(content, eventId);
+          } catch (err) {
+            console.error('Failed to resolve placeholders for message', msg.id, err);
+          }
+          return { ...msg, content };
         })
-        .catch(err => console.error('Failed to load announcements', err))
-        .finally(() => setIsAnnouncementsLoading(false));
-    }
-  }, [myProfile?.id]);
+      );
+      return resolved;
+    },
+    enabled: !!myProfile?.id,
+  });
+  const announcements = announcementsQuery.data ?? [];
+
+  const resourcesQuery = useQuery({
+    queryKey: queryKeys.resources.list(),
+    queryFn: () => resourceService.getResources(),
+  });
+  const resources = resourcesQuery.data ?? [];
+
+  const rosterSettingsQuery = useQuery({
+    queryKey: queryKeys.appSettings.roster,
+    queryFn: () => settingsService.getRosterSettings(),
+  });
+  const maxRehearsalMisses = rosterSettingsQuery.data?.maxRehearsalMisses ?? 3;
 
   useEffect(() => {
     setCurrentTime(Date.now());
   }, [events]);
 
-  useEffect(() => {
-    setIsResourcesLoading(true);
-    resourceService.getResources()
-      .then(list => setResources(list))
-      .catch(err => console.error('Failed to load resources', err))
-      .finally(() => setIsResourcesLoading(false));
+  const pollMutation = useMutation({
+    mutationFn: ({ pollId, profileId, status }: { pollId: string; profileId: string; status: 'Yes' | 'No' }) =>
+      pollService.submitResponseLoggedIn(pollId, profileId, status),
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Failed to submit poll response';
+      dialog.showToast(message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.polls.active });
+    },
+  });
 
-    settingsService.getRosterSettings()
-      .then(settings => {
-        if (settings?.maxRehearsalMisses !== undefined) {
-          setMaxRehearsalMisses(settings.maxRehearsalMisses);
-        }
-      })
-      .catch(err => console.error('Failed to load roster settings:', err));
-  }, []);
-
-  const handlePollResponse = async (pollId: string, status: 'Yes' | 'No') => {
+  const handlePollResponse = (pollId: string, status: 'Yes' | 'No') => {
     if (!myProfile?.id) return;
-    
-    // Optimistic update
-    setActivePolls(prev => prev.map(p => p.id === pollId ? { ...p, status } : p));
-    
-    try {
-      await pollService.submitResponseLoggedIn(pollId, myProfile.id, status);
-    } catch (err) {
-      console.error('Failed to submit poll response', err);
-      // Revert on error
-      const list = await pollService.getActivePollsForSinger(myProfile.id);
-      setActivePolls(list);
-    }
+    pollMutation.mutate({ pollId, profileId: myProfile.id, status });
   };
 
   const handleUpdateRSVP = async (eventId: string, rsvp: 'Yes' | 'No') => {
@@ -338,7 +319,7 @@ export default function DashboardView() {
 
             {/* Recent Announcements Widget */}
             <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="✉️ Bulletins">
-              {isAnnouncementsLoading ? (
+              {announcementsQuery.isLoading ? (
                 <div className="text-muted p-4 text-center">Loading bulletins...</div>
               ) : announcements.length > 0 ? (
                 <div className="flex flex-col gap-4">
@@ -368,7 +349,7 @@ export default function DashboardView() {
 
             {/* Resources Widget */}
             <AppCard className="rounded-lg bg-surface/80 p-6 shadow-sm backdrop-blur-sm" title="📂 Resources">
-              {isResourcesLoading ? (
+              {resourcesQuery.isLoading ? (
                 <div className="text-muted p-4 text-center">Loading resources...</div>
               ) : resources.length > 0 ? (
                 <div className="flex flex-col gap-2">

@@ -1,11 +1,25 @@
 // @vitest-environment jsdom
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useAttendance } from '../src/hooks/useAttendance.ts';
 import { rosterService, type EventRoster } from '../src/services/rosterService.ts';
 import { profileService, type Profile } from '../src/services/profileService.ts';
 import { eventService, type Event } from '../src/services/eventService.ts';
+
+function createWrapper() {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  };
+}
 
 test('useAttendance - resolves RSVP correctly for rehearsals and performances', async () => {
   const originalGetEvents = eventService.getEvents;
@@ -87,7 +101,7 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
     ];
     parentRosters = eventRosters;
 
-    const { result: res1 } = renderHook(() => useAttendance('perf_1'));
+    const { result: res1 } = renderHook(() => useAttendance('perf_1'), { wrapper: createWrapper() });
 
     await waitFor(() => {
       if (res1.current.isLoading) throw new Error('Still loading');
@@ -117,7 +131,7 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
       }
     ];
 
-    const { result: res2 } = renderHook(() => useAttendance('reh_1'));
+    const { result: res2 } = renderHook(() => useAttendance('reh_1'), { wrapper: createWrapper() });
 
     await waitFor(() => {
       if (res2.current.isLoading) throw new Error('Still loading');
@@ -161,7 +175,7 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
       }
     ];
 
-    const { result: res3 } = renderHook(() => useAttendance('reh_1'));
+    const { result: res3 } = renderHook(() => useAttendance('reh_1'), { wrapper: createWrapper() });
 
     await waitFor(() => {
       if (res3.current.isLoading) throw new Error('Still loading');
@@ -190,7 +204,7 @@ test('useAttendance - resolves RSVP correctly for rehearsals and performances', 
       }
     ];
 
-    const { result: res4 } = renderHook(() => useAttendance('reh_1'));
+    const { result: res4 } = renderHook(() => useAttendance('reh_1'), { wrapper: createWrapper() });
 
     await waitFor(() => {
       if (res4.current.isLoading) throw new Error('Still loading');

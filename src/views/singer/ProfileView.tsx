@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { profileService, type Profile, type CalendarFeedUrls } from '../../services/profileService';
 import { PhotoUploader } from '../../components/common/PhotoUploader';
@@ -9,10 +11,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
 
 export default function ProfileView() {
+  const queryClient = useQueryClient();
   const { user, updatePreferences } = useAuth();
   const dialog = useDialog();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -22,18 +23,78 @@ export default function ProfileView() {
   const [calendarFeedUrls, setCalendarFeedUrls] = useState<CalendarFeedUrls | null>(null);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
 
-  const loadCalendarFeed = useCallback(async (profileId: string) => {
-    if (!profileId) return;
-    setIsCalendarLoading(true);
-    try {
-      const urls = await profileService.getCalendarFeedUrls();
-      setCalendarFeedUrls(urls);
-    } catch {
-      // ignore silently
-    } finally {
-      setIsCalendarLoading(false);
+  // Editable fields
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [receiveAttendanceReports, setReceiveAttendanceReports] = useState(true);
+  const [receiveRsvpDeclineNotices, setReceiveRsvpDeclineNotices] = useState(false);
+  const [receiveAdminNotifications, setReceiveAdminNotifications] = useState(true);
+
+  const profileQuery = useQuery({
+    queryKey: queryKeys.myProfile.all,
+    queryFn: async () => {
+      const currentUser = pb.authStore.record;
+      if (currentUser?.role === 'admin') {
+        let p: Profile | null = null;
+        try {
+          p = await profileService.getMyProfile();
+        } catch {
+          // Admins don't always have a row in profiles
+        }
+        if (p) return p;
+        return {
+          id: '',
+          user: currentUser.id,
+          name: currentUser.name || '',
+          phone: '',
+          photo: '',
+          voicePart: 'Administrator',
+          globalStatus: 'Active',
+          notes: '',
+          collectionId: '',
+          collectionName: 'profiles',
+          created: '',
+          updated: '',
+        } as Profile;
+      }
+      return await profileService.getMyProfile();
+    },
+  });
+
+  const profile = profileQuery.data ?? null;
+  const isLoading = profileQuery.isLoading;
+
+  // Sync form state when profile data loads
+  useEffect(() => {
+    if (!profileQuery.data) return;
+    const p = profileQuery.data;
+    const currentUser = pb.authStore.record;
+    if (currentUser?.role === 'admin') {
+      setName(p.name || currentUser.name || '');
+      setPhone(p.phone || '');
+      setReceiveAttendanceReports(p.receiveAttendanceReports !== false);
+      setReceiveRsvpDeclineNotices(Boolean(p.receiveRsvpDeclineNotices));
+      setReceiveAdminNotifications(p.receiveAdminNotifications !== false);
+      setEmail(currentUser.email || '');
+    } else {
+      setName(p.name || '');
+      setPhone(p.phone || '');
+      setEmail(pb.authStore.record?.email || '');
     }
-  }, []);
+  }, [profileQuery.data]);
+
+  const calendarQuery = useQuery({
+    queryKey: queryKeys.myProfile.calendarFeed(),
+    queryFn: () => profileService.getCalendarFeedUrls(),
+    enabled: !!profileQuery.data?.id,
+  });
+
+  useEffect(() => {
+    if (calendarQuery.data) {
+      setCalendarFeedUrls(calendarQuery.data);
+    }
+  }, [calendarQuery.data]);
 
   const handleResetLink = async () => {
     const confirmReset = await dialog.confirm({
@@ -75,90 +136,13 @@ export default function ProfileView() {
     }
   };
 
-  // Editable fields
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [receiveAttendanceReports, setReceiveAttendanceReports] = useState(true);
-  const [receiveRsvpDeclineNotices, setReceiveRsvpDeclineNotices] = useState(false);
-  const [receiveAdminNotifications, setReceiveAdminNotifications] = useState(true);
-
-  const loadProfile = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
+  const saveMutation = useMutation({
+    mutationFn: async (profileId: string) => {
       const currentUser = pb.authStore.record;
       if (currentUser?.role === 'admin') {
-        let p: Profile | null = null;
-        try {
-          p = await profileService.getMyProfile();
-        } catch {
-          // Admins don't always have a row in profiles
-        }
-
-        if (p) {
-          setProfile(p);
-          setName(p.name || currentUser.name || '');
-          setPhone(p.phone || '');
-           setReceiveAttendanceReports(p.receiveAttendanceReports !== false);
-          setReceiveRsvpDeclineNotices(Boolean(p.receiveRsvpDeclineNotices));
-          setReceiveAdminNotifications(p.receiveAdminNotifications !== false);
-          loadCalendarFeed(p.id);
-        } else {
-          setProfile({
-            id: '',
-            user: currentUser.id,
-            name: currentUser.name || '',
-            phone: '',
-            photo: '',
-            voicePart: 'Administrator',
-            globalStatus: 'Active',
-            notes: '',
-            collectionId: '',
-            collectionName: 'profiles',
-            created: '',
-            updated: ''
-          });
-          setName(currentUser.name || '');
-          setPhone('');
-           setReceiveRsvpDeclineNotices(false);
-          setReceiveAdminNotifications(true);
-        }
-        setEmail(currentUser.email || '');
-      } else {
-        const p = await profileService.getMyProfile();
-        setProfile(p);
-        setName(p.name || '');
-        setPhone(p.phone || '');
-        setEmail(pb.authStore.record?.email || '');
-        loadCalendarFeed(p.id);
-      }
-    } catch {
-      setError('Could not load your profile.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [loadCalendarFeed]);
-
-  useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!profile) return;
-    setIsSaving(true);
-    setError(null);
-    setSuccess(false);
-    try {
-      const currentUser = pb.authStore.record;
-      if (currentUser?.role === 'admin') {
-        // Update user record directly
         await pb.collection('users').update(currentUser.id, { name, email });
-        
-        // If there's an associated profile, update it; otherwise create one.
-         if (profile.id) {
-          await pb.collection('profiles').update(profile.id, { name, receiveAttendanceReports, receiveRsvpDeclineNotices, receiveAdminNotifications });
+        if (profileId) {
+          await pb.collection('profiles').update(profileId, { name, receiveAttendanceReports, receiveRsvpDeclineNotices, receiveAdminNotifications });
         } else {
           await pb.collection('profiles').create({
             user: currentUser.id,
@@ -171,26 +155,38 @@ export default function ProfileView() {
           });
         }
       } else {
-        // Update profile fields
-        await pb.collection('profiles').update(profile.id, { name, phone });
-        // Update user email if changed
+        await pb.collection('profiles').update(profileId, { name, phone });
         const currentEmail = pb.authStore.record?.email;
         if (email && email !== currentEmail && pb.authStore.record?.id) {
           await pb.collection('users').update(pb.authStore.record.id, { email });
         }
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.myProfile.all });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-      await loadProfile();
-    } catch (err) {
+    },
+    onError: (err: unknown) => {
       setError(formatPocketBaseError(err));
+    },
+  });
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    setIsSaving(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      await saveMutation.mutateAsync(profile.id);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handlePhotoSuccess = () => {
-    loadProfile();
+    queryClient.invalidateQueries({ queryKey: queryKeys.myProfile.all });
   };
 
   if (isLoading) return <div className="container pt-8 text-center">Loading profile...</div>;

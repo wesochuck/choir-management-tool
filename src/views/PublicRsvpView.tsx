@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '../components/common/AppCard';
 import { pb } from '../lib/pocketbase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -7,6 +8,7 @@ import { calendarUtils } from '../lib/calendar';
 import { formatInTimezone } from '../lib/timezone';
 import { useDialog } from '../contexts/DialogContext';
 import { Button } from '../components/ui';
+import { queryKeys } from '../lib/queryKeys';
 
 interface EventDetails {
   id: string;
@@ -68,74 +70,86 @@ export default function PublicRsvpView() {
   const rsvpTitle = event?.title ? `RSVP for ${event.title}` : 'RSVP';
   useDocumentTitle(rsvpTitle);
 
+  const detailsQuery = useQuery({
+    queryKey: queryKeys.publicRsvp.details(token),
+    queryFn: () => pb.send<{
+      event: EventDetails;
+      profile: ProfileDetails;
+      currentRsvp: 'Yes' | 'No' | 'Pending';
+      currentRsvpNote: string;
+      rehearsals: EventDetails[];
+      rsvpWindow?: {
+        canSubmit: boolean;
+        isReadOnly: boolean;
+        reason: string;
+      };
+    }>('/api/rsvp-details', {
+      method: 'POST',
+      body: { token }
+    }),
+    enabled: !!token,
+  });
+
+  const timezoneQuery = useQuery({
+    queryKey: queryKeys.publicRsvp.timezone(),
+    queryFn: async () => {
+      try {
+        const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
+        return setting?.value?.timezone || 'America/New_York';
+      } catch {
+        return 'America/New_York';
+      }
+    },
+  });
+
   useEffect(() => {
     if (!token) {
       setStatus('error');
       setErrorMessage('Invalid RSVP link. Missing secure verification token.');
-      return;
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!detailsQuery.data) return;
+    const res = detailsQuery.data;
+
+    setEvent(res.event);
+    setProfile(res.profile);
+    setRehearsals(res.rehearsals);
+    setRsvpNote(res.currentRsvpNote || "");
+    setDbRsvp(res.currentRsvp || "Pending");
+    setRsvpWindow(res.rsvpWindow || {
+      canSubmit: true,
+      isReadOnly: false,
+      reason: '',
+    });
+
+    if (initialRsvp) {
+      setSelectedRsvp(initialRsvp);
+    } else if (res.currentRsvp !== 'Pending') {
+      setSelectedRsvp(res.currentRsvp);
     }
 
-    const loadDetails = async () => {
-      try {
-        const res = await pb.send<{
-          event: EventDetails;
-          profile: ProfileDetails;
-          currentRsvp: 'Yes' | 'No' | 'Pending';
-          currentRsvpNote: string;
-          rehearsals: EventDetails[];
-          rsvpWindow?: {
-            canSubmit: boolean;
-            isReadOnly: boolean;
-            reason: string;
-          };
-        }>('/api/rsvp-details', {
-          method: 'POST',
-          body: { token }
-        });
+    if (res.currentRsvp !== 'Pending') {
+      setIsConfirmed(true);
+    } else if (initialRsvp) {
+      setIsConfirmed(false);
+    }
 
-        let tz = 'America/New_York';
-        try {
-          const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
-          if (setting?.value?.timezone) tz = setting.value.timezone;
-        } catch {
-          // ignore error and fallback to default timezone
-          void 0;
-        }
+    setStatus('success');
+  }, [detailsQuery.data, initialRsvp]);
 
-        setEvent(res.event);
-        setProfile(res.profile);
-        setTimezone(tz);
-        setRehearsals(res.rehearsals);
-        setRsvpNote(res.currentRsvpNote || "");
-        setDbRsvp(res.currentRsvp || "Pending");
-        setRsvpWindow(res.rsvpWindow || {
-          canSubmit: true,
-          isReadOnly: false,
-          reason: '',
-        });
+  useEffect(() => {
+    if (!detailsQuery.isError) return;
+    setStatus('error');
+    const errObj = detailsQuery.error as { data?: { error?: string } } | null;
+    setErrorMessage(errObj?.data?.error || 'This link is invalid or has expired. Please contact a choir administrator for a new link.');
+  }, [detailsQuery.isError, detailsQuery.error]);
 
-        if (initialRsvp) {
-          setSelectedRsvp(initialRsvp);
-        } else if (res.currentRsvp !== 'Pending') {
-          setSelectedRsvp(res.currentRsvp);
-        }
-
-        if (res.currentRsvp !== 'Pending') {
-          setIsConfirmed(true);
-        } else if (initialRsvp) {
-          setIsConfirmed(false);
-        }
-
-        setStatus('success');
-      } catch (err: unknown) {
-        setStatus('error');
-        const errObj = err as { data?: { error?: string } } | null;
-        setErrorMessage(errObj?.data?.error || 'This link is invalid or has expired. Please contact a choir administrator for a new link.');
-      }
-    };
-
-    void loadDetails();
-  }, [token, initialRsvp]);
+  useEffect(() => {
+    if (!timezoneQuery.data) return;
+    setTimezone(timezoneQuery.data);
+  }, [timezoneQuery.data]);
 
   const handleConfirmRsvp = async (rsvpVal: 'Yes' | 'No', note: string = rsvpNote) => {
     if (!token || isUpdating || !event) return;

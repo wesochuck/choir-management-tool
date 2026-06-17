@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { Modal, Button, Select, Input } from '../ui';
 import { pb } from '../../lib/pocketbase';
 import { useEvents } from '../../hooks/useEvents';
@@ -23,8 +25,6 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
   onSelect,
 }) => {
   const [tab, setTab] = useState<'list' | 'create'>('list');
-  const [polls, setPolls] = useState<PollRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const { events } = useEvents();
 
@@ -32,26 +32,16 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
   const [question, setQuestion] = useState('');
   const [eventId, setEventId] = useState('');
 
-  const loadPolls = async () => {
-    setIsLoading(true);
-    try {
-      const list = await pb.collection('polls').getFullList<PollRecord>({ sort: '-created' });
-      setPolls(list);
-    } catch (err) {
-      console.error('Failed to load polls', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data: polls = [], isLoading } = useQuery({
+    queryKey: queryKeys.polls.list,
+    queryFn: () => pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
+    enabled: isOpen,
+  });
 
-  useEffect(() => {
-    if (isOpen) {
-      loadPolls();
-      setTab('list');
-      setQuestion('');
-      setEventId('');
-    }
-  }, [isOpen]);
+  const createMutation = useMutation({
+    mutationFn: (data: { question: string; eventId: string | null }) =>
+      pb.collection('polls').create<PollRecord>(data),
+  });
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +49,7 @@ export const PollSelectionModal: React.FC<PollSelectionModalProps> = ({
 
     setIsCreating(true);
     try {
-      const record = await pb.collection('polls').create<PollRecord>({
+      const record = await createMutation.mutateAsync({
         question,
         eventId: eventId || null,
       });

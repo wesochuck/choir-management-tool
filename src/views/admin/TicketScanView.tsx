@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ticketService } from '../../services/ticketService';
-import { eventService, type Event } from '../../services/eventService';
+import { eventService } from '../../services/eventService';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { ScanResultCard } from '../../components/admin/ScanResultCard';
 import type { ValidationResult } from '../../services/ticketService';
 import { Button, Input, Spinner, Select } from '../../components/ui';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 
 const STORAGE_KEY = 'ticket-scan-event-id';
 const HISTORY_SIZE = 5;
@@ -43,9 +45,11 @@ export default function TicketScanView() {
     return searchParams.get('eventId') || localStorage.getItem(STORAGE_KEY) || '';
   });
 
-  const [events, setEvents] = useState<Event[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(true);
-  const [eventsError, setEventsError] = useState<string | null>(null);
+  const { data: events = [], isLoading: eventsLoading, error: eventsError } = useQuery({
+    queryKey: queryKeys.events.publicList,
+    queryFn: () => eventService.getPublicEvents(),
+  });
+  const eventsErrorMsg = eventsError?.message ?? null;
 
   const [manualToken, setManualToken] = useState('');
   const [validating, setValidating] = useState(false);
@@ -63,27 +67,7 @@ export default function TicketScanView() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const validatingRef = useRef(false);
 
-  /* Load events */
-  useEffect(() => {
-    let cancelled = false;
-    setEventsLoading(true);
-    setEventsError(null);
-    eventService.getPublicEvents()
-      .then(data => {
-        if (!cancelled) {
-          setEvents(data);
-          setEventsLoading(false);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : String(err);
-          setEventsError(msg);
-          setEventsLoading(false);
-        }
-      });
-    return () => { cancelled = true; };
-  }, []);
+
 
   /* Handle event selection - update URL and localStorage */
   const handleEventChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -236,7 +220,7 @@ export default function TicketScanView() {
             Loading events...
           </div>
         ) : eventsError ? (
-          <p className="text-sm text-danger-text">{eventsError}</p>
+          <p className="text-sm text-danger-text">{eventsErrorMsg}</p>
         ) : (
           <Select id="event-select" value={selectedEventId} onChange={handleEventChange}>
             <option value="">Select an event...</option>

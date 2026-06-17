@@ -1,20 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { donationService, type DonationLevel } from '../services/donationService';
+import { useQuery } from '@tanstack/react-query';
+import { donationService } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { Button, Select, Input } from '../components/ui';
+import { queryKeys } from '../lib/queryKeys';
 
 export default function PublicDonationView() {
   useDocumentTitle('Support Our Music');
   const { choirName } = useChoirName();
   
-  const [levels, setLevels] = useState<DonationLevel[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
   const [selectedLevelId, setSelectedLevelId] = useState<string | 'custom'>('');
+
+  const donationQuery = useQuery({
+    queryKey: queryKeys.donations.settings,
+    queryFn: () => donationService.getDonationSettings(),
+  });
+
+  const levels = donationQuery.data?.levels ?? [];
+  const loading = donationQuery.isLoading;
+
+  const levelInitRef = useRef(false);
+  useEffect(() => {
+    if (!donationQuery.data || levelInitRef.current) return;
+    levelInitRef.current = true;
+    if (donationQuery.data.levels.length > 0) {
+      setSelectedLevelId(donationQuery.data.levels[0].id);
+    } else {
+      setSelectedLevelId('custom');
+    }
+  }, [donationQuery.data]);
+
+  useEffect(() => {
+    if (donationQuery.isError) {
+      setError('Failed to load donation settings.');
+    }
+  }, [donationQuery.isError]);
+
   const [customAmount, setCustomAmount] = useState<string>('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -23,25 +49,6 @@ export default function PublicDonationView() {
   const [tributeName, setTributeName] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    async function loadSettings() {
-      try {
-        const settings = await donationService.getDonationSettings();
-        setLevels(settings.levels);
-        if (settings.levels.length > 0) {
-          setSelectedLevelId(settings.levels[0].id);
-        } else {
-          setSelectedLevelId('custom');
-        }
-      } catch {
-        setError('Failed to load donation settings.');
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadSettings();
-  }, []);
 
   const getEffectiveAmount = () => {
     if (selectedLevelId === 'custom') {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AppCard } from '../components/common/AppCard';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { pollService, type PollDetails } from '../services/pollService';
@@ -7,6 +8,7 @@ import { formatInTimezone } from '../lib/timezone';
 import { pb } from '../lib/pocketbase';
 import { useDialog } from '../contexts/DialogContext';
 import { Button } from '../components/ui';
+import { queryKeys } from '../lib/queryKeys';
 
 export default function PublicPollView() {
   const dialog = useDialog();
@@ -21,44 +23,54 @@ export default function PublicPollView() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [timezone, setTimezone] = useState('America/New_York');
 
-  useDocumentTitle(pollData?.poll.question ? `Poll: ${pollData.poll.question}` : 'Engagement Poll');
+  const pollQuery = useQuery({
+    queryKey: queryKeys.publicPoll.details(token),
+    queryFn: () => pollService.getPollDetails(token),
+    enabled: !!token,
+  });
+
+  const timezoneQuery = useQuery({
+    queryKey: queryKeys.publicPoll.timezone(),
+    queryFn: async () => {
+      try {
+        const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
+        return setting?.value?.timezone || 'America/New_York';
+      } catch {
+        return 'America/New_York';
+      }
+    },
+  });
+
+  useDocumentTitle(pollQuery.data?.poll.question ? `Poll: ${pollQuery.data.poll.question}` : 'Engagement Poll');
 
   useEffect(() => {
     if (!token) {
       setStatus('error');
       setErrorMessage('Invalid poll link. Missing secure verification token.');
-      return;
     }
-
-    const loadDetails = async () => {
-      try {
-        const res = await pollService.getPollDetails(token);
-        
-        let tz = 'America/New_York';
-        try {
-          const setting = await pb.collection('appSettings').getFirstListItem<{ value: { timezone?: string } }>('key = "timezone"');
-          if (setting?.value?.timezone) tz = setting.value.timezone;
-        } catch {
-          // ignore error and fallback to default timezone
-          void 0;
-        }
-
-        setPollData(res);
-        setSelectedResponse(res.currentStatus);
-        setTimezone(tz);
-        setStatus('success');
-      } catch (err: unknown) {
-        setStatus('error');
-        const errObj = err as { data?: { error?: string } } | null;
-        setErrorMessage(
-          errObj?.data?.error || 
-          'Failed to load poll details. The link may have expired or is invalid.'
-        );
-      }
-    };
-
-    void loadDetails();
   }, [token]);
+
+  useEffect(() => {
+    if (!pollQuery.data) return;
+    setPollData(pollQuery.data);
+    setSelectedResponse(pollQuery.data.currentStatus);
+    setStatus('success');
+  }, [pollQuery.data]);
+
+  useEffect(() => {
+    if (!pollQuery.isError) return;
+    setStatus('error');
+    const errObj = pollQuery.error as { data?: { error?: string } } | null;
+    setErrorMessage(
+      errObj?.data?.error ||
+      'Failed to load poll details. The link may have expired or is invalid.'
+    );
+  }, [pollQuery.isError, pollQuery.error]);
+
+  useEffect(() => {
+    if (!timezoneQuery.data) return;
+    setTimezone(timezoneQuery.data);
+  }, [timezoneQuery.data]);
 
   const handleSubmitResponse = async (val: 'Yes' | 'No') => {
     if (!token || isUpdating) return;

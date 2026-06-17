@@ -4,9 +4,17 @@ import assert from 'node:assert';
 import { MemoryRouter } from 'react-router-dom';
 import { render, waitFor } from '@testing-library/react';
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { settingsService } from '../../src/services/settingsService';
 import { eventService } from '../../src/services/eventService';
+
+function createWrapper() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  };
+}
 
 describe('PublicLandingView', () => {
   let PublicLandingView: React.ComponentType;
@@ -35,7 +43,8 @@ describe('PublicLandingView', () => {
     const { container } = render(
       <MemoryRouter>
         <PublicLandingView />
-      </MemoryRouter>
+      </MemoryRouter>,
+      { wrapper: createWrapper() }
     );
 
     await waitFor(() => {
@@ -47,7 +56,8 @@ describe('PublicLandingView', () => {
     const { container } = render(
       <MemoryRouter>
         <PublicLandingView />
-      </MemoryRouter>
+      </MemoryRouter>,
+      { wrapper: createWrapper() }
     );
 
     await waitFor(() => {

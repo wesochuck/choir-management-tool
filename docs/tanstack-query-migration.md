@@ -28,7 +28,31 @@ This app uses TanStack Query for server state and keeps React Router for routing
 | 9 | `src/views/admin/TicketingView.tsx` | Done |
 | 10 | `src/hooks/useEventRosterData.ts` | Done |
 | 11 | `src/hooks/useSeatingChart.ts` | Done |
-| 12 | Dashboard views (after shared hooks) | Done |
+| 12 | `src/hooks/useAttendance.ts` | Done |
+| 13 | `src/hooks/useDocumentTitle.tsx` | Done |
+| 14 | `src/hooks/useRosterConfigForm.ts` | Done |
+| 15 | `src/views/singer/DashboardView.tsx` | Done |
+| 16 | `src/views/singer/ProfileView.tsx` | Done |
+| 17 | `src/views/singer/SeatingFinderView.tsx` | Done |
+| 18 | `src/views/admin/AttendanceView.tsx` | Done |
+| 19 | `src/views/admin/DonationsView.tsx` | Done |
+| 20 | `src/views/admin/MusicLibraryView.tsx` | Done |
+| 21 | `src/views/admin/SettingsView.tsx` | Done |
+| 22 | `src/views/admin/music-library/MusicPieceModal.tsx` | Done |
+| 23 | `src/views/PublicLandingView.tsx` | Done |
+| 24 | `src/views/PublicAuditionView.tsx` | Done |
+| 25 | `src/views/PublicDonationView.tsx` | Done |
+| 26 | `src/views/PublicDonationSuccessView.tsx` | Done |
+| 27 | `src/views/PublicHistoryView.tsx` | Done |
+| 28 | `src/views/PublicPlayerView.tsx` | Done |
+| 29 | `src/views/PublicPollView.tsx` | Done |
+| 30 | `src/views/PublicRsvpView.tsx` | Done |
+| 31 | `src/views/PublicTicketSuccessView.tsx` | Done |
+| 32 | `src/components/admin/LandingPageSettingsPanel.tsx` | Done |
+| 33 | `src/components/admin/PollSelectionModal.tsx` | Done |
+| 34 | `src/components/admin/SeatingFormationsEditor.tsx` | Done |
+| 35 | `src/components/admin/SingerLookupModal.tsx` | Done |
+| 36 | `src/components/admin/SingerPatronageHistoryTab.tsx` | Done |
 
 ## Query Key Pattern
 

@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../lib/queryKeys';
 import { 
   settingsService, 
   getVoicePartsAndSections, 
@@ -94,55 +96,97 @@ export function useRosterConfigForm({
   const [isSavingConfig, setIsSavingConfig] = useState(false);
   const [configMessage, setConfigMessage] = useState('');
 
-  const loadConfig = useCallback(async () => {
-    try {
-      const rosterSettings = await settingsService.getRosterSettings();
-      const voiceSettings = await getVoicePartsAndSections();
-      
-      const loadedDefaultStatus = rosterSettings?.defaultStatus || '';
-      const loadedSeason = rosterSettings?.currentSeason || '';
-      const loadedSections = voiceSettings.sections || [];
-      const loadedVoiceParts = voiceSettings.voiceParts || [];
-      const loadedAutomationEnabled = rosterSettings?.statusAutomationEnabled ?? true;
-      const loadedAutomationMissThreshold = rosterSettings?.statusAutomationMissThreshold ?? 3;
-      const loadedAutomationRecoveryEnabled = rosterSettings?.statusAutomationRecoveryEnabled ?? true;
-      const loadedMaxRehearsalMisses = rosterSettings?.maxRehearsalMisses ?? 3;
+  const { data: rosterSettings, refetch: refetchRoster } = useQuery({
+    queryKey: queryKeys.appSettings.roster,
+    queryFn: () => settingsService.getRosterSettings(),
+  });
 
-      setConfigDefaultStatus(loadedDefaultStatus);
-      setConfigSeason(loadedSeason);
-      setConfigSections(loadedSections);
-      setConfigVoiceParts(loadedVoiceParts);
-      setConfigAutomationEnabled(loadedAutomationEnabled);
-      setConfigAutomationMissThreshold(loadedAutomationMissThreshold);
-      setConfigAutomationRecoveryEnabled(loadedAutomationRecoveryEnabled);
-      setConfigMaxRehearsalMisses(loadedMaxRehearsalMisses);
-
-      setInitialConfigState({
-        defaultStatus: loadedDefaultStatus,
-        currentSeason: loadedSeason,
-        statusAutomationEnabled: loadedAutomationEnabled,
-        statusAutomationMissThreshold: loadedAutomationMissThreshold,
-        statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
-        maxRehearsalMisses: loadedMaxRehearsalMisses,
-        sections: JSON.parse(JSON.stringify(loadedSections)),
-        voiceParts: JSON.parse(JSON.stringify(loadedVoiceParts))
-      });
-    } catch (err) {
-      console.error('Failed to load configuration:', err);
-    }
-  }, []);
+  const { data: voiceSettings, refetch: refetchVoice } = useQuery({
+    queryKey: queryKeys.voiceParts.list(),
+    queryFn: () => getVoicePartsAndSections(),
+  });
 
   useEffect(() => {
-    settingsService.getRosterSettings().then(settings => {
-      if (settings && settings.defaultStatus !== undefined) {
-        setFilter('status', settings.defaultStatus);
-      }
-    }).catch(err => {
-      console.error('Failed to load roster settings:', err);
+    if (!rosterSettings || !voiceSettings) return;
+    if (initialConfigState) return;
+
+    const loadedDefaultStatus = rosterSettings.defaultStatus || '';
+    const loadedSeason = rosterSettings.currentSeason || '';
+    const loadedSections = voiceSettings.sections || [];
+    const loadedVoiceParts = voiceSettings.voiceParts || [];
+    const loadedAutomationEnabled = rosterSettings.statusAutomationEnabled ?? true;
+    const loadedAutomationMissThreshold = rosterSettings.statusAutomationMissThreshold ?? 3;
+    const loadedAutomationRecoveryEnabled = rosterSettings.statusAutomationRecoveryEnabled ?? true;
+    const loadedMaxRehearsalMisses = rosterSettings.maxRehearsalMisses ?? 3;
+
+    setConfigDefaultStatus(loadedDefaultStatus);
+    setConfigSeason(loadedSeason);
+    setConfigSections(loadedSections);
+    setConfigVoiceParts(loadedVoiceParts);
+    setConfigAutomationEnabled(loadedAutomationEnabled);
+    setConfigAutomationMissThreshold(loadedAutomationMissThreshold);
+    setConfigAutomationRecoveryEnabled(loadedAutomationRecoveryEnabled);
+    setConfigMaxRehearsalMisses(loadedMaxRehearsalMisses);
+
+    setInitialConfigState({
+      defaultStatus: loadedDefaultStatus,
+      currentSeason: loadedSeason,
+      statusAutomationEnabled: loadedAutomationEnabled,
+      statusAutomationMissThreshold: loadedAutomationMissThreshold,
+      statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
+      maxRehearsalMisses: loadedMaxRehearsalMisses,
+      sections: JSON.parse(JSON.stringify(loadedSections)),
+      voiceParts: JSON.parse(JSON.stringify(loadedVoiceParts)),
     });
 
-    loadConfig();
-  }, [setFilter, loadConfig]);
+    if (rosterSettings.defaultStatus !== undefined) {
+      setFilter('status', rosterSettings.defaultStatus);
+    }
+  }, [rosterSettings, voiceSettings, initialConfigState, setFilter]);
+
+  const loadConfig = useCallback(async () => {
+    const [rosterResult, voiceResult] = await Promise.all([
+      refetchRoster(),
+      refetchVoice(),
+    ]);
+
+    const rosterSettings = rosterResult.data;
+    const voiceSettings = voiceResult.data;
+    if (!rosterSettings || !voiceSettings) return;
+
+    const loadedDefaultStatus = rosterSettings.defaultStatus || '';
+    const loadedSeason = rosterSettings.currentSeason || '';
+    const loadedSections = voiceSettings.sections || [];
+    const loadedVoiceParts = voiceSettings.voiceParts || [];
+    const loadedAutomationEnabled = rosterSettings.statusAutomationEnabled ?? true;
+    const loadedAutomationMissThreshold = rosterSettings.statusAutomationMissThreshold ?? 3;
+    const loadedAutomationRecoveryEnabled = rosterSettings.statusAutomationRecoveryEnabled ?? true;
+    const loadedMaxRehearsalMisses = rosterSettings.maxRehearsalMisses ?? 3;
+
+    setConfigDefaultStatus(loadedDefaultStatus);
+    setConfigSeason(loadedSeason);
+    setConfigSections(loadedSections);
+    setConfigVoiceParts(loadedVoiceParts);
+    setConfigAutomationEnabled(loadedAutomationEnabled);
+    setConfigAutomationMissThreshold(loadedAutomationMissThreshold);
+    setConfigAutomationRecoveryEnabled(loadedAutomationRecoveryEnabled);
+    setConfigMaxRehearsalMisses(loadedMaxRehearsalMisses);
+
+    setInitialConfigState({
+      defaultStatus: loadedDefaultStatus,
+      currentSeason: loadedSeason,
+      statusAutomationEnabled: loadedAutomationEnabled,
+      statusAutomationMissThreshold: loadedAutomationMissThreshold,
+      statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
+      maxRehearsalMisses: loadedMaxRehearsalMisses,
+      sections: JSON.parse(JSON.stringify(loadedSections)),
+      voiceParts: JSON.parse(JSON.stringify(loadedVoiceParts)),
+    });
+
+    if (rosterSettings.defaultStatus !== undefined) {
+      setFilter('status', rosterSettings.defaultStatus);
+    }
+  }, [refetchRoster, refetchVoice, setFilter]);
 
   const isConfigDirty = useMemo(() => {
     if (!initialConfigState) return false;
