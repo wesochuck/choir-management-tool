@@ -13,46 +13,34 @@ This app uses TanStack Query for server state and keeps React Router for routing
 - Use `pb.filter(...)` for dynamic PocketBase filters.
 - Do not introduce explicit `any` or `as any`.
 
-## Migration Status
+## Migration Status (Full Sweep Completed 2026-06-16)
 
-| # | Target | Status |
-|---|--------|--------|
-| 1 | `src/hooks/useVenues.ts` | Done |
-| 2 | `src/hooks/useVoiceParts.ts` | Done |
-| 3 | `src/hooks/useDues.ts` | Done |
-| 4 | `src/hooks/useEvents.ts` | Done |
-| 5 | `src/hooks/useProfiles.ts` | Done |
-| 6 | `src/hooks/useMyEvents.ts` | Done |
-| 7 | `src/hooks/useSingerRsvpHistory.ts` | Done |
-| 8 | `src/views/admin/ResourcesView.tsx` | Done |
-| 9 | `src/views/admin/TicketingView.tsx` | Done |
-| 10 | `src/hooks/useEventRosterData.ts` | Done |
-| 11 | `src/hooks/useSeatingChart.ts` | Done |
-| 12 | `src/hooks/useAttendance.ts` | Done |
-| 13 | `src/hooks/useDocumentTitle.tsx` | Done |
-| 14 | `src/hooks/useRosterConfigForm.ts` | Done |
-| 15 | `src/views/singer/DashboardView.tsx` | Done |
-| 16 | `src/views/singer/ProfileView.tsx` | Done |
-| 17 | `src/views/singer/SeatingFinderView.tsx` | Done |
-| 18 | `src/views/admin/AttendanceView.tsx` | Done |
-| 19 | `src/views/admin/DonationsView.tsx` | Done |
-| 20 | `src/views/admin/MusicLibraryView.tsx` | Done |
-| 21 | `src/views/admin/SettingsView.tsx` | Done |
-| 22 | `src/views/admin/music-library/MusicPieceModal.tsx` | Done |
-| 23 | `src/views/PublicLandingView.tsx` | Done |
-| 24 | `src/views/PublicAuditionView.tsx` | Done |
-| 25 | `src/views/PublicDonationView.tsx` | Done |
-| 26 | `src/views/PublicDonationSuccessView.tsx` | Done |
-| 27 | `src/views/PublicHistoryView.tsx` | Done |
-| 28 | `src/views/PublicPlayerView.tsx` | Done |
-| 29 | `src/views/PublicPollView.tsx` | Done |
-| 30 | `src/views/PublicRsvpView.tsx` | Done |
-| 31 | `src/views/PublicTicketSuccessView.tsx` | Done |
-| 32 | `src/components/admin/LandingPageSettingsPanel.tsx` | Done |
-| 33 | `src/components/admin/PollSelectionModal.tsx` | Done |
-| 34 | `src/components/admin/SeatingFormationsEditor.tsx` | Done |
-| 35 | `src/components/admin/SingerLookupModal.tsx` | Done |
-| 36 | `src/components/admin/SingerPatronageHistoryTab.tsx` | Done |
+All views and hooks now use TanStack Query for server state. The full sweep included:
+
+**Phase A — Critical anti-pattern fixes:**
+- Moved queryFn side effects to useEffect in `useDocumentTitle.tsx` 
+- Removed 6 state mirrors in `useCommunicationLibrary.ts` (data now read from query cache)
+- Fixed duplicate cache key in `useEventSettings.ts` (communication settings under wrong key)
+- Added `staleTime` defaults to all 15 hook-level queries
+- Registered all inline query keys in central `queryKeys.ts`
+
+**Phase B — Mutation migration (wrapped all writes in useMutation):**
+- MusicLibraryView and MusicPieceModal (~25 write paths)
+- Communication module (draft save, send, test, config save, SMTP test)
+- SettingsView (7 parallel service calls in batch save + token generation)
+- AuditionsView and PollsDashboardView
+- SetListView and ResourcesView
+- EventRosterView and PatronsView
+- 4 public form submission views (Stripe redirects)
+- Raw `pb.send()` calls (unsubscribe, quick-rsvp)
+
+**Phase C — Polish:**
+- Removed SettingsView `initial*` state (derived dirty-checking from query data)
+- Removed PublicRsvpView state mirror (reads query data directly)
+- Fixed PublicPlayerView IDB side effect in queryFn (moved to onSuccess)
+- Added error handling to ChoirNameProvider, resolvedRecipientsQuery, seatingProfilesQuery
+- Migrated useRosterConfigForm to useMutation
+- Removed redundant state in useSeatingChart
 
 ## Query Key Pattern
 
