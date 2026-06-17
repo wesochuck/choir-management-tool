@@ -51,23 +51,6 @@ export default function PublicRsvpView() {
   const [rsvpNote, setRsvpNote] = useState('');
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [showRehearsals, setShowRehearsals] = useState(false);
-  const [rsvpWindow, setRsvpWindow] = useState<{
-    canSubmit: boolean;
-    isReadOnly: boolean;
-    reason: string;
-  }>({
-    canSubmit: true,
-    isReadOnly: false,
-    reason: '',
-  });
-
-  const [event, setEvent] = useState<EventDetails | null>(null);
-  const [profile, setProfile] = useState<ProfileDetails | null>(null);
-  const [rehearsals, setRehearsals] = useState<EventDetails[]>([]);
-  const [timezone, setTimezone] = useState('America/New_York');
-
-  const rsvpTitle = event?.title ? `RSVP for ${event.title}` : 'RSVP';
-  useDocumentTitle(rsvpTitle);
 
   const detailsQuery = useQuery({
     queryKey: queryKeys.publicRsvp.details(token),
@@ -104,6 +87,19 @@ export default function PublicRsvpView() {
     },
   });
 
+  const event = detailsQuery.data?.event ?? null;
+  const profile = detailsQuery.data?.profile ?? null;
+  const rehearsals = detailsQuery.data?.rehearsals ?? [];
+  const timezone = timezoneQuery.data ?? 'America/New_York';
+  const rsvpWindow = detailsQuery.data?.rsvpWindow ?? {
+    canSubmit: true,
+    isReadOnly: false,
+    reason: '',
+  };
+
+  const rsvpTitle = event?.title ? `RSVP for ${event.title}` : 'RSVP';
+  useDocumentTitle(rsvpTitle);
+
   const quickRsvpMutation = useMutation({
     mutationFn: (data: { token: string; rsvp: string; rsvpNote: string }) =>
       pb.send('/api/quick-rsvp', {
@@ -123,18 +119,8 @@ export default function PublicRsvpView() {
     if (!detailsQuery.data) return;
     const res = detailsQuery.data;
 
-    setEvent(res.event);
-    setProfile(res.profile);
-    setRehearsals(res.rehearsals);
     setRsvpNote(res.currentRsvpNote || '');
     setDbRsvp(res.currentRsvp || 'Pending');
-    setRsvpWindow(
-      res.rsvpWindow || {
-        canSubmit: true,
-        isReadOnly: false,
-        reason: '',
-      }
-    );
 
     if (initialRsvp) {
       setSelectedRsvp(initialRsvp);
@@ -160,11 +146,6 @@ export default function PublicRsvpView() {
         'This link is invalid or has expired. Please contact a choir administrator for a new link.'
     );
   }, [detailsQuery.isError, detailsQuery.error]);
-
-  useEffect(() => {
-    if (!timezoneQuery.data) return;
-    setTimezone(timezoneQuery.data);
-  }, [timezoneQuery.data]);
 
   const handleConfirmRsvp = async (rsvpVal: 'Yes' | 'No', note: string = rsvpNote) => {
     if (!token || quickRsvpMutation.isPending || !event) return;
