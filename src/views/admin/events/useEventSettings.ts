@@ -4,7 +4,7 @@ import { queryKeys } from '../../../lib/queryKeys';
 
 export function useEventSettings() {
   const { data: communicationSettings = DEFAULT_COMMUNICATION_SETTINGS } = useQuery({
-    queryKey: [...queryKeys.events.all, 'communicationSettings'],
+    queryKey: queryKeys.communications.settings(),
     queryFn: () => settingsService.getCommunicationSettings(),
   });
 
