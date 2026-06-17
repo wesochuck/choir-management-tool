@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   playerService,
-  type PlayerPlaylist,
   type PlayerMediaFile,
 } from '../services/playerService';
 import { Player } from '../components/player/Player';
@@ -29,7 +28,6 @@ export default function PublicPlayerView() {
   }
   const eventId = searchParams.get('eventId') || '';
 
-  const [data, setData] = useState<PlayerPlaylist | null>(null);
   const [playlist, setPlaylist] = useState<PlayerMediaFile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -47,28 +45,20 @@ export default function PublicPlayerView() {
   const playlistQuery = useQuery({
     queryKey: token ? queryKeys.playlist.byToken(token) : queryKeys.playlist.byEventId(eventId),
     queryFn: async () => {
-      let result: PlayerPlaylist;
       if (token) {
-        result = await playerService.fetchPlaylistByToken(token);
-        await savePlaylistOffline(token, result.files);
+        return playerService.fetchPlaylistByToken(token);
       } else {
-        result = await playerService.fetchPlaylistByEventId(eventId);
-        await savePlaylistOffline(eventId, result.files);
+        return playerService.fetchPlaylistByEventId(eventId);
       }
-      return result;
     },
     enabled: hasTokenOrEventId,
   });
 
-  const dataRef = useRef(data);
-  useEffect(() => {
-    dataRef.current = data;
-  }, [data]);
-
   useEffect(() => {
     if (!playlistQuery.data) return;
     const result = playlistQuery.data;
-    setData(result);
+    const key = token || eventId;
+    savePlaylistOffline(key, result.files);
     const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
     const targetedTracks = playerService.applyVoicePartToFiles(
       result.files,
@@ -78,7 +68,7 @@ export default function PublicPlayerView() {
     );
     hydrateOfflineStatus(targetedTracks).then(setPlaylist);
     setError(null);
-  }, [playlistQuery.data]);
+  }, [playlistQuery.data, token, eventId]);
 
   useEffect(() => {
     if (!playlistQuery.isError) return;
@@ -89,8 +79,8 @@ export default function PublicPlayerView() {
         const targetedTracks = playerService.applyVoicePartToFiles(
           cached,
           initialPart,
-          dataRef.current?.allPieces || [],
-          dataRef.current?.voiceParts || []
+          playlistQuery.data?.allPieces || [],
+          playlistQuery.data?.voiceParts || []
         );
         hydrateOfflineStatus(targetedTracks).then(setPlaylist);
       } else {
@@ -103,13 +93,13 @@ export default function PublicPlayerView() {
     setSelectedVoicePart(part);
     safeLocalStorage.setItem('player-voice-part', part);
 
-    if (!data) return;
+    if (!playlistQuery.data) return;
 
     const updatedPlaylist = playerService.applyVoicePartToFiles(
       playlist,
       part,
-      data.allPieces,
-      data.voiceParts
+      playlistQuery.data.allPieces,
+      playlistQuery.data.voiceParts
     );
     const hydrated = await hydrateOfflineStatus(updatedPlaylist);
     setPlaylist(hydrated);
@@ -202,7 +192,7 @@ export default function PublicPlayerView() {
       </div>
     );
   }
-  if (!data) return null;
+  if (!playlistQuery.data) return null;
 
   const showDashboardBackLink = Boolean(eventId && !token);
 
@@ -219,12 +209,12 @@ export default function PublicPlayerView() {
             </Link>
           )}
           <h1 className="text-text text-3xl font-extrabold tracking-tight">Chorus</h1>
-          <div className="text-muted text-sm">{data.event.title}</div>
+          <div className="text-muted text-sm">{playlistQuery.data.event.title}</div>
         </div>
       </header>
 
       <VoicePartSelector
-        voiceParts={data.voiceParts}
+        voiceParts={playlistQuery.data.voiceParts}
         selectedPart={selectedVoicePart}
         onSelect={handleVoicePartChange}
       />

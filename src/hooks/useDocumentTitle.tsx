@@ -23,7 +23,7 @@ export function ChoirNameProvider({ children }: { children: ReactNode }) {
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezoneState] = useState('America/New_York');
 
-  const { data } = useQuery({
+  const { data, error } = useQuery({
     queryKey: queryKeys.choirSettings.all,
     queryFn: async () => {
       const [name, tz] = await Promise.all([
@@ -34,6 +34,12 @@ export function ChoirNameProvider({ children }: { children: ReactNode }) {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (error) {
+      console.warn('Failed to load choir settings, using defaults:', error);
+    }
+  }, [error]);
 
   useEffect(() => {
     if (!data) return;
