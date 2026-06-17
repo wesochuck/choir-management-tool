@@ -23,20 +23,24 @@ export function ChoirNameProvider({ children }: { children: ReactNode }) {
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezoneState] = useState('America/New_York');
 
-  useQuery({
+  const { data } = useQuery({
     queryKey: queryKeys.choirSettings.all,
     queryFn: async () => {
       const [name, tz] = await Promise.all([
         settingsService.getChoirName(),
         settingsService.getTimezone(),
       ]);
-      setChoirName(name);
-      setTimezoneState(tz);
-      setCachedTimezone(tz);
       return { name, timezone: tz };
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (!data) return;
+    setChoirName(data.name);
+    setTimezoneState(data.timezone);
+    setCachedTimezone(data.timezone);
+  }, [data]);
 
   const setTimezone = (tz: string) => {
     setTimezoneState(tz);
