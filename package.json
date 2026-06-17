@@ -12,7 +12,12 @@
     "check:pb-hooks": "npm run generate:pb-hooks && vitest run test/pb-hooks/integrity.test.ts",
     "knip": "knip",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": "eslint --max-warnings 0",
+    "*": "prettier --write --ignore-unknown"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -50,8 +55,10 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "eslint-plugin-tailwindcss": "^4.0.0-alpha.6",
     "globals": "^17.6.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "knip": "^6.16.1",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4.3.0",
