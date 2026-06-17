@@ -1,5 +1,4 @@
 import React, { createContext, useCallback, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
 import type { ChoirUser, UserPreferences } from '../types/auth';
 import { mergePreferences } from '../lib/userPreferences';
@@ -21,7 +20,6 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<ChoirUser | null>(pb.authStore.model as ChoirUser | null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   const updatePreferences = async (newPrefs: Partial<UserPreferences>) => {
     if (!user) return;
@@ -42,8 +40,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = useCallback(() => {
     pb.authStore.clear();
-    navigate('/login');
-  }, [navigate]);
+    window.location.assign('/login');
+  }, []);
 
   useEffect(() => {
     setUser(pb.authStore.model as ChoirUser | null);
