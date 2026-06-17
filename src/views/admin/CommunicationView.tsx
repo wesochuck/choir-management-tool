@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppCard } from '../../components/common/AppCard';
 import EasyMDE from 'easymde';
 import { useDialog } from '../../contexts/DialogContext';
@@ -63,10 +63,22 @@ export default function CommunicationView() {
 
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
-  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
 
   const library = useCommunicationLibrary();
   const queryClient = useQueryClient();
+
+  const saveConfigMutation = useMutation({
+    mutationFn: (settings: CommunicationSettings) =>
+      settingsService.saveCommunicationSettings(settings),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.settings() });
+    },
+  });
+
+  const testSmtpMutation = useMutation({
+    mutationFn: (email: string) =>
+      pb.send('/api/test-smtp', { method: 'POST', body: { email } }),
+  });
 
   const automated = useAutomatedCommunicationTasks({
     events,
@@ -446,7 +458,7 @@ export default function CommunicationView() {
           setCommSettings={library.setCommSettings}
           testEmailAddress={testEmailAddress}
           setTestEmailAddress={setTestEmailAddress}
-          isTestingSmtp={isTestingSmtp}
+          isTestingSmtp={testSmtpMutation.isPending}
           onSendConnectionTest={async () => {
             if (!testEmailAddress) {
               await dialog.showMessage({
@@ -457,12 +469,8 @@ export default function CommunicationView() {
               return;
             }
 
-            setIsTestingSmtp(true);
             try {
-              const response = await pb.send('/api/test-smtp', {
-                method: 'POST',
-                body: { email: testEmailAddress },
-              });
+              const response = await testSmtpMutation.mutateAsync(testEmailAddress);
 
               if (response && response.success) {
                 dialog.showToast(`Test email successfully sent to ${testEmailAddress}!`);
@@ -476,19 +484,16 @@ export default function CommunicationView() {
                 message: `Could not send test email: ${errMsg}`,
                 variant: 'danger',
               });
-            } finally {
-              setIsTestingSmtp(false);
             }
           }}
-          isSavingConfig={library.isSavingConfig}
+          isSavingConfig={saveConfigMutation.isPending}
           onSaveSettings={async () => {
-            library.setIsSavingConfig(true);
             try {
               const currentSettings =
                 queryClient.getQueryData<CommunicationSettings>(
                   queryKeys.communications.settings()
                 ) ?? library.commSettings;
-              await settingsService.saveCommunicationSettings(currentSettings);
+              await saveConfigMutation.mutateAsync(currentSettings);
               dialog.showToast('Settings updated successfully.');
             } catch (err: unknown) {
               const message = err instanceof Error ? err.message : String(err);
@@ -497,8 +502,6 @@ export default function CommunicationView() {
                 message: 'Failed to save settings: ' + message,
                 variant: 'danger',
               });
-            } finally {
-              library.setIsSavingConfig(false);
             }
           }}
           templates={library.templates}
