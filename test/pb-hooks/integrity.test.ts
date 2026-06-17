@@ -476,6 +476,39 @@ test('Generator output matches committed file', () => {
   );
 });
 
+test('Generated main.pb.js uses async cron callbacks when body has await', () => {
+  const content = readGeneratedMain();
+
+  const ticketBuyerCron = extractCronCallback(content, 'ticket_buyer_reminder');
+  assert.ok(
+    ticketBuyerCron.includes('await '),
+    'ticket_buyer_reminder cron body should contain await calls'
+  );
+
+  // Verify the cron registration itself has the async keyword
+  const cronRegex = /cronAdd\("ticket_buyer_reminder",\s*"[^"]*",\s*async\s*\(\)\s*=>\s*\{/;
+  assert.match(
+    content,
+    cronRegex,
+    'ticket_buyer_reminder cron registration should use async callback'
+  );
+
+  // Verify other crons (no await) use plain callbacks
+  const postEventRegex = /cronAdd\("post_event_report",\s*"[^"]*",\s*\(\)\s*=>\s*\{/;
+  assert.match(
+    content,
+    postEventRegex,
+    'post_event_report cron should use plain (non-async) callback'
+  );
+
+  const queueRegex = /cronAdd\("process_email_queue_job",\s*"[^"]*",\s*\(\)\s*=>\s*\{/;
+  assert.match(
+    content,
+    queueRegex,
+    'process_email_queue_job cron should use plain (non-async) callback'
+  );
+});
+
 test('Manual pb_hooks self-containment validation', () => {
   const hooksDir = path.join(process.cwd(), 'pocketbase/pb_hooks');
   const files = fs.readdirSync(hooksDir);
