@@ -12,26 +12,14 @@ import {
   DEFAULT_COMMUNICATION_CONFIG,
   settingsService,
   type CommunicationSettings,
-  type CommunicationConfig,
 } from '../../../services/settingsService';
 
 export function useCommunicationLibrary() {
   const queryClient = useQueryClient();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [history, setHistory] = useState<MessageRecord[]>([]);
-  const [drafts, setDrafts] = useState<MessageRecord[]>([]);
-  const [templates, setTemplates] = useState<TemplateRecord[]>([]);
-  const [commSettings, setCommSettings] = useState<CommunicationSettings>(
-    DEFAULT_COMMUNICATION_SETTINGS
-  );
-  const [commConfig, setCommConfig] = useState<CommunicationConfig>(DEFAULT_COMMUNICATION_CONFIG);
-  const [choirName, setChoirName] = useState<string>('Choir Management');
-
   const [editingTemplate, setEditingTemplate] = useState<Partial<TemplateRecord> | null>(null);
 
   const [historyPage, setHistoryPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
 
   const [isSavingConfig, setIsSavingConfig] = useState(false);
@@ -79,53 +67,6 @@ export function useCommunicationLibrary() {
   });
 
   useEffect(() => {
-    if (historyQuery.data) {
-      setHistory(historyQuery.data.items);
-      setTotalPages(historyQuery.data.totalPages);
-    }
-  }, [historyQuery.data]);
-
-  useEffect(() => {
-    if (draftsQuery.data) setDrafts(draftsQuery.data);
-  }, [draftsQuery.data]);
-
-  useEffect(() => {
-    if (templatesQuery.data) setTemplates(templatesQuery.data);
-  }, [templatesQuery.data]);
-
-  useEffect(() => {
-    if (commSettingsQuery.data) setCommSettings(commSettingsQuery.data);
-  }, [commSettingsQuery.data]);
-
-  useEffect(() => {
-    if (commConfigQuery.data) setCommConfig(commConfigQuery.data);
-  }, [commConfigQuery.data]);
-
-  useEffect(() => {
-    if (choirNameQuery.data) setChoirName(choirNameQuery.data);
-  }, [choirNameQuery.data]);
-
-  useEffect(() => {
-    if (
-      !historyQuery.isLoading &&
-      !draftsQuery.isLoading &&
-      !templatesQuery.isLoading &&
-      !commSettingsQuery.isLoading &&
-      !commConfigQuery.isLoading &&
-      !choirNameQuery.isLoading
-    ) {
-      setIsLoading(false);
-    }
-  }, [
-    historyQuery.isLoading,
-    draftsQuery.isLoading,
-    templatesQuery.isLoading,
-    commSettingsQuery.isLoading,
-    commConfigQuery.isLoading,
-    choirNameQuery.isLoading,
-  ]);
-
-  useEffect(() => {
     setHistoryPage(1);
   }, [historySearchQuery]);
 
@@ -137,24 +78,80 @@ export function useCommunicationLibrary() {
     [queryClient]
   );
 
+  const isLoading =
+    historyQuery.isLoading ||
+    draftsQuery.isLoading ||
+    templatesQuery.isLoading ||
+    commSettingsQuery.isLoading ||
+    commConfigQuery.isLoading ||
+    choirNameQuery.isLoading;
+
+  const setHistory: React.Dispatch<React.SetStateAction<MessageRecord[]>> = useCallback(
+    (_value) => {
+      void _value;
+    },
+    []
+  );
+
+  const setTotalPages: React.Dispatch<React.SetStateAction<number>> = useCallback((_value) => {
+    void _value;
+  }, []);
+
+  const setIsLoading: React.Dispatch<React.SetStateAction<boolean>> = useCallback((_value) => {
+    void _value;
+  }, []);
+
+  const setDrafts: React.Dispatch<React.SetStateAction<MessageRecord[]>> = useCallback(
+    (_value) => {
+      void _value;
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
+    },
+    [queryClient]
+  );
+
+  const setTemplates: React.Dispatch<React.SetStateAction<TemplateRecord[]>> = useCallback(
+    (_value) => {
+      void _value;
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.templates() });
+    },
+    [queryClient]
+  );
+
+  const setCommSettings: React.Dispatch<React.SetStateAction<CommunicationSettings>> = useCallback(
+    (settingsOrUpdater) => {
+      if (typeof settingsOrUpdater === 'function') {
+        const current =
+          queryClient.getQueryData<CommunicationSettings>(queryKeys.communications.settings()) ??
+          DEFAULT_COMMUNICATION_SETTINGS;
+        queryClient.setQueryData(
+          queryKeys.communications.settings(),
+          (settingsOrUpdater as (prev: CommunicationSettings) => CommunicationSettings)(current)
+        );
+      } else {
+        queryClient.setQueryData(queryKeys.communications.settings(), settingsOrUpdater);
+      }
+    },
+    [queryClient]
+  );
+
   return {
     isLoading,
     setIsLoading,
-    history,
+    history: historyQuery.data?.items ?? [],
     setHistory,
-    drafts,
+    drafts: draftsQuery.data ?? [],
     setDrafts,
-    templates,
+    templates: templatesQuery.data ?? [],
     setTemplates,
-    commSettings,
+    commSettings: commSettingsQuery.data ?? DEFAULT_COMMUNICATION_SETTINGS,
     setCommSettings,
-    commConfig,
-    choirName,
+    commConfig: commConfigQuery.data ?? DEFAULT_COMMUNICATION_CONFIG,
+    choirName: choirNameQuery.data ?? 'Choir Management',
     editingTemplate,
     setEditingTemplate,
     historyPage,
     setHistoryPage,
-    totalPages,
+    totalPages: historyQuery.data?.totalPages ?? 1,
     setTotalPages,
     historySearchQuery,
     setHistorySearchQuery,

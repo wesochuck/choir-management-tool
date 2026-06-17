@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
+import { queryKeys } from '../../../lib/queryKeys';
 import {
   communicationService,
   type CommunicationFilters,
@@ -36,12 +37,14 @@ export function useCommunicationDraft({
   historyPage,
   setHistoryPage,
   refreshHistory,
-  setDrafts,
+  setDrafts: _setDrafts,
   setAutomatedTaskStatus,
   dialog,
   setTab,
   setWizardStep,
 }: UseCommunicationDraftArgs) {
+  const queryClient = useQueryClient();
+
   const [searchParams] = useSearchParams();
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
 
@@ -135,7 +138,7 @@ export function useCommunicationDraft({
       };
       const record = await communicationService.saveDraft(input, activeDraftId || undefined);
       setActiveDraftId(record.id);
-      setDrafts(await communicationService.getDrafts());
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
       dialog.showToast('Your message has been saved as a draft.');
     } catch (err: unknown) {
       console.error(err);
@@ -282,7 +285,7 @@ export function useCommunicationDraft({
       } else {
         setHistoryPage(1);
       }
-      setDrafts(await communicationService.getDrafts());
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
       setActiveDraftId(null);
 
       dialog.showToast('Message sent successfully!');

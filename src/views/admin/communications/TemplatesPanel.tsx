@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
 import { PlaceholderPanel } from '../../../components/admin/PlaceholderPanel';
@@ -8,6 +9,7 @@ import {
   type TemplateRecord,
   type MessageType,
 } from '../../../services/communicationService';
+import { queryKeys } from '../../../lib/queryKeys';
 import { resolvePreviewContent } from '../../../lib/communicationUtils';
 import { useDialog } from '../../../contexts/DialogContext';
 import { Button, Select, Input } from '../../../components/ui';
@@ -28,7 +30,7 @@ export interface TemplatesPanelProps {
 
 export function TemplatesPanel({
   templates,
-  setTemplates,
+  setTemplates: _setTemplates,
   editingTemplate,
   setEditingTemplate,
   onUseTemplate,
@@ -39,6 +41,7 @@ export function TemplatesPanel({
   choirName,
   senderEmail,
 }: TemplatesPanelProps) {
+  const queryClient = useQueryClient();
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   if (editingTemplate) {
@@ -181,7 +184,7 @@ export function TemplatesPanel({
                 }
                 try {
                   await communicationService.saveTemplate(editingTemplate);
-                  setTemplates(await communicationService.getTemplates());
+                  queryClient.invalidateQueries({ queryKey: queryKeys.communications.templates() });
                   setEditingTemplate(null);
                   dialog.showToast('Template saved successfully.');
                 } catch (err: unknown) {
@@ -308,7 +311,7 @@ export function TemplatesPanel({
                               ) {
                                 try {
                                   await communicationService.deleteTemplate(tpl.id!);
-                                  setTemplates(await communicationService.getTemplates());
+                                  queryClient.invalidateQueries({ queryKey: queryKeys.communications.templates() });
                                 } catch (e: unknown) {
                                   const msg = e instanceof Error ? e.message : String(e);
                                   await dialog.showMessage({

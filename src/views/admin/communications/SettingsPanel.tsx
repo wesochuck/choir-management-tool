@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
 import type { CommunicationSettings } from '../../../services/settingsService';
@@ -51,6 +51,17 @@ export function SettingsPanel({
   choirName,
   senderEmail,
 }: SettingsPanelProps) {
+  const [localSettings, setLocalSettings] = useState<CommunicationSettings>(commSettings);
+
+  useEffect(() => {
+    setLocalSettings(commSettings);
+  }, [commSettings]);
+
+  const handleSave = async () => {
+    setCommSettings(localSettings);
+    await onSaveSettings();
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {editingTemplate ? (
@@ -73,13 +84,13 @@ export function SettingsPanel({
               <SettingsGrid>
                 <Field
                   label="Physical Mailing Address"
-                  value={commSettings.mailingAddress}
-                  onChange={(v) => setCommSettings({ ...commSettings, mailingAddress: v })}
+                  value={localSettings.mailingAddress}
+                  onChange={(v) => setLocalSettings((prev) => ({ ...prev, mailingAddress: v }))}
                 />
                 <Field
                   label="Application Base URL"
-                  value={commSettings.frontendUrl}
-                  onChange={(v) => setCommSettings({ ...commSettings, frontendUrl: v })}
+                  value={localSettings.frontendUrl}
+                  onChange={(v) => setLocalSettings((prev) => ({ ...prev, frontendUrl: v }))}
                 />
               </SettingsGrid>
               <div className="text-muted text-xs">
@@ -128,7 +139,7 @@ export function SettingsPanel({
           </AppCard>
 
           <div className="flex justify-end">
-            <Button variant="primary" onClick={onSaveSettings} disabled={isSavingConfig}>
+            <Button variant="primary" onClick={handleSave} disabled={isSavingConfig}>
               {isSavingConfig ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>

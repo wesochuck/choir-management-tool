@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AppCard } from '../../components/common/AppCard';
 import EasyMDE from 'easymde';
 import { useDialog } from '../../contexts/DialogContext';
@@ -11,7 +12,8 @@ import type { CommunicationTab } from '../../types/Communication';
 import type { CommunicationRecipient, MessageRecord } from '../../services/communicationService';
 import { pb } from '../../lib/pocketbase';
 import { communicationService } from '../../services/communicationService';
-import { settingsService } from '../../services/settingsService';
+import { queryKeys } from '../../lib/queryKeys';
+import { settingsService, type CommunicationSettings } from '../../services/settingsService';
 
 import { useCommunicationLibrary } from './communications/useCommunicationLibrary';
 import { useCommunicationDraft } from './communications/useCommunicationDraft';
@@ -64,6 +66,7 @@ export default function CommunicationView() {
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
 
   const library = useCommunicationLibrary();
+  const queryClient = useQueryClient();
 
   const automated = useAutomatedCommunicationTasks({
     events,
@@ -415,7 +418,7 @@ export default function CommunicationView() {
               })
             ) {
               await communicationService.deleteDraft(draftRecord.id);
-              library.setDrafts(await communicationService.getDrafts());
+              queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
             }
           }}
         />
@@ -481,7 +484,11 @@ export default function CommunicationView() {
           onSaveSettings={async () => {
             library.setIsSavingConfig(true);
             try {
-              await settingsService.saveCommunicationSettings(library.commSettings);
+              const currentSettings =
+                queryClient.getQueryData<CommunicationSettings>(
+                  queryKeys.communications.settings()
+                ) ?? library.commSettings;
+              await settingsService.saveCommunicationSettings(currentSettings);
               dialog.showToast('Settings updated successfully.');
             } catch (err: unknown) {
               const message = err instanceof Error ? err.message : String(err);
