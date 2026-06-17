@@ -26,27 +26,26 @@ export const PlayerLinkModal: React.FC<PlayerLinkModalProps> = ({
       }
       maxWidth="520px"
     >
-      <div className="flex flex-col gap-4">
-        <p className="text-text-muted m-0 text-sm leading-relaxed">
+      <div className="flex flex-col gap-2">
+        <p className="text-text-muted m-0 text-sm leading-snug">
           A standalone practice link has been generated for{' '}
           <strong className="text-text font-semibold">"{eventTitle}"</strong>. Share it with singers
           so they can listen to the audio tracks offline.
         </p>
 
-        <div className="bg-bg border-border flex items-stretch gap-2 rounded-lg border p-2">
-          <div className="text-text-muted flex-1 overflow-x-auto px-2 py-1 font-mono text-[0.8rem] whitespace-nowrap select-all">
+        <div className="bg-bg border-border flex items-center gap-1 rounded-md border p-1.5">
+          <div className="text-text-muted flex-1 overflow-x-auto px-1.5 py-0.5 font-mono text-[0.8rem] whitespace-nowrap select-all">
             {url}
           </div>
           <CopyButton value={url}>Copy</CopyButton>
         </div>
 
-        <div className="text-text-muted flex items-center gap-2 text-xs">
-          <span aria-hidden>🔗</span>
-          <span>Links do not require an account and can be sent via email or text.</span>
-        </div>
+        <p className="text-text-muted m-0 text-xs">
+          Links do not require an account and can be sent via email or text.
+        </p>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4">
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onClose}>
           Close
         </Button>
