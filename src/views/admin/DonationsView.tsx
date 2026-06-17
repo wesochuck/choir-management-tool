@@ -897,20 +897,6 @@ export default function DonationsView() {
                           </div>
                         </div>
                       ))}
-
-                      {/* interactive "+ Add Level" trigger card */}
-                      <Button
-                        variant="ghost"
-                        onClick={() => openLevelModal()}
-                        className="group flex min-h-[150px] w-full cursor-pointer flex-col items-center justify-center p-6 transition-all"
-                      >
-                        <div className="group-hover:border-primary/40 group-hover:text-primary rounded-xl border-2 border-dashed border-slate-300 bg-white p-2.5 text-slate-400 shadow-sm transition-colors">
-                          ➕
-                        </div>
-                        <span className="group-hover:text-primary mt-3 text-sm font-bold text-slate-500 transition-colors">
-                          + Add Donor Level
-                        </span>
-                      </Button>
                     </>
                   )}
                 </div>
