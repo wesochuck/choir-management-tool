@@ -1,4 +1,5 @@
 import SlSpinner from '@shoelace-style/shoelace/dist/react/spinner/index.js';
+import { safeSlProps } from '../shared';
 
 export type SpinnerSize = 'small' | 'medium' | 'large';
 
@@ -33,7 +34,7 @@ export function Spinner({ size = 'medium', className }: SpinnerProps) {
 
   return (
     <SlSpinner 
-      className={className} 
+      {...safeSlProps({ className } as Record<string, unknown>)}
       role="status"
       aria-label="Loading"
       // @allow-inline-style - dynamic spinner sizes

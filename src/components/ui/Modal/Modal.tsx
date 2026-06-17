@@ -6,6 +6,7 @@ import SlDrawer from '@shoelace-style/shoelace/dist/react/drawer/index.js';
 import type SlDrawerElement from '@shoelace-style/shoelace/dist/components/drawer/drawer.component.js';
 import { DialogContext } from '../../../contexts/DialogContext';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
+import { safeSlProps } from '../shared';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -216,12 +217,14 @@ export function Modal({
     return (
       <SlDrawer
         ref={drawerRef}
-        open={isOpen}
+        {...safeSlProps({
+          open: isOpen,
+          label: typeof title === 'string' ? title : undefined,
+          placement: 'end' as const,
+          // @allow-inline-style - dynamic max-width for drawer --size custom property (Shoelace uses --size for drawer width with placement="end"/"start")
+          style: { '--size': maxWidth } as React.CSSProperties,
+        } as Record<string, unknown>)}
         onSlRequestClose={handleRequestClose}
-        label={typeof title === 'string' ? title : undefined}
-        placement="end"
-        // @allow-inline-style - dynamic max-width for drawer --size custom property (Shoelace uses --size for drawer width with placement="end"/"start")
-        style={{ '--size': maxWidth } as React.CSSProperties}
       >
         {title && typeof title !== 'string' && (
           <div slot="label">
@@ -245,11 +248,13 @@ export function Modal({
   return (
     <SlDialog
       ref={dialogRef}
-      open={isOpen}
+      {...safeSlProps({
+        open: isOpen,
+        // @allow-inline-style - dynamic max-width for modal panel width custom property override
+        style: { '--width': maxWidth } as React.CSSProperties,
+        label: typeof title === 'string' ? title : undefined,
+      } as Record<string, unknown>)}
       onSlRequestClose={handleRequestClose}
-      // @allow-inline-style - dynamic max-width for modal panel width custom property override
-      style={{ '--width': maxWidth } as React.CSSProperties}
-      label={typeof title === 'string' ? title : undefined}
     >
       {title && typeof title !== 'string' && (
         <div slot="label">

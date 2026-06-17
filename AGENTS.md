@@ -114,6 +114,25 @@ This codebase uses Shoelace (`@shoelace-style/shoelace`) — Lit-based Web Compo
 
 **Do not import raw Shoelace components directly.** Always use the wrapper from `src/components/ui/`:
 
+**Every Shoelace wrapper MUST use `safeSlProps` from `src/components/ui/shared.ts`** to strip `undefined` values from the props object before spreading it onto a Shoelace component. Shoelace crashes internally in its render lifecycle when receiving `undefined` for props it may iterate over (class lists, part suffixes, option children). The pattern:
+
+```tsx
+import { safeSlProps } from '../shared';
+
+// Always wrap Sl* component props:
+<SlComponent
+  ref={slRef}
+  {...safeSlProps({
+    prop1: value,          // stripped if undefined
+    className: className,   // stripped if undefined
+    // ...rest spread goes inside safeSlProps, not outside
+    ...(consumerRest as Record<string, unknown>),
+  } as Record<string, unknown>)}
+/>
+```
+
+Never spread `{...rest}` directly onto a Shoelace component — rest values may be `undefined`.
+
 ```tsx
 // correct
 import { Button } from './components/ui/Button/Button';

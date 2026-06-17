@@ -72,17 +72,21 @@ export function Button({
   const slSize = size === 'tiny' || size === 'small' ? 'small' : 'medium';
   const isOutline = variant === 'outline';
 
+  const slProps: Record<string, unknown> = {
+    variant: slVariant,
+    size: slSize,
+    outline: isOutline,
+    loading,
+    onClick,
+  };
+  if (disabled !== undefined) slProps.disabled = disabled;
+  if (className !== undefined) slProps.className = className;
+  for (const [key, value] of Object.entries(rest)) {
+    if (value !== undefined) slProps[key] = value;
+  }
+
   return (
-    <SlButton
-      variant={slVariant}
-      size={slSize}
-      outline={isOutline}
-      loading={loading}
-      disabled={disabled}
-      onClick={onClick}
-      className={className}
-      {...rest}
-    >
+    <SlButton {...slProps}>
       {icon && <span slot="prefix">{icon}</span>}
       {children}
     </SlButton>

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import SlCopyButton from '@shoelace-style/shoelace/dist/react/copy-button/index.js';
+import { safeSlProps } from '../shared';
 
 export interface CopyButtonProps {
   value: string;
@@ -23,7 +24,7 @@ export function CopyButton({ value, disabled, className, children }: CopyButtonP
   }
 
   return (
-    <SlCopyButton value={value} disabled={disabled} className={className}>
+    <SlCopyButton {...safeSlProps({ value, disabled, className } as Record<string, unknown>)}>
       {children}
     </SlCopyButton>
   );

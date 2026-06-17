@@ -2,7 +2,7 @@ import React, { useImperativeHandle, useRef } from 'react';
 import SlSelect from '@shoelace-style/shoelace/dist/react/select/index.js';
 import SlOption from '@shoelace-style/shoelace/dist/react/option/index.js';
 import type SlSelectElement from '@shoelace-style/shoelace/dist/components/select/select.component.js';
-import { layoutOnly } from '../shared';
+import { layoutOnly, safeSlProps } from '../shared';
 
 export type SelectSize = 'default' | 'small' | 'compact';
 
@@ -26,9 +26,11 @@ function convertOptions(children: React.ReactNode): React.ReactNode {
         const { value: optionValue, disabled, children: optionChildren, ...restProps } = props;
         return (
           <SlOption 
-            value={optionValue !== undefined ? String(optionValue) : ''} 
-            disabled={Boolean(disabled)} 
-            {...(restProps as Record<string, unknown>)}
+            {...safeSlProps({
+              value: optionValue !== undefined ? String(optionValue) : '',
+              disabled: Boolean(disabled),
+              ...(restProps as Record<string, unknown>),
+            } as Record<string, unknown>)}
           >
             {optionChildren as React.ReactNode}
           </SlOption>
@@ -146,17 +148,20 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <SlSelect
         ref={slRef}
-        size={slSize}
-        value={value !== undefined ? String(value) : undefined}
-        defaultValue={defaultValue !== undefined ? String(defaultValue) : undefined}
-        disabled={rest.disabled}
-        required={rest.required}
-        name={rest.name}
-        onSlChange={handleChange}
-        onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLSelectElement>) : undefined}
-        className={layoutOnly(className)}
-        // @allow-inline-style - dynamic invalid border color override
-        style={invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined}
+        {...safeSlProps({
+          size: slSize,
+          value: value !== undefined ? String(value) : undefined,
+          defaultValue: defaultValue !== undefined ? String(defaultValue) : undefined,
+          hoist: true,
+          disabled: rest.disabled,
+          required: rest.required,
+          name: rest.name,
+          onSlChange: handleChange,
+          onSlBlur: onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLSelectElement>) : undefined,
+          className: layoutOnly(className),
+          // @allow-inline-style - dynamic invalid border color override
+          style: invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined,
+        } as Record<string, unknown>)}
       >
         {convertedChildren}
       </SlSelect>

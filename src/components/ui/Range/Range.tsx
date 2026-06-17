@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import SlRange from '@shoelace-style/shoelace/dist/react/range/index.js';
+import { safeSlProps } from '../shared';
 
 export interface RangeProps {
   value: number;
@@ -37,16 +38,17 @@ export function Range({ value, min, max, step, onInput, onChange, className, id,
 
   return (
     <SlRange
-      id={id}
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      className={className}
-      // @allow-inline-style - CSS custom properties for Shoelace range theming
-      style={style}
-      onSlInput={onInput ? (e: unknown) => onInput((e as CustomEvent).detail.value as number) : undefined}
-      onSlChange={onChange ? (e: unknown) => onChange((e as CustomEvent).detail.value as number) : undefined}
+      {...safeSlProps({
+        id,
+        min,
+        max,
+        step,
+        value,
+        className,
+        style,
+        onSlInput: onInput ? (e: unknown) => onInput((e as CustomEvent).detail.value as number) : undefined,
+        onSlChange: onChange ? (e: unknown) => onChange((e as CustomEvent).detail.value as number) : undefined,
+      } as Record<string, unknown>)}
     />
   );
 }

@@ -2,6 +2,7 @@ import type { ReactNode, ComponentProps, ComponentType } from 'react';
 import SlTabGroup from '@shoelace-style/shoelace/dist/react/tab-group/index.js';
 import SlTab from '@shoelace-style/shoelace/dist/react/tab/index.js';
 import SlTabPanel from '@shoelace-style/shoelace/dist/react/tab-panel/index.js';
+import { safeSlProps } from '../shared';
 
 const SlTabGroupWithValue = SlTabGroup as unknown as ComponentType<
   ComponentProps<typeof SlTabGroup> & { value?: string }
@@ -33,8 +34,7 @@ export function TabGroup({ value, onTabChange, children, className }: TabGroupPr
 
   return (
     <SlTabGroupWithValue
-      value={value}
-      className={className}
+      {...safeSlProps({ value, className } as Record<string, unknown>)}
       onSlTabShow={(e: unknown) => {
         onTabChange(((e as CustomEvent).detail.name as string));
       }}
@@ -49,7 +49,7 @@ export function Tab({ panel, children, className }: TabProps) {
     return <div className={className}>{children}</div>;
   }
 
-  return <SlTab slot="nav" panel={panel} className={className}>{children}</SlTab>;
+  return <SlTab slot="nav" {...safeSlProps({ panel, className } as Record<string, unknown>)}>{children}</SlTab>;
 }
 
 export function TabPanel({ name, children, className }: TabPanelProps) {
@@ -57,5 +57,5 @@ export function TabPanel({ name, children, className }: TabPanelProps) {
     return <div className={className}>{children}</div>;
   }
 
-  return <SlTabPanel name={name} className={className}>{children}</SlTabPanel>;
+  return <SlTabPanel {...safeSlProps({ name, className } as Record<string, unknown>)}>{children}</SlTabPanel>;
 }

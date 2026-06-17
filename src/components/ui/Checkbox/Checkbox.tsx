@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, useRef } from 'react';
 import SlCheckbox from '@shoelace-style/shoelace/dist/react/checkbox/index.js';
 import type SlCheckboxElement from '@shoelace-style/shoelace/dist/components/checkbox/checkbox.component.js';
-import { layoutOnly } from '../shared';
+import { layoutOnly, safeSlProps } from '../shared';
 
 export type CheckboxProps = Omit<React.ComponentPropsWithoutRef<'input'>, 'size'>;
 
@@ -67,17 +67,19 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     return (
       <SlCheckbox
         ref={slRef}
-        checked={checked}
-        defaultChecked={defaultChecked}
-        disabled={disabled}
-        required={required}
-        name={name}
-        value={value !== undefined ? String(value) : undefined}
-        className={layoutOnly(className)}
-        onSlChange={handleChange}
-        onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined}
-        onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined}
-        {...(rest as Record<string, unknown>)}
+        {...safeSlProps({
+          checked,
+          defaultChecked,
+          disabled,
+          required,
+          name,
+          value: value !== undefined ? String(value) : undefined,
+          className: layoutOnly(className),
+          onSlChange: handleChange,
+          onSlBlur: onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined,
+          onSlFocus: onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined,
+          ...(rest as Record<string, unknown>),
+        } as Record<string, unknown>)}
       >
         {children}
       </SlCheckbox>

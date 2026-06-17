@@ -1,7 +1,7 @@
 import React, { useImperativeHandle, useRef } from 'react';
 import SlInput from '@shoelace-style/shoelace/dist/react/input/index.js';
 import type SlInputElement from '@shoelace-style/shoelace/dist/components/input/input.component.js';
-import { layoutOnly } from '../shared';
+import { layoutOnly, safeSlProps } from '../shared';
 
 export interface InputProps extends Omit<React.ComponentPropsWithoutRef<'input'>, 'size'> {
   invalid?: boolean;
@@ -114,21 +114,23 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <SlInput
         ref={slRef}
-        type={type as SlInputElement['type']}
-        value={value !== undefined ? String(value) : undefined}
-        defaultValue={defaultValue !== undefined ? String(defaultValue) : undefined}
-        placeholder={placeholder}
-        disabled={disabled}
-        required={required}
-        readonly={readOnly}
-        name={name}
-        className={layoutOnly(className)}
-        onSlInput={handleInput}
-        onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined}
-        onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined}
-        // @allow-inline-style - dynamic invalid border color override
-        style={invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined}
-        {...(rest as Record<string, unknown>)}
+        {...safeSlProps({
+          type: type as SlInputElement['type'],
+          value: value !== undefined ? String(value) : undefined,
+          defaultValue: defaultValue !== undefined ? String(defaultValue) : undefined,
+          placeholder,
+          disabled,
+          required,
+          readonly: readOnly,
+          name,
+          className: layoutOnly(className),
+          onSlInput: handleInput,
+          onSlBlur: onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined,
+          onSlFocus: onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined,
+          // @allow-inline-style - dynamic invalid border color override
+          style: invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined,
+          ...(rest as Record<string, unknown>),
+        } as Record<string, unknown>)}
       >
         {children}
       </SlInput>

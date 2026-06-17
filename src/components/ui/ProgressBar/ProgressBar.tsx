@@ -1,4 +1,5 @@
 import SlProgressBar from '@shoelace-style/shoelace/dist/react/progress-bar/index.js';
+import { safeSlProps } from '../shared';
 
 export interface ProgressBarProps {
   value: number;
@@ -18,5 +19,5 @@ export function ProgressBar({ value, className }: ProgressBarProps) {
     );
   }
 
-  return <SlProgressBar value={value} className={className} />;
+  return <SlProgressBar {...safeSlProps({ value, className } as Record<string, unknown>)} />;
 }
