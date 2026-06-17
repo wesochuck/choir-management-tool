@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
-import { EventList } from '../../components/admin/EventList';
+import { EventTable } from '../../components/admin/EventTable';
 import { EventModal } from '../../components/admin/EventModal';
 import { BulkEventModal } from '../../components/admin/BulkEventModal';
 import type { Event } from '../../services/eventService';
@@ -228,7 +228,7 @@ export default function EventsView(): React.JSX.Element {
         </div>
       </div>
 
-      <EventList
+      <EventTable
         events={filteredEvents}
         onEdit={handleEdit}
         onCreate={handleAdd}
