@@ -35,6 +35,7 @@ export interface DataTableProps<T> {
   onPaginationChange?: (state: { pageIndex: number; pageSize: number }) => void;
   pageCount?: number;
   pageSize?: number;
+  hidePagination?: boolean;
   getRowId?: (originalRow: T, index: number) => string;
   getRowClassName?: (row: T) => string;
   renderMobileCard?: (row: T) => ReactNode;

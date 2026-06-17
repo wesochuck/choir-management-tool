@@ -82,6 +82,7 @@ export function DataTable<T>({
   getRowClassName,
   renderRow,
   defaultSorting,
+  hidePagination,
 }: DataTableProps<T>) {
   const tanStackColumns = useMemo(() => columns.map(toTanStackColumn), [columns]);
 
@@ -370,7 +371,7 @@ export function DataTable<T>({
         })}
       </div>
 
-      <DataTablePagination table={table} />
+      {!hidePagination && <DataTablePagination table={table} />}
     </div>
   );
 }
