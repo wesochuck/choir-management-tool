@@ -157,7 +157,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
                 className="!m-0"
                 onClick={() => onPlayTrack(row)}
               >
-                🎵 Play
+                ▶ Play
               </Button>
             ) : isParent && totalMovementTracksCount > 0 ? (
               <span
