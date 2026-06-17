@@ -31,53 +31,71 @@ const getInitials = (name: string) => {
     .toUpperCase();
 };
 
-export const RosterTable: React.FC<RosterTableProps> = ({ 
-  profiles, 
-  onEdit, 
+export const RosterTable: React.FC<RosterTableProps> = ({
+  profiles,
+  onEdit,
   onCreate,
-  currentSeason, 
-  duesMap, 
+  currentSeason,
+  duesMap,
   onToggleDues,
   currentPage,
   pageSize,
   totalCount,
-  onPageChange
+  onPageChange,
 }) => {
-  const [activePhoto, setActivePhoto] = useState<{ url: string; name: string; voicePart?: string } | null>(null);
+  const [activePhoto, setActivePhoto] = useState<{
+    url: string;
+    name: string;
+    voicePart?: string;
+  } | null>(null);
 
   return (
     <AppCard noPadding>
       <div className="overflow-x-auto rounded-t-xl">
-        <table className="min-w-full divide-y divide-border bg-surface">
+        <table className="divide-border bg-surface min-w-full divide-y">
           <thead className="bg-slate-50/70">
             <tr>
-              <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Name</th>
-              <th className="hidden px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase sm:table-cell">Login</th>
-              <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Voice</th>
-              <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Status</th>
+              <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                Name
+              </th>
+              <th className="hidden px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase sm:table-cell">
+                Login
+              </th>
+              <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                Voice
+              </th>
+              <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                Status
+              </th>
               {currentSeason && (
-                <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">Dues Paid</th>
+                <th className="px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                  Dues Paid
+                </th>
               )}
-              <th className="hidden px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase md:table-cell">Phone</th>
-              <th className="px-6 py-3.5 text-right text-xs font-semibold tracking-wider text-slate-500 uppercase">Actions</th>
+              <th className="hidden px-6 py-3.5 text-left text-xs font-semibold tracking-wider text-slate-500 uppercase md:table-cell">
+                Phone
+              </th>
+              <th className="px-6 py-3.5 text-right text-xs font-semibold tracking-wider text-slate-500 uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border bg-surface">
+          <tbody className="divide-border bg-surface divide-y">
             {profiles.map((p) => {
               const statusDisplay = getGlobalStatusDisplay(p.globalStatus);
               const photoUrl = p.photo ? pb.files.getURL(p, p.photo) : undefined;
               const initials = getInitials(p.name);
 
               return (
-                <tr 
-                  key={p.id} 
-                  className="cursor-pointer transition-colors hover:bg-slate-50/50" 
+                <tr
+                  key={p.id}
+                  className="cursor-pointer transition-colors hover:bg-slate-50/50"
                   onClick={() => onEdit(p)}
                 >
-                  <td className="px-6 py-4 text-sm font-medium text-text">
+                  <td className="text-text px-6 py-4 text-sm font-medium">
                     <div className="flex items-center gap-3">
                       {/* Interactive Avatar */}
-                      <div 
+                      <div
                         onClick={(e) => {
                           if (photoUrl) {
                             e.stopPropagation();
@@ -85,7 +103,9 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                           }
                         }}
                         className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 transition-all duration-200 select-none ${
-                          photoUrl ? 'cursor-zoom-in hover:scale-105 hover:border-primary/50' : 'cursor-default'
+                          photoUrl
+                            ? 'hover:border-primary/50 cursor-zoom-in hover:scale-105'
+                            : 'cursor-default'
                         }`}
                       >
                         {photoUrl ? (
@@ -104,7 +124,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                       <div className="flex flex-col items-start">
                         <span className="font-semibold text-slate-900">{p.name}</span>
                         {p.expand?.user?.role === 'admin' && (
-                          <span className="mt-1 inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-overline text-emerald-800">
+                          <span className="text-overline mt-1 inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-800">
                             Admin
                           </span>
                         )}
@@ -112,11 +132,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                     </div>
                   </td>
                   <td className="hidden px-6 py-4 text-sm text-slate-500 sm:table-cell">
-                    {p.expand?.user?.email || <span className="text-slate-300 italic">No login</span>}
+                    {p.expand?.user?.email || (
+                      <span className="text-slate-300 italic">No login</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm">
                     {p.voicePart ? (
-                      <span className="inline-flex items-center rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary-deep">
+                      <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
                         {p.voicePart}
                       </span>
                     ) : (
@@ -124,19 +146,15 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <Badge
-                      label={statusDisplay.label}
-                      tone={statusDisplay.tone}
-                      size="sm"
-                    />
+                    <Badge label={statusDisplay.label} tone={statusDisplay.tone} size="sm" />
                   </td>
                   {currentSeason && (
                     <td className="px-6 py-4 text-sm" onClick={(e) => e.stopPropagation()}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         checked={duesMap?.[p.id]?.paid || false}
                         onChange={(e) => onToggleDues?.(p.id, e.target.checked)}
-                        className="size-4 cursor-pointer rounded border-slate-300 text-primary focus:ring-primary focus:ring-offset-2"
+                        className="text-primary focus:ring-primary size-4 cursor-pointer rounded border-slate-300 focus:ring-offset-2"
                       />
                     </td>
                   )}
@@ -144,11 +162,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                     {p.phone || <span className="text-slate-300">—</span>}
                   </td>
                   <td className="px-6 py-4 text-right text-sm" onClick={(e) => e.stopPropagation()}>
-                    <Button 
-                      onClick={() => onEdit(p)}
-                      variant="outline"
-                      size="small"
-                    >
+                    <Button onClick={() => onEdit(p)} variant="outline" size="small">
                       Edit
                     </Button>
                   </td>
@@ -173,12 +187,13 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         </table>
       </div>
       {totalCount > 0 && (
-        <div className="no-print mt-1 flex flex-col items-center justify-between rounded-b-xl border-t border-border bg-surface px-6 py-4 md:flex-row">
-          <span className="text-sm font-medium text-text-muted">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
+        <div className="no-print border-border bg-surface mt-1 flex flex-col items-center justify-between rounded-b-xl border-t px-6 py-4 md:flex-row">
+          <span className="text-text-muted text-sm font-medium">
+            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–
+            {Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
           </span>
 
-          <Pagination 
+          <Pagination
             currentPage={currentPage}
             totalPages={Math.max(1, Math.ceil(totalCount / pageSize))}
             onPageChange={onPageChange}
@@ -202,7 +217,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
               />
             </div>
             {activePhoto.voicePart && (
-              <span className="inline-flex items-center rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-semibold text-primary-deep">
+              <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
                 {activePhoto.voicePart}
               </span>
             )}

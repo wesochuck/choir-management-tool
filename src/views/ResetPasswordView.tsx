@@ -47,7 +47,10 @@ export default function ResetPasswordView() {
         navigate('/login');
       }, 3000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to reset password. The link may have expired or is invalid.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Failed to reset password. The link may have expired or is invalid.';
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -55,29 +58,26 @@ export default function ResetPasswordView() {
   };
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-bg p-4">
+    <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-center p-4">
       <AppCard className="w-full max-w-[min(400px,calc(100vw-32px))]">
         <h1 className="text-display mb-8 text-center">Reset Password</h1>
 
         {!token ? (
           <div className="flex flex-col items-center gap-4">
-            <p className="m-0 text-xs text-danger-text">
+            <p className="text-danger-text m-0 text-xs">
               ⚠️ Missing or invalid password reset token.
             </p>
-            <p className="m-0 text-xs text-text-muted">
-              The reset link you followed is invalid or has expired. Please go back to the login screen and request a new password reset link.
+            <p className="text-text-muted m-0 text-xs">
+              The reset link you followed is invalid or has expired. Please go back to the login
+              screen and request a new password reset link.
             </p>
-            <Button
-              variant="primary"
-              className="mt-2 w-full"
-              onClick={() => navigate('/login')}
-            >
+            <Button variant="primary" className="mt-2 w-full" onClick={() => navigate('/login')}>
               Go to Login
             </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <p className="m-0 text-center text-sm leading-relaxed text-text-muted">
+            <p className="text-text-muted m-0 text-center text-sm leading-relaxed">
               Please enter your new password below. It must be at least 8 characters.
             </p>
 
@@ -88,7 +88,6 @@ export default function ResetPasswordView() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-               
                 disabled={isLoading || !!success}
               />
             </FormField>
@@ -100,13 +99,12 @@ export default function ResetPasswordView() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-               
                 disabled={isLoading || !!success}
               />
             </FormField>
 
-            {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
-            {success && <p className="m-0 text-xs font-semibold text-primary">{success}</p>}
+            {error && <p className="text-danger-text m-0 text-xs">{error}</p>}
+            {success && <p className="text-primary m-0 text-xs font-semibold">{success}</p>}
 
             <Button
               type="submit"
@@ -120,7 +118,7 @@ export default function ResetPasswordView() {
             {!success && (
               <button
                 type="button"
-                className="h-auto cursor-pointer self-center border-none bg-none p-0 text-xs text-text-muted underline hover:text-text"
+                className="text-text-muted hover:text-text h-auto cursor-pointer self-center border-none bg-none p-0 text-xs underline"
                 onClick={() => navigate('/login')}
               >
                 Cancel and return to Login

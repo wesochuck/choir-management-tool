@@ -15,10 +15,7 @@ interface HistoryPanelProps {
   commSettings: CommunicationSettings;
   onViewDetails: (message: MessageRecord) => void;
   onCopyDraft: (message: MessageRecord) => void;
-  onViewRecipients: (
-    recipients: CommunicationRecipient[],
-    title: string
-  ) => void;
+  onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
 }
 
 export function HistoryPanel({
@@ -39,20 +36,20 @@ export function HistoryPanel({
   return (
     <div className="flex flex-col gap-4">
       <MessageHistory
-          history={history}
-          currentPage={historyPage}
-          totalPages={totalPages}
-          onPageChange={setHistoryPage}
-          historySearchQuery={historySearchQuery}
-          onHistorySearchChange={onHistorySearchChange}
-          sourceFilter={sourceFilter}
-          onSourceFilterChange={setSourceFilter}
-          onViewDetails={onViewDetails}
-          onCopyDraft={onCopyDraft}
-          onViewRecipients={onViewRecipients}
-          events={events}
-          commSettings={commSettings}
-        />
+        history={history}
+        currentPage={historyPage}
+        totalPages={totalPages}
+        onPageChange={setHistoryPage}
+        historySearchQuery={historySearchQuery}
+        onHistorySearchChange={onHistorySearchChange}
+        sourceFilter={sourceFilter}
+        onSourceFilterChange={setSourceFilter}
+        onViewDetails={onViewDetails}
+        onCopyDraft={onCopyDraft}
+        onViewRecipients={onViewRecipients}
+        events={events}
+        commSettings={commSettings}
+      />
     </div>
   );
 }

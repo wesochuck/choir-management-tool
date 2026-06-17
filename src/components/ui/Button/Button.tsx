@@ -20,7 +20,8 @@ export interface ButtonProps {
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md',
   secondary: 'bg-primary-light text-primary-deep hover:bg-primary-deep/10',
-  outline: 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
+  outline:
+    'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
   danger: 'bg-danger-bg text-danger-text hover:bg-red-200 hover:border-red-300',
 };
 
@@ -57,7 +58,7 @@ export function Button({
     return (
       <Component
         className={classNames}
-        disabled={isButton ? (disabled || loading) : undefined}
+        disabled={isButton ? disabled || loading : undefined}
         onClick={loading ? undefined : onClick}
         {...rest}
       >
@@ -68,7 +69,8 @@ export function Button({
     );
   }
 
-  const slVariant = variant === 'secondary' ? 'neutral' : variant === 'danger' ? 'danger' : 'primary';
+  const slVariant =
+    variant === 'secondary' ? 'neutral' : variant === 'danger' ? 'danger' : 'primary';
   const slSize = size === 'tiny' || size === 'small' ? 'small' : 'medium';
   const isOutline = variant === 'outline';
 

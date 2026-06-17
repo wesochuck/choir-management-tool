@@ -1,6 +1,14 @@
 import type { CSVData } from './rosterImportUtils';
 
-export type MusicField = 'title' | 'composer' | 'arranger' | 'copies' | 'catalogId' | 'duration' | 'notes' | 'purchaseDate';
+export type MusicField =
+  | 'title'
+  | 'composer'
+  | 'arranger'
+  | 'copies'
+  | 'catalogId'
+  | 'duration'
+  | 'notes'
+  | 'purchaseDate';
 export type MusicFieldMapping = Record<MusicField, number>;
 
 export interface MappedMusicPiece {
@@ -21,12 +29,12 @@ export interface MappedMusicPiece {
 }
 
 function trimStr(s: string): string {
-  if (!s) return "";
+  if (!s) return '';
   return s.replace(/^[\s,;./()]+|[\s,;./()]+$/g, '').trim();
 }
 
 function parseComposerArranger(combined: string): { composer: string; arranger: string } {
-  if (!combined) return { composer: "", arranger: "" };
+  if (!combined) return { composer: '', arranger: '' };
 
   const trimmed = combined.trim();
 
@@ -44,7 +52,7 @@ function parseComposerArranger(combined: string): { composer: string; arranger: 
   const parenArrSuffixMatch = trimmed.match(/\((?:arr|arranged)\.?\)/i);
   if (parenArrSuffixMatch) {
     const composer = trimStr(trimmed.replace(parenArrSuffixMatch[0], ''));
-    return { composer, arranger: "" };
+    return { composer, arranger: '' };
   }
 
   // Pattern 3: Split by common delimiters like "/ arr. ", ", arr. ", " arr. ", "arranged by", "/ arr"
@@ -68,13 +76,13 @@ function parseComposerArranger(combined: string): { composer: string; arranger: 
         const arrangerVal = right.replace(/^(?:arr(?:anged)?\b\.?\s*(?:by)?\s*)/i, '').trim();
         return {
           composer: left,
-          arranger: trimStr(arrangerVal)
+          arranger: trimStr(arrangerVal),
         };
       }
     }
   }
 
-  return { composer: trimStr(trimmed), arranger: "" };
+  return { composer: trimStr(trimmed), arranger: '' };
 }
 
 function parsePurchaseDate(val: string): string | undefined {
@@ -107,19 +115,39 @@ function parsePurchaseDate(val: string): string | undefined {
 
   // 4. Matches Month Name Year, e.g. "May 2026" or "May, 2026" or "May 26"
   const monthNames = [
-    'january', 'february', 'march', 'april', 'may', 'june',
-    'july', 'august', 'september', 'october', 'november', 'december'
+    'january',
+    'february',
+    'march',
+    'april',
+    'may',
+    'june',
+    'july',
+    'august',
+    'september',
+    'october',
+    'november',
+    'december',
   ];
   const shortMonthNames = [
-    'jan', 'feb', 'mar', 'apr', 'may', 'jun',
-    'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
+    'jan',
+    'feb',
+    'mar',
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec',
   ];
 
   const lower = clean.toLowerCase();
   for (let i = 0; i < 12; i++) {
     const mName = monthNames[i];
     const mShort = shortMonthNames[i];
-    
+
     // Check if month name exists in string
     if (lower.includes(mName) || lower.includes(mShort)) {
       // Find a 2 or 4 digit year in the string
@@ -169,8 +197,9 @@ export function suggestMusicFieldMapping(headers: string[]): MusicFieldMapping {
 
   headers.forEach((header, index) => {
     const clean = header.trim().toLowerCase();
-    
-    const matches = (keywords: string[]) => keywords.some(k => clean.includes(k) || k.includes(clean));
+
+    const matches = (keywords: string[]) =>
+      keywords.some((k) => clean.includes(k) || k.includes(clean));
 
     if (mapping.title === -1 && matches(titleKeywords)) {
       mapping.title = index;
@@ -280,4 +309,3 @@ export function validateAndMapMusicPieces(
 
   return result;
 }
-

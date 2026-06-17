@@ -1,8 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  DEFAULT_COMMUNICATION_SETTINGS,
-  settingsService,
-} from '../../../services/settingsService';
+import { DEFAULT_COMMUNICATION_SETTINGS, settingsService } from '../../../services/settingsService';
 import { queryKeys } from '../../../lib/queryKeys';
 
 export function useEventSettings() {

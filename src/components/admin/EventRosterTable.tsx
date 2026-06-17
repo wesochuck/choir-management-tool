@@ -6,7 +6,6 @@ import { PhotoUploader } from '../common/PhotoUploader';
 import { Badge, Button } from '../ui';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
 
-
 interface EventRosterTableProps {
   singers: Array<{
     profile: Profile;
@@ -59,10 +58,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
             const p = s.profile;
             const rsvpDisplay = getRsvpDisplay(s.rsvp, { variant: 'eventRoster' });
             return (
-              <tr
-                key={p.id}
-                className="hover:bg-slate-50"
-              >
+              <tr key={p.id} className="hover:bg-slate-50">
                 <td className="px-6 py-4 text-sm whitespace-nowrap">
                   <div className="flex items-center gap-3">
                     <PhotoUploader
@@ -106,11 +102,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
                 </td>
                 <td className="px-6 py-4 text-center text-sm whitespace-nowrap">
                   <div className="flex flex-col items-center gap-1">
-                    <Badge
-                      label={rsvpDisplay.label}
-                      tone={rsvpDisplay.tone}
-                      size="sm"
-                    />
+                    <Badge label={rsvpDisplay.label} tone={rsvpDisplay.tone} size="sm" />
                     {s.roster?.rsvpNote && s.rsvp === 'No' && (
                       <div className="max-w-[160px] text-xs leading-tight font-normal text-slate-400 italic">
                         &quot;{s.roster.rsvpNote}&quot;

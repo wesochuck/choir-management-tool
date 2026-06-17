@@ -34,7 +34,7 @@ export default function SeatingView() {
   const { performances } = useEvents();
   const { venues, editVenue } = useVenues();
   const hasDefaultedRef = useRef(false);
-  
+
   const [performanceId, setPerformanceId] = useState('');
   const [activeTab, setActiveTab] = useState<'chart' | 'templates'>('chart');
 
@@ -57,11 +57,11 @@ export default function SeatingView() {
   });
   const [printMode, setPrintMode] = useState<'visual' | 'text'>('visual');
   const [showVoicePartsInList, setShowVoicePartsInList] = useState(true);
-  
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isWideLayout = isFullscreen;
   const singersListPosition = getSingersListPosition();
-  
+
   const workspaceRef = useRef<HTMLDivElement>(null);
 
   const toggleFullscreen = () => {
@@ -84,11 +84,33 @@ export default function SeatingView() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const selectedVenue = venues.find(v => v.id === venueId) || null;
-  const { 
-    chart, optimisticAssignments, activeProfiles, rowCounts, suggestions, sections, voiceParts, seatingSettings, isLoading,
-    isSaving, isDirty, error: saveError, assignSinger, updateChart, copyFromPerformance, forceSave, refresh, currentFormation,
-    charts, activeChartId, setActiveChartId, createChart, renameChart, deleteChart, reorderCharts
+  const selectedVenue = venues.find((v) => v.id === venueId) || null;
+  const {
+    chart,
+    optimisticAssignments,
+    activeProfiles,
+    rowCounts,
+    suggestions,
+    sections,
+    voiceParts,
+    seatingSettings,
+    isLoading,
+    isSaving,
+    isDirty,
+    error: saveError,
+    assignSinger,
+    updateChart,
+    copyFromPerformance,
+    forceSave,
+    refresh,
+    currentFormation,
+    charts,
+    activeChartId,
+    setActiveChartId,
+    createChart,
+    renameChart,
+    deleteChart,
+    reorderCharts,
   } = useSeatingChart(performanceId, selectedVenue);
 
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
@@ -96,7 +118,7 @@ export default function SeatingView() {
 
   const [isNewChartModalOpen, setIsNewChartModalOpen] = useState(false);
   const [newChartName, setNewChartName] = useState('');
-  
+
   const [isRenameChartModalOpen, setIsRenameChartModalOpen] = useState(false);
   const [renameChartName, setRenameChartName] = useState('');
   const [chartToRename, setChartToRename] = useState<SeatingChart | null>(null);
@@ -121,7 +143,7 @@ export default function SeatingView() {
       title: 'Remove from Performance Roster?',
       message: `Change RSVP for ${name} to "No" (Not Attending) for this performance? This will remove them from the seating chart shelf.`,
       confirmLabel: 'Remove',
-      variant: 'danger'
+      variant: 'danger',
     });
     if (!confirmed) return;
 
@@ -141,7 +163,7 @@ export default function SeatingView() {
 
   useEffect(() => {
     if (performanceId) {
-      const perf = performances.find(p => p.id === performanceId);
+      const perf = performances.find((p) => p.id === performanceId);
       if (perf && perf.venue) {
         setVenueId(perf.venue);
       }
@@ -163,9 +185,9 @@ export default function SeatingView() {
 
   const groupedRows = useMemo(() => {
     if (!rowCounts.length) return [];
-    
+
     const profileMap: Record<string, Profile> = {};
-    activeProfiles.forEach(p => profileMap[p.id] = p);
+    activeProfiles.forEach((p) => (profileMap[p.id] = p));
 
     return rowCounts.map((seatCount, rowIndex) => {
       const row: (Profile | null)[] = [];
@@ -182,18 +204,16 @@ export default function SeatingView() {
     const order = currentFormation?.sectionOrder || [];
     const hasOrder = order.length > 0;
 
-    return activeProfiles.filter(p => {
+    return activeProfiles.filter((p) => {
       if (assignedIds.has(p.id)) return false;
       if (!hasOrder) return true;
 
       if (currentFormation?.isVoicePartLayout) {
-        return order.some(key =>
-          key.toLowerCase() === (p.voicePart || '').trim().toLowerCase()
-        );
+        return order.some((key) => key.toLowerCase() === (p.voicePart || '').trim().toLowerCase());
       }
 
-      const vpDef = voiceParts.find(vp =>
-        vp.label === p.voicePart || vp.fullName === p.voicePart
+      const vpDef = voiceParts.find(
+        (vp) => vp.label === p.voicePart || vp.fullName === p.voicePart
       );
       let sectionCode = vpDef?.sectionCode;
       if (!sectionCode) {
@@ -233,17 +253,22 @@ export default function SeatingView() {
   const handleReset = async () => {
     const shouldReset = await dialog.confirm({
       title: 'Reset Seating Chart',
-      message: 'REALLY RESET EVERYTHING? This will clear assignments, custom row counts, and formations.',
+      message:
+        'REALLY RESET EVERYTHING? This will clear assignments, custom row counts, and formations.',
       confirmLabel: 'Reset',
       variant: 'danger',
     });
     if (!shouldReset) return;
 
-    await updateChart({ assignments: {}, layoutOverride: null, formationId: seatingSettings.defaultFormationId });
+    await updateChart({
+      assignments: {},
+      layoutOverride: null,
+      formationId: seatingSettings.defaultFormationId,
+    });
   };
 
   const handleCopy = async (sourceChartId: string) => {
-    const source = allCharts.find(c => c.id === sourceChartId);
+    const source = allCharts.find((c) => c.id === sourceChartId);
     if (!source) return;
 
     const shouldCopy = await dialog.confirm({
@@ -257,8 +282,8 @@ export default function SeatingView() {
   };
 
   const chartList = charts || [];
-  const activeChart = chartList.find(c => c.id === activeChartId) || null;
-  const activeChartIndex = chartList.findIndex(c => c.id === activeChartId);
+  const activeChart = chartList.find((c) => c.id === activeChartId) || null;
+  const activeChartIndex = chartList.findIndex((c) => c.id === activeChartId);
   const canMoveChartEarlier = activeChartIndex > 0;
   const canMoveChartLater = activeChartIndex >= 0 && activeChartIndex < chartList.length - 1;
 
@@ -270,20 +295,18 @@ export default function SeatingView() {
     const orderedCharts = [...chartList];
     const [movedChart] = orderedCharts.splice(activeChartIndex, 1);
     orderedCharts.splice(targetIndex, 0, movedChart);
-    await reorderCharts(orderedCharts.map(c => c.id));
+    await reorderCharts(orderedCharts.map((c) => c.id));
   };
 
   return (
-    <div 
-      className={`flex w-full flex-col gap-4 bg-transparent px-0 py-2 print-landscape ${isWideLayout ? '!mx-0 w-full max-w-none !bg-bg !p-4' : ''}`} 
+    <div
+      className={`print-landscape flex w-full flex-col gap-4 bg-transparent px-0 py-2 ${isWideLayout ? '!bg-bg !mx-0 w-full max-w-none !p-4' : ''}`}
       ref={workspaceRef}
-      data-print-mode={printMode} 
+      data-print-mode={printMode}
     >
       {/* Header Area */}
       <div className="no-print flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-          Seating Chart
-        </h1>
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Seating Chart</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
           Assign singers to seats, manage formations, and print seating layouts
         </p>
@@ -296,7 +319,7 @@ export default function SeatingView() {
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'chart'
-                ? 'border-primary font-bold text-primary'
+                ? 'border-primary text-primary font-bold'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('chart')}
@@ -307,7 +330,7 @@ export default function SeatingView() {
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'templates'
-                ? 'border-primary font-bold text-primary'
+                ? 'border-primary text-primary font-bold'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('templates')}
@@ -321,30 +344,45 @@ export default function SeatingView() {
       {activeTab === 'chart' && (
         <div className="no-print grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 md:grid-cols-2 xl:grid-cols-[0.8fr_1fr_1fr_1.6fr]">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Performance</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Performance
+            </label>
             <Select
               value={performanceId}
               onChange={(e) => setPerformanceId(e.target.value)}
-              size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
+              size="small"
+              className="focus:!border-primary focus:!ring-primary focus:!ring-1"
             >
               <option value="">-- Select Performance --</option>
-              {performances.map(p => (
-                <option key={p.id} value={p.id}>{p.title || formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })}</option>
+              {performances.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title ||
+                    formatInTimezone(p.date, timezone, {
+                      year: 'numeric',
+                      month: 'numeric',
+                      day: 'numeric',
+                    })}
+                </option>
               ))}
             </Select>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Venue</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Venue
+            </label>
             <div className="flex items-center gap-2">
               <Select
                 value={venueId}
                 onChange={(e) => setVenueId(e.target.value)}
-                size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
+                size="small"
+                className="focus:!border-primary focus:!ring-primary focus:!ring-1"
               >
                 <option value="">-- Select Venue --</option>
-                {venues.map(v => (
-                  <option key={v.id} value={v.id}>{v.name}</option>
+                {venues.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
                 ))}
               </Select>
               {hasLayoutOverride && (
@@ -354,26 +392,28 @@ export default function SeatingView() {
                       title: 'Update Master Venue Template?',
                       message: `Would you like to overwrite the master template for "${selectedVenue?.name}" with this performance's row configuration (${chart?.layoutOverride?.join(', ')})? This will affect new seating charts for this venue.`,
                       confirmLabel: 'Yes, Update Template',
-                      cancelLabel: 'Cancel'
+                      cancelLabel: 'Cancel',
                     });
                     if (confirmed && selectedVenue) {
                       try {
-                        await editVenue(selectedVenue.id, { rowCounts: chart?.layoutOverride || undefined });
+                        await editVenue(selectedVenue.id, {
+                          rowCounts: chart?.layoutOverride || undefined,
+                        });
                         await dialog.showMessage({
                           title: 'Success',
-                          message: `Successfully updated the master template for "${selectedVenue.name}".`
+                          message: `Successfully updated the master template for "${selectedVenue.name}".`,
                         });
                       } catch (err: unknown) {
                         const msg = err instanceof Error ? err.message : String(err);
                         console.error('Failed to update venue', err);
                         await dialog.showMessage({
                           title: 'Error',
-                          message: msg
+                          message: msg,
                         });
                       }
                     }
                   }}
-                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary bg-primary-light px-3 text-xs font-bold whitespace-nowrap text-primary-deep shadow-sm transition-colors hover:bg-primary/10"
+                  className="border-primary bg-primary-light text-primary-deep hover:bg-primary/10 inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-dashed px-3 text-xs font-bold whitespace-nowrap shadow-sm transition-colors"
                   title={`Overwrite "${selectedVenue?.name}" default layout counts with this chart's current counts`}
                 >
                   💾 Update
@@ -383,17 +423,20 @@ export default function SeatingView() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Formation</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Formation
+            </label>
             <Select
               value={chart?.formationId || seatingSettings.defaultFormationId}
               onChange={async (e) => {
                 const selectedId = e.target.value;
-                const formation = seatingSettings.formations.find(f => f.id === selectedId);
+                const formation = seatingSettings.formations.find((f) => f.id === selectedId);
                 if (!formation) return;
 
                 const shouldChange = await dialog.confirm({
                   title: 'Change Formation',
-                  message: 'Changing the formation logic will clear all current seating assignments. Do you want to proceed?',
+                  message:
+                    'Changing the formation logic will clear all current seating assignments. Do you want to proceed?',
                   confirmLabel: 'Change',
                   variant: 'danger',
                 });
@@ -401,16 +444,21 @@ export default function SeatingView() {
 
                 await updateChart({ formationId: selectedId, assignments: {} });
               }}
-              size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
+              size="small"
+              className="focus:!border-primary focus:!ring-primary focus:!ring-1"
             >
-              {seatingSettings.formations?.map(formation => (
-                <option key={formation.id} value={formation.id}>{formation.name}</option>
+              {seatingSettings.formations?.map((formation) => (
+                <option key={formation.id} value={formation.id}>
+                  {formation.name}
+                </option>
               ))}
             </Select>
           </div>
 
           <div className="flex min-w-0 flex-col gap-1">
-            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">Chart</label>
+            <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Chart
+            </label>
             <div className="flex min-w-0 items-center gap-1">
               <Select
                 aria-label="Select seating chart"
@@ -420,7 +468,8 @@ export default function SeatingView() {
                     setActiveChartId(e.target.value);
                   }
                 }}
-                size="small" className="focus:!border-primary focus:!ring-1 focus:!ring-primary"
+                size="small"
+                className="focus:!border-primary focus:!ring-primary focus:!ring-1"
               >
                 {chartList.map((c, index) => (
                   <option key={c.id} value={c.id}>{`${index + 1}. ${c.name}`}</option>
@@ -430,7 +479,7 @@ export default function SeatingView() {
                 type="button"
                 onClick={() => moveActiveChart(-1)}
                 disabled={!canMoveChartEarlier}
-                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="enabled:hover:border-primary enabled:hover:text-primary inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                 title="Move chart earlier in concert order"
               >
                 ↑
@@ -439,7 +488,7 @@ export default function SeatingView() {
                 type="button"
                 onClick={() => moveActiveChart(1)}
                 disabled={!canMoveChartLater}
-                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="enabled:hover:border-primary enabled:hover:text-primary inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-600 shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                 title="Move chart later in concert order"
               >
                 ↓
@@ -447,7 +496,7 @@ export default function SeatingView() {
               <button
                 type="button"
                 onClick={() => setIsNewChartModalOpen(true)}
-                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed border-primary bg-primary-light text-lg font-extrabold text-primary shadow-sm transition-colors hover:bg-primary/10"
+                className="border-primary bg-primary-light text-primary hover:bg-primary/10 inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-dashed text-lg font-extrabold shadow-sm transition-colors"
                 title="Create new seating chart"
               >
                 +
@@ -461,7 +510,7 @@ export default function SeatingView() {
                   setIsRenameChartModalOpen(true);
                 }}
                 disabled={!activeChart}
-                className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm text-slate-600 shadow-sm transition-colors enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+                className="enabled:hover:border-primary enabled:hover:text-primary inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-sm text-slate-600 shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                 title="Rename chart"
               >
                 ✎
@@ -475,7 +524,7 @@ export default function SeatingView() {
                       title: 'Delete Seating Chart?',
                       message: `Are you sure you want to delete "${activeChart.name}"? This cannot be undone.`,
                       confirmLabel: 'Delete',
-                      variant: 'danger'
+                      variant: 'danger',
                     });
                     if (confirmed) {
                       await deleteChart(activeChart.id);
@@ -498,249 +547,295 @@ export default function SeatingView() {
       ) : performanceId && venueId ? (
         <>
           <div className="flex w-full min-w-0 flex-col items-start gap-4 sm:flex-row">
-          <AppCard className="w-full min-w-0 flex-1 flex flex-col p-4">
-            <div className="no-print seating-toolbar flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-primary-light p-1.5 px-3 shadow-sm">
-               <div className="flex flex-row gap-1">
-                   <Button variant="outline" size="small" onClick={handleClear}>
-                     🧹 Clear
-                   </Button>
-                   <Button variant="danger" size="small" onClick={handleReset}>
-                     💥 Reset
-                   </Button>
-               </div>
-               
-               <div className="no-print flex h-8 flex-row items-center gap-0.5 rounded-lg border border-border bg-surface p-0.5">
-                <button 
-                  onClick={() => setPrintMode('visual')}
-                  className={`font-medium tracking-wide inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs ${printMode === 'visual' ? 'bg-primary text-[var(--bg,white)]' : 'text-muted bg-transparent'}`}
-                >
-                  Grid
-                </button>
-                <button 
-                  onClick={() => setPrintMode('text')}
-                  className={`font-medium tracking-wide inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs ${printMode === 'text' ? 'bg-primary text-[var(--bg,white)]' : 'text-muted bg-transparent'}`}
-                >
-                  List
-                </button>
-               </div>
+            <AppCard className="flex w-full min-w-0 flex-1 flex-col p-4">
+              <div className="no-print seating-toolbar border-border bg-primary-light flex flex-row flex-wrap items-center justify-between gap-2 rounded-lg border p-1.5 px-3 shadow-sm">
+                <div className="flex flex-row gap-1">
+                  <Button variant="outline" size="small" onClick={handleClear}>
+                    🧹 Clear
+                  </Button>
+                  <Button variant="danger" size="small" onClick={handleReset}>
+                    💥 Reset
+                  </Button>
+                </div>
 
-               <div className="no-print flex flex-row flex-wrap gap-2">
+                <div className="no-print border-border bg-surface flex h-8 flex-row items-center gap-0.5 rounded-lg border p-0.5">
+                  <button
+                    onClick={() => setPrintMode('visual')}
+                    className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-medium tracking-wide ${printMode === 'visual' ? 'bg-primary text-[var(--bg,white)]' : 'text-muted bg-transparent'}`}
+                  >
+                    Grid
+                  </button>
+                  <button
+                    onClick={() => setPrintMode('text')}
+                    className={`inline-flex h-[26px] min-h-[26px] items-center justify-center rounded-[calc(var(--radius-md)-2px)] px-2.5 text-xs font-medium tracking-wide ${printMode === 'text' ? 'bg-primary text-[var(--bg,white)]' : 'text-muted bg-transparent'}`}
+                  >
+                    List
+                  </button>
+                </div>
+
+                <div className="no-print flex flex-row flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className={`font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-border px-2.5 text-xs whitespace-nowrap ${isFullscreen ? 'bg-primary text-surface' : 'text-muted bg-surface'}`}
+                    className={`border-border inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border px-2.5 text-xs font-medium tracking-wide whitespace-nowrap ${isFullscreen ? 'bg-primary text-surface' : 'text-muted bg-surface'}`}
                   >
-                   {isFullscreen ? 'Exit' : '🖥️ Full'}
-                 </button>
+                    {isFullscreen ? 'Exit' : '🖥️ Full'}
+                  </button>
 
                   {printMode === 'text' && (
                     <label className="text-muted ml-2 flex cursor-pointer items-center gap-1 text-[0.8125rem] leading-none font-semibold select-none">
-                      <Input 
-                        type="checkbox" 
-                        checked={showVoicePartsInList} 
+                      <Input
+                        type="checkbox"
+                        checked={showVoicePartsInList}
                         onChange={(e) => setShowVoicePartsInList(e.target.checked)}
                         className="size-[15px] cursor-pointer"
                       />
                       <span>Show Voice Parts</span>
                     </label>
-                 )}
-               </div>
-               
-               <ChartCopyDropdown
-                 allCharts={allCharts.filter(c => c.venue === venueId)}
-                 currentChartId={activeChartId || ''}
-                 onCopy={handleCopy}
-               />
-
-                <Button variant="primary" size="small" onClick={handlePrint}>
-                   🖨️ Print
-                </Button>
-               <div className="flex flex-row items-center gap-1">
-                 <SavingIndicator isSaving={isSaving} error={saveError} />
-                 <span className="text-muted mr-1 text-xs font-medium whitespace-nowrap">
-                   Auto-saved
-                 </span>
-                 <button
-                   onClick={handleManualSave}
-                   className={`font-medium tracking-wide inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-2.5 text-xs whitespace-nowrap ${
-                     saveError ? 'text-[var(--color-danger-text)]' : saveFeedback ? 'text-[var(--color-success-text)]' : 'text-text'
-                   }`}
-                 >
-                   {saveError ? (isDirty ? 'Retry' : 'Retry') : isSaving ? 'Saving...' : saveFeedback ? '✓ Saved' : isDirty ? 'Save' : 'Save'}
-                 </button>
-               </div>
-            </div>
-
-            {isLoading ? (
-              <div className="flex flex-col items-center p-8">
-                <p className="text-muted">Loading seating data...</p>
-              </div>
-            ) : selectedVenue?.isOpenSeating ? (
-              <div className="flex flex-col items-center p-8 text-center">
-                <h3 className="text-headline">Open Seating</h3>
-                <p className="text-muted">This venue is configured for open seating. No seating assignments are required.</p>
-                {selectedVenue.address && (
-                  <p className="mt-4">
-                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`} target="_blank" rel="noopener noreferrer" className="font-medium tracking-wide text-muted inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-transparent px-6 whitespace-nowrap">
-                      📍 View Map
-                    </a>
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="flex min-w-0 flex-col gap-6">
-                {printMode === 'visual' && (
-                  <div className="no-print rounded-md border border-border bg-primary-light p-2 text-center text-sm text-primary-deep shadow-sm">
-                    <strong>Editor Mode:</strong>{' '}
-                    {singersListPosition === 'bottom' ? (
-                      <span>
-                        Drag singers from the <strong>bottom shelf</strong> below, or click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them.
-                        <span className="ml-2 font-bold text-[var(--color-danger-text)]">
-                          👇 Scroll down to see unassigned singers!
-                        </span>
-                      </span>
-                    ) : singersListPosition === 'side' ? (
-                      <span>Drag singers from the <strong>right sidebar</strong>, or click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them.</span>
-                    ) : (
-                      <span>Click an <strong>empty seat</strong> to assign. Drag assigned singers to move or swap them. (Singers list is currently hidden).</span>
-                    )}
-                  </div>
-                )}
-                {printMode === 'visual' && (
-                  <SeatingGrid 
-                    rowCounts={rowCounts}
-                    assignments={optimisticAssignments}
-                    suggestions={suggestions}
-                    activeProfiles={activeProfiles}
-                    sections={sections}
-                    voiceParts={voiceParts}
-                    onAssign={assignSinger}
-                    onUpdateRowCounts={async (newRowCounts, newAssignments) => {
-                      const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
-                      if (newAssignments) {
-                        updates.assignments = newAssignments;
-                      }
-                      await updateChart(updates);
-                    }}
-                    isVoicePartLayout={currentFormation?.isVoicePartLayout}
-                    sectionOrder={currentFormation?.sectionOrder}
-                  />
-                )}
-                
-                {(!selectedVenue?.isOpenSeating && singersListPosition === 'bottom' && printMode === 'visual') && (
-                  <SeatingBottomDock 
-                    activeProfiles={activeProfiles}
-                    assignments={optimisticAssignments}
-                    sections={sections}
-                    voiceParts={voiceParts}
-                    assignSinger={assignSinger}
-                    onAddSinger={() => setIsSingerModalOpen(true)}
-                    onLookupSinger={() => setIsSingerLookupOpen(true)}
-                    onRemoveRsvp={handleRemoveRsvp}
-                    isVoicePartLayout={currentFormation?.isVoicePartLayout}
-                    sectionOrder={currentFormation?.sectionOrder}
-                  />
-                )}
-
-                {printMode === 'text' && unassignedCount > 0 && (
-                  <div className="no-print mb-4 rounded-md border border-[var(--color-danger-text)] bg-[var(--color-danger-bg)] p-4 text-center text-sm font-semibold text-[var(--color-danger-text)] shadow-sm">
-                    ⚠️ You have {unassignedCount} unassigned singer{unassignedCount > 1 ? 's' : ''} left. Switch to Grid view to assign them.
-                  </div>
-                )}
-
-                {printMode === 'text' && (
-                  <SeatingTextList rows={groupedRows} showVoiceParts={showVoicePartsInList} />
-                )}
-
-                {printMode === 'visual' && (
-                  <UnassignedPrintSection 
-                    activeProfiles={activeProfiles}
-                    assignments={optimisticAssignments}
-                  />
-                )}
-              </div>
-            )}
-          </AppCard>
-
-          {(!selectedVenue?.isOpenSeating && singersListPosition === 'side' && printMode === 'visual') && (
-            <AppCard className="no-print sticky top-6 flex h-[calc(100vh-140px)] w-[320px] flex-col border-2 border-dashed border-border">
-              <div 
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  try {
-                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-                    if (data.fromSeatKey) {
-                      assignSinger(data.fromSeatKey, '');
-                    }
-                  } catch (err) {
-                    console.error('Failed to parse sidebar drop data', err);
-                  }
-                }}
-                className="flex size-full flex-col"
-              >
-                <div className="mb-4 flex flex-row items-center justify-between gap-1">
-                  <h3 className="text-headline m-0">Unassigned</h3>
-                  <div className="flex flex-row gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setIsSingerLookupOpen(true)}
-                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 rounded-md bg-primary-light px-2 text-[11px] font-semibold whitespace-nowrap text-primary-deep"
-                    >
-                      🔍 Lookup
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsSingerModalOpen(true)}
-                      className="inline-flex h-7 min-h-[28px] items-center justify-center gap-2 rounded-md bg-primary-light px-2 text-[11px] font-semibold whitespace-nowrap text-primary-deep"
-                    >
-                      + Add New
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 flex flex-col gap-2 overflow-y-auto px-1">
-                  {activeProfiles
-                    .filter(p => !Object.values(optimisticAssignments).includes(p.id))
-                    .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
-                    .map(p => (
-                      <div 
-                        key={p.id}
-                        draggable
-                        onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ profileId: p.id }))}
-                        className="cursor-grab flex flex-row justify-between rounded-md border border-border bg-bg px-4 py-2"
-                      >
-                        <span className="text-label font-semibold">{p.name}</span>
-                        <span className="inline-flex items-center rounded bg-primary-light px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">{p.voicePart}</span>
-                      </div>
-                    ))}
-                  {activeProfiles.filter(p => !Object.values(optimisticAssignments).includes(p.id)).length === 0 && (
-                    <div className="p-8 text-center">
-                      <p className="text-muted text-sm">All singers assigned!</p>
-                    </div>
                   )}
                 </div>
+
+                <ChartCopyDropdown
+                  allCharts={allCharts.filter((c) => c.venue === venueId)}
+                  currentChartId={activeChartId || ''}
+                  onCopy={handleCopy}
+                />
+
+                <Button variant="primary" size="small" onClick={handlePrint}>
+                  🖨️ Print
+                </Button>
+                <div className="flex flex-row items-center gap-1">
+                  <SavingIndicator isSaving={isSaving} error={saveError} />
+                  <span className="text-muted mr-1 text-xs font-medium whitespace-nowrap">
+                    Auto-saved
+                  </span>
+                  <button
+                    onClick={handleManualSave}
+                    className={`border-border inline-flex h-8 min-h-8 items-center justify-center gap-2 rounded-md border bg-transparent px-2.5 text-xs font-medium tracking-wide whitespace-nowrap ${
+                      saveError
+                        ? 'text-[var(--color-danger-text)]'
+                        : saveFeedback
+                          ? 'text-[var(--color-success-text)]'
+                          : 'text-text'
+                    }`}
+                  >
+                    {saveError
+                      ? isDirty
+                        ? 'Retry'
+                        : 'Retry'
+                      : isSaving
+                        ? 'Saving...'
+                        : saveFeedback
+                          ? '✓ Saved'
+                          : isDirty
+                            ? 'Save'
+                            : 'Save'}
+                  </button>
+                </div>
               </div>
+
+              {isLoading ? (
+                <div className="flex flex-col items-center p-8">
+                  <p className="text-muted">Loading seating data...</p>
+                </div>
+              ) : selectedVenue?.isOpenSeating ? (
+                <div className="flex flex-col items-center p-8 text-center">
+                  <h3 className="text-headline">Open Seating</h3>
+                  <p className="text-muted">
+                    This venue is configured for open seating. No seating assignments are required.
+                  </p>
+                  {selectedVenue.address && (
+                    <p className="mt-4">
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedVenue.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted border-border inline-flex h-11 items-center justify-center gap-2 rounded-md border bg-transparent px-6 font-medium tracking-wide whitespace-nowrap"
+                      >
+                        📍 View Map
+                      </a>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex min-w-0 flex-col gap-6">
+                  {printMode === 'visual' && (
+                    <div className="no-print border-border bg-primary-light text-primary-deep rounded-md border p-2 text-center text-sm shadow-sm">
+                      <strong>Editor Mode:</strong>{' '}
+                      {singersListPosition === 'bottom' ? (
+                        <span>
+                          Drag singers from the <strong>bottom shelf</strong> below, or click an{' '}
+                          <strong>empty seat</strong> to assign. Drag assigned singers to move or
+                          swap them.
+                          <span className="ml-2 font-bold text-[var(--color-danger-text)]">
+                            👇 Scroll down to see unassigned singers!
+                          </span>
+                        </span>
+                      ) : singersListPosition === 'side' ? (
+                        <span>
+                          Drag singers from the <strong>right sidebar</strong>, or click an{' '}
+                          <strong>empty seat</strong> to assign. Drag assigned singers to move or
+                          swap them.
+                        </span>
+                      ) : (
+                        <span>
+                          Click an <strong>empty seat</strong> to assign. Drag assigned singers to
+                          move or swap them. (Singers list is currently hidden).
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {printMode === 'visual' && (
+                    <SeatingGrid
+                      rowCounts={rowCounts}
+                      assignments={optimisticAssignments}
+                      suggestions={suggestions}
+                      activeProfiles={activeProfiles}
+                      sections={sections}
+                      voiceParts={voiceParts}
+                      onAssign={assignSinger}
+                      onUpdateRowCounts={async (newRowCounts, newAssignments) => {
+                        const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
+                        if (newAssignments) {
+                          updates.assignments = newAssignments;
+                        }
+                        await updateChart(updates);
+                      }}
+                      isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                      sectionOrder={currentFormation?.sectionOrder}
+                    />
+                  )}
+
+                  {!selectedVenue?.isOpenSeating &&
+                    singersListPosition === 'bottom' &&
+                    printMode === 'visual' && (
+                      <SeatingBottomDock
+                        activeProfiles={activeProfiles}
+                        assignments={optimisticAssignments}
+                        sections={sections}
+                        voiceParts={voiceParts}
+                        assignSinger={assignSinger}
+                        onAddSinger={() => setIsSingerModalOpen(true)}
+                        onLookupSinger={() => setIsSingerLookupOpen(true)}
+                        onRemoveRsvp={handleRemoveRsvp}
+                        isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                        sectionOrder={currentFormation?.sectionOrder}
+                      />
+                    )}
+
+                  {printMode === 'text' && unassignedCount > 0 && (
+                    <div className="no-print mb-4 rounded-md border border-[var(--color-danger-text)] bg-[var(--color-danger-bg)] p-4 text-center text-sm font-semibold text-[var(--color-danger-text)] shadow-sm">
+                      ⚠️ You have {unassignedCount} unassigned singer
+                      {unassignedCount > 1 ? 's' : ''} left. Switch to Grid view to assign them.
+                    </div>
+                  )}
+
+                  {printMode === 'text' && (
+                    <SeatingTextList rows={groupedRows} showVoiceParts={showVoicePartsInList} />
+                  )}
+
+                  {printMode === 'visual' && (
+                    <UnassignedPrintSection
+                      activeProfiles={activeProfiles}
+                      assignments={optimisticAssignments}
+                    />
+                  )}
+                </div>
+              )}
             </AppCard>
-          )}
-        </div>
+
+            {!selectedVenue?.isOpenSeating &&
+              singersListPosition === 'side' &&
+              printMode === 'visual' && (
+                <AppCard className="no-print border-border sticky top-6 flex h-[calc(100vh-140px)] w-[320px] flex-col border-2 border-dashed">
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      try {
+                        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                        if (data.fromSeatKey) {
+                          assignSinger(data.fromSeatKey, '');
+                        }
+                      } catch (err) {
+                        console.error('Failed to parse sidebar drop data', err);
+                      }
+                    }}
+                    className="flex size-full flex-col"
+                  >
+                    <div className="mb-4 flex flex-row items-center justify-between gap-1">
+                      <h3 className="text-headline m-0">Unassigned</h3>
+                      <div className="flex flex-row gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsSingerLookupOpen(true)}
+                          className="bg-primary-light text-primary-deep inline-flex h-7 min-h-[28px] items-center justify-center gap-2 rounded-md px-2 text-[11px] font-semibold whitespace-nowrap"
+                        >
+                          🔍 Lookup
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsSingerModalOpen(true)}
+                          className="bg-primary-light text-primary-deep inline-flex h-7 min-h-[28px] items-center justify-center gap-2 rounded-md px-2 text-[11px] font-semibold whitespace-nowrap"
+                        >
+                          + Add New
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex flex-1 flex-col gap-2 overflow-y-auto px-1">
+                      {activeProfiles
+                        .filter((p) => !Object.values(optimisticAssignments).includes(p.id))
+                        .sort((a, b) => a.voicePart.localeCompare(b.voicePart))
+                        .map((p) => (
+                          <div
+                            key={p.id}
+                            draggable
+                            onDragStart={(e) =>
+                              e.dataTransfer.setData(
+                                'text/plain',
+                                JSON.stringify({ profileId: p.id })
+                              )
+                            }
+                            className="border-border bg-bg flex cursor-grab flex-row justify-between rounded-md border px-4 py-2"
+                          >
+                            <span className="text-label font-semibold">{p.name}</span>
+                            <span className="bg-primary-light text-primary-deep inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+                              {p.voicePart}
+                            </span>
+                          </div>
+                        ))}
+                      {activeProfiles.filter(
+                        (p) => !Object.values(optimisticAssignments).includes(p.id)
+                      ).length === 0 && (
+                        <div className="p-8 text-center">
+                          <p className="text-muted text-sm">All singers assigned!</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </AppCard>
+              )}
+          </div>
         </>
       ) : (
         <AppCard className="p-[80px] text-center">
-          <p className="text-muted">Select a Performance and a Venue to start creating the seating chart.</p>
+          <p className="text-muted">
+            Select a Performance and a Venue to start creating the seating chart.
+          </p>
         </AppCard>
       )}
 
-      <SingerModal 
-        isOpen={isSingerModalOpen} 
-        onClose={() => setIsSingerModalOpen(false)} 
-        onSave={handleAddSingerSave} 
+      <SingerModal
+        isOpen={isSingerModalOpen}
+        onClose={() => setIsSingerModalOpen(false)}
+        onSave={handleAddSingerSave}
       />
 
       <SingerLookupModal
         isOpen={isSingerLookupOpen}
         onClose={() => setIsSingerLookupOpen(false)}
         onSelect={handleLookupSingerSelect}
-        excludeIds={useMemo(() => new Set(activeProfiles.map(p => p.id)), [activeProfiles])}
+        excludeIds={useMemo(() => new Set(activeProfiles.map((p) => p.id)), [activeProfiles])}
       />
 
       {/* New Chart Modal */}
@@ -754,9 +849,9 @@ export default function SeatingView() {
         maxWidth="400px"
         footer={
           <>
-            <Button 
+            <Button
               variant="outline"
-              className="" 
+              className=""
               onClick={() => {
                 setIsNewChartModalOpen(false);
                 setNewChartName('');
@@ -764,7 +859,7 @@ export default function SeatingView() {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="primary"
               className=""
               disabled={!newChartName.trim()}
@@ -794,12 +889,11 @@ export default function SeatingView() {
         >
           <div className="flex flex-col gap-1">
             <label className="text-label font-semibold">Chart Name</label>
-            <Input 
-               
-              value={newChartName} 
-              onChange={(e) => setNewChartName(e.target.value)} 
+            <Input
+              value={newChartName}
+              onChange={(e) => setNewChartName(e.target.value)}
               placeholder="e.g. Chamber Choir, Combined Finale"
-              required 
+              required
             />
           </div>
         </form>
@@ -817,9 +911,9 @@ export default function SeatingView() {
         maxWidth="400px"
         footer={
           <>
-            <Button 
+            <Button
               variant="outline"
-              className="" 
+              className=""
               onClick={() => {
                 setIsRenameChartModalOpen(false);
                 setRenameChartName('');
@@ -828,7 +922,7 @@ export default function SeatingView() {
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               variant="primary"
               className=""
               disabled={!renameChartName.trim()}
@@ -860,12 +954,11 @@ export default function SeatingView() {
         >
           <div className="flex flex-col gap-1">
             <label className="text-label font-semibold">New Chart Name</label>
-            <Input 
-               
-              value={renameChartName} 
-              onChange={(e) => setRenameChartName(e.target.value)} 
+            <Input
+              value={renameChartName}
+              onChange={(e) => setRenameChartName(e.target.value)}
               placeholder="e.g. Chamber Choir"
-              required 
+              required
             />
           </div>
         </form>

@@ -48,11 +48,11 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({ result }) => {
         </div>
         {result.isBundlePass && result.bundleTitle && (
           <div className="mt-3 rounded-lg border border-emerald-200 bg-white p-3">
-            <p className="m-0 text-xs font-bold uppercase text-emerald-700">Season Pass</p>
+            <p className="m-0 text-xs font-bold text-emerald-700 uppercase">Season Pass</p>
             <p className="m-0 mt-1 text-sm font-semibold text-emerald-900">{result.bundleTitle}</p>
             {result.bundleEvents && result.bundleEvents.length > 0 && (
               <p className="m-0 mt-1 text-xs text-emerald-600">
-                Also valid at: {result.bundleEvents.map(ev => ev.title).join(', ')}
+                Also valid at: {result.bundleEvents.map((ev) => ev.title).join(', ')}
               </p>
             )}
           </div>

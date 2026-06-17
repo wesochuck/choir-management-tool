@@ -23,4 +23,7 @@ export interface MusicPiece extends RecordModel {
   };
 }
 
-export type MusicPieceInput = Omit<MusicPiece, 'id' | 'created' | 'updated' | 'collectionId' | 'collectionName'>;
+export type MusicPieceInput = Omit<
+  MusicPiece,
+  'id' | 'created' | 'updated' | 'collectionId' | 'collectionName'
+>;

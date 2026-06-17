@@ -12,9 +12,7 @@ export function linkSetListItemToPiece(
   itemId: string,
   pieceId: string
 ): SetListItem[] {
-  return items.map(item => 
-    item.id === itemId ? { ...item, pieceId } : item
-  );
+  return items.map((item) => (item.id === itemId ? { ...item, pieceId } : item));
 }
 
 /**
@@ -30,9 +28,9 @@ export function appendPieceToSetList(
   piece: { id: string; title: string; composer?: string; duration?: string; notes?: string }
 ): { updated: boolean; setList: SetListItem[] } {
   const currentList = setList ? [...setList] : [];
-  
+
   // Check if a set list item already references this pieceId
-  const alreadyExists = currentList.some(item => item.pieceId === piece.id);
+  const alreadyExists = currentList.some((item) => item.pieceId === piece.id);
   if (alreadyExists) {
     return { updated: false, setList: currentList };
   }
@@ -44,7 +42,7 @@ export function appendPieceToSetList(
     composer: piece.composer || '',
     duration: piece.duration || '',
     notes: '', // Notes are specific to the performance and initialized to empty
-    type: 'song'
+    type: 'song',
   };
 
   currentList.push(newItem);

@@ -62,7 +62,10 @@ export function formatInTimezone(
  */
 export function utcToZonedInputValue(utcString: string | Date | number, timeZone: string): string {
   if (!utcString) return '';
-  const date = typeof utcString === 'string' || typeof utcString === 'number' ? new Date(utcString) : utcString;
+  const date =
+    typeof utcString === 'string' || typeof utcString === 'number'
+      ? new Date(utcString)
+      : utcString;
   if (isNaN(date.getTime())) return '';
 
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -76,7 +79,7 @@ export function utcToZonedInputValue(utcString: string | Date | number, timeZone
   });
 
   const parts = formatter.formatToParts(date);
-  const getPart = (type: string) => parts.find(p => p.type === type)?.value || '';
+  const getPart = (type: string) => parts.find((p) => p.type === type)?.value || '';
 
   const year = getPart('year');
   const month = getPart('month');
@@ -125,7 +128,8 @@ export function zonedInputValueToUtc(localString: string, timeZone: string): str
     });
 
     const formattedParts = formatter.formatToParts(utcDate);
-    const getPart = (type: string) => Number(formattedParts.find(p => p.type === type)?.value || '0');
+    const getPart = (type: string) =>
+      Number(formattedParts.find((p) => p.type === type)?.value || '0');
 
     const formattedYear = getPart('year');
     const formattedMonth = getPart('month');

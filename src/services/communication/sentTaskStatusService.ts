@@ -1,9 +1,5 @@
 import { pb } from '../../lib/pocketbase';
-import {
-  chunkArray,
-  mapWithConcurrency,
-  retryOn429,
-} from '../../lib/networkSafety';
+import { chunkArray, mapWithConcurrency, retryOn429 } from '../../lib/networkSafety';
 import type {
   AutomatedTaskStatusMap,
   AutomatedTaskType,
@@ -77,10 +73,10 @@ export async function getAutomatedTaskStatuses(
       type === 'RSVP Request'
         ? 'rsvp'
         : type === 'Reminder'
-        ? 'reminder'
-        : type === 'Ticket Buyer Reminder'
-        ? 'ticket-reminder'
-        : 'report';
+          ? 'reminder'
+          : type === 'Ticket Buyer Reminder'
+            ? 'ticket-reminder'
+            : 'report';
 
     await mapWithConcurrency(
       chunks,
@@ -155,10 +151,10 @@ export async function wasMessageSent(filter: {
       filter.type === 'RSVP Request'
         ? 'rsvp'
         : filter.type === 'Reminder'
-        ? 'reminder'
-        : filter.type === 'Ticket Buyer Reminder'
-        ? 'ticket-reminder'
-        : 'report';
+          ? 'reminder'
+          : filter.type === 'Ticket Buyer Reminder'
+            ? 'ticket-reminder'
+            : 'report';
     return statuses[`${keyPrefix}-${filter.eventId}`] === 'sent';
   } catch {
     return false;

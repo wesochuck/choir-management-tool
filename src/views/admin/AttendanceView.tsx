@@ -15,7 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
-import { pb } from '../../lib/pocketbase';
+import { rosterService } from '../../services/rosterService';
 import type { EventRoster } from '../../services/rosterService';
 import { chunkArray } from '../../lib/networkSafety';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
@@ -80,14 +80,10 @@ export default function AttendanceView() {
       if (cycleRehearsals.length === 0) return {};
 
       const nowMs = Date.now();
-      const pastRehearsals = cycleRehearsals.filter(
-        (reh) => new Date(reh.date).getTime() < nowMs
-      );
+      const pastRehearsals = cycleRehearsals.filter((reh) => new Date(reh.date).getTime() < nowMs);
 
       const perfRosters = linkedPerfId
-        ? await pb.collection('eventRosters').getFullList({
-            filter: pb.filter('event = {:linkedPerfId} && rsvp = "Yes"', { linkedPerfId }),
-          })
+        ? await rosterService.getAcceptedRostersForEvent(linkedPerfId)
         : [];
       const performingProfileIds = new Set(perfRosters.map((r) => r.profile));
 
@@ -96,13 +92,9 @@ export default function AttendanceView() {
 
       const allRosters: EventRoster[] = [];
 
-      const chunkPromises = idChunks.map((chunk) => {
-        const filterStr = chunk.map((_, i) => `event = {:id${i}}`).join(' || ');
-        const params = Object.fromEntries(chunk.map((id, i) => [`id${i}`, id]));
-        return pb.collection('eventRosters').getFullList<EventRoster>({
-          filter: pb.filter(filterStr, params),
-        });
-      });
+      const chunkPromises = idChunks.map((chunk) =>
+        rosterService.getRostersForEvents(chunk)
+      );
 
       const chunkResults = await Promise.all(chunkPromises);
       for (const chunkRosters of chunkResults) {
@@ -301,9 +293,7 @@ export default function AttendanceView() {
         actions={
           <div className="flex flex-row items-center gap-3">
             <div className="flex flex-col gap-0.5">
-              <span className="text-overline text-text-muted">
-                Select Event
-              </span>
+              <span className="text-overline text-text-muted">Select Event</span>
               <Select
                 value={selectedEventId}
                 onChange={(e) => {
@@ -328,9 +318,9 @@ export default function AttendanceView() {
         }
       >
         {!selectedEventId ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface/20 p-24 text-center shadow-xs">
+          <div className="border-border bg-surface/20 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-24 text-center shadow-xs">
             <span className="text-5xl opacity-40">📅</span>
-            <p className="mt-6 text-lg font-semibold text-text-muted">
+            <p className="text-text-muted mt-6 text-lg font-semibold">
               Please select an event above to start check-in.
             </p>
           </div>
@@ -338,23 +328,21 @@ export default function AttendanceView() {
           <div className="flex flex-col gap-6">
             {/* Event Summary Details Block */}
             {selectedEvent && (
-              <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary-light/30 p-5 shadow-xs transition-all duration-200">
+              <div className="border-primary/20 bg-primary-light/30 flex flex-col gap-3 rounded-xl border p-5 shadow-xs transition-all duration-200">
                 <div
                   className="flex w-full cursor-pointer flex-row items-center justify-between"
                   onClick={() => selectedEvent.details && setIsEventExpanded(!isEventExpanded)}
                 >
                   <div className="flex flex-col gap-1">
-                    <span className="text-overline text-text-muted">
-                      Active Event
-                    </span>
+                    <span className="text-overline text-text-muted">Active Event</span>
                     <div className="flex flex-row items-center gap-2.5">
-                      <h2 className="m-0 text-xl font-extrabold tracking-tight text-primary-deep">
+                      <h2 className="text-primary-deep m-0 text-xl font-extrabold tracking-tight">
                         {selectedEvent.title ||
                           selectedEvent.expand?.venue?.name ||
                           'Untitled Event'}
                       </h2>
                       <span
-                        className={`inline-flex items-center rounded px-2 py-0.5 text-overline ${selectedEvent.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary/20 text-primary-deep'}`}
+                        className={`text-overline inline-flex items-center rounded px-2 py-0.5 ${selectedEvent.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary/20 text-primary-deep'}`}
                       >
                         {selectedEvent.type}
                       </span>
@@ -364,7 +352,7 @@ export default function AttendanceView() {
                   {selectedEvent.details && (
                     <button
                       type="button"
-                      className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border/40 bg-white/50 px-3 py-1.5 text-xs font-bold text-primary-deep transition-all hover:bg-white hover:shadow-xs active:scale-95"
+                      className="border-border/40 text-primary-deep flex cursor-pointer items-center gap-1.5 rounded-lg border bg-white/50 px-3 py-1.5 text-xs font-bold transition-all hover:bg-white hover:shadow-xs active:scale-95"
                       onClick={(e) => {
                         e.stopPropagation();
                         setIsEventExpanded(!isEventExpanded);
@@ -376,16 +364,16 @@ export default function AttendanceView() {
                   )}
                 </div>
 
-                <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2 border-t border-primary/10 pt-3">
+                <div className="border-primary/10 flex flex-row flex-wrap items-center gap-x-6 gap-y-2 border-t pt-3">
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-sm font-bold text-primary transition-colors hover:text-primary-deep hover:underline"
+                    className="text-primary hover:text-primary-deep flex items-center gap-1.5 text-sm font-bold transition-colors hover:underline"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <svg
-                      className="size-4 text-primary"
+                      className="text-primary size-4"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -399,7 +387,7 @@ export default function AttendanceView() {
                     </svg>
                     {selectedEvent.expand?.venue?.name || 'Unknown Venue'}
                   </a>
-                  <span className="flex items-center gap-1.5 text-sm font-medium text-text-muted">
+                  <span className="text-text-muted flex items-center gap-1.5 text-sm font-medium">
                     <svg
                       className="size-4 text-slate-400"
                       viewBox="0 0 24 24"
@@ -426,8 +414,8 @@ export default function AttendanceView() {
                 </div>
 
                 {isEventExpanded && selectedEvent.details && (
-                  <div className="mt-3 border-t border-primary/10 pt-3 text-sm text-text-muted">
-                    <span className="mb-1.5 block text-overline text-text-muted">
+                  <div className="border-primary/10 text-text-muted mt-3 border-t pt-3 text-sm">
+                    <span className="text-overline text-text-muted mb-1.5 block">
                       Details / Notes
                     </span>
                     <p className="m-0 leading-relaxed whitespace-pre-wrap text-slate-600">
@@ -450,10 +438,10 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-overline text-slate-500">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>👥 Expected</span>
                   {filterStatus === '' && (
-                    <span className="size-2 animate-pulse rounded-full bg-blue-500" />
+                    <span className="size-2.5 animate-pulse rounded-full bg-blue-500" />
                   )}
                 </div>
                 <div className="text-3xl font-extrabold tracking-tight text-slate-800">
@@ -471,10 +459,10 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-overline text-slate-500">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>🟢 Present</span>
                   {filterStatus === 'Present' && (
-                    <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                    <span className="size-2.5 animate-pulse rounded-full bg-emerald-500" />
                   )}
                 </div>
                 <div className="text-3xl font-extrabold tracking-tight text-slate-800">
@@ -492,10 +480,10 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-overline text-slate-500">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>🔴 Absent</span>
                   {filterStatus === 'Absent' && (
-                    <span className="size-2 animate-pulse rounded-full bg-red-500" />
+                    <span className="size-2.5 animate-pulse rounded-full bg-red-500" />
                   )}
                 </div>
                 <div className="text-3xl font-extrabold tracking-tight text-slate-800">
@@ -513,10 +501,10 @@ export default function AttendanceView() {
                     : 'border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className="flex items-center justify-between text-overline text-slate-500">
+                <div className="flex items-center justify-between text-xs text-slate-500">
                   <span>⏳ Unmarked</span>
                   {filterStatus === 'Pending' && (
-                    <span className="size-2 animate-pulse rounded-full bg-slate-500" />
+                    <span className="size-2.5 animate-pulse rounded-full bg-slate-500" />
                   )}
                 </div>
                 <div className="text-3xl font-extrabold tracking-tight text-slate-800">
@@ -539,7 +527,15 @@ export default function AttendanceView() {
                     className="min-w-[200px] flex-1"
                   >
                     <span slot="prefix" className="flex items-center text-gray-500">
-                      <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        className="size-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                       </svg>
@@ -552,7 +548,15 @@ export default function AttendanceView() {
                         className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
                         aria-label="Clear search"
                       >
-                        <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <svg
+                          className="size-3.5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
                           <line x1="18" y1="6" x2="6" y2="18" />
                           <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
@@ -658,7 +662,7 @@ export default function AttendanceView() {
                   {/* Refresh Button */}
                   <button
                     onClick={() => refresh()}
-                    className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border bg-surface text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95"
+                    className="border-border bg-surface flex size-9 cursor-pointer items-center justify-center rounded-lg border text-lg shadow-xs transition-all hover:bg-gray-50 active:scale-95"
                     title="Refresh Roster"
                     aria-label="Refresh roster"
                   >
@@ -765,23 +769,23 @@ export default function AttendanceView() {
 
             {/* Attendance List */}
             {isLoading ? (
-              <div className="rounded-lg border border-border bg-surface p-12 text-center shadow-xs">
-                <p className="m-0 font-medium text-text-muted">Loading attendance data...</p>
+              <div className="border-border bg-surface rounded-lg border p-12 text-center shadow-xs">
+                <p className="text-text-muted m-0 font-medium">Loading attendance data...</p>
               </div>
             ) : error ? (
-              <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-8 text-center shadow-xs">
-                <p className="m-0 font-bold text-danger-text">{error}</p>
+              <div className="border-danger-text/30 bg-danger-bg rounded-lg border p-8 text-center shadow-xs">
+                <p className="text-danger-text m-0 font-bold">{error}</p>
               </div>
             ) : filteredCheckInItems.length === 0 && declinedSingers.length === 0 ? (
-              <div className="flex flex-col items-center rounded-lg border-2 border-dashed border-border bg-surface/30 p-12 text-center shadow-xs">
+              <div className="border-border bg-surface/30 flex flex-col items-center rounded-lg border-2 border-dashed p-12 text-center shadow-xs">
                 <span className="text-4xl">🔍</span>
-                <h3 className="mt-4 mb-2 text-xl font-extrabold text-text">No Matching Singers</h3>
-                <p className="mt-0 mb-6 max-w-sm text-sm font-medium text-text-muted">
+                <h3 className="text-text mt-4 mb-2 text-xl font-extrabold">No Matching Singers</h3>
+                <p className="text-text-muted mt-0 mb-6 max-w-sm text-sm font-medium">
                   Try adjusting your search terms, voice parts, or attendance filters.
                 </p>
                 <button
                   onClick={handleResetFilters}
-                  className="cursor-pointer rounded-md bg-primary px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-primary-deep active:scale-95"
+                  className="bg-primary hover:bg-primary-deep cursor-pointer rounded-md px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all active:scale-95"
                 >
                   Reset All Filters
                 </button>
@@ -800,8 +804,8 @@ export default function AttendanceView() {
                       maxRehearsalMisses={maxRehearsalMisses}
                     />
                   ) : (
-                    <div className="rounded-lg border border-dashed border-border bg-surface/30 p-6 text-center shadow-xs">
-                      <p className="m-0 text-sm font-medium text-text-muted">
+                    <div className="border-border bg-surface/30 rounded-lg border border-dashed p-6 text-center shadow-xs">
+                      <p className="text-text-muted m-0 text-sm font-medium">
                         No singers match your RSVP or attendance filters.
                       </p>
                     </div>

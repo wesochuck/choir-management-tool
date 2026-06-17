@@ -22,14 +22,13 @@ export function useCommunicationLibrary() {
   const [history, setHistory] = useState<MessageRecord[]>([]);
   const [drafts, setDrafts] = useState<MessageRecord[]>([]);
   const [templates, setTemplates] = useState<TemplateRecord[]>([]);
-  const [commSettings, setCommSettings] =
-    useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
-  const [commConfig, setCommConfig] =
-    useState<CommunicationConfig>(DEFAULT_COMMUNICATION_CONFIG);
+  const [commSettings, setCommSettings] = useState<CommunicationSettings>(
+    DEFAULT_COMMUNICATION_SETTINGS
+  );
+  const [commConfig, setCommConfig] = useState<CommunicationConfig>(DEFAULT_COMMUNICATION_CONFIG);
   const [choirName, setChoirName] = useState<string>('Choir Management');
 
-  const [editingTemplate, setEditingTemplate] =
-    useState<Partial<TemplateRecord> | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<Partial<TemplateRecord> | null>(null);
 
   const [historyPage, setHistoryPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -43,9 +42,12 @@ export function useCommunicationLibrary() {
       const baseFilter = "(status = 'Sent' || status = 'Archived')";
       let filterString = baseFilter;
       if (historySearchQuery.trim()) {
-        filterString = pb.filter(`(${baseFilter} && (subject ~ {:query} || content ~ {:query} || type ~ {:query}))`, {
-          query: historySearchQuery.trim()
-        });
+        filterString = pb.filter(
+          `(${baseFilter} && (subject ~ {:query} || content ~ {:query} || type ~ {:query}))`,
+          {
+            query: historySearchQuery.trim(),
+          }
+        );
       }
       return communicationService.getMessagesPaginated(historyPage, 10, filterString);
     },
@@ -127,10 +129,13 @@ export function useCommunicationLibrary() {
     setHistoryPage(1);
   }, [historySearchQuery]);
 
-  const refreshHistory = useCallback(async (_page?: number) => {
-    void _page;
-    await queryClient.invalidateQueries({ queryKey: queryKeys.communications.history() });
-  }, [queryClient]);
+  const refreshHistory = useCallback(
+    async (_page?: number) => {
+      void _page;
+      await queryClient.invalidateQueries({ queryKey: queryKeys.communications.history() });
+    },
+    [queryClient]
+  );
 
   return {
     isLoading,
@@ -158,4 +163,3 @@ export function useCommunicationLibrary() {
     setIsSavingConfig,
   };
 }
-

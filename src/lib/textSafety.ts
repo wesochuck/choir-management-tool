@@ -30,7 +30,9 @@ export function escapeHtml(value: unknown): string {
 export function sanitizeEmailSubject(value: unknown): string {
   if (value == null) return '';
 
-  return String(value).replace(/[\r\n]+/g, ' ').trim();
+  return String(value)
+    .replace(/[\r\n]+/g, ' ')
+    .trim();
 }
 
 /**
@@ -47,33 +49,57 @@ export function sanitizeHtml(htmlStr: string): string {
     try {
       const parser = new window.DOMParser();
       const doc = parser.parseFromString(htmlStr, 'text/html');
-      
+
       const allowedTags = new Set([
-        'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'ul', 'ol', 'li', 'a', 'blockquote', 'div', 'span'
+        'p',
+        'br',
+        'strong',
+        'em',
+        'u',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'ul',
+        'ol',
+        'li',
+        'a',
+        'blockquote',
+        'div',
+        'span',
       ]);
 
       const allowedAttrs = new Set(['class', 'style', 'href', 'target', 'rel', 'id']);
 
       const discardContentTags = new Set([
-        'script', 'style', 'iframe', 'object', 'embed', 'noscript', 'template'
+        'script',
+        'style',
+        'iframe',
+        'object',
+        'embed',
+        'noscript',
+        'template',
       ]);
 
       const cleanNode = (node: Node): Node | null => {
         // Text nodes are safe
-        if (node.nodeType === 3) { // Node.TEXT_NODE
+        if (node.nodeType === 3) {
+          // Node.TEXT_NODE
           return doc.createTextNode(node.nodeValue || '');
         }
-        
+
         // Element nodes need scanning
-        if (node.nodeType === 1) { // Node.ELEMENT_NODE
+        if (node.nodeType === 1) {
+          // Node.ELEMENT_NODE
           const el = node as Element;
           const tagName = el.tagName.toLowerCase();
-          
+
           if (discardContentTags.has(tagName)) {
             return null;
           }
-          
+
           if (!allowedTags.has(tagName)) {
             // Strip tag, but recursively clean and keep children
             const fragment = doc.createDocumentFragment();
@@ -88,17 +114,17 @@ export function sanitizeHtml(htmlStr: string): string {
 
           // Create cleaned element
           const cleanEl = doc.createElement(tagName);
-          
+
           // Copy and clean attributes
           for (let i = 0; i < el.attributes.length; i++) {
             const attr = el.attributes[i];
             const attrName = attr.name.toLowerCase();
-            
+
             // Block event handlers (on*)
             if (attrName.startsWith('on')) {
               continue;
             }
-            
+
             // Block javascript: and data: protocol URIs in links/sources
             if (attrName === 'href' || attrName === 'src') {
               // Strip control characters and spaces to prevent bypasses like `java\tscript:`
@@ -108,7 +134,7 @@ export function sanitizeHtml(htmlStr: string): string {
                 continue;
               }
             }
-            
+
             if (allowedAttrs.has(attrName)) {
               cleanEl.setAttribute(attrName, attr.value);
             }
@@ -121,10 +147,10 @@ export function sanitizeHtml(htmlStr: string): string {
               cleanEl.appendChild(cleaned);
             }
           }
-          
+
           return cleanEl;
         }
-        
+
         return null;
       };
 
@@ -149,4 +175,3 @@ export function sanitizeHtml(htmlStr: string): string {
   // Fallback: if DOMParser is not available, we must escape everything for safety
   return escapeHtml(htmlStr);
 }
-

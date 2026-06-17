@@ -20,7 +20,9 @@ test('Select renders with invalid state', () => {
 
 test('Select passes through native props (onChange with option children)', () => {
   let value = '';
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => { value = e.target.value; };
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    value = e.target.value;
+  };
   const options = [
     React.createElement('option', { value: 'a', key: 'a' }, 'A'),
     React.createElement('option', { value: 'b', key: 'b' }, 'B'),

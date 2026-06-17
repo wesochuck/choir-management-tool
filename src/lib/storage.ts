@@ -19,5 +19,5 @@ export const safeLocalStorage = {
     } catch {
       // Ignore
     }
-  }
+  },
 };

@@ -11,8 +11,6 @@ import { useEventRosterData } from '../../hooks/useEventRosterData';
 import { useRsvpBulkActions } from './event-roster/useRsvpBulkActions';
 import { useEventRosterExport } from './event-roster/useEventRosterExport';
 
-
-
 interface EventRosterViewProps {
   eventIdProp?: string;
   onClose?: () => void;
@@ -56,12 +54,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   } = useEventRosterData({ eventId, isInline });
 
   // RSVP bulk actions hook
-  const {
-    isUpdating,
-    bulkProgress,
-    handleUpdateRSVP,
-    handleBulkUpdateRSVP,
-  } = useRsvpBulkActions({
+  const { isUpdating, bulkProgress, handleUpdateRSVP, handleBulkUpdateRSVP } = useRsvpBulkActions({
     eventId,
     sortedSingers,
     refreshRosters,
@@ -91,10 +84,8 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   }
 
   const handleVoicePartToggle = (part: string) => {
-    setSelectedVoiceParts(prev => 
-      prev.includes(part)
-        ? prev.filter(p => p !== part)
-        : [...prev, part]
+    setSelectedVoiceParts((prev) =>
+      prev.includes(part) ? prev.filter((p) => p !== part) : [...prev, part]
     );
   };
 
@@ -130,11 +121,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   return (
     <AppCard
-      title={isInline ? '' : `RSVP Management: ${event ? (event.title || event.expand?.venue?.name || '') : ''}`}
+      title={
+        isInline
+          ? ''
+          : `RSVP Management: ${event ? event.title || event.expand?.venue?.name || '' : ''}`
+      }
       actions={
         <div className="flex flex-row items-center gap-2">
           {!isInline && event && (
-            <Button 
+            <Button
               variant="secondary"
               size="small"
               className=""
@@ -150,19 +145,11 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             </Button>
           )}
           {!isInline ? (
-            <Button 
-              variant="outline"
-              size="small"
-              onClick={() => navigate('/admin/events')}
-            >
+            <Button variant="outline" size="small" onClick={() => navigate('/admin/events')}>
               Close
             </Button>
           ) : onClose ? (
-            <Button 
-              variant="outline"
-              size="small"
-              onClick={onClose}
-            >
+            <Button variant="outline" size="small" onClick={onClose}>
               Close
             </Button>
           ) : null}
@@ -172,19 +159,14 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       <div className="flex flex-col gap-4">
         {/* Voice Part RSVP Balance Summary Card */}
         {voiceParts.length > 0 && (
-          <AppCard 
+          <AppCard
             title="Voice Part RSVP Balance"
             actions={
               <div className="flex flex-row items-center gap-2">
-                <Button
-                  onClick={handleExportCSV}
-                  variant="secondary"
-                  size="small"
-                  className=""
-                >
+                <Button onClick={handleExportCSV} variant="secondary" size="small" className="">
                   📥 Export CSV
                 </Button>
-                <span className="inline-flex items-center rounded-full bg-primary-light px-4 py-1.5 text-sm font-semibold tracking-wider text-primary-deep uppercase">
+                <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold tracking-wider uppercase">
                   {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
                   {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
                   {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
@@ -248,22 +230,24 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               // @allow-inline-style - dynamic grid columns based on section count using CSS variable
               style={{ '--grid-cols': sections.length } as React.CSSProperties}
             >
-              {sections.map(sec => {
+              {sections.map((sec) => {
                 const isSelected = selectedVoiceParts.includes(sec.code);
                 return (
                   <div
                     key={sec.code}
-                    className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-colors duration-150 hover:bg-primary-light/80 ${
+                    className={`bg-primary-light hover:bg-primary-light/80 flex cursor-pointer flex-col gap-1 rounded-lg border-2 p-[calc(16px-2px)] text-center transition-colors duration-150 ${
                       isSelected
                         ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]'
                         : 'border-transparent'
                     }`}
                     onClick={() => handleVoicePartToggle(sec.code)}
                   >
-                    <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
+                    <div className="text-primary-deep text-xs font-bold tracking-wider uppercase">
                       {sec.name}
                     </div>
-                    <div className="text-3xl leading-none font-extrabold text-primary-deep">{sectionCounts[sec.code] || 0}</div>
+                    <div className="text-primary-deep text-3xl leading-none font-extrabold">
+                      {sectionCounts[sec.code] || 0}
+                    </div>
                   </div>
                 );
               })}
@@ -271,15 +255,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
             {/* Individual Part Breakdowns */}
             <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
-              {voiceParts.map(vp => {
+              {voiceParts.map((vp) => {
                 const isSelected = selectedVoiceParts.includes(vp.label);
                 const count = partCounts.get(vp.label) || 0;
                 return (
                   <div
                     key={vp.label}
-                    className={`flex cursor-pointer flex-col rounded-lg transition-colors duration-150 hover:bg-primary-light ${
+                    className={`hover:bg-primary-light flex cursor-pointer flex-col rounded-lg transition-colors duration-150 ${
                       isSelected
-                        ? 'border-2 border-primary bg-primary-light p-[7px]'
+                        ? 'border-primary bg-primary-light border-2 p-[7px]'
                         : 'border border-gray-200 bg-white p-2'
                     }`}
                     onClick={() => handleVoicePartToggle(vp.label)}
@@ -303,7 +287,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               className="min-w-[240px] flex-[1_1_280px]"
             >
               <span slot="prefix" className="flex items-center text-gray-500">
-                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  className="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
@@ -316,7 +308,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                   className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
                   aria-label="Clear search"
                 >
-                  <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    className="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -327,7 +327,8 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             <Select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              size="small" className="!w-[210px]"
+              size="small"
+              className="!w-[210px]"
               aria-label="Sort singers"
             >
               <option value="lastName">Last Name</option>
@@ -344,7 +345,16 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 variant="secondary"
                 className="flex h-11 items-center gap-1"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                   <path d="M3 3v5h5"></path>
                 </svg>
@@ -353,8 +363,13 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             )}
           </div>
 
-          <div className="flex flex-[0_1_auto] flex-wrap items-center justify-end gap-2" aria-label="Bulk RSVP actions">
-            <span className="text-xs font-bold whitespace-nowrap text-gray-500">{sortedSingers.length} shown</span>
+          <div
+            className="flex flex-[0_1_auto] flex-wrap items-center justify-end gap-2"
+            aria-label="Bulk RSVP actions"
+          >
+            <span className="text-xs font-bold whitespace-nowrap text-gray-500">
+              {sortedSingers.length} shown
+            </span>
             <Button
               disabled={isUpdating || sortedSingers.length === 0}
               onClick={() => handleBulkUpdateRSVP('Yes')}
@@ -380,7 +395,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         </div>
 
         {/* Unified Event Roster Table */}
-        <EventRosterTable 
+        <EventRosterTable
           singers={sortedSingers}
           isUpdating={isUpdating}
           onCreate={() => navigate('/admin/roster')}
@@ -392,7 +407,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         />
       </div>
 
-      <SingerModal 
+      <SingerModal
         isOpen={isSingerModalOpen}
         onClose={() => setIsSingerModalOpen(false)}
         onSave={handleSingerModalSave}
@@ -407,14 +422,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         maxWidth="400px"
       >
         <div className="flex flex-col items-center gap-4 py-3">
-          <div className="size-10 animate-spin rounded-full border-3 border-gray-200 border-t-primary" />
-          <div className="text-lg font-bold text-gray-800">
-            Processing changes...
-          </div>
+          <div className="border-t-primary size-10 animate-spin rounded-full border-3 border-gray-200" />
+          <div className="text-lg font-bold text-gray-800">Processing changes...</div>
           <div className="text-sm font-semibold text-gray-500">
             {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
           </div>
-          <ProgressBar value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="mt-1 h-2 w-full [&::part(base)]:rounded" />
+          <ProgressBar
+            value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0}
+            className="mt-1 h-2 w-full [&::part(base)]:rounded"
+          />
         </div>
       </Modal>
     </AppCard>

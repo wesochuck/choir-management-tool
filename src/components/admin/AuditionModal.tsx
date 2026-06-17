@@ -8,7 +8,11 @@ import { type AuditionSettings } from '../../services/settingsService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { formatInTimezone } from '../../lib/timezone';
-import { auditionToFormData, isAuditionFormDirty, defaultAuditionInput } from '../../lib/auditionForm';
+import {
+  auditionToFormData,
+  isAuditionFormDirty,
+  defaultAuditionInput,
+} from '../../lib/auditionForm';
 
 interface AuditionModalProps {
   audition: Audition | null;
@@ -19,13 +23,13 @@ interface AuditionModalProps {
   performances: Event[];
 }
 
-export const AuditionModal: React.FC<AuditionModalProps> = ({ 
-  audition, 
-  isOpen, 
-  onClose, 
+export const AuditionModal: React.FC<AuditionModalProps> = ({
+  audition,
+  isOpen,
+  onClose,
   onSave,
   settings,
-  performances
+  performances,
 }) => {
   const navigate = useNavigate();
   const dialog = useDialog();
@@ -49,12 +53,12 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
     if (isDirty) {
       const confirmDiscard = await dialog.confirm({
         title: 'Unsaved Changes',
-        message: audition 
-          ? 'You have unsaved changes to this audition. Do you want to discard them?' 
+        message: audition
+          ? 'You have unsaved changes to this audition. Do you want to discard them?'
           : 'You are filling a new audition sheet with unsaved details. Do you want to discard this audition?',
         confirmLabel: 'Discard Changes',
         cancelLabel: 'Keep Editing',
-        variant: 'warning'
+        variant: 'warning',
       });
       if (!confirmDiscard) return;
     }
@@ -91,8 +95,15 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
       maxWidth="640px"
       footer={
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button variant="primary" disabled={isSubmitting} loading={isSubmitting} onClick={() => handleSubmit()}>
+          <Button type="button" variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            disabled={isSubmitting}
+            loading={isSubmitting}
+            onClick={() => handleSubmit()}
+          >
             {audition ? 'Save Audition' : 'Add Audition'}
           </Button>
         </div>
@@ -100,7 +111,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
     >
       <form id="audition-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
         {audition && (
-          <div className="flex flex-row items-center justify-between gap-4 rounded bg-primary-light px-4 py-2">
+          <div className="bg-primary-light flex flex-row items-center justify-between gap-4 rounded px-4 py-2">
             <span className="text-label text-primary-deep">Quick Contact:</span>
             {formData.contact.includes('@') ? (
               <Button
@@ -109,17 +120,19 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 onClick={() => {
                   navigate('/admin/communications', {
                     state: {
-                      initialRecipients: [{
-                        id: `audition-${formData.contact}`,
-                        name: formData.name,
-                        email: formData.contact,
-                        phone: '',
-                        voicePart: formData.voicePart || '',
-                        globalStatus: 'Auditionee'
-                      }],
+                      initialRecipients: [
+                        {
+                          id: `audition-${formData.contact}`,
+                          name: formData.name,
+                          email: formData.contact,
+                          phone: '',
+                          voicePart: formData.voicePart || '',
+                          globalStatus: 'Auditionee',
+                        },
+                      ],
                       initialSubject: 'Audition Inquiry',
-                      initialContent: `Dear ${formData.name},\n\n`
-                    }
+                      initialContent: `Dear ${formData.name},\n\n`,
+                    },
                   });
                   onClose();
                 }}
@@ -128,24 +141,21 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 {formData.contact}
               </Button>
             ) : (
-              <a
-                href={`tel:${formData.contact}`}
-                className="font-semibold text-text underline"
-              >
+              <a href={`tel:${formData.contact}`} className="text-text font-semibold underline">
                 {formData.contact}
               </a>
             )}
           </div>
         )}
 
-        <div className="mb-1 flex flex-row gap-4 border-b border-border">
+        <div className="border-border mb-1 flex flex-row gap-4 border-b">
           <button
             type="button"
             onClick={() => setActiveTab('info')}
             className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${
               activeTab === 'info'
-                ? 'border-b-2 border-primary font-semibold text-primary'
-                : 'border-b-2 border-transparent font-medium text-text-muted'
+                ? 'border-primary text-primary border-b-2 font-semibold'
+                : 'text-text-muted border-b-2 border-transparent font-medium'
             }`}
           >
             Applicant Details
@@ -155,8 +165,8 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
             onClick={() => setActiveTab('slots')}
             className={`cursor-pointer border-none bg-none px-4 py-2 text-[15px] transition-all duration-200 ${
               activeTab === 'slots'
-                ? 'border-b-2 border-primary font-semibold text-primary'
-                : 'border-b-2 border-transparent font-medium text-text-muted'
+                ? 'border-primary text-primary border-b-2 font-semibold'
+                : 'text-text-muted border-b-2 border-transparent font-medium'
             }`}
           >
             Time Slots
@@ -192,11 +202,18 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               <label className="text-label">Voice Part</label>
               <Select
                 value={formData.voicePart || ''}
-                onChange={(event) => setFormData({ ...formData, voicePart: event.target.value as Audition['voicePart'] })}
+                onChange={(event) =>
+                  setFormData({
+                    ...formData,
+                    voicePart: event.target.value as Audition['voicePart'],
+                  })
+                }
               >
                 <option value="">Not sure yet</option>
                 {voicePartLabels.map((part) => (
-                  <option key={part} value={part}>{part}</option>
+                  <option key={part} value={part}>
+                    {part}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -208,8 +225,15 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
                 onChange={(event) => setFormData({ ...formData, performance: event.target.value })}
               >
                 <option value="">-- No performance assigned --</option>
-                {performances.map(p => (
-                  <option key={p.id} value={p.id}>{formatInTimezone(p.date, timezone, { year: 'numeric', month: 'numeric', day: 'numeric' })} - {p.title}</option>
+                {performances.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {formatInTimezone(p.date, timezone, {
+                      year: 'numeric',
+                      month: 'numeric',
+                      day: 'numeric',
+                    })}{' '}
+                    - {p.title}
+                  </option>
                 ))}
               </Select>
             </div>
@@ -217,7 +241,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Status</label>
-            <div className="flex h-[44px] items-center text-lg font-bold text-text">
+            <div className="text-text flex h-[44px] items-center text-lg font-bold">
               {formData.status}
             </div>
           </div>
@@ -250,50 +274,82 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               <label className="text-label">Confirmed Scheduled Time</label>
               <Select
                 value={formData.scheduledTimeSlot || ''}
-                onChange={(event) => setFormData({ ...formData, scheduledTimeSlot: event.target.value })}
+                onChange={(event) =>
+                  setFormData({ ...formData, scheduledTimeSlot: event.target.value })
+                }
               >
                 <option value="">-- Not Scheduled --</option>
                 {settings?.slots?.map((slot) => (
                   <option key={slot} value={slot}>
-                    {formatInTimezone(slot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    {formatInTimezone(slot, timezone, {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
                   </option>
                 ))}
-                {formData.scheduledTimeSlot && !settings?.slots?.includes(formData.scheduledTimeSlot) && (
-                  <option value={formData.scheduledTimeSlot}>
-                    {formatInTimezone(formData.scheduledTimeSlot, timezone, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })} (Custom)
-                  </option>
-                )}
+                {formData.scheduledTimeSlot &&
+                  !settings?.slots?.includes(formData.scheduledTimeSlot) && (
+                    <option value={formData.scheduledTimeSlot}>
+                      {formatInTimezone(formData.scheduledTimeSlot, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}{' '}
+                      (Custom)
+                    </option>
+                  )}
               </Select>
             </div>
 
             <div className="mt-2 flex flex-col gap-2">
-              <label className="text-label">Requested Slots ({formData.requestedSlots?.length || 0})</label>
+              <label className="text-label">
+                Requested Slots ({formData.requestedSlots?.length || 0})
+              </label>
               <p className="text-muted m-0 text-sm">
                 Select the potential time slots this applicant requested or is available for:
               </p>
-              <div className="max-h-[250px] flex flex-col gap-[10px] overflow-y-auto px-1">
+              <div className="flex max-h-[250px] flex-col gap-[10px] overflow-y-auto px-1">
                 {(settings?.slots || []).map((slot) => {
                   const isChecked = formData.requestedSlots?.includes(slot);
                   return (
-                    <label 
-                      key={slot} 
-                      className={`m-0 cursor-pointer flex flex-row items-center gap-3 rounded-xl p-3 shadow-none border ${isChecked ? 'border-primary bg-primary-light' : 'border-border bg-bg'}`}
+                    <label
+                      key={slot}
+                      className={`m-0 flex cursor-pointer flex-row items-center gap-3 rounded-xl border p-3 shadow-none ${isChecked ? 'border-primary bg-primary-light' : 'border-border bg-bg'}`}
                     >
-                      <input 
-                        type="checkbox" 
-                        checked={isChecked} 
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
                         onChange={() => {
                           const current = formData.requestedSlots || [];
                           if (isChecked) {
-                            setFormData({ ...formData, requestedSlots: current.filter(s => s !== slot) });
+                            setFormData({
+                              ...formData,
+                              requestedSlots: current.filter((s) => s !== slot),
+                            });
                           } else {
                             setFormData({ ...formData, requestedSlots: [...current, slot].sort() });
                           }
                         }}
-                        className="size-4 cursor-pointer accent-primary"
+                        className="accent-primary size-4 cursor-pointer"
                       />
-                      <span className={`text-sm text-text ${isChecked ? 'font-semibold' : 'font-normal'}`}>
-                        {formatInTimezone(slot, timezone, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      <span
+                        className={`text-text text-sm ${isChecked ? 'font-semibold' : 'font-normal'}`}
+                      >
+                        {formatInTimezone(slot, timezone, {
+                          weekday: 'long',
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
                       </span>
                     </label>
                   );

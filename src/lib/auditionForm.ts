@@ -12,7 +12,10 @@ export const defaultAuditionInput: AuditionInput = {
 /**
  * Hydrates form state from a record or defaults.
  */
-export function auditionToFormData(audition: Audition | null, defaultPerformanceId?: string): AuditionInput {
+export function auditionToFormData(
+  audition: Audition | null,
+  defaultPerformanceId?: string
+): AuditionInput {
   if (!audition) {
     return {
       ...defaultAuditionInput,
@@ -35,7 +38,10 @@ export function auditionToFormData(audition: Audition | null, defaultPerformance
 /**
  * Checks if the current form differs from the initial record data.
  */
-export function isAuditionFormDirty(formData: AuditionInput, initialData: Audition | null): boolean {
+export function isAuditionFormDirty(
+  formData: AuditionInput,
+  initialData: Audition | null
+): boolean {
   const currentInitial = auditionToFormData(initialData);
   // Sort requested slots to ensure comparison is order-independent
   const sortedFormData = {

@@ -21,9 +21,11 @@ export const duesService = {
 
   async updateDues(profileId: string, season: string, paid: boolean) {
     try {
-      const existing = await pb.collection('seasonalDues').getFirstListItem<SeasonalDue>(
-        pb.filter('profile = {:profileId} && season = {:season}', { profileId, season })
-      );
+      const existing = await pb
+        .collection('seasonalDues')
+        .getFirstListItem<SeasonalDue>(
+          pb.filter('profile = {:profileId} && season = {:season}', { profileId, season })
+        );
       return await pb.collection('seasonalDues').update<SeasonalDue>(existing.id, { paid });
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) {
@@ -35,5 +37,5 @@ export const duesService = {
       }
       throw err;
     }
-  }
+  },
 };

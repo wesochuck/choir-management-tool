@@ -20,8 +20,13 @@ export const useEvents = () => {
   };
 
   const addEventMutation = useMutation({
-    mutationFn: ({ data, bulkConfig }: { data: Partial<Event> | FormData; bulkConfig?: BulkRehearsalConfig }) =>
-      eventService.createEventWithRehearsals(data, bulkConfig),
+    mutationFn: ({
+      data,
+      bulkConfig,
+    }: {
+      data: Partial<Event> | FormData;
+      bulkConfig?: BulkRehearsalConfig;
+    }) => eventService.createEventWithRehearsals(data, bulkConfig),
     onSuccess: invalidate,
   });
 
@@ -75,7 +80,7 @@ export const useEvents = () => {
   };
 
   const performances = useMemo(() => {
-    return (eventsQuery.data ?? []).filter(e => e.type === 'Performance');
+    return (eventsQuery.data ?? []).filter((e) => e.type === 'Performance');
   }, [eventsQuery.data]);
 
   return {
@@ -87,6 +92,8 @@ export const useEvents = () => {
     editEvent,
     removeEvent,
     bulkAddRehearsals,
-    refresh: async () => { await eventsQuery.refetch(); },
+    refresh: async () => {
+      await eventsQuery.refetch();
+    },
   };
 };

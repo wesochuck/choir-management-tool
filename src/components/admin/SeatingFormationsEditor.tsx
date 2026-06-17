@@ -1,19 +1,35 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Link } from 'react-router-dom';
-import { settingsService, getVoicePartsAndSections, type SectionDef, type VoicePartDef, type SeatingSettings, type SeatingFormationDef } from '../../services/settingsService';
+import {
+  settingsService,
+  getVoicePartsAndSections,
+  type SectionDef,
+  type VoicePartDef,
+  type SeatingSettings,
+  type SeatingFormationDef,
+} from '../../services/settingsService';
 import { AppCard } from '../common/AppCard';
 import { FloatingSaveBar } from './FloatingSaveBar';
 import { useDialog } from '../../contexts/DialogContext';
 import { Button, Select, Input } from '../ui';
 import { toggleAccordion } from '../../lib/seatingFormationsUtils';
-
-
-
 
 interface FormationSectionPillProps {
   dndId: string;
@@ -26,8 +42,19 @@ interface FormationSectionPillProps {
   onRemove: () => void;
 }
 
-function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, borderColor, isRows, onRemove }: FormationSectionPillProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dndId });
+function FormationSectionPill({
+  dndId,
+  label,
+  hasSec,
+  bgColor,
+  textColor,
+  borderColor,
+  isRows,
+  onRemove,
+}: FormationSectionPillProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: dndId,
+  });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? 'none' : (transition ?? undefined),
@@ -38,7 +65,9 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
     color: textColor,
     border: `1px solid ${borderColor}`,
     // fill width when displaying as a row
-    ...(isRows ? { width: '100%', boxSizing: 'border-box' as const, justifyContent: 'space-between' } : {}),
+    ...(isRows
+      ? { width: '100%', boxSizing: 'border-box' as const, justifyContent: 'space-between' }
+      : {}),
   };
 
   return (
@@ -58,12 +87,19 @@ function FormationSectionPill({ dndId, label, hasSec, bgColor, textColor, border
         ⣿
       </span>
       <span className="flex min-w-0 flex-1 items-center gap-1 truncate">
-        {!hasSec &&                     <span title="Unknown item — click × to remove" className="shrink-0 cursor-help">⚠️</span>}
+        {!hasSec && (
+          <span title="Unknown item — click × to remove" className="shrink-0 cursor-help">
+            ⚠️
+          </span>
+        )}
         {label}
       </span>
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
         className="flex shrink-0 cursor-pointer items-center border-none bg-none px-0.5 text-base leading-none font-bold text-inherit opacity-65"
         title="Remove"
       >
@@ -83,22 +119,20 @@ interface FormationRowProps {
   onToggleExpand: () => void;
 }
 
-function FormationRow({ 
-  formation, 
-  formationIndex, 
-  allSections, 
-  allVoiceParts, 
+function FormationRow({
+  formation,
+  formationIndex,
+  allSections,
+  allVoiceParts,
   setCustomSeatingSettings,
   isExpanded,
-  onToggleExpand
+  onToggleExpand,
 }: FormationRowProps) {
   const isRows = formation.strategy === 'horizontal_row';
   const isVoice = !!formation.isVoicePartLayout;
   const dndItems = formation.sectionOrder.map((code, i) => `${formation.id}::${code}::${i}`);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -116,7 +150,7 @@ function FormationRow({
 
   return (
     <div
-      className="flex w-full flex-col rounded-lg border border-border bg-bg p-2 transition-all duration-200 ease-out"
+      className="border-border bg-bg flex w-full flex-col rounded-lg border p-2 transition-all duration-200 ease-out"
       // @allow-inline-style - expansion toggle
       style={{ gap: isExpanded ? '8px' : '0' }}
     >
@@ -126,12 +160,10 @@ function FormationRow({
         className="flex cursor-pointer items-center justify-between py-1 select-none"
       >
         <div className="flex items-center gap-2">
-          <span className="text-[1.05rem] font-bold text-text">
+          <span className="text-text text-[1.05rem] font-bold">
             {formation.name || 'New Formation'}
           </span>
-          <span
-            className="inline-flex items-center rounded-full border border-border bg-[var(--bg-light)] px-2 py-0.5 text-xs font-semibold text-text-muted"
-          >
+          <span className="border-border text-text-muted inline-flex items-center rounded-full border bg-[var(--bg-light)] px-2 py-0.5 text-xs font-semibold">
             {isRows ? 'Horizontal Rows' : 'Vertical Columns'}
           </span>
         </div>
@@ -151,16 +183,12 @@ function FormationRow({
           >
             🗑 Delete template
           </button>
-          <span className="pr-1 text-sm font-bold text-text-muted">
-            {isExpanded ? '▲' : '▼'}
-          </span>
+          <span className="text-text-muted pr-1 text-sm font-bold">{isExpanded ? '▲' : '▼'}</span>
         </div>
       </div>
 
       {/* Collapsible details body container */}
-      <div
-        className={isExpanded ? 'flex flex-col gap-2 border-t border-border pt-2' : 'hidden'}
-      >
+      <div className={isExpanded ? 'border-border flex flex-col gap-2 border-t pt-2' : 'hidden'}>
         {/* Row 1: name input + strategy select */}
         <div className="grid grid-cols-[1fr_170px] items-center gap-2">
           <Input
@@ -168,7 +196,10 @@ function FormationRow({
             onChange={(e) => {
               setCustomSeatingSettings((prev) => {
                 const newFormations = [...prev.formations];
-                newFormations[formationIndex] = { ...newFormations[formationIndex], name: e.target.value };
+                newFormations[formationIndex] = {
+                  ...newFormations[formationIndex],
+                  name: e.target.value,
+                };
                 return { ...prev, formations: newFormations };
               });
             }}
@@ -180,7 +211,10 @@ function FormationRow({
             onChange={(e) => {
               setCustomSeatingSettings((prev) => {
                 const newFormations = [...prev.formations];
-                newFormations[formationIndex] = { ...newFormations[formationIndex], strategy: e.target.value as 'vertical_column' | 'horizontal_row' };
+                newFormations[formationIndex] = {
+                  ...newFormations[formationIndex],
+                  strategy: e.target.value as 'vertical_column' | 'horizontal_row',
+                };
                 return { ...prev, formations: newFormations };
               });
             }}
@@ -204,20 +238,24 @@ function FormationRow({
                   newFormations[formationIndex] = {
                     ...newFormations[formationIndex],
                     isVoicePartLayout: checked,
-                    sectionOrder: [] // Clear previous order to avoid mismatching items
+                    sectionOrder: [], // Clear previous order to avoid mismatching items
                   };
                   return { ...prev, formations: newFormations };
                 });
               }}
-              className="size-[15px] cursor-pointer accent-primary"
+              className="accent-primary size-[15px] cursor-pointer"
             />
             Layout by Voice Parts (S1, S2...) instead of Section Buckets
           </label>
         </div>
 
         {/* Row 2: section/voice part order preview */}
-        <div className="min-h-[44px] rounded-lg border border-border bg-surface p-[6px_8px]">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <div className="border-border bg-surface min-h-[44px] rounded-lg border p-[6px_8px]">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
             <SortableContext items={dndItems} strategy={horizontalListSortingStrategy}>
               <div
                 className={`flex ${isRows ? 'flex-col flex-nowrap items-stretch gap-1' : 'flex-row flex-wrap items-center gap-1.5'}`}
@@ -229,15 +267,16 @@ function FormationRow({
                   let itemResolved = false;
 
                   if (isVoice) {
-                    const vp = allVoiceParts.find(v => v.label === code);
+                    const vp = allVoiceParts.find((v) => v.label === code);
                     if (vp) {
                       label = vp.fullName;
-                      const parentSec = allSections.find(s => s.code === vp.sectionCode);
-                      color = vp.color || vp.colorBg || parentSec?.color || parentSec?.colorBg || color;
+                      const parentSec = allSections.find((s) => s.code === vp.sectionCode);
+                      color =
+                        vp.color || vp.colorBg || parentSec?.color || parentSec?.colorBg || color;
                       itemResolved = true;
                     }
                   } else {
-                    const sec = allSections.find(s => s.code === code);
+                    const sec = allSections.find((s) => s.code === code);
                     if (sec) {
                       label = sec.name;
                       color = sec.color || sec.colorBg || color;
@@ -260,8 +299,13 @@ function FormationRow({
                       onRemove={() => {
                         setCustomSeatingSettings((prev) => {
                           const newFormations = [...prev.formations];
-                          const order = newFormations[formationIndex].sectionOrder.filter((_, sIdx) => sIdx !== secIdx);
-                          newFormations[formationIndex] = { ...newFormations[formationIndex], sectionOrder: order };
+                          const order = newFormations[formationIndex].sectionOrder.filter(
+                            (_, sIdx) => sIdx !== secIdx
+                          );
+                          newFormations[formationIndex] = {
+                            ...newFormations[formationIndex],
+                            sectionOrder: order,
+                          };
                           return { ...prev, formations: newFormations };
                         });
                       }}
@@ -276,8 +320,10 @@ function FormationRow({
         {/* Row 3: Section/Voice dropdown pill creators */}
         <div className="flex flex-wrap items-center gap-1">
           <div
-            className={`relative inline-block${formation.sectionOrder.length > 0 ? ' mt-[6px]' : ''}`}
-          >              <Select
+            className={`relative inline-block${formation.sectionOrder.length > 0 ? 'mt-[6px]' : ''}`}
+          >
+            {' '}
+            <Select
               value=""
               onChange={(e) => {
                 const val = e.target.value;
@@ -292,30 +338,29 @@ function FormationRow({
                 });
               }}
               visuallyHidden
-              title={isVoice ? "Add voice part to order" : "Add section to order"}
+              title={isVoice ? 'Add voice part to order' : 'Add section to order'}
             >
-              <option value="" disabled>{isVoice ? "+ Add Voice Part" : "+ Add Section"}</option>
-              {isVoice ? (
-                allVoiceParts.filter(vp => vp.label && !formation.sectionOrder.includes(vp.label)).map(vp => (
-                  <option key={vp.label} value={vp.label}>
-                    {vp.fullName} ({vp.label})
-                  </option>
-                ))
-              ) : (
-                allSections.filter(s => s.code && !formation.sectionOrder.includes(s.code)).map(s => (
-                  <option key={s.code} value={s.code}>
-                    {s.name ? `${s.name} (${s.code})` : s.code}
-                  </option>
-                ))
-              )}
+              <option value="" disabled>
+                {isVoice ? '+ Add Voice Part' : '+ Add Section'}
+              </option>
+              {isVoice
+                ? allVoiceParts
+                    .filter((vp) => vp.label && !formation.sectionOrder.includes(vp.label))
+                    .map((vp) => (
+                      <option key={vp.label} value={vp.label}>
+                        {vp.fullName} ({vp.label})
+                      </option>
+                    ))
+                : allSections
+                    .filter((s) => s.code && !formation.sectionOrder.includes(s.code))
+                    .map((s) => (
+                      <option key={s.code} value={s.code}>
+                        {s.name ? `${s.name} (${s.code})` : s.code}
+                      </option>
+                    ))}
             </Select>
-            <Button
-              type="button"
-              variant="secondary"
-              size="tiny"
-              className="pointer-events-none"
-            >
-              {isVoice ? "+ Add Voice Part" : "+ Add Section"}
+            <Button type="button" variant="secondary" size="tiny" className="pointer-events-none">
+              {isVoice ? '+ Add Voice Part' : '+ Add Section'}
             </Button>
           </div>
         </div>
@@ -330,13 +375,15 @@ interface SeatingFormationsEditorProps {
 
 export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEditorProps) {
   const dialog = useDialog();
-  
+
   // Templates Independent Settings State
   const [customSeatingSettings, setCustomSeatingSettings] = useState<SeatingSettings>({
     defaultFormationId: 'columns-standard',
-    formations: []
+    formations: [],
   });
-  const [initialSeatingSettings, setInitialSeatingSettings] = useState<SeatingSettings | null>(null);
+  const [initialSeatingSettings, setInitialSeatingSettings] = useState<SeatingSettings | null>(
+    null
+  );
   const [expandedFormationId, setExpandedFormationId] = useState<string | null>(null);
   const [allSections, setAllSections] = useState<SectionDef[]>([]);
   const [allVoiceParts, setAllVoiceParts] = useState<VoicePartDef[]>([]);
@@ -397,9 +444,9 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       }
 
       const seenFormationNames = new Set<string>();
-      const sectionCodes = new Set(allSections.map(s => s.code.toUpperCase()));
-      const voicePartLabels = new Set(allVoiceParts.map(vp => vp.label.toUpperCase()));
-      
+      const sectionCodes = new Set(allSections.map((s) => s.code.toUpperCase()));
+      const voicePartLabels = new Set(allVoiceParts.map((vp) => vp.label.toUpperCase()));
+
       for (let i = 0; i < formations.length; i++) {
         const form = formations[i];
         const name = form.name.trim();
@@ -416,9 +463,11 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
         }
         seenFormationNames.add(lowerName);
 
-        const codes = form.sectionOrder.map(c => c.trim().toUpperCase()).filter(Boolean);
+        const codes = form.sectionOrder.map((c) => c.trim().toUpperCase()).filter(Boolean);
         if (codes.length === 0) {
-          setMessage(`Error: Seating formation "${name}" must have at least one section or voice part.`);
+          setMessage(
+            `Error: Seating formation "${name}" must have at least one section or voice part.`
+          );
           setIsSaving(false);
           return;
         }
@@ -428,7 +477,9 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
 
         for (const code of codes) {
           if (!validCodes.has(code)) {
-            setMessage(`Error: Seating formation "${name}" contains unknown ${isVoice ? 'voice part' : 'section'} code "${code}".`);
+            setMessage(
+              `Error: Seating formation "${name}" contains unknown ${isVoice ? 'voice part' : 'section'} code "${code}".`
+            );
             setIsSaving(false);
             return;
           }
@@ -438,14 +489,18 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       await settingsService.saveSeatingSettings(customSeatingSettings);
       setInitialSeatingSettings(JSON.parse(JSON.stringify(customSeatingSettings)));
       setMessage('Templates saved successfully.');
-      
+
       onSaveSuccess?.();
-      
+
       dialog.showToast('Seating templates saved successfully.');
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setMessage(`Error saving templates: ${errMsg}`);
-      await dialog.showMessage({ title: 'Error', message: 'Failed to save seating templates.', variant: 'danger' });
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to save seating templates.',
+        variant: 'danger',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -458,7 +513,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
   return (
     <div className="flex flex-col gap-8 pb-16">
       {message && (
-        <div 
+        <div
           className={`inline-flex items-center self-start rounded px-2 py-1 text-xs font-semibold tracking-wider uppercase ${message.startsWith('Error') ? 'border border-red-200 bg-red-100 text-red-800' : 'border border-sky-200 bg-sky-100 text-sky-700'}`}
         >
           {message}
@@ -466,15 +521,20 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       )}
 
       <AppCard title="Default Seating Formation">
-          <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1">
           <label className="text-label">Default Seating Formation</label>
           <Select
             value={customSeatingSettings.defaultFormationId}
-            onChange={(e) => setCustomSeatingSettings((prev) => ({ ...prev, defaultFormationId: e.target.value }))}
-            size="small" className="!max-w-[400px]"
+            onChange={(e) =>
+              setCustomSeatingSettings((prev) => ({ ...prev, defaultFormationId: e.target.value }))
+            }
+            size="small"
+            className="!max-w-[400px]"
           >
-            {customSeatingSettings.formations?.map(form => (
-              <option key={form.id} value={form.id}>{form.name}</option>
+            {customSeatingSettings.formations?.map((form) => (
+              <option key={form.id} value={form.id}>
+                {form.name}
+              </option>
             ))}
           </Select>
           <p className="text-muted m-0">
@@ -486,15 +546,13 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
       <AppCard title="Seating Formations">
         <div className="flex flex-col gap-4">
           <div className="flex flex-row flex-wrap items-center justify-between gap-2">
-          <p className="text-muted m-0">
-              Define reusable seating formations for your choir.
-            </p>
-            <Button 
+            <p className="text-muted m-0">Define reusable seating formations for your choir.</p>
+            <Button
               as={Link}
-              to="/admin/roster" 
+              to="/admin/roster"
               variant="outline"
               size="small"
-              className="inline-flex items-center gap-[6px] px-2 py-1 text-sm font-semibold text-primary"
+              className="text-primary inline-flex items-center gap-[6px] px-2 py-1 text-sm font-semibold"
             >
               🎨 Edit Section Colors in Roster
             </Button>
@@ -509,7 +567,9 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
               allVoiceParts={allVoiceParts}
               setCustomSeatingSettings={setCustomSeatingSettings}
               isExpanded={expandedFormationId === formation.id}
-              onToggleExpand={() => setExpandedFormationId(prev => toggleAccordion(prev, formation.id))}
+              onToggleExpand={() =>
+                setExpandedFormationId((prev) => toggleAccordion(prev, formation.id))
+              }
             />
           ))}
 
@@ -521,8 +581,13 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
                 ...prev,
                 formations: [
                   ...(prev.formations || []),
-                  { id: newId, name: 'New Formation', strategy: 'vertical_column', sectionOrder: allSections.map(s => s.code) }
-                ]
+                  {
+                    id: newId,
+                    name: 'New Formation',
+                    strategy: 'vertical_column',
+                    sectionOrder: allSections.map((s) => s.code),
+                  },
+                ],
               }));
             }}
             variant="secondary"
@@ -533,11 +598,11 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
         </div>
       </AppCard>
 
-      <FloatingSaveBar 
-        isDirty={isDirty} 
-        isSaving={isSaving} 
-        onSave={handleSave} 
-        onDiscard={handleDiscard} 
+      <FloatingSaveBar
+        isDirty={isDirty}
+        isSaving={isSaving}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
       />
     </div>
   );

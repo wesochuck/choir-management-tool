@@ -22,16 +22,14 @@ const COMPLIANT_FOOTER_HTML = `
 export function renderMarkdown(text: string): string {
   if (!text) return '';
 
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
   html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
     const level = hashes.length;
     // Using inline styles for headings for better email client compatibility
-    const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+    const fontSize =
+      level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
     return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
   });
 
@@ -51,19 +49,21 @@ export function renderMarkdown(text: string): string {
     return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
   });
 
-
   // Lists (Ordered and Unordered)
   const lines = html.split('\n');
   let inUl = false;
   let inOl = false;
-  const processedLines = lines.map(line => {
+  const processedLines = lines.map((line) => {
     const ulMatch = line.match(/^(\*|-)\s+(.*)/);
     const olMatch = line.match(/^(\d+)\.\s+(.*)/);
 
     if (ulMatch) {
       const content = ulMatch[2];
       let prefix = '';
-      if (inOl) { inOl = false; prefix = '</ol>'; }
+      if (inOl) {
+        inOl = false;
+        prefix = '</ol>';
+      }
       if (!inUl) {
         inUl = true;
         return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
@@ -72,7 +72,10 @@ export function renderMarkdown(text: string): string {
     } else if (olMatch) {
       const content = olMatch[2];
       let prefix = '';
-      if (inUl) { inUl = false; prefix = '</ul>'; }
+      if (inUl) {
+        inUl = false;
+        prefix = '</ul>';
+      }
       if (!inOl) {
         inOl = true;
         return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
@@ -80,8 +83,14 @@ export function renderMarkdown(text: string): string {
       return `<li>${content}</li>`;
     } else {
       let result = line;
-      if (inUl) { inUl = false; result = '</ul>' + line; }
-      if (inOl) { inOl = false; result = '</ol>' + line; }
+      if (inUl) {
+        inUl = false;
+        result = '</ul>' + line;
+      }
+      if (inOl) {
+        inOl = false;
+        result = '</ol>' + line;
+      }
       return result;
     }
   });
@@ -91,18 +100,19 @@ export function renderMarkdown(text: string): string {
 
   // Line breaks and paragraphs
   const blocks = html.split(/\n\s*\n/);
-  html = blocks.map(block => {
-    const trimmed = block.trim();
-    if (!trimmed) return '';
-    if (trimmed.startsWith('<ul')) return block;
-    if (trimmed.startsWith('<ol')) return block;
-    if (trimmed.match(/^<h\d/)) return block;
-    return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, '<br>')}</p>`;
-  }).join('\n');
+  html = blocks
+    .map((block) => {
+      const trimmed = block.trim();
+      if (!trimmed) return '';
+      if (trimmed.startsWith('<ul')) return block;
+      if (trimmed.startsWith('<ol')) return block;
+      if (trimmed.match(/^<h\d/)) return block;
+      return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, '<br>')}</p>`;
+    })
+    .join('\n');
 
   return html;
 }
-
 
 /**
  * Resolves placeholders for message preview.
@@ -128,22 +138,22 @@ export function resolvePreviewContent(
   // Event Placeholders
   const rawTitle = event?.title || event?.type || 'Sample Performance';
   const title = isHtml ? escapeHtml(rawTitle) : rawTitle;
-  
+
   const rawType = event?.type || 'Performance';
   const type = isHtml ? escapeHtml(rawType) : rawType;
-  
+
   const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-  
+
   const venueName = event?.expand?.venue?.name || 'Main Concert Hall';
   const venueAddress = event?.expand?.venue?.address || '';
-  
+
   let location = isHtml ? escapeHtml(venueName) : venueName;
   if (isHtml && venueAddress.trim()) {
     location = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
   }
 
   const callTime = event?.callTime ? formatTime12h(event.callTime) : '';
-  
+
   const rawDetails = event?.details || 'Join us for an amazing evening of music and harmony!';
   const details = isHtml ? escapeHtml(rawDetails) : rawDetails;
 
@@ -158,13 +168,18 @@ export function resolvePreviewContent(
   const setlistItems = event?.setList;
   let setlistHtml: string;
   if (setlistItems && setlistItems.length > 0) {
-    const rows = setlistItems.map((item, i) => {
-      const num = i + 1;
-      const itemTitle = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
-      const composer = escapeHtml(item.composer || '');
-      const duration = escapeHtml(item.duration || '');
-      return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${itemTitle}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
-    }).join('');
+    const rows = setlistItems
+      .map((item, i) => {
+        const num = i + 1;
+        const itemTitle =
+          item.type === 'intermission'
+            ? `<em>${escapeHtml(item.title)}</em>`
+            : escapeHtml(item.title);
+        const composer = escapeHtml(item.composer || '');
+        const duration = escapeHtml(item.duration || '');
+        return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${itemTitle}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+      })
+      .join('');
     setlistHtml = `
 <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;">
   <thead>

@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { renderCommunicationTemplate, type CommunicationSettings } from '../../../services/settingsService';
+import {
+  renderCommunicationTemplate,
+  type CommunicationSettings,
+} from '../../../services/settingsService';
 import type { AutomatedTask } from './types';
 import { Button } from '../../../components/ui';
 
@@ -36,7 +39,7 @@ export function AutomatedTasksPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-lg font-semibold text-text">Upcoming Automated Tasks</h3>
+      <h3 className="text-text text-lg font-semibold">Upcoming Automated Tasks</h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px] border-collapse text-left">
           <thead>
@@ -63,7 +66,7 @@ export function AutomatedTasksPanel({
                     {task.scheduledTime.toLocaleString()}
                   </td>
                   <td className="p-3 px-4">
-                    <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase">
+                    <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
                       {task.type}
                     </span>
                   </td>
@@ -74,7 +77,7 @@ export function AutomatedTasksPanel({
                     {new Date(task.event.date).toLocaleString()}
                   </td>
                   <td className="p-3 px-4">
-                    <span className="inline-flex w-fit items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
+                    <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
                       {task.status}
                     </span>
                   </td>
@@ -116,11 +119,11 @@ export function AutomatedTasksPanel({
                             };
                             const subjectText = renderCommunicationTemplate(
                               commSettings.reminderSubjectTemplate,
-                              values,
+                              values
                             );
                             const bodyText = renderCommunicationTemplate(
                               commSettings.reminderBodyTemplate,
-                              values,
+                              values
                             );
                             onDraftTaskMessage(subjectText, bodyText, task);
                           }

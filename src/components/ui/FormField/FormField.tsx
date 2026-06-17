@@ -10,7 +10,14 @@ export interface FormFieldProps {
   children?: React.ReactNode;
 }
 
-export function FormField({ label, htmlFor, error, helpText, required = false, children }: FormFieldProps) {
+export function FormField({
+  label,
+  htmlFor,
+  error,
+  helpText,
+  required = false,
+  children,
+}: FormFieldProps) {
   let childElement = children;
 
   if (error && isValidElement(childElement)) {
@@ -20,13 +27,22 @@ export function FormField({ label, htmlFor, error, helpText, required = false, c
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-text" htmlFor={htmlFor}>
+      <label className="text-text text-sm font-medium" htmlFor={htmlFor}>
         {label}
-        {required && <span className="ml-0.5 text-danger-text" aria-hidden="true"> *</span>}
+        {required && (
+          <span className="text-danger-text ml-0.5" aria-hidden="true">
+            {' '}
+            *
+          </span>
+        )}
       </label>
       {childElement}
-      {error && <span className="text-xs text-danger-text" role="alert">{error}</span>}
-      {helpText && <span className="text-xs text-text-muted">{helpText}</span>}
+      {error && (
+        <span className="text-danger-text text-xs" role="alert">
+          {error}
+        </span>
+      )}
+      {helpText && <span className="text-text-muted text-xs">{helpText}</span>}
     </div>
   );
 }

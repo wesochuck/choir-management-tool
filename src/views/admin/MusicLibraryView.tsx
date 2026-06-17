@@ -68,12 +68,10 @@ export default function MusicLibraryView() {
     queryKey: queryKeys.voiceParts.list(),
     queryFn: () => getVoicePartsAndSections(),
   });
-  const sections = useMemo(
-    () => voicePartsQuery.data?.sections ?? [],
-    [voicePartsQuery.data],
-  );
+  const sections = useMemo(() => voicePartsQuery.data?.sections ?? [], [voicePartsQuery.data]);
 
-  const isLoading = libraryQuery.isLoading || settingsLibQuery.isLoading || voicePartsQuery.isLoading;
+  const isLoading =
+    libraryQuery.isLoading || settingsLibQuery.isLoading || voicePartsQuery.isLoading;
 
   useEffect(() => {
     if (!settingsLibQuery.data) return;
@@ -386,9 +384,7 @@ export default function MusicLibraryView() {
     if (!confirmed) return;
 
     try {
-      const children = await pb.collection('musicLibrary').getFullList<MusicPiece>({
-        filter: pb.filter('parentId = {:id}', { id }),
-      });
+      const children = await musicLibraryService.getMovements(id);
 
       let unlinkChildren = false;
       if (children.length > 0) {
@@ -540,7 +536,7 @@ export default function MusicLibraryView() {
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'catalog'
-                ? 'border-primary font-bold text-primary'
+                ? 'border-primary text-primary font-bold'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('catalog')}
@@ -551,7 +547,7 @@ export default function MusicLibraryView() {
             type="button"
             className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
               activeTab === 'config'
-                ? 'border-primary font-bold text-primary'
+                ? 'border-primary text-primary font-bold'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
             onClick={() => setActiveTab('config')}
@@ -725,7 +721,7 @@ export default function MusicLibraryView() {
                   }
                   placeholder="https://example.com/catalog/{catalogId}"
                 />
-                <p className="mt-1 text-xs text-text-muted">
+                <p className="text-text-muted mt-1 text-xs">
                   Configure an external lookup URL format for Catalog IDs. Use{' '}
                   <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px]">
                     {'{catalogId}'}
@@ -742,7 +738,7 @@ export default function MusicLibraryView() {
 
           <AppCard title="Music Library Genres">
             <div className="flex flex-col gap-4">
-              <p className="text-sm text-text-muted">
+              <p className="text-text-muted text-sm">
                 Configure standard genre tags used for library organization and advanced layout
                 filtering.
               </p>

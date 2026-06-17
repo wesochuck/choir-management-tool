@@ -7,11 +7,7 @@ interface DraftsPanelProps {
   onDeleteDraft: (draft: MessageRecord) => Promise<void>;
 }
 
-export function DraftsPanel({
-  drafts,
-  onResumeDraft,
-  onDeleteDraft,
-}: DraftsPanelProps) {
+export function DraftsPanel({ drafts, onResumeDraft, onDeleteDraft }: DraftsPanelProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[700px] border-collapse text-left">
@@ -38,7 +34,7 @@ export function DraftsPanel({
                   {new Date(draft.updated).toLocaleString()}
                 </td>
                 <td className="p-3 px-4">
-                  <span className="inline-flex w-fit items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
+                  <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
                     {draft.type}
                   </span>
                 </td>
@@ -50,18 +46,10 @@ export function DraftsPanel({
                 </td>
                 <td className="p-3 px-4 text-right whitespace-nowrap">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="small"
-                      onClick={() => onDeleteDraft(draft)}
-                    >
+                    <Button variant="outline" size="small" onClick={() => onDeleteDraft(draft)}>
                       Delete
                     </Button>
-                    <Button
-                      variant="primary"
-                      size="small"
-                      onClick={() => onResumeDraft(draft)}
-                    >
+                    <Button variant="primary" size="small" onClick={() => onResumeDraft(draft)}>
                       Resume Draft
                     </Button>
                   </div>

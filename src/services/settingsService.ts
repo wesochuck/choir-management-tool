@@ -33,7 +33,6 @@ export interface CommunicationSettings {
   reportBodyTemplate: string;
 }
 
-
 export interface RosterSettings {
   defaultStatus: string;
   defaultSort: 'lastName' | 'voicePart';
@@ -132,7 +131,7 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
     'Please make sure your RSVP is up to date: {rsvpLinks}',
     '',
     'See you there!',
-    'Choir Management'
+    'Choir Management',
   ].join('\n'),
   reportEnabled: true,
   reportHoursAfter: 12,
@@ -154,7 +153,6 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
     '{thresholdWarningsSection}',
   ].join('\n'),
 };
-
 
 const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultStatus: '',
@@ -201,7 +199,9 @@ const getSetting = async <T>(key: string): Promise<AppSetting<T> | null> => {
   const existing = inFlightRequests[key];
   if (existing) return existing as Promise<AppSetting<T> | null>;
 
-  const promise = pb.collection('appSettings').getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }))
+  const promise = pb
+    .collection('appSettings')
+    .getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }))
     .then((setting) => setting)
     .catch((err: unknown) => {
       if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
@@ -209,7 +209,14 @@ const getSetting = async <T>(key: string): Promise<AppSetting<T> | null> => {
     });
 
   inFlightRequests[key] = promise;
-  void promise.then(() => { delete inFlightRequests[key]; }, () => { delete inFlightRequests[key]; });
+  void promise.then(
+    () => {
+      delete inFlightRequests[key];
+    },
+    () => {
+      delete inFlightRequests[key];
+    }
+  );
 
   return promise;
 };
@@ -253,7 +260,11 @@ export const settingsService = {
     const setting = await getSetting<CommunicationSettings>('communications');
     const value = setting?.value;
     let resolvedUrl = value?.frontendUrl;
-    if ((!resolvedUrl || resolvedUrl === 'http://localhost:5173') && typeof window !== 'undefined' && window.location?.origin) {
+    if (
+      (!resolvedUrl || resolvedUrl === 'http://localhost:5173') &&
+      typeof window !== 'undefined' &&
+      window.location?.origin
+    ) {
       resolvedUrl = window.location.origin;
     }
     return {
@@ -275,7 +286,6 @@ export const settingsService = {
   async saveCommunicationConfig(value: CommunicationConfig) {
     return await upsertSetting('communications_config', value, false);
   },
-
 
   async getRosterSettings() {
     const setting = await getSetting<RosterSettings>('roster');
@@ -304,21 +314,23 @@ export const settingsService = {
     const setting = await getSetting<SeatingSettings>('seating_config');
     const value = setting?.value;
     const voiceSettings = await getVoicePartsAndSections();
-    const activeCodes = voiceSettings.sections.map(s => s.code.toUpperCase());
-    const activeParts = voiceSettings.voiceParts.map(vp => vp.label.toUpperCase());
+    const activeCodes = voiceSettings.sections.map((s) => s.code.toUpperCase());
+    const activeParts = voiceSettings.voiceParts.map((vp) => vp.label.toUpperCase());
 
     const baseFormations = value?.formations || DEFAULT_SEATING_SETTINGS.formations;
 
-    const sanitizedFormations = baseFormations.map(form => {
+    const sanitizedFormations = baseFormations.map((form) => {
       const isVoice = !!form.isVoicePartLayout;
       const filterList = isVoice ? activeParts : activeCodes;
-      const order = (form.sectionOrder || []).filter(code => filterList.includes(code.toUpperCase()));
+      const order = (form.sectionOrder || []).filter((code) =>
+        filterList.includes(code.toUpperCase())
+      );
       return { ...form, sectionOrder: order, isVoicePartLayout: isVoice };
     });
 
     return {
       defaultFormationId: value?.defaultFormationId || DEFAULT_SEATING_SETTINGS.defaultFormationId,
-      formations: sanitizedFormations
+      formations: sanitizedFormations,
     };
   },
 
@@ -364,9 +376,9 @@ export const settingsService = {
 
   async getHeroImageUrl(): Promise<string | null> {
     try {
-      const record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
-        pb.filter('key = {:key}', { key: 'landingHeroImage' })
-      );
+      const record = await pb
+        .collection('appSettings')
+        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key: 'landingHeroImage' }));
       const filename = record['logo'] as string | undefined;
       if (!filename) return null;
       return pb.files.getURL(record, filename);
@@ -380,9 +392,9 @@ export const settingsService = {
     const key = 'landingHeroImage';
     let record: RecordModel;
     try {
-      record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
-        pb.filter('key = {:key}', { key })
-      );
+      record = await pb
+        .collection('appSettings')
+        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key }));
     } catch (err: unknown) {
       if (!(err && typeof err === 'object' && 'status' in err && err.status === 404)) {
         throw err;
@@ -400,9 +412,9 @@ export const settingsService = {
 
   async getLogoUrl(): Promise<string | null> {
     try {
-      const record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
-        pb.filter('key = {:key}', { key: 'logo' })
-      );
+      const record = await pb
+        .collection('appSettings')
+        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key: 'logo' }));
       const logo = record['logo'] as string | undefined;
       if (!logo) return null;
       return pb.files.getURL(record, logo);
@@ -419,9 +431,9 @@ export const settingsService = {
     // is properly serialized. FormData + JSON fields can fail on create.
     let record: RecordModel;
     try {
-      record = await pb.collection('appSettings').getFirstListItem<RecordModel>(
-        pb.filter('key = {:key}', { key })
-      );
+      record = await pb
+        .collection('appSettings')
+        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key }));
     } catch (err: unknown) {
       if (!(err && typeof err === 'object' && 'status' in err && err.status === 404)) {
         throw err;
@@ -478,8 +490,20 @@ export interface SeatingSettings {
 }
 
 export const DEFAULT_SECTIONS: SectionDef[] = [
-  { code: 'S', name: 'Sopranos', color: '#1b4d3e', colorBg: 'var(--color-danger-bg)', colorText: 'var(--color-danger-text)' },
-  { code: 'A', name: 'Altos', color: '#4a7c59', colorBg: 'var(--color-primary-light)', colorText: 'var(--color-primary-deep)' },
+  {
+    code: 'S',
+    name: 'Sopranos',
+    color: '#1b4d3e',
+    colorBg: 'var(--color-danger-bg)',
+    colorText: 'var(--color-danger-text)',
+  },
+  {
+    code: 'A',
+    name: 'Altos',
+    color: '#4a7c59',
+    colorBg: 'var(--color-primary-light)',
+    colorText: 'var(--color-primary-deep)',
+  },
   { code: 'T', name: 'Tenors', color: '#92400e', colorBg: '#fef3c7', colorText: '#92400e' },
   { code: 'B', name: 'Basses', color: '#075985', colorBg: '#e0f2fe', colorText: '#075985' },
 ];
@@ -498,9 +522,19 @@ export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
 export const DEFAULT_SEATING_SETTINGS: SeatingSettings = {
   defaultFormationId: 'columns-standard',
   formations: [
-    { id: 'columns-standard', name: 'Standard Columns (S-A-T-B Left to Right)', strategy: 'vertical_column', sectionOrder: ['S', 'A', 'T', 'B'] },
-    { id: 'rows-standard', name: 'Standard Rows (S-A-T-B Front to Back)', strategy: 'horizontal_row', sectionOrder: ['S', 'A', 'T', 'B'] }
-  ]
+    {
+      id: 'columns-standard',
+      name: 'Standard Columns (S-A-T-B Left to Right)',
+      strategy: 'vertical_column',
+      sectionOrder: ['S', 'A', 'T', 'B'],
+    },
+    {
+      id: 'rows-standard',
+      name: 'Standard Rows (S-A-T-B Front to Back)',
+      strategy: 'horizontal_row',
+      sectionOrder: ['S', 'A', 'T', 'B'],
+    },
+  ],
 };
 
 export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
@@ -513,7 +547,7 @@ export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
       // Auto-migrate old format to new format
       if (sections.length === 0 && voiceParts.length > 0) {
         const detectedCodes = new Set<string>();
-        voiceParts = voiceParts.map(vp => {
+        voiceParts = voiceParts.map((vp) => {
           let code = vp.sectionCode;
           if (!code) {
             const label = vp.label || '';
@@ -533,7 +567,7 @@ export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
         if (detectedCodes.has('T')) sections.push({ code: 'T', name: 'Tenors' });
         if (detectedCodes.has('B')) sections.push({ code: 'B', name: 'Basses' });
         if (detectedCodes.has('Other')) sections.push({ code: 'Other', name: 'Other' });
-        
+
         if (sections.length === 0) {
           sections = [...DEFAULT_SECTIONS];
         }
@@ -549,7 +583,10 @@ export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
   }
 }
 
-export async function saveVoicePartsAndSections(voiceParts: VoicePartDef[], sections: SectionDef[]): Promise<AppSetting<VoicePartSettings>> {
+export async function saveVoicePartsAndSections(
+  voiceParts: VoicePartDef[],
+  sections: SectionDef[]
+): Promise<AppSetting<VoicePartSettings>> {
   return await upsertSetting<VoicePartSettings>('voiceParts', { voiceParts, sections }, true);
 }
 
@@ -558,7 +595,9 @@ export async function getVoiceParts(): Promise<VoicePartDef[]> {
   return settings.voiceParts;
 }
 
-export async function saveVoiceParts(voiceParts: VoicePartDef[]): Promise<AppSetting<VoicePartSettings>> {
+export async function saveVoiceParts(
+  voiceParts: VoicePartDef[]
+): Promise<AppSetting<VoicePartSettings>> {
   const current = await getVoicePartsAndSections();
   return await saveVoicePartsAndSections(voiceParts, current.sections);
 }
@@ -570,9 +609,5 @@ export const queueSettingsService = {
 
   async generateToken(): Promise<{ secret: string }> {
     return pb.send('/api/admin/queue-settings/generate', { method: 'POST' });
-  }
+  },
 };
-
-
-
-

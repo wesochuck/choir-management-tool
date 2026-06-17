@@ -28,9 +28,11 @@ function createHarness() {
     React.createElement(
       QueryClientProvider,
       { client },
-      React.createElement(MemoryRouter, null,
-        React.createElement(DialogContext.Provider, { value: dialog }, children),
-      ),
+      React.createElement(
+        MemoryRouter,
+        null,
+        React.createElement(DialogContext.Provider, { value: dialog }, children)
+      )
     );
   return { wrapper, showMessage, showToast, client };
 }
@@ -48,7 +50,7 @@ test('useEventRosterData shows the error dialog once when the query fails', asyn
 
   const { result } = renderHook(
     ({ eventId, isInline }) => useEventRosterData({ eventId, isInline }),
-    { wrapper, initialProps: { eventId: 'evt1', isInline: false } },
+    { wrapper, initialProps: { eventId: 'evt1', isInline: false } }
   );
 
   await waitFor(() => {
@@ -71,7 +73,7 @@ test('useEventRosterData does not re-fire the error dialog on re-render with the
 
   const { result, rerender } = renderHook(
     ({ eventId, isInline }) => useEventRosterData({ eventId, isInline }),
-    { wrapper, initialProps: { eventId: 'evt1', isInline: false } },
+    { wrapper, initialProps: { eventId: 'evt1', isInline: false } }
   );
 
   await waitFor(() => {
@@ -95,7 +97,7 @@ test('useEventRosterData re-fires the error dialog when a new error replaces the
 
   const { result, rerender } = renderHook(
     ({ eventId, isInline }) => useEventRosterData({ eventId, isInline }),
-    { wrapper, initialProps: { eventId: 'evt1', isInline: false } },
+    { wrapper, initialProps: { eventId: 'evt1', isInline: false } }
   );
 
   await waitFor(() => {

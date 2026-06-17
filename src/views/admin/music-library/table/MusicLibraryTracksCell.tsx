@@ -6,7 +6,10 @@ interface MusicLibraryTracksCellProps {
   isParent: boolean;
   totalMovementTracksCount: number;
   onPlayTrack: (piece: MusicPiece) => void;
-  onEditPiece?: (piece: MusicPiece, tab?: 'details' | 'tracks' | 'performances' | 'movements') => void;
+  onEditPiece?: (
+    piece: MusicPiece,
+    tab?: 'details' | 'tracks' | 'performances' | 'movements'
+  ) => void;
 }
 
 export function MusicLibraryTracksCell({
@@ -17,7 +20,7 @@ export function MusicLibraryTracksCell({
   onEditPiece,
 }: MusicLibraryTracksCellProps) {
   return (
-    <td className="border border-border px-[10px] py-[6px] align-middle">
+    <td className="border-border border px-[10px] py-[6px] align-middle">
       {piece.audioTrackMapping && Object.keys(piece.audioTrackMapping).length > 0 ? (
         <Button
           variant="secondary"
@@ -36,7 +39,7 @@ export function MusicLibraryTracksCell({
             e.stopPropagation();
             onEditPiece?.(piece, 'tracks');
           }}
-          className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap text-primary transition-colors hover:bg-[rgb(27_77_62_/_12%)]"
+          className="text-primary inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap transition-colors hover:bg-[rgb(27_77_62_/_12%)]"
         >
           🎧 {totalMovementTracksCount} in mvts
         </span>

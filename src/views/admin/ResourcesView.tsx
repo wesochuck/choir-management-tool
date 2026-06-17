@@ -5,8 +5,20 @@ import { resourceService, type SingerResource } from '../../services/resourceSer
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import { Button, Input, FormField, Badge, Modal, RadioGroup, Radio } from '../../components/ui';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 const EMPTY_RESOURCES: SingerResource[] = [];
@@ -20,10 +32,12 @@ function SortableResourceRow({
   children: React.ReactNode;
   dragHandle: React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: resource.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: resource.id,
+  });
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging ? 'none' : (transition || undefined),
+    transition: isDragging ? 'none' : transition || undefined,
     opacity: isDragging ? 0.5 : 1,
   };
   return (
@@ -192,14 +206,12 @@ export default function ResourcesView() {
 
   const stats = useMemo(() => {
     const total = resources.length;
-    const files = resources.filter(r => !r.url).length;
-    const links = resources.filter(r => !!r.url).length;
+    const files = resources.filter((r) => !r.url).length;
+    const links = resources.filter((r) => !!r.url).length;
     return { total, files, links };
   }, [resources]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -225,9 +237,7 @@ export default function ResourcesView() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-row items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-            Singer Resources
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">Singer Resources</h1>
           <p className="mt-2 text-sm text-slate-500">
             Upload documents or reference URLs for active singers to view on their dashboard.
           </p>
@@ -240,31 +250,21 @@ export default function ResourcesView() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
-          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
+        <div className="border-border bg-surface rounded-xl border px-6 py-5 shadow-sm">
+          <p className="text-text-muted text-xs font-semibold tracking-wide uppercase">
             Total Resources
           </p>
-          <p className="mt-2 text-3xl font-bold text-text">
-            {stats.total}
-          </p>
+          <p className="text-text mt-2 text-3xl font-bold">{stats.total}</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
-          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
-            Files
-          </p>
-          <p className="mt-2 text-3xl font-bold text-text">
-            {stats.files}
-          </p>
+        <div className="border-border bg-surface rounded-xl border px-6 py-5 shadow-sm">
+          <p className="text-text-muted text-xs font-semibold tracking-wide uppercase">Files</p>
+          <p className="text-text mt-2 text-3xl font-bold">{stats.files}</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface px-6 py-5 shadow-sm">
-          <p className="text-xs font-semibold tracking-wide text-text-muted uppercase">
-            Links
-          </p>
-          <p className="mt-2 text-3xl font-bold text-text">
-            {stats.links}
-          </p>
+        <div className="border-border bg-surface rounded-xl border px-6 py-5 shadow-sm">
+          <p className="text-text-muted text-xs font-semibold tracking-wide uppercase">Links</p>
+          <p className="text-text mt-2 text-3xl font-bold">{stats.links}</p>
         </div>
       </div>
 
@@ -275,7 +275,9 @@ export default function ResourcesView() {
         maxWidth="500px"
         footer={
           <div className="flex flex-row gap-4">
-            <Button type="button" onClick={resetForm} disabled={isSaving} variant="outline">Cancel</Button>
+            <Button type="button" onClick={resetForm} disabled={isSaving} variant="outline">
+              Cancel
+            </Button>
             <Button disabled={isSaving} variant="primary" onClick={() => handleSave()}>
               {isSaving ? 'Saving...' : 'Save Resource'}
             </Button>
@@ -294,7 +296,10 @@ export default function ResourcesView() {
 
           <FormField label="Resource Type">
             <div className="mt-1 flex items-center gap-6">
-              <RadioGroup value={resourceType} onChange={(value) => setResourceType(value as 'file' | 'link')}>
+              <RadioGroup
+                value={resourceType}
+                onChange={(value) => setResourceType(value as 'file' | 'link')}
+              >
                 <Radio value="file">File Upload</Radio>
                 <Radio value="link">Link</Radio>
               </RadioGroup>
@@ -307,9 +312,11 @@ export default function ResourcesView() {
                 type="file"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
                 required={!editingId}
-                className="file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary hover:file:bg-primary/20"
+                className="file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:mr-4 file:rounded-md file:border-0 file:px-4 file:py-2 file:text-sm file:font-semibold"
               />
-              <span className="mt-1 block text-xs text-text-muted">Supports PDF, Word, Excel, Images, etc. Max 10MB.</span>
+              <span className="text-text-muted mt-1 block text-xs">
+                Supports PDF, Word, Excel, Images, etc. Max 10MB.
+              </span>
             </FormField>
           ) : (
             <FormField label="Link URL" required>
@@ -320,44 +327,46 @@ export default function ResourcesView() {
                 required
                 placeholder="drive.google.com/..."
               />
-              <span className="mt-1 block text-xs text-text-muted">Enter a link URL. https:// will be prepended if missing.</span>
+              <span className="text-text-muted mt-1 block text-xs">
+                Enter a link URL. https:// will be prepended if missing.
+              </span>
             </FormField>
           )}
         </form>
       </Modal>
 
       <AppCard>
-          <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
+        <div className="overflow-x-auto">
+          <table className="divide-border min-w-full divide-y">
             <thead className="bg-slate-50/50">
               <tr>
-                <th className="w-10 px-2 py-3 text-center text-xs font-semibold tracking-wide text-text-muted uppercase">
+                <th className="text-text-muted w-10 px-2 py-3 text-center text-xs font-semibold tracking-wide uppercase">
                   <span className="text-slate-300">⣿</span>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                <th className="text-text-muted px-6 py-3 text-left text-xs font-semibold tracking-wide uppercase">
                   Resource Title
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                <th className="text-text-muted px-6 py-3 text-left text-xs font-semibold tracking-wide uppercase">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold tracking-wide text-text-muted uppercase">
+                <th className="text-text-muted px-6 py-3 text-left text-xs font-semibold tracking-wide uppercase">
                   Destination / Link
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-semibold tracking-wide text-text-muted uppercase">
+                <th className="text-text-muted px-6 py-3 text-right text-xs font-semibold tracking-wide uppercase">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border bg-surface">
+            <tbody className="divide-border bg-surface divide-y">
               {isLoading && resources.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-text-muted">
+                  <td colSpan={5} className="text-text-muted px-6 py-8 text-center text-sm">
                     Loading resources...
                   </td>
                 </tr>
               ) : resources.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-text-muted">
+                  <td colSpan={5} className="text-text-muted px-6 py-8 text-center text-sm">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <span>No resources uploaded yet.</span>
                       <Button onClick={() => setIsAdding(true)} variant="primary" size="small">
@@ -367,9 +376,16 @@ export default function ResourcesView() {
                   </td>
                 </tr>
               ) : (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={resources.map(r => r.id)} strategy={verticalListSortingStrategy}>
-                    {resources.map(r => (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={resources.map((r) => r.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {resources.map((r) => (
                       <SortableResourceRow
                         key={r.id}
                         resource={r}
@@ -379,28 +395,26 @@ export default function ResourcesView() {
                           </div>
                         }
                       >
-                        <td className="px-6 py-4 text-sm font-semibold text-text">
-                          {r.title}
-                        </td>
+                        <td className="text-text px-6 py-4 text-sm font-semibold">{r.title}</td>
                         <td className="px-6 py-4 text-sm">
                           <Badge tone={r.url ? 'neutral' : 'rehearsal'}>
                             {r.url ? 'Link' : 'File'}
                           </Badge>
                         </td>
-                        <td className="max-w-xs truncate px-6 py-4 text-sm text-text-muted">
+                        <td className="text-text-muted max-w-xs truncate px-6 py-4 text-sm">
                           {r.url ? (
-                            <a 
-                              href={r.url} 
-                              target="_blank" 
+                            <a
+                              href={r.url}
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="text-primary hover:underline"
                             >
                               {r.url}
                             </a>
                           ) : (
-                            <a 
-                              href={resourceService.getResourceFileUrl(r, r.file || '')} 
-                              target="_blank" 
+                            <a
+                              href={resourceService.getResourceFileUrl(r, r.file || '')}
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="text-primary hover:underline"
                             >
@@ -410,18 +424,10 @@ export default function ResourcesView() {
                         </td>
                         <td className="px-6 py-4 text-right text-sm">
                           <div className="flex justify-end gap-2">
-                            <Button 
-                              onClick={() => handleEdit(r)} 
-                              variant="outline" 
-                              size="small"
-                            >
+                            <Button onClick={() => handleEdit(r)} variant="outline" size="small">
                               Edit
                             </Button>
-                            <Button
-                              onClick={() => handleDelete(r)}
-                              variant="danger"
-                              size="small"
-                            >
+                            <Button onClick={() => handleDelete(r)} variant="danger" size="small">
                               Delete
                             </Button>
                           </div>
@@ -434,8 +440,11 @@ export default function ResourcesView() {
             </tbody>
           </table>
           {resources.length > 0 && (
-            <div className="flex items-center justify-between px-4 py-2 text-xs text-text-muted">
-              <span className="italic">Tip: Drag the ⣿ handle on any row to reorder resources. Changes are saved automatically.</span>
+            <div className="text-text-muted flex items-center justify-between px-4 py-2 text-xs">
+              <span className="italic">
+                Tip: Drag the ⣿ handle on any row to reorder resources. Changes are saved
+                automatically.
+              </span>
             </div>
           )}
         </div>
@@ -443,4 +452,3 @@ export default function ResourcesView() {
     </div>
   );
 }
-

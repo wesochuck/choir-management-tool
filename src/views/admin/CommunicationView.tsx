@@ -8,10 +8,7 @@ import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useAuth } from '../../contexts/AuthContext';
 import { CommunicationTabs } from '../../components/CommunicationTabs';
 import type { CommunicationTab } from '../../types/Communication';
-import type {
-  CommunicationRecipient,
-  MessageRecord,
-} from '../../services/communicationService';
+import type { CommunicationRecipient, MessageRecord } from '../../services/communicationService';
 import { pb } from '../../lib/pocketbase';
 import { communicationService } from '../../services/communicationService';
 import { settingsService } from '../../services/settingsService';
@@ -27,11 +24,7 @@ import { DraftsPanel } from './communications/DraftsPanel';
 import { HistoryPanel } from './communications/HistoryPanel';
 import { SettingsPanel } from './communications/SettingsPanel';
 import { CommunicationModals } from './communications/CommunicationModals';
-import type {
-  AutomatedTask,
-  CommunicationRouteState,
-  WizardStep,
-} from './communications/types';
+import type { AutomatedTask, CommunicationRouteState, WizardStep } from './communications/types';
 
 export default function CommunicationView() {
   const dialog = useDialog();
@@ -142,7 +135,8 @@ export default function CommunicationView() {
           recipients,
           title: `Admins Receiving Report for ${eventLabel}`,
           emptyMessage: 'No admins are currently opted in to receive attendance reports.',
-          helperText: 'Enable attendance reports on at least one admin profile to receive these messages.',
+          helperText:
+            'Enable attendance reports on at least one admin profile to receive these messages.',
         });
 
         return;
@@ -156,7 +150,8 @@ export default function CommunicationView() {
           recipients,
           title: `Ticket Buyers for ${eventLabel}`,
           emptyMessage: 'No ticket buyers found for this performance.',
-          helperText: 'Only users who have purchased tickets for this specific performance will receive this reminder.',
+          helperText:
+            'Only users who have purchased tickets for this specific performance will receive this reminder.',
         });
 
         return;
@@ -268,13 +263,16 @@ export default function CommunicationView() {
     delete cleanFilters.archivedAt;
     delete cleanFilters.automatedTaskType;
 
-    draft.handleResumeDraft({
-      ...message,
-      subject: message.subject.replace(/^\[Archived\]\s*/, ''),
-      content: message.content,
-      filters: cleanFilters,
-      status: 'Draft',
-    }, { asCopy: true });
+    draft.handleResumeDraft(
+      {
+        ...message,
+        subject: message.subject.replace(/^\[Archived\]\s*/, ''),
+        content: message.content,
+        filters: cleanFilters,
+        status: 'Draft',
+      },
+      { asCopy: true }
+    );
   };
 
   const handleDraftTaskMessage = (subjectText: string, bodyText: string) => {
@@ -312,29 +310,24 @@ export default function CommunicationView() {
 
     // The editor's change handler will trigger setContent/setEditingTemplate automatically via onChange
   };
-if (library.isLoading) {
+  if (library.isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl p-6">
+        <AppCard className="flex items-center justify-center py-12">
+          <p>Loading Communications...</p>
+        </AppCard>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <AppCard className="flex items-center justify-center py-12">
-        <p>Loading Communications...</p>
-      </AppCard>
-    </div>
-  );
-}
-
-return (
-  <div className="mx-auto max-w-7xl p-6">
-    <div className="mb-6 flex items-center justify-between">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-display m-0">
-          Communications
-        </h1>
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-display m-0">Communications</h1>
 
           {routeState?.returnToPolls && (
-            <Link
-              to="/admin/polls"
-              className="text-muted text-sm underline"
-            >
+            <Link to="/admin/polls" className="text-muted text-sm underline">
               Back to Polls
             </Link>
           )}

@@ -1,9 +1,9 @@
 import type { MusicPiece } from '../../types/musicLibrary';
 import type { SetListItem } from '../../services/eventService';
-import { 
-  isValidDurationString, 
-  parseDurationToSeconds, 
-  formatSecondsToDuration 
+import {
+  isValidDurationString,
+  parseDurationToSeconds,
+  formatSecondsToDuration,
 } from '../music/duration';
 import { formatInTimezone } from '../timezone';
 
@@ -23,10 +23,15 @@ export interface SetListDurationTotals {
   total: string;
 }
 
-export function getPerformanceIdForSetListLibraryLink(event: {
-  id: string;
-  type?: string;
-} | null | undefined): string | undefined {
+export function getPerformanceIdForSetListLibraryLink(
+  event:
+    | {
+        id: string;
+        type?: string;
+      }
+    | null
+    | undefined
+): string | undefined {
   return event?.type === 'Performance' ? event.id : undefined;
 }
 
@@ -41,7 +46,7 @@ export function createSetListItemFromCustomInput(input: {
   notes?: string;
 }): SetListItem {
   const { title, type, duration, composer, notes } = input;
-  
+
   if (!title || !title.trim()) {
     throw new Error('Title is required');
   }
@@ -53,10 +58,10 @@ export function createSetListItemFromCustomInput(input: {
   return {
     id: crypto.randomUUID(),
     title: title.trim(),
-    composer: type === 'song' ? (composer?.trim() || undefined) : undefined,
+    composer: type === 'song' ? composer?.trim() || undefined : undefined,
     duration: duration?.trim() || undefined,
     notes: notes?.trim() || undefined,
-    type
+    type,
   };
 }
 
@@ -75,7 +80,7 @@ export function createSetListItemFromMusicPiece(
     duration: overrides.duration?.trim() || piece.duration || '',
     notes: overrides.notes?.trim() || '',
     type: 'song',
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -87,12 +92,16 @@ export function updateSetListItem(
   patch: Partial<Omit<SetListItem, 'id'>>
 ): SetListItem {
   const updated = { ...existingItem, ...patch };
-  
+
   if (updated.title !== undefined && (!updated.title || !updated.title.trim())) {
     throw new Error('Title is required');
   }
 
-  if (updated.duration !== undefined && updated.duration && !isValidDurationString(updated.duration)) {
+  if (
+    updated.duration !== undefined &&
+    updated.duration &&
+    !isValidDurationString(updated.duration)
+  ) {
     throw new Error('Invalid duration format');
   }
 
@@ -114,34 +123,58 @@ export function resolveSetListDisplayRows(
 ): SetListDisplayRow[] {
   return items.reduce<SetListDisplayRow[]>((acc, item) => {
     // 1. Resolve by pieceId first
-    let linkedPiece = item.pieceId ? library.find(p => p.id === item.pieceId) : null;
-    
+    let linkedPiece = item.pieceId ? library.find((p) => p.id === item.pieceId) : null;
+
     // 2. Fallback: Resolve by title match (case-insensitive, normalized) if pieceId is missing
     if (!linkedPiece && item.title) {
-      const normTitle = item.title.toLowerCase().replace(/[♪♫♬♩𝄞]/gu, ' ').replace(/\s+/g, ' ').trim();
+      const normTitle = item.title
+        .toLowerCase()
+        .replace(/[♪♫♬♩𝄞]/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       if (normTitle) {
-        linkedPiece = library.find(p => !p.parentId && p.title.toLowerCase().replace(/[♪♫♬♩𝄞]/gu, ' ').replace(/\s+/g, ' ').trim() === normTitle) || 
-                      library.find(p => p.title.toLowerCase().replace(/[♪♫♬♩𝄞]/gu, ' ').replace(/\s+/g, ' ').trim() === normTitle) || null;
+        linkedPiece =
+          library.find(
+            (p) =>
+              !p.parentId &&
+              p.title
+                .toLowerCase()
+                .replace(/[♪♫♬♩𝄞]/gu, ' ')
+                .replace(/\s+/g, ' ')
+                .trim() === normTitle
+          ) ||
+          library.find(
+            (p) =>
+              p.title
+                .toLowerCase()
+                .replace(/[♪♫♬♩𝄞]/gu, ' ')
+                .replace(/\s+/g, ' ')
+                .trim() === normTitle
+          ) ||
+          null;
       }
     }
-    
+
     // 3. Parent work fallback for child movements to resolve composer
-    const parentPiece = linkedPiece?.parentId ? library.find(p => p.id === linkedPiece.parentId) : null;
+    const parentPiece = linkedPiece?.parentId
+      ? library.find((p) => p.id === linkedPiece.parentId)
+      : null;
 
     const displayTitle = item.title || linkedPiece?.title || '';
     const linkedComposer = linkedPiece?.composer || parentPiece?.composer || '';
     const linkedArranger = linkedPiece?.arranger || parentPiece?.arranger || '';
-    const combinedLinked = linkedComposer && linkedArranger 
-      ? `${linkedComposer} (arr. ${linkedArranger})` 
-      : (linkedComposer || linkedArranger);
+    const combinedLinked =
+      linkedComposer && linkedArranger
+        ? `${linkedComposer} (arr. ${linkedArranger})`
+        : linkedComposer || linkedArranger;
 
-    const displayComposer = item.type !== 'intermission' 
-      ? (item.composer || combinedLinked || '') 
-      : '';
+    const displayComposer =
+      item.type !== 'intermission' ? item.composer || combinedLinked || '' : '';
     const rawDuration = item.duration || linkedPiece?.duration || '';
     const durationSeconds = parseDurationToSeconds(rawDuration);
-    
-    const previousEndSeconds = acc.length > 0 ? parseDurationToSeconds(acc[acc.length - 1].cumulativeEnd) : 0;
+
+    const previousEndSeconds =
+      acc.length > 0 ? parseDurationToSeconds(acc[acc.length - 1].cumulativeEnd) : 0;
     const endSec = previousEndSeconds + durationSeconds;
 
     acc.push({
@@ -151,7 +184,7 @@ export function resolveSetListDisplayRows(
       displayDuration: rawDuration ? formatSecondsToDuration(durationSeconds) : '',
       cumulativeStart: formatSecondsToDuration(previousEndSeconds),
       cumulativeEnd: formatSecondsToDuration(endSec),
-      resolvedPiece: linkedPiece
+      resolvedPiece: linkedPiece,
     });
     return acc;
   }, []);
@@ -199,11 +232,7 @@ export function calculateSetListDurationTotals(
     let rawDuration = item.duration || linkedPiece?.duration || '';
 
     // Multi-movement dedup: skip individual movements when all children present
-    if (
-      linkedPiece &&
-      linkedPiece.parentId &&
-      completeParents[linkedPiece.parentId]
-    ) {
+    if (linkedPiece && linkedPiece.parentId && completeParents[linkedPiece.parentId]) {
       if (addedParentDurations.has(linkedPiece.parentId)) {
         return; // Already accounted for this parent
       }
@@ -241,10 +270,10 @@ export function calculateSetListDurationTotals(
 export function getDefaultPlayableTrackKey(piece: MusicPiece): string | null {
   const mapping = piece.audioTrackMapping;
   if (!mapping) return null;
-  
-  const keys = Object.keys(mapping).filter(k => mapping[k]);
+
+  const keys = Object.keys(mapping).filter((k) => mapping[k]);
   if (keys.length === 0) return null;
-  
+
   if (keys.includes('tutti')) return 'tutti';
   return keys[0];
 }
@@ -293,14 +322,16 @@ export function buildSetListPlainText(
 /**
  * Filters the music library for suggestions based on a query.
  */
-export function filterMusicLibrarySuggestions(
-  library: MusicPiece[],
-  query: string
-): MusicPiece[] {
+export function filterMusicLibrarySuggestions(library: MusicPiece[], query: string): MusicPiece[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   return library
-    .filter(p => p.title.toLowerCase().includes(q) || p.composer?.toLowerCase().includes(q) || p.arranger?.toLowerCase().includes(q))
+    .filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.composer?.toLowerCase().includes(q) ||
+        p.arranger?.toLowerCase().includes(q)
+    )
     .sort((a, b) => a.title.localeCompare(b.title))
     .slice(0, 10);
 }

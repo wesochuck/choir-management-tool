@@ -7,7 +7,7 @@ export function findDuplicates(pieces: MusicPiece[]): MusicPiece[] {
     if (!seen.has(key)) seen.set(key, []);
     seen.get(key)!.push(piece);
   }
-  
+
   const duplicates: MusicPiece[] = [];
   for (const group of seen.values()) {
     if (group.length > 1) {

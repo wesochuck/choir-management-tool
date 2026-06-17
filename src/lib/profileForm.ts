@@ -62,9 +62,12 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
     (formData.globalStatus || '') !== (initialData.globalStatus || '') ||
     (formData.notes || '') !== (initialData.notes || '') ||
     Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail) ||
-    (formData.receiveAttendanceReports !== false) !== (initialData.receiveAttendanceReports !== false) ||
-    Boolean(formData.receiveRsvpDeclineNotices) !== Boolean(initialData.receiveRsvpDeclineNotices) ||
-    (formData.receiveAdminNotifications !== false) !== (initialData.receiveAdminNotifications !== false) ||
+    (formData.receiveAttendanceReports !== false) !==
+      (initialData.receiveAttendanceReports !== false) ||
+    Boolean(formData.receiveRsvpDeclineNotices) !==
+      Boolean(initialData.receiveRsvpDeclineNotices) ||
+    (formData.receiveAdminNotifications !== false) !==
+      (initialData.receiveAdminNotifications !== false) ||
     Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader) ||
     Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual) ||
     (formData.role || 'singer') !== (initialData.expand?.user?.role || 'singer') ||

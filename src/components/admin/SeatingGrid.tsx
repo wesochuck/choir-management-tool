@@ -8,7 +8,6 @@ import { isSectionMismatch } from '../../lib/voicePartUtils';
 import { getContrastColor } from '../../lib/colorUtils';
 import { Button, Select } from '../ui';
 
-
 interface SeatingGridProps {
   rowCounts: number[];
   assignments: Record<string, string>;
@@ -18,13 +17,26 @@ interface SeatingGridProps {
   voiceParts: VoicePartDef[];
   onAssign: (seatKey: string, profileId: string, fromSeatKey?: string) => Promise<void>;
   isReadOnly?: boolean;
-  onUpdateRowCounts?: (newRowCounts: number[], newAssignments?: Record<string, string>) => Promise<void>;
+  onUpdateRowCounts?: (
+    newRowCounts: number[],
+    newAssignments?: Record<string, string>
+  ) => Promise<void>;
   isVoicePartLayout?: boolean;
   sectionOrder?: string[];
 }
 
 export const SeatingGrid: React.FC<SeatingGridProps> = ({
-  rowCounts, assignments, suggestions, activeProfiles, sections, voiceParts, onAssign, isReadOnly = false, onUpdateRowCounts, isVoicePartLayout = false, sectionOrder
+  rowCounts,
+  assignments,
+  suggestions,
+  activeProfiles,
+  sections,
+  voiceParts,
+  onAssign,
+  isReadOnly = false,
+  onUpdateRowCounts,
+  isVoicePartLayout = false,
+  sectionOrder,
 }) => {
   const dialog = useDialog();
   const formatNameLastFirst = React.useCallback((fullName: string): string => {
@@ -35,47 +47,55 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const uniqueDisplayNames = React.useMemo(() => {
     return getUniqueDisplayNames(activeProfiles);
   }, [activeProfiles]);
-  const totalSeats = React.useMemo(() => rowCounts.reduce((sum, count) => sum + count, 0), [rowCounts]);
+  const totalSeats = React.useMemo(
+    () => rowCounts.reduce((sum, count) => sum + count, 0),
+    [rowCounts]
+  );
 
-  const fitsFormation = React.useCallback((p: Profile): boolean => {
-    const order = sectionOrder || [];
-    if (order.length === 0) {
-      const activeSuggestionCodes = new Set(
-        Object.values(suggestions).map(code => code.toUpperCase())
-      );
-      if (activeSuggestionCodes.size === 0) return true;
-      if (isVoicePartLayout) {
-        return activeSuggestionCodes.has(p.voicePart.toUpperCase());
-      } else {
-        const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-        let sectionCode = vpDef?.sectionCode;
-        if (!sectionCode) {
-          const part = p.voicePart ? p.voicePart.trim() : '';
-          if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
-          else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
-          else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
-          else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+  const fitsFormation = React.useCallback(
+    (p: Profile): boolean => {
+      const order = sectionOrder || [];
+      if (order.length === 0) {
+        const activeSuggestionCodes = new Set(
+          Object.values(suggestions).map((code) => code.toUpperCase())
+        );
+        if (activeSuggestionCodes.size === 0) return true;
+        if (isVoicePartLayout) {
+          return activeSuggestionCodes.has(p.voicePart.toUpperCase());
+        } else {
+          const vpDef = voiceParts.find((vp) => vp.label === p.voicePart);
+          let sectionCode = vpDef?.sectionCode;
+          if (!sectionCode) {
+            const part = p.voicePart ? p.voicePart.trim() : '';
+            if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
+            else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
+            else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
+            else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+          }
+          return sectionCode ? activeSuggestionCodes.has(sectionCode.toUpperCase()) : false;
         }
-        return sectionCode ? activeSuggestionCodes.has(sectionCode.toUpperCase()) : false;
       }
-    }
 
-    // Check exact voice part match first
-    const hasExactMatch = order.some(code => code.toUpperCase() === p.voicePart.toUpperCase());
-    if (hasExactMatch) return true;
+      // Check exact voice part match first
+      const hasExactMatch = order.some((code) => code.toUpperCase() === p.voicePart.toUpperCase());
+      if (hasExactMatch) return true;
 
-    // Check parent section code match
-    const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-    let sectionCode = vpDef?.sectionCode;
-    if (!sectionCode) {
-      const part = p.voicePart ? p.voicePart.trim() : '';
-      if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
-      else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
-      else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
-      else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
-    }
-    return sectionCode ? order.some(code => code.toUpperCase() === sectionCode.toUpperCase()) : false;
-  }, [sectionOrder, suggestions, isVoicePartLayout, voiceParts]);
+      // Check parent section code match
+      const vpDef = voiceParts.find((vp) => vp.label === p.voicePart);
+      let sectionCode = vpDef?.sectionCode;
+      if (!sectionCode) {
+        const part = p.voicePart ? p.voicePart.trim() : '';
+        if (/^(soprano|s)(\s*\d+)?$/i.test(part)) sectionCode = 'S';
+        else if (/^(alto|a)(\s*\d+)?$/i.test(part)) sectionCode = 'A';
+        else if (/^(tenor|t)(\s*\d+)?$/i.test(part)) sectionCode = 'T';
+        else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(part)) sectionCode = 'B';
+      }
+      return sectionCode
+        ? order.some((code) => code.toUpperCase() === sectionCode.toUpperCase())
+        : false;
+    },
+    [sectionOrder, suggestions, isVoicePartLayout, voiceParts]
+  );
 
   const activeSingersForFormationCount = React.useMemo(() => {
     return activeProfiles.filter(fitsFormation).length;
@@ -83,7 +103,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
   const profileMap = React.useMemo(() => {
     const map: Record<string, Profile> = {};
-    activeProfiles.forEach(p => map[p.id] = p);
+    activeProfiles.forEach((p) => (map[p.id] = p));
     return map;
   }, [activeProfiles]);
 
@@ -107,14 +127,20 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   const availableGridWidth = gridWidth > 0 ? gridWidth : Number.POSITIVE_INFINITY;
   const getFittedSeatSize = (gap: number): number => {
     const gapWidth = Math.max(0, rowChildCount - 1) * gap;
-    const fixedWidth = rowLabelWidth + editButtonWidth + editButtonMargins + gapWidth + (containerPaddingPx * 2);
+    const fixedWidth =
+      rowLabelWidth + editButtonWidth + editButtonMargins + gapWidth + containerPaddingPx * 2;
     return maxSeats > 0 ? (availableGridWidth - fixedWidth) / maxSeats : baseSeatSize;
   };
   const baseFittedSeatSize = getFittedSeatSize(baseGridGap);
-  const gridGap = Number.isFinite(baseFittedSeatSize) && baseFittedSeatSize < baseSeatSize ? tightGridGap : baseGridGap;
+  const gridGap =
+    Number.isFinite(baseFittedSeatSize) && baseFittedSeatSize < baseSeatSize
+      ? tightGridGap
+      : baseGridGap;
   const fittedSeatSize = Math.floor(getFittedSeatSize(gridGap));
   const minSeatSize = isCompact ? 44 : 72;
-  const seatSize = Number.isFinite(fittedSeatSize) ? Math.max(minSeatSize, Math.min(baseSeatSize, fittedSeatSize)) : baseSeatSize;
+  const seatSize = Number.isFinite(fittedSeatSize)
+    ? Math.max(minSeatSize, Math.min(baseSeatSize, fittedSeatSize))
+    : baseSeatSize;
   const isTightGrid = seatSize < baseSeatSize;
   const rowGap = isCompact ? '4px' : '8px';
   const containerPadding = isCompact ? '4px' : '16px';
@@ -141,7 +167,11 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   }, []);
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
   };
 
   const [activeDragOver, setActiveDragOver] = React.useState<string | null>(null);
@@ -179,20 +209,23 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       ref={gridRef}
       className="grid-print flex w-full flex-col items-center"
       // @allow-inline-style - dynamic gap, padding, and seat size from layout calculations
-      style={{
-        gap: rowGap,
-        padding: containerPadding,
-        '--seat-size': `${seatSize}px`,
-      } as React.CSSProperties}
+      style={
+        {
+          gap: rowGap,
+          padding: containerPadding,
+          '--seat-size': `${seatSize}px`,
+        } as React.CSSProperties
+      }
     >
       {/* Warning banner if not enough seats */}
       {activeSingersForFormationCount > totalSeats && onUpdateRowCounts && (
-        <div className="no-print flex w-full max-w-[800px] flex-col items-center justify-center gap-4 rounded-md border border-red-200 bg-danger-bg p-4 text-center text-danger-text shadow-sm">
+        <div className="no-print bg-danger-bg text-danger-text flex w-full max-w-[800px] flex-col items-center justify-center gap-4 rounded-md border border-red-200 p-4 text-center shadow-sm">
           <span className="text-xl">⚠️</span>
           <div className="flex flex-1 flex-col gap-0.5">
             <strong className="text-[0.9375rem] font-bold">Not enough seats configured!</strong>
             <span className="text-[0.8125rem] opacity-90">
-              You have {activeSingersForFormationCount} active singers but only {totalSeats} seats. Click the <strong>+</strong> button at the end of any row to add seats.
+              You have {activeSingersForFormationCount} active singers but only {totalSeats} seats.
+              Click the <strong>+</strong> button at the end of any row to add seats.
             </span>
           </div>
         </div>
@@ -208,7 +241,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}
           variant="outline"
           size="small"
-          className="no-print mb-1 rounded-md border-dashed border-primary bg-primary-light text-[0.8125rem] font-semibold text-primary-deep"
+          className="no-print border-primary bg-primary-light text-primary-deep mb-1 rounded-md border-dashed text-[0.8125rem] font-semibold"
           title="Add a new row with 10 seats at the back"
         >
           ➕ Add Row to Back
@@ -217,373 +250,462 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
 
       {/* Seating grid */}
       <div
-        className="w-full overflow-x-clip overflow-y-visible flex flex-col"
+        className="flex w-full flex-col overflow-x-clip overflow-y-visible"
         // @allow-inline-style - dynamic row gap from layout calculations
         style={{ gap: rowGap }}
       >
-
-      {rowCounts.map((_, index) => {
-        const rowIndex = rowCounts.length - 1 - index;
-        const seatCount = rowCounts[rowIndex];
-        const isFront = rowIndex === 0;
-        const rowLabel = `Row ${rowIndex + 1}`;
-        const occupiedCount = Object.keys(assignments).filter(key =>
-          key.startsWith(`${rowIndex}-`) && !!assignments[key]
-        ).length;
-        // Calculate suggestion-based seat numbers in this row
-        const suggestedSeatNumbers: Record<number, number> = {};
-        let suggestedCount = 0;
-        for (let sIdx = 0; sIdx < seatCount; sIdx++) {
-          if (suggestions[`${rowIndex}-${sIdx}`]) {
-            suggestedCount++;
-            suggestedSeatNumbers[sIdx] = suggestedCount;
+        {rowCounts.map((_, index) => {
+          const rowIndex = rowCounts.length - 1 - index;
+          const seatCount = rowCounts[rowIndex];
+          const isFront = rowIndex === 0;
+          const rowLabel = `Row ${rowIndex + 1}`;
+          const occupiedCount = Object.keys(assignments).filter(
+            (key) => key.startsWith(`${rowIndex}-`) && !!assignments[key]
+          ).length;
+          // Calculate suggestion-based seat numbers in this row
+          const suggestedSeatNumbers: Record<number, number> = {};
+          let suggestedCount = 0;
+          for (let sIdx = 0; sIdx < seatCount; sIdx++) {
+            if (suggestions[`${rowIndex}-${sIdx}`]) {
+              suggestedCount++;
+              suggestedSeatNumbers[sIdx] = suggestedCount;
+            }
           }
-        }
 
-        return (
-          <div key={rowIndex}
-            className="flex flex-row items-center justify-center w-full"
-            // @allow-inline-style - dynamic gap computed from grid width
-            style={{ gap: `${gridGap}px` }}>
-            <div className="seating-row-label flex flex-col items-end justify-center pr-4 text-right font-bold text-text"
-              // @allow-inline-style - dynamic width based on compact mode
-              style={{ width: `${rowLabelWidth}px` }}
-              title={`${occupiedCount} of ${seatCount} seats occupied`}>
-              <span className="text-sm leading-tight md:text-base">
-                {rowLabel}
-                {(isFront || rowIndex === rowCounts.length - 1) && (
-                  <span className="no-print ml-1 text-xs font-normal opacity-75">
-                    {isFront ? '(Front)' : '(Back)'}
-                  </span>
-                )}
-              </span>
-              <span className="mt-0.5 text-xs leading-tight font-semibold opacity-80 md:text-sm">
-                {occupiedCount}/{seatCount}
-              </span>
-            </div>
-
-            {/* "🗑️" remove row button */}
-            {!isReadOnly && onUpdateRowCounts && (
-              <button
-                className="seating-row-action-btn no-print hover:bg-danger-bg/80 ml-1.5 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-danger-bg p-0 text-[13px] font-bold text-danger-text shadow-sm transition-all duration-200 active:scale-95"
-                onClick={async () => {
-                  const rowHasAssignments = Object.keys(assignments).some(key => key.startsWith(`${rowIndex}-`));
-                  let shouldRemove = true;
-                  if (rowHasAssignments) {
-                    shouldRemove = await dialog.confirm({
-                      title: 'Remove Row?',
-                      message: `Row ${rowIndex + 1} has singer assignments. Removing the row will clear these assignments. Proceed?`,
-                      confirmLabel: 'Remove Row',
-                      cancelLabel: 'Cancel',
-                      variant: 'danger'
-                    });
-                  }
-
-                  if (shouldRemove) {
-                    const result = removeRowAndShiftAssignments(rowCounts, rowIndex, assignments);
-                    onUpdateRowCounts(result.rowCounts, result.assignments);
-                  }
-                }}
-                title="Remove this row"
+          return (
+            <div
+              key={rowIndex}
+              className="flex w-full flex-row items-center justify-center"
+              // @allow-inline-style - dynamic gap computed from grid width
+              style={{ gap: `${gridGap}px` }}
+            >
+              <div
+                className="seating-row-label text-text flex flex-col items-end justify-center pr-4 text-right font-bold"
+                // @allow-inline-style - dynamic width based on compact mode
+                style={{ width: `${rowLabelWidth}px` }}
+                title={`${occupiedCount} of ${seatCount} seats occupied`}
               >
-                🗑️
-              </button>
-            )}
-            {Array.from({ length: seatCount }).map((_, seatIndex) => {
-              const seatKey = `${rowIndex}-${seatIndex}`;
-              const suggestion = suggestions[seatKey];
-              const profileId = assignments[seatKey];
-              const assignedProfile = profileId ? profileMap[profileId] : null;
-
-              const isMismatch = isVoicePartLayout
-                ? Boolean(assignedProfile?.voicePart && suggestion && assignedProfile.voicePart.toUpperCase() !== suggestion.toUpperCase())
-                : isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
-
-              const displaySuggestion = (() => {
-                if (suggestion) return suggestion;
-                if (assignedProfile) {
-                  const profileVpDef = voiceParts.find(vp => vp.label === assignedProfile.voicePart);
-                  if (profileVpDef) {
-                    const parentSec = sections.find(s => s.code === profileVpDef.sectionCode);
-                    return isVoicePartLayout ? assignedProfile.voicePart : (parentSec?.code || assignedProfile.voicePart[0]?.toUpperCase() || '');
-                  }
-                  return assignedProfile.voicePart[0]?.toUpperCase() || '';
-                }
-                return '';
-              })();
-
-              const displaySeatNumber = suggestion ? suggestedSeatNumbers[seatIndex] : (seatIndex + 1);
-
-              let sectionDef: SectionDef | undefined;
-              let vpDef: VoicePartDef | undefined;
-
-              if (displaySuggestion) {
-                if (isVoicePartLayout) {
-                  vpDef = voiceParts.find(v => v.label.toUpperCase() === displaySuggestion.toUpperCase());
-                  if (vpDef) {
-                    sectionDef = sections.find(s => s.code === vpDef?.sectionCode);
-                  }
-                } else {
-                  sectionDef = sections.find(s => s.code.toUpperCase() === displaySuggestion.toUpperCase());
-                }
-              }
-
-              let secColor: string | undefined;
-              if (suggestion) {
-                if (isVoicePartLayout) {
-                  if (vpDef) {
-                    secColor = vpDef.color || vpDef.colorBg || sectionDef?.color || sectionDef?.colorBg;
-                  }
-                } else {
-                  secColor = sectionDef?.color || sectionDef?.colorBg;
-                }
-              }
-
-              const isAssigned = !!profileId;
-
-              // Resolve singer's section/voice-part color for color-coding mismatches along with their section
-              let singerSecColor: string | undefined;
-              if (assignedProfile) {
-                const vpDef = voiceParts.find(vp => vp.label === assignedProfile.voicePart);
-                if (vpDef) {
-                  const parentSec = sections.find(s => s.code === vpDef.sectionCode);
-                  singerSecColor = vpDef.color || vpDef.colorBg || parentSec?.color || parentSec?.colorBg;
-                } else if (assignedProfile.voicePart) {
-                  const derivedCode = assignedProfile.voicePart.trim()[0].toUpperCase();
-                  const parentSec = sections.find(s => s.code.toUpperCase() === derivedCode);
-                  singerSecColor = parentSec?.color || parentSec?.colorBg;
-                }
-              }
-
-              const activeColor = (isAssigned && singerSecColor) ? singerSecColor : secColor;
-              const colors = activeColor
-                ? { bg: activeColor, text: getContrastColor(activeColor) }
-                : { bg: 'var(--color-surface)', text: 'var(--color-muted)' };
-
-              const seatBg = isAssigned ? colors.bg : 'var(--color-surface)';
-              const seatTextColor = isAssigned ? colors.text : (secColor || 'var(--color-muted)');
-              const borderStyle = isAssigned ? 'solid' : 'dashed';
-              const borderColor = isAssigned ? '#000000' : (secColor || 'var(--color-border)');
-
-              // Wedge Outline Logic
-              const leftSuggestion = seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
-              const rightSuggestion = seatIndex < seatCount - 1 ? suggestions[`${rowIndex}-${seatIndex + 1}`] : null;
-
-              const hasLeftBorder = !!(suggestion && leftSuggestion && suggestion !== leftSuggestion);
-              const hasRightBorder = !!(suggestion && rightSuggestion && suggestion !== rightSuggestion);
-
-              const activeHoverOrDrag = hoveredSeat || activeDragOver;
-              const isHovered = seatKey === activeHoverOrDrag;
-              const isNeighbor = getIsNeighbor(activeHoverOrDrag, seatKey);
-
-              const scale = isHovered ? hoverScale : (isNeighbor ? neighborScale : 1.0);
-              const translateY = isHovered ? hoverTranslateY : (isNeighbor ? neighborTranslateY : 0);
-              const zIndex = activeDragOver === seatKey ? 100 : (isHovered ? 10 : (isNeighbor ? 5 : 1));
-              const boxShadow = isHovered ? 'var(--shadow-lg)' : (isNeighbor ? 'var(--shadow-sm)' : 'none');
-
-              return (
-                <div
-                  key={seatKey}
-                  onDragOver={(e) => {
-                    if (!isReadOnly) {
-                      e.preventDefault();
-                      if (activeDragOver !== seatKey) {
-                        setActiveDragOver(seatKey);
-                      }
-                    }
-                  }}
-                  onDragLeave={() => !isReadOnly && setActiveDragOver(null)}
-                  onMouseEnter={() => !isReadOnly && setHoveredSeat(seatKey)}
-                  onMouseLeave={() => !isReadOnly && setHoveredSeat(null)}
-                  onDrop={(e) => {
-                    if (!isReadOnly) {
-                      e.preventDefault();
-                      setActiveDragOver(null);
-                      setHoveredSeat(null);
-                      handleDrop(e, seatKey);
-                    }
-                  }}
-                  draggable={!isReadOnly && !!assignedProfile}
-                  onDragStart={(e) => !isReadOnly && assignedProfile && handleDragStart(e, assignedProfile.id, seatKey)}
-                  title={assignedProfile ? `${assignedProfile.name} (${assignedProfile.voicePart})` : (suggestion ? `Empty Seat ${suggestion}${suggestedSeatNumbers[seatIndex]}` : `Empty Space ${seatIndex + 1}`)}
-                  className={`group relative flex size-8 cursor-pointer flex-col items-center justify-center rounded-md bg-primary-light text-xs font-medium text-primary-deep transition-colors hover:bg-primary hover:text-surface ${isMismatch ? 'bg-[linear-gradient(135deg,rgba(0,0,0,0.08)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.08)_50%,rgba(0,0,0,0.08)_75%,transparent_75%,transparent)] bg-[length:10px_10px]' : ''} ${activeDragOver === seatKey ? 'animate-drop-zone-pulse border-2 border-dashed' : ''}`}
-                  // @allow-inline-style - all seat dimensions, colors, borders, transform computed from props and state
-                  style={{
-                    width: 'var(--seat-size)',
-                    height: 'var(--seat-size)',
-                    backgroundColor: seatBg,
-                    borderTop: `1px ${borderStyle} ${borderColor}`,
-                    borderBottom: `1px ${borderStyle} ${borderColor}`,
-                    borderLeft: hasLeftBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
-                    borderRight: hasRightBorder ? `3px ${borderStyle} ${borderColor}` : `1px ${borderStyle} ${borderColor}`,
-                    borderRadius: 'var(--radius-md)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    position: 'relative',
-                    cursor: isReadOnly ? 'default' : (assignedProfile ? 'grab' : 'pointer'),
-                    boxShadow: boxShadow,
-                    flexShrink: 0,
-                    gap: 0,
-                    transform: `scale(${scale}) translateY(${translateY}px)`,
-                    zIndex: zIndex,
-                    opacity: activeDragOver === seatKey ? 0.95 : undefined,
-                    transition: 'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease-in-out, background-color 0.2s, border-color 0.2s'
-                  }}
-                >
-                  {activeDragOver === seatKey && (
-                    <div className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center rounded-[inherit] bg-blue-500/18">
-                      <span className={`inline-block animate-bounce-subtle leading-none ${isCompact ? 'text-lg' : 'text-2xl'}`}>
-                        {assignedProfile ? '🔄' : '📥'}
-                      </span>
-                    </div>
+                <span className="text-sm leading-tight md:text-base">
+                  {rowLabel}
+                  {(isFront || rowIndex === rowCounts.length - 1) && (
+                    <span className="no-print ml-1 text-xs font-normal opacity-75">
+                      {isFront ? '(Front)' : '(Back)'}
+                    </span>
                   )}
+                </span>
+                <span className="mt-0.5 text-xs leading-tight font-semibold opacity-80 md:text-sm">
+                  {occupiedCount}/{seatCount}
+                </span>
+              </div>
 
-                  {(!isReadOnly && !assignedProfile) && (
-                    <Select
-                      value={profileId || ''}
-                      onChange={(e) => onAssign(seatKey, e.target.value)}
-                      visuallyHidden
-                    >
-                       <option value="">-- Assign --</option>
-                      <option value="">(Empty)</option>
+              {/* "🗑️" remove row button */}
+              {!isReadOnly && onUpdateRowCounts && (
+                <button
+                  className="seating-row-action-btn no-print hover:bg-danger-bg/80 bg-danger-bg text-danger-text ml-1.5 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full p-0 text-[13px] font-bold shadow-sm transition-all duration-200 active:scale-95"
+                  onClick={async () => {
+                    const rowHasAssignments = Object.keys(assignments).some((key) =>
+                      key.startsWith(`${rowIndex}-`)
+                    );
+                    let shouldRemove = true;
+                    if (rowHasAssignments) {
+                      shouldRemove = await dialog.confirm({
+                        title: 'Remove Row?',
+                        message: `Row ${rowIndex + 1} has singer assignments. Removing the row will clear these assignments. Proceed?`,
+                        confirmLabel: 'Remove Row',
+                        cancelLabel: 'Cancel',
+                        variant: 'danger',
+                      });
+                    }
 
-                      {suggestion && (isVoicePartLayout ? vpDef : sectionDef) && (
-                        <optgroup label={`Recommended (${isVoicePartLayout ? vpDef?.fullName : sectionDef?.name})`}>
+                    if (shouldRemove) {
+                      const result = removeRowAndShiftAssignments(rowCounts, rowIndex, assignments);
+                      onUpdateRowCounts(result.rowCounts, result.assignments);
+                    }
+                  }}
+                  title="Remove this row"
+                >
+                  🗑️
+                </button>
+              )}
+              {Array.from({ length: seatCount }).map((_, seatIndex) => {
+                const seatKey = `${rowIndex}-${seatIndex}`;
+                const suggestion = suggestions[seatKey];
+                const profileId = assignments[seatKey];
+                const assignedProfile = profileId ? profileMap[profileId] : null;
+
+                const isMismatch = isVoicePartLayout
+                  ? Boolean(
+                      assignedProfile?.voicePart &&
+                      suggestion &&
+                      assignedProfile.voicePart.toUpperCase() !== suggestion.toUpperCase()
+                    )
+                  : isSectionMismatch(assignedProfile?.voicePart, suggestion, voiceParts);
+
+                const displaySuggestion = (() => {
+                  if (suggestion) return suggestion;
+                  if (assignedProfile) {
+                    const profileVpDef = voiceParts.find(
+                      (vp) => vp.label === assignedProfile.voicePart
+                    );
+                    if (profileVpDef) {
+                      const parentSec = sections.find((s) => s.code === profileVpDef.sectionCode);
+                      return isVoicePartLayout
+                        ? assignedProfile.voicePart
+                        : parentSec?.code || assignedProfile.voicePart[0]?.toUpperCase() || '';
+                    }
+                    return assignedProfile.voicePart[0]?.toUpperCase() || '';
+                  }
+                  return '';
+                })();
+
+                const displaySeatNumber = suggestion
+                  ? suggestedSeatNumbers[seatIndex]
+                  : seatIndex + 1;
+
+                let sectionDef: SectionDef | undefined;
+                let vpDef: VoicePartDef | undefined;
+
+                if (displaySuggestion) {
+                  if (isVoicePartLayout) {
+                    vpDef = voiceParts.find(
+                      (v) => v.label.toUpperCase() === displaySuggestion.toUpperCase()
+                    );
+                    if (vpDef) {
+                      sectionDef = sections.find((s) => s.code === vpDef?.sectionCode);
+                    }
+                  } else {
+                    sectionDef = sections.find(
+                      (s) => s.code.toUpperCase() === displaySuggestion.toUpperCase()
+                    );
+                  }
+                }
+
+                let secColor: string | undefined;
+                if (suggestion) {
+                  if (isVoicePartLayout) {
+                    if (vpDef) {
+                      secColor =
+                        vpDef.color || vpDef.colorBg || sectionDef?.color || sectionDef?.colorBg;
+                    }
+                  } else {
+                    secColor = sectionDef?.color || sectionDef?.colorBg;
+                  }
+                }
+
+                const isAssigned = !!profileId;
+
+                // Resolve singer's section/voice-part color for color-coding mismatches along with their section
+                let singerSecColor: string | undefined;
+                if (assignedProfile) {
+                  const vpDef = voiceParts.find((vp) => vp.label === assignedProfile.voicePart);
+                  if (vpDef) {
+                    const parentSec = sections.find((s) => s.code === vpDef.sectionCode);
+                    singerSecColor =
+                      vpDef.color || vpDef.colorBg || parentSec?.color || parentSec?.colorBg;
+                  } else if (assignedProfile.voicePart) {
+                    const derivedCode = assignedProfile.voicePart.trim()[0].toUpperCase();
+                    const parentSec = sections.find((s) => s.code.toUpperCase() === derivedCode);
+                    singerSecColor = parentSec?.color || parentSec?.colorBg;
+                  }
+                }
+
+                const activeColor = isAssigned && singerSecColor ? singerSecColor : secColor;
+                const colors = activeColor
+                  ? { bg: activeColor, text: getContrastColor(activeColor) }
+                  : { bg: 'var(--color-surface)', text: 'var(--color-muted)' };
+
+                const seatBg = isAssigned ? colors.bg : 'var(--color-surface)';
+                const seatTextColor = isAssigned ? colors.text : secColor || 'var(--color-muted)';
+                const borderStyle = isAssigned ? 'solid' : 'dashed';
+                const borderColor = isAssigned ? '#000000' : secColor || 'var(--color-border)';
+
+                // Wedge Outline Logic
+                const leftSuggestion =
+                  seatIndex > 0 ? suggestions[`${rowIndex}-${seatIndex - 1}`] : null;
+                const rightSuggestion =
+                  seatIndex < seatCount - 1 ? suggestions[`${rowIndex}-${seatIndex + 1}`] : null;
+
+                const hasLeftBorder = !!(
+                  suggestion &&
+                  leftSuggestion &&
+                  suggestion !== leftSuggestion
+                );
+                const hasRightBorder = !!(
+                  suggestion &&
+                  rightSuggestion &&
+                  suggestion !== rightSuggestion
+                );
+
+                const activeHoverOrDrag = hoveredSeat || activeDragOver;
+                const isHovered = seatKey === activeHoverOrDrag;
+                const isNeighbor = getIsNeighbor(activeHoverOrDrag, seatKey);
+
+                const scale = isHovered ? hoverScale : isNeighbor ? neighborScale : 1.0;
+                const translateY = isHovered
+                  ? hoverTranslateY
+                  : isNeighbor
+                    ? neighborTranslateY
+                    : 0;
+                const zIndex =
+                  activeDragOver === seatKey ? 100 : isHovered ? 10 : isNeighbor ? 5 : 1;
+                const boxShadow = isHovered
+                  ? 'var(--shadow-lg)'
+                  : isNeighbor
+                    ? 'var(--shadow-sm)'
+                    : 'none';
+
+                return (
+                  <div
+                    key={seatKey}
+                    onDragOver={(e) => {
+                      if (!isReadOnly) {
+                        e.preventDefault();
+                        if (activeDragOver !== seatKey) {
+                          setActiveDragOver(seatKey);
+                        }
+                      }
+                    }}
+                    onDragLeave={() => !isReadOnly && setActiveDragOver(null)}
+                    onMouseEnter={() => !isReadOnly && setHoveredSeat(seatKey)}
+                    onMouseLeave={() => !isReadOnly && setHoveredSeat(null)}
+                    onDrop={(e) => {
+                      if (!isReadOnly) {
+                        e.preventDefault();
+                        setActiveDragOver(null);
+                        setHoveredSeat(null);
+                        handleDrop(e, seatKey);
+                      }
+                    }}
+                    draggable={!isReadOnly && !!assignedProfile}
+                    onDragStart={(e) =>
+                      !isReadOnly &&
+                      assignedProfile &&
+                      handleDragStart(e, assignedProfile.id, seatKey)
+                    }
+                    title={
+                      assignedProfile
+                        ? `${assignedProfile.name} (${assignedProfile.voicePart})`
+                        : suggestion
+                          ? `Empty Seat ${suggestion}${suggestedSeatNumbers[seatIndex]}`
+                          : `Empty Space ${seatIndex + 1}`
+                    }
+                    className={`group bg-primary-light text-primary-deep hover:bg-primary hover:text-surface relative flex size-8 cursor-pointer flex-col items-center justify-center rounded-md text-xs font-medium transition-colors ${isMismatch ? 'bg-[linear-gradient(135deg,rgba(0,0,0,0.08)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.08)_50%,rgba(0,0,0,0.08)_75%,transparent_75%,transparent)] bg-[length:10px_10px]' : ''} ${activeDragOver === seatKey ? 'animate-drop-zone-pulse border-2 border-dashed' : ''}`}
+                    // @allow-inline-style - all seat dimensions, colors, borders, transform computed from props and state
+                    style={{
+                      width: 'var(--seat-size)',
+                      height: 'var(--seat-size)',
+                      backgroundColor: seatBg,
+                      borderTop: `1px ${borderStyle} ${borderColor}`,
+                      borderBottom: `1px ${borderStyle} ${borderColor}`,
+                      borderLeft: hasLeftBorder
+                        ? `3px ${borderStyle} ${borderColor}`
+                        : `1px ${borderStyle} ${borderColor}`,
+                      borderRight: hasRightBorder
+                        ? `3px ${borderStyle} ${borderColor}`
+                        : `1px ${borderStyle} ${borderColor}`,
+                      borderRadius: 'var(--radius-md)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textAlign: 'center',
+                      position: 'relative',
+                      cursor: isReadOnly ? 'default' : assignedProfile ? 'grab' : 'pointer',
+                      boxShadow: boxShadow,
+                      flexShrink: 0,
+                      gap: 0,
+                      transform: `scale(${scale}) translateY(${translateY}px)`,
+                      zIndex: zIndex,
+                      opacity: activeDragOver === seatKey ? 0.95 : undefined,
+                      transition:
+                        'transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease-in-out, background-color 0.2s, border-color 0.2s',
+                    }}
+                  >
+                    {activeDragOver === seatKey && (
+                      <div className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center rounded-[inherit] bg-blue-500/18">
+                        <span
+                          className={`animate-bounce-subtle inline-block leading-none ${isCompact ? 'text-lg' : 'text-2xl'}`}
+                        >
+                          {assignedProfile ? '🔄' : '📥'}
+                        </span>
+                      </div>
+                    )}
+
+                    {!isReadOnly && !assignedProfile && (
+                      <Select
+                        value={profileId || ''}
+                        onChange={(e) => onAssign(seatKey, e.target.value)}
+                        visuallyHidden
+                      >
+                        <option value="">-- Assign --</option>
+                        <option value="">(Empty)</option>
+
+                        {suggestion && (isVoicePartLayout ? vpDef : sectionDef) && (
+                          <optgroup
+                            label={`Recommended (${isVoicePartLayout ? vpDef?.fullName : sectionDef?.name})`}
+                          >
+                            {activeProfiles
+                              .filter((p) => !assignedProfileIds.has(p.id) || p.id === profileId)
+                              .filter(fitsFormation)
+                              .filter((p) => {
+                                if (isVoicePartLayout) {
+                                  return p.voicePart.toUpperCase() === suggestion.toUpperCase();
+                                } else {
+                                  const vpDef = voiceParts.find((vp) => vp.label === p.voicePart);
+                                  return (
+                                    vpDef?.sectionCode?.toUpperCase() === suggestion.toUpperCase()
+                                  );
+                                }
+                              })
+                              .sort((a, b) =>
+                                formatNameLastFirst(a.name).localeCompare(
+                                  formatNameLastFirst(b.name)
+                                )
+                              )
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {formatNameLastFirst(p.name)} ({p.voicePart})
+                                </option>
+                              ))}
+                          </optgroup>
+                        )}
+                        <optgroup label="Other Sections">
                           {activeProfiles
-                            .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
+                            .filter((p) => !assignedProfileIds.has(p.id) || p.id === profileId)
                             .filter(fitsFormation)
-                            .filter(p => {
+                            .filter((p) => {
                               if (isVoicePartLayout) {
-                                return p.voicePart.toUpperCase() === suggestion.toUpperCase();
+                                return p.voicePart.toUpperCase() !== suggestion?.toUpperCase();
                               } else {
-                                const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                                return vpDef?.sectionCode?.toUpperCase() === suggestion.toUpperCase();
+                                const vpDef = voiceParts.find((vp) => vp.label === p.voicePart);
+                                return (
+                                  vpDef?.sectionCode?.toUpperCase() !== suggestion?.toUpperCase()
+                                );
                               }
                             })
-                            .sort((a, b) => formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name)))
-                            .map(p => (
-                              <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
-                            ))
-                          }
+                            .sort((a, b) => {
+                              const vpCompare = a.voicePart.localeCompare(b.voicePart);
+                              if (vpCompare !== 0) return vpCompare;
+                              return formatNameLastFirst(a.name).localeCompare(
+                                formatNameLastFirst(b.name)
+                              );
+                            })
+                            .map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {formatNameLastFirst(p.name)} ({p.voicePart})
+                              </option>
+                            ))}
                         </optgroup>
-                      )}
-                      <optgroup label="Other Sections">
-                        {activeProfiles
-                          .filter(p => !assignedProfileIds.has(p.id) || p.id === profileId)
-                          .filter(fitsFormation)
-                          .filter(p => {
-                            if (isVoicePartLayout) {
-                              return p.voicePart.toUpperCase() !== suggestion?.toUpperCase();
-                            } else {
-                              const vpDef = voiceParts.find(vp => vp.label === p.voicePart);
-                              return vpDef?.sectionCode?.toUpperCase() !== suggestion?.toUpperCase();
-                            }
-                          })
-                          .sort((a, b) => {
-                            const vpCompare = a.voicePart.localeCompare(b.voicePart);
-                            if (vpCompare !== 0) return vpCompare;
-                            return formatNameLastFirst(a.name).localeCompare(formatNameLastFirst(b.name));
-                          })
-                          .map(p => (
-                            <option key={p.id} value={p.id}>{formatNameLastFirst(p.name)} ({p.voicePart})</option>
-                          ))
-                        }
-                      </optgroup>
-                    </Select>
-                  )}
+                      </Select>
+                    )}
 
-                  {!isReadOnly && onUpdateRowCounts && (
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
+                    {!isReadOnly && onUpdateRowCounts && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
 
-                        const seatHasAssignment = !!assignments[seatKey];
-                        if (seatHasAssignment) {
-                          await onAssign(seatKey, '');
-                        } else {
-                          const result = removeSeatFromRow(rowCounts, rowIndex, seatIndex, assignments);
-                          onUpdateRowCounts(result.rowCounts, result.assignments);
-                        }
-                      }}
-                      className={`no-print absolute top-[2px] right-[2px] z-[12] flex size-4 cursor-pointer items-center justify-center rounded-full border-none p-0 text-[10px] leading-none font-bold shadow-[var(--shadow-xs)] ${
-                        assignments[seatKey]
-                          ? 'bg-[var(--bg-muted,#e2e8f0)] text-[var(--text-muted,#475569)]'
-                          : 'bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]'
-                      }`}
-                      data-action={assignments[seatKey] ? "unassign" : "delete"}
-                      title={assignments[seatKey] ? "Unassign singer" : "Delete empty seat"}
-                    >
-                      ×
-                    </button>
-                  )}
+                          const seatHasAssignment = !!assignments[seatKey];
+                          if (seatHasAssignment) {
+                            await onAssign(seatKey, '');
+                          } else {
+                            const result = removeSeatFromRow(
+                              rowCounts,
+                              rowIndex,
+                              seatIndex,
+                              assignments
+                            );
+                            onUpdateRowCounts(result.rowCounts, result.assignments);
+                          }
+                        }}
+                        className={`no-print absolute top-[2px] right-[2px] z-[12] flex size-4 cursor-pointer items-center justify-center rounded-full border-none p-0 text-[10px] leading-none font-bold shadow-[var(--shadow-xs)] ${
+                          assignments[seatKey]
+                            ? 'bg-[var(--bg-muted,#e2e8f0)] text-[var(--text-muted,#475569)]'
+                            : 'bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]'
+                        }`}
+                        data-action={assignments[seatKey] ? 'unassign' : 'delete'}
+                        title={assignments[seatKey] ? 'Unassign singer' : 'Delete empty seat'}
+                      >
+                        ×
+                      </button>
+                    )}
 
-                  <div
-                    className={`font-bold ${isCompact ? 'text-[10px]' : 'text-[13px]'}`}
-                    // @allow-inline-style - dynamic color from computed seat styles
-                    style={{ color: seatTextColor }}>
-                    {displaySuggestion
-                      ? (isVoicePartLayout ? `${displaySuggestion} - ${displaySeatNumber}` : `${sectionDef?.name[0] || displaySuggestion}${displaySeatNumber}`)
-                      : ''
-                    }
-                  </div>
-                  {assignedProfile ? (
-                    <div className="flex flex-col gap-px items-center">
-                      <div
-                        className="leading-tight font-extrabold text-sm"
-                        // @allow-inline-style - dynamic color from computed styles
-                        style={{ color: colors.text }}>
-                        {isCompact ? getInitials(assignedProfile.name) : (uniqueDisplayNames[assignedProfile.id] || assignedProfile.name.split(' ').pop())}
-                      </div>
-                      <div
-                        className={`font-bold ${isCompact ? 'text-[10px]' : 'text-xs'}`}
-                        // @allow-inline-style - dynamic color from computed styles
-                        style={{ color: colors.text }}>
-                        {assignedProfile.voicePart}
-                      </div>
-                      <div className={`no-print pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 ${isMismatch ? 'bg-red-700' : ''} ${rowIndex === rowCounts.length - 1 ? '-bottom-1 translate-y-full' : '-top-1 -translate-y-full'}`}>
-                        {isMismatch ? (
-                          <>
-                            <span>⚠️ {assignedProfile.name} </span>
-                            <span>
-                              Not recommended voice type ({assignedProfile.voicePart}) for this {isVoicePartLayout ? `${vpDef?.fullName || displaySuggestion} seat ${displaySeatNumber}` : `${sectionDef?.name || displaySuggestion} seat ${displaySeatNumber}`}
-                            </span>
-                          </>
-                        ) : (
-                          `${assignedProfile.name} (${assignedProfile.voicePart})`
-                        )}
-                      </div>
-                    </div>
-                  ) : (
                     <div
-                      className={`font-semibold ${isCompact ? 'text-[10px]' : 'text-[13px]'}`}
-                      // @allow-inline-style - dynamic color from computed styles
-                      style={{ color: seatTextColor }}>
-                      {isCompact ? '—' : 'Empty'}
+                      className={`font-bold ${isCompact ? 'text-[10px]' : 'text-[13px]'}`}
+                      // @allow-inline-style - dynamic color from computed seat styles
+                      style={{ color: seatTextColor }}
+                    >
+                      {displaySuggestion
+                        ? isVoicePartLayout
+                          ? `${displaySuggestion} - ${displaySeatNumber}`
+                          : `${sectionDef?.name[0] || displaySuggestion}${displaySeatNumber}`
+                        : ''}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                    {assignedProfile ? (
+                      <div className="flex flex-col items-center gap-px">
+                        <div
+                          className="text-sm leading-tight font-extrabold"
+                          // @allow-inline-style - dynamic color from computed styles
+                          style={{ color: colors.text }}
+                        >
+                          {isCompact
+                            ? getInitials(assignedProfile.name)
+                            : uniqueDisplayNames[assignedProfile.id] ||
+                              assignedProfile.name.split(' ').pop()}
+                        </div>
+                        <div
+                          className={`font-bold ${isCompact ? 'text-[10px]' : 'text-xs'}`}
+                          // @allow-inline-style - dynamic color from computed styles
+                          style={{ color: colors.text }}
+                        >
+                          {assignedProfile.voicePart}
+                        </div>
+                        <div
+                          className={`no-print pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 rounded bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 ${isMismatch ? 'bg-red-700' : ''} ${rowIndex === rowCounts.length - 1 ? '-bottom-1 translate-y-full' : '-top-1 -translate-y-full'}`}
+                        >
+                          {isMismatch ? (
+                            <>
+                              <span>⚠️ {assignedProfile.name} </span>
+                              <span>
+                                Not recommended voice type ({assignedProfile.voicePart}) for this{' '}
+                                {isVoicePartLayout
+                                  ? `${vpDef?.fullName || displaySuggestion} seat ${displaySeatNumber}`
+                                  : `${sectionDef?.name || displaySuggestion} seat ${displaySeatNumber}`}
+                              </span>
+                            </>
+                          ) : (
+                            `${assignedProfile.name} (${assignedProfile.voicePart})`
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`font-semibold ${isCompact ? 'text-[10px]' : 'text-[13px]'}`}
+                        // @allow-inline-style - dynamic color from computed styles
+                        style={{ color: seatTextColor }}
+                      >
+                        {isCompact ? '—' : 'Empty'}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
-            {/* "+" add seat button */}
-            {!isReadOnly && onUpdateRowCounts && (
-              <button
-                className="seating-row-action-btn no-print hover:bg-primary-light/80 mx-3 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed border-primary bg-primary-light p-0 text-[15px] font-bold text-primary-deep shadow-sm transition-all duration-200 active:scale-95"
-                onClick={() => {
-                  const newRowCounts = [...rowCounts];
-                  newRowCounts[rowIndex] += 1;
-                  onUpdateRowCounts(newRowCounts);
-                }}
-                title="Add seat to this row"
-              >
-                +
-              </button>
-            )}
-          </div>
-        );
-      })}
+              {/* "+" add seat button */}
+              {!isReadOnly && onUpdateRowCounts && (
+                <button
+                  className="seating-row-action-btn no-print hover:bg-primary-light/80 border-primary bg-primary-light text-primary-deep mx-3 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-dashed p-0 text-[15px] font-bold shadow-sm transition-all duration-200 active:scale-95"
+                  onClick={() => {
+                    const newRowCounts = [...rowCounts];
+                    newRowCounts[rowIndex] += 1;
+                    onUpdateRowCounts(newRowCounts);
+                  }}
+                  title="Add seat to this row"
+                >
+                  +
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Add Row to Front Button */}
@@ -602,7 +724,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           }}
           variant="outline"
           size="small"
-          className="no-print mt-1 rounded-md border-dashed border-primary bg-primary-light text-[0.8125rem] font-semibold text-primary-deep"
+          className="no-print border-primary bg-primary-light text-primary-deep mt-1 rounded-md border-dashed text-[0.8125rem] font-semibold"
           title="Add a new row with 10 seats at the front"
         >
           ➕ Add Row to Front
@@ -610,7 +732,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
       )}
 
       {/* Director Indicator */}
-      <div className="director-indicator mt-4 flex w-fit items-center justify-center gap-2 rounded-full border border-primary bg-primary-light px-8 py-1 text-[0.8125rem] font-bold tracking-wider text-primary-deep uppercase shadow-xs">
+      <div className="director-indicator border-primary bg-primary-light text-primary-deep mt-4 flex w-fit items-center justify-center gap-2 rounded-full border px-8 py-1 text-[0.8125rem] font-bold tracking-wider uppercase shadow-xs">
         <span>🎼</span>
         <span>Director</span>
       </div>

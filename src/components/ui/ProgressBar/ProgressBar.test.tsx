@@ -31,7 +31,7 @@ test('ProgressBar clamps value to 0-100 range', () => {
 
 test('ProgressBar merges className', () => {
   const { container } = render(
-    React.createElement(ProgressBar, { value: 10, className: 'extra-class' }),
+    React.createElement(ProgressBar, { value: 10, className: 'extra-class' })
   );
   const track = container.firstElementChild as HTMLElement;
   assert.ok(track, 'renders an element');

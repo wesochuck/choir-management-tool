@@ -18,11 +18,7 @@ export interface RadioProps {
 
 export function RadioGroup({ value, onChange, children, className }: RadioGroupProps) {
   if (process.env.NODE_ENV === 'test') {
-    return (
-      <div className={className}>
-        {children}
-      </div>
-    );
+    return <div className={className}>{children}</div>;
   }
 
   return (
@@ -47,5 +43,7 @@ export function Radio({ value, children, className }: RadioProps) {
     );
   }
 
-  return <SlRadio {...safeSlProps({ value, className } as Record<string, unknown>)}>{children}</SlRadio>;
+  return (
+    <SlRadio {...safeSlProps({ value, className } as Record<string, unknown>)}>{children}</SlRadio>
+  );
 }

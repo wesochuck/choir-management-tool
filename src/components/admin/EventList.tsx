@@ -36,12 +36,14 @@ export const EventList: React.FC<EventListProps> = ({
   const [activeDropdownId, setActiveDropdownId] = React.useState<string | null>(null);
   const dropdownAnchorRef = useRef<HTMLDivElement>(null);
 
-  useClickOutside(dropdownAnchorRef, () => setActiveDropdownId(null), { enabled: !!activeDropdownId });
+  useClickOutside(dropdownAnchorRef, () => setActiveDropdownId(null), {
+    enabled: !!activeDropdownId,
+  });
 
   if (events.length === 0) {
     return (
       <AppCard noPadding>
-        <div className="flex flex-col items-center gap-4 p-8 text-center text-sm text-text-muted">
+        <div className="text-text-muted flex flex-col items-center gap-4 p-8 text-center text-sm">
           No events scheduled.
           {onCreate && (
             <Button onClick={onCreate} variant="primary" size="small">
@@ -114,7 +116,7 @@ export const EventList: React.FC<EventListProps> = ({
         return (
           <div
             key={e.id}
-            className="grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border-b border-border px-6 py-5 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl last:border-b-0 hover:bg-primary-light/50 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
+            className="border-border hover:bg-primary-light/50 grid cursor-pointer grid-cols-[auto_1fr_auto] items-center gap-4 border-b px-6 py-5 transition-colors duration-150 first:rounded-t-xl last:rounded-b-xl last:border-b-0 max-sm:grid-cols-[auto_1fr] max-sm:gap-x-4 max-sm:gap-y-2 max-sm:px-4"
             onClick={() => onEdit(e)}
             role="button"
             tabIndex={0}
@@ -128,20 +130,20 @@ export const EventList: React.FC<EventListProps> = ({
           >
             {/* Date column */}
             <div className="flex min-w-14 flex-col items-center">
-              <span className="text-[11px] font-semibold tracking-wider text-text-muted uppercase">{weekday}</span>
-              <span className="text-2xl leading-tight font-bold text-text">{day}</span>
-              <span className="text-[11px] font-semibold tracking-wide text-text-muted uppercase">{month} {year}</span>
+              <span className="text-text-muted text-[11px] font-semibold tracking-wider uppercase">
+                {weekday}
+              </span>
+              <span className="text-text text-2xl leading-tight font-bold">{day}</span>
+              <span className="text-text-muted text-[11px] font-semibold tracking-wide uppercase">
+                {month} {year}
+              </span>
             </div>
 
             {/* Details column */}
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-1.5">
-                <Badge tone={isPerformance ? 'performance' : 'rehearsal'}>
-                  {e.type}
-                </Badge>
-                {hasAuditions && (
-                  <Badge tone="success">🎵 Auditions Open</Badge>
-                )}
+                <Badge tone={isPerformance ? 'performance' : 'rehearsal'}>{e.type}</Badge>
+                {hasAuditions && <Badge tone="success">🎵 Auditions Open</Badge>}
                 {e.callTime && (
                   <span className="inline-flex items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-1.5 py-px text-xs font-bold text-indigo-700">
                     📢 Call: {formatTime12h(e.callTime)}
@@ -150,28 +152,33 @@ export const EventList: React.FC<EventListProps> = ({
               </div>
 
               {e.title && (
-                <div className="text-base leading-snug font-semibold text-text">{e.title}</div>
+                <div className="text-text text-base leading-snug font-semibold">{e.title}</div>
               )}
 
-              {(e.expand?.venue?.name) && (
+              {e.expand?.venue?.name && (
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.expand?.venue?.address || e.expand?.venue?.name || '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(event) => event.stopPropagation()}
-                  className="inline-flex w-fit items-center gap-1 text-sm font-medium text-text-muted transition-colors hover:text-primary-deep"
+                  className="text-text-muted hover:text-primary-deep inline-flex w-fit items-center gap-1 text-sm font-medium transition-colors"
                 >
-                  📍 <strong className="text-text group-hover:text-primary-deep">{e.expand?.venue?.name}</strong>
+                  📍{' '}
+                  <strong className="text-text group-hover:text-primary-deep">
+                    {e.expand?.venue?.name}
+                  </strong>
                 </a>
               )}
 
               {e.details && (
-                <div className="line-clamp-2 text-xs leading-relaxed text-text-muted">{e.details}</div>
+                <div className="text-text-muted line-clamp-2 text-xs leading-relaxed">
+                  {e.details}
+                </div>
               )}
             </div>
 
             {/* Actions column */}
-            <div className="flex items-center gap-2 max-sm:col-span-full max-sm:justify-end max-sm:border-t max-sm:border-border/60 max-sm:pt-2">
+            <div className="max-sm:border-border/60 flex items-center gap-2 max-sm:col-span-full max-sm:justify-end max-sm:border-t max-sm:pt-2">
               <Button
                 onClick={(event) => {
                   event.stopPropagation();
@@ -190,7 +197,7 @@ export const EventList: React.FC<EventListProps> = ({
                   className={`flex size-8 cursor-pointer items-center justify-center rounded-full border text-base font-extrabold transition-colors duration-150 ${
                     isDropdownOpen
                       ? 'border-primary-light bg-primary-light text-primary-deep'
-                      : 'border-border bg-transparent text-text-muted hover:bg-primary-light hover:text-primary-deep'
+                      : 'border-border text-text-muted hover:bg-primary-light hover:text-primary-deep bg-transparent'
                   }`}
                   aria-expanded={isDropdownOpen}
                   aria-haspopup="true"
@@ -205,14 +212,14 @@ export const EventList: React.FC<EventListProps> = ({
 
                 {isDropdownOpen && (
                   <div
-                    className="absolute top-[calc(100%+4px)] right-0 z-[250] min-w-[180px] rounded-lg border border-border bg-surface p-1 shadow-lg"
+                    className="border-border bg-surface absolute top-[calc(100%+4px)] right-0 z-[250] min-w-[180px] rounded-lg border p-1 shadow-lg"
                     role="menu"
                   >
                     {visibleOverflow.map((item) => (
                       <button
                         key={item.label}
                         type="button"
-                        className="flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-medium text-text transition-colors duration-100 hover:bg-primary-light"
+                        className="text-text hover:bg-primary-light flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-medium transition-colors duration-100"
                         role="menuitem"
                         onClick={(event) => {
                           event.stopPropagation();
@@ -227,7 +234,7 @@ export const EventList: React.FC<EventListProps> = ({
                     <Divider />
                     <button
                       type="button"
-                      className="flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-semibold text-primary-deep transition-colors duration-100 hover:bg-primary-light"
+                      className="text-primary-deep hover:bg-primary-light flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-semibold transition-colors duration-100"
                       role="menuitem"
                       onClick={(event) => {
                         event.stopPropagation();

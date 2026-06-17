@@ -9,19 +9,13 @@ import {
   buildEventRosterExportFilename,
   type RsvpExportSort,
 } from '../../../lib/eventRoster/exportCsv';
-import {
-  getRsvpStatusLabel,
-  type RsvpStatus,
-} from '../../../lib/eventRoster/rsvpLabels';
+import { getRsvpStatusLabel, type RsvpStatus } from '../../../lib/eventRoster/rsvpLabels';
 
-type VoicePartDef =
-  ReturnType<typeof useEventRosterData>['voiceParts'][number];
+type VoicePartDef = ReturnType<typeof useEventRosterData>['voiceParts'][number];
 
-type SectionDef =
-  ReturnType<typeof useEventRosterData>['sections'][number];
+type SectionDef = ReturnType<typeof useEventRosterData>['sections'][number];
 
-type EventRosterExportSinger =
-  ReturnType<typeof useEventRosterData>['filteredSingers'][number];
+type EventRosterExportSinger = ReturnType<typeof useEventRosterData>['filteredSingers'][number];
 
 interface UseEventRosterExportArgs {
   event: Event | null;
@@ -66,9 +60,7 @@ export function useEventRosterExport({
     }
 
     const filterSummary =
-      filterParts.length > 0
-        ? filterParts.join(' · ')
-        : 'No filters active — all singers included';
+      filterParts.length > 0 ? filterParts.join(' · ') : 'No filters active — all singers included';
 
     // Keep this mutable local variable inside handleExportCSV.
     // It captures the modal dropdown value at confirm time without extra renders.
@@ -78,20 +70,16 @@ export function useEventRosterExport({
       title: 'Export RSVP Roster to CSV',
       message: (
         <div className="flex flex-col gap-4">
-          <div className="rounded-md border border-border bg-bg p-3">
-            <div className="text-xs font-semibold text-text-muted uppercase">
+          <div className="border-border bg-bg rounded-md border p-3">
+            <div className="text-text-muted text-xs font-semibold uppercase">
               Exporting {filteredSingers.length} singer
               {filteredSingers.length !== 1 ? 's' : ''} currently shown
             </div>
-            <div className="text-sm text-text">
-              {filterSummary}
-            </div>
+            <div className="text-text text-sm">{filterSummary}</div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-text-muted uppercase">
-              Sort Order
-            </label>
+            <label className="text-text-muted text-xs font-semibold uppercase">Sort Order</label>
             <Select
               id="rsvp-export-sort-select"
               defaultValue={defaultExportSort}

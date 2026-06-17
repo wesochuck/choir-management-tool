@@ -294,7 +294,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
             <tr className="border-none">
               <td colSpan={5} className="p-0 pt-6 pb-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-[0.8rem] font-extrabold tracking-wider text-primary-deep uppercase">
+                  <span className="text-primary-deep text-[0.8rem] font-extrabold tracking-wider uppercase">
                     {headerText}
                   </span>
                   <div className="h-px flex-1 bg-[rgb(74_117_89_/_15%)]" />
@@ -351,11 +351,11 @@ export const CheckInList: React.FC<CheckInListProps> = ({
                   <tr className="border-none">
                     <td colSpan={5} className="p-0 pt-6 pb-2">
                       <div className="flex items-center gap-4">
-                        <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
-                        <span className="flex items-center gap-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] bg-surface px-4 py-[6px] text-[0.8rem] font-extrabold tracking-widest text-primary-deep uppercase shadow-[0_2px_8px_rgb(0_0_0_/_3%)]">
+                        <div className="to-border h-px flex-1 bg-gradient-to-r from-transparent" />
+                        <span className="bg-surface text-primary-deep flex items-center gap-[6px] rounded-full border border-[rgb(74_117_89_/_25%)] px-4 py-[6px] text-[0.8rem] font-extrabold tracking-widest uppercase shadow-[0_2px_8px_rgb(0_0_0_/_3%)]">
                           ✓ Checked In ({checkedIn.length})
                         </span>
-                        <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
+                        <div className="to-border h-px flex-1 bg-gradient-to-l from-transparent" />
                       </div>
                     </td>
                   </tr>

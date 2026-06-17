@@ -233,7 +233,6 @@ test('profileService.getActiveProfiles deduplicates concurrent in-flight request
 test('profileService.getMyProfile queries using parameterized pb.filter', async (t) => {
   const originalCollection = pb.collection;
   const originalAuthStore = pb.authStore;
-
   const mockGetFirstListItem = t.mock.fn(async () => {
     return { id: 'profile123', user: 'user123' };
   });
@@ -245,15 +244,9 @@ test('profileService.getMyProfile queries using parameterized pb.filter', async 
     return originalCollection.call(pb, name);
   };
 
-  // Mock pb.authStore.model
-  pb.authStore = {
-    ...originalAuthStore,
-    model: { id: 'user123' }
-  } as typeof originalAuthStore;
-
   try {
     const { profileService } = await import('../src/services/profileService.ts');
-    const result = await profileService.getMyProfile();
+    const result = await profileService.getMyProfile('user123');
 
     assert.equal(result.id, 'profile123');
     assert.equal(mockGetFirstListItem.mock.callCount(), 1);

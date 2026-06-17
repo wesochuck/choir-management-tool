@@ -2,10 +2,7 @@ import { pb } from '../../lib/pocketbase';
 import { profileService, type Profile } from '../profileService';
 import { rosterService } from '../rosterService';
 import { getVoicePartsAndSections } from '../settingsService';
-import type {
-  CommunicationFilters,
-  CommunicationRecipient,
-} from './types';
+import type { CommunicationFilters, CommunicationRecipient } from './types';
 
 export function profileToRecipient(profile: Profile): CommunicationRecipient {
   return {
@@ -87,6 +84,8 @@ export async function resolveRecipients(
     .filter((profile: Profile) => !!profile.voicePart)
     .filter((profile: Profile) => !allowedProfileIds || allowedProfileIds.has(profile.id))
     .filter((profile: Profile) => !targetParts || targetParts.has(profile.voicePart))
-    .filter((profile: Profile) => !filters.globalStatus || profile.globalStatus === filters.globalStatus)
+    .filter(
+      (profile: Profile) => !filters.globalStatus || profile.globalStatus === filters.globalStatus
+    )
     .map(profileToRecipient);
 }

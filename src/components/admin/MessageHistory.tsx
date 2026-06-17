@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { type MessageRecord, type CommunicationRecipient } from '../../services/communicationService';
+import {
+  type MessageRecord,
+  type CommunicationRecipient,
+} from '../../services/communicationService';
 import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
@@ -54,14 +57,15 @@ export function MessageHistory({
     setSearchTerm(historySearchQuery);
   }, [historySearchQuery]);
 
-  const filteredHistory = sourceFilter === 'all'
-    ? history
-    : history.filter((message) => {
-        const mFilters = message.filters as Record<string, unknown>;
-        const mType = mFilters?.type as string | undefined;
-        const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
-        return sourceFilter === 'automated' ? isAutomated : !isAutomated;
-      });
+  const filteredHistory =
+    sourceFilter === 'all'
+      ? history
+      : history.filter((message) => {
+          const mFilters = message.filters as Record<string, unknown>;
+          const mType = mFilters?.type as string | undefined;
+          const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+          return sourceFilter === 'automated' ? isAutomated : !isAutomated;
+        });
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,7 +73,6 @@ export function MessageHistory({
         <div className="relative flex-1">
           <Input
             type="text"
-            
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -78,7 +81,7 @@ export function MessageHistory({
           {searchTerm && (
             <button
               type="button"
-              className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer border-0 bg-transparent text-xl leading-none text-text-muted"
+              className="text-text-muted absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer border-0 bg-transparent text-xl leading-none"
               onClick={() => {
                 setSearchTerm('');
                 onHistorySearchChange('');
@@ -129,7 +132,7 @@ export function MessageHistory({
                 const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
 
                 const eventId = mFilters?.eventId as string | undefined;
-                const linkedEvent = events.find(e => e.id === eventId) || null;
+                const linkedEvent = events.find((e) => e.id === eventId) || null;
                 const resolvedSubject = resolvePreviewContent(
                   message.subject || 'SMS message',
                   linkedEvent,
@@ -144,11 +147,11 @@ export function MessageHistory({
                     </td>
                     <td className="p-3 px-4">
                       <div className="flex flex-col gap-1">
-                        <span className="inline-flex w-fit items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
+                        <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
                           {message.type}
                         </span>
                         {isAutomated && (
-                          <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase opacity-80">
+                          <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
                             {mType}
                           </span>
                         )}
@@ -159,7 +162,7 @@ export function MessageHistory({
                     </td>
                     <td className="p-3 px-4">
                       {isAutomated ? (
-                        <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase">
+                        <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
                           Automated
                         </span>
                       ) : (
@@ -174,13 +177,11 @@ export function MessageHistory({
                         variant="outline"
                         className="h-auto min-h-0 cursor-pointer"
                         onClick={() =>
-                          onViewRecipients(
-                            message.recipients,
-                            `Recipients — ${resolvedSubject}`
-                          )
+                          onViewRecipients(message.recipients, `Recipients — ${resolvedSubject}`)
                         }
                       >
-                        {message.recipients.length} recipient{message.recipients.length !== 1 ? 's' : ''}
+                        {message.recipients.length} recipient
+                        {message.recipients.length !== 1 ? 's' : ''}
                       </Button>
                     </td>
                     <td className="p-3 px-4">
@@ -189,17 +190,27 @@ export function MessageHistory({
                           Archived
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">
+                        <span className="bg-success-bg text-success-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
                           Sent
                         </span>
                       )}
                     </td>
                     <td className="p-3 px-4 text-right whitespace-nowrap">
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" size="small" onClick={() => onViewDetails(message)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="small"
+                          onClick={() => onViewDetails(message)}
+                        >
                           Details
                         </Button>
-                        <Button type="button" variant="secondary" size="small" onClick={() => onCopyDraft(message)}>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="small"
+                          onClick={() => onCopyDraft(message)}
+                        >
                           Copy to Draft
                         </Button>
                       </div>
@@ -212,11 +223,7 @@ export function MessageHistory({
         </table>
       </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
-      />
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
   );
 }

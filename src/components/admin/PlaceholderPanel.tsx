@@ -9,17 +9,83 @@ interface Placeholder {
 }
 
 const PLACEHOLDERS: Placeholder[] = [
-  { tag: '{singerName}', label: 'Singer Name', desc: "Recipient's full name (e.g. 'John Doe')", category: 'Recipient', className: 'text-emerald-600 bg-emerald-50' },
-  { tag: '{eventTitle}', label: 'Event Title', desc: 'The title of the selected event', category: 'Event', className: 'text-blue-600 bg-blue-50' },
-  { tag: '{eventType}', label: 'Event Type', desc: "The type (e.g. 'Performance', 'Rehearsal')", category: 'Event', className: 'text-blue-600 bg-blue-50' },
-  { tag: '{eventDate}', label: 'Event Date', desc: 'Formatted date and time of the event', category: 'Event', className: 'text-blue-600 bg-blue-50' },
-  { tag: '{eventLocation}', label: 'Event Location', desc: 'Name of the venue for the event', category: 'Event', className: 'text-blue-600 bg-blue-50' },
-  { tag: '{eventCallTime}', label: 'Event Call Time', desc: 'Formatted call time of the performance (e.g. 6:15 PM)', category: 'Event', className: 'text-blue-600 bg-blue-50' },
-  { tag: '{eventDetails}', label: 'Event Details', desc: 'Administrative details/notes', category: 'Event', className: 'text-blue-600 bg-blue-50' },
-  { tag: '{setlist}', label: 'Set List', desc: "The performance program (songs, composers, intermissions)", category: 'Event', className: 'text-blue-600 bg-blue-50' },
-  { tag: '{{PLAYER_LINK}}', label: 'Practice Player', desc: 'Generates an unauthenticated standalone practice player button (requires Event context)', category: 'Event', className: 'text-purple-600 bg-purple-50' },
-  { tag: '{{POLL_LINK:pollId}}', label: 'Engagement Poll', desc: 'Inserts a personalized "Volunteer" poll link (choose poll after clicking)', category: 'RSVP', className: 'text-amber-600 bg-amber-50' },
-  { tag: '{{RSVP_LINKS}}', label: 'RSVP Buttons', desc: 'Generates beautiful "Yes/No" response buttons', category: 'RSVP', className: 'text-orange-600 bg-orange-50' },
+  {
+    tag: '{singerName}',
+    label: 'Singer Name',
+    desc: "Recipient's full name (e.g. 'John Doe')",
+    category: 'Recipient',
+    className: 'text-emerald-600 bg-emerald-50',
+  },
+  {
+    tag: '{eventTitle}',
+    label: 'Event Title',
+    desc: 'The title of the selected event',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{eventType}',
+    label: 'Event Type',
+    desc: "The type (e.g. 'Performance', 'Rehearsal')",
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{eventDate}',
+    label: 'Event Date',
+    desc: 'Formatted date and time of the event',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{eventLocation}',
+    label: 'Event Location',
+    desc: 'Name of the venue for the event',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{eventCallTime}',
+    label: 'Event Call Time',
+    desc: 'Formatted call time of the performance (e.g. 6:15 PM)',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{eventDetails}',
+    label: 'Event Details',
+    desc: 'Administrative details/notes',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{setlist}',
+    label: 'Set List',
+    desc: 'The performance program (songs, composers, intermissions)',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{{PLAYER_LINK}}',
+    label: 'Practice Player',
+    desc: 'Generates an unauthenticated standalone practice player button (requires Event context)',
+    category: 'Event',
+    className: 'text-purple-600 bg-purple-50',
+  },
+  {
+    tag: '{{POLL_LINK:pollId}}',
+    label: 'Engagement Poll',
+    desc: 'Inserts a personalized "Volunteer" poll link (choose poll after clicking)',
+    category: 'RSVP',
+    className: 'text-amber-600 bg-amber-50',
+  },
+  {
+    tag: '{{RSVP_LINKS}}',
+    label: 'RSVP Buttons',
+    desc: 'Generates beautiful "Yes/No" response buttons',
+    category: 'RSVP',
+    className: 'text-orange-600 bg-orange-50',
+  },
 ];
 
 interface PlaceholderPanelProps {
@@ -29,13 +95,13 @@ interface PlaceholderPanelProps {
   hasCallTime?: boolean;
 }
 
-export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({ 
+export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
   onInsert,
   hasEvent = true,
   hasApprovedSetList = true,
-  hasCallTime = true
+  hasCallTime = true,
 }) => {
-  const visiblePlaceholders = PLACEHOLDERS.filter(p => {
+  const visiblePlaceholders = PLACEHOLDERS.filter((p) => {
     if (p.category === 'Recipient') return true;
     if (p.tag.startsWith('{{POLL_LINK:')) return true;
     if (!hasEvent) return false;
@@ -44,14 +110,16 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
     return true;
   });
 
-  const categories = Array.from(new Set(visiblePlaceholders.map(p => p.category))) as Placeholder['category'][];
+  const categories = Array.from(
+    new Set(visiblePlaceholders.map((p) => p.category))
+  ) as Placeholder['category'][];
 
   return (
-    <div className="sticky top-6 flex max-h-[calc(100vh-120px)] flex-col gap-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
-      <div className="border-b border-border pb-2">
+    <div className="border-border bg-surface sticky top-6 flex max-h-[calc(100vh-120px)] flex-col gap-4 rounded-xl border p-4 shadow-sm">
+      <div className="border-border border-b pb-2">
         <div className="flex items-center gap-2">
           <span>⚡</span>
-          <h4 className="m-0 text-sm font-bold text-primary-deep">Placeholders</h4>
+          <h4 className="text-primary-deep m-0 text-sm font-bold">Placeholders</h4>
         </div>
         <p className="text-muted m-0 mt-1 text-xs">
           Click any badge to insert dynamic text at cursor.
@@ -59,11 +127,11 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
       </div>
 
       <div className="flex flex-col gap-4 overflow-x-hidden overflow-y-auto px-1">
-        {categories.map(cat => {
-          const items = visiblePlaceholders.filter(p => p.category === cat);
+        {categories.map((cat) => {
+          const items = visiblePlaceholders.filter((p) => p.category === cat);
           return (
             <div key={cat} className="flex flex-col gap-1.5">
-              <div className="mb-0.5 text-[10px] font-bold tracking-wider text-text-muted uppercase">
+              <div className="text-text-muted mb-0.5 text-[10px] font-bold tracking-wider uppercase">
                 {cat} Placeholders
               </div>
               {items.map((p) => (
@@ -71,18 +139,20 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
                   key={p.tag}
                   type="button"
                   onClick={() => onInsert(p.tag)}
-                  className="flex h-auto w-full cursor-pointer flex-col items-start rounded-md border border-border bg-bg p-2.5 text-left transition-all duration-200 hover:bg-primary-light"
+                  className="border-border bg-bg hover:bg-primary-light flex h-auto w-full cursor-pointer flex-col items-start rounded-md border p-2.5 text-left transition-all duration-200"
                   title={`Insert ${p.tag}`}
                 >
                   <div className="flex w-full items-center justify-between">
                     <code className={`rounded px-1.5 py-0.5 text-sm font-bold ${p.className}`}>
                       {p.tag}
                     </code>
-                    <span className="text-xs font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="text-primary text-xs font-semibold opacity-0 transition-opacity group-hover:opacity-100">
                       + Insert
                     </span>
                   </div>
-                  <span className="mt-1 text-[0.72rem] leading-tight text-text-muted">{p.desc}</span>
+                  <span className="text-text-muted mt-1 text-[0.72rem] leading-tight">
+                    {p.desc}
+                  </span>
                 </button>
               ))}
             </div>

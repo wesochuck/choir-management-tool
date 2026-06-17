@@ -32,7 +32,9 @@ export default function PatronsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ltv' | 'name' | 'lastDate'>('ltv');
-  const [startDate, setStartDate] = useState(safeLocalStorage.getItem(STORAGE_KEY_START_DATE) || '');
+  const [startDate, setStartDate] = useState(
+    safeLocalStorage.getItem(STORAGE_KEY_START_DATE) || ''
+  );
   const [endDate, setEndDate] = useState('');
 
   const handleSetStartDate = (val: string) => {
@@ -70,12 +72,16 @@ export default function PatronsView() {
     const donations = donationsQuery.data ?? [];
     const purchases = purchasesQuery.data ?? [];
 
-    const paidPurchases = purchases.filter(p => p.status === 'paid');
+    const paidPurchases = purchases.filter((p) => p.status === 'paid');
     const patronMap = new Map<string, PatronData>();
 
-    const processTransaction = (profileId: string | undefined, amountCents: number, date: string) => {
+    const processTransaction = (
+      profileId: string | undefined,
+      amountCents: number,
+      date: string
+    ) => {
       if (!profileId) return;
-      const profile = profiles.find(p => p.id === profileId);
+      const profile = profiles.find((p) => p.id === profileId);
       if (!profile) return;
 
       const existing = patronMap.get(profileId);
@@ -91,13 +97,13 @@ export default function PatronsView() {
           ltvCents: amountCents,
           lastTransactionDate: date,
           transactionCount: 1,
-          isSinger: !!profile.voicePart
+          isSinger: !!profile.voicePart,
         });
       }
     };
 
-    donations.forEach(d => processTransaction(d.profile, d.amountPaidCents, d.created));
-    paidPurchases.forEach(p => processTransaction(p.profile, p.amountPaidCents, p.created));
+    donations.forEach((d) => processTransaction(d.profile, d.amountPaidCents, d.created));
+    paidPurchases.forEach((p) => processTransaction(p.profile, p.amountPaidCents, p.created));
 
     return Array.from(patronMap.values());
   }, [profiles, donationsQuery.data, purchasesQuery.data]);
@@ -113,7 +119,7 @@ export default function PatronsView() {
   const isLoading = donationsQuery.isLoading || purchasesQuery.isLoading;
 
   const filteredPatrons = useMemo(() => {
-    const result = patronData.filter(p => {
+    const result = patronData.filter((p) => {
       const search = searchQuery.toLowerCase();
       const matchesSearch =
         p.profile.name.toLowerCase().includes(search) ||
@@ -135,7 +141,9 @@ export default function PatronsView() {
         return getFirstName(a.profile.name).localeCompare(getFirstName(b.profile.name));
       }
       if (sortBy === 'lastDate') {
-        return new Date(b.lastTransactionDate).getTime() - new Date(a.lastTransactionDate).getTime();
+        return (
+          new Date(b.lastTransactionDate).getTime() - new Date(a.lastTransactionDate).getTime()
+        );
       }
       return 0;
     });
@@ -153,7 +161,7 @@ export default function PatronsView() {
     if (selectedIds.size === filteredPatrons.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredPatrons.map(p => p.profile.id)));
+      setSelectedIds(new Set(filteredPatrons.map((p) => p.profile.id)));
     }
   };
 
@@ -194,9 +202,7 @@ export default function PatronsView() {
     <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-          Patrons Dashboard
-        </h1>
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Patrons Dashboard</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
           View lifetime value and message your donors and ticket buyers
         </p>
@@ -217,7 +223,16 @@ export default function PatronsView() {
               </p>
             </div>
             <div className="rounded-xl bg-slate-50 p-3 text-slate-500 transition-colors group-hover:bg-slate-100">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -236,11 +251,23 @@ export default function PatronsView() {
                 Total Lifetime Value
               </p>
               <p className="mt-2 text-3xl font-black tracking-tight text-pink-600">
-                ${(filteredStats.totalLtvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                $
+                {(filteredStats.totalLtvCents / 100).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
               </p>
             </div>
             <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <line x1="12" y1="1" x2="12" y2="23" />
                 <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
@@ -262,10 +289,18 @@ export default function PatronsView() {
                   type="text"
                   placeholder="Search patron name or email..."
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 >
                   <span slot="prefix" className="flex items-center text-slate-400">
-                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      className="size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <circle cx="11" cy="11" r="8" />
                       <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
@@ -276,21 +311,21 @@ export default function PatronsView() {
             <div className="flex flex-row gap-4 md:col-span-2">
               <div className="min-w-0 flex-1">
                 <FormField label="From Date">
-                  <Input 
-                    type="date" 
+                  <Input
+                    type="date"
                     value={startDate}
-                    onChange={e => handleSetStartDate(e.target.value)}
-                    className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
+                    onChange={(e) => handleSetStartDate(e.target.value)}
+                    className="focus:ring-primary block w-full shadow-sm transition-colors outline-none focus:ring-1"
                   />
                 </FormField>
               </div>
               <div className="min-w-0 flex-1">
                 <FormField label="To Date">
-                  <Input 
-                    type="date" 
+                  <Input
+                    type="date"
                     value={endDate}
-                    onChange={e => setEndDate(e.target.value)}
-                    className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="focus:ring-primary block w-full shadow-sm transition-colors outline-none focus:ring-1"
                   />
                 </FormField>
               </div>
@@ -300,8 +335,7 @@ export default function PatronsView() {
                 <FormField label="Sort By">
                   <Select
                     value={sortBy}
-                    onChange={e => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
-
+                    onChange={(e) => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
                   >
                     <option value="ltv">Lifetime Value</option>
                     <option value="name">Name</option>
@@ -310,13 +344,22 @@ export default function PatronsView() {
                 </FormField>
               </div>
               {(searchQuery || startDate || endDate) && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleClearFilters}
                   className="flex h-10 items-center justify-center"
                   title="Reset filters"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                     <path d="M3 3v5h5" />
                   </svg>
@@ -341,7 +384,16 @@ export default function PatronsView() {
                 disabled={selectedIds.size === 0}
                 title="Send Message"
                 icon={
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                   </svg>
@@ -361,25 +413,42 @@ export default function PatronsView() {
                   <th className="w-12 px-6 py-3.5 text-left">
                     <input
                       type="checkbox"
-                      className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary/25"
-                      checked={filteredPatrons.length > 0 && selectedIds.size === filteredPatrons.length}
+                      className="text-primary focus:ring-primary/25 cursor-pointer rounded border-slate-300"
+                      checked={
+                        filteredPatrons.length > 0 && selectedIds.size === filteredPatrons.length
+                      }
                       onChange={toggleSelectAll}
                     />
                   </th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Name</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Email</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Type</th>
-                  <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">LTV</th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">Last Transaction</th>
-                  <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">Orders</th>
+                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Name
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Email
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Type
+                  </th>
+                  <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    LTV
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Last Transaction
+                  </th>
+                  <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
+                    Orders
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-sm font-medium text-slate-400">
+                    <td
+                      colSpan={7}
+                      className="px-6 py-12 text-center text-sm font-medium text-slate-400"
+                    >
                       <div className="flex flex-col items-center justify-center gap-2">
-                        <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                        <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
                         Loading patrons...
                       </div>
                     </td>
@@ -391,12 +460,12 @@ export default function PatronsView() {
                         title="No Patrons Found"
                         description={
                           searchQuery || startDate || endDate
-                            ? "No patrons match your search/filter criteria."
-                            : "No patron records are available yet."
+                            ? 'No patrons match your search/filter criteria.'
+                            : 'No patron records are available yet.'
                         }
                         icon="👥"
                         action={
-                          (searchQuery || startDate || endDate) ? (
+                          searchQuery || startDate || endDate ? (
                             <Button variant="secondary" onClick={handleClearFilters} size="small">
                               Reset Filters
                             </Button>
@@ -406,16 +475,19 @@ export default function PatronsView() {
                     </td>
                   </tr>
                 ) : (
-                  filteredPatrons.map(p => (
-                    <tr 
-                      key={p.profile.id} 
-                      className="cursor-pointer transition-colors hover:bg-slate-50/40" 
+                  filteredPatrons.map((p) => (
+                    <tr
+                      key={p.profile.id}
+                      className="cursor-pointer transition-colors hover:bg-slate-50/40"
                       onClick={() => handleOpenProfile(p.profile)}
                     >
-                      <td className="w-12 px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
+                      <td
+                        className="w-12 px-6 py-4 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <input
                           type="checkbox"
-                          className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary/25"
+                          className="text-primary focus:ring-primary/25 cursor-pointer rounded border-slate-300"
                           checked={selectedIds.has(p.profile.id)}
                           onChange={() => toggleSelect(p.profile.id)}
                         />
@@ -432,10 +504,15 @@ export default function PatronsView() {
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-extrabold whitespace-nowrap text-emerald-700">
-                        ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        $
+                        {(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                        {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {formatInTimezone(p.lastTransactionDate, 'America/New_York', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium text-slate-500">
                         {p.transactionCount}
@@ -452,7 +529,7 @@ export default function PatronsView() {
             <div className="divide-y divide-slate-100">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
-                  <span className="size-6 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+                  <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
                   Loading patrons...
                 </div>
               ) : filteredPatrons.length === 0 ? (
@@ -461,12 +538,12 @@ export default function PatronsView() {
                     title="No Patrons Found"
                     description={
                       searchQuery || startDate || endDate
-                        ? "No patrons match your search/filter criteria."
-                        : "No patron records are available yet."
+                        ? 'No patrons match your search/filter criteria.'
+                        : 'No patron records are available yet.'
                     }
                     icon="👥"
                     action={
-                      (searchQuery || startDate || endDate) ? (
+                      searchQuery || startDate || endDate ? (
                         <Button variant="secondary" onClick={handleClearFilters} size="small">
                           Reset Filters
                         </Button>
@@ -475,23 +552,28 @@ export default function PatronsView() {
                   />
                 </div>
               ) : (
-                filteredPatrons.map(p => (
-                  <div 
-                    key={p.profile.id} 
+                filteredPatrons.map((p) => (
+                  <div
+                    key={p.profile.id}
                     className="flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40"
                     onClick={() => handleOpenProfile(p.profile)}
                   >
                     {/* Row 1: Checkbox & Type Badge */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
-                          className="cursor-pointer rounded border-slate-300 text-primary focus:ring-primary/25"
+                          className="text-primary focus:ring-primary/25 cursor-pointer rounded border-slate-300"
                           checked={selectedIds.has(p.profile.id)}
                           onChange={() => toggleSelect(p.profile.id)}
                         />
                         <span className="text-xs font-medium text-slate-400">
-                          Last: {formatInTimezone(p.lastTransactionDate, 'America/New_York', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          Last:{' '}
+                          {formatInTimezone(p.lastTransactionDate, 'America/New_York', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
                         </span>
                       </div>
                       <Badge tone={p.isSinger ? 'rehearsal' : 'neutral'}>
@@ -509,7 +591,10 @@ export default function PatronsView() {
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-0.5">
                         <span className="text-base font-extrabold text-emerald-700">
-                          ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          $
+                          {(p.ltvCents / 100).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}
                         </span>
                         <span className="text-[10px] font-medium text-slate-400">
                           {p.transactionCount} order{p.transactionCount !== 1 ? 's' : ''}
@@ -524,7 +609,7 @@ export default function PatronsView() {
         </div>
       </AppCard>
 
-      <SingerModal 
+      <SingerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveProfile}

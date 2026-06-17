@@ -36,8 +36,8 @@ export default function PublicTicketSuccessView() {
         <AppCard className="w-full max-w-[480px] items-center text-center">
           <h2 className="m-0">Verifying Order...</h2>
           <Spinner size="medium" />
-          <p className="text-sm text-text-muted">Please wait while we confirm your transaction.</p>
-          <div className="size-10 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <p className="text-text-muted text-sm">Please wait while we confirm your transaction.</p>
+          <div className="border-border border-t-primary size-10 animate-spin rounded-full border-4" />
         </AppCard>
       </div>
     );
@@ -46,14 +46,12 @@ export default function PublicTicketSuccessView() {
   return (
     <PublicBrandingWrapper showLogo={false}>
       <AppCard className="w-full max-w-[480px] items-center gap-4 text-center">
-        <div className="text-6xl text-success-text">✓</div>
+        <div className="text-success-text text-6xl">✓</div>
         <h1 className="text-display m-0">Thank You!</h1>
-        <p className="m-0 text-text-muted">
-          Your purchase has been successfully processed.
-        </p>
+        <p className="text-text-muted m-0">Your purchase has been successfully processed.</p>
 
         {purchase ? (
-          <div className="flex w-full flex-col gap-1 rounded-xl border border-border bg-neutral-100 p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md">
+          <div className="border-border flex w-full flex-col gap-1 rounded-xl border bg-neutral-100 p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md">
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Order ID:</span>
               <strong>{purchase.id}</strong>
@@ -68,56 +66,62 @@ export default function PublicTicketSuccessView() {
             </div>
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Quantity:</span>
-              <strong>{purchase.quantity} {purchase.expand?.bundle ? 'Season Pass' : 'ticket'}{purchase.quantity > 1 ? (purchase.expand?.bundle ? 'es' : 's') : ''}</strong>
+              <strong>
+                {purchase.quantity} {purchase.expand?.bundle ? 'Season Pass' : 'ticket'}
+                {purchase.quantity > 1 ? (purchase.expand?.bundle ? 'es' : 's') : ''}
+              </strong>
             </div>
             <div className="flex flex-row justify-between text-sm">
               <span className="text-text-muted">Amount Paid:</span>
               <strong>${(purchase.amountPaidCents / 100).toFixed(2)}</strong>
             </div>
             {purchase.expand?.bundle ? (
-              <div className="mt-1 flex flex-col gap-1 border-t border-border pt-1">
-                <span className="text-xs text-text-muted">Season Ticket Pass</span>
+              <div className="border-border mt-1 flex flex-col gap-1 border-t pt-1">
+                <span className="text-text-muted text-xs">Season Ticket Pass</span>
                 <strong>{purchase.expand.bundle.title}</strong>
-                <p className="m-0 text-xs text-text-muted">
+                <p className="text-text-muted m-0 text-xs">
                   This pass grants Will Call admission to all performances included in this package.
                 </p>
               </div>
             ) : purchase.expand?.event ? (
-              <div className="mt-1 flex flex-col gap-1 border-t border-border pt-1">
-                <span className="text-xs text-text-muted">Event Details</span>
+              <div className="border-border mt-1 flex flex-col gap-1 border-t pt-1">
+                <span className="text-text-muted text-xs">Event Details</span>
                 <strong>{purchase.expand.event.title}</strong>
-                <span className="text-xs text-text-muted">
+                <span className="text-text-muted text-xs">
                   {new Date(purchase.expand.event.date).toLocaleString()}
                 </span>
                 {purchase.expand.event.eventGraphic && (
                   <img
                     src={pb.files.getURL(purchase.expand.event, purchase.expand.event.eventGraphic)}
-                    alt={purchase.expand.event.title} className="mt-1 max-h-30 w-full rounded-sm object-cover"
+                    alt={purchase.expand.event.title}
+                    className="mt-1 max-h-30 w-full rounded-sm object-cover"
                   />
                 )}
               </div>
             ) : null}
-            <p className="m-0 border-t border-border pt-1 text-center text-xs text-text-muted">
-              A confirmation email has been sent. Your tickets will be held at Will Call on show day. Please bring a photo ID matching the buyer's name.
+            <p className="border-border text-text-muted m-0 border-t pt-1 text-center text-xs">
+              A confirmation email has been sent. Your tickets will be held at Will Call on show
+              day. Please bring a photo ID matching the buyer's name.
             </p>
           </div>
         ) : (
           <div className="w-full rounded-lg bg-neutral-100 p-4">
-            <p className="m-0 text-sm text-text-muted">
-              We're finishing up enqueuing your confirmation email. You can safely navigate away. Your tickets are secured.
+            <p className="text-text-muted m-0 text-sm">
+              We're finishing up enqueuing your confirmation email. You can safely navigate away.
+              Your tickets are secured.
             </p>
           </div>
         )}
 
         {scanContextQuery.data && (
-          <div className="flex w-full flex-col items-center gap-3 rounded-xl border border-border bg-white p-4 shadow-sm">
-            <h3 className="m-0 text-sm font-bold uppercase text-text-muted">Your Ticket QR</h3>
+          <div className="border-border flex w-full flex-col items-center gap-3 rounded-xl border bg-white p-4 shadow-sm">
+            <h3 className="text-text-muted m-0 text-sm font-bold uppercase">Your Ticket QR</h3>
             <img
               src={scanContextQuery.data.qrDataUri}
               alt="Your ticket QR code"
               className="max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
             />
-            <p className="m-0 text-center text-xs text-text-muted">
+            <p className="text-text-muted m-0 text-center text-xs">
               Screenshot this — you'll need it at the door.
             </p>
           </div>

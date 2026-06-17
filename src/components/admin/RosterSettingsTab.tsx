@@ -67,10 +67,10 @@ export function RosterSettingsTab({
   return (
     <div className="flex max-w-4xl flex-col gap-6">
       {configMessage && (
-        <div 
+        <div
           className={`inline-flex items-center self-start rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition-all duration-300 ${
-            configMessage.startsWith('Error') 
-              ? 'border border-red-200 bg-red-50 text-red-800' 
+            configMessage.startsWith('Error')
+              ? 'border border-red-200 bg-red-50 text-red-800'
               : 'border border-emerald-200 bg-emerald-50 text-emerald-800'
           }`}
         >
@@ -94,10 +94,7 @@ export function RosterSettingsTab({
         setConfigMaxRehearsalMisses={setConfigMaxRehearsalMisses}
       />
 
-      <SeasonManagementSettings
-        configSeason={configSeason}
-        setConfigSeason={setConfigSeason}
-      />
+      <SeasonManagementSettings configSeason={configSeason} setConfigSeason={setConfigSeason} />
 
       <SectionBucketEditor
         configSections={configSections}
@@ -114,11 +111,11 @@ export function RosterSettingsTab({
         setFilter={setFilter}
       />
 
-      <FloatingSaveBar 
-        isDirty={isConfigDirty} 
-        isSaving={isSavingConfig} 
-        onSave={handleConfigSave} 
-        onDiscard={handleConfigDiscard} 
+      <FloatingSaveBar
+        isDirty={isConfigDirty}
+        isSaving={isSavingConfig}
+        onSave={handleConfigSave}
+        onDiscard={handleConfigDiscard}
       />
     </div>
   );

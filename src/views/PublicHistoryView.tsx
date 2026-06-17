@@ -15,7 +15,7 @@ function PublicHistoryView() {
 
   if (settingsQuery.isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <Spinner />
       </div>
     );
@@ -23,7 +23,7 @@ function PublicHistoryView() {
 
   if (settingsQuery.isError || !settingsQuery.data) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-text-muted">{'Unable to load page content. Please try again later.'}</p>
       </div>
     );
@@ -33,13 +33,15 @@ function PublicHistoryView() {
 
   return (
     <PublicLayout>
-      <section className="max-w-3xl mx-auto px-6 py-16">
+      <section className="mx-auto max-w-3xl px-6 py-16">
         <AppCard title="Our History">
           {settings.historyText ? (
             <div
-              className="prose prose-sm max-w-none text-text"
+              className="prose prose-sm text-text max-w-none"
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(marked.parse(settings.historyText, { async: false }) as string),
+                __html: DOMPurify.sanitize(
+                  marked.parse(settings.historyText, { async: false }) as string
+                ),
               }}
             />
           ) : (

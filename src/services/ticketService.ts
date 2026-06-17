@@ -64,33 +64,55 @@ export interface TicketPurchase extends RecordModel {
 }
 
 export const ticketService = {
-  async createCheckoutSession(eventId: string, quantity: number, email: string, name: string): Promise<{ url: string; sessionId: string }> {
-    return await pb.send<{ url: string; sessionId: string }>('/api/checkout/create-tickets-session', {
-      method: 'POST',
-      body: { eventId, quantity, email, name }
-    });
+  async createCheckoutSession(
+    eventId: string,
+    quantity: number,
+    email: string,
+    name: string
+  ): Promise<{ url: string; sessionId: string }> {
+    return await pb.send<{ url: string; sessionId: string }>(
+      '/api/checkout/create-tickets-session',
+      {
+        method: 'POST',
+        body: { eventId, quantity, email, name },
+      }
+    );
   },
 
-  async createBundleCheckoutSession(bundleId: string, quantity: number, email: string, name: string): Promise<{ url: string; sessionId: string }> {
-    return await pb.send<{ url: string; sessionId: string }>('/api/checkout/create-bundle-session', {
-      method: 'POST',
-      body: { bundleId, quantity, email, name }
-    });
+  async createBundleCheckoutSession(
+    bundleId: string,
+    quantity: number,
+    email: string,
+    name: string
+  ): Promise<{ url: string; sessionId: string }> {
+    return await pb.send<{ url: string; sessionId: string }>(
+      '/api/checkout/create-bundle-session',
+      {
+        method: 'POST',
+        body: { bundleId, quantity, email, name },
+      }
+    );
   },
 
-  async pollForPurchaseRecord(sessionId: string, retries = 5, delay = 1000): Promise<TicketPurchase | null> {
+  async pollForPurchaseRecord(
+    sessionId: string,
+    retries = 5,
+    delay = 1000
+  ): Promise<TicketPurchase | null> {
     // @allow-sequential-await - Sequential polling checks for Stripe fulfillment status.
     for (let i = 0; i < retries; i++) {
       try {
-        const record = await pb.collection('ticketPurchases').getFirstListItem<TicketPurchase>(
-          pb.filter('stripeSessionId = {:sessionId}', { sessionId }),
-          { expand: 'event,bundle' }
-        );
+        const record = await pb
+          .collection('ticketPurchases')
+          .getFirstListItem<TicketPurchase>(
+            pb.filter('stripeSessionId = {:sessionId}', { sessionId }),
+            { expand: 'event,bundle' }
+          );
         if (record) return record;
       } catch {
         // ignore and retry
       }
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
     return null;
   },
@@ -99,7 +121,7 @@ export const ticketService = {
     return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
       filter: pb.filter('event = {:eventId}', { eventId }),
       sort: 'buyerName',
-      expand: 'event,bundle'
+      expand: 'event,bundle',
     });
   },
 
@@ -107,35 +129,35 @@ export const ticketService = {
     return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
       filter: pb.filter('profile = {:profileId}', { profileId }),
       sort: '-created',
-      expand: 'event,bundle'
+      expand: 'event,bundle',
     });
   },
 
   async getAllPurchases(): Promise<TicketPurchase[]> {
     return await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
       sort: '-created',
-      expand: 'event,bundle'
+      expand: 'event,bundle',
     });
   },
 
   async adminRefundTicket(purchaseId: string): Promise<{ success: boolean }> {
     return await pb.send<{ success: boolean }>('/api/admin/refund-ticket', {
       method: 'POST',
-      body: { purchaseId }
+      body: { purchaseId },
     });
   },
 
   async adminRefundBundle(paymentIntentId: string): Promise<{ success: boolean }> {
     return await pb.send<{ success: boolean }>('/api/admin/refund-bundle', {
       method: 'POST',
-      body: { paymentIntentId }
+      body: { paymentIntentId },
     });
   },
 
   async validateScan(token: string, eventId: string): Promise<ValidationResult> {
     return await pb.send<ValidationResult>('/api/tickets/validate', {
       method: 'POST',
-      body: { token, eventId }
+      body: { token, eventId },
     });
   },
 
@@ -144,5 +166,43 @@ export const ticketService = {
       `/api/tickets/scan-context?session_id=${encodeURIComponent(sessionId)}&purchase_id=${encodeURIComponent(purchaseId)}`,
       { method: 'GET' }
     );
+  },
+
+  async getPublicBundles(): Promise<TicketBundle[]> {
+    return await pb.collection('ticketBundles').getFullList<TicketBundle>({
+      filter: 'isActive = true && saleEndDate >= @now',
+      sort: 'saleEndDate',
+      expand: 'events',
+    });
+  },
+
+  async getAllBundles(): Promise<TicketBundle[]> {
+    return await pb.collection('ticketBundles').getFullList<TicketBundle>({
+      sort: '-created',
+      expand: 'events',
+    });
+  },
+
+  async saveBundle(data: Partial<TicketBundle> & { id?: string }): Promise<TicketBundle> {
+    const { id, ...rest } = data;
+    if (id) {
+      return await pb.collection('ticketBundles').update<TicketBundle>(id, rest);
+    }
+    return await pb.collection('ticketBundles').create<TicketBundle>(rest);
+  },
+
+  async deleteBundle(bundleId: string): Promise<void> {
+    await pb.collection('ticketBundles').delete(bundleId);
+  },
+
+  async hasPaidPurchasesForEvent(eventId: string): Promise<boolean> {
+    try {
+      await pb.collection('ticketPurchases').getFirstListItem(
+        pb.filter('event = {:eventId} && status = "paid"', { eventId }),
+      );
+      return true;
+    } catch {
+      return false;
+    }
   },
 };

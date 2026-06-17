@@ -119,13 +119,13 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
     if (!qrCodeUrl) return;
     const link = document.createElement('a');
     link.href = qrCodeUrl;
-    
+
     // Clean name for the downloaded file
     const safeName = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '_')
       .replace(/(^_+|_+$)/g, '');
-    
+
     link.download = `${safeName}_qr_code.png`;
     document.body.appendChild(link);
     link.click();
@@ -135,31 +135,29 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-        
         {/* Left Side: Text Details */}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             {badgeText && (
-              <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
-                badgeTone === 'success' ? 'bg-emerald-50 text-emerald-700' :
-                badgeTone === 'performance' ? 'bg-rose-50 text-rose-700' :
-                badgeTone === 'rehearsal' ? 'bg-blue-50 text-blue-700' :
-                'bg-slate-100 text-slate-700'
-              }`}>
+              <span
+                className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
+                  badgeTone === 'success'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : badgeTone === 'performance'
+                      ? 'bg-rose-50 text-rose-700'
+                      : badgeTone === 'rehearsal'
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'bg-slate-100 text-slate-700'
+                }`}
+              >
                 {badgeText}
               </span>
             )}
-            {subtitle && (
-              <span className="text-xs font-semibold text-slate-400">
-                {subtitle}
-              </span>
-            )}
+            {subtitle && <span className="text-xs font-semibold text-slate-400">{subtitle}</span>}
           </div>
-          
-          <h4 className="m-0 text-lg font-bold text-slate-800 truncate">
-            {title}
-          </h4>
-          
+
+          <h4 className="m-0 truncate text-lg font-bold text-slate-800">{title}</h4>
+
           <div className="mt-1 flex flex-col gap-2">
             <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Public Link
@@ -169,19 +167,22 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
                 href={absoluteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="min-w-0 flex-1 truncate text-xs font-medium text-primary underline transition-colors hover:text-primary-deep"
+                className="text-primary hover:text-primary-deep min-w-0 flex-1 truncate text-xs font-medium underline transition-colors"
               >
                 {absoluteUrl}
               </a>
             </div>
           </div>
-          
+
           {/* Actions */}
           <div className="mt-2 flex flex-wrap gap-2.5">
-            <CopyButton value={absoluteUrl} className="min-w-[100px] font-bold shadow-xs transition-all duration-150">
+            <CopyButton
+              value={absoluteUrl}
+              className="min-w-[100px] font-bold shadow-xs transition-all duration-150"
+            >
               🔗 Copy Link
             </CopyButton>
-            
+
             <Button
               onClick={handleDownloadPNG}
               disabled={!qrCodeUrl}
@@ -201,7 +202,7 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
               Error rendering QR
             </div>
           ) : qrCodeUrl ? (
-            <div className="relative group/qr">
+            <div className="group/qr relative">
               <img
                 src={qrCodeUrl}
                 alt={`QR Code for ${title}`}
@@ -210,12 +211,11 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
             </div>
           ) : (
             <div className="flex size-[140px] flex-col items-center justify-center gap-2">
-              <span className="size-5 animate-spin rounded-full border-2 border-slate-200 border-t-primary" />
+              <span className="border-t-primary size-5 animate-spin rounded-full border-2 border-slate-200" />
               <span className="text-[10px] font-medium text-slate-400">Generating QR...</span>
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

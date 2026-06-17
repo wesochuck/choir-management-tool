@@ -71,7 +71,7 @@ export default function LoginView() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       await pb.collection('users').authWithPassword(email.trim().toLowerCase(), password);
       navigate('/');
@@ -93,7 +93,8 @@ export default function LoginView() {
       setResetSuccess('A password reset link has been sent to your email.');
       setEmail('');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to request password reset. Please try again.';
+      const msg =
+        err instanceof Error ? err.message : 'Failed to request password reset. Please try again.';
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -104,7 +105,7 @@ export default function LoginView() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       const result = await pb.collection('users').requestOTP(email.trim().toLowerCase());
       setOtpId(result.otpId);
@@ -112,7 +113,10 @@ export default function LoginView() {
       setCountdown(1800);
       setResendCooldown(60);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'No account found with this email, or failed to send login code.';
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'No account found with this email, or failed to send login code.';
       setError(msg);
     } finally {
       setIsLoading(false);
@@ -124,7 +128,7 @@ export default function LoginView() {
     setIsLoading(true);
     setError('');
     setOtpCode('');
-    
+
     try {
       const result = await pb.collection('users').requestOTP(email.trim().toLowerCase());
       setOtpId(result.otpId);
@@ -144,7 +148,7 @@ export default function LoginView() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       await pb.collection('users').authWithOTP(otpId, otpCode.trim());
       navigate('/');
@@ -156,24 +160,24 @@ export default function LoginView() {
   };
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-bg p-4">
-      <div className="w-full max-w-[min(400px,calc(100vw-32px))] rounded-xl border border-border bg-surface p-8 shadow-[0_10px_25px_-5px_rgb(0_0_0_/_5%),0_8px_16px_-6px_rgb(0_0_0_/_3%)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(109,40,217,0.2)] hover:shadow-[0_20px_30px_-10px_rgb(91_33_182_/_6%),0_10px_20px_-8px_rgb(0_0_0_/_4%)]">
-        <h1 className="mb-6 text-center text-3xl font-extrabold tracking-tight text-text">
+    <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-center p-4">
+      <div className="border-border bg-surface w-full max-w-[min(400px,calc(100vw-32px))] rounded-xl border p-8 shadow-[0_10px_25px_-5px_rgb(0_0_0_/_5%),0_8px_16px_-6px_rgb(0_0_0_/_3%)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(109,40,217,0.2)] hover:shadow-[0_20px_30px_-10px_rgb(91_33_182_/_6%),0_10px_20px_-8px_rgb(0_0_0_/_4%)]">
+        <h1 className="text-text mb-6 text-center text-3xl font-extrabold tracking-tight">
           {isForgotMode ? 'Reset Password' : 'Singer Portal'}
         </h1>
 
         {!isForgotMode && otpStep === 'request' && (
-          <div className="mb-6 flex gap-1 border-b-2 border-border">
+          <div className="border-border mb-6 flex gap-1 border-b-2">
             <button
               type="button"
-              className={`relative flex-1 cursor-pointer border-none bg-transparent py-2 text-center text-sm font-semibold transition-all outline-none ${loginMode === 'otp' ? 'font-bold text-primary after:absolute after:inset-x-0 after:bottom-[-2px] after:h-0.5 after:rounded-sm after:bg-primary after:content-[""]' : 'text-text-muted hover:text-text'}`}
+              className={`relative flex-1 cursor-pointer border-none bg-transparent py-2 text-center text-sm font-semibold transition-all outline-none ${loginMode === 'otp' ? 'text-primary after:bg-primary font-bold after:absolute after:inset-x-0 after:bottom-[-2px] after:h-0.5 after:rounded-sm after:content-[""]' : 'text-text-muted hover:text-text'}`}
               onClick={() => handleSwitchMode('otp')}
             >
               Email Code
             </button>
             <button
               type="button"
-              className={`relative flex-1 cursor-pointer border-none bg-transparent py-2 text-center text-sm font-semibold transition-all outline-none ${loginMode === 'password' ? 'font-bold text-primary after:absolute after:inset-x-0 after:bottom-[-2px] after:h-0.5 after:rounded-sm after:bg-primary after:content-[""]' : 'text-text-muted hover:text-text'}`}
+              className={`relative flex-1 cursor-pointer border-none bg-transparent py-2 text-center text-sm font-semibold transition-all outline-none ${loginMode === 'password' ? 'text-primary after:bg-primary font-bold after:absolute after:inset-x-0 after:bottom-[-2px] after:h-0.5 after:rounded-sm after:content-[""]' : 'text-text-muted hover:text-text'}`}
               onClick={() => handleSwitchMode('password')}
             >
               Password
@@ -182,39 +186,37 @@ export default function LoginView() {
         )}
 
         {isForgotMode ? (
-          <form onSubmit={handleRequestReset} className="flex animate-login-fade-in flex-col gap-6">
-            <p className="m-0 text-center text-sm leading-relaxed text-text-muted">
+          <form onSubmit={handleRequestReset} className="animate-login-fade-in flex flex-col gap-6">
+            <p className="text-text-muted m-0 text-center text-sm leading-relaxed">
               Enter your email address and we'll send you a custom link to reset your password.
             </p>
 
             <div className="flex flex-col gap-1">
-              <label className="text-label" htmlFor="forgot-email">Email Address</label>
+              <label className="text-label" htmlFor="forgot-email">
+                Email Address
+              </label>
               <Input
                 id="forgot-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-               
                 placeholder="e.g. singer@choir.org"
               />
             </div>
 
-            {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
-            {resetSuccess && <p className="m-0 text-xs font-semibold text-primary">{resetSuccess}</p>}
+            {error && <p className="text-danger-text m-0 text-xs">{error}</p>}
+            {resetSuccess && (
+              <p className="text-primary m-0 text-xs font-semibold">{resetSuccess}</p>
+            )}
 
-            <Button
-              type="submit"
-              disabled={isLoading}
-              variant="primary"
-              className="mt-1 w-full"
-            >
+            <Button type="submit" disabled={isLoading} variant="primary" className="mt-1 w-full">
               {isLoading ? 'Sending reset link...' : 'Send Reset Link'}
             </Button>
 
             <button
               type="button"
-              className="h-auto cursor-pointer self-center p-0 text-xs text-text-muted underline hover:text-text"
+              className="text-text-muted hover:text-text h-auto cursor-pointer self-center p-0 text-xs underline"
               onClick={() => setIsForgotMode(false)}
             >
               ← Back to Login
@@ -226,22 +228,23 @@ export default function LoginView() {
               <div className="animate-login-fade-in">
                 {otpStep === 'request' ? (
                   <form onSubmit={handleRequestOTP} className="flex flex-col gap-6">
-                    <p className="m-0 text-center text-sm leading-relaxed text-text-muted">
+                    <p className="text-text-muted m-0 text-center text-sm leading-relaxed">
                       Sign in securely without a password. We'll email you a 6-digit login code.
                     </p>
                     <div className="flex flex-col gap-1">
-                      <label className="text-label" htmlFor="otp-email">Email Address</label>
+                      <label className="text-label" htmlFor="otp-email">
+                        Email Address
+                      </label>
                       <Input
                         id="otp-email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                       
                         placeholder="singer@choir.org"
                       />
                     </div>
-                    {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
+                    {error && <p className="text-danger-text m-0 text-xs">{error}</p>}
                     <Button
                       type="submit"
                       disabled={isLoading}
@@ -253,14 +256,16 @@ export default function LoginView() {
                   </form>
                 ) : (
                   <form onSubmit={handleVerifyOTP} className="flex flex-col gap-6">
-                    <div className="mb-4 rounded-r-lg border-l-4 border-primary bg-primary-light px-4 py-2">
-                      <p className="m-0 text-sm leading-relaxed text-primary-deep">
+                    <div className="border-primary bg-primary-light mb-4 rounded-r-lg border-l-4 px-4 py-2">
+                      <p className="text-primary-deep m-0 text-sm leading-relaxed">
                         A 6-digit login code has been sent to <strong>{email}</strong>
                       </p>
                     </div>
 
                     <div className="mb-2 flex flex-col gap-1">
-                      <label className="text-label" htmlFor="otp-code">Enter 6-Digit Login Code</label>
+                      <label className="text-label" htmlFor="otp-code">
+                        Enter 6-Digit Login Code
+                      </label>
                       <Input
                         id="otp-code"
                         type="text"
@@ -273,18 +278,21 @@ export default function LoginView() {
                         placeholder="000000"
                         className="text-center font-mono text-xl font-bold tracking-widest"
                       />
-                      
-                      <div className="mt-1 flex items-center justify-between text-xs text-text-muted">
+
+                      <div className="text-text-muted mt-1 flex items-center justify-between text-xs">
                         <span>
-                          Code expires in: <span className="font-bold text-primary tabular-nums">{formatCountdown(countdown)}</span>
+                          Code expires in:{' '}
+                          <span className="text-primary font-bold tabular-nums">
+                            {formatCountdown(countdown)}
+                          </span>
                         </span>
-                        
+
                         {resendCooldown > 0 ? (
                           <span>Resend in {resendCooldown}s</span>
                         ) : (
                           <button
                             type="button"
-                            className="h-auto min-h-0 cursor-pointer border-none bg-transparent p-0 text-xs font-semibold text-primary underline disabled:cursor-not-allowed disabled:text-text-muted disabled:no-underline"
+                            className="text-primary disabled:text-text-muted h-auto min-h-0 cursor-pointer border-none bg-transparent p-0 text-xs font-semibold underline disabled:cursor-not-allowed disabled:no-underline"
                             onClick={handleResendOTP}
                             disabled={isLoading}
                           >
@@ -294,8 +302,10 @@ export default function LoginView() {
                       </div>
                     </div>
 
-                    {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
-                    {resetSuccess && <p className="m-0 text-xs font-semibold text-primary">{resetSuccess}</p>}
+                    {error && <p className="text-danger-text m-0 text-xs">{error}</p>}
+                    {resetSuccess && (
+                      <p className="text-primary m-0 text-xs font-semibold">{resetSuccess}</p>
+                    )}
 
                     <Button
                       type="submit"
@@ -308,7 +318,7 @@ export default function LoginView() {
 
                     <button
                       type="button"
-                      className="mt-2 cursor-pointer self-center border-none bg-transparent py-1 text-xs text-text-muted underline transition-colors hover:text-text"
+                      className="text-text-muted hover:text-text mt-2 cursor-pointer self-center border-none bg-transparent py-1 text-xs underline transition-colors"
                       onClick={() => {
                         setOtpStep('request');
                         setOtpCode('');
@@ -318,10 +328,10 @@ export default function LoginView() {
                       Edit Email Address
                     </button>
 
-                    <div className="mt-4 flex justify-center border-t border-border pt-4">
+                    <div className="border-border mt-4 flex justify-center border-t pt-4">
                       <button
                         type="button"
-                        className="cursor-pointer border-none bg-transparent p-0 text-xs font-semibold text-primary underline hover:text-primary-deep"
+                        className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-xs font-semibold underline"
                         onClick={() => handleSwitchMode('password')}
                       >
                         Sign in with Password instead
@@ -333,25 +343,31 @@ export default function LoginView() {
             )}
 
             {loginMode === 'password' && (
-              <form onSubmit={handlePasswordSubmit} className="flex animate-login-fade-in flex-col gap-6">
+              <form
+                onSubmit={handlePasswordSubmit}
+                className="animate-login-fade-in flex flex-col gap-6"
+              >
                 <div className="flex flex-col gap-1">
-                  <label className="text-label" htmlFor="login-email">Email Address</label>
+                  <label className="text-label" htmlFor="login-email">
+                    Email Address
+                  </label>
                   <Input
                     id="login-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                   
                     placeholder="e.g. singer@choir.org"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <div className="flex flex-row items-center justify-between">
-                    <label className="text-label" htmlFor="login-password">Password</label>
+                    <label className="text-label" htmlFor="login-password">
+                      Password
+                    </label>
                     <button
                       type="button"
-                      className="h-auto min-h-0 cursor-pointer border-none bg-none p-0 text-xs text-text-muted underline hover:text-text"
+                      className="text-text-muted hover:text-text h-auto min-h-0 cursor-pointer border-none bg-none p-0 text-xs underline"
                       onClick={() => {
                         setIsForgotMode(true);
                         setError('');
@@ -367,10 +383,9 @@ export default function LoginView() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                   
                   />
                 </div>
-                {error && <p className="m-0 text-xs text-danger-text">{error}</p>}
+                {error && <p className="text-danger-text m-0 text-xs">{error}</p>}
                 <Button
                   type="submit"
                   disabled={isLoading}

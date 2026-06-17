@@ -21,7 +21,19 @@ export interface Audition extends RecordModel {
   };
 }
 
-export type AuditionInput = Pick<Audition, 'name' | 'contact'> & Partial<Pick<Audition, 'scheduledTimeSlot' | 'requestedSlots' | 'voicePart' | 'experience' | 'performance' | 'status' | 'notes'>>;
+export type AuditionInput = Pick<Audition, 'name' | 'contact'> &
+  Partial<
+    Pick<
+      Audition,
+      | 'scheduledTimeSlot'
+      | 'requestedSlots'
+      | 'voicePart'
+      | 'experience'
+      | 'performance'
+      | 'status'
+      | 'notes'
+    >
+  >;
 type ConvertibleAudition = Audition & Partial<{ email: string; phone: string }>;
 
 const isEmailContact = (contact: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim());
@@ -60,7 +72,9 @@ export const auditionService = {
       try {
         // 1. Find all related events (the performance itself + rehearsals tied to it)
         const relatedEvents = await pb.collection('events').getFullList<Event>({
-          filter: pb.filter('id = {:performanceId} || parentPerformanceId = {:performanceId}', { performanceId: audition.performance }),
+          filter: pb.filter('id = {:performanceId} || parentPerformanceId = {:performanceId}', {
+            performanceId: audition.performance,
+          }),
         });
 
         // 2. Create roster entries for each using batch to avoid N+1 requests
@@ -77,7 +91,10 @@ export const auditionService = {
         await batch.send();
       } catch (e: unknown) {
         if (e instanceof ClientResponseError) {
-          console.error(`Failed to link converted singer to performance rosters: ${e.status}`, e.data);
+          console.error(
+            `Failed to link converted singer to performance rosters: ${e.status}`,
+            e.data
+          );
         } else {
           console.error('Failed to link converted singer to performance rosters', e);
         }
@@ -89,8 +106,13 @@ export const auditionService = {
 };
 
 export async function convertAuditionToSinger(audition: ConvertibleAudition): Promise<Profile> {
-  const email = isEmailContact(audition.contact || '') ? audition.contact.trim() : (audition.email || '');
-  const phone = !email && audition.contact && /[\d+]/.test(audition.contact) ? audition.contact.trim() : (audition.phone || '');
+  const email = isEmailContact(audition.contact || '')
+    ? audition.contact.trim()
+    : audition.email || '';
+  const phone =
+    !email && audition.contact && /[\d+]/.test(audition.contact)
+      ? audition.contact.trim()
+      : audition.phone || '';
 
   const profileData = {
     name: audition.name,
@@ -101,7 +123,9 @@ export async function convertAuditionToSinger(audition: ConvertibleAudition): Pr
     notes: [
       audition.experience ? `Audition experience: ${audition.experience}` : '',
       audition.notes ? `Audition notes: ${audition.notes}` : '',
-    ].filter(Boolean).join('\n\n'),
+    ]
+      .filter(Boolean)
+      .join('\n\n'),
   };
 
   return await pb.collection('profiles').create<Profile>(profileData);

@@ -36,7 +36,7 @@ export function MusicLibraryTitleCell({
 
   return (
     <td
-      className={`border border-border px-[10px] py-[6px] align-middle ${isChild ? '!pl-8' : ''}`}
+      className={`border-border border px-[10px] py-[6px] align-middle ${isChild ? '!pl-8' : ''}`}
     >
       <div className="flex flex-col gap-[2px]">
         <div className="flex flex-row flex-wrap items-center gap-[6px]">
@@ -51,11 +51,7 @@ export function MusicLibraryTitleCell({
               {isExpanded ? '▼' : '▶'}
             </button>
           )}
-          {isChild && (
-            <span className="text-muted mr-[2px] font-mono text-xs select-none">
-              └─
-            </span>
-          )}
+          {isChild && <span className="text-muted mr-[2px] font-mono text-xs select-none">└─</span>}
           <strong className={`font-bold ${isDuplicate ? 'text-section-orange' : ''}`}>
             {piece.title}
           </strong>

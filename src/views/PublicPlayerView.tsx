@@ -1,17 +1,21 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { playerService, type PlayerPlaylist, type PlayerMediaFile } from '../services/playerService';
+import {
+  playerService,
+  type PlayerPlaylist,
+  type PlayerMediaFile,
+} from '../services/playerService';
 import { Player } from '../components/player/Player';
 import { Playlist } from '../components/player/Playlist';
 import { VoicePartSelector } from '../components/player/VoicePartSelector';
-import { 
-  getOfflinePlaylist, 
-  downloadTrack, 
-  removeOfflineTrack, 
+import {
+  getOfflinePlaylist,
+  downloadTrack,
+  removeOfflineTrack,
   savePlaylistOffline,
   hydrateOfflineStatus,
-  clearAllDownloads
+  clearAllDownloads,
 } from '../services/offlineMediaStore';
 import { safeLocalStorage } from '../lib/storage';
 import { queryKeys } from '../lib/queryKeys';
@@ -30,7 +34,7 @@ export default function PublicPlayerView() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [selectedVoicePart, setSelectedVoicePart] = useState<string>(() => {
     return safeLocalStorage.getItem('player-voice-part') || 'tutti';
   });
@@ -66,7 +70,12 @@ export default function PublicPlayerView() {
     const result = playlistQuery.data;
     setData(result);
     const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
-    const targetedTracks = playerService.applyVoicePartToFiles(result.files, initialPart, result.allPieces, result.voiceParts);
+    const targetedTracks = playerService.applyVoicePartToFiles(
+      result.files,
+      initialPart,
+      result.allPieces,
+      result.voiceParts
+    );
     hydrateOfflineStatus(targetedTracks).then(setPlaylist);
     setError(null);
   }, [playlistQuery.data]);
@@ -74,10 +83,15 @@ export default function PublicPlayerView() {
   useEffect(() => {
     if (!playlistQuery.isError) return;
     const key = token || eventId;
-    getOfflinePlaylist(key).then(cached => {
+    getOfflinePlaylist(key).then((cached) => {
       if (cached) {
         const initialPart = safeLocalStorage.getItem('player-voice-part') || 'tutti';
-        const targetedTracks = playerService.applyVoicePartToFiles(cached, initialPart, dataRef.current?.allPieces || [], dataRef.current?.voiceParts || []);
+        const targetedTracks = playerService.applyVoicePartToFiles(
+          cached,
+          initialPart,
+          dataRef.current?.allPieces || [],
+          dataRef.current?.voiceParts || []
+        );
         hydrateOfflineStatus(targetedTracks).then(setPlaylist);
       } else {
         setError('Failed to load playlist. Please check your link.');
@@ -90,26 +104,35 @@ export default function PublicPlayerView() {
     safeLocalStorage.setItem('player-voice-part', part);
 
     if (!data) return;
-    
-    const updatedPlaylist = playerService.applyVoicePartToFiles(playlist, part, data.allPieces, data.voiceParts);
+
+    const updatedPlaylist = playerService.applyVoicePartToFiles(
+      playlist,
+      part,
+      data.allPieces,
+      data.voiceParts
+    );
     const hydrated = await hydrateOfflineStatus(updatedPlaylist);
     setPlaylist(hydrated);
   };
 
   const handleDownload = async (track: PlayerMediaFile) => {
     try {
-      setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));
-      setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f));
+      setDownloadProgress((prev) => ({ ...prev, [track.id]: 0 }));
+      setPlaylist((prev) =>
+        prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f))
+      );
 
       await downloadTrack(track, (prog) => {
-        setDownloadProgress(prev => ({ ...prev, [track.id]: prog }));
+        setDownloadProgress((prev) => ({ ...prev, [track.id]: prog }));
       });
 
       const hydrated = await hydrateOfflineStatus(playlist);
       setPlaylist(hydrated);
     } catch (err) {
       console.error('Download failed', err);
-      setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'error' } : f));
+      setPlaylist((prev) =>
+        prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'error' } : f))
+      );
     }
   };
 
@@ -120,29 +143,35 @@ export default function PublicPlayerView() {
 
   const handleDownloadAll = async () => {
     if (isDownloadingAll) return;
-    const toDownload = playlist.filter(f => !f.isFolder && !f.isDownloaded);
+    const toDownload = playlist.filter((f) => !f.isFolder && !f.isDownloaded);
     if (toDownload.length === 0) return;
     setIsDownloadingAll(true);
-    
+
     const errorIds = new Set<string>();
-    
+
     // @allow-sequential-await - downloads must be sequential to avoid overwhelming the server
     for (const track of toDownload) {
       try {
-        setDownloadProgress(prev => ({ ...prev, [track.id]: 0 }));
-        setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f));
+        setDownloadProgress((prev) => ({ ...prev, [track.id]: 0 }));
+        setPlaylist((prev) =>
+          prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f))
+        );
         await downloadTrack(track, (prog) => {
-          setDownloadProgress(prev => ({ ...prev, [track.id]: prog }));
+          setDownloadProgress((prev) => ({ ...prev, [track.id]: prog }));
         });
       } catch (err) {
         console.error('Download failed for', track.name, err);
         errorIds.add(track.id);
-        setPlaylist(prev => prev.map(f => f.id === track.id ? { ...f, downloadStatus: 'error' } : f));
+        setPlaylist((prev) =>
+          prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'error' } : f))
+        );
       }
     }
-    
+
     const hydrated = await hydrateOfflineStatus(playlist);
-    const finalPlaylist = hydrated.map(f => errorIds.has(f.id) ? { ...f, downloadStatus: 'error' as const } : f);
+    const finalPlaylist = hydrated.map((f) =>
+      errorIds.has(f.id) ? { ...f, downloadStatus: 'error' as const } : f
+    );
     setPlaylist(finalPlaylist);
     setIsDownloadingAll(false);
   };
@@ -155,8 +184,8 @@ export default function PublicPlayerView() {
 
   if (!hasTokenOrEventId) {
     return (
-      <div className="mx-auto max-w-md p-4 text-center mt-16">
-        <div className="rounded-lg border border-danger-text bg-danger-bg p-4 text-danger-text font-semibold shadow-sm">
+      <div className="mx-auto mt-16 max-w-md p-4 text-center">
+        <div className="border-danger-text bg-danger-bg text-danger-text rounded-lg border p-4 font-semibold shadow-sm">
           Missing player token or event ID.
         </div>
       </div>
@@ -166,8 +195,8 @@ export default function PublicPlayerView() {
   if (playlistQuery.isLoading) return <div className="pt-16 text-center">Loading playlist...</div>;
   if (error) {
     return (
-      <div className="mx-auto max-w-md p-4 text-center mt-16">
-        <div className="rounded-lg border border-danger-text bg-danger-bg p-4 text-danger-text font-semibold shadow-sm">
+      <div className="mx-auto mt-16 max-w-md p-4 text-center">
+        <div className="border-danger-text bg-danger-bg text-danger-text rounded-lg border p-4 font-semibold shadow-sm">
           {error}
         </div>
       </div>
@@ -182,22 +211,25 @@ export default function PublicPlayerView() {
       <header className="mb-6">
         <div>
           {showDashboardBackLink && (
-            <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary-deep hover:underline">
+            <Link
+              to="/"
+              className="text-primary hover:text-primary-deep mb-4 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+            >
               ← Dashboard
             </Link>
           )}
-          <h1 className="text-3xl font-extrabold tracking-tight text-text">Chorus</h1>
-          <div className="text-sm text-muted">{data.event.title}</div>
+          <h1 className="text-text text-3xl font-extrabold tracking-tight">Chorus</h1>
+          <div className="text-muted text-sm">{data.event.title}</div>
         </div>
       </header>
 
-      <VoicePartSelector 
-        voiceParts={data.voiceParts} 
+      <VoicePartSelector
+        voiceParts={data.voiceParts}
         selectedPart={selectedVoicePart}
         onSelect={handleVoicePartChange}
       />
 
-      <Player 
+      <Player
         playlist={playlist}
         currentIndex={currentIndex}
         onTrackChange={setCurrentIndex}
@@ -206,7 +238,7 @@ export default function PublicPlayerView() {
         selectedVoicePart={selectedVoicePart}
       />
 
-      <Playlist 
+      <Playlist
         playlist={playlist}
         currentIndex={currentIndex}
         onTrackSelect={(idx) => {
@@ -222,7 +254,7 @@ export default function PublicPlayerView() {
         isDownloadingAll={isDownloadingAll}
       />
 
-      <div className="mt-8 text-center text-xs text-muted">
+      <div className="text-muted mt-8 text-center text-xs">
         You can download tracks for offline practice. They will be saved in your browser.
       </div>
     </div>

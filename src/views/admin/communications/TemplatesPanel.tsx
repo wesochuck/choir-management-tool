@@ -16,9 +16,7 @@ export interface TemplatesPanelProps {
   templates: TemplateRecord[];
   setTemplates: React.Dispatch<React.SetStateAction<TemplateRecord[]>>;
   editingTemplate: Partial<TemplateRecord> | null;
-  setEditingTemplate: React.Dispatch<
-    React.SetStateAction<Partial<TemplateRecord> | null>
-  >;
+  setEditingTemplate: React.Dispatch<React.SetStateAction<Partial<TemplateRecord> | null>>;
   onUseTemplate?: (template: TemplateRecord) => void;
   dialog: ReturnType<typeof useDialog>;
   previewHtml: string;
@@ -53,7 +51,6 @@ export function TemplatesPanel({
                 <div className="flex flex-1 flex-col gap-1">
                   <label className="text-label">Template Title</label>
                   <Input
-                    
                     value={editingTemplate.title || ''}
                     onChange={(e) =>
                       setEditingTemplate({ ...editingTemplate, title: e.target.value })
@@ -85,7 +82,6 @@ export function TemplatesPanel({
               <div className="flex flex-col gap-1">
                 <label className="text-label">Subject</label>
                 <Input
-                  
                   value={editingTemplate.subject || ''}
                   onChange={(e) =>
                     setEditingTemplate({ ...editingTemplate, subject: e.target.value })
@@ -101,9 +97,7 @@ export function TemplatesPanel({
                 <MarkdownEditor
                   instanceRef={editorRef}
                   value={editingTemplate.content || ''}
-                  onChange={(val) =>
-                    setEditingTemplate({ ...editingTemplate, content: val })
-                  }
+                  onChange={(val) => setEditingTemplate({ ...editingTemplate, content: val })}
                   placeholder="Hello {singerName},&#10;&#10;Details: {eventDetails}"
                   minHeight="250px"
                 />
@@ -114,7 +108,7 @@ export function TemplatesPanel({
           <AppCard
             title="Template Preview"
             actions={
-              <div className="flex gap-4 rounded-b-lg border-t border-border bg-slate-50 p-4">
+              <div className="border-border flex gap-4 rounded-b-lg border-t bg-slate-50 p-4">
                 <Button
                   type="button"
                   variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
@@ -137,19 +131,19 @@ export function TemplatesPanel({
             }
           >
             <div
-              className={`flex justify-center overflow-hidden rounded-lg border border-border bg-slate-100 transition-all duration-300 ${previewDevice === 'mobile' ? 'px-[15px] py-[30px]' : 'p-0'}`}
+              className={`border-border flex justify-center overflow-hidden rounded-lg border bg-slate-100 transition-all duration-300 ${previewDevice === 'mobile' ? 'px-[15px] py-[30px]' : 'p-0'}`}
             >
               <div
-                className={`flex min-h-[400px] w-full flex-col bg-surface shadow-md transition-all duration-300 ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
+                className={`bg-surface flex min-h-[400px] w-full flex-col shadow-md transition-all duration-300 ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
               >
-                <div className="flex flex-col gap-1.5 border-b border-border bg-slate-50 p-4 text-xs">
-                  <div className="flex text-text-muted">
+                <div className="border-border flex flex-col gap-1.5 border-b bg-slate-50 p-4 text-xs">
+                  <div className="text-text-muted flex">
                     <span className="w-[60px] font-semibold">From:</span>
                     <span className="text-slate-800">
                       {choirName} &lt;{senderEmail}&gt;
                     </span>
                   </div>
-                  <div className="flex text-text-muted">
+                  <div className="text-text-muted flex">
                     <span className="w-[60px] font-semibold">Subject:</span>
                     <strong className="text-slate-900">
                       {resolvePreviewContent(editingTemplate.subject || '', null, null)}
@@ -174,11 +168,7 @@ export function TemplatesPanel({
           </AppCard>
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setEditingTemplate(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setEditingTemplate(null)}>
               Cancel
             </Button>
             <Button
@@ -237,7 +227,8 @@ export function TemplatesPanel({
     >
       <div className="flex flex-col gap-4">
         <p className="text-muted text-sm">
-          Manage message templates. Custom templates can be added, edited, or deleted. System-defined templates cannot be deleted.
+          Manage message templates. Custom templates can be added, edited, or deleted.
+          System-defined templates cannot be deleted.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] border-collapse text-left">
@@ -264,14 +255,14 @@ export function TemplatesPanel({
                       <div className="flex items-center gap-1.5">
                         <span>{tpl.title}</span>
                         {tpl.isSystemTemplate && (
-                          <span className="inline-flex items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase opacity-80">
+                          <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
                             System
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="p-3 px-4">
-                      <span className="inline-flex w-fit items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
+                      <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
                         {tpl.type}
                       </span>
                     </td>

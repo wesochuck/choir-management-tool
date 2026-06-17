@@ -14,7 +14,17 @@ export interface RangeProps {
   style?: CSSProperties;
 }
 
-export function Range({ value, min, max, step, onInput, onChange, className, id, style }: RangeProps) {
+export function Range({
+  value,
+  min,
+  max,
+  step,
+  onInput,
+  onChange,
+  className,
+  id,
+  style,
+}: RangeProps) {
   if (process.env.NODE_ENV === 'test') {
     return (
       <input
@@ -46,8 +56,12 @@ export function Range({ value, min, max, step, onInput, onChange, className, id,
         value,
         className,
         style,
-        onSlInput: onInput ? (e: unknown) => onInput((e as CustomEvent).detail.value as number) : undefined,
-        onSlChange: onChange ? (e: unknown) => onChange((e as CustomEvent).detail.value as number) : undefined,
+        onSlInput: onInput
+          ? (e: unknown) => onInput((e as CustomEvent).detail.value as number)
+          : undefined,
+        onSlChange: onChange
+          ? (e: unknown) => onChange((e as CustomEvent).detail.value as number)
+          : undefined,
       } as Record<string, unknown>)}
     />
   );

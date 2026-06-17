@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
-import { 
-  settingsService, 
-  getVoicePartsAndSections, 
+import {
+  settingsService,
+  getVoicePartsAndSections,
   saveVoicePartsAndSections,
   type VoicePartDef,
-  type SectionDef
+  type SectionDef,
 } from '../services/settingsService';
 import { calculateSettingsDirty } from '../lib/settings/dirtyCheck';
 
@@ -21,7 +21,10 @@ export interface RosterConfigState {
   voiceParts: VoicePartDef[];
 }
 
-export function validateRosterConfig(config: { sections: SectionDef[]; voiceParts: VoicePartDef[] }): string | null {
+export function validateRosterConfig(config: {
+  sections: SectionDef[];
+  voiceParts: VoicePartDef[];
+}): string | null {
   const { sections, voiceParts } = config;
 
   // Validate Sections
@@ -30,7 +33,7 @@ export function validateRosterConfig(config: { sections: SectionDef[]; voicePart
     const sec = sections[i];
     const code = sec.code.trim().toUpperCase();
     const name = sec.name.trim();
-    
+
     if (!code) {
       return 'Error: Section bucket code cannot be empty.';
     }
@@ -145,10 +148,7 @@ export function useRosterConfigForm({
   }, [rosterSettings, voiceSettings, initialConfigState, setFilter]);
 
   const loadConfig = useCallback(async () => {
-    const [rosterResult, voiceResult] = await Promise.all([
-      refetchRoster(),
-      refetchVoice(),
-    ]);
+    const [rosterResult, voiceResult] = await Promise.all([refetchRoster(), refetchVoice()]);
 
     const rosterSettings = rosterResult.data;
     const voiceSettings = voiceResult.data;
@@ -198,7 +198,7 @@ export function useRosterConfigForm({
       statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
       maxRehearsalMisses: configMaxRehearsalMisses,
       sections: configSections,
-      voiceParts: configVoiceParts
+      voiceParts: configVoiceParts,
     });
   }, [
     initialConfigState,
@@ -209,7 +209,7 @@ export function useRosterConfigForm({
     configAutomationRecoveryEnabled,
     configMaxRehearsalMisses,
     configSections,
-    configVoiceParts
+    configVoiceParts,
   ]);
 
   const handleConfigSave = async () => {
@@ -218,7 +218,7 @@ export function useRosterConfigForm({
 
     const validationError = validateRosterConfig({
       sections: configSections,
-      voiceParts: configVoiceParts
+      voiceParts: configVoiceParts,
     });
 
     if (validationError) {
@@ -236,7 +236,7 @@ export function useRosterConfigForm({
         statusAutomationEnabled: configAutomationEnabled,
         statusAutomationMissThreshold: configAutomationMissThreshold,
         statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
-        maxRehearsalMisses: configMaxRehearsalMisses
+        maxRehearsalMisses: configMaxRehearsalMisses,
       });
       await saveVoicePartsAndSections(configVoiceParts, configSections);
 

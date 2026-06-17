@@ -11,7 +11,7 @@ export const checkValidation = (
   selectedEventId: string
 ): ValidationWarning[] => {
   const warnings: ValidationWarning[] = [];
-  
+
   const eventPlaceholders = [
     '{eventTitle}',
     '{eventType}',
@@ -20,7 +20,7 @@ export const checkValidation = (
     '{eventDetails}',
     '{setlist}',
     '{playerLink}',
-    '{rsvpLinks}'
+    '{rsvpLinks}',
   ];
 
   if ((currentChannel === 'Email' || currentChannel === 'Both') && !subject.trim()) {
@@ -31,9 +31,10 @@ export const checkValidation = (
     });
   }
 
-  const hasPlaceholder = eventPlaceholders.some(placeholder => 
-    messageBody.toLowerCase().includes(placeholder.toLowerCase()) || 
-    subject.toLowerCase().includes(placeholder.toLowerCase())
+  const hasPlaceholder = eventPlaceholders.some(
+    (placeholder) =>
+      messageBody.toLowerCase().includes(placeholder.toLowerCase()) ||
+      subject.toLowerCase().includes(placeholder.toLowerCase())
   );
 
   if (hasPlaceholder && !selectedEventId) {

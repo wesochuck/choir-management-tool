@@ -129,11 +129,11 @@ export const calculateAutoPaint = (
     for (let seatIndex = 0; seatIndex < rowSize; seatIndex++) {
       // Calculate target capacity weight thresholds
       const currentSeatTargetIndex = Math.floor((filledSeatsCount / totalSeats) * totalSingers);
-      
+
       // Map index position linearly to section bounds
       let trackingSum = 0;
       let chosenSection = sectionOrder[sectionOrder.length - 1];
-      
+
       for (let i = 0; i < sectionOrder.length; i++) {
         trackingSum += sectionCounts[sectionOrder[i]] || 0;
         if (currentSeatTargetIndex < trackingSum) {
@@ -141,7 +141,7 @@ export const calculateAutoPaint = (
           break;
         }
       }
-      
+
       suggestions[`${ri}-${seatIndex}`] = chosenSection;
       filledSeatsCount++;
     }

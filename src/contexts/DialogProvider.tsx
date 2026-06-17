@@ -14,24 +14,27 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
   const [promptValue, setPromptValue] = useState('');
   const [toast, setToast] = useState<{ message: string; id: number } | null>(null);
 
-  const closeDialog = useCallback((value: boolean | string | null) => {
-    setActiveDialog((current) => {
-      if (!current) {
+  const closeDialog = useCallback(
+    (value: boolean | string | null) => {
+      setActiveDialog((current) => {
+        if (!current) {
+          return null;
+        }
+
+        if (current.type === 'message') {
+          current.resolve();
+        } else if (current.type === 'confirm') {
+          current.resolve(value === true);
+        } else {
+          current.resolve(typeof value === 'boolean' ? (value ? promptValue : null) : value);
+        }
+
         return null;
-      }
-
-      if (current.type === 'message') {
-        current.resolve();
-      } else if (current.type === 'confirm') {
-        current.resolve(value === true);
-      } else {
-        current.resolve(typeof value === 'boolean' ? (value ? promptValue : null) : value);
-      }
-
-      return null;
-    });
-    setPromptValue('');
-  }, [promptValue]);
+      });
+      setPromptValue('');
+    },
+    [promptValue]
+  );
 
   const showMessage = useCallback((options: MessageOptions) => {
     return new Promise<void>((resolve) => {
@@ -68,11 +71,14 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
     const id = Date.now();
     setToast({ message, id });
     setTimeout(() => {
-      setToast(current => current?.id === id ? null : current);
+      setToast((current) => (current?.id === id ? null : current));
     }, duration);
   }, []);
 
-  const value = useMemo(() => ({ showMessage, confirm, prompt, showToast }), [showMessage, confirm, prompt, showToast]);
+  const value = useMemo(
+    () => ({ showMessage, confirm, prompt, showToast }),
+    [showMessage, confirm, prompt, showToast]
+  );
   const variant: DialogVariant = activeDialog?.options.variant || 'info';
 
   return (
@@ -82,7 +88,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
       {toast && (
         <div
           key={toast.id}
-          className="pointer-events-none fixed right-6 bottom-6 z-[9999] flex animate-toast-slide-in items-center gap-2 rounded-lg border border-white/10 bg-[var(--text-color,#1f2937)] px-5 py-3 text-xs font-medium text-white shadow-lg backdrop-blur"
+          className="animate-toast-slide-in pointer-events-none fixed right-6 bottom-6 z-[9999] flex items-center gap-2 rounded-lg border border-white/10 bg-[var(--text-color,#1f2937)] px-5 py-3 text-xs font-medium text-white shadow-lg backdrop-blur"
         >
           <span className="text-sm">ℹ️</span>
           <span>{toast.message}</span>
@@ -104,23 +110,26 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
               )}
               <Button
                 variant={
-                  variant === 'danger' ? 'danger' :
-                  variant === 'warning' ? 'secondary' :
-                  'primary'
+                  variant === 'danger' ? 'danger' : variant === 'warning' ? 'secondary' : 'primary'
                 }
-                disabled={activeDialog.type === 'prompt' && activeDialog.options.required && !promptValue.trim()}
+                disabled={
+                  activeDialog.type === 'prompt' &&
+                  activeDialog.options.required &&
+                  !promptValue.trim()
+                }
                 onClick={() => closeDialog(true)}
               >
-                {activeDialog.options.confirmLabel || (activeDialog.type === 'confirm' || activeDialog.type === 'prompt' ? 'Confirm' : 'OK')}
+                {activeDialog.options.confirmLabel ||
+                  (activeDialog.type === 'confirm' || activeDialog.type === 'prompt'
+                    ? 'Confirm'
+                    : 'OK')}
               </Button>
             </div>
           )
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="text-body m-0 whitespace-pre-wrap">
-            {activeDialog?.options.message}
-          </div>
+          <div className="text-body m-0 whitespace-pre-wrap">{activeDialog?.options.message}</div>
           {activeDialog?.type === 'prompt' && (
             <div className="flex flex-col gap-1">
               <textarea
@@ -129,10 +138,10 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                 onChange={(e) => setPromptValue(e.target.value)}
                 placeholder={activeDialog.options.placeholder}
                 maxLength={activeDialog.options.maxLength}
-                className="box-border min-h-[80px] w-full resize-y rounded-sm border border-border p-[10px] font-[inherit] text-[0.9rem]"
+                className="border-border box-border min-h-[80px] w-full resize-y rounded-sm border p-[10px] font-[inherit] text-[0.9rem]"
               />
               {activeDialog.options.maxLength && (
-                <div className="text-right text-[0.7rem] text-text-muted">
+                <div className="text-text-muted text-right text-[0.7rem]">
                   {promptValue.length} / {activeDialog.options.maxLength}
                 </div>
               )}

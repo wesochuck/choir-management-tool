@@ -1,10 +1,11 @@
-@import "tailwindcss";
-@plugin "@tailwindcss/typography";
-@import "@shoelace-style/shoelace/dist/themes/light.css";
-@import "@shoelace-style/shoelace/dist/themes/dark.css";
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@import '@shoelace-style/shoelace/dist/themes/light.css';
+@import '@shoelace-style/shoelace/dist/themes/dark.css';
 
 /* Map custom brand colors to Shoelace/Web Awesome design tokens */
-:root, .sl-theme-light {
+:root,
+.sl-theme-light {
   --sl-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
   --sl-color-primary-50: #f4f7f5;
@@ -32,7 +33,8 @@
   --color-surface-muted: var(--color-slate-50);
 }
 
-.sl-theme-dark, .dark {
+.sl-theme-dark,
+.dark {
   --sl-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
   --sl-color-primary-50: #1b3021;
@@ -82,16 +84,16 @@
   --color-surface-muted: var(--color-surface-muted);
 
   /* Section Representation Colors */
-  --color-section-red: #EF4444;
-  --color-section-orange: #F97316;
-  --color-section-amber: #F59E0B;
-  --color-section-green: #10B981;
-  --color-section-cyan: #06B6D4;
-  --color-section-blue: #3B82F6;
-  --color-section-indigo: #6366F1;
-  --color-section-purple: #8B5CF6;
-  --color-section-pink: #EC4899;
-  --color-section-slate: #64748B;
+  --color-section-red: #ef4444;
+  --color-section-orange: #f97316;
+  --color-section-amber: #f59e0b;
+  --color-section-green: #10b981;
+  --color-section-cyan: #06b6d4;
+  --color-section-blue: #3b82f6;
+  --color-section-indigo: #6366f1;
+  --color-section-purple: #8b5cf6;
+  --color-section-pink: #ec4899;
+  --color-section-slate: #64748b;
 
   /* Typography Scale */
   --text-display: clamp(2rem, 5vw, 3rem);
@@ -134,13 +136,25 @@
    Global Custom Keyframe Animations
    ---------------------------------------------------- */
 @keyframes toast-slide-in {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes login-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes drop-zone-pulse {
@@ -148,34 +162,64 @@
     box-shadow: 0 0 0 0 rgb(59 130 246 / 50%);
     border-color: #3b82f6;
   }
-  70% { box-shadow: 0 0 0 8px rgb(59 130 246 / 0%); border-color: #2563eb; }
-  100% { box-shadow: 0 0 0 0 rgb(59 130 246 / 0%); border-color: #3b82f6; }
+  70% {
+    box-shadow: 0 0 0 8px rgb(59 130 246 / 0%);
+    border-color: #2563eb;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(59 130 246 / 0%);
+    border-color: #3b82f6;
+  }
 }
 
 @keyframes bounce-subtle {
-  from { transform: translateY(0); }
-  to { transform: translateY(-4px); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
+  }
 }
 
 @keyframes modal-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modal-slide-up {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes pulse-once {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes save-bar-slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 /* ----------------------------------------------------
@@ -206,23 +250,23 @@
     margin: 0 !important;
   }
 
-  [data-print-mode="text"] [data-seating-text-list] {
+  [data-print-mode='text'] [data-seating-text-list] {
     display: block !important;
   }
 
-  [data-print-mode="visual"] [data-seating-text-list] {
+  [data-print-mode='visual'] [data-seating-text-list] {
     display: none !important;
   }
 
-  [data-print-mode="visual"] [data-unassigned-print] {
+  [data-print-mode='visual'] [data-unassigned-print] {
     display: none !important;
   }
 
-  body:has([data-print-mode="visual"]) .admin-layout-header {
+  body:has([data-print-mode='visual']) .admin-layout-header {
     display: none !important;
   }
 
-  [data-print-mode="visual"] .grid-print {
+  [data-print-mode='visual'] .grid-print {
     --seat-size: var(--print-seat-size, 42px) !important;
     --seat-font-size: 8px !important;
     --seat-name-font-size: 10px !important;
@@ -230,7 +274,7 @@
     --seat-empty-font-size: 8px !important;
   }
 
-  [data-print-mode="visual"] .seating-row-label {
+  [data-print-mode='visual'] .seating-row-label {
     padding-right: 8px !important;
     width: 85px !important;
     font-size: 11px !important;
@@ -238,11 +282,11 @@
     white-space: nowrap !important;
   }
 
-  [data-print-mode="visual"] .seating-row-label span {
+  [data-print-mode='visual'] .seating-row-label span {
     font-size: 10px !important;
   }
 
-  [data-print-mode="visual"] .director-indicator {
+  [data-print-mode='visual'] .director-indicator {
     display: flex !important;
   }
 
@@ -346,4 +390,3 @@ sl-dialog::part(close-button) {
 sl-dialog::part(close-button__base):hover {
   color: var(--color-primary-deep);
 }
-

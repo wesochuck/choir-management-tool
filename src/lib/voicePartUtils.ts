@@ -18,17 +18,17 @@ export function getSectionFromVoicePart(part: string): string {
 }
 
 export function getSectionsFromVoiceParts(voiceParts: VoicePartDef[]): SectionDef[] {
-  const codes = Array.from(new Set(voiceParts.map(vp => vp.sectionCode).filter(Boolean)));
+  const codes = Array.from(new Set(voiceParts.map((vp) => vp.sectionCode).filter(Boolean)));
   const nameMap: Record<string, string> = {
-    'S': 'Sopranos',
-    'A': 'Altos',
-    'T': 'Tenors',
-    'B': 'Basses',
-    'Other': 'Other'
+    S: 'Sopranos',
+    A: 'Altos',
+    T: 'Tenors',
+    B: 'Basses',
+    Other: 'Other',
   };
-  return codes.map(code => ({
+  return codes.map((code) => ({
     code,
-    name: nameMap[code] || `${code} Section`
+    name: nameMap[code] || `${code} Section`,
   }));
 }
 
@@ -42,8 +42,8 @@ export function matchesVoiceParts(
   voiceParts: VoicePartDef[]
 ): boolean {
   if (!filterParts || filterParts.length === 0) return true;
-  
-  return filterParts.some(filterPart => {
+
+  return filterParts.some((filterPart) => {
     // 0. Special case for Administrative/Staff (no voice part)
     if (filterPart === '__STAFF__') return !profilePart;
 
@@ -51,7 +51,7 @@ export function matchesVoiceParts(
     if (profilePart === filterPart) return true;
 
     // 2. Dynamic section match via config
-    const vpDef = voiceParts.find(vp => vp.label === profilePart);
+    const vpDef = voiceParts.find((vp) => vp.label === profilePart);
     if (vpDef && vpDef.sectionCode === filterPart) return true;
 
     // 3. Fallback regex match for unconfigured or custom legacy values
@@ -74,7 +74,7 @@ export function isSectionMismatch(
   voiceParts: VoicePartDef[]
 ): boolean {
   if (!profilePart || !suggestedSection) return false;
-  const vpDef = voiceParts.find(vp => vp.label === profilePart);
+  const vpDef = voiceParts.find((vp) => vp.label === profilePart);
   if (!vpDef || !vpDef.sectionCode) return false;
   return vpDef.sectionCode.toUpperCase() !== suggestedSection.toUpperCase();
 }

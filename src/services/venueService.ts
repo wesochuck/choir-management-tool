@@ -38,4 +38,3 @@ export async function checkVenueDependencies(venueId: string): Promise<boolean> 
   });
   return result.totalItems > 0;
 }
-

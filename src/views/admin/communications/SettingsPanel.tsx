@@ -22,9 +22,7 @@ export interface SettingsPanelProps {
   templates: TemplateRecord[];
   setTemplates: React.Dispatch<React.SetStateAction<TemplateRecord[]>>;
   editingTemplate: Partial<TemplateRecord> | null;
-  setEditingTemplate: React.Dispatch<
-    React.SetStateAction<Partial<TemplateRecord> | null>
-  >;
+  setEditingTemplate: React.Dispatch<React.SetStateAction<Partial<TemplateRecord> | null>>;
   previewHtml: string;
   onInsertPlaceholder: (tag: string) => void;
   editorRef: React.MutableRefObject<EasyMDE | null>;
@@ -130,11 +128,7 @@ export function SettingsPanel({
           </AppCard>
 
           <div className="flex justify-end">
-            <Button
-              variant="primary"
-              onClick={onSaveSettings}
-              disabled={isSavingConfig}
-            >
+            <Button variant="primary" onClick={onSaveSettings} disabled={isSavingConfig}>
               {isSavingConfig ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>
@@ -146,9 +140,7 @@ export function SettingsPanel({
 
 function SettingsGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">
-      {children}
-    </div>
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">{children}</div>
   );
 }
 
@@ -169,7 +161,6 @@ function Field({
     <div className="flex flex-col gap-1">
       <label className="text-label">{label}</label>
       <Input
-        
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

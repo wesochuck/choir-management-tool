@@ -26,7 +26,8 @@ export const useVenues = () => {
   });
 
   const editVenueMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Venue> }) => venueService.updateVenue(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Venue> }) =>
+      venueService.updateVenue(id, data),
     onSuccess: invalidateVenues,
   });
 

@@ -8,10 +8,7 @@ import type { ListResult } from 'pocketbase';
 import { pb } from '../lib/pocketbase';
 import type { Event } from './eventService';
 import { ticketService } from './ticketService';
-import {
-  DEFAULT_COMMUNICATION_CONFIG,
-  type CommunicationConfig,
-} from './settingsService';
+import { DEFAULT_COMMUNICATION_CONFIG, type CommunicationConfig } from './settingsService';
 
 import { messageRepository } from './communication/messageRepository';
 import { resolveRecipients } from './communication/recipientResolver';
@@ -46,10 +43,7 @@ export type {
   SentTaskStatusOptions,
 } from './communication/types';
 
-export {
-  renderManualAttendanceReportSubject,
-  renderManualAttendanceReportTemplate,
-};
+export { renderManualAttendanceReportSubject, renderManualAttendanceReportTemplate };
 
 import type {
   CommunicationRecipient,
@@ -84,11 +78,19 @@ export const communicationService = {
   },
   resolveRsvpPlaceholders,
   resolvePollPlaceholders,
-  resolveSingerPlaceholders: async (content: string, eventId?: string): Promise<string> => {
-    const response = await pb.send<{ resolvedContent: string }>('/api/singer/resolve-placeholders', {
-      method: 'POST',
-      body: { content, eventId },
+  getSentPollMessages: async (): Promise<import('pocketbase').RecordModel[]> => {
+    return await pb.collection('messages').getFullList({
+      filter: 'status = "Sent" && content ~ "{{POLL_LINK:"',
     });
+  },
+  resolveSingerPlaceholders: async (content: string, eventId?: string): Promise<string> => {
+    const response = await pb.send<{ resolvedContent: string }>(
+      '/api/singer/resolve-placeholders',
+      {
+        method: 'POST',
+        body: { content, eventId },
+      }
+    );
     return response.resolvedContent;
   },
   sendBulkMessage,
@@ -123,9 +125,7 @@ export const communicationService = {
   getEvents: () => Promise<Event[]>;
   getConfig: () => Promise<CommunicationConfig>;
   saveConfig: (value: CommunicationConfig) => Promise<unknown>;
-  resolveRecipients: (
-    filters: CommunicationFilters
-  ) => Promise<CommunicationRecipient[]>;
+  resolveRecipients: (filters: CommunicationFilters) => Promise<CommunicationRecipient[]>;
   resolveAttendanceReportRecipients: () => Promise<CommunicationRecipient[]>;
   resolveTicketBuyerRecipients: (eventId: string) => Promise<CommunicationRecipient[]>;
   resolveRsvpPlaceholders: (
@@ -137,13 +137,11 @@ export const communicationService = {
     content: string,
     recipients: CommunicationRecipient[]
   ) => Promise<{ previewContent: string; logs: string[] }>;
+  getSentPollMessages: () => Promise<import('pocketbase').RecordModel[]>;
   resolveSingerPlaceholders: (content: string, eventId?: string) => Promise<string>;
   saveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   archiveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
-  sendBulkMessage: (
-    data: SendMessageInput,
-    draftId?: string
-  ) => Promise<SendMessageResult>;
+  sendBulkMessage: (data: SendMessageInput, draftId?: string) => Promise<SendMessageResult>;
   triggerAttendanceReport: (eventId: string) => Promise<MessageRecord>;
   defaultConfig: CommunicationConfig;
   statuses: string[];

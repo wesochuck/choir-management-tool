@@ -26,8 +26,8 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
   editorRef,
   warnings,
 }) => {
-  const subjectWarning = warnings.find(w => w.field === 'subject');
-  const bodyWarning = warnings.find(w => w.field === 'body');
+  const subjectWarning = warnings.find((w) => w.field === 'subject');
+  const bodyWarning = warnings.find((w) => w.field === 'body');
 
   return (
     <div className="flex flex-col gap-4">
@@ -40,12 +40,12 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
             disabled={messageType === 'SMS'}
-            placeholder={messageType === 'SMS' ? 'Subject not supported for SMS' : 'Enter subject...'}
+            placeholder={
+              messageType === 'SMS' ? 'Subject not supported for SMS' : 'Enter subject...'
+            }
           />
           {subjectWarning && (
-            <span className="mt-1 text-xs text-danger-text">
-              ⚠️ {subjectWarning.message}
-            </span>
+            <span className="text-danger-text mt-1 text-xs">⚠️ {subjectWarning.message}</span>
           )}
         </div>
         <div className="flex flex-col gap-1">
@@ -72,12 +72,9 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           minHeight="350px"
         />
         {bodyWarning && (
-          <span className="mt-1 text-xs text-amber-600">
-            ⚠️ {bodyWarning.message}
-          </span>
+          <span className="mt-1 text-xs text-amber-600">⚠️ {bodyWarning.message}</span>
         )}
       </div>
     </div>
   );
 };
-

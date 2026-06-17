@@ -19,14 +19,14 @@ export const musicLibraryWorkflows = {
       const formData = new FormData();
       formData.append('audioFiles', options.tuttiFile);
       const uploaded = await musicLibraryService.updatePiece(parent.id, formData);
-      
+
       const lastFile = uploaded.audioFiles?.[uploaded.audioFiles.length - 1];
       if (lastFile) {
         parent = await musicLibraryService.updatePiece(parent.id, {
           audioTrackMapping: {
             ...(parent.audioTrackMapping || {}),
-            tutti: lastFile
-          }
+            tutti: lastFile,
+          },
         });
       }
     }
@@ -43,12 +43,12 @@ export const musicLibraryWorkflows = {
             copies: parent.copies !== undefined ? parent.copies : undefined,
             catalogId: parent.catalogId || undefined,
             genres: parent.genres || [],
-            performances: []
+            performances: [],
           })
         )
       );
     }
 
     return parent;
-  }
+  },
 };

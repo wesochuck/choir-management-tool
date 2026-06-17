@@ -99,7 +99,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     const eventRosters = eventRosterQuery.data ?? [];
     const parentRosters =
       currentEvent?.type === 'Rehearsal' && currentEvent.parentPerformanceId
-        ? parentRosterQuery.data ?? []
+        ? (parentRosterQuery.data ?? [])
         : eventRosters;
 
     const rosterMap: Record<string, EventRoster> = {};
@@ -115,7 +115,11 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
         const parentRoster = parentRosterMap[p.id];
 
         let resolvedRsvp: 'Yes' | 'No' | 'Pending' = roster?.rsvp || 'Pending';
-        if (resolvedRsvp === 'Pending' && currentEvent?.type === 'Rehearsal' && parentRoster?.rsvp === 'No') {
+        if (
+          resolvedRsvp === 'Pending' &&
+          currentEvent?.type === 'Rehearsal' &&
+          parentRoster?.rsvp === 'No'
+        ) {
           resolvedRsvp = 'No';
         }
 
@@ -142,9 +146,14 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     (parentEventId ? parentRosterQuery.isLoading : false);
 
   const queryError =
-    eventsQuery.error ?? activeProfilesQuery.error ?? eventRosterQuery.error ?? parentRosterQuery.error;
+    eventsQuery.error ??
+    activeProfilesQuery.error ??
+    eventRosterQuery.error ??
+    parentRosterQuery.error;
   const error = queryError
-    ? (queryError instanceof Error ? queryError.message : 'Failed to fetch attendance')
+    ? queryError instanceof Error
+      ? queryError.message
+      : 'Failed to fetch attendance'
     : localError;
 
   // --- Query cache helpers ---
@@ -153,7 +162,11 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) }),
       ...(parentEventIdRef.current
-        ? [queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.byEventId(parentEventIdRef.current) })]
+        ? [
+            queryClient.invalidateQueries({
+              queryKey: queryKeys.eventRoster.byEventId(parentEventIdRef.current),
+            }),
+          ]
         : []),
     ]);
   }, [queryClient, eventId]);
@@ -167,7 +180,9 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
       }),
     onMutate: async ({ profileId, rsvp }): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
-      const previousRosters = queryClient.getQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId));
+      const previousRosters = queryClient.getQueryData<EventRoster[]>(
+        queryKeys.eventRoster.byEventId(eventId)
+      );
       queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
         if (!old) return old;
         return old.map((r) => (r.profile === profileId ? { ...r, rsvp } : r));
@@ -185,20 +200,30 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
   });
 
   const attendanceMutation = useMutation({
-    mutationFn: ({ profileId, next }: { profileId: string; next: 'Present' | 'Absent' | 'Pending' }) =>
+    mutationFn: ({
+      profileId,
+      next,
+    }: {
+      profileId: string;
+      next: 'Present' | 'Absent' | 'Pending';
+    }) =>
       rosterService.upsertAttendance(eventId, profileId, next, {
         onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
       }),
     onMutate: async ({ profileId, next }): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
-      const previousRosters = queryClient.getQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId));
+      const previousRosters = queryClient.getQueryData<EventRoster[]>(
+        queryKeys.eventRoster.byEventId(eventId)
+      );
       const existingRoster = previousRosters?.find((r) => r.profile === profileId);
       const targetRsvp =
-        existingRoster?.rsvp === 'Pending' && next === 'Present' ? 'Yes' : existingRoster?.rsvp ?? 'Pending';
+        existingRoster?.rsvp === 'Pending' && next === 'Present'
+          ? 'Yes'
+          : (existingRoster?.rsvp ?? 'Pending');
       queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
         if (!old) return old;
         return old.map((r) =>
-          r.profile === profileId ? { ...r, attendance: next, rsvp: targetRsvp } : r,
+          r.profile === profileId ? { ...r, attendance: next, rsvp: targetRsvp } : r
         );
       });
       return { previousRosters };
@@ -223,12 +248,19 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
       folderNumber?: string;
       folderReturned?: boolean;
     }) =>
-      rosterService.upsertFolder(eventId, profileId, { folderNumber, folderReturned }, {
-        onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
-      }),
+      rosterService.upsertFolder(
+        eventId,
+        profileId,
+        { folderNumber, folderReturned },
+        {
+          onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
+        }
+      ),
     onMutate: async ({ profileId, folderNumber, folderReturned }): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
-      const previousRosters = queryClient.getQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId));
+      const previousRosters = queryClient.getQueryData<EventRoster[]>(
+        queryKeys.eventRoster.byEventId(eventId)
+      );
       queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
         if (!old) return old;
         return old.map((r) =>
@@ -238,7 +270,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
                 folderNumber: folderNumber !== undefined ? folderNumber : r.folderNumber,
                 folderReturned: folderReturned !== undefined ? folderReturned : r.folderReturned,
               }
-            : r,
+            : r
         );
       });
       return { previousRosters };
@@ -262,7 +294,9 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     },
     onMutate: async ({ updates }): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
-      const previousRosters = queryClient.getQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId));
+      const previousRosters = queryClient.getQueryData<EventRoster[]>(
+        queryKeys.eventRoster.byEventId(eventId)
+      );
       const updateMap = new Map(updates.map((u) => [u.profileId, u.attendance]));
       queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
         if (!old) return old;
@@ -289,21 +323,21 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     async (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => {
       await rsvpMutation.mutateAsync({ profileId, rsvp: nextRsvp });
     },
-    [rsvpMutation],
+    [rsvpMutation]
   );
 
   const setAttendance = useCallback(
     async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
       await attendanceMutation.mutateAsync({ profileId, next });
     },
-    [attendanceMutation],
+    [attendanceMutation]
   );
 
   const updateFolder = useCallback(
     async (profileId: string, folderNumber?: string, folderReturned?: boolean) => {
       await folderMutation.mutateAsync({ profileId, folderNumber, folderReturned });
     },
-    [folderMutation],
+    [folderMutation]
   );
 
   const setAllAttendance = useCallback(
@@ -318,7 +352,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
       if (updates.length === 0) return;
       await bulkAttendanceMutation.mutateAsync({ updates });
     },
-    [eventId, items, bulkAttendanceMutation],
+    [eventId, items, bulkAttendanceMutation]
   );
 
   const refresh = useCallback(async () => {

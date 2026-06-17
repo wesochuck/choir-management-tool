@@ -19,9 +19,7 @@ interface EventCommunicationTemplateValues extends Record<string, string> {
 }
 
 export function getEventVenueName(event: Event, venues: Venue[]): string {
-  return event.venue
-    ? venues.find((venue) => venue.id === event.venue)?.name || 'TBD'
-    : 'TBD';
+  return event.venue ? venues.find((venue) => venue.id === event.venue)?.name || 'TBD' : 'TBD';
 }
 
 function buildEventCommunicationTemplateValues(args: {
@@ -69,11 +67,11 @@ export function buildEventReminderDraft(args: {
     initialEventId: args.event.id,
     initialSubject: renderCommunicationTemplate(
       args.communicationSettings.reminderSubjectTemplate,
-      values,
+      values
     ),
     initialContent: renderCommunicationTemplate(
       args.communicationSettings.reminderBodyTemplate,
-      values,
+      values
     ),
   };
 }

@@ -68,7 +68,9 @@ test('Button renders icon slot', () => {
 
 test('Button calls onClick', () => {
   let clicked = false;
-  const handleClick = () => { clicked = true; };
+  const handleClick = () => {
+    clicked = true;
+  };
   const { container } = render(React.createElement(Button, { onClick: handleClick }, 'Click'));
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
@@ -78,8 +80,12 @@ test('Button calls onClick', () => {
 
 test('Button does NOT call onClick when loading', () => {
   let clicked = false;
-  const handleClick = () => { clicked = true; };
-  const { container } = render(React.createElement(Button, { onClick: handleClick, loading: true }, 'Click'));
+  const handleClick = () => {
+    clicked = true;
+  };
+  const { container } = render(
+    React.createElement(Button, { onClick: handleClick, loading: true }, 'Click')
+  );
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   fireEvent.click(el);
@@ -96,7 +102,9 @@ test('Button renders as anchor when as="a"', () => {
 });
 
 test('Button passes className when using as prop', () => {
-  const { container } = render(React.createElement(Button, { as: 'a', className: 'custom-link' }, 'Link'));
+  const { container } = render(
+    React.createElement(Button, { as: 'a', className: 'custom-link' }, 'Link')
+  );
   const el = container.firstElementChild;
   assert.ok(el, 'renders');
   assert.ok(el.classList.contains('custom-link'), 'has custom className');

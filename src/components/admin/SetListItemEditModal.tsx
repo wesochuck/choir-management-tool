@@ -15,7 +15,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   isOpen,
   item,
   onClose,
-  onSave
+  onSave,
 }) => {
   const dialog = useDialog();
   const [title, setTitle] = useState('');
@@ -43,8 +43,15 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     const durationChanged = duration !== (item.duration || '');
     const notesChanged = notes !== (item.notes || '');
     const typeChanged = type !== (item.type || 'song');
-    const soloChanged = soloSmallGroup !== (!!item.soloSmallGroup);
-    return titleChanged || composerChanged || durationChanged || notesChanged || typeChanged || soloChanged;
+    const soloChanged = soloSmallGroup !== !!item.soloSmallGroup;
+    return (
+      titleChanged ||
+      composerChanged ||
+      durationChanged ||
+      notesChanged ||
+      typeChanged ||
+      soloChanged
+    );
   }, [item, title, composer, duration, notes, type, soloSmallGroup]);
 
   const handleClose = async () => {
@@ -54,7 +61,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         message: 'You have unsaved changes to this set list item. Do you want to discard them?',
         confirmLabel: 'Discard Changes',
         cancelLabel: 'Keep Editing',
-        variant: 'warning'
+        variant: 'warning',
       });
       if (!confirmDiscard) return;
     }
@@ -71,7 +78,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       dialog.showMessage({
         title: 'Invalid Duration',
         message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
-        variant: 'danger'
+        variant: 'danger',
       });
       return;
     }
@@ -79,11 +86,11 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     onSave({
       ...item,
       title: title.trim(),
-      composer: type === 'song' ? (composer.trim() || undefined) : undefined,
+      composer: type === 'song' ? composer.trim() || undefined : undefined,
       duration: normalizedDuration || undefined,
       notes: notes.trim() || undefined,
       type,
-      soloSmallGroup: type === 'song' ? soloSmallGroup : false
+      soloSmallGroup: type === 'song' ? soloSmallGroup : false,
     });
     onClose();
   };
@@ -96,8 +103,12 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       maxWidth="500px"
       footer={
         <div className="flex justify-end gap-2">
-          <Button type="button" onClick={handleClose} variant="outline">Cancel</Button>
-          <Button variant="primary" onClick={() => handleSubmit()}>Update Item</Button>
+          <Button type="button" onClick={handleClose} variant="outline">
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={() => handleSubmit()}>
+            Update Item
+          </Button>
         </div>
       }
     >
@@ -126,28 +137,19 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
 
         <div className="flex flex-col gap-1">
           <label className="text-label">Title</label>
-          <Input
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            
-          />
+          <Input required value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
 
         {type === 'song' && (
           <div className="flex flex-col gap-1">
             <label className="text-label">Composer/Arranger</label>
-            <Input
-              value={composer}
-              onChange={(e) => setComposer(e.target.value)}
-              
-            />
+            <Input value={composer} onChange={(e) => setComposer(e.target.value)} />
           </div>
         )}
 
         {type === 'song' && (
-          <div 
-            className={`flex flex-row items-center gap-3 rounded-xl border p-3 px-4 shadow-sm cursor-pointer transition-colors ${soloSmallGroup ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
+          <div
+            className={`flex cursor-pointer flex-row items-center gap-3 rounded-xl border p-3 px-4 shadow-sm transition-colors ${soloSmallGroup ? 'border-primary bg-primary-light text-primary-deep' : 'border-border bg-surface'}`}
             onClick={() => setSoloSmallGroup(!soloSmallGroup)}
           >
             <input
@@ -155,7 +157,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               checked={soloSmallGroup}
               onChange={(e) => setSoloSmallGroup(e.target.checked)}
               onClick={(e) => e.stopPropagation()}
-              className="size-[18px] cursor-pointer accent-primary"
+              className="accent-primary size-[18px] cursor-pointer"
             />
             <span className="text-[14px] font-medium">🎤 Mark as Solo / Small Group</span>
           </div>
@@ -167,7 +169,6 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
             placeholder="e.g. 3:30"
-            
           />
         </div>
 

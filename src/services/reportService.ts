@@ -35,12 +35,14 @@ export const reportService = {
 
     // 2. Get all rehearsals for this performance
     const rehearsals = await pb.collection('events').getFullList<Event>({
-      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', { performanceId }),
+      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', {
+        performanceId,
+      }),
       sort: 'date',
     });
 
     // 3. Get all rosters for these rehearsals
-    const rehearsalIds = rehearsals.map(r => r.id);
+    const rehearsalIds = rehearsals.map((r) => r.id);
     if (rehearsalIds.length === 0) {
       return {
         performance,
@@ -56,10 +58,13 @@ export const reportService = {
 
     // 4. Get all profiles for name/voicePart mapping
     const profiles = await profileService.getProfiles();
-    const profileMap = new Map(profiles.map(p => [p.id, p]));
+    const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
     // 5. Aggregate data by singer
-    const singerStats = new Map<string, { absences: number; presenceCount: number; total: number }>();
+    const singerStats = new Map<
+      string,
+      { absences: number; presenceCount: number; total: number }
+    >();
 
     for (const item of allRostersFlat) {
       const stats = singerStats.get(item.profile) || { absences: 0, presenceCount: 0, total: 0 };
@@ -72,24 +77,27 @@ export const reportService = {
       singerStats.set(item.profile, stats);
     }
 
-    const singerReports: SingerReport[] = Array.from(singerStats.entries()).map(([profileId, stats]) => {
-      const profile = profileMap.get(profileId);
-      return {
-        profileId,
-        name: profile?.name || 'Unknown',
-        voicePart: profile?.voicePart || 'Unknown',
-        absences: stats.absences,
-        presenceCount: stats.presenceCount,
-        totalEvents: stats.total,
-        attendanceRate: stats.total > 0 ? (stats.presenceCount / stats.total) * 100 : 0,
-      };
-    }).sort((a, b) => b.absences - a.absences || a.name.localeCompare(b.name));
+    const singerReports: SingerReport[] = Array.from(singerStats.entries())
+      .map(([profileId, stats]) => {
+        const profile = profileMap.get(profileId);
+        return {
+          profileId,
+          name: profile?.name || 'Unknown',
+          voicePart: profile?.voicePart || 'Unknown',
+          absences: stats.absences,
+          presenceCount: stats.presenceCount,
+          totalEvents: stats.total,
+          attendanceRate: stats.total > 0 ? (stats.presenceCount / stats.total) * 100 : 0,
+        };
+      })
+      .sort((a, b) => b.absences - a.absences || a.name.localeCompare(b.name));
 
     // 6. Calculate summary metrics
-    const totalAttendanceRates = singerReports.map(r => r.attendanceRate);
-    const avgAttendanceRate = totalAttendanceRates.length > 0
-      ? totalAttendanceRates.reduce((a, b) => a + b, 0) / totalAttendanceRates.length
-      : 0;
+    const totalAttendanceRates = singerReports.map((r) => r.attendanceRate);
+    const avgAttendanceRate =
+      totalAttendanceRates.length > 0
+        ? totalAttendanceRates.reduce((a, b) => a + b, 0) / totalAttendanceRates.length
+        : 0;
 
     return {
       performance,
@@ -98,5 +106,5 @@ export const reportService = {
       avgAttendanceRate,
       singerReports,
     };
-  }
+  },
 };

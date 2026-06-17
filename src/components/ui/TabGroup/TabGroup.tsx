@@ -36,7 +36,7 @@ export function TabGroup({ value, onTabChange, children, className }: TabGroupPr
     <SlTabGroupWithValue
       {...safeSlProps({ value, className } as Record<string, unknown>)}
       onSlTabShow={(e: unknown) => {
-        onTabChange(((e as CustomEvent).detail.name as string));
+        onTabChange((e as CustomEvent).detail.name as string);
       }}
     >
       {children}
@@ -49,7 +49,11 @@ export function Tab({ panel, children, className }: TabProps) {
     return <div className={className}>{children}</div>;
   }
 
-  return <SlTab slot="nav" {...safeSlProps({ panel, className } as Record<string, unknown>)}>{children}</SlTab>;
+  return (
+    <SlTab slot="nav" {...safeSlProps({ panel, className } as Record<string, unknown>)}>
+      {children}
+    </SlTab>
+  );
 }
 
 export function TabPanel({ name, children, className }: TabPanelProps) {
@@ -57,5 +61,9 @@ export function TabPanel({ name, children, className }: TabPanelProps) {
     return <div className={className}>{children}</div>;
   }
 
-  return <SlTabPanel {...safeSlProps({ name, className } as Record<string, unknown>)}>{children}</SlTabPanel>;
+  return (
+    <SlTabPanel {...safeSlProps({ name, className } as Record<string, unknown>)}>
+      {children}
+    </SlTabPanel>
+  );
 }

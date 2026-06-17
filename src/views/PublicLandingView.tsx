@@ -34,7 +34,7 @@ function PublicLandingView() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <Spinner />
       </div>
     );
@@ -42,7 +42,7 @@ function PublicLandingView() {
 
   if (landingQuery.isError || !landingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <p className="text-text-muted">{'Unable to load page content. Please try again later.'}</p>
       </div>
     );
@@ -52,16 +52,18 @@ function PublicLandingView() {
 
   return (
     <PublicLayout>
-      {/* @allow-inline-style - hero background image is dynamic */}
-      <section className="relative flex items-center justify-center text-center py-24 px-6" style={{
-        backgroundImage: heroImageUrl ? `url(${heroImageUrl})` : undefined,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: '400px',
-      }}
+      <section
+        className="relative flex items-center justify-center px-6 py-24 text-center"
+        // @allow-inline-style - hero background image is dynamic
+        style={{
+          backgroundImage: heroImageUrl ? `url(${heroImageUrl})` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          minHeight: '400px',
+        }}
       >
-        <div className={`max-w-3xl ${heroImageUrl ? 'bg-black/50 rounded-lg p-8' : ''}`}>
-          <h1 className={`text-4xl font-bold mb-4 ${heroImageUrl ? 'text-white' : 'text-text'}`}>
+        <div className={`max-w-3xl ${heroImageUrl ? 'rounded-lg bg-black/50 p-8' : ''}`}>
+          <h1 className={`mb-4 text-4xl font-bold ${heroImageUrl ? 'text-white' : 'text-text'}`}>
             {settings.heroHeadline}
           </h1>
           <p className={`text-xl ${heroImageUrl ? 'text-gray-200' : 'text-text-muted'}`}>
@@ -71,12 +73,14 @@ function PublicLandingView() {
       </section>
 
       {settings.aboutUsText && (
-        <section className="max-w-3xl mx-auto px-6 py-16">
+        <section className="mx-auto max-w-3xl px-6 py-16">
           <AppCard title="About Us">
             <div
-              className="prose prose-sm max-w-none text-text"
+              className="prose prose-sm text-text max-w-none"
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(marked.parse(settings.aboutUsText, { async: false }) as string),
+                __html: DOMPurify.sanitize(
+                  marked.parse(settings.aboutUsText, { async: false }) as string
+                ),
               }}
             />
           </AppCard>
@@ -84,27 +88,44 @@ function PublicLandingView() {
       )}
 
       {performanceList.length > 0 && (
-        <section className="max-w-5xl mx-auto px-6 py-16">
-          <h2 className="text-2xl font-bold text-text mb-6">Past Performances</h2>
+        <section className="mx-auto max-w-5xl px-6 py-16">
+          <h2 className="text-text mb-6 text-2xl font-bold">Past Performances</h2>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {performanceList.map((perf) => {
-              const venueName = perf.expand?.venue && typeof perf.expand.venue === 'object' && 'name' in perf.expand.venue
-                ? (perf.expand.venue as { name: string }).name
-                : '';
-              const graphicUrl = perf.eventGraphic ? pb.files.getURL(perf, perf.eventGraphic) : null;
+              const venueName =
+                perf.expand?.venue &&
+                typeof perf.expand.venue === 'object' &&
+                'name' in perf.expand.venue
+                  ? (perf.expand.venue as { name: string }).name
+                  : '';
+              const graphicUrl = perf.eventGraphic
+                ? pb.files.getURL(perf, perf.eventGraphic)
+                : null;
 
               return (
                 <AppCard key={perf.id} title={perf.title}>
-                  <p className="text-sm text-text-muted mb-2">{formatInTimezone(perf.date, timezone, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                  <p className="text-text-muted mb-2 text-sm">
+                    {formatInTimezone(perf.date, timezone, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </p>
                   {graphicUrl && (
-                    <img src={graphicUrl} alt={perf.title} className="w-full h-40 object-cover rounded mb-3" />
+                    <img
+                      src={graphicUrl}
+                      alt={perf.title}
+                      className="mb-3 h-40 w-full rounded object-cover"
+                    />
                   )}
-                  {venueName && <p className="text-sm text-text-muted mb-2">{venueName}</p>}
+                  {venueName && <p className="text-text-muted mb-2 text-sm">{venueName}</p>}
                   {perf.publicDetails && (
                     <div
-                      className="text-sm text-text"
+                      className="text-text text-sm"
                       dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(marked.parse(perf.publicDetails, { async: false }) as string),
+                        __html: DOMPurify.sanitize(
+                          marked.parse(perf.publicDetails, { async: false }) as string
+                        ),
                       }}
                     />
                   )}
@@ -116,8 +137,8 @@ function PublicLandingView() {
       )}
 
       {settings.contactEmail && (
-        <section className="max-w-3xl mx-auto px-6 py-16 text-center">
-          <h2 className="text-2xl font-bold text-text mb-4">Contact Us</h2>
+        <section className="mx-auto max-w-3xl px-6 py-16 text-center">
+          <h2 className="text-text mb-4 text-2xl font-bold">Contact Us</h2>
           <p className="text-text-muted">
             <a href={`mailto:${settings.contactEmail}`} className="text-primary hover:underline">
               {settings.contactEmail}

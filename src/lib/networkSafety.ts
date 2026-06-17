@@ -66,7 +66,7 @@ const jitterDelay = (delayMs: number, jitterRatio: number, random: () => number)
 
 export async function retryOn429<T>(
   run: () => Promise<T>,
-  options: Retry429Options = {},
+  options: Retry429Options = {}
 ): Promise<T> {
   const maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
   const baseDelayMs = options.baseDelayMs ?? DEFAULT_BASE_DELAY_MS;
@@ -99,7 +99,7 @@ export async function retryOn429<T>(
 export async function mapWithConcurrency<T, R>(
   items: T[],
   mapper: (item: T, index: number) => Promise<R>,
-  options: MapWithConcurrencyOptions = {},
+  options: MapWithConcurrencyOptions = {}
 ): Promise<R[]> {
   const concurrency = Math.max(1, Math.floor(options.concurrency ?? 4));
   const results: R[] = new Array(items.length);

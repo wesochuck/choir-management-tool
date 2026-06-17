@@ -1,7 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
-import { profileService, getProfileEmail, type Profile, type ProfileInput } from '../services/profileService';
+import {
+  profileService,
+  getProfileEmail,
+  type Profile,
+  type ProfileInput,
+} from '../services/profileService';
 import { matchesVoiceParts } from '../lib/voicePartUtils';
 import { getHttpStatus, type Retry429Options } from '../lib/networkSafety';
 import { useVoiceParts } from './useVoiceParts';
@@ -80,38 +85,52 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
     onSuccess: invalidate,
   });
 
-  const addProfile = useCallback(async (data: ProfileInput) => {
-    try {
-      await addProfileMutation.mutateAsync(data);
-    } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to add profile');
-    }
-  }, [addProfileMutation]);
+  const addProfile = useCallback(
+    async (data: ProfileInput) => {
+      try {
+        await addProfileMutation.mutateAsync(data);
+      } catch (err: unknown) {
+        throw new Error(err instanceof Error ? err.message : 'Failed to add profile');
+      }
+    },
+    [addProfileMutation]
+  );
 
-  const editProfile = useCallback(async (id: string, data: ProfileInput) => {
-    try {
-      await editProfileMutation.mutateAsync({ id, data });
-    } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to update profile');
-    }
-  }, [editProfileMutation]);
+  const editProfile = useCallback(
+    async (id: string, data: ProfileInput) => {
+      try {
+        await editProfileMutation.mutateAsync({ id, data });
+      } catch (err: unknown) {
+        throw new Error(err instanceof Error ? err.message : 'Failed to update profile');
+      }
+    },
+    [editProfileMutation]
+  );
 
-  const removeProfile = useCallback(async (id: string) => {
-    try {
-      await removeProfileMutation.mutateAsync(id);
-    } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to delete profile');
-    }
-  }, [removeProfileMutation]);
+  const removeProfile = useCallback(
+    async (id: string) => {
+      try {
+        await removeProfileMutation.mutateAsync(id);
+      } catch (err: unknown) {
+        throw new Error(err instanceof Error ? err.message : 'Failed to delete profile');
+      }
+    },
+    [removeProfileMutation]
+  );
 
-  const setFilter = useCallback(<K extends keyof typeof filters>(key: K, value: typeof filters[K]) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const setFilter = useCallback(
+    <K extends keyof typeof filters>(key: K, value: (typeof filters)[K]) => {
+      setFilters((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   const error = profilesQuery.error
     ? getHttpStatus(profilesQuery.error) === 429
       ? 'Roster loading is temporarily rate-limited. Please wait a moment and try again.'
-      : (profilesQuery.error instanceof Error ? profilesQuery.error.message : 'Failed to fetch profiles')
+      : profilesQuery.error instanceof Error
+        ? profilesQuery.error.message
+        : 'Failed to fetch profiles'
     : null;
 
   return {
@@ -125,6 +144,8 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
     addProfile,
     editProfile,
     removeProfile,
-    refresh: async () => { await profilesQuery.refetch(); },
+    refresh: async () => {
+      await profilesQuery.refetch();
+    },
   };
 };

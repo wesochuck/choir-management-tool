@@ -12,8 +12,8 @@ test('TabGroup renders children inside a wrapper in test environment', () => {
       React.createElement(Tab, { panel: 'profile' }, 'Profile'),
       React.createElement(Tab, { panel: 'rsvps' }, 'RSVPs'),
       React.createElement(TabPanel, { name: 'profile' }, 'Profile content'),
-      React.createElement(TabPanel, { name: 'rsvps' }, 'RSVPs content'),
-    ),
+      React.createElement(TabPanel, { name: 'rsvps' }, 'RSVPs content')
+    )
   );
   const wrapper = container.firstElementChild;
   assert.ok(wrapper, 'renders a wrapper');
@@ -28,8 +28,8 @@ test('TabGroup passes className to the wrapper', () => {
     React.createElement(
       TabGroup,
       { value: 'a', onTabChange: () => {}, className: 'mt-4' },
-      React.createElement(Tab, { panel: 'a' }, 'A'),
-    ),
+      React.createElement(Tab, { panel: 'a' }, 'A')
+    )
   );
   const wrapper = container.firstElementChild;
   assert.ok(wrapper, 'renders a wrapper');
@@ -37,9 +37,7 @@ test('TabGroup passes className to the wrapper', () => {
 });
 
 test('Tab renders its children as content', () => {
-  const { container } = render(
-    React.createElement(Tab, { panel: 'profile' }, 'Profile Info'),
-  );
+  const { container } = render(React.createElement(Tab, { panel: 'profile' }, 'Profile Info'));
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   assert.equal(el.tagName, 'DIV');
@@ -47,9 +45,7 @@ test('Tab renders its children as content', () => {
 });
 
 test('TabPanel renders its children as content', () => {
-  const { container } = render(
-    React.createElement(TabPanel, { name: 'profile' }, 'Panel body'),
-  );
+  const { container } = render(React.createElement(TabPanel, { name: 'profile' }, 'Panel body'));
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   assert.equal(el.tagName, 'DIV');
@@ -67,8 +63,8 @@ test('TabPanel does not crash when clicked (smoke test for change handling)', ()
         TabGroup,
         { value: 'a', onTabChange: () => {} },
         React.createElement(Tab, { panel: 'a' }, 'A'),
-        React.createElement(TabPanel, { name: 'a' }, 'Body'),
-      ),
+        React.createElement(TabPanel, { name: 'a' }, 'Body')
+      )
     );
     fireEvent.click(container.firstElementChild as HTMLElement);
   } catch {

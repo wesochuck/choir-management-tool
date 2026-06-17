@@ -14,14 +14,13 @@ interface CalendarEvent {
 }
 
 const escapeIcsText = (value = '') =>
-  value
-    .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;');
+  value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 
 const fmtUtc = (date: Date) =>
-  date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  date
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
 
 export const calendarUtils = {
   createICS(
@@ -37,9 +36,11 @@ export const calendarUtils = {
     const prodId = opts?.prodId ?? '-//Choir Management Tool//EN';
 
     const venueObj = event.expand?.venue;
-    const locationName = venueObj 
-      ? (venueObj.address ? `${venueObj.name}, ${venueObj.address}` : venueObj.name) 
-      : (event.location || '');
+    const locationName = venueObj
+      ? venueObj.address
+        ? `${venueObj.name}, ${venueObj.address}`
+        : venueObj.name
+      : event.location || '';
 
     return [
       'BEGIN:VCALENDAR',
@@ -56,7 +57,7 @@ export const calendarUtils = {
       `DESCRIPTION:${escapeIcsText(event.details || '')}`,
       'END:VEVENT',
       'END:VCALENDAR',
-      ''
+      '',
     ].join('\r\n');
   },
 
@@ -70,5 +71,5 @@ export const calendarUtils = {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
+  },
 };

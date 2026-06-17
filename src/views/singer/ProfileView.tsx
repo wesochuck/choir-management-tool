@@ -34,11 +34,11 @@ export default function ProfileView() {
   const profileQuery = useQuery({
     queryKey: queryKeys.myProfile.all,
     queryFn: async () => {
-      const currentUser = pb.authStore.record;
+      const currentUser = user;
       if (currentUser?.role === 'admin') {
         let p: Profile | null = null;
         try {
-          p = await profileService.getMyProfile();
+          p = await profileService.getMyProfile(currentUser?.id ?? '');
         } catch {
           // Admins don't always have a row in profiles
         }
@@ -58,7 +58,7 @@ export default function ProfileView() {
           updated: '',
         } as Profile;
       }
-      return await profileService.getMyProfile();
+      return await profileService.getMyProfile(user?.id ?? '');
     },
   });
 
@@ -69,7 +69,7 @@ export default function ProfileView() {
   useEffect(() => {
     if (!profileQuery.data) return;
     const p = profileQuery.data;
-    const currentUser = pb.authStore.record;
+    const currentUser = user;
     if (currentUser?.role === 'admin') {
       setName(p.name || currentUser.name || '');
       setPhone(p.phone || '');
@@ -80,7 +80,7 @@ export default function ProfileView() {
     } else {
       setName(p.name || '');
       setPhone(p.phone || '');
-      setEmail(pb.authStore.record?.email || '');
+      setEmail(user?.email || '');
     }
   }, [profileQuery.data]);
 
@@ -99,7 +99,8 @@ export default function ProfileView() {
   const handleResetLink = async () => {
     const confirmReset = await dialog.confirm({
       title: 'Reset Calendar Link',
-      message: 'Are you sure you want to reset your calendar subscription link? This will instantly invalidate your existing feed link on all your devices, and you will need to resubscribe using the new link.',
+      message:
+        'Are you sure you want to reset your calendar subscription link? This will instantly invalidate your existing feed link on all your devices, and you will need to resubscribe using the new link.',
       confirmLabel: 'Reset Link',
       variant: 'danger',
     });
@@ -111,7 +112,8 @@ export default function ProfileView() {
       setCalendarFeedUrls(urls);
       await dialog.showMessage({
         title: 'Link Reset',
-        message: 'Your calendar subscription link has been successfully reset. Please update the link in your calendar applications.',
+        message:
+          'Your calendar subscription link has been successfully reset. Please update the link in your calendar applications.',
         variant: 'info',
       });
     } catch {
@@ -125,7 +127,10 @@ export default function ProfileView() {
     }
   };
 
-  const handlePreferenceChange = async (key: 'rosterSort' | 'attendanceSort' | 'rsvpSort', value: 'lastName' | 'voicePart' | 'section') => {
+  const handlePreferenceChange = async (
+    key: 'rosterSort' | 'attendanceSort' | 'rsvpSort',
+    value: 'lastName' | 'voicePart' | 'section'
+  ) => {
     try {
       setError(null);
       await updatePreferences({ [key]: value });
@@ -138,28 +143,15 @@ export default function ProfileView() {
 
   const saveMutation = useMutation({
     mutationFn: async (profileId: string) => {
-      const currentUser = pb.authStore.record;
+      const currentUser = user;
       if (currentUser?.role === 'admin') {
-        await pb.collection('users').update(currentUser.id, { name, email });
-        if (profileId) {
-          await pb.collection('profiles').update(profileId, { name, receiveAttendanceReports, receiveRsvpDeclineNotices, receiveAdminNotifications });
-        } else {
-          await pb.collection('profiles').create({
-            user: currentUser.id,
-            name: name || currentUser.name || email,
-            receiveAttendanceReports,
-            receiveRsvpDeclineNotices,
-            receiveAdminNotifications,
-            voicePart: '',
-            globalStatus: 'Active',
-          });
-        }
+        await profileService.ensureProfileForAdmin(
+          currentUser.id,
+          profileId || null,
+          { name, email, receiveAttendanceReports, receiveRsvpDeclineNotices, receiveAdminNotifications }
+        );
       } else {
-        await pb.collection('profiles').update(profileId, { name, phone });
-        const currentEmail = pb.authStore.record?.email;
-        if (email && email !== currentEmail && pb.authStore.record?.id) {
-          await pb.collection('users').update(pb.authStore.record.id, { email });
-        }
+        await profileService.updateProfile(profileId, { name, phone, email });
       }
     },
     onSuccess: () => {
@@ -190,12 +182,12 @@ export default function ProfileView() {
   };
 
   if (isLoading) return <div className="container pt-8 text-center">Loading profile...</div>;
-  if (!profile) return <div className="container p-5 text-red-600">{error || 'Profile not found'}</div>;
+  if (!profile)
+    return <div className="container p-5 text-red-600">{error || 'Profile not found'}</div>;
 
   return (
     <PageLayout title="My Profile" backTo="/dashboard" maxWidth="500px">
       <div className="flex flex-col items-center gap-8 py-8">
-
         {/* Photo / Avatar */}
         <div className="flex flex-col items-center gap-2">
           {profile.id ? (
@@ -207,71 +199,73 @@ export default function ProfileView() {
               onSuccess={handlePhotoSuccess}
             />
           ) : (
-            <div className="flex size-24 items-center justify-center rounded-full border-2 border-border bg-primary-light text-5xl text-primary">
+            <div className="border-border bg-primary-light text-primary flex size-24 items-center justify-center rounded-full border-2 text-5xl">
               👤
             </div>
           )}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSave} className="w-full flex flex-col gap-4">
+        <form onSubmit={handleSave} className="flex w-full flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-label">Name</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+            <Input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Email</label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
 
           {user?.role === 'admin' && (
             <>
-              <label className="my-1 cursor-pointer flex flex-row items-center gap-2">
+              <label className="my-1 flex cursor-pointer flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveAttendanceReports}
                   onChange={(e) => setReceiveAttendanceReports(e.target.checked)}
-                  className="size-[18px] shrink-0 cursor-pointer accent-primary"
+                  className="accent-primary size-[18px] shrink-0 cursor-pointer"
                 />
                 <div className="flex flex-col gap-[2px]">
                   <span className="text-label font-semibold">Receive attendance reports</span>
-                  <span className="text-muted text-xs">Receive automated after-event reports for all events.</span>
+                  <span className="text-muted text-xs">
+                    Receive automated after-event reports for all events.
+                  </span>
                 </div>
               </label>
 
-              <label className="my-1 cursor-pointer flex flex-row items-center gap-2">
+              <label className="my-1 flex cursor-pointer flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveRsvpDeclineNotices}
                   onChange={(e) => setReceiveRsvpDeclineNotices(e.target.checked)}
-                  className="size-[18px] shrink-0 cursor-pointer accent-primary"
+                  className="accent-primary size-[18px] shrink-0 cursor-pointer"
                 />
                 <div className="flex flex-col gap-[2px]">
-                  <span className="text-label font-semibold">Receive RSVP decline notifications</span>
-                  <span className="text-muted text-xs">Receive automated email alerts when a singer declines a rehearsal or performance.</span>
+                  <span className="text-label font-semibold">
+                    Receive RSVP decline notifications
+                  </span>
+                  <span className="text-muted text-xs">
+                    Receive automated email alerts when a singer declines a rehearsal or
+                    performance.
+                  </span>
                 </div>
               </label>
 
-              <label className="my-1 cursor-pointer flex flex-row items-center gap-2">
+              <label className="my-1 flex cursor-pointer flex-row items-center gap-2">
                 <input
                   type="checkbox"
                   checked={receiveAdminNotifications}
                   onChange={(e) => setReceiveAdminNotifications(e.target.checked)}
-                  className="size-[18px] shrink-0 cursor-pointer accent-primary"
+                  className="accent-primary size-[18px] shrink-0 cursor-pointer"
                 />
                 <div className="flex flex-col gap-[2px]">
-                  <span className="text-label font-semibold">Receive general admin notifications</span>
-                  <span className="text-muted text-xs">Receive automated general admin alerts and system notifications.</span>
+                  <span className="text-label font-semibold">
+                    Receive general admin notifications
+                  </span>
+                  <span className="text-muted text-xs">
+                    Receive automated general admin alerts and system notifications.
+                  </span>
                 </div>
               </label>
             </>
@@ -281,38 +275,35 @@ export default function ProfileView() {
             <>
               <div className="flex flex-col gap-1">
                 <label className="text-label">Phone</label>
-                <Input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                />
+                <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
 
               {/* Voice Part — read-only */}
               <div className="flex flex-col gap-1">
                 <label className="text-label">Voice Part</label>
-                <div className="flex h-11 w-full items-center rounded-xl border border-border bg-bg px-3 text-text-muted">
+                <div className="border-border bg-bg text-text-muted flex h-11 w-full items-center rounded-xl border px-3">
                   {profile.voicePart}
                 </div>
-                <span className="text-muted text-xs">Contact your director to change voice part</span>
+                <span className="text-muted text-xs">
+                  Contact your director to change voice part
+                </span>
               </div>
             </>
           ) : (
             <div className="flex flex-col gap-1">
               <label className="text-label">Role</label>
-              <div className="flex h-11 w-full items-center rounded-xl border border-border bg-bg px-3 text-text-muted">
+              <div className="border-border bg-bg text-text-muted flex h-11 w-full items-center rounded-xl border px-3">
                 Administrator
               </div>
             </div>
           )}
 
           {error && (
-            <div className="rounded-md bg-danger-bg p-2 px-4 text-sm text-danger-text">
-              {error}
-            </div>
+            <div className="bg-danger-bg text-danger-text rounded-md p-2 px-4 text-sm">{error}</div>
           )}
 
           {success && (
-            <div className="rounded-md bg-success-bg p-2 px-4 text-sm text-success-text">
+            <div className="bg-success-bg text-success-text rounded-md p-2 px-4 text-sm">
               Profile updated!
             </div>
           )}
@@ -325,7 +316,8 @@ export default function ProfileView() {
         {profile.id && (
           <AppCard title="📅 Calendar Sync" className="w-full">
             <p className="text-muted m-0 mb-4 text-xs">
-              Subscribe to your personalized choir calendar to sync performances, rehearsals, call times, and set lists directly to your personal Google, Apple, or Outlook calendar.
+              Subscribe to your personalized choir calendar to sync performances, rehearsals, call
+              times, and set lists directly to your personal Google, Apple, or Outlook calendar.
             </p>
 
             <div className="flex flex-col gap-4">
@@ -349,7 +341,7 @@ export default function ProfileView() {
                   {/* Action 2: Copy Google Calendar URL (httpsUrl) */}
                   <div className="flex flex-col gap-1">
                     <label className="text-label">Google Calendar Setup</label>
-                    <div className="w-full flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-1">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-1">
                       <Input
                         readOnly
                         value={calendarFeedUrls.httpsUrl}
@@ -364,7 +356,8 @@ export default function ProfileView() {
                       </CopyButton>
                     </div>
                     <span className="text-muted text-xs">
-                      For Google Calendar, copy the HTTPS URL and add it with Other calendars → From URL.
+                      For Google Calendar, copy the HTTPS URL and add it with Other calendars → From
+                      URL.
                     </span>
                   </div>
                 </div>
@@ -376,7 +369,7 @@ export default function ProfileView() {
                 <Button
                   type="button"
                   onClick={handleResetLink}
-                  className="cursor-pointer border border-danger-text bg-transparent text-sm !text-danger-text"
+                  className="border-danger-text !text-danger-text cursor-pointer border bg-transparent text-sm"
                   variant="outline"
                   disabled={isCalendarLoading}
                 >
@@ -386,7 +379,11 @@ export default function ProfileView() {
               <p className="text-muted m-0 text-xs italic">
                 Note: Resetting will invalidate any previous link you've set up on your devices.
                 {user?.role === 'admin' && !profile?.voicePart ? (
-                  <> Because you are an administrative-only account, this link provides a <strong>master schedule</strong> of all choir rehearsals and performances.</>
+                  <>
+                    {' '}
+                    Because you are an administrative-only account, this link provides a{' '}
+                    <strong>master schedule</strong> of all choir rehearsals and performances.
+                  </>
                 ) : (
                   <> Only active rehearsals and concerts you haven't declined will sync.</>
                 )}
@@ -398,7 +395,8 @@ export default function ProfileView() {
         {user?.role === 'admin' && (
           <AppCard title="View Preferences" className="w-full">
             <p className="text-muted m-0 text-xs">
-              These settings customize how directories and rosters are ordered for your account across all your devices.
+              These settings customize how directories and rosters are ordered for your account
+              across all your devices.
             </p>
 
             <div className="flex flex-col gap-4">
@@ -406,7 +404,9 @@ export default function ProfileView() {
                 <label className="text-label">Directory Sort</label>
                 <Select
                   value={user?.preferences?.rosterSort || 'lastName'}
-                  onChange={(e) => handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')}
+                  onChange={(e) =>
+                    handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')
+                  }
                   className="h-11 w-full"
                 >
                   <option value="lastName">Last Name</option>
@@ -418,7 +418,12 @@ export default function ProfileView() {
                 <label className="text-label">Attendance Sort</label>
                 <Select
                   value={user?.preferences?.attendanceSort || 'lastName'}
-                  onChange={(e) => handlePreferenceChange('attendanceSort', e.target.value as 'lastName' | 'voicePart' | 'section')}
+                  onChange={(e) =>
+                    handlePreferenceChange(
+                      'attendanceSort',
+                      e.target.value as 'lastName' | 'voicePart' | 'section'
+                    )
+                  }
                   className="h-11 w-full"
                 >
                   <option value="lastName">Last Name</option>
@@ -431,7 +436,9 @@ export default function ProfileView() {
                 <label className="text-label">Event RSVP Sort</label>
                 <Select
                   value={user?.preferences?.rsvpSort || 'lastName'}
-                  onChange={(e) => handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')}
+                  onChange={(e) =>
+                    handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')
+                  }
                   className="h-11 w-full"
                 >
                   <option value="lastName">Last Name</option>
@@ -440,7 +447,7 @@ export default function ProfileView() {
               </div>
 
               {prefSuccess && (
-                <div className="rounded-md bg-success-bg p-2 px-4 text-center text-sm text-success-text">
+                <div className="bg-success-bg text-success-text rounded-md p-2 px-4 text-center text-sm">
                   Preferences updated!
                 </div>
               )}

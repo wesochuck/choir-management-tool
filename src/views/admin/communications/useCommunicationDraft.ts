@@ -47,7 +47,7 @@ export function useCommunicationDraft({
 
   const initialProfileIds = useMemo(() => {
     const ids = searchParams.get('recipientIds');
-    return ids ? ids.split(',').filter(id => !!id) : [];
+    return ids ? ids.split(',').filter((id) => !!id) : [];
   }, [searchParams]);
 
   const [filters, setFilters] = useState<CommunicationFilters>({
@@ -59,26 +59,26 @@ export function useCommunicationDraft({
   });
 
   const [recipients, setRecipients] = useState<CommunicationRecipient[]>(
-    routeState?.initialRecipients || [],
+    routeState?.initialRecipients || []
   );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    new Set(routeState?.initialRecipients?.map((r) => r.id) || []),
+    new Set(routeState?.initialRecipients?.map((r) => r.id) || [])
   );
   const [lockInitialRecipients, setLockInitialRecipients] = useState(
     Boolean(
       (routeState?.initialOpenReview &&
         routeState?.initialRecipients &&
         routeState.initialRecipients.length > 0) ||
-        routeState?.openDraftId ||
-        initialProfileIds.length > 0
-    ),
+      routeState?.openDraftId ||
+      initialProfileIds.length > 0
+    )
   );
 
   const [subject, setSubject] = useState(routeState?.initialSubject || '');
   const [content, setContent] = useState(routeState?.initialContent || '');
   const [messageType, setMessageType] = useState<MessageType>('Email');
   const [pollQuestions, setPollQuestions] = useState<Record<string, string>>(
-    routeState?.initialPollQuestions ?? {},
+    routeState?.initialPollQuestions ?? {}
   );
 
   const [isSending, setIsSending] = useState(false);
@@ -87,7 +87,7 @@ export function useCommunicationDraft({
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
-    [recipients, selectedIds],
+    [recipients, selectedIds]
   );
 
   const recipientCounts = useMemo(() => {
@@ -116,14 +116,11 @@ export function useCommunicationDraft({
   }, [resolvedRecipientsQuery.data]);
 
   const updateFilter = useCallback(
-    <K extends keyof CommunicationFilters>(
-      key: K,
-      value: CommunicationFilters[K],
-    ) => {
+    <K extends keyof CommunicationFilters>(key: K, value: CommunicationFilters[K]) => {
       if (lockInitialRecipients) setLockInitialRecipients(false);
       setFilters((prev) => ({ ...prev, [key]: value }));
     },
-    [lockInitialRecipients],
+    [lockInitialRecipients]
   );
 
   const handleSaveDraft = async () => {
@@ -136,10 +133,7 @@ export function useCommunicationDraft({
         recipients: selectedRecipients,
         filters: filters as unknown as Record<string, unknown>,
       };
-      const record = await communicationService.saveDraft(
-        input,
-        activeDraftId || undefined,
-      );
+      const record = await communicationService.saveDraft(input, activeDraftId || undefined);
       setActiveDraftId(record.id);
       setDrafts(await communicationService.getDrafts());
       dialog.showToast('Your message has been saved as a draft.');
@@ -166,8 +160,8 @@ export function useCommunicationDraft({
       const vpArray: string[] = Array.isArray(mFilters?.voiceParts)
         ? (mFilters.voiceParts as string[])
         : mFilters?.voicePart
-        ? [mFilters.voicePart as string]
-        : [];
+          ? [mFilters.voicePart as string]
+          : [];
 
       setFilters({
         eventId: (mFilters?.eventId as string) || '',
@@ -189,7 +183,7 @@ export function useCommunicationDraft({
       setWizardStep('COMPOSE');
       setTab('compose');
     },
-    [setTab, setWizardStep],
+    [setTab, setWizardStep]
   );
 
   const handleSendTest = async () => {
@@ -205,8 +199,7 @@ export function useCommunicationDraft({
     if (messageType === 'SMS') {
       const switchToEmail = await dialog.confirm({
         title: 'Email Test Only',
-        message:
-          'Test send delivers email only. Switch channel to Email and continue?',
+        message: 'Test send delivers email only. Switch channel to Email and continue?',
         confirmLabel: 'Switch to Email',
       });
       if (!switchToEmail) return;
@@ -215,8 +208,7 @@ export function useCommunicationDraft({
 
     setIsSendingTest(true);
     try {
-      const adminName =
-        (user as unknown as { name?: string })?.name || user.email || 'Admin';
+      const adminName = (user as unknown as { name?: string })?.name || user.email || 'Admin';
       const testRecipient: CommunicationRecipient = {
         id: user.id,
         name: adminName,
@@ -277,16 +269,11 @@ export function useCommunicationDraft({
         recipients: selectedRecipients,
         filters: filters as unknown as Record<string, unknown>,
       };
-      await communicationService.sendBulkMessage(
-        input,
-        activeDraftId || undefined,
-      );
+      await communicationService.sendBulkMessage(input, activeDraftId || undefined);
 
       if (filters.eventId) {
         const key =
-          filters.rsvp === 'Pending'
-            ? `rsvp-${filters.eventId}`
-            : `reminder-${filters.eventId}`;
+          filters.rsvp === 'Pending' ? `rsvp-${filters.eventId}` : `reminder-${filters.eventId}`;
         setAutomatedTaskStatus((prev) => ({ ...prev, [key]: 'sent' }));
       }
 

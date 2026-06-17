@@ -42,10 +42,7 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function savePlaylistOffline(
-  key: string,
-  files: PlayerMediaFile[]
-): Promise<void> {
+export async function savePlaylistOffline(key: string, files: PlayerMediaFile[]): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_PLAYLISTS, 'readwrite');
@@ -63,9 +60,7 @@ export async function savePlaylistOffline(
   });
 }
 
-export async function getOfflinePlaylist(
-  key: string
-): Promise<PlayerMediaFile[] | null> {
+export async function getOfflinePlaylist(key: string): Promise<PlayerMediaFile[] | null> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_PLAYLISTS, 'readonly');
@@ -222,8 +217,10 @@ export async function hydrateOfflineStatus(files: PlayerMediaFile[]): Promise<Pl
     const hydrated = await Promise.all(
       files.map(async (file) => {
         const isDownloaded = downloadedIds.has(file.id);
-        const offlineUrl = isDownloaded ? (await getOfflineTrackUrl(file.id) || undefined) : undefined;
-        
+        const offlineUrl = isDownloaded
+          ? (await getOfflineTrackUrl(file.id)) || undefined
+          : undefined;
+
         return {
           ...file,
           isDownloaded,

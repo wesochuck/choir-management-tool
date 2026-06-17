@@ -15,8 +15,16 @@
  * margin classes already passing through.
  */
 const visualClassPrefixes = [
-  'border', 'rounded', 'bg-',
-  'text-', 'shadow-', 'outline-', 'placeholder:', 'focus:', 'transition-', 'ring-',
+  'border',
+  'rounded',
+  'bg-',
+  'text-',
+  'shadow-',
+  'outline-',
+  'placeholder:',
+  'focus:',
+  'transition-',
+  'ring-',
 ];
 
 export function layoutOnly(className?: string): string | undefined {

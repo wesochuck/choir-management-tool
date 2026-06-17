@@ -6,16 +6,18 @@ import type { MusicGenreDef } from '../../services/settingsService';
  * Supports title, composer, copies, catalogId, duration, and notes.
  */
 export function parseMusicLibraryCSV(csvText: string): Partial<MusicPieceInput>[] {
-  const lines = csvText.split(/\r?\n/).filter(l => l.trim() !== '');
+  const lines = csvText.split(/\r?\n/).filter((l) => l.trim() !== '');
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const titleIdx = headers.findIndex(h => h.includes('title'));
-  const composerIdx = headers.findIndex(h => h.includes('composer') || h.includes('arranger'));
-  const copiesIdx = headers.findIndex(h => h.includes('cop'));
-  const catalogIdx = headers.findIndex(h => h.includes('catalog') || h.includes('id'));
-  const durationIdx = headers.findIndex(h => h.includes('duration') || h.includes('length') || h.includes('time'));
-  const notesIdx = headers.findIndex(h => h.includes('note'));
+  const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
+  const titleIdx = headers.findIndex((h) => h.includes('title'));
+  const composerIdx = headers.findIndex((h) => h.includes('composer') || h.includes('arranger'));
+  const copiesIdx = headers.findIndex((h) => h.includes('cop'));
+  const catalogIdx = headers.findIndex((h) => h.includes('catalog') || h.includes('id'));
+  const durationIdx = headers.findIndex(
+    (h) => h.includes('duration') || h.includes('length') || h.includes('time')
+  );
+  const notesIdx = headers.findIndex((h) => h.includes('note'));
 
   if (titleIdx === -1) {
     throw new Error('CSV must contain a "Title" column.');
@@ -56,28 +58,42 @@ export function parseMusicLibraryCSV(csvText: string): Partial<MusicPieceInput>[
       catalogId: catalogIdx !== -1 && cells[catalogIdx] !== undefined ? cells[catalogIdx] : '',
       duration: durationIdx !== -1 && cells[durationIdx] ? cells[durationIdx] : undefined,
       notes: notesIdx !== -1 && cells[notesIdx] !== undefined ? cells[notesIdx] : '',
-      performances: []
+      performances: [],
     });
   }
 
   return pieces;
 }
 
-export function exportMusicToCSV(pieces: MusicPiece[], options?: { genres?: MusicGenreDef[] }): string {
-  const header = ['Title', 'Composer', 'Arranger', 'Copies', 'Catalog ID', 'Duration', 'Voicing', 'Applies To', 'Genres', 'Purchase Date', 'Notes'].join(',');
+export function exportMusicToCSV(
+  pieces: MusicPiece[],
+  options?: { genres?: MusicGenreDef[] }
+): string {
+  const header = [
+    'Title',
+    'Composer',
+    'Arranger',
+    'Copies',
+    'Catalog ID',
+    'Duration',
+    'Voicing',
+    'Applies To',
+    'Genres',
+    'Purchase Date',
+    'Notes',
+  ].join(',');
 
   const genreMap = options?.genres?.reduce((acc, g) => {
     acc.set(g.id, g.label);
     return acc;
   }, new Map<string, string>());
 
-  const rows = pieces.map(p => {
-    const applicability = (!p.sectionBuckets || p.sectionBuckets.length === 0) 
-      ? 'All' 
-      : p.sectionBuckets.join(';');
-      
+  const rows = pieces.map((p) => {
+    const applicability =
+      !p.sectionBuckets || p.sectionBuckets.length === 0 ? 'All' : p.sectionBuckets.join(';');
+
     const genreList = genreMap
-      ? p.genres?.map(id => genreMap.get(id) || id).join(';') || ''
+      ? p.genres?.map((id) => genreMap.get(id) || id).join(';') || ''
       : p.genres?.join(';') || '';
 
     const clean = (val: unknown) => {
@@ -97,7 +113,7 @@ export function exportMusicToCSV(pieces: MusicPiece[], options?: { genres?: Musi
       clean(applicability),
       clean(genreList),
       clean(p.purchaseDate),
-      clean(p.notes)
+      clean(p.notes),
     ].join(',');
   });
   return [header, ...rows].join('\n');

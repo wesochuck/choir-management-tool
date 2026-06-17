@@ -19,11 +19,13 @@ test('Input renders with invalid state', () => {
 });
 
 test('Input passes through native props', () => {
-  const { container } = render(React.createElement(Input, {
-    placeholder: 'Enter name',
-    type: 'text',
-    onChange: () => {},
-  }));
+  const { container } = render(
+    React.createElement(Input, {
+      placeholder: 'Enter name',
+      type: 'text',
+      onChange: () => {},
+    })
+  );
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   assert.equal(el.getAttribute('placeholder'), 'Enter name');
@@ -49,7 +51,11 @@ test('Input ref exposes setCustomValidity as a function (smoke test)', () => {
   const ref = React.createRef<HTMLInputElement>();
   render(React.createElement(Input, { ref }));
   assert.ok(ref.current, 'ref should be attached');
-  assert.equal(typeof ref.current.setCustomValidity, 'function', 'ref must expose setCustomValidity');
+  assert.equal(
+    typeof ref.current.setCustomValidity,
+    'function',
+    'ref must expose setCustomValidity'
+  );
   // Verify the method is callable and the call does not throw.
   assert.doesNotThrow(() => ref.current.setCustomValidity('test'));
 });
@@ -60,9 +66,7 @@ test('Input type=file uses a native input and does not throw when value is undef
   // The wrapper must use a native <input> for type="file" so user-selected files
   // can survive reconciliation.
   const onChange = () => {};
-  const { container } = render(
-    React.createElement(Input, { type: 'file', onChange }),
-  );
+  const { container } = render(React.createElement(Input, { type: 'file', onChange }));
   const el = container.firstElementChild as HTMLInputElement;
   assert.ok(el, 'renders an element');
   assert.equal(el.tagName, 'INPUT');
@@ -77,9 +81,7 @@ test('Input type=file preserves a user-selected file across re-renders', () => {
   // Smoke test: selecting a file should set input.value to a non-empty path,
   // and a subsequent re-render with no value prop must not throw or clear it.
   const ref = React.createRef<HTMLInputElement>();
-  const { rerender } = render(
-    React.createElement(Input, { type: 'file', ref }),
-  );
+  const { rerender } = render(React.createElement(Input, { type: 'file', ref }));
   const input = ref.current;
   assert.ok(input, 'ref should be attached');
   // jsdom doesn't expose DataTransfer, but it does allow setting .value

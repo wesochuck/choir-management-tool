@@ -11,9 +11,9 @@ import { queryKeys } from '../lib/queryKeys';
 export default function PublicDonationView() {
   useDocumentTitle('Support Our Music');
   const { choirName } = useChoirName();
-  
+
   const [error, setError] = useState('');
-  
+
   const [selectedLevelId, setSelectedLevelId] = useState<string | 'custom'>('');
 
   const donationQuery = useQuery({
@@ -54,7 +54,7 @@ export default function PublicDonationView() {
     if (selectedLevelId === 'custom') {
       return parseFloat(customAmount) || 0;
     }
-    const level = levels.find(l => l.id === selectedLevelId);
+    const level = levels.find((l) => l.id === selectedLevelId);
     return level ? level.amount : 0;
   };
 
@@ -81,7 +81,7 @@ export default function PublicDonationView() {
         name: name.trim(),
         tributeType,
         tributeName: tributeName.trim(),
-        isAnonymous
+        isAnonymous,
       });
 
       if (session.url) {
@@ -110,34 +110,44 @@ export default function PublicDonationView() {
     <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
-          <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">← Back to Concerts</Button>
+          <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">
+            ← Back to Concerts
+          </Button>
           <div className="flex flex-col gap-0.5">
-            {choirName && <span className="text-xs font-bold tracking-wider text-text-muted uppercase">{choirName}</span>}
+            {choirName && (
+              <span className="text-text-muted text-xs font-bold tracking-wider uppercase">
+                {choirName}
+              </span>
+            )}
             <h1 className="text-display m-0">Support Our Music</h1>
-            <p className="text-body m-0">Your tax-deductible contribution helps us keep the music playing.</p>
+            <p className="text-body m-0">
+              Your tax-deductible contribution helps us keep the music playing.
+            </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-6">
-          {error && <p className="m-0 text-danger-text">{error}</p>}
+          {error && <p className="text-danger-text m-0">{error}</p>}
 
           <div className="flex flex-col gap-1">
             <label className="text-label">Select a Donation Level</label>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 rounded-lg border border-border bg-neutral-100 p-4">
-              {levels.map(level => (
-                <div 
+            <div className="border-border grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3 rounded-lg border bg-neutral-100 p-4">
+              {levels.map((level) => (
+                <div
                   key={level.id}
                   className={`flex cursor-pointer items-center gap-2.5 rounded-sm border p-3 transition-all select-none ${selectedLevelId === level.id ? 'border-primary bg-[rgba(74,117,89,0.05)]' : 'border-border bg-surface'}`}
                   onClick={() => setSelectedLevelId(level.id)}
                 >
                   <div className="flex flex-1 flex-col">
                     <span className="font-semibold">{level.label}</span>
-                    {level.benefit && <span className="text-xs text-text-muted">{level.benefit}</span>}
+                    {level.benefit && (
+                      <span className="text-text-muted text-xs">{level.benefit}</span>
+                    )}
                   </div>
                   <span className="font-bold">${level.amount}</span>
                 </div>
               ))}
-              <div 
+              <div
                 className={`flex cursor-pointer items-center gap-2.5 rounded-sm border p-3 transition-all select-none ${selectedLevelId === 'custom' ? 'border-primary bg-[rgba(74,117,89,0.05)]' : 'border-border bg-surface'}`}
                 onClick={() => setSelectedLevelId('custom')}
               >
@@ -157,9 +167,8 @@ export default function PublicDonationView() {
                 step="0.01"
                 required
                 placeholder="0.00"
-                
                 value={customAmount}
-                onChange={e => setCustomAmount(e.target.value)}
+                onChange={(e) => setCustomAmount(e.target.value)}
               />
             </div>
           )}
@@ -170,9 +179,8 @@ export default function PublicDonationView() {
               type="text"
               required
               placeholder="Full Name"
-              
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
 
@@ -183,9 +191,8 @@ export default function PublicDonationView() {
                 type="email"
                 required
                 placeholder="email@example.com"
-                
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div className="flex flex-1 flex-col gap-1">
@@ -194,9 +201,8 @@ export default function PublicDonationView() {
                 type="email"
                 required
                 placeholder="Confirm Email"
-                
                 value={confirmEmail}
-                onChange={e => setConfirmEmail(e.target.value)}
+                onChange={(e) => setConfirmEmail(e.target.value)}
               />
             </div>
           </div>
@@ -204,10 +210,10 @@ export default function PublicDonationView() {
           <div className="flex flex-col gap-1">
             <label className="text-label">Tribute Information (Optional)</label>
             <div className="flex flex-col gap-4 md:flex-row">
-              <Select 
-                className="h-11 flex-1 rounded-md border border-border bg-surface px-3 focus:border-primary"
+              <Select
+                className="border-border bg-surface focus:border-primary h-11 flex-1 rounded-md border px-3"
                 value={tributeType}
-                onChange={e => setTributeType(e.target.value as 'none' | 'memory' | 'honor')}
+                onChange={(e) => setTributeType(e.target.value as 'none' | 'memory' | 'honor')}
               >
                 <option value="none">No Tribute</option>
                 <option value="memory">In Memory Of</option>
@@ -220,28 +226,31 @@ export default function PublicDonationView() {
                   placeholder="Honoree Name"
                   className="flex-[2]"
                   value={tributeName}
-                  onChange={e => setTributeName(e.target.value)}
+                  onChange={(e) => setTributeName(e.target.value)}
                 />
               )}
             </div>
           </div>
 
-          <div className="mt-1 flex flex-row items-center gap-4 rounded-lg border border-border bg-neutral-100 p-4">
+          <div className="border-border mt-1 flex flex-row items-center gap-4 rounded-lg border bg-neutral-100 p-4">
             <input
               id="isAnonymous"
               type="checkbox"
-              className="size-[18px] cursor-pointer accent-primary"
+              className="accent-primary size-[18px] cursor-pointer"
               checked={isAnonymous}
-              onChange={e => setIsAnonymous(e.target.checked)}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
             />
-            <label htmlFor="isAnonymous" className="flex flex-1 cursor-pointer flex-col gap-0.5 select-none">
-              <span className="text-sm leading-tight font-semibold text-text">
+            <label
+              htmlFor="isAnonymous"
+              className="flex flex-1 cursor-pointer flex-col gap-0.5 select-none"
+            >
+              <span className="text-text text-sm leading-tight font-semibold">
                 I wish to remain anonymous.
               </span>
             </label>
           </div>
 
-          <div className="flex w-full flex-col gap-1 rounded-xl border border-border bg-neutral-100 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
+          <div className="border-border flex w-full flex-col gap-1 rounded-xl border bg-neutral-100 p-4 shadow-sm transition-all duration-200 hover:shadow-md">
             <div className="m-0 mt-0 flex flex-row justify-between border-t-0 border-none p-0 pt-0 font-bold">
               <span>Total Donation</span>
               <span>${effectiveAmount.toFixed(2)}</span>
@@ -254,10 +263,10 @@ export default function PublicDonationView() {
             className="h-12 w-full font-semibold"
             variant="primary"
           >
-            {submitting ? "Opening Secure Checkout…" : `Donate $${effectiveAmount.toFixed(2)}`}
+            {submitting ? 'Opening Secure Checkout…' : `Donate $${effectiveAmount.toFixed(2)}`}
           </Button>
 
-          <p className="m-0 text-center text-xs text-text-muted">
+          <p className="text-text-muted m-0 text-center text-xs">
             Secure payment processing provided by Stripe.
           </p>
         </form>

@@ -23,9 +23,7 @@ export function useEventFilters(events: Event[]) {
       return true;
     });
 
-    return [...filtered].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-    );
+    return [...filtered].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [events, activeTab, showPastEvents, now]);
 
   return {

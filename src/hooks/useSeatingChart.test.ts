@@ -75,33 +75,39 @@ function mockServices(overrides: ServiceOverrides = {}) {
     sections: settingsService.DEFAULT_SECTIONS,
   };
 
-  const getCharts = mock.method(
-    seatingService,
-    'getChartsForPerformance',
-    async () => {
-      if (overrides.getChartsThrows) throw overrides.getChartsThrows;
-      return charts;
-    },
-  );
+  const getCharts = mock.method(seatingService, 'getChartsForPerformance', async () => {
+    if (overrides.getChartsThrows) throw overrides.getChartsThrows;
+    return charts;
+  });
   const saveChart = mock.method(
     seatingService,
     'saveChart',
-    overrides.saveChart ?? (async (data: Partial<SeatingChart>) => ({ ...sampleChart, ...data, id: data.id ?? `chart_new_${Date.now()}` } as SeatingChart)),
+    overrides.saveChart ??
+      (async (data: Partial<SeatingChart>) =>
+        ({ ...sampleChart, ...data, id: data.id ?? `chart_new_${Date.now()}` }) as SeatingChart)
   );
   const deleteChart = mock.method(
     seatingService,
     'deleteChart',
-    overrides.deleteChart ?? (async () => undefined),
+    overrides.deleteChart ?? (async () => undefined)
   );
   const reorderCharts = mock.method(
     seatingService,
     'reorderCharts',
-    overrides.reorderCharts ?? (async () => undefined),
+    overrides.reorderCharts ?? (async () => undefined)
   );
   const getActiveProfiles = mock.method(profileService, 'getActiveProfiles', async () => profiles);
   const getEventRoster = mock.method(rosterService, 'getEventRoster', async () => roster);
-  const getSeatingSettings = mock.method(settingsService.settingsService, 'getSeatingSettings', async () => settings);
-  const getVoiceParts = mock.method(settingsService, 'getVoicePartsAndSections', async () => voiceParts);
+  const getSeatingSettings = mock.method(
+    settingsService.settingsService,
+    'getSeatingSettings',
+    async () => settings
+  );
+  const getVoiceParts = mock.method(
+    settingsService,
+    'getVoicePartsAndSections',
+    async () => voiceParts
+  );
 
   return {
     getCharts,
@@ -180,7 +186,9 @@ test('useSeatingChart does not auto-create twice for the same context across re-
   const mocks = mockServices({ charts: [] });
   const { Wrapper } = createWrapper();
 
-  const { rerender } = renderHook(() => useSeatingChart('perf_1', sampleVenue), { wrapper: Wrapper });
+  const { rerender } = renderHook(() => useSeatingChart('perf_1', sampleVenue), {
+    wrapper: Wrapper,
+  });
 
   await waitFor(() => {
     assert.equal(mocks.saveChart.mock.callCount(), 1);
@@ -228,7 +236,12 @@ test('useSeatingChart.assignSinger queues a save flushed by forceSave', async ()
 
 test('useSeatingChart.createChart calls saveChart, refreshes, and activates the new chart', async () => {
   let savedCharts = [sampleChart];
-  const newChart: SeatingChart = { ...sampleChart, id: 'chart_2', name: 'Second Chart', sortOrder: 2 };
+  const newChart: SeatingChart = {
+    ...sampleChart,
+    id: 'chart_2',
+    name: 'Second Chart',
+    sortOrder: 2,
+  };
 
   const mocks = mockServices({
     saveChart: async (data) => {
@@ -349,7 +362,9 @@ test('useSeatingChart flushes dirty state on unmount', async () => {
   const mocks = mockServices();
   const { Wrapper } = createWrapper();
 
-  const { result, unmount } = renderHook(() => useSeatingChart('perf_1', sampleVenue), { wrapper: Wrapper });
+  const { result, unmount } = renderHook(() => useSeatingChart('perf_1', sampleVenue), {
+    wrapper: Wrapper,
+  });
 
   await waitFor(() => assert.equal(result.current.isLoading, false));
 

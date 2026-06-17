@@ -10,7 +10,7 @@ afterEach(() => {
 
 test('ColorPicker renders a native <input type="color"> in test environment', () => {
   const { container } = render(
-    React.createElement(ColorPicker, { value: '#ff0000', onChange: () => {} }),
+    React.createElement(ColorPicker, { value: '#ff0000', onChange: () => {} })
   );
   const input = container.querySelector('input[type="color"]') as HTMLInputElement;
   assert.ok(input, 'renders a color input');
@@ -23,7 +23,7 @@ test('ColorPicker passes through className', () => {
       value: '#000000',
       onChange: () => {},
       className: 'extra-class',
-    }),
+    })
   );
   const input = container.firstElementChild as HTMLElement;
   assert.ok(input, 'renders an element');
@@ -32,17 +32,16 @@ test('ColorPicker passes through className', () => {
 
 test('ColorPicker calls onChange when the input value changes', () => {
   let captured: string | undefined;
-  const handleChange = (val: string) => { captured = val; };
+  const handleChange = (val: string) => {
+    captured = val;
+  };
   const { container } = render(
-    React.createElement(ColorPicker, { value: '#000000', onChange: handleChange }),
+    React.createElement(ColorPicker, { value: '#000000', onChange: handleChange })
   );
   const input = container.querySelector('input[type="color"]') as HTMLInputElement;
   assert.ok(input, 'renders a color input');
   // Use the prototype's value setter so the change event fires correctly under jsdom
-  const setter = Object.getOwnPropertyDescriptor(
-    window.HTMLInputElement.prototype,
-    'value',
-  )?.set;
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
   setter?.call(input, '#abcdef');
   fireEvent.change(input);
   assert.equal(captured, '#abcdef', 'onChange is called with the new value');

@@ -1,8 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { updateProfilePhoto, deleteProfilePhoto, type Profile } from '../../services/profileService';
+import {
+  updateProfilePhoto,
+  deleteProfilePhoto,
+  type Profile,
+} from '../../services/profileService';
 import { useDialog } from '../../contexts/DialogContext';
 import { Button, Select } from '../ui';
-
 
 interface PhotoUploaderProps {
   profileId: string;
@@ -120,7 +123,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         };
 
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        
+
         if (!active) {
           stream.getTracks().forEach((t) => t.stop());
           return;
@@ -134,7 +137,9 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         console.error('Camera startup failed', err);
         if (active) {
           if (err instanceof DOMException && err.name === 'NotAllowedError') {
-            setCameraError('Camera access denied. Please check your browser or system permissions.');
+            setCameraError(
+              'Camera access denied. Please check your browser or system permissions.'
+            );
           } else {
             setCameraError('Unable to open the camera. It might be in use by another application.');
           }
@@ -187,7 +192,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     if (isMobile || readOnlyOnDesktop) return;
     e.preventDefault();
     setIsDragging(false);
-    
+
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
       setRawFile(file);
@@ -218,30 +223,33 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     e.target.value = ''; // Reset input to allow re-selection
   };
 
-  const uploadFile = useCallback(async (file: File) => {
-    setIsUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('photo', file);
-      const updated = await updateProfilePhoto(profileId, fd);
-      revokeObjectUrl(displayObjectUrlRef.current);
-      const nextDisplayUrl = URL.createObjectURL(file);
-      displayObjectUrlRef.current = nextDisplayUrl;
-      setDisplayUrl(nextDisplayUrl);
+  const uploadFile = useCallback(
+    async (file: File) => {
+      setIsUploading(true);
+      try {
+        const fd = new FormData();
+        fd.append('photo', file);
+        const updated = await updateProfilePhoto(profileId, fd);
+        revokeObjectUrl(displayObjectUrlRef.current);
+        const nextDisplayUrl = URL.createObjectURL(file);
+        displayObjectUrlRef.current = nextDisplayUrl;
+        setDisplayUrl(nextDisplayUrl);
 
-      revokeObjectUrl(previewObjectUrlRef.current);
-      previewObjectUrlRef.current = null;
-      setPreview(null);
+        revokeObjectUrl(previewObjectUrlRef.current);
+        previewObjectUrlRef.current = null;
+        setPreview(null);
 
-      setRawFile(null);
-      setShowCrop(false);
-      onSuccess?.(updated);
-    } catch (err) {
-      console.error('Photo upload failed', err);
-    } finally {
-      setIsUploading(false);
-    }
-  }, [profileId, onSuccess]);
+        setRawFile(null);
+        setShowCrop(false);
+        onSuccess?.(updated);
+      } catch (err) {
+        console.error('Photo upload failed', err);
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [profileId, onSuccess]
+  );
 
   const handleSaveOriginal = async () => {
     if (!rawFile) return;
@@ -301,40 +309,44 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   const handleCapture = () => {
     if (!videoRef.current) return;
     const video = videoRef.current;
-    
+
     const size = Math.min(video.videoWidth, video.videoHeight);
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
-    
+
     if (ctx) {
       const sx = (video.videoWidth - size) / 2;
       const sy = (video.videoHeight - size) / 2;
-      
+
       // Mirror horizontal translation for captured snapshots
       ctx.translate(size, 0);
       ctx.scale(-1, 1);
-      
+
       ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
-      
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          setRawFile(file);
-          revokeObjectUrl(previewObjectUrlRef.current);
-          const nextPreviewUrl = URL.createObjectURL(blob);
-          previewObjectUrlRef.current = nextPreviewUrl;
-          setPreview(nextPreviewUrl);
-          setShowCrop(true);
-          
-          if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop());
-            streamRef.current = null;
+
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setRawFile(file);
+            revokeObjectUrl(previewObjectUrlRef.current);
+            const nextPreviewUrl = URL.createObjectURL(blob);
+            previewObjectUrlRef.current = nextPreviewUrl;
+            setPreview(nextPreviewUrl);
+            setShowCrop(true);
+
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach((track) => track.stop());
+              streamRef.current = null;
+            }
+            setShowCamera(false);
           }
-          setShowCamera(false);
-        }
-      }, 'image/jpeg', 0.95);
+        },
+        'image/jpeg',
+        0.95
+      );
     }
   };
 
@@ -404,7 +416,6 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
     }
   };
 
-
   const initials = profileName.charAt(0).toUpperCase();
   const showImage = displayUrl || preview;
 
@@ -417,11 +428,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         style={{ width: px, height: px }}
       >
         {showImage ? (
-          <img
-            src={preview || displayUrl}
-            alt={profileName}
-            className="size-full object-cover"
-          />
+          <img src={preview || displayUrl} alt={profileName} className="size-full object-cover" />
         ) : (
           <div
             className="flex items-center justify-center font-bold text-slate-500 uppercase select-none"
@@ -443,7 +450,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleAvatarClick}
-        className="group relative flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 bg-slate-100 shadow-sm transition-all hover:border-primary"
+        className="group hover:border-primary relative flex shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-slate-200 bg-slate-100 shadow-sm transition-all"
         // @allow-inline-style - dynamic sizing px value and dragging borders based on component state
         style={{
           width: px,
@@ -485,8 +492,10 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
         {/* Drag and Drop Over Overlay */}
         {!isMobile && isDragging && !isUploading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-primary-light/90 p-2 text-center text-primary-deep">
-            <span className={`font-bold ${size === 'sm' ? 'text-[8px]' : 'text-[12px]'}`}>Drop Photo</span>
+          <div className="bg-primary-light/90 text-primary-deep absolute inset-0 z-10 flex flex-col items-center justify-center p-2 text-center">
+            <span className={`font-bold ${size === 'sm' ? 'text-[8px]' : 'text-[12px]'}`}>
+              Drop Photo
+            </span>
           </div>
         )}
       </div>
@@ -497,25 +506,51 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           <div className="flex items-center justify-center gap-2.5 text-xs">
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click(); }}
-              className="flex cursor-pointer items-center gap-1 font-medium text-primary transition-colors hover:text-primary-deep"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileRef.current?.click();
+              }}
+              className="text-primary hover:text-primary-deep flex cursor-pointer items-center gap-1 font-medium transition-colors"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               Choose File
             </button>
-            
+
             <span className="text-slate-300">|</span>
 
             <button
               type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(true); }}
-              className="flex cursor-pointer items-center gap-1 font-medium text-primary transition-colors hover:text-primary-deep"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowCamera(true);
+              }}
+              className="text-primary hover:text-primary-deep flex cursor-pointer items-center gap-1 font-medium transition-colors"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                 <circle cx="12" cy="13" r="4" />
               </svg>
@@ -530,7 +565,16 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                   onClick={handleRemovePhoto}
                   className="flex cursor-pointer items-center gap-1 font-medium text-red-600 transition-colors hover:text-red-700"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>
@@ -539,25 +583,30 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </>
             )}
           </div>
-          <span className="text-[10px] text-slate-400">
-            or drag & drop photo here
-          </span>
+          <span className="text-[10px] text-slate-400">or drag & drop photo here</span>
         </div>
       )}
 
       {/* Mobile-only clean footer instruction */}
       {isMobile && size !== 'sm' && (
         <div className="flex w-full flex-col items-center gap-1.5">
-          <span className="text-xs text-slate-500">
-            Tap photo to change
-          </span>
+          <span className="text-xs text-slate-500">Tap photo to change</span>
           {displayUrl && (
             <button
               type="button"
               onClick={handleRemovePhoto}
               className="flex cursor-pointer items-center gap-1 text-xs font-medium text-red-600 transition-colors hover:text-red-700"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
@@ -566,7 +615,6 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           )}
         </div>
       )}
-
 
       <input
         ref={fileRef}
@@ -587,10 +635,23 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               <h3 className="text-base font-bold text-slate-800">Camera Preview</h3>
               <button
                 type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancelCamera(); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCancelCamera();
+                }}
                 className="cursor-pointer text-slate-400 transition-colors hover:text-slate-600"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -603,7 +664,12 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 <div className="text-sm font-medium text-red-600">{cameraError}</div>
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowCamera(false); fileRef.current?.click(); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowCamera(false);
+                    fileRef.current?.click();
+                  }}
                   className="cursor-pointer rounded-lg bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200"
                 >
                   Choose File from Device
@@ -618,7 +684,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                     <span>Starting camera...</span>
                   </div>
                 )}
-                
+
                 <video
                   ref={videoRef}
                   autoPlay
@@ -639,7 +705,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 <Select
                   value={selectedDeviceId}
                   onChange={(e) => setSelectedDeviceId(e.target.value)}
-                  size="small" className="!rounded !border-slate-200 !bg-white !text-slate-700"
+                  size="small"
+                  className="!rounded !border-slate-200 !bg-white !text-slate-700"
                 >
                   {videoDevices.map((device) => (
                     <option key={device.deviceId} value={device.deviceId}>
@@ -655,7 +722,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               <div className="flex flex-col items-center justify-center gap-2 bg-slate-50 p-6">
                 <button
                   type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCapture(); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleCapture();
+                  }}
                   className="flex size-14 items-center justify-center rounded-full border-4 border-white bg-red-500 shadow-md transition-all hover:scale-105 hover:bg-red-600 active:scale-95"
                 >
                   <div className="size-5 rounded-full bg-white/40" />
@@ -682,7 +753,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             <div className="flex w-full flex-col justify-center gap-2 sm:flex-row">
               <Button
                 type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSaveOriginal(); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSaveOriginal();
+                }}
                 disabled={isUploading}
                 variant="primary"
                 className="px-5"
@@ -692,7 +767,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </Button>
               <Button
                 type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCrop(); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCrop();
+                }}
                 disabled={isUploading}
                 variant="secondary"
                 className="px-5"
@@ -701,7 +780,11 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               </Button>
               <Button
                 type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCancel(); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCancel();
+                }}
                 disabled={isUploading}
                 variant="outline"
                 className="px-5"

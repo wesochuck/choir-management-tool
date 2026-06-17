@@ -8,7 +8,7 @@ interface UseEventDeepLinkingArgs {
   searchParams: URLSearchParams;
   setSearchParams: (
     nextInit: URLSearchParams | URLSearchParamsInit,
-    navigateOptions?: { replace?: boolean },
+    navigateOptions?: { replace?: boolean }
   ) => void;
   setCloningEventId: (id: string | null) => void;
   setEditingEvent: (event: Event | null) => void;

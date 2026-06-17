@@ -18,7 +18,7 @@ export default function PublicUnsubscribeView() {
   } else if (token && sParam && !token.includes('&s=')) {
     token = `${token}&s=${sParam}`;
   }
-  
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -33,13 +33,15 @@ export default function PublicUnsubscribeView() {
       try {
         await pb.send('/api/unsubscribe', {
           method: 'POST',
-          body: { token }
+          body: { token },
         });
         setStatus('success');
       } catch (err: unknown) {
         console.error('Unsubscribe error:', err);
         setStatus('error');
-        setErrorMessage('This unsubscribe link is invalid or has expired. Please contact a choir administrator if you need help updating your message preferences.');
+        setErrorMessage(
+          'This unsubscribe link is invalid or has expired. Please contact a choir administrator if you need help updating your message preferences.'
+        );
       }
     };
 
@@ -47,11 +49,13 @@ export default function PublicUnsubscribeView() {
   }, [token]);
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-start bg-bg px-4 pt-20">
+    <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-start px-4 pt-20">
       <AppCard title="Unsubscribe from Emails" className="w-full max-w-[500px]">
         <div className="flex flex-col gap-4 text-center">
           {status === 'loading' && (
-            <div className="flex flex-row items-center gap-2 text-text-muted"><Spinner size="small" /> Processing your request...</div>
+            <div className="text-text-muted flex flex-row items-center gap-2">
+              <Spinner size="small" /> Processing your request...
+            </div>
           )}
 
           {status === 'success' && (
@@ -62,7 +66,9 @@ export default function PublicUnsubscribeView() {
                 You have been unsubscribed from all future choir management emails.
               </p>
               <div className="mt-4">
-                <Button as={Link} to="/login" variant="primary">Go to Login</Button>
+                <Button as={Link} to="/login" variant="primary">
+                  Go to Login
+                </Button>
               </div>
             </>
           )}
@@ -71,11 +77,11 @@ export default function PublicUnsubscribeView() {
             <>
               <div className="text-4xl">❌</div>
               <h3 className="text-headline text-danger-text">Unsubscribe Failed</h3>
-              <p className="text-text-muted">
-                {errorMessage}
-              </p>
+              <p className="text-text-muted">{errorMessage}</p>
               <div className="mt-4">
-                <Button as={Link} to="/login" variant="outline">Return to Site</Button>
+                <Button as={Link} to="/login" variant="outline">
+                  Return to Site
+                </Button>
               </div>
             </>
           )}

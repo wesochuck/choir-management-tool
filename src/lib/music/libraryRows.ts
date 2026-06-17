@@ -5,7 +5,13 @@ import {
 } from './performanceHistory';
 import { parseDurationToSeconds } from './duration';
 
-export type MusicLibrarySortField = 'title' | 'composer' | 'duration' | 'copies' | 'catalogId' | 'lastPerformed';
+export type MusicLibrarySortField =
+  | 'title'
+  | 'composer'
+  | 'duration'
+  | 'copies'
+  | 'catalogId'
+  | 'lastPerformed';
 export type SortDirection = 'asc' | 'desc';
 export type FilterMode = 'OR' | 'AND';
 
@@ -37,10 +43,10 @@ export function buildVisibleMusicLibraryRows(
   pieces: MusicPiece[],
   options: BuildVisibleMusicLibraryRowsOptions
 ): MusicPiece[] {
-  const { 
-    searchTerm = '', 
-    showDuplicatesOnly = false, 
-    showMovements = false, 
+  const {
+    searchTerm = '',
+    showDuplicatesOnly = false,
+    showMovements = false,
     duplicateIds = new Set<string>(),
     sectionFilters = [],
     genreFilters = [],
@@ -49,47 +55,48 @@ export function buildVisibleMusicLibraryRows(
     now,
     sortField = 'title',
     sortDirection = 'asc',
-    ignoreArticles = false
+    ignoreArticles = false,
   } = options;
 
   let result = [...pieces];
 
   // 1. Core Visibility Filtering
   if (!showMovements) {
-    result = result.filter(p => !p.parentId);
+    result = result.filter((p) => !p.parentId);
   }
 
   if (showDuplicatesOnly) {
-    result = result.filter(p => duplicateIds.has(p.id));
+    result = result.filter((p) => duplicateIds.has(p.id));
   }
 
   // 2. Search Matching
   if (searchTerm) {
     const lower = searchTerm.toLowerCase();
-    result = result.filter(p => 
-      p.title.toLowerCase().includes(lower) || 
-      p.composer?.toLowerCase().includes(lower) ||
-      p.arranger?.toLowerCase().includes(lower) ||
-      p.catalogId?.toLowerCase().includes(lower) ||
-      p.notes?.toLowerCase().includes(lower)
+    result = result.filter(
+      (p) =>
+        p.title.toLowerCase().includes(lower) ||
+        p.composer?.toLowerCase().includes(lower) ||
+        p.arranger?.toLowerCase().includes(lower) ||
+        p.catalogId?.toLowerCase().includes(lower) ||
+        p.notes?.toLowerCase().includes(lower)
     );
   }
 
   // 3. Section Bucket Applicability
   if (sectionFilters && sectionFilters.length > 0) {
-    result = result.filter(p => {
+    result = result.filter((p) => {
       if (!p.sectionBuckets || p.sectionBuckets.length === 0) {
         return true;
       }
-      return p.sectionBuckets.some(code => sectionFilters.includes(code));
+      return p.sectionBuckets.some((code) => sectionFilters.includes(code));
     });
   }
 
   // 3b. Genre Filtering
   if (genreFilters && genreFilters.length > 0) {
-    const realGenreFilters = genreFilters.filter(id => id !== '__no-genre__');
+    const realGenreFilters = genreFilters.filter((id) => id !== '__no-genre__');
     const includeNoGenre = genreFilters.includes('__no-genre__');
-    result = result.filter(p => {
+    result = result.filter((p) => {
       const pGenres = p.genres || [];
       const hasNoGenres = !Array.isArray(pGenres) || pGenres.length === 0;
 
@@ -97,13 +104,14 @@ export function buildVisibleMusicLibraryRows(
         // AND mode: Must match ALL criteria
         if (includeNoGenre && !hasNoGenres) return false;
         if (realGenreFilters.length > 0) {
-          return realGenreFilters.every(gId => pGenres.includes(gId));
+          return realGenreFilters.every((gId) => pGenres.includes(gId));
         }
         return includeNoGenre ? hasNoGenres : true;
       } else {
         // OR mode: Match ANY criteria
         if (includeNoGenre && hasNoGenres) return true;
-        if (realGenreFilters.length > 0 && pGenres.some(gId => realGenreFilters.includes(gId))) return true;
+        if (realGenreFilters.length > 0 && pGenres.some((gId) => realGenreFilters.includes(gId)))
+          return true;
         return false;
       }
     });
@@ -112,7 +120,7 @@ export function buildVisibleMusicLibraryRows(
   // 3c. Performance Recency Filtering
   if (recencyFilter && recencyFilter !== 'all') {
     const referenceDate = now || new Date();
-    result = result.filter(p => {
+    result = result.filter((p) => {
       const mostRecent = getEffectiveMostRecentPerformanceDate(p, pieces);
 
       if (recencyFilter === 'never') {
@@ -154,8 +162,8 @@ export function buildVisibleMusicLibraryRows(
   }
 
   // Separate parent/standalone and child pieces from the current result set
-  const parents = result.filter(p => !p.parentId);
-  const children = result.filter(p => p.parentId);
+  const parents = result.filter((p) => !p.parentId);
+  const children = result.filter((p) => p.parentId);
 
   const comparePieces = (a: MusicPiece, b: MusicPiece): number => {
     switch (sortField) {
@@ -208,7 +216,7 @@ export function buildVisibleMusicLibraryRows(
   const childMap = new Map<string, MusicPiece[]>();
 
   // Group children by parentId
-  children.forEach(child => {
+  children.forEach((child) => {
     if (child.parentId) {
       const list = childMap.get(child.parentId) || [];
       list.push(child);
@@ -217,7 +225,7 @@ export function buildVisibleMusicLibraryRows(
   });
 
   // Sort each parent's children alphabetically by title
-  childMap.forEach(list => {
+  childMap.forEach((list) => {
     list.sort((a, b) => {
       const titleA = getSortTitle(a.title, ignoreArticles);
       const titleB = getSortTitle(b.title, ignoreArticles);
@@ -226,7 +234,7 @@ export function buildVisibleMusicLibraryRows(
   });
 
   // Insert children immediately following their parent piece
-  parents.forEach(parent => {
+  parents.forEach((parent) => {
     sorted.push(parent);
     const parentChildren = childMap.get(parent.id);
     if (parentChildren) {
@@ -236,8 +244,8 @@ export function buildVisibleMusicLibraryRows(
 
   // 5. Handle Orphans
   // (children whose parents are not in the current filtered list, or whose parentId is invalid)
-  const sortedIds = new Set(sorted.map(p => p.id));
-  const orphans = children.filter(child => !sortedIds.has(child.id));
+  const sortedIds = new Set(sorted.map((p) => p.id));
+  const orphans = children.filter((child) => !sortedIds.has(child.id));
   orphans.sort(comparePieces);
   sorted.push(...orphans);
 

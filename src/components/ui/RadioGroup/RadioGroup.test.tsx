@@ -10,8 +10,8 @@ test('RadioGroup renders children inside a wrapper in test environment', () => {
       RadioGroup,
       { value: 'a', onChange: () => {} },
       React.createElement(Radio, { value: 'a' }, 'Option A'),
-      React.createElement(Radio, { value: 'b' }, 'Option B'),
-    ),
+      React.createElement(Radio, { value: 'b' }, 'Option B')
+    )
   );
   const wrapper = container.firstElementChild;
   assert.ok(wrapper, 'renders a wrapper');
@@ -27,8 +27,8 @@ test('RadioGroup passes className to the wrapper', () => {
     React.createElement(
       RadioGroup,
       { value: 'a', onChange: () => {}, className: 'flex gap-2' },
-      React.createElement(Radio, { value: 'a' }, 'A'),
-    ),
+      React.createElement(Radio, { value: 'a' }, 'A')
+    )
   );
   const wrapper = container.firstElementChild;
   assert.ok(wrapper, 'renders a wrapper');
@@ -36,9 +36,7 @@ test('RadioGroup passes className to the wrapper', () => {
 });
 
 test('Radio renders an <input type="radio"> with the value attribute', () => {
-  const { container } = render(
-    React.createElement(Radio, { value: 'yes' }, 'Yes'),
-  );
+  const { container } = render(React.createElement(Radio, { value: 'yes' }, 'Yes'));
   const input = container.querySelector('input[type="radio"]') as HTMLInputElement;
   assert.ok(input, 'renders a radio input');
   assert.equal(input.value, 'yes');

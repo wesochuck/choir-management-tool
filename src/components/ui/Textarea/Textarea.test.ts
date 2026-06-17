@@ -12,11 +12,13 @@ test('Textarea renders with default props', () => {
 });
 
 test('Textarea passes through native props', () => {
-  const { container } = render(React.createElement(Textarea, {
-    placeholder: 'Enter bio',
-    rows: 4,
-    onChange: () => {},
-  }));
+  const { container } = render(
+    React.createElement(Textarea, {
+      placeholder: 'Enter bio',
+      rows: 4,
+      onChange: () => {},
+    })
+  );
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   assert.equal(el.getAttribute('placeholder'), 'Enter bio');
@@ -35,7 +37,11 @@ test('Textarea ref exposes setCustomValidity as a function (smoke test)', () => 
   const ref = React.createRef<HTMLTextAreaElement>();
   render(React.createElement(Textarea, { ref }));
   assert.ok(ref.current, 'ref should be attached');
-  assert.equal(typeof ref.current.setCustomValidity, 'function', 'ref must expose setCustomValidity');
+  assert.equal(
+    typeof ref.current.setCustomValidity,
+    'function',
+    'ref must expose setCustomValidity'
+  );
   // Verify the method is callable and the call does not throw.
   assert.doesNotThrow(() => ref.current.setCustomValidity('test'));
 });

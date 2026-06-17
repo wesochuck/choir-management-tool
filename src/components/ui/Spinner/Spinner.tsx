@@ -27,22 +27,26 @@ export function Spinner({ size = 'medium', className }: SpinnerProps) {
       'border-border border-t-primary',
       sizeClasses[size],
       className,
-    ].filter(Boolean).join(' ');
+    ]
+      .filter(Boolean)
+      .join(' ');
 
     return <div className={classNames} role="status" aria-label="Loading" />;
   }
 
   return (
-    <SlSpinner 
+    <SlSpinner
       {...safeSlProps({ className } as Record<string, unknown>)}
       role="status"
       aria-label="Loading"
       // @allow-inline-style - dynamic spinner sizes
-      style={{ 
-        fontSize: sizeFontSizes[size],
-        '--track-width': size === 'small' ? '2px' : size === 'medium' ? '3px' : '4px',
-        display: 'inline-block'
-      } as React.CSSProperties}
+      style={
+        {
+          fontSize: sizeFontSizes[size],
+          '--track-width': size === 'small' ? '2px' : size === 'medium' ? '3px' : '4px',
+          display: 'inline-block',
+        } as React.CSSProperties
+      }
     />
   );
 }

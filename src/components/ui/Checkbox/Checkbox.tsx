@@ -6,17 +6,45 @@ import { layoutOnly, safeSlProps } from '../shared';
 export type CheckboxProps = Omit<React.ComponentPropsWithoutRef<'input'>, 'size'>;
 
 export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, onChange, onBlur, onFocus, checked, defaultChecked, disabled, required, name, value, children, ...rest }, ref) => {
+  (
+    {
+      className,
+      onChange,
+      onBlur,
+      onFocus,
+      checked,
+      defaultChecked,
+      disabled,
+      required,
+      name,
+      value,
+      children,
+      ...rest
+    },
+    ref
+  ) => {
     const slRef = useRef<SlCheckboxElement | null>(null);
 
-    useImperativeHandle(ref, () => ({
-      focus: () => slRef.current?.focus(),
-      blur: () => slRef.current?.blur(),
-      get checked() { return slRef.current?.checked || false; },
-      set checked(val) { if (slRef.current) slRef.current.checked = val; },
-      get value() { return slRef.current?.value || ''; },
-      set value(val) { if (slRef.current) slRef.current.value = val; },
-    } as unknown as HTMLInputElement));
+    useImperativeHandle(
+      ref,
+      () =>
+        ({
+          focus: () => slRef.current?.focus(),
+          blur: () => slRef.current?.blur(),
+          get checked() {
+            return slRef.current?.checked || false;
+          },
+          set checked(val) {
+            if (slRef.current) slRef.current.checked = val;
+          },
+          get value() {
+            return slRef.current?.value || '';
+          },
+          set value(val) {
+            if (slRef.current) slRef.current.value = val;
+          },
+        }) as unknown as HTMLInputElement
+    );
 
     if (process.env.NODE_ENV === 'test') {
       return (
@@ -76,8 +104,12 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           value: value !== undefined ? String(value) : undefined,
           className: layoutOnly(className),
           onSlChange: handleChange,
-          onSlBlur: onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined,
-          onSlFocus: onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined,
+          onSlBlur: onBlur
+            ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>)
+            : undefined,
+          onSlFocus: onFocus
+            ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>)
+            : undefined,
           ...(rest as Record<string, unknown>),
         } as Record<string, unknown>)}
       >

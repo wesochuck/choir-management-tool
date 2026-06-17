@@ -54,7 +54,8 @@ export const queryKeys = {
   },
   ticketing: {
     all: ['ticketing'] as const,
-    main: (selectedEventId: string) => [...queryKeys.ticketing.all, 'main', selectedEventId] as const,
+    main: (selectedEventId: string) =>
+      [...queryKeys.ticketing.all, 'main', selectedEventId] as const,
     logoUrl: ['ticketing', 'logoUrl'] as const,
   },
   eventRoster: {
@@ -63,14 +64,17 @@ export const queryKeys = {
   },
   tickets: {
     all: ['tickets'] as const,
-    scanContext: (sessionId: string, purchaseId: string) => [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,
-    publicBundle: (bundleId: string) => [...queryKeys.tickets.all, 'publicBundle', bundleId] as const,
+    scanContext: (sessionId: string, purchaseId: string) =>
+      [...queryKeys.tickets.all, 'scanContext', sessionId, purchaseId] as const,
+    publicBundle: (bundleId: string) =>
+      [...queryKeys.tickets.all, 'publicBundle', bundleId] as const,
     publicBundles: ['tickets', 'publicBundles'] as const,
     verify: (sessionId: string) => [...queryKeys.tickets.all, 'verify', sessionId] as const,
   },
   seating: {
     all: ['seating'] as const,
-    data: (performanceId: string, venueId: string) => [...queryKeys.seating.all, 'data', performanceId, venueId] as const,
+    data: (performanceId: string, venueId: string) =>
+      [...queryKeys.seating.all, 'data', performanceId, venueId] as const,
     settings: ['seating', 'settings'] as const,
   },
   settings: {
@@ -79,7 +83,8 @@ export const queryKeys = {
   reports: {
     all: ['reports'] as const,
     performances: ['reports', 'performances'] as const,
-    concertSummary: (performanceId: string) => [...queryKeys.reports.all, 'concertSummary', performanceId] as const,
+    concertSummary: (performanceId: string) =>
+      [...queryKeys.reports.all, 'concertSummary', performanceId] as const,
     musicLibrary: ['reports', 'musicLibrary'] as const,
   },
   polls: {
@@ -155,7 +160,8 @@ export const queryKeys = {
   communications: {
     all: ['communications'] as const,
     history: () => [...queryKeys.communications.all, 'history'] as const,
-    historyPaginated: (page: number, query: string) => [...queryKeys.communications.all, 'history', page, query] as const,
+    historyPaginated: (page: number, query: string) =>
+      [...queryKeys.communications.all, 'history', page, query] as const,
     drafts: () => [...queryKeys.communications.all, 'drafts'] as const,
     templates: () => [...queryKeys.communications.all, 'templates'] as const,
     settings: () => [...queryKeys.communications.all, 'settings'] as const,

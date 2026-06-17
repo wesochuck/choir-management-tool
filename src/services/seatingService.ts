@@ -23,35 +23,51 @@ export const seatingService = {
   async getChartsForPerformance(performanceId: string, venueId: string | null) {
     try {
       const filterStr = venueId
-        ? pb.filter('performance = {:performanceId} && venue = {:venueId}', { performanceId, venueId })
+        ? pb.filter('performance = {:performanceId} && venue = {:venueId}', {
+            performanceId,
+            venueId,
+          })
         : pb.filter('performance = {:performanceId}', { performanceId });
       return await pb.collection('pbc_seating_001').getFullList<SeatingChart>({
         filter: filterStr,
         sort: 'sortOrder,name',
-        expand: 'venue'
+        expand: 'venue',
       });
     } catch {
       return [];
     }
   },
 
-  async getChartForPerformance(performanceId: string, venueId: string | null, chartIdOrName?: string) {
+  async getChartForPerformance(
+    performanceId: string,
+    venueId: string | null,
+    chartIdOrName?: string
+  ) {
     try {
       let filterStr = '';
       if (chartIdOrName) {
         filterStr = venueId
-          ? pb.filter('performance = {:performanceId} && venue = {:venueId} && (id = {:chartIdOrName} || name = {:chartIdOrName})', { performanceId, venueId, chartIdOrName })
-          : pb.filter('performance = {:performanceId} && (id = {:chartIdOrName} || name = {:chartIdOrName})', { performanceId, chartIdOrName });
+          ? pb.filter(
+              'performance = {:performanceId} && venue = {:venueId} && (id = {:chartIdOrName} || name = {:chartIdOrName})',
+              { performanceId, venueId, chartIdOrName }
+            )
+          : pb.filter(
+              'performance = {:performanceId} && (id = {:chartIdOrName} || name = {:chartIdOrName})',
+              { performanceId, chartIdOrName }
+            );
       } else {
         filterStr = venueId
-          ? pb.filter('performance = {:performanceId} && venue = {:venueId}', { performanceId, venueId })
+          ? pb.filter('performance = {:performanceId} && venue = {:venueId}', {
+              performanceId,
+              venueId,
+            })
           : pb.filter('performance = {:performanceId}', { performanceId });
       }
 
       const list = await pb.collection('pbc_seating_001').getList<SeatingChart>(1, 1, {
         filter: filterStr,
         expand: 'venue',
-        sort: 'created'
+        sort: 'created',
       });
       return list.items[0] || null;
     } catch (err: unknown) {
@@ -62,7 +78,7 @@ export const seatingService = {
 
   async getAllCharts() {
     return await pb.collection('pbc_seating_001').getFullList<SeatingChart>({
-      expand: 'performance,venue'
+      expand: 'performance,venue',
     });
   },
 
@@ -86,11 +102,17 @@ export const seatingService = {
     await batch.send();
   },
 
-  async getSingerSeatingProfiles(performanceId: string, chartId: string): Promise<SeatingSingerProfile[]> {
-    const response = await pb.send<{ profiles?: SeatingSingerProfile[] }>('/api/singer/seating-profiles', {
-      method: 'GET',
-      query: { eventId: performanceId, chartId },
-    });
+  async getSingerSeatingProfiles(
+    performanceId: string,
+    chartId: string
+  ): Promise<SeatingSingerProfile[]> {
+    const response = await pb.send<{ profiles?: SeatingSingerProfile[] }>(
+      '/api/singer/seating-profiles',
+      {
+        method: 'GET',
+        query: { eventId: performanceId, chartId },
+      }
+    );
     return response.profiles ?? [];
   },
 
@@ -98,11 +120,11 @@ export const seatingService = {
    * Proportional Seating Algorithm
    */
   calculateAutoPaint(
-    rowCounts: number[], 
-    sectionCounts: Record<string, number>, 
+    rowCounts: number[],
+    sectionCounts: Record<string, number>,
     sectionOrder: string[],
     strategy: FormationStrategyType
   ): Record<string, string> {
     return calculateAutoPaint(rowCounts, sectionCounts, sectionOrder, strategy);
-  }
+  },
 };

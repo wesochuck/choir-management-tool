@@ -7,10 +7,32 @@ export interface InputProps extends Omit<React.ComponentPropsWithoutRef<'input'>
   invalid?: boolean;
 }
 
-const baseInputClasses = 'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]';
+const baseInputClasses =
+  'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]';
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ invalid, className, type, onChange, onInput, onBlur, onFocus, value, defaultValue, placeholder, disabled, required, readOnly, name, autoFocus, children, ...rest }, ref) => {
+  (
+    {
+      invalid,
+      className,
+      type,
+      onChange,
+      onInput,
+      onBlur,
+      onFocus,
+      value,
+      defaultValue,
+      placeholder,
+      disabled,
+      required,
+      readOnly,
+      name,
+      autoFocus,
+      children,
+      ...rest
+    },
+    ref
+  ) => {
     const slRef = useRef<SlInputElement | null>(null);
     const nativeRef = useRef<HTMLInputElement | null>(null);
 
@@ -22,8 +44,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         focus: () => slRef.current?.focus(),
         blur: () => slRef.current?.blur(),
         select: () => slRef.current?.select(),
-        get value() { return slRef.current?.value || ''; },
-        set value(val) { if (slRef.current) slRef.current.value = val; },
+        get value() {
+          return slRef.current?.value || '';
+        },
+        set value(val) {
+          if (slRef.current) slRef.current.value = val;
+        },
         setCustomValidity: (message: string) => slRef.current?.setCustomValidity(message),
         reportValidity: () => slRef.current?.reportValidity?.() ?? false,
       } as unknown as HTMLInputElement;
@@ -38,7 +64,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         'flex items-center py-0',
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
-      ].filter(Boolean).join(' ');
+      ]
+        .filter(Boolean)
+        .join(' ');
       return (
         <input
           ref={nativeRef}
@@ -64,7 +92,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         baseInputClasses,
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
-      ].filter(Boolean).join(' ');
+      ]
+        .filter(Boolean)
+        .join(' ');
       return (
         <input
           ref={ref}
@@ -125,10 +155,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           name,
           className: layoutOnly(className),
           onSlInput: handleInput,
-          onSlBlur: onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>) : undefined,
-          onSlFocus: onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>) : undefined,
+          onSlBlur: onBlur
+            ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>)
+            : undefined,
+          onSlFocus: onFocus
+            ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>)
+            : undefined,
           // @allow-inline-style - dynamic invalid border color override
-          style: invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined,
+          style: invalid
+            ? ({ '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties)
+            : undefined,
           ...(rest as Record<string, unknown>),
         } as Record<string, unknown>)}
       >

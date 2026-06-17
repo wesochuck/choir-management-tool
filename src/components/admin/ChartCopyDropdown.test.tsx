@@ -26,9 +26,27 @@ function getTriggerButton(): HTMLElement {
 }
 
 const charts: SeatingChart[] = [
-  makeChart({ id: '1', name: 'Main', performance: 'perf-1', sortOrder: 0, expand: { performance: { id: 'perf-1', title: 'Spring Concert', date: '2026-06-01' } } }),
-  makeChart({ id: '2', name: 'Alt Layout', performance: 'perf-1', sortOrder: 1, expand: { performance: { id: 'perf-1', title: 'Spring Concert', date: '2026-06-01' } } }),
-  makeChart({ id: '3', name: 'Main', performance: 'perf-2', sortOrder: 0, expand: { performance: { id: 'perf-2', title: 'Fall Fundraiser', date: '2026-10-01' } } }),
+  makeChart({
+    id: '1',
+    name: 'Main',
+    performance: 'perf-1',
+    sortOrder: 0,
+    expand: { performance: { id: 'perf-1', title: 'Spring Concert', date: '2026-06-01' } },
+  }),
+  makeChart({
+    id: '2',
+    name: 'Alt Layout',
+    performance: 'perf-1',
+    sortOrder: 1,
+    expand: { performance: { id: 'perf-1', title: 'Spring Concert', date: '2026-06-01' } },
+  }),
+  makeChart({
+    id: '3',
+    name: 'Main',
+    performance: 'perf-2',
+    sortOrder: 0,
+    expand: { performance: { id: 'perf-2', title: 'Fall Fundraiser', date: '2026-10-01' } },
+  }),
 ];
 
 describe('ChartCopyDropdown', () => {
@@ -37,39 +55,21 @@ describe('ChartCopyDropdown', () => {
   });
 
   it('renders trigger with "Copy: Choose..."', () => {
-    render(
-      <ChartCopyDropdown
-        allCharts={charts}
-        currentChartId="1"
-        onCopy={() => {}}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={() => {}} />);
     const btn = getTriggerButton();
     assert.ok(btn.textContent?.includes('Copy:'));
     assert.ok(btn.textContent?.includes('Choose...'));
   });
 
   it('opens dropdown panel on trigger click', () => {
-    render(
-      <ChartCopyDropdown
-        allCharts={charts}
-        currentChartId="1"
-        onCopy={() => {}}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={() => {}} />);
     fireEvent.click(getTriggerButton());
     assert.ok(screen.getByText('Spring Concert'));
     assert.ok(screen.getByText('Fall Fundraiser'));
   });
 
   it('shows chart names indented under performance groups', () => {
-    render(
-      <ChartCopyDropdown
-        allCharts={charts}
-        currentChartId="1"
-        onCopy={() => {}}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={() => {}} />);
     fireEvent.click(getTriggerButton());
     const mainCharts = screen.getAllByText('Main');
     assert.strictEqual(mainCharts.length, 2);
@@ -77,29 +77,19 @@ describe('ChartCopyDropdown', () => {
   });
 
   it('disables current active chart option', () => {
-    render(
-      <ChartCopyDropdown
-        allCharts={charts}
-        currentChartId="1"
-        onCopy={() => {}}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={() => {}} />);
     fireEvent.click(getTriggerButton());
-    const disabledCharts = screen.getAllByText('Main').filter(el => el.closest('[data-disabled]'));
+    const disabledCharts = screen
+      .getAllByText('Main')
+      .filter((el) => el.closest('[data-disabled]'));
     assert.strictEqual(disabledCharts.length, 1);
   });
 
   it('does not fire onCopy when clicking the disabled current chart', () => {
     const onCopy = mock.fn();
-    render(
-      <ChartCopyDropdown
-        allCharts={charts}
-        currentChartId="1"
-        onCopy={onCopy}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={onCopy} />);
     fireEvent.click(getTriggerButton());
-    const disabledChart = screen.getAllByText('Main').find(el => el.closest('[data-disabled]'));
+    const disabledChart = screen.getAllByText('Main').find((el) => el.closest('[data-disabled]'));
     assert.ok(disabledChart);
     fireEvent.click(disabledChart!);
     assert.strictEqual(onCopy.mock.callCount(), 0);
@@ -107,13 +97,7 @@ describe('ChartCopyDropdown', () => {
 
   it('calls onCopy with chart id when clicking a different chart', () => {
     const onCopy = mock.fn();
-    render(
-      <ChartCopyDropdown
-        allCharts={charts}
-        currentChartId="1"
-        onCopy={onCopy}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={onCopy} />);
     fireEvent.click(getTriggerButton());
     fireEvent.click(screen.getByText('Alt Layout'));
     assert.strictEqual(onCopy.mock.callCount(), 1);
@@ -121,13 +105,7 @@ describe('ChartCopyDropdown', () => {
   });
 
   it('closes dropdown on Escape key', () => {
-    render(
-      <ChartCopyDropdown
-        allCharts={charts}
-        currentChartId="1"
-        onCopy={() => {}}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={() => {}} />);
     fireEvent.click(getTriggerButton());
     assert.ok(screen.getByText('Spring Concert'));
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -138,11 +116,7 @@ describe('ChartCopyDropdown', () => {
     render(
       <div>
         <span data-testid="outside">Outside</span>
-        <ChartCopyDropdown
-          allCharts={charts}
-          currentChartId="1"
-          onCopy={() => {}}
-        />
+        <ChartCopyDropdown allCharts={charts} currentChartId="1" onCopy={() => {}} />
       </div>
     );
     fireEvent.click(getTriggerButton());
@@ -152,13 +126,7 @@ describe('ChartCopyDropdown', () => {
   });
 
   it('shows empty state when no charts are available to copy', () => {
-    render(
-      <ChartCopyDropdown
-        allCharts={[]}
-        currentChartId="1"
-        onCopy={() => {}}
-      />
-    );
+    render(<ChartCopyDropdown allCharts={[]} currentChartId="1" onCopy={() => {}} />);
     fireEvent.click(getTriggerButton());
     assert.ok(screen.getByText(/no.*chart/i));
   });

@@ -21,25 +21,37 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-bg">
-      <header className="no-print sticky top-0 z-40 bg-bg border-b border-border shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div className="bg-bg min-h-screen">
+      <header className="no-print bg-bg border-border sticky top-0 z-40 border-b shadow-sm">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
           <Link to="/" className="flex items-center gap-3 no-underline">
             <PublicLogo />
-            <span className="text-lg font-semibold text-text">{choirName || 'Choir'}</span>
+            <span className="text-text text-lg font-semibold">{choirName || 'Choir'}</span>
           </Link>
           <nav className="flex items-center gap-4">
-            <Link to="/tickets" className={getLinkClass('/tickets')}>Tickets</Link>
-            <Link to="/donate" className={getLinkClass('/donate')}>Donate</Link>
-            <Link to="/auditions" className={getLinkClass('/auditions')}>Auditions</Link>
-            <Link to="/history" className={getLinkClass('/history')}>History</Link>
+            <Link to="/tickets" className={getLinkClass('/tickets')}>
+              Tickets
+            </Link>
+            <Link to="/donate" className={getLinkClass('/donate')}>
+              Donate
+            </Link>
+            <Link to="/auditions" className={getLinkClass('/auditions')}>
+              Auditions
+            </Link>
+            <Link to="/history" className={getLinkClass('/history')}>
+              History
+            </Link>
             {user ? (
               <Link to="/dashboard">
-                <Button variant="secondary" size="small">Dashboard</Button>
+                <Button variant="secondary" size="small">
+                  Dashboard
+                </Button>
               </Link>
             ) : (
               <Link to="/login">
-                <Button variant="primary" size="small">Login</Button>
+                <Button variant="primary" size="small">
+                  Login
+                </Button>
               </Link>
             )}
           </nav>
@@ -48,8 +60,12 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
 
       <main>{children}</main>
 
-      <footer className="border-t border-border py-6 text-center text-sm text-text-muted">
-        {choirName && <p>&copy; {new Date().getFullYear()} {choirName}</p>}
+      <footer className="border-border text-text-muted border-t py-6 text-center text-sm">
+        {choirName && (
+          <p>
+            &copy; {new Date().getFullYear()} {choirName}
+          </p>
+        )}
       </footer>
     </div>
   );

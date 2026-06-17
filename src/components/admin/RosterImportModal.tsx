@@ -48,14 +48,13 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     notes: -1,
   });
   const [mappedSingers, setMappedSingers] = useState<MappedSinger[]>([]);
-  
+
   // Execution progress
   const [importProgress, setImportProgress] = useState(0);
   const [importingIndex, setImportingIndex] = useState(0);
   const [successCount, setSuccessCount] = useState(0);
   const [errorsList, setErrorsList] = useState<{ row: number; name: string; error: string }[]>([]);
   const [credentialsList, setCredentialsList] = useState<CreatedCredential[]>([]);
-
 
   // 1. Handlers for Upload Step
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +70,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       }
 
       setCsvData(parsed);
-      
+
       // Auto-suggest mapping based on headers
       const suggested = suggestFieldMapping(parsed.headers);
       setMapping(suggested);
@@ -90,7 +89,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
   // 2. Handlers for Mapping Step
   const handleMappingChange = (field: RosterField, index: number) => {
-    setMapping(prev => ({ ...prev, [field]: index }));
+    setMapping((prev) => ({ ...prev, [field]: index }));
   };
 
   const handleApplyMapping = () => {
@@ -115,11 +114,12 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   const handleStartImport = async () => {
     if (!csvData) return;
 
-    const validSingers = mappedSingers.filter(s => s.isValid);
+    const validSingers = mappedSingers.filter((s) => s.isValid);
     if (validSingers.length === 0) {
       await dialog.showMessage({
         title: 'No Valid Records',
-        message: 'There are no valid records to import. Please check your field mapping or fix errors.',
+        message:
+          'There are no valid records to import. Please check your field mapping or fix errors.',
         variant: 'danger',
       });
       return;
@@ -128,8 +128,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     const confirmed = await dialog.confirm({
       title: 'Confirm Import',
       message: `Ready to import ${validSingers.length} singers? ${
-        mappedSingers.length - validSingers.length > 0 
-          ? `${mappedSingers.length - validSingers.length} invalid rows will be skipped.` 
+        mappedSingers.length - validSingers.length > 0
+          ? `${mappedSingers.length - validSingers.length} invalid rows will be skipped.`
           : ''
       }`,
       confirmLabel: 'Import Now',
@@ -151,11 +151,11 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
     // @allow-sequential-await - Import runs sequentially to show live progress and handle partial success robustly.
     for (let i = 0; i < mappedSingers.length; i++) {
-       const singer = mappedSingers[i];
-       if (!singer.isValid) continue;
+      const singer = mappedSingers[i];
+      if (!singer.isValid) continue;
 
       setImportingIndex(i + 1);
-      
+
       try {
         const payload: Parameters<typeof profileService.createProfile>[0] = {
           name: singer.data.name,
@@ -207,13 +207,13 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     if (credentialsList.length === 0) return;
 
     const headers = ['Name', 'Email', 'Temporary Password'];
-    const rows = credentialsList.map(c => [
+    const rows = credentialsList.map((c) => [
       c.name.includes(',') ? `"${c.name}"` : c.name,
       c.email,
       c.password || '',
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -252,24 +252,36 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       case 'UPLOAD':
         return (
           <div className="flex w-full justify-end gap-2">
-            <Button onClick={handleModalClose} variant="outline">Cancel</Button>
+            <Button onClick={handleModalClose} variant="outline">
+              Cancel
+            </Button>
           </div>
         );
       case 'MAP':
         return (
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <div className="flex justify-between gap-2 sm:mr-auto">
-              <Button onClick={handleReset} variant="outline">Restart</Button>
-              <Button onClick={() => setStep('UPLOAD')} variant="outline">Back</Button>
+              <Button onClick={handleReset} variant="outline">
+                Restart
+              </Button>
+              <Button onClick={() => setStep('UPLOAD')} variant="outline">
+                Back
+              </Button>
             </div>
-            <Button onClick={handleApplyMapping} variant="primary" className="w-full sm:w-auto">Preview & Validate</Button>
+            <Button onClick={handleApplyMapping} variant="primary" className="w-full sm:w-auto">
+              Preview & Validate
+            </Button>
           </div>
         );
       case 'PREVIEW':
         return (
           <div className="flex w-full justify-end gap-2">
-            <Button onClick={() => setStep('MAP')} variant="outline">Back</Button>
-            <Button onClick={handleStartImport} variant="primary">Confirm & Import</Button>
+            <Button onClick={() => setStep('MAP')} variant="outline">
+              Back
+            </Button>
+            <Button onClick={handleStartImport} variant="primary">
+              Confirm & Import
+            </Button>
           </div>
         );
       case 'IMPORTING':
@@ -277,7 +289,9 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       case 'COMPLETE':
         return (
           <div className="flex w-full justify-end gap-2">
-            <Button onClick={handleModalClose} variant="primary">Done</Button>
+            <Button onClick={handleModalClose} variant="primary">
+              Done
+            </Button>
           </div>
         );
     }
@@ -287,7 +301,11 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     { key: 'name', label: 'Name', desc: 'Full name of the singer', required: true },
     { key: 'email', label: 'Email', desc: 'Enables user login if provided' },
     { key: 'phone', label: 'Phone', desc: 'Contact phone number' },
-    { key: 'voicePart', label: 'Voice Part', desc: 'S1, A2, etc. (should match your configured parts)' },
+    {
+      key: 'voicePart',
+      label: 'Voice Part',
+      desc: 'S1, A2, etc. (should match your configured parts)',
+    },
     { key: 'globalStatus', label: 'Global Status', desc: 'Active, Idle, or Inactive' },
     { key: 'notes', label: 'Notes', desc: 'Administrative notes' },
   ];
@@ -297,11 +315,15 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       isOpen={isOpen}
       onClose={step === 'IMPORTING' ? () => undefined : handleModalClose}
       title={
-        step === 'UPLOAD' ? 'Import Singers via CSV' :
-        step === 'MAP' ? 'Map CSV Columns' :
-        step === 'PREVIEW' ? 'Preview & Validation' :
-        step === 'IMPORTING' ? 'Importing Roster...' :
-        'Import Completed'
+        step === 'UPLOAD'
+          ? 'Import Singers via CSV'
+          : step === 'MAP'
+            ? 'Map CSV Columns'
+            : step === 'PREVIEW'
+              ? 'Preview & Validation'
+              : step === 'IMPORTING'
+                ? 'Importing Roster...'
+                : 'Import Completed'
       }
       footer={renderFooter()}
       maxWidth={step === 'PREVIEW' || step === 'COMPLETE' ? '800px' : '520px'}
@@ -313,9 +335,9 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             Upload a CSV file containing your singer roster to bootstrap the process.
           </p>
 
-          <div 
+          <div
             onClick={() => fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-[rgb(74_124_89_/_2%)] p-[40px_20px] transition-[border-color,background-color] duration-200"
+            className="border-border flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed bg-[rgb(74_124_89_/_2%)] p-[40px_20px] transition-[border-color,background-color] duration-200"
             onMouseOver={(e) => {
               e.currentTarget.style.borderColor = 'var(--color-primary)';
               e.currentTarget.style.backgroundColor = 'rgba(74, 124, 89, 0.05)';
@@ -327,23 +349,21 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           >
             <span className="text-5xl">📄</span>
             <div>
-              <strong className="block text-base text-primary-deep">
+              <strong className="text-primary-deep block text-base">
                 Select a CSV file to upload
               </strong>
-              <span className="text-muted mt-1 block text-xs">
-                or drag & drop it here
-              </span>
+              <span className="text-muted mt-1 block text-xs">or drag & drop it here</span>
             </div>
-            <input 
-              type="file" 
-              accept=".csv" 
-              ref={fileInputRef} 
-              onChange={handleFileUpload} 
-              className="hidden" 
+            <input
+              type="file"
+              accept=".csv"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
             />
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
+          <div className="text-text-muted flex items-center justify-center gap-2 text-xs">
             <span>💡</span>
             <span>The importer will automatically try to match column headers for you!</span>
           </div>
@@ -354,25 +374,24 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       {step === 'MAP' && csvData && (
         <div className="flex flex-col gap-4">
           <p className="text-muted m-0 text-sm">
-            Align the columns in your CSV with our system database fields. Smart auto-matches have been pre-selected.
+            Align the columns in your CSV with our system database fields. Smart auto-matches have
+            been pre-selected.
           </p>
 
-          <div className="max-h-[350px] flex flex-col gap-2 overflow-y-auto px-1">
-            {fieldsConfig.map(field => {
+          <div className="flex max-h-[350px] flex-col gap-2 overflow-y-auto px-1">
+            {fieldsConfig.map((field) => {
               const selectedIndex = mapping[field.key];
-              
+
               return (
-                <div 
-                  key={field.key} 
-                  className={`flex flex-row items-center justify-between gap-3 rounded-xl border bg-surface p-3 px-4 ${field.required && selectedIndex === -1 ? 'border-red-300' : 'border-border'}`}
+                <div
+                  key={field.key}
+                  className={`bg-surface flex flex-row items-center justify-between gap-3 rounded-xl border p-3 px-4 ${field.required && selectedIndex === -1 ? 'border-red-300' : 'border-border'}`}
                 >
-                  <div className="flex-1 flex flex-col gap-0.5">
+                  <div className="flex flex-1 flex-col gap-0.5">
                     <div className="flex items-center gap-[6px]">
-                      <strong className="text-sm text-text">{field.label}</strong>
+                      <strong className="text-text text-sm">{field.label}</strong>
                       {field.required && (
-                        <span 
-                          className="rounded bg-[rgb(153_27_27_/_10%)] px-[6px] py-[1px] text-[0.7rem] font-semibold text-danger-text"
-                        >
+                        <span className="text-danger-text rounded bg-[rgb(153_27_27_/_10%)] px-[6px] py-[1px] text-[0.7rem] font-semibold">
                           Required
                         </span>
                       )}
@@ -383,9 +402,16 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                   <Select
                     value={selectedIndex}
                     onChange={(e) => handleMappingChange(field.key, parseInt(e.target.value))}
-                    size="small" className="!w-[200px]"
+                    size="small"
+                    className="!w-[200px]"
                     // @allow-inline-style - Shoelace CSS custom property for input border color (must be inline; cannot be expressed via className)
-                    style={selectedIndex !== -1 ? { '--sl-input-border-color': 'var(--color-primary)' } as React.CSSProperties : undefined}
+                    style={
+                      selectedIndex !== -1
+                        ? ({
+                            '--sl-input-border-color': 'var(--color-primary)',
+                          } as React.CSSProperties)
+                        : undefined
+                    }
                   >
                     <option value={-1}>-- Skip / Do Not Map --</option>
                     {csvData.headers.map((hdr, idx) => (
@@ -406,21 +432,22 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col items-center justify-between md:flex-row">
             <p className="text-muted m-0 text-sm">
-              Verify parsed singer details and resolve validation warnings or errors before importing.
+              Verify parsed singer details and resolve validation warnings or errors before
+              importing.
             </p>
             <div className="flex gap-3">
-              <span className="rounded-md border border-primary/20 bg-[rgb(74_124_89_/_5%)] px-2 py-1 text-xs font-semibold text-primary-deep">
+              <span className="border-primary/20 text-primary-deep rounded-md border bg-[rgb(74_124_89_/_5%)] px-2 py-1 text-xs font-semibold">
                 Total Mapped: {mappedSingers.length}
               </span>
-              <span className="rounded-md border border-danger-text/20 bg-[rgb(153_27_27_/_5%)] px-2 py-1 text-xs font-semibold text-danger-text">
-                Errors: {mappedSingers.filter(s => !s.isValid).length}
+              <span className="border-danger-text/20 text-danger-text rounded-md border bg-[rgb(153_27_27_/_5%)] px-2 py-1 text-xs font-semibold">
+                Errors: {mappedSingers.filter((s) => !s.isValid).length}
               </span>
             </div>
           </div>
 
-          <div className="max-h-[350px] overflow-x-auto rounded-lg border border-border">
+          <div className="border-border max-h-[350px] overflow-x-auto rounded-lg border">
             <table className="m-0 table w-full min-w-[600px]">
-              <thead className="sticky top-0 z-[1] bg-bg shadow-[0_1px_0_var(--color-border)]">
+              <thead className="bg-bg sticky top-0 z-[1] shadow-[0_1px_0_var(--color-border)]">
                 <tr>
                   <th className="w-[60px] text-center">Row</th>
                   <th>Name</th>
@@ -434,15 +461,13 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                 {mappedSingers.map((singer, idx) => {
                   const hasErrors = !singer.isValid;
                   const hasWarnings = singer.warnings.length > 0;
-                  
+
                   return (
-                    <tr 
-                      key={idx} 
+                    <tr
+                      key={idx}
                       className={hasErrors ? 'bg-red-50' : hasWarnings ? 'bg-amber-50' : ''}
                     >
-                      <td className="text-center text-xs text-text-muted">
-                        {singer.rowNumber}
-                      </td>
+                      <td className="text-text-muted text-center text-xs">{singer.rowNumber}</td>
                       <td>
                         <strong className={hasErrors ? 'text-danger' : ''}>
                           {singer.data.name || '(Empty Name)'}
@@ -455,23 +480,27 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
                         </span>
                       </td>
                       <td>
-                        <span className="inline-block rounded border border-border bg-bg p-[2px_6px] text-xs">
+                        <span className="border-border bg-bg inline-block rounded border p-[2px_6px] text-xs">
                           {singer.data.globalStatus}
                         </span>
                       </td>
                       <td>
                         {hasErrors && (
-                          <div className="flex flex-col gap-0.5 text-xs text-danger">
-                            {singer.errors.map((e, i) => <span key={i}>❌ {e}</span>)}
+                          <div className="text-danger flex flex-col gap-0.5 text-xs">
+                            {singer.errors.map((e, i) => (
+                              <span key={i}>❌ {e}</span>
+                            ))}
                           </div>
                         )}
                         {hasWarnings && (
-                          <div className="flex flex-col gap-0.5 text-xs text-warning-text">
-                            {singer.warnings.map((w, i) => <span key={i}>⚠️ {w}</span>)}
+                          <div className="text-warning-text flex flex-col gap-0.5 text-xs">
+                            {singer.warnings.map((w, i) => (
+                              <span key={i}>⚠️ {w}</span>
+                            ))}
                           </div>
                         )}
                         {!hasErrors && !hasWarnings && (
-                          <span className="text-xs text-primary-deep">🟢 Ready</span>
+                          <span className="text-primary-deep text-xs">🟢 Ready</span>
                         )}
                       </td>
                     </tr>
@@ -487,21 +516,31 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       {step === 'IMPORTING' && (
         <div className="flex flex-col items-center gap-4 py-5">
           <span className="animate-spin text-5xl">⚙️</span>
-          
-          <div className="w-full flex flex-col items-center gap-[6px]">
-            <strong className="text-lg text-text">
-              Importing {mappedSingers.filter(s => s.isValid).length} Singers...
+
+          <div className="flex w-full flex-col items-center gap-[6px]">
+            <strong className="text-text text-lg">
+              Importing {mappedSingers.filter((s) => s.isValid).length} Singers...
             </strong>
             <span className="text-muted text-sm">
               Processing row {importingIndex} of {mappedSingers.length}
             </span>
           </div>
 
-          <ProgressBar value={importProgress} className="mt-[10px] h-3 w-full [&::part(base)]:rounded-full" />
+          <ProgressBar
+            value={importProgress}
+            className="mt-[10px] h-3 w-full [&::part(base)]:rounded-full"
+          />
 
-          <div className="flex gap-5 text-sm text-text-muted">
-            <span>Successes: <strong className="text-primary-deep">{successCount}</strong></span>
-            <span>Failures: <strong className={errorsList.length > 0 ? 'text-danger-text' : ''}>{errorsList.length}</strong></span>
+          <div className="text-text-muted flex gap-5 text-sm">
+            <span>
+              Successes: <strong className="text-primary-deep">{successCount}</strong>
+            </span>
+            <span>
+              Failures:{' '}
+              <strong className={errorsList.length > 0 ? 'text-danger-text' : ''}>
+                {errorsList.length}
+              </strong>
+            </span>
           </div>
         </div>
       )}
@@ -511,7 +550,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         <div className="flex flex-col gap-6 py-[10px]">
           <div className="flex flex-col items-center gap-2 text-center">
             <span className="text-6xl">🎉</span>
-            <h3 className="m-0 text-2xl text-primary-deep">Import Finished!</h3>
+            <h3 className="text-primary-deep m-0 text-2xl">Import Finished!</h3>
             <p className="text-muted m-0 text-sm">
               Successfully imported <strong>{successCount}</strong> singers into the roster.
             </p>
@@ -519,19 +558,18 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
           {/* Credentials Download Callout */}
           {credentialsList.length > 0 && (
-            <div 
-              className="flex flex-row items-center justify-between gap-4 rounded-xl border border-[rgb(74_124_89_/_20%)] bg-[rgb(74_124_89_/_6%)] p-4 px-5"
-            >
-              <div className="flex-1 flex flex-col gap-1">
-                <strong className="text-sm text-primary-deep">
+            <div className="flex flex-row items-center justify-between gap-4 rounded-xl border border-[rgb(74_124_89_/_20%)] bg-[rgb(74_124_89_/_6%)] p-4 px-5">
+              <div className="flex flex-1 flex-col gap-1">
+                <strong className="text-primary-deep text-sm">
                   🔑 Generated temporary credentials
                 </strong>
                 <span className="text-muted text-xs leading-[1.4]">
-                  Created {credentialsList.length} new login accounts. Download this CSV now to save their temporary login passwords.
+                  Created {credentialsList.length} new login accounts. Download this CSV now to save
+                  their temporary login passwords.
                 </span>
               </div>
-              <Button 
-                onClick={handleDownloadCredentials} 
+              <Button
+                onClick={handleDownloadCredentials}
                 variant="primary"
                 className="flex h-10 items-center gap-[6px]"
               >
@@ -543,13 +581,17 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
           {/* Error Details */}
           {errorsList.length > 0 && (
             <div className="flex flex-col gap-1">
-              <strong className="text-sm text-danger-text">
+              <strong className="text-danger-text text-sm">
                 ⚠️ Some rows failed to import ({errorsList.length})
               </strong>
-              <div className="max-h-[150px] overflow-y-auto rounded-lg border border-border bg-surface-muted p-[8px_12px] text-xs">
+              <div className="border-border bg-surface-muted max-h-[150px] overflow-y-auto rounded-lg border p-[8px_12px] text-xs">
                 {errorsList.map((err, i) => (
-                  <div key={i} className={`p-[4px_0] text-gray-600 ${i < errorsList.length - 1 ? 'border-b border-border' : ''}`}>
-                    Row {err.row} (<strong>{err.name}</strong>): <span className="text-danger-text">{err.error}</span>
+                  <div
+                    key={i}
+                    className={`p-[4px_0] text-gray-600 ${i < errorsList.length - 1 ? 'border-border border-b' : ''}`}
+                  >
+                    Row {err.row} (<strong>{err.name}</strong>):{' '}
+                    <span className="text-danger-text">{err.error}</span>
                   </div>
                 ))}
               </div>

@@ -10,17 +10,20 @@ export interface MappedSinger {
   roster: EventRoster | undefined;
 }
 
-export function mapSingersToRosters(activeProfiles: Profile[], eventRoster: EventRoster[]): MappedSinger[] {
+export function mapSingersToRosters(
+  activeProfiles: Profile[],
+  eventRoster: EventRoster[]
+): MappedSinger[] {
   const profileRosterMap = new Map<string, EventRoster>();
-  eventRoster.forEach(item => {
+  eventRoster.forEach((item) => {
     if (item.profile) {
       profileRosterMap.set(item.profile, item);
     }
   });
 
   return activeProfiles
-    .filter(profile => !!profile.voicePart)
-    .map(profile => {
+    .filter((profile) => !!profile.voicePart)
+    .map((profile) => {
       const roster = profileRosterMap.get(profile.id);
       const rsvp = roster?.rsvp || 'Pending';
       return {
@@ -32,9 +35,9 @@ export function mapSingersToRosters(activeProfiles: Profile[], eventRoster: Even
 }
 
 export function calculateRsvpCounts(mappedSingers: MappedSinger[]) {
-  const yesCount = mappedSingers.filter(s => s.rsvp === 'Yes').length;
-  const noCount = mappedSingers.filter(s => s.rsvp === 'No').length;
-  const pendingCount = mappedSingers.filter(s => s.rsvp === 'Pending').length;
+  const yesCount = mappedSingers.filter((s) => s.rsvp === 'Yes').length;
+  const noCount = mappedSingers.filter((s) => s.rsvp === 'No').length;
+  const pendingCount = mappedSingers.filter((s) => s.rsvp === 'Pending').length;
   return { yesCount, noCount, pendingCount };
 }
 
@@ -44,12 +47,12 @@ export function calculateSectionCounts(
   voiceParts: VoicePartDef[]
 ): Record<string, number> {
   const counts: Record<string, number> = {};
-  sections.forEach(sec => {
+  sections.forEach((sec) => {
     counts[sec.code] = 0;
   });
-  activeCountSingers.forEach(s => {
+  activeCountSingers.forEach((s) => {
     if (s.profile.voicePart) {
-      const vpDef = voiceParts.find(vp => vp.label === s.profile.voicePart);
+      const vpDef = voiceParts.find((vp) => vp.label === s.profile.voicePart);
       const section = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(s.profile.voicePart);
       if (counts[section] !== undefined) {
         counts[section]++;
@@ -66,8 +69,8 @@ export function calculatePartCounts(
   voiceParts: VoicePartDef[]
 ): Map<string, number> {
   const partCounts = new Map<string, number>();
-  voiceParts.forEach(vp => {
-    const count = activeCountSingers.filter(s => s.profile.voicePart === vp.label).length;
+  voiceParts.forEach((vp) => {
+    const count = activeCountSingers.filter((s) => s.profile.voicePart === vp.label).length;
     partCounts.set(vp.label, count);
   });
   return partCounts;
@@ -80,11 +83,15 @@ export function filterMappedSingers(
   voiceParts: VoicePartDef[],
   searchQuery: string
 ): MappedSinger[] {
-  return mappedSingers.filter(singer => {
+  return mappedSingers.filter((singer) => {
     if (rsvpFilter !== 'All' && singer.rsvp !== rsvpFilter) return false;
-    
+
     if (selectedVoiceParts.length > 0) {
-      const matchesVoice = matchesVoiceParts(singer.profile.voicePart, selectedVoiceParts, voiceParts);
+      const matchesVoice = matchesVoiceParts(
+        singer.profile.voicePart,
+        selectedVoiceParts,
+        voiceParts
+      );
       if (!matchesVoice) return false;
     }
 
@@ -101,7 +108,7 @@ export function sortMappedSingers(
   sortBy: 'lastName' | 'voicePart',
   voiceParts: VoicePartDef[]
 ): MappedSinger[] {
-  const parts = voiceParts.map(vp => vp.label);
+  const parts = voiceParts.map((vp) => vp.label);
   return [...filteredSingers].sort((a, b) => {
     if (sortBy === 'voicePart') {
       return compareProfilesByVoicePartThenLastName(a.profile, b.profile, parts);

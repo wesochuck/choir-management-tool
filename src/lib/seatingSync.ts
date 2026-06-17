@@ -6,17 +6,15 @@ export interface SeatingSyncContext {
   sessionId: number;
 }
 
-export const seatingContextKey = (performanceId: string, venueId: string) => (
-  `${performanceId || 'none'}-${venueId || 'none'}`
-);
+export const seatingContextKey = (performanceId: string, venueId: string) =>
+  `${performanceId || 'none'}-${venueId || 'none'}`;
 
-export const seatingContextId = ({ performanceId, venueId, sessionId }: SeatingSyncContext) => (
-  `${seatingContextKey(performanceId, venueId)}-${sessionId}`
-);
+export const seatingContextId = ({ performanceId, venueId, sessionId }: SeatingSyncContext) =>
+  `${seatingContextKey(performanceId, venueId)}-${sessionId}`;
 
 export const shouldApplySeatingResponse = (
   requestContext: SeatingSyncContext,
-  currentContext: SeatingSyncContext,
+  currentContext: SeatingSyncContext
 ) => seatingContextId(requestContext) === seatingContextId(currentContext);
 
 export const mergeSeatingResponseWithDirtyState = (
@@ -24,16 +22,22 @@ export const mergeSeatingResponseWithDirtyState = (
   dirtyPayload: Partial<SeatingChart>,
   optimisticAssignments: Record<string, string>,
   performanceId: string,
-  venueId: string,
-) => ({
-  ...(serverChart || {}),
-  ...dirtyPayload,
-  performance: performanceId,
-  venue: venueId,
-  assignments: optimisticAssignments,
-}) as SeatingChart;
+  venueId: string
+) =>
+  ({
+    ...(serverChart || {}),
+    ...dirtyPayload,
+    performance: performanceId,
+    venue: venueId,
+    assignments: optimisticAssignments,
+  }) as SeatingChart;
 
-import { DEFAULT_SECTIONS, DEFAULT_VOICE_PARTS, type SectionDef, type VoicePartDef } from '../services/settingsService';
+import {
+  DEFAULT_SECTIONS,
+  DEFAULT_VOICE_PARTS,
+  type SectionDef,
+  type VoicePartDef,
+} from '../services/settingsService';
 
 export function groupSingersBySection<T extends { id: string; name: string; voicePart: string }>(
   profiles: T[],
@@ -41,20 +45,21 @@ export function groupSingersBySection<T extends { id: string; name: string; voic
   sections: SectionDef[] = DEFAULT_SECTIONS,
   voicePartDefs: VoicePartDef[] = DEFAULT_VOICE_PARTS
 ) {
-  const unassigned = profiles.filter(p => !assignedIds.has(p.id));
-  
+  const unassigned = profiles.filter((p) => !assignedIds.has(p.id));
+
   const groups: Record<string, T[]> = {};
-  sections.forEach(s => {
+  sections.forEach((s) => {
     groups[s.code] = [];
   });
   groups.Other = [];
 
-  unassigned.forEach(p => {
-    const vpDef = voicePartDefs.find(vp => 
-      vp.label === p.voicePart || 
-      vp.fullName === p.voicePart || 
-      vp.label.toLowerCase() === p.voicePart.toLowerCase() ||
-      vp.fullName.toLowerCase() === p.voicePart.toLowerCase()
+  unassigned.forEach((p) => {
+    const vpDef = voicePartDefs.find(
+      (vp) =>
+        vp.label === p.voicePart ||
+        vp.fullName === p.voicePart ||
+        vp.label.toLowerCase() === p.voicePart.toLowerCase() ||
+        vp.fullName.toLowerCase() === p.voicePart.toLowerCase()
     );
     let sectionCode = vpDef?.sectionCode;
     if (!sectionCode) {
@@ -146,15 +151,8 @@ export function filterProfilesByRsvpYes<T extends ProfileWithStatus>(
   profiles: T[],
   roster: RsvpRecord[]
 ): T[] {
-  const attendingProfileIds = new Set(
-    roster
-      .filter(r => r.rsvp === 'Yes')
-      .map(r => r.profile)
-  );
+  const attendingProfileIds = new Set(roster.filter((r) => r.rsvp === 'Yes').map((r) => r.profile));
   return profiles.filter(
-    p => p.globalStatus === 'Active' && !!p.voicePart && attendingProfileIds.has(p.id)
+    (p) => p.globalStatus === 'Active' && !!p.voicePart && attendingProfileIds.has(p.id)
   );
 }
-
-
-

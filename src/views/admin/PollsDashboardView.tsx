@@ -3,17 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { Button, FormField, Badge, Modal, EmptyState, Input } from '../../components/ui';
-import { pb } from '../../lib/pocketbase';
+import { pollService } from '../../services/pollService';
+import { communicationService } from '../../services/communicationService';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService } from '../../services/profileService';
-import {
-  communicationService,
-  type CommunicationRecipient,
-  type MessageRecord,
-} from '../../services/communicationService';
+import type { CommunicationRecipient } from '../../services/communicationService';
 import type { RecordModel } from 'pocketbase';
 import { settingsService, type PollSettings } from '../../services/settingsService';
 import { Pagination } from '../../components/common/Pagination';
@@ -48,19 +45,17 @@ export default function PollsDashboardView() {
   // ── Data queries ──
   const pollsQuery = useQuery({
     queryKey: queryKeys.polls.list,
-    queryFn: () => pb.collection('polls').getFullList<PollRecord>({ sort: '-created' }),
+    queryFn: () => pollService.getPolls(),
   });
 
   const responsesQuery = useQuery({
     queryKey: queryKeys.polls.responses,
-    queryFn: () => pb.collection('pollResponses').getFullList<PollResponseRecord>({ expand: 'profileId', sort: '-updated' }),
+    queryFn: () => pollService.getPollResponses(),
   });
 
   const pollMessagesQuery = useQuery({
     queryKey: queryKeys.polls.messages,
-    queryFn: () => pb.collection('messages').getFullList<MessageRecord>({
-      filter: 'status = "Sent" && content ~ "{{POLL_LINK:"',
-    }),
+    queryFn: () => communicationService.getSentPollMessages(),
   });
 
   const pollSettingsQuery = useQuery({
@@ -77,13 +72,20 @@ export default function PollsDashboardView() {
     ]);
   };
 
-  const polls = useMemo(() => pollsQuery.data ?? [], [pollsQuery.data]);
-  const responses = useMemo(() => responsesQuery.data ?? [], [responsesQuery.data]);
+  const polls = useMemo(() => (pollsQuery.data ?? []) as PollRecord[], [pollsQuery.data]);
+  const responses = useMemo(() => (responsesQuery.data ?? []) as PollResponseRecord[], [responsesQuery.data]);
   const pollMessages = pollMessagesQuery.data ?? [];
-  const isLoading = pollsQuery.isLoading || responsesQuery.isLoading || pollMessagesQuery.isLoading || pollSettingsQuery.isLoading;
-  const firstError = pollsQuery.error || responsesQuery.error || pollMessagesQuery.error || pollSettingsQuery.error;
+  const isLoading =
+    pollsQuery.isLoading ||
+    responsesQuery.isLoading ||
+    pollMessagesQuery.isLoading ||
+    pollSettingsQuery.isLoading;
+  const firstError =
+    pollsQuery.error || responsesQuery.error || pollMessagesQuery.error || pollSettingsQuery.error;
   const loadError = firstError
-    ? (firstError instanceof Error ? firstError.message : 'Unable to load polls.')
+    ? firstError instanceof Error
+      ? firstError.message
+      : 'Unable to load polls.'
     : null;
   const [recipientModal, setRecipientModal] = useState<{
     isOpen: boolean;
@@ -180,7 +182,7 @@ export default function PollsDashboardView() {
     if (!confirmed) return;
 
     try {
-      await pb.collection('polls').delete(id);
+      await pollService.deletePoll(id);
       refresh();
       dialog.showToast('Poll deleted.');
     } catch {
@@ -209,10 +211,10 @@ export default function PollsDashboardView() {
       const archiveAt = new Date(Date.now() + quickPollDays * 24 * 60 * 60 * 1000).toISOString();
 
       // 1. Create the poll record
-      const poll = await pb.collection('polls').create<PollRecord>({
+      const poll = await pollService.createPoll({
         question: trimmedQuestion,
         archiveAt,
-      });
+      }) as PollRecord;
 
       // 2. Build recipients (active/idle singers)
       const profiles = await profileService.getProfiles();
@@ -311,7 +313,7 @@ export default function PollsDashboardView() {
                 No sent communications found yet.{' '}
                 <button
                   type="button"
-                  className="font-semibold text-primary underline hover:text-primary-deep"
+                  className="text-primary hover:text-primary-deep font-semibold underline"
                   onClick={(e) => {
                     e.preventDefault();
                     navigate('/admin/communications');
@@ -325,7 +327,7 @@ export default function PollsDashboardView() {
           {contactedSingers.length > 0 && (
             <button
               type="button"
-              className="text-left text-xs font-bold text-primary underline transition-colors hover:text-primary-deep sm:text-right"
+              className="text-primary hover:text-primary-deep text-left text-xs font-bold underline transition-colors sm:text-right"
               onClick={() =>
                 setRecipientModal({
                   isOpen: true,
@@ -341,7 +343,7 @@ export default function PollsDashboardView() {
 
         <div className="flex flex-col gap-8 md:flex-row">
           <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <h4 className="m-0 border-b-2 border-primary/20 pb-1.5 text-sm font-black tracking-wider text-primary uppercase">
+            <h4 className="border-primary/20 text-primary m-0 border-b-2 pb-1.5 text-sm font-black tracking-wider uppercase">
               Volunteers ({stat.yes})
             </h4>
             {stat.volunteers.length === 0 ? (
@@ -366,7 +368,7 @@ export default function PollsDashboardView() {
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-3">
-            <h4 className="m-0 border-b-2 border-danger-text/20 pb-1.5 text-sm font-black tracking-wider text-danger-text uppercase">
+            <h4 className="border-danger-text/20 text-danger-text m-0 border-b-2 pb-1.5 text-sm font-black tracking-wider uppercase">
               Declined ({stat.no})
             </h4>
             {stat.decliners.length === 0 ? (
@@ -376,7 +378,7 @@ export default function PollsDashboardView() {
                 {stat.decliners.map((v) => (
                   <div
                     key={v.id}
-                    className="rounded-lg border border-danger-text/10 bg-white p-2.5 px-4 opacity-90 shadow-sm transition-shadow hover:shadow-md"
+                    className="border-danger-text/10 rounded-lg border bg-white p-2.5 px-4 opacity-90 shadow-sm transition-shadow hover:shadow-md"
                   >
                     <div className="text-sm font-bold text-slate-800">
                       {v.expand?.profileId?.name ?? 'Unknown singer'}
@@ -425,7 +427,7 @@ export default function PollsDashboardView() {
               type="checkbox"
               checked={showArchived}
               onChange={(e) => setShowArchived(e.target.checked)}
-              className="size-4 rounded-sm border-slate-300 text-primary focus:ring-primary focus:ring-offset-0"
+              className="text-primary focus:ring-primary size-4 rounded-sm border-slate-300 focus:ring-offset-0"
             />
             Show Archived
           </label>
@@ -482,8 +484,8 @@ export default function PollsDashboardView() {
 
       <div className="flex flex-col gap-6">
         {loadError && (
-          <div className="rounded-lg border border-danger-text/30 bg-danger-bg p-5 text-left shadow-xs">
-            <p className="m-0 font-bold text-danger-text">{loadError}</p>
+          <div className="border-danger-text/30 bg-danger-bg rounded-lg border p-5 text-left shadow-xs">
+            <p className="text-danger-text m-0 font-bold">{loadError}</p>
           </div>
         )}
 
@@ -587,21 +589,17 @@ export default function PollsDashboardView() {
                             className="flex items-center gap-3"
                             aria-label="Poll response counts"
                           >
-                            <div className="flex min-w-[56px] flex-col rounded-lg border border-primary/20 bg-primary/5 p-1.5 text-center shadow-xs">
-                              <span className="text-lg leading-tight font-black text-primary">
+                            <div className="border-primary/20 bg-primary/5 flex min-w-[56px] flex-col rounded-lg border p-1.5 text-center shadow-xs">
+                              <span className="text-primary text-lg leading-tight font-black">
                                 {stat.yes}
                               </span>
-                              <span className="text-overline text-primary">
-                                Yes
-                              </span>
+                              <span className="text-overline text-primary">Yes</span>
                             </div>
-                            <div className="flex min-w-[56px] flex-col rounded-lg border border-danger-text/20 bg-danger-bg p-1.5 text-center shadow-xs">
-                              <span className="text-lg leading-tight font-black text-danger-text">
+                            <div className="border-danger-text/20 bg-danger-bg flex min-w-[56px] flex-col rounded-lg border p-1.5 text-center shadow-xs">
+                              <span className="text-danger-text text-lg leading-tight font-black">
                                 {stat.no}
                               </span>
-                              <span className="text-overline text-danger-text">
-                                No
-                              </span>
+                              <span className="text-overline text-danger-text">No</span>
                             </div>
                           </div>
 
@@ -697,13 +695,13 @@ export default function PollsDashboardView() {
 
                         {/* Row 3: Response summary stats */}
                         <div className="flex items-center gap-3">
-                          <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 py-1.5 text-xs font-bold text-primary">
+                          <div className="border-primary/20 bg-primary/5 text-primary flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-bold">
                             <span>{stat.yes}</span>
                             <span className="text-[10px] font-bold tracking-wider uppercase">
                               Yes
                             </span>
                           </div>
-                          <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-danger-text/20 bg-danger-bg py-1.5 text-xs font-bold text-danger-text">
+                          <div className="border-danger-text/20 bg-danger-bg text-danger-text flex flex-1 items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-bold">
                             <span>{stat.no}</span>
                             <span className="text-[10px] font-bold tracking-wider uppercase">
                               No
@@ -765,7 +763,7 @@ export default function PollsDashboardView() {
                 <Input
                   id="quick-poll-question"
                   type="text"
-                  className="block w-full shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
+                  className="focus:ring-primary block w-full shadow-sm transition-colors outline-none focus:ring-1"
                   value={quickPollQuestion}
                   onChange={(e) => setQuickPollQuestion(e.target.value)}
                   placeholder="e.g. Who can help with setup?"
@@ -778,7 +776,7 @@ export default function PollsDashboardView() {
                   type="number"
                   min="1"
                   max="365"
-                  className="block w-[120px] shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
+                  className="focus:ring-primary block w-[120px] shadow-sm transition-colors outline-none focus:ring-1"
                   value={quickPollDays}
                   onChange={(e) => setQuickPollDays(parseInt(e.target.value) || 1)}
                   required
@@ -811,17 +809,13 @@ export default function PollsDashboardView() {
               </p>
               <div className="flex flex-col gap-4">
                 <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-                  <div className="mb-2 text-overline text-slate-400">
-                    Poll Question
-                  </div>
+                  <div className="text-overline mb-2 text-slate-400">Poll Question</div>
                   <strong className="text-lg font-extrabold tracking-tight text-slate-900">
                     {quickPollQuestion.trim()}
                   </strong>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 shadow-sm">
-                  <div className="mb-2 text-overline text-slate-400">
-                    Draft Preview
-                  </div>
+                  <div className="text-overline mb-2 text-slate-400">Draft Preview</div>
                   <div className="text-sm">
                     <strong className="text-slate-800">Subject:</strong> Quick Choir Poll
                   </div>
@@ -866,7 +860,7 @@ export default function PollsDashboardView() {
               type="number"
               min="1"
               max="365"
-              className="block w-[120px] shadow-sm transition-colors outline-none focus:ring-1 focus:ring-primary"
+              className="focus:ring-primary block w-[120px] shadow-sm transition-colors outline-none focus:ring-1"
               value={globalDefaultDays}
               onChange={(e) => setGlobalDefaultDays(parseInt(e.target.value) || 1)}
               required

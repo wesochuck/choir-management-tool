@@ -112,8 +112,6 @@ export function ComposePanel({
   choirName,
   senderEmail,
 }: ComposePanelProps) {
-
-
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -136,7 +134,7 @@ export function ComposePanel({
       setContent('');
       setMessageType('Email');
     } else {
-      const tpl = templates.find(t => t.id === selectedTemplateId);
+      const tpl = templates.find((t) => t.id === selectedTemplateId);
       if (tpl) {
         setSubject(tpl.subject || '');
         setContent(tpl.content || '');
@@ -167,9 +165,7 @@ export function ComposePanel({
 
   const renderSetlistWarning = () => {
     if (!filters.eventId) return null;
-    const hasApprovedSetList = selectedEvent
-      ? selectedEvent.setListApproved !== false
-      : false;
+    const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
     if (hasApprovedSetList) return null;
     if (!content.toLowerCase().includes('{setlist}')) return null;
     return (
@@ -189,7 +185,12 @@ export function ComposePanel({
         </svg>
         <span>
           <strong>Set list not approved.</strong> The set list hasn't been approved for singers yet.{' '}
-          <Link to="/admin/setlists" className="cursor-pointer font-semibold text-primary underline hover:text-primary-deep">Open Set List Builder</Link>{' '}
+          <Link
+            to="/admin/setlists"
+            className="text-primary hover:text-primary-deep cursor-pointer font-semibold underline"
+          >
+            Open Set List Builder
+          </Link>{' '}
           to approve it before sending.
         </span>
       </div>
@@ -220,13 +221,15 @@ export function ComposePanel({
       {wizardStep === 'TARGETS' && (
         <div className="flex flex-col gap-6">
           {/* Top Actions */}
-          <div className="flex w-full items-center justify-between gap-3 border-b border-border pb-3 max-md:flex-col">
+          <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
             <div>
-              <h2 className="text-lg font-semibold text-text">Step 1: Define Your Audience</h2>
-              <p className="text-xs text-text-muted">Select filter criteria on the left and verify reachable users on the right.</p>
+              <h2 className="text-text text-lg font-semibold">Step 1: Define Your Audience</h2>
+              <p className="text-text-muted text-xs">
+                Select filter criteria on the left and verify reachable users on the right.
+              </p>
             </div>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={() => {
                 setWizardStep('COMPOSE');
                 setStartedMessage(false);
@@ -243,7 +246,9 @@ export function ComposePanel({
               <div className="flex flex-col gap-4">
                 {/* Event Context */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Event Context</label>
+                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                    Event Context
+                  </label>
                   <Select
                     size="small"
                     value={filters.eventId}
@@ -260,7 +265,9 @@ export function ComposePanel({
 
                 {/* RSVP Status */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">RSVP Status</label>
+                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                    RSVP Status
+                  </label>
                   <Select
                     size="small"
                     value={filters.rsvp}
@@ -275,7 +282,7 @@ export function ComposePanel({
                     <option value="Pending">No Response (Pending)</option>
                   </Select>
                   {!filters.eventId && (
-                    <span className="text-[11px] text-text-muted italic">
+                    <span className="text-text-muted text-[11px] italic">
                       Select an event first to filter by RSVP status.
                     </span>
                   )}
@@ -283,7 +290,9 @@ export function ComposePanel({
 
                 {/* Member Status */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Member Status</label>
+                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                    Member Status
+                  </label>
                   <Select
                     size="small"
                     value={filters.globalStatus}
@@ -298,13 +307,21 @@ export function ComposePanel({
 
                 {/* Voice Part / Section dropdown */}
                 <div className="relative flex flex-col gap-1.5" ref={dropdownRef}>
-                  <label className="text-xs font-semibold tracking-wider text-text-muted uppercase">Voice Part / Section</label>
+                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                    Voice Part / Section
+                  </label>
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-surface px-3 py-2 text-left text-sm shadow-sm transition-all hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                    className="border-border bg-surface hover:border-primary focus:border-primary focus:ring-primary flex w-full cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-left text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
                   >
-                    <span className={(filters.voiceParts || []).length > 0 ? 'font-medium text-text' : 'text-text-muted'}>
+                    <span
+                      className={
+                        (filters.voiceParts || []).length > 0
+                          ? 'text-text font-medium'
+                          : 'text-text-muted'
+                      }
+                    >
                       {filters.voiceParts.length === 0
                         ? 'All Voice Parts'
                         : `${filters.voiceParts.length} selected`}
@@ -322,32 +339,54 @@ export function ComposePanel({
                     </svg>
                   </button>
                   {isDropdownOpen && (
-                    <div className="absolute top-full left-0 z-55 mt-1 flex max-h-60 w-full flex-col gap-1 overflow-y-auto rounded-lg border border-border bg-surface p-2 shadow-lg">
-                      <div className="px-2 py-1 text-xs font-bold tracking-wider text-text-muted uppercase">Sections</div>
+                    <div className="border-border bg-surface absolute top-full left-0 z-55 mt-1 flex max-h-60 w-full flex-col gap-1 overflow-y-auto rounded-lg border p-2 shadow-lg">
+                      <div className="text-text-muted px-2 py-1 text-xs font-bold tracking-wider uppercase">
+                        Sections
+                      </div>
                       {configSections.map((sec) => (
-                        <label key={sec.code} className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50">
+                        <label
+                          key={sec.code}
+                          className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50"
+                        >
                           <input
                             type="checkbox"
                             checked={filters.voiceParts.includes(sec.code)}
                             onChange={() => handleVoicePartToggle(sec.code)}
-                            className="mr-2 rounded border-border text-primary focus:ring-primary"
+                            className="border-border text-primary focus:ring-primary mr-2 rounded"
                           />
-                          <span className={filters.voiceParts.includes(sec.code) ? 'font-medium text-primary-deep' : 'text-text'}>
+                          <span
+                            className={
+                              filters.voiceParts.includes(sec.code)
+                                ? 'text-primary-deep font-medium'
+                                : 'text-text'
+                            }
+                          >
                             {sec.name}
                           </span>
                         </label>
                       ))}
-                      <div className="my-1 border-t border-border"></div>
-                      <div className="px-2 py-1 text-xs font-bold tracking-wider text-text-muted uppercase">Individual Parts</div>
+                      <div className="border-border my-1 border-t"></div>
+                      <div className="text-text-muted px-2 py-1 text-xs font-bold tracking-wider uppercase">
+                        Individual Parts
+                      </div>
                       {voicePartLabels.map((part) => (
-                        <label key={part} className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50">
+                        <label
+                          key={part}
+                          className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50"
+                        >
                           <input
                             type="checkbox"
                             checked={filters.voiceParts.includes(part)}
                             onChange={() => handleVoicePartToggle(part)}
-                            className="mr-2 rounded border-border text-primary focus:ring-primary"
+                            className="border-border text-primary focus:ring-primary mr-2 rounded"
                           />
-                          <span className={filters.voiceParts.includes(part) ? 'font-medium text-primary-deep' : 'text-text'}>
+                          <span
+                            className={
+                              filters.voiceParts.includes(part)
+                                ? 'text-primary-deep font-medium'
+                                : 'text-text'
+                            }
+                          >
                             {part}
                           </span>
                         </label>
@@ -360,57 +399,93 @@ export function ComposePanel({
 
             {/* Right Column: Recipient Summary & Preview */}
             <div className="flex flex-col gap-6">
-              <AppCard 
+              <AppCard
                 title="Audience Summary"
                 actions={
-                  <span className="inline-flex items-center rounded bg-primary-light px-2.5 py-0.5 text-xs font-semibold tracking-wider text-primary-deep uppercase">
+                  <span className="bg-primary-light text-primary-deep inline-flex items-center rounded px-2.5 py-0.5 text-xs font-semibold tracking-wider uppercase">
                     {recipientCounts.total} Matched
                   </span>
                 }
               >
                 <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
                   {/* Total Card */}
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-slate-50/50 p-4 text-center">
-                    <span className="text-xs font-bold tracking-wider text-text-muted uppercase">Selected</span>
-                    <span className="mt-1 text-3xl font-extrabold text-text">{recipientCounts.total}</span>
-                    <span className="mt-1 text-[11px] text-text-muted">matched singers</span>
+                  <div className="border-border flex flex-col items-center justify-center rounded-lg border bg-slate-50/50 p-4 text-center">
+                    <span className="text-text-muted text-xs font-bold tracking-wider uppercase">
+                      Selected
+                    </span>
+                    <span className="text-text mt-1 text-3xl font-extrabold">
+                      {recipientCounts.total}
+                    </span>
+                    <span className="text-text-muted mt-1 text-[11px]">matched singers</span>
                   </div>
 
                   {/* Email Card */}
                   <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50/30 p-4 text-center">
-                    <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase">Email Reach</span>
-                    <span className="mt-1 text-3xl font-extrabold text-emerald-900">{recipientCounts.hasEmail}</span>
+                    <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase">
+                      Email Reach
+                    </span>
+                    <span className="mt-1 text-3xl font-extrabold text-emerald-900">
+                      {recipientCounts.hasEmail}
+                    </span>
                     <span className="mt-1 text-[11px] text-emerald-700">reachable by email</span>
                   </div>
 
                   {/* SMS Card */}
                   <div className="flex flex-col items-center justify-center rounded-lg border border-blue-100 bg-blue-50/30 p-4 text-center">
-                    <span className="text-xs font-bold tracking-wider text-blue-800 uppercase">SMS Reach</span>
-                    <span className="mt-1 text-3xl font-extrabold text-blue-900">{recipientCounts.hasPhone}</span>
+                    <span className="text-xs font-bold tracking-wider text-blue-800 uppercase">
+                      SMS Reach
+                    </span>
+                    <span className="mt-1 text-3xl font-extrabold text-blue-900">
+                      {recipientCounts.hasPhone}
+                    </span>
                     <span className="mt-1 text-[11px] text-blue-700">reachable by SMS</span>
                   </div>
                 </div>
 
                 {recipientCounts.hasPhone === 0 && (
                   <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2.5 text-xs text-amber-800">
-                    <svg className="size-4 flex-shrink-0 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg
+                      className="size-4 flex-shrink-0 text-amber-600"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                      />
                     </svg>
                     <span>SMS is unavailable for this audience.</span>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between border-t border-border pt-4">
-                  <span className="text-xs text-text-muted">Need to audit the exact names?</span>
+                <div className="border-border flex items-center justify-between border-t pt-4">
+                  <span className="text-text-muted text-xs">Need to audit the exact names?</span>
                   <button
                     type="button"
-                    className="inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold text-primary hover:text-primary-deep hover:underline"
+                    className="text-primary hover:text-primary-deep inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold hover:underline"
                     disabled={recipients.length === 0}
                     onClick={() => onViewRecipients(recipients, 'Matched Singers')}
                   >
-                    <svg className="size-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <svg
+                      className="size-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                      />
                     </svg>
                     View matched singers
                   </button>
@@ -419,35 +494,48 @@ export function ComposePanel({
 
               {/* Matched Singers Preview Panel */}
               <AppCard title="Singer Preview (showing first 5)">
-                <div className="-my-2 flex flex-col divide-y divide-border">
+                <div className="divide-border -my-2 flex flex-col divide-y">
                   {recipients.length === 0 ? (
-                    <div className="py-4 text-center text-sm text-text-muted italic">
+                    <div className="text-text-muted py-4 text-center text-sm italic">
                       No singers matched with the current filters.
                     </div>
                   ) : (
                     recipients.slice(0, 5).map((singer) => (
-                      <div key={singer.id} className="flex items-center justify-between py-2 text-sm">
+                      <div
+                        key={singer.id}
+                        className="flex items-center justify-between py-2 text-sm"
+                      >
                         <div className="flex flex-col">
-                          <span className="font-medium text-text">{singer.name}</span>
-                          <span className="text-xs text-text-muted">{singer.voicePart || 'No Voice Part'}</span>
+                          <span className="text-text font-medium">{singer.name}</span>
+                          <span className="text-text-muted text-xs">
+                            {singer.voicePart || 'No Voice Part'}
+                          </span>
                         </div>
                         <div className="flex gap-1.5">
                           {singer.email ? (
-                            <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Email</span>
+                            <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                              Email
+                            </span>
                           ) : (
-                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">No Email</span>
+                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                              No Email
+                            </span>
                           )}
                           {singer.phone ? (
-                            <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">SMS</span>
+                            <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                              SMS
+                            </span>
                           ) : (
-                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">No SMS</span>
+                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                              No SMS
+                            </span>
                           )}
                         </div>
                       </div>
                     ))
                   )}
                   {recipients.length > 5 && (
-                    <div className="py-2 text-center text-xs text-text-muted italic">
+                    <div className="text-text-muted py-2 text-center text-xs italic">
                       and {recipients.length - 5} more singers...
                     </div>
                   )}
@@ -457,9 +545,9 @@ export function ComposePanel({
           </div>
 
           {/* Sticky/Bottom Actions */}
-          <div className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-end gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
-            <Button 
-              variant="primary" 
+          <div className="border-border bg-surface sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-end gap-2 border-t p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
+            <Button
+              variant="primary"
               onClick={() => {
                 setWizardStep('COMPOSE');
                 setStartedMessage(false);
@@ -476,10 +564,14 @@ export function ComposePanel({
           {!startedMessage ? (
             /* Sub-step A: Template Selection */
             <div className="flex flex-col gap-6">
-              <div className="flex w-full items-center justify-between gap-3 border-b border-border pb-3 max-md:flex-col">
+              <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
                 <div>
-                  <h2 className="text-lg font-semibold text-text">Step 2: Choose how to start your message</h2>
-                  <p className="text-xs text-text-muted">Select a template below or start with a blank message.</p>
+                  <h2 className="text-text text-lg font-semibold">
+                    Step 2: Choose how to start your message
+                  </h2>
+                  <p className="text-text-muted text-xs">
+                    Select a template below or start with a blank message.
+                  </p>
                 </div>
                 <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
                   ← Back to Audience
@@ -498,21 +590,21 @@ export function ComposePanel({
                 </div>
               </AppCard>
 
-              <div className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-between border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:bg-transparent lg:p-0 lg:shadow-none">
+              <div className="border-border bg-surface sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-between border-t p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:bg-transparent lg:p-0 lg:shadow-none">
                 <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
                   ← Back to Audience
                 </Button>
                 <Button variant="primary" onClick={handleContinue}>
-                  {selectedTemplateId === 'blank' ? 'Start Blank Message' : 'Use Template & Continue'}
+                  {selectedTemplateId === 'blank'
+                    ? 'Start Blank Message'
+                    : 'Use Template & Continue'}
                 </Button>
               </div>
             </div>
           ) : (
             /* Sub-step B: Composer */
             <div className="flex flex-col gap-4">
-              <div
-                className="flex w-full w-full flex-col items-center justify-between gap-2 border-b border-border pb-2.5 md:flex-row"
-              >
+              <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
                 <Button variant="outline" onClick={() => setStartedMessage(false)}>
                   ← Back to Template Selection
                 </Button>
@@ -540,14 +632,16 @@ export function ComposePanel({
                     />
                   </AppCard>
 
-                  <div
-                    className="sticky inset-x-0 bottom-0 z-50 -mx-4 flex w-full flex-col items-center justify-between gap-2 border-t border-border bg-surface p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row lg:static lg:mx-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none"
-                  >
+                  <div className="border-border bg-surface sticky inset-x-0 bottom-0 z-50 -mx-4 flex w-full flex-col items-center justify-between gap-2 border-t p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row lg:static lg:mx-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
                     <Button variant="outline" onClick={() => setStartedMessage(false)}>
                       ← Back to Template Selection
                     </Button>
                     <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
-                      <Button variant="secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                      <Button
+                        variant="secondary"
+                        onClick={handleSaveDraft}
+                        disabled={isSavingDraft}
+                      >
                         {isSavingDraft ? 'Saving...' : 'Save Draft'}
                       </Button>
                       <Button variant="primary" onClick={() => setWizardStep('REVIEW')}>
@@ -573,12 +667,10 @@ export function ComposePanel({
 
       {wizardStep === 'REVIEW' && (
         <div className="flex flex-col gap-4">
-          <div
-            className="flex w-full w-full flex-col items-center justify-between gap-2 border-b border-border pb-2.5 md:flex-row"
-          >
+          <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
             <button
               type="button"
-              className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-text transition-all duration-200 hover:border-text-muted hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:-translate-x-0.5"
+              className="border-border text-text hover:border-text-muted inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:-translate-x-0.5"
               onClick={() => setWizardStep('COMPOSE')}
             >
               <svg
@@ -597,7 +689,7 @@ export function ComposePanel({
             <div className="flex flex-row flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-text transition-all duration-200 hover:border-primary hover:bg-slate-50 hover:text-primary-deep active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:rotate-12"
+                className="border-border text-text hover:border-primary hover:text-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:rotate-12"
                 onClick={handleSendTest}
                 disabled={isSendingTest || isSending}
                 title={`Send email test to ${user?.email || 'your email'}`}
@@ -606,7 +698,7 @@ export function ComposePanel({
               </button>
               <button
                 type="button"
-                className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-deep hover:bg-primary-deep hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
+                className="border-primary bg-primary hover:border-primary-deep hover:bg-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
                 onClick={sendMessage}
                 disabled={isSending || selectedRecipients.length === 0}
               >
@@ -615,451 +707,472 @@ export function ComposePanel({
             </div>
           </div>
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-          {/* Left Column: Unified Live Preview */}
-          <div className="flex flex-col">
-            <AppCard noPadding>
-              <div className="p-4">
-                <LivePreview
-                  channel={messageType}
-                  subject={renderedSubject}
-                  bodyHtml={previewHtml}
-                  smsBody={renderedSmsBody}
-                  recipientName={previewRecipient?.name}
-                  recipientEmail={previewRecipient?.email}
-                  senderName={choirName}
-                  senderEmail={senderEmail}
-                />
-              </div>
-            </AppCard>
-          </div>
-
-          {/* Right Column: Sidebar Stack */}
-          <aside className="flex flex-col gap-5">
-            {/* Card 1: Recipient summary */}
-            <AppCard
-              title="Recipient Summary"
-              actions={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="small"
-                  disabled={selectedRecipients.length === 0}
-                  onClick={() => onViewRecipients(selectedRecipients, 'Recipients Selected for Send')}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    className="mr-1 inline-flex size-4"
-                  >
-                    <line x1="8" y1="6" x2="21" y2="6" />
-                    <line x1="8" y1="12" x2="21" y2="12" />
-                    <line x1="8" y1="18" x2="21" y2="18" />
-                    <line x1="3" y1="6" x2="3.01" y2="6" />
-                    <line x1="3" y1="12" x2="3.01" y2="12" />
-                    <line x1="3" y1="18" x2="3.01" y2="18" />
-                  </svg>
-                  View List
-                </Button>
-              }
-            >
-              <div className="mt-1 grid grid-cols-3 gap-3 max-md:grid-cols-1">
-                <button
-                  type="button"
-                  className="relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border border-primary/15 bg-primary-light p-4 text-center font-sans text-primary-deep transition-all duration-250 hover:-translate-y-0.5 hover:border-primary hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:hover:text-primary-deep"
-                  disabled={selectedRecipients.length === 0}
-                  onClick={() => onViewRecipients(selectedRecipients, 'Recipient List (Total Audience)')}
-                >
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-text-muted uppercase">
-                    <svg
-                      className="size-4 text-text-muted transition-colors duration-250"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                      <circle cx="9" cy="7" r="4" />
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    <span>Total Audience</span>
-                  </div>
-                  <strong className="mt-1 mb-0.5 text-2xl leading-none font-bold text-text">{recipientCounts.total}</strong>
-                  <span className="text-[10px] text-text-muted">matched singers</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border border-green-600/15 bg-green-50/50 p-4 text-center font-sans text-green-800 transition-all duration-250 hover:-translate-y-0.5 hover:border-green-600 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:hover:text-green-600"
-                  disabled={selectedRecipients.filter((r) => r.email?.trim()).length === 0}
-                  onClick={() =>
-                    onViewRecipients(
-                      selectedRecipients.filter((r) => r.email?.trim()),
-                      'Recipient List (Via Email)'
-                    )
-                  }
-                >
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-text-muted uppercase">
-                    <svg
-                      className="size-4 text-text-muted transition-colors duration-250"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                    <span>Via Email</span>
-                  </div>
-                  <strong className="mt-1 mb-0.5 text-2xl leading-none font-bold text-text">{recipientCounts.hasEmail}</strong>
-                  <span className="text-[10px] text-text-muted">receive email</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border border-blue-600/15 bg-blue-50/50 p-4 text-center font-sans text-blue-800 transition-all duration-250 hover:-translate-y-0.5 hover:border-blue-600 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:hover:text-blue-600"
-                  disabled={selectedRecipients.filter((r) => r.phone?.trim()).length === 0}
-                  onClick={() =>
-                    onViewRecipients(
-                      selectedRecipients.filter((r) => r.phone?.trim()),
-                      'Recipient List (Via SMS)'
-                    )
-                  }
-                >
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-text-muted uppercase">
-                    <svg
-                      className="size-4 text-text-muted transition-colors duration-250"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                      <line x1="12" y1="18" x2="12.01" y2="18" />
-                    </svg>
-                    <span>Via SMS</span>
-                  </div>
-                  <strong className="mt-1 mb-0.5 text-2xl leading-none font-bold text-text">{recipientCounts.hasPhone}</strong>
-                  <span className="text-[10px] text-text-muted">receive SMS text</span>
-                </button>
-              </div>
-            </AppCard>
-
-            {/* Card 2: Pre-flight checklist */}
-            <AppCard title="Pre-Flight Checklist">
-              <div className="flex flex-col gap-2">
-                {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
-                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                    <svg
-                      className="mt-0.5 size-4 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    <span>
-                      <strong>Subject is empty.</strong> Add a subject line for better open rates.
-                    </span>
-                  </div>
-                )}
-                {content.length < 10 && (
-                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                    <svg
-                      className="mt-0.5 size-4 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    <span>
-                      <strong>Very short message body.</strong>
-                    </span>
-                  </div>
-                )}
-                {selectedRecipients.length === 0 && (
-                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                    <svg
-                      className="mt-0.5 size-4 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    <span>
-                      <strong>No recipients selected.</strong>
-                    </span>
-                  </div>
-                )}
-
-                {!filters.eventId && (() => {
-                  const eventPlaceholders = [
-                    '{eventTitle}',
-                    '{eventType}',
-                    '{eventDate}',
-                    '{eventLocation}',
-                    '{eventDetails}',
-                    '{setlist}',
-                    '{{PLAYER_LINK}}',
-                    '{{RSVP_LINKS}}',
-                  ];
-
-                  const combinedText = (subject + ' ' + content).toLowerCase();
-                  const foundPlaceholders = eventPlaceholders.filter((p) =>
-                    combinedText.includes(p.toLowerCase())
-                  );
-
-                  if (foundPlaceholders.length > 0) {
-                    return (
-                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                        <svg
-                          className="mt-0.5 size-4 flex-shrink-0"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                          <line x1="12" y1="9" x2="12" y2="13" />
-                          <line x1="12" y1="17" x2="12.01" y2="17" />
-                        </svg>
-                        <span>
-                          <strong>No event selected</strong> but active event placeholders exist:{' '}
-                          <code>{foundPlaceholders.join(', ')}</code>.
-                        </span>
-                      </div>
-                    );
-                  }
-
-                  return null;
-                })()}
-
-                {filters.eventId && (() => {
-                  const hasApprovedSetList = selectedEvent
-                    ? selectedEvent.setListApproved !== false
-                    : false;
-                  const hasPlayerPlaceholder = content.toLowerCase().includes('{{player_link}}');
-
-                  if (!hasApprovedSetList && hasPlayerPlaceholder) {
-                    return (
-                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                        <svg
-                          className="mt-0.5 size-4 flex-shrink-0"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                          <line x1="12" y1="9" x2="12" y2="13" />
-                          <line x1="12" y1="17" x2="12.01" y2="17" />
-                        </svg>
-                        <span>
-                          <strong>Practice player not approved.</strong> Set list is unapproved;{' '}
-                          <code>{'{{PLAYER_LINK}}'}</code> button will not render.
-                        </span>
-                      </div>
-                    );
-                  }
-
-                  return null;
-                })()}
-
-                {renderSetlistWarning()}
-
-                {selectedRecipients.some((r) => !r.email) && (messageType === 'Email' || messageType === 'Both') && (
-                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-blue-100 border-l-blue-600 bg-blue-50 p-3 text-xs leading-normal text-blue-900 transition-transform duration-200 hover:translate-x-0.5">
-                    <svg
-                      className="mt-0.5 size-4 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="16" x2="12" y2="12" />
-                      <line x1="12" y1="8" x2="12.01" y2="8" />
-                    </svg>
-                    <span>
-                      <strong>{selectedRecipients.filter((r) => !r.email).length} singers</strong> have
-                      no email configured and will skip this channel.
-                    </span>
-                  </div>
-                )}
-
-                {selectedRecipients.some((r) => !r.phone) && (messageType === 'SMS' || messageType === 'Both') && (
-                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-blue-100 border-l-blue-600 bg-blue-50 p-3 text-xs leading-normal text-blue-900 transition-transform duration-200 hover:translate-x-0.5">
-                    <svg
-                      className="mt-0.5 size-4 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="16" x2="12" y2="12" />
-                      <line x1="12" y1="8" x2="12.01" y2="8" />
-                    </svg>
-                    <span>
-                      <strong>{selectedRecipients.filter((r) => !r.phone).length} singers</strong> have
-                      no phone configured and will skip this channel.
-                    </span>
-                  </div>
-                )}
-
-                {commSettings.mailingAddress.includes('123 Choir St') && (messageType === 'Email' || messageType === 'Both') && (
-                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                    <svg
-                      className="mt-0.5 size-4 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" />
-                      <line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
-                    <span>
-                      <strong>Default physical address active.</strong> Please{' '}
-                      <button
-                        type="button"
-                        className="cursor-pointer font-semibold text-primary underline hover:text-primary-deep"
-                        onClick={() => {
-                          setTab('settings');
-                          setEditingTemplate(null);
-                        }}
-                      >
-                        update this in settings
-                      </button>{' '}
-                      for CAN-SPAM legal compliance.
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-emerald-100 border-l-emerald-600 bg-emerald-50 p-3 text-xs leading-normal text-emerald-900 transition-transform duration-200 hover:translate-x-0.5">
-                  <svg
-                    className="mt-0.5 size-4 flex-shrink-0"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                  <span>Compliance footer will be attached.</span>
+            {/* Left Column: Unified Live Preview */}
+            <div className="flex flex-col">
+              <AppCard noPadding>
+                <div className="p-4">
+                  <LivePreview
+                    channel={messageType}
+                    subject={renderedSubject}
+                    bodyHtml={previewHtml}
+                    smsBody={renderedSmsBody}
+                    recipientName={previewRecipient?.name}
+                    recipientEmail={previewRecipient?.email}
+                    senderName={choirName}
+                    senderEmail={senderEmail}
+                  />
                 </div>
-              </div>
-            </AppCard>
+              </AppCard>
+            </div>
 
-            {/* Card 3: Sending Actions */}
-            <AppCard title="Sending Actions">
-              <div className="flex w-full gap-3 max-md:flex-col-reverse">
-                <button
-                  type="button"
-                  className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-text transition-all duration-200 hover:border-text-muted hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:-translate-x-0.5"
-                  onClick={() => setWizardStep('COMPOSE')}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="size-4 transition-transform duration-200"
+            {/* Right Column: Sidebar Stack */}
+            <aside className="flex flex-col gap-5">
+              {/* Card 1: Recipient summary */}
+              <AppCard
+                title="Recipient Summary"
+                actions={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="small"
+                    disabled={selectedRecipients.length === 0}
+                    onClick={() =>
+                      onViewRecipients(selectedRecipients, 'Recipients Selected for Send')
+                    }
                   >
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                  Back
-                </button>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      className="mr-1 inline-flex size-4"
+                    >
+                      <line x1="8" y1="6" x2="21" y2="6" />
+                      <line x1="8" y1="12" x2="21" y2="12" />
+                      <line x1="8" y1="18" x2="21" y2="18" />
+                      <line x1="3" y1="6" x2="3.01" y2="6" />
+                      <line x1="3" y1="12" x2="3.01" y2="12" />
+                      <line x1="3" y1="18" x2="3.01" y2="18" />
+                    </svg>
+                    View List
+                  </Button>
+                }
+              >
+                <div className="mt-1 grid grid-cols-3 gap-3 max-md:grid-cols-1">
+                  <button
+                    type="button"
+                    className="border-primary/15 bg-primary-light text-primary-deep hover:border-primary [&_svg]:hover:text-primary-deep relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border p-4 text-center font-sans transition-all duration-250 hover:-translate-y-0.5 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={selectedRecipients.length === 0}
+                    onClick={() =>
+                      onViewRecipients(selectedRecipients, 'Recipient List (Total Audience)')
+                    }
+                  >
+                    <div className="text-text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                      <svg
+                        className="text-text-muted size-4 transition-colors duration-250"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                      <span>Total Audience</span>
+                    </div>
+                    <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
+                      {recipientCounts.total}
+                    </strong>
+                    <span className="text-text-muted text-[10px]">matched singers</span>
+                  </button>
 
-                <button
-                  type="button"
-                  className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-text transition-all duration-200 hover:border-primary hover:bg-slate-50 hover:text-primary-deep active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:rotate-12"
-                  onClick={handleSendTest}
-                  disabled={isSendingTest || isSending}
-                  title={`Send email test to ${user?.email || 'your email'}`}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="size-4 transition-transform duration-200"
+                  <button
+                    type="button"
+                    className="relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border border-green-600/15 bg-green-50/50 p-4 text-center font-sans text-green-800 transition-all duration-250 hover:-translate-y-0.5 hover:border-green-600 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:hover:text-green-600"
+                    disabled={selectedRecipients.filter((r) => r.email?.trim()).length === 0}
+                    onClick={() =>
+                      onViewRecipients(
+                        selectedRecipients.filter((r) => r.email?.trim()),
+                        'Recipient List (Via Email)'
+                      )
+                    }
                   >
-                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                  </svg>
-                  {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
-                </button>
+                    <div className="text-text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                      <svg
+                        className="text-text-muted size-4 transition-colors duration-250"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                      <span>Via Email</span>
+                    </div>
+                    <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
+                      {recipientCounts.hasEmail}
+                    </strong>
+                    <span className="text-text-muted text-[10px]">receive email</span>
+                  </button>
 
-                <button
-                  type="button"
-                  className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-primary bg-primary px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-deep hover:bg-primary-deep hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
-                  onClick={sendMessage}
-                  disabled={isSending || selectedRecipients.length === 0}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="size-4 transition-transform duration-200"
+                  <button
+                    type="button"
+                    className="relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border border-blue-600/15 bg-blue-50/50 p-4 text-center font-sans text-blue-800 transition-all duration-250 hover:-translate-y-0.5 hover:border-blue-600 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:hover:text-blue-600"
+                    disabled={selectedRecipients.filter((r) => r.phone?.trim()).length === 0}
+                    onClick={() =>
+                      onViewRecipients(
+                        selectedRecipients.filter((r) => r.phone?.trim()),
+                        'Recipient List (Via SMS)'
+                      )
+                    }
                   >
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
-                  {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
-                </button>
-              </div>
-            </AppCard>
-          </aside>
+                    <div className="text-text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                      <svg
+                        className="text-text-muted size-4 transition-colors duration-250"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                        <line x1="12" y1="18" x2="12.01" y2="18" />
+                      </svg>
+                      <span>Via SMS</span>
+                    </div>
+                    <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
+                      {recipientCounts.hasPhone}
+                    </strong>
+                    <span className="text-text-muted text-[10px]">receive SMS text</span>
+                  </button>
+                </div>
+              </AppCard>
+
+              {/* Card 2: Pre-flight checklist */}
+              <AppCard title="Pre-Flight Checklist">
+                <div className="flex flex-col gap-2">
+                  {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
+                    <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
+                      <svg
+                        className="mt-0.5 size-4 flex-shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <span>
+                        <strong>Subject is empty.</strong> Add a subject line for better open rates.
+                      </span>
+                    </div>
+                  )}
+                  {content.length < 10 && (
+                    <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
+                      <svg
+                        className="mt-0.5 size-4 flex-shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <span>
+                        <strong>Very short message body.</strong>
+                      </span>
+                    </div>
+                  )}
+                  {selectedRecipients.length === 0 && (
+                    <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
+                      <svg
+                        className="mt-0.5 size-4 flex-shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                      <span>
+                        <strong>No recipients selected.</strong>
+                      </span>
+                    </div>
+                  )}
+
+                  {!filters.eventId &&
+                    (() => {
+                      const eventPlaceholders = [
+                        '{eventTitle}',
+                        '{eventType}',
+                        '{eventDate}',
+                        '{eventLocation}',
+                        '{eventDetails}',
+                        '{setlist}',
+                        '{{PLAYER_LINK}}',
+                        '{{RSVP_LINKS}}',
+                      ];
+
+                      const combinedText = (subject + ' ' + content).toLowerCase();
+                      const foundPlaceholders = eventPlaceholders.filter((p) =>
+                        combinedText.includes(p.toLowerCase())
+                      );
+
+                      if (foundPlaceholders.length > 0) {
+                        return (
+                          <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
+                            <svg
+                              className="mt-0.5 size-4 flex-shrink-0"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <span>
+                              <strong>No event selected</strong> but active event placeholders
+                              exist: <code>{foundPlaceholders.join(', ')}</code>.
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })()}
+
+                  {filters.eventId &&
+                    (() => {
+                      const hasApprovedSetList = selectedEvent
+                        ? selectedEvent.setListApproved !== false
+                        : false;
+                      const hasPlayerPlaceholder = content
+                        .toLowerCase()
+                        .includes('{{player_link}}');
+
+                      if (!hasApprovedSetList && hasPlayerPlaceholder) {
+                        return (
+                          <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
+                            <svg
+                              className="mt-0.5 size-4 flex-shrink-0"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                              <line x1="12" y1="9" x2="12" y2="13" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <span>
+                              <strong>Practice player not approved.</strong> Set list is unapproved;{' '}
+                              <code>{'{{PLAYER_LINK}}'}</code> button will not render.
+                            </span>
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })()}
+
+                  {renderSetlistWarning()}
+
+                  {selectedRecipients.some((r) => !r.email) &&
+                    (messageType === 'Email' || messageType === 'Both') && (
+                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-blue-100 border-l-blue-600 bg-blue-50 p-3 text-xs leading-normal text-blue-900 transition-transform duration-200 hover:translate-x-0.5">
+                        <svg
+                          className="mt-0.5 size-4 flex-shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                        <span>
+                          <strong>
+                            {selectedRecipients.filter((r) => !r.email).length} singers
+                          </strong>{' '}
+                          have no email configured and will skip this channel.
+                        </span>
+                      </div>
+                    )}
+
+                  {selectedRecipients.some((r) => !r.phone) &&
+                    (messageType === 'SMS' || messageType === 'Both') && (
+                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-blue-100 border-l-blue-600 bg-blue-50 p-3 text-xs leading-normal text-blue-900 transition-transform duration-200 hover:translate-x-0.5">
+                        <svg
+                          className="mt-0.5 size-4 flex-shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="16" x2="12" y2="12" />
+                          <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                        <span>
+                          <strong>
+                            {selectedRecipients.filter((r) => !r.phone).length} singers
+                          </strong>{' '}
+                          have no phone configured and will skip this channel.
+                        </span>
+                      </div>
+                    )}
+
+                  {commSettings.mailingAddress.includes('123 Choir St') &&
+                    (messageType === 'Email' || messageType === 'Both') && (
+                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
+                        <svg
+                          className="mt-0.5 size-4 flex-shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                          <line x1="12" y1="9" x2="12" y2="13" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        <span>
+                          <strong>Default physical address active.</strong> Please{' '}
+                          <button
+                            type="button"
+                            className="text-primary hover:text-primary-deep cursor-pointer font-semibold underline"
+                            onClick={() => {
+                              setTab('settings');
+                              setEditingTemplate(null);
+                            }}
+                          >
+                            update this in settings
+                          </button>{' '}
+                          for CAN-SPAM legal compliance.
+                        </span>
+                      </div>
+                    )}
+
+                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-emerald-100 border-l-emerald-600 bg-emerald-50 p-3 text-xs leading-normal text-emerald-900 transition-transform duration-200 hover:translate-x-0.5">
+                    <svg
+                      className="mt-0.5 size-4 flex-shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    <span>Compliance footer will be attached.</span>
+                  </div>
+                </div>
+              </AppCard>
+
+              {/* Card 3: Sending Actions */}
+              <AppCard title="Sending Actions">
+                <div className="flex w-full gap-3 max-md:flex-col-reverse">
+                  <button
+                    type="button"
+                    className="border-border text-text hover:border-text-muted inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:-translate-x-0.5"
+                    onClick={() => setWizardStep('COMPOSE')}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="size-4 transition-transform duration-200"
+                    >
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                    Back
+                  </button>
+
+                  <button
+                    type="button"
+                    className="border-border text-text hover:border-primary hover:text-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:rotate-12"
+                    onClick={handleSendTest}
+                    disabled={isSendingTest || isSending}
+                    title={`Send email test to ${user?.email || 'your email'}`}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="size-4 transition-transform duration-200"
+                    >
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                    </svg>
+                    {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="border-primary bg-primary hover:border-primary-deep hover:bg-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
+                    onClick={sendMessage}
+                    disabled={isSending || selectedRecipients.length === 0}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="size-4 transition-transform duration-200"
+                    >
+                      <line x1="22" y1="2" x2="11" y2="13" />
+                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                    {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
+                  </button>
+                </div>
+              </AppCard>
+            </aside>
+          </div>
         </div>
-      </div>
       )}
     </div>
   );

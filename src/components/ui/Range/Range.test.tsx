@@ -9,9 +9,7 @@ afterEach(() => {
 });
 
 test('Range renders a native <input type="range"> in test environment', () => {
-  const { container } = render(
-    React.createElement(Range, { value: 5, min: 0, max: 10, step: 1 }),
-  );
+  const { container } = render(React.createElement(Range, { value: 5, min: 0, max: 10, step: 1 }));
   const input = container.querySelector('input[type="range"]') as HTMLInputElement;
   assert.ok(input, 'renders a range input');
   assert.equal(input.value, '5');
@@ -29,7 +27,7 @@ test('Range passes through id and className', () => {
       step: 0.1,
       id: 'volume-input',
       className: 'accent-color',
-    }),
+    })
   );
   const input = container.firstElementChild as HTMLInputElement;
   assert.ok(input, 'renders an element');
@@ -46,18 +44,19 @@ test('Range calls onChange and onInput with a parsed number', () => {
       min: 0,
       max: 100,
       step: 1,
-      onChange: (v) => { onChangeVal = v; },
-      onInput: (v) => { onInputVal = v; },
-    }),
+      onChange: (v) => {
+        onChangeVal = v;
+      },
+      onInput: (v) => {
+        onInputVal = v;
+      },
+    })
   );
   const input = container.querySelector('input[type="range"]') as HTMLInputElement;
   assert.ok(input, 'renders a range input');
   // jsdom's HTMLInputElement.prototype value setter for type=range dispatches
   // 'input' and 'change' events, which is what the wrapper listens to.
-  const setter = Object.getOwnPropertyDescriptor(
-    window.HTMLInputElement.prototype,
-    'value',
-  )?.set;
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
   setter?.call(input, '42');
   fireEvent.change(input);
   assert.equal(onChangeVal, 42, 'onChange receives the parsed number');

@@ -22,7 +22,12 @@ export type MusicPieceWithPerformanceHistory = MusicPiece & {
 export function getMostRecentPerformanceDate(
   piece: MusicPieceWithPerformanceHistory
 ): string | null {
-  if (!piece || !piece.expand || !piece.expand.performances || !Array.isArray(piece.expand.performances)) {
+  if (
+    !piece ||
+    !piece.expand ||
+    !piece.expand.performances ||
+    !Array.isArray(piece.expand.performances)
+  ) {
     return null;
   }
 
@@ -62,20 +67,16 @@ export function getMostRecentPerformanceDate(
  */
 export function getEffectiveMostRecentPerformanceDate(
   piece: MusicPieceWithPerformanceHistory,
-  allPieces: MusicPieceWithPerformanceHistory[] = [],
+  allPieces: MusicPieceWithPerformanceHistory[] = []
 ): string | null {
   const ownDate = getMostRecentPerformanceDate(piece);
   if (ownDate) return ownDate;
 
   if (!piece.parentId) return null;
 
-  const expandedParent = piece.expand?.parentId as
-    | MusicPieceWithPerformanceHistory
-    | undefined;
+  const expandedParent = piece.expand?.parentId as MusicPieceWithPerformanceHistory | undefined;
 
-  const parent =
-    allPieces.find((candidate) => candidate.id === piece.parentId) ||
-    expandedParent;
+  const parent = allPieces.find((candidate) => candidate.id === piece.parentId) || expandedParent;
 
   return parent ? getMostRecentPerformanceDate(parent) : null;
 }
@@ -86,7 +87,12 @@ export function getEffectiveMostRecentPerformanceDate(
  * @returns An array of formatted performance string titles with dates.
  */
 export function formatPerformanceHistory(piece: MusicPieceWithPerformanceHistory): string[] {
-  if (!piece || !piece.expand || !piece.expand.performances || !Array.isArray(piece.expand.performances)) {
+  if (
+    !piece ||
+    !piece.expand ||
+    !piece.expand.performances ||
+    !Array.isArray(piece.expand.performances)
+  ) {
     return [];
   }
   return piece.expand.performances.map((perf) => {

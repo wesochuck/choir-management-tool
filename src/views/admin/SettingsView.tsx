@@ -39,12 +39,12 @@ const ALL_SYSTEM_TIMEZONES = (() => {
       'Europe/London',
       'Europe/Paris',
       'Asia/Tokyo',
-      'Australia/Sydney'
+      'Australia/Sydney',
     ];
   }
 })();
 
-const inputClasses = "max-w-lg";
+const inputClasses = 'max-w-lg';
 
 export default function SettingsView() {
   const dialog = useDialog();
@@ -70,19 +70,22 @@ export default function SettingsView() {
   const settingsQuery = useQuery({
     queryKey: queryKeys.choirSettings.all,
     queryFn: async () => {
-      const [loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl] = await Promise.all([
-        settingsService.getChoirName(),
-        settingsService.getTimezone(),
-        settingsService.getHomepageUrl(),
-        settingsService.getLogoUrl()
-      ]);
+      const [loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl] = await Promise.all(
+        [
+          settingsService.getChoirName(),
+          settingsService.getTimezone(),
+          settingsService.getHomepageUrl(),
+          settingsService.getLogoUrl(),
+        ]
+      );
       return { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl };
     },
   });
 
   useEffect(() => {
     if (!settingsQuery.data) return;
-    const { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl } = settingsQuery.data;
+    const { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl } =
+      settingsQuery.data;
     setChoirName(loadedChoirName);
     setInitialChoirName(loadedChoirName);
     setTimezone(loadedTimezone);
@@ -102,7 +105,17 @@ export default function SettingsView() {
     );
     const logoDirty = logoFile !== null || isLogoRemoved;
     return fieldsDirty || logoDirty || landingDirty;
-  }, [initialChoirName, choirName, initialTimezone, timezone, initialHomepageUrl, homepageUrl, logoFile, isLogoRemoved, landingDirty]);
+  }, [
+    initialChoirName,
+    choirName,
+    initialTimezone,
+    timezone,
+    initialHomepageUrl,
+    homepageUrl,
+    logoFile,
+    isLogoRemoved,
+    landingDirty,
+  ]);
 
   const handleGlobalDiscard = () => {
     setChoirName(initialChoirName);
@@ -143,7 +156,9 @@ export default function SettingsView() {
 
       const [newLogoUrl, newHeroUrl] = await Promise.all([
         logoFile ? settingsService.getLogoUrl() : Promise.resolve(logoUrl),
-        heroChanges?.file || heroChanges?.removed ? settingsService.getHeroImageUrl() : Promise.resolve(null),
+        heroChanges?.file || heroChanges?.removed
+          ? settingsService.getHeroImageUrl()
+          : Promise.resolve(null),
       ]);
 
       setContextChoirName(choirName);
@@ -163,8 +178,8 @@ export default function SettingsView() {
       setIsLogoRemoved(false);
 
       landingPanelRef.current?.markSaved(
-        landingSettings ?? await settingsService.getLandingSettings(),
-        newHeroUrl,
+        landingSettings ?? (await settingsService.getLandingSettings()),
+        newHeroUrl
       );
 
       setMessage('System settings saved.');
@@ -172,7 +187,11 @@ export default function SettingsView() {
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setMessage(`Error: ${errMsg}`);
-      await dialog.showMessage({ title: 'Error', message: 'Failed to save system settings.', variant: 'danger' });
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to save system settings.',
+        variant: 'danger',
+      });
     } finally {
       setIsSaving(false);
     }
@@ -190,7 +209,7 @@ export default function SettingsView() {
       </div>
 
       {message && (
-        <div className="inline-flex w-fit items-center rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary-deep">
+        <div className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold">
           {message}
         </div>
       )}
@@ -207,7 +226,8 @@ export default function SettingsView() {
               className={inputClasses}
             />
             <p className="text-xs text-slate-500">
-              Displayed in the browser tab title across all pages (e.g. "Roster Management - My Choir").
+              Displayed in the browser tab title across all pages (e.g. "Roster Management - My
+              Choir").
             </p>
           </div>
         </AppCard>
@@ -216,17 +236,40 @@ export default function SettingsView() {
           <div className="flex items-center gap-6">
             <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
               {logoUrl ? (
-                <img src={logoUrl} alt="Organization logo preview" className="size-full object-contain p-2" />
+                <img
+                  src={logoUrl}
+                  alt="Organization logo preview"
+                  className="size-full object-contain p-2"
+                />
               ) : (
-                <svg className="size-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.75c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h18M10.5 3.75h3v3h-3v-3z" />
+                <svg
+                  className="size-10 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.75c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h18M10.5 3.75h3v3h-3v-3z"
+                  />
                 </svg>
               )}
             </div>
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <label className="inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-light px-4 font-sans text-xs font-semibold text-primary-deep transition-colors hover:bg-primary-deep/10 active:translate-y-px">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
@@ -266,7 +309,8 @@ export default function SettingsView() {
                 )}
               </div>
               <p className="max-w-md text-xs leading-normal text-slate-500">
-                Displayed on public pages and the singer dashboard. PNG, JPG, SVG, or WebP formats are supported.
+                Displayed on public pages and the singer dashboard. PNG, JPG, SVG, or WebP formats
+                are supported.
               </p>
             </div>
           </div>
@@ -283,7 +327,8 @@ export default function SettingsView() {
               className={inputClasses}
             />
             <p className="text-xs text-slate-500">
-              The main public website address where applicants are redirected after submitting their audition sheet successfully.
+              The main public website address where applicants are redirected after submitting their
+              audition sheet successfully.
             </p>
           </div>
         </AppCard>
@@ -312,24 +357,22 @@ export default function SettingsView() {
               </optgroup>
             </Select>
             <p className="text-xs text-slate-500">
-              This timezone controls all event scheduling, display clocks, and email/SMS automatic reminders.
+              This timezone controls all event scheduling, display clocks, and email/SMS automatic
+              reminders.
             </p>
           </div>
         </AppCard>
 
-        <LandingPageSettingsPanel
-          ref={landingPanelRef}
-          onDirtyChange={handleLandingDirtyChange}
-        />
+        <LandingPageSettingsPanel ref={landingPanelRef} onDirtyChange={handleLandingDirtyChange} />
 
         <QueueWebhookSettings />
       </div>
 
-      <FloatingSaveBar 
-        isDirty={isDirty} 
-        isSaving={isSaving} 
-        onSave={handleSave} 
-        onDiscard={handleGlobalDiscard} 
+      <FloatingSaveBar
+        isDirty={isDirty}
+        isSaving={isSaving}
+        onSave={handleSave}
+        onDiscard={handleGlobalDiscard}
       />
     </div>
   );
@@ -356,9 +399,10 @@ function QueueWebhookSettings() {
   const handleGenerate = async () => {
     const confirmed = await dialog.confirm({
       title: 'Revoke Token?',
-      message: 'Generating a new token revokes the old one. Update the PocketHost configuration immediately.',
+      message:
+        'Generating a new token revokes the old one. Update the PocketHost configuration immediately.',
       confirmLabel: 'Regenerate',
-      variant: 'danger'
+      variant: 'danger',
     });
 
     if (!confirmed) return;
@@ -368,7 +412,11 @@ function QueueWebhookSettings() {
       const data = await queueSettingsService.generateToken();
       setToken(data.secret);
     } catch {
-      await dialog.showMessage({ title: 'Error', message: 'Failed to generate token', variant: 'danger' });
+      await dialog.showMessage({
+        title: 'Error',
+        message: 'Failed to generate token',
+        variant: 'danger',
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -377,17 +425,21 @@ function QueueWebhookSettings() {
   const pbBaseUrl = (pb.baseUrl || window.location.origin).replace(/\/+$/, '');
   const webhookUrl = `${pbBaseUrl}/api/queue/process?token=${token}`;
 
-  if (isLoading) return <div className="text-xs text-slate-400">Loading queue configurations...</div>;
+  if (isLoading)
+    return <div className="text-xs text-slate-400">Loading queue configurations...</div>;
 
   return (
     <AppCard title="Email Queue Webhook">
       <div className="flex flex-col gap-4">
         <p className="text-xs text-slate-500">
-          PocketHost triggers this URL to process single-recipient messages sequentially in the background.
+          PocketHost triggers this URL to process single-recipient messages sequentially in the
+          background.
         </p>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold text-slate-700" htmlFor="webhook-url">Target Webhook URL</label>
+          <label className="text-xs font-semibold text-slate-700" htmlFor="webhook-url">
+            Target Webhook URL
+          </label>
           <div className="flex items-center gap-2">
             <Input
               id="webhook-url"
@@ -399,7 +451,7 @@ function QueueWebhookSettings() {
             <CopyButton
               value={webhookUrl}
               disabled={!token}
-              className={`${!token ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`${!token ? 'cursor-not-allowed opacity-50' : ''}`}
             >
               Copy Link
             </CopyButton>
@@ -408,14 +460,16 @@ function QueueWebhookSettings() {
 
         <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-4">
           <div className="text-xs text-slate-500">
-            <strong>Status:</strong> {token ? <span className="font-semibold text-emerald-700">Active ({token.substring(0, 8)}...)</span> : <span className="text-slate-400">Unassigned</span>}
+            <strong>Status:</strong>{' '}
+            {token ? (
+              <span className="font-semibold text-emerald-700">
+                Active ({token.substring(0, 8)}...)
+              </span>
+            ) : (
+              <span className="text-slate-400">Unassigned</span>
+            )}
           </div>
-          <Button
-            type="button"
-            onClick={handleGenerate}
-            variant="secondary"
-            size="small"
-          >
+          <Button type="button" onClick={handleGenerate} variant="secondary" size="small">
             {token ? 'Regenerate Token' : 'Generate Token'}
           </Button>
         </div>

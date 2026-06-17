@@ -45,7 +45,11 @@ export default function TicketScanView() {
     return searchParams.get('eventId') || localStorage.getItem(STORAGE_KEY) || '';
   });
 
-  const { data: events = [], isLoading: eventsLoading, error: eventsError } = useQuery({
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    error: eventsError,
+  } = useQuery({
     queryKey: queryKeys.events.publicList,
     queryFn: () => eventService.getPublicEvents(),
   });
@@ -66,8 +70,6 @@ export default function TicketScanView() {
   const scanningRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const validatingRef = useRef(false);
-
-
 
   /* Handle event selection - update URL and localStorage */
   const handleEventChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -91,33 +93,36 @@ export default function TicketScanView() {
 
   /* Add result to history */
   const addToHistory = useCallback((result: ValidationResult, token: string) => {
-    setHistory(prev => {
+    setHistory((prev) => {
       const next = [{ result, timestamp: Date.now(), token }, ...prev];
       return next.slice(0, HISTORY_SIZE);
     });
   }, []);
 
   /* Validate a token */
-  const handleValidateToken = useCallback(async (token: string) => {
-    if (!selectedEventId) return;
-    if (validatingRef.current) return;
-    validatingRef.current = true;
-    setValidating(true);
-    setScanResult(null);
-    try {
-      const result = await ticketService.validateScan(token, selectedEventId);
-      setScanResult(result);
-      addToHistory(result, token);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const errorResult: ValidationResult = { valid: false, reason: msg };
-      setScanResult(errorResult);
-      addToHistory(errorResult, token);
-    } finally {
-      setValidating(false);
-      validatingRef.current = false;
-    }
-  }, [selectedEventId, addToHistory]);
+  const handleValidateToken = useCallback(
+    async (token: string) => {
+      if (!selectedEventId) return;
+      if (validatingRef.current) return;
+      validatingRef.current = true;
+      setValidating(true);
+      setScanResult(null);
+      try {
+        const result = await ticketService.validateScan(token, selectedEventId);
+        setScanResult(result);
+        addToHistory(result, token);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const errorResult: ValidationResult = { valid: false, reason: msg };
+        setScanResult(errorResult);
+        addToHistory(errorResult, token);
+      } finally {
+        setValidating(false);
+        validatingRef.current = false;
+      }
+    },
+    [selectedEventId, addToHistory]
+  );
 
   /* Manual submit */
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -131,7 +136,9 @@ export default function TicketScanView() {
   /* Camera helpers */
   const startFrameCapture = useCallback(async () => {
     scanningRef.current = true;
-    let jsQR: ((data: Uint8ClampedArray, width: number, height: number) => { data: string } | null) | null = null;
+    let jsQR:
+      | ((data: Uint8ClampedArray, width: number, height: number) => { data: string } | null)
+      | null = null;
     try {
       jsQR = (await import('jsqr')).default;
     } catch {
@@ -187,7 +194,7 @@ export default function TicketScanView() {
       intervalRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     setCameraActive(false);
@@ -202,7 +209,7 @@ export default function TicketScanView() {
         clearInterval(intervalRef.current);
       }
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
@@ -211,20 +218,20 @@ export default function TicketScanView() {
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Event selector */}
       <div>
-        <label htmlFor="event-select" className="mb-1.5 block text-sm font-medium text-text">
+        <label htmlFor="event-select" className="text-text mb-1.5 block text-sm font-medium">
           Event
         </label>
         {eventsLoading ? (
-          <div className="flex items-center gap-2 text-sm text-muted">
+          <div className="text-muted flex items-center gap-2 text-sm">
             <Spinner size="small" />
             Loading events...
           </div>
         ) : eventsError ? (
-          <p className="text-sm text-danger-text">{eventsErrorMsg}</p>
+          <p className="text-danger-text text-sm">{eventsErrorMsg}</p>
         ) : (
           <Select id="event-select" value={selectedEventId} onChange={handleEventChange}>
             <option value="">Select an event...</option>
-            {events.map(event => (
+            {events.map((event) => (
               <option key={event.id} value={event.id}>
                 {event.title} — {new Date(event.date).toLocaleDateString()}
               </option>
@@ -234,29 +241,21 @@ export default function TicketScanView() {
       </div>
 
       {!selectedEventId && (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
-          <p className="text-sm text-muted">Select an event to start scanning tickets.</p>
+        <div className="border-border bg-surface rounded-xl border p-8 text-center shadow-sm">
+          <p className="text-muted text-sm">Select an event to start scanning tickets.</p>
         </div>
       )}
 
       {selectedEventId && (
         <>
           {/* Camera scanner */}
-          <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-text">Camera Scanner</h3>
-            {cameraError && (
-              <p className="mb-3 text-sm text-danger-text">{cameraError}</p>
-            )}
+          <div className="border-border bg-surface rounded-xl border p-4 shadow-sm">
+            <h3 className="text-text mb-3 text-sm font-semibold">Camera Scanner</h3>
+            {cameraError && <p className="text-danger-text mb-3 text-sm">{cameraError}</p>}
             {cameraActive ? (
               <div className="space-y-3">
-                <div className="overflow-hidden rounded-lg border border-border bg-black">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="block w-full"
-                  />
+                <div className="border-border overflow-hidden rounded-lg border bg-black">
+                  <video ref={videoRef} autoPlay playsInline muted className="block w-full" />
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
                 <div className="flex justify-center">
@@ -279,13 +278,16 @@ export default function TicketScanView() {
           </div>
 
           {/* Manual entry */}
-          <form onSubmit={handleManualSubmit} className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-            <h3 className="mb-3 text-sm font-semibold text-text">Manual Entry</h3>
+          <form
+            onSubmit={handleManualSubmit}
+            className="border-border bg-surface rounded-xl border p-4 shadow-sm"
+          >
+            <h3 className="text-text mb-3 text-sm font-semibold">Manual Entry</h3>
             <div className="flex gap-2">
               <Input
                 placeholder="Paste ticket code or URL..."
                 value={manualToken}
-                onChange={e => setManualToken(e.target.value)}
+                onChange={(e) => setManualToken(e.target.value)}
                 className="flex-1"
               />
               <Button
@@ -301,20 +303,18 @@ export default function TicketScanView() {
 
           {/* Result panel */}
           {validating && !scanResult && (
-            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted">
+            <div className="text-muted flex items-center justify-center gap-2 py-8 text-sm">
               <Spinner size="small" />
               Validating ticket...
             </div>
           )}
 
-          {scanResult && (
-            <ScanResultCard result={scanResult} />
-          )}
+          {scanResult && <ScanResultCard result={scanResult} />}
 
           {/* History strip */}
           {history.length > 0 && (
-            <div className="rounded-xl border border-border bg-surface p-4 shadow-sm">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+            <div className="border-border bg-surface rounded-xl border p-4 shadow-sm">
+              <h3 className="text-muted mb-2 text-xs font-semibold tracking-wide uppercase">
                 Recent Scans
               </h3>
               <div className="flex flex-col gap-2">
@@ -327,16 +327,20 @@ export default function TicketScanView() {
                         : 'border-rose-200 bg-rose-50'
                     }`}
                   >
-                    <span className={`text-sm font-bold ${item.result.valid ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    <span
+                      className={`text-sm font-bold ${item.result.valid ? 'text-emerald-700' : 'text-rose-700'}`}
+                    >
                       {item.result.valid ? 'OK' : 'BAD'}
                     </span>
-                    <span className="flex-1 truncate text-muted">
+                    <span className="text-muted flex-1 truncate">
                       {item.result.buyerName || `Token: ${item.token.slice(0, 16)}...`}
                     </span>
                     {item.result.eventTitle && (
-                      <span className="hidden text-xs text-muted sm:inline">{item.result.eventTitle}</span>
+                      <span className="text-muted hidden text-xs sm:inline">
+                        {item.result.eventTitle}
+                      </span>
                     )}
-                    <span className="shrink-0 text-xs text-muted">
+                    <span className="text-muted shrink-0 text-xs">
                       {new Date(item.timestamp).toLocaleTimeString()}
                     </span>
                   </div>

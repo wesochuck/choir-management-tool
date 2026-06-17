@@ -19,10 +19,10 @@ function TestComponent({
   const ref = useRef<HTMLDivElement>(null);
   const [closed, setClosed] = useState(false);
   useClickOutside(ref, () => setClosed(true), { enabled, escape });
-  return (
-    React.createElement('div', { ref, 'data-testid': 'inside' },
-      React.createElement('span', { 'data-testid': 'status' }, closed ? 'closed' : 'open')
-    )
+  return React.createElement(
+    'div',
+    { ref, 'data-testid': 'inside' },
+    React.createElement('span', { 'data-testid': 'status' }, closed ? 'closed' : 'open')
   );
 }
 

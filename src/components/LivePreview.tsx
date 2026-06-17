@@ -37,33 +37,37 @@ const EmailMockup: React.FC<EmailMockupProps> = ({
   bodyHtml,
 }) => (
   <div
-    className={`flex min-h-[550px] w-full flex-col bg-surface shadow-md transition-all duration-300 ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
+    className={`bg-surface flex min-h-[550px] w-full flex-col shadow-md transition-all duration-300 ${previewDevice === 'mobile' ? 'max-w-[375px] rounded-[20px] border-8 border-slate-800' : 'max-w-full rounded-none border-0'}`}
   >
-    <div className="flex flex-col gap-1.5 border-b border-border bg-slate-50 p-4 text-xs">
-      <div className="flex text-text-muted">
+    <div className="border-border flex flex-col gap-1.5 border-b bg-slate-50 p-4 text-xs">
+      <div className="text-text-muted flex">
         <span className="w-[60px] shrink-0 font-semibold">From:</span>
         <span className="text-slate-800">
           {senderName} &lt;{senderEmail}&gt;
         </span>
       </div>
-      <div className="flex text-text-muted">
+      <div className="text-text-muted flex">
         <span className="w-[60px] shrink-0 font-semibold">To:</span>
         <span className="text-slate-800">
           {recipientName} &lt;{recipientEmail}&gt;
         </span>
       </div>
-      <div className="mt-1 flex border-t border-dashed border-border pt-1.5 text-text-muted">
+      <div className="border-border text-text-muted mt-1 flex border-t border-dashed pt-1.5">
         <span className="w-[60px] shrink-0 font-semibold">Subject:</span>
         <strong className="text-slate-900">{subject || '(No Subject)'}</strong>
       </div>
     </div>
 
-    <div className={`flex-1 overflow-y-auto text-sm leading-relaxed break-words text-slate-600 ${previewDevice === 'mobile' ? 'p-4' : 'p-6'}`}>
+    <div
+      className={`flex-1 overflow-y-auto text-sm leading-relaxed break-words text-slate-600 ${previewDevice === 'mobile' ? 'p-4' : 'p-6'}`}
+    >
       <div
         className="text-body"
         // @allow-dangerouslySetInnerHTML - bodyHtml is pre-escaped by renderMarkdown/resolvePreviewContent (use with caution)
         dangerouslySetInnerHTML={{
-          __html: bodyHtml || '<p class="text-text-muted text-center py-10">No message content drafted yet.</p>',
+          __html:
+            bodyHtml ||
+            '<p class="text-text-muted text-center py-10">No message content drafted yet.</p>',
         }}
       />
     </div>
@@ -106,9 +110,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
   senderName = 'Choir Management',
   senderEmail = 'no-reply@choir.management',
 }) => {
-  const [activeTab, setActiveTab] = useState<'email' | 'sms'>(
-    channel === 'SMS' ? 'sms' : 'email'
-  );
+  const [activeTab, setActiveTab] = useState<'email' | 'sms'>(channel === 'SMS' ? 'sms' : 'email');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
   return (
@@ -117,7 +119,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
         <h3 className="text-headline m-0 text-lg">Live Preview</h3>
         <div className="flex gap-2">
           {channel === 'Both' && (
-            <div className="flex gap-1 rounded-md border border-border bg-bg p-0.5">
+            <div className="border-border bg-bg flex gap-1 rounded-md border p-0.5">
               <Button
                 type="button"
                 variant={activeTab === 'email' ? 'secondary' : 'outline'}
@@ -139,7 +141,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
             </div>
           )}
           {activeTab === 'email' && channel !== 'SMS' && (
-            <div className="flex gap-1 rounded-md border border-border bg-bg p-0.5">
+            <div className="border-border bg-bg flex gap-1 rounded-md border p-0.5">
               <Button
                 type="button"
                 variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
@@ -164,7 +166,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
       </div>
 
       <div
-        className={`flex items-center justify-center overflow-hidden rounded-md border border-border bg-[var(--primary-light,#f1f5f9)] transition-all duration-300 ${activeTab === 'email' && previewDevice === 'mobile' ? 'px-[15px] py-[30px]' : 'p-5'}`}
+        className={`border-border flex items-center justify-center overflow-hidden rounded-md border bg-[var(--primary-light,#f1f5f9)] transition-all duration-300 ${activeTab === 'email' && previewDevice === 'mobile' ? 'px-[15px] py-[30px]' : 'p-5'}`}
       >
         {activeTab === 'email' && channel !== 'SMS' ? (
           <EmailMockup

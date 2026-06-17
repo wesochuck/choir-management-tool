@@ -44,13 +44,12 @@ export const useDashboardCounts = () => {
     activeSingers: activeSingersQuery.data,
     upcomingEvents: upcomingEventsQuery.data,
     pendingAuditions: pendingAuditionsQuery.data,
-    errorMessage:
-      activeSingersQuery.error
-        ? toErrorMessage(activeSingersQuery.error, 'Failed to fetch active singers count')
-        : upcomingEventsQuery.error
-          ? toErrorMessage(upcomingEventsQuery.error, 'Failed to fetch upcoming events count')
-          : pendingAuditionsQuery.error
-            ? toErrorMessage(pendingAuditionsQuery.error, 'Failed to fetch pending auditions count')
-            : null,
+    errorMessage: activeSingersQuery.error
+      ? toErrorMessage(activeSingersQuery.error, 'Failed to fetch active singers count')
+      : upcomingEventsQuery.error
+        ? toErrorMessage(upcomingEventsQuery.error, 'Failed to fetch upcoming events count')
+        : pendingAuditionsQuery.error
+          ? toErrorMessage(pendingAuditionsQuery.error, 'Failed to fetch pending auditions count')
+          : null,
   };
 };
