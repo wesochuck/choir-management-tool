@@ -12444,7 +12444,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -12647,7 +12647,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             }
         }
     }
-    function handleCreateTicketsSession(e) {
+    async function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -12998,7 +12998,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
-    function handleStripeWebhook(e) {
+    async function handleStripeWebhook(e) {
         var _a, _b, _c, _d;
         let rawBody;
         try {
@@ -14015,7 +14015,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -14218,7 +14218,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             }
         }
     }
-    function handleCreateTicketsSession(e) {
+    async function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -14569,7 +14569,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
-    function handleStripeWebhook(e) {
+    async function handleStripeWebhook(e) {
         var _a, _b, _c, _d;
         let rawBody;
         try {
@@ -15586,7 +15586,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -15789,7 +15789,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             }
         }
     }
-    function handleCreateTicketsSession(e) {
+    async function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -16140,7 +16140,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
-    function handleStripeWebhook(e) {
+    async function handleStripeWebhook(e) {
         var _a, _b, _c, _d;
         let rawBody;
         try {
@@ -17157,7 +17157,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -17360,7 +17360,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             }
         }
     }
-    function handleCreateTicketsSession(e) {
+    async function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -17711,7 +17711,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
-    function handleStripeWebhook(e) {
+    async function handleStripeWebhook(e) {
         var _a, _b, _c, _d;
         let rawBody;
         try {
@@ -18728,7 +18728,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -18931,7 +18931,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             }
         }
     }
-    function handleCreateTicketsSession(e) {
+    async function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -19282,7 +19282,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
-    function handleStripeWebhook(e) {
+    async function handleStripeWebhook(e) {
         var _a, _b, _c, _d;
         let rawBody;
         try {
@@ -20299,7 +20299,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -20502,7 +20502,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             }
         }
     }
-    function handleCreateTicketsSession(e) {
+    async function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -20853,7 +20853,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
-    function handleStripeWebhook(e) {
+    async function handleStripeWebhook(e) {
         var _a, _b, _c, _d;
         let rawBody;
         try {
@@ -21870,7 +21870,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -22073,7 +22073,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             }
         }
     }
-    function handleCreateTicketsSession(e) {
+    async function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -22424,7 +22424,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
         }
     }
-    function handleStripeWebhook(e) {
+    async function handleStripeWebhook(e) {
         var _a, _b, _c, _d;
         let rawBody;
         try {
@@ -23318,7 +23318,7 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
@@ -23821,7 +23821,7 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
         }
         return "http://localhost:5173";
     }
-    function handleValidateScan(e) {
+    async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';

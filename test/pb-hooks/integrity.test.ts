@@ -503,6 +503,7 @@ test('Generated main.pb.js is structurally valid Goja-compatible JavaScript', ()
 
 test('Generated main.pb.js uses async callbacks when body has await', () => {
   const content = readGeneratedMain();
+  const lines = content.split('\n');
 
   // 1. Check cron registrations
   const ticketBuyerCron = extractCronCallback(content, 'ticket_buyer_reminder');
@@ -539,6 +540,80 @@ test('Generated main.pb.js uses async callbacks when body has await', () => {
       if (usesAwait && !callbackOpen.startsWith('async ')) {
         assert.fail(
           `Route ${routePath} uses await in its body but lacks async keyword on callback.`
+        );
+      }
+    }
+  }
+
+  // 3. Check all function declarations in source files — verify functions using await are async
+  //    Check source files directly (more reliable than parsing the generated file
+  //    which has regex literals that confuse brace matching)
+  const srcDir = path.join(process.cwd(), 'pocketbase/pb_hooks_src');
+  function walkSrcDir(dir: string): string[] {
+    const results: string[] = [];
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) results.push(...walkSrcDir(full));
+        else if (entry.isFile() && entry.name.endsWith('.ts')) results.push(full);
+      }
+    } catch {}
+    return results;
+  }
+
+  const srcFiles = walkSrcDir(srcDir);
+  for (const srcFile of srcFiles) {
+    if (srcFile.endsWith('generate-main-pb-js.ts')) continue;
+    const srcContent = fs.readFileSync(srcFile, 'utf8');
+
+    // Find all function declarations (sync, not async)
+    const funcDeclRegex = /^(?:export\s+)?function\s+(\w+)\s*\([^)]*\)\s*:\s*\w+/gm;
+    let funcMatch: RegExpExecArray | null;
+    while ((funcMatch = funcDeclRegex.exec(srcContent)) !== null) {
+      const funcName = funcMatch[1];
+      // Check if this function has 'async' somewhere before its name (the source uses TypeScript async)
+      const matchStart = srcContent.lastIndexOf('\n', funcMatch.index) + 1;
+      const beforeFunc = srcContent.slice(Math.max(0, matchStart - 10), matchStart);
+      if (beforeFunc.includes('async ')) continue;
+
+      // Find the opening brace of the function body
+      const afterParams = srcContent.indexOf('{', funcMatch.index + funcMatch[0].length);
+      if (afterParams === -1) continue;
+
+      // Count braces to find the matching close
+      let depth = 1;
+      let pos = afterParams + 1;
+      while (depth > 0 && pos < srcContent.length) {
+        if (srcContent[pos] === '/' && srcContent[pos + 1] === '/') {
+          const nextNl = srcContent.indexOf('\n', pos);
+          pos = nextNl === -1 ? srcContent.length : nextNl + 1;
+          continue;
+        }
+        if (srcContent[pos] === '/' && srcContent[pos + 1] === '*') {
+          const endComment = srcContent.indexOf('*/', pos);
+          pos = endComment === -1 ? srcContent.length : endComment + 2;
+          continue;
+        }
+        if (srcContent[pos] === '"' || srcContent[pos] === "'" || srcContent[pos] === '`') {
+          const quote = srcContent[pos];
+          pos++;
+          while (pos < srcContent.length && srcContent[pos] !== quote) {
+            if (srcContent[pos] === '\\') pos++;
+            pos++;
+          }
+          pos++;
+          continue;
+        }
+        if (srcContent[pos] === '{') depth++;
+        if (srcContent[pos] === '}') depth--;
+        pos++;
+      }
+      const body = srcContent.slice(afterParams, pos - 1);
+      if (body.includes('await ')) {
+        const lineNum = srcContent.substring(0, funcMatch.index).split('\n').length;
+        assert.fail(
+          `Function ${funcName} in ${path.relative(process.cwd(), srcFile)} (line ${lineNum}) uses await but is not declared async. Add 'async' keyword.`
         );
       }
     }
