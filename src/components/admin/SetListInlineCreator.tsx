@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import type { MusicPiece } from '../../types/musicLibrary';
 import type { SetListItem } from '../../services/eventService';
+import { getLearningTrackContextLabel } from '../../lib/music/learningTrackLabels';
 import {
   createSetListItemFromCustomInput,
   createSetListItemFromMusicPiece,
@@ -142,7 +143,10 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
                   className="group hover:bg-primary-light focus:bg-primary-light flex w-full flex-col items-start gap-0.5 rounded px-3 py-1.5 text-left transition-colors focus:outline-none"
                 >
                   <span className="text-text group-hover:text-primary-deep group-focus:text-primary-deep text-sm font-semibold">
-                    {p.title}
+                    {getLearningTrackContextLabel(
+                      p,
+                      library.find((parent) => parent.id === p.parentId)?.title
+                    )}
                   </span>
                   {p.composer && (
                     <span className="text-text-muted group-hover:text-primary-deep/80 group-focus:text-primary-deep/80 text-xs">
