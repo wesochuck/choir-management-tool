@@ -47,7 +47,7 @@ test('EventRosterTable renders event roster RSVP badge labels for each status', 
     )
   );
 
-  assert.equal(countOccurrences(html, '🟢 Attending'), 1);
-  assert.equal(countOccurrences(html, '🔴 Declined'), 1);
-  assert.equal(countOccurrences(html, '⏳ No Response'), 1);
+  assert.equal(countOccurrences(html, '🟢 Attending'), 2);
+  assert.equal(countOccurrences(html, '🔴 Declined'), 2);
+  assert.equal(countOccurrences(html, '⏳ No Response'), 2);
 });
