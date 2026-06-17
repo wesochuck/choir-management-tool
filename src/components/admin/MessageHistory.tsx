@@ -82,7 +82,7 @@ export function MessageHistory({
       message.subject || 'SMS message',
       linkedEvent,
       null,
-      commSettings.mailingAddress,
+      commSettings.mailingAddress
     );
   };
 
@@ -159,16 +159,15 @@ export function MessageHistory({
       align: 'center',
       enableSorting: false,
       cell: (_, row) => (
-        <Button
+        <button
           type="button"
-          variant="outline"
-          className="h-auto min-h-0 cursor-pointer"
+          className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-sm font-semibold underline decoration-dotted underline-offset-2 transition-colors"
           onClick={() =>
             onViewRecipients(row.recipients, `Recipients — ${getResolvedSubject(row)}`)
           }
         >
           {row.recipients.length} recipient{row.recipients.length !== 1 ? 's' : ''}
-        </Button>
+        </button>
       ),
       cardSection: 1,
       cardSide: 'right',
@@ -197,20 +196,10 @@ export function MessageHistory({
       enableSorting: false,
       cell: (_, row) => (
         <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button
-            type="button"
-            variant="outline"
-            size="small"
-            onClick={() => onViewDetails(row)}
-          >
+          <Button type="button" variant="outline" size="small" onClick={() => onViewDetails(row)}>
             Details
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="small"
-            onClick={() => onCopyDraft(row)}
-          >
+          <Button type="button" variant="secondary" size="small" onClick={() => onCopyDraft(row)}>
             Copy to Draft
           </Button>
         </div>
