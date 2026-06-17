@@ -41,7 +41,9 @@ function PublicLandingView() {
     landingQuery.isLoading || performancesQuery.isLoading || ticketedQuery.isLoading;
   const landingData = landingQuery.data;
   const performanceList = performancesQuery.data ?? [];
-  const ticketedEvents = ticketedQuery.data ?? [];
+  const ticketedEvents = (ticketedQuery.data ?? []).filter(
+    (event) => new Date(event.date) > new Date()
+  );
 
   if (isLoading) {
     return (
