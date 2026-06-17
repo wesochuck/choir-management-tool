@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { AppCard } from '../components/common/AppCard';
 import { pb } from '../lib/pocketbase';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -50,7 +50,6 @@ export default function PublicRsvpView() {
   const [dbRsvp, setDbRsvp] = useState<'Yes' | 'No' | 'Pending'>('Pending');
   const [rsvpNote, setRsvpNote] = useState('');
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [showRehearsals, setShowRehearsals] = useState(false);
   const [rsvpWindow, setRsvpWindow] = useState<{
     canSubmit: boolean;
@@ -103,6 +102,14 @@ export default function PublicRsvpView() {
         return 'America/New_York';
       }
     },
+  });
+
+  const quickRsvpMutation = useMutation({
+    mutationFn: (data: { token: string; rsvp: string; rsvpNote: string }) =>
+      pb.send('/api/quick-rsvp', {
+        method: 'POST',
+        body: data,
+      }),
   });
 
   useEffect(() => {
@@ -160,7 +167,7 @@ export default function PublicRsvpView() {
   }, [timezoneQuery.data]);
 
   const handleConfirmRsvp = async (rsvpVal: 'Yes' | 'No', note: string = rsvpNote) => {
-    if (!token || isUpdating || !event) return;
+    if (!token || quickRsvpMutation.isPending || !event) return;
 
     if (event.type === 'Rehearsal' && rsvpVal === 'No' && !note.trim()) {
       await dialog.showMessage({
@@ -181,15 +188,11 @@ export default function PublicRsvpView() {
       return;
     }
 
-    setIsUpdating(true);
     try {
-      await pb.send('/api/quick-rsvp', {
-        method: 'POST',
-        body: {
-          token,
-          rsvp: rsvpVal,
-          rsvpNote: rsvpVal === 'No' ? note.trim() : '',
-        },
+      await quickRsvpMutation.mutateAsync({
+        token,
+        rsvp: rsvpVal,
+        rsvpNote: rsvpVal === 'No' ? note.trim() : '',
       });
       setSelectedRsvp(rsvpVal);
       setDbRsvp(rsvpVal);
@@ -202,8 +205,6 @@ export default function PublicRsvpView() {
         message: errObj?.data?.error || 'Failed to record RSVP. Please try again.',
         variant: 'danger',
       });
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -475,11 +476,11 @@ export default function PublicRsvpView() {
                 <div className="flex w-full gap-2">
                   <Button
                     onClick={() => handleConfirmRsvp('Yes')}
-                    disabled={isUpdating}
+                    disabled={quickRsvpMutation.isPending}
                     variant="primary"
                     className={`h-12 flex-1 font-bold ${selectedRsvp === 'Yes' ? 'border-primary-deep border-2 opacity-100' : 'border-border border opacity-60'}`}
                   >
-                    {isUpdating && selectedRsvp === 'Yes' ? 'Confirming...' : 'Yes, I Will Attend'}
+                    {quickRsvpMutation.isPending && selectedRsvp === 'Yes' ? 'Confirming...' : 'Yes, I Will Attend'}
                   </Button>
                   <Button
                     onClick={() => {
@@ -489,11 +490,11 @@ export default function PublicRsvpView() {
                         handleConfirmRsvp('No');
                       }
                     }}
-                    disabled={isUpdating}
+                    disabled={quickRsvpMutation.isPending}
                     variant="danger"
                     className={`h-12 flex-1 font-bold ${selectedRsvp === 'No' ? 'border-danger-text border-2 opacity-100' : 'border-border border opacity-60'}`}
                   >
-                    {isUpdating && selectedRsvp === 'No'
+                    {quickRsvpMutation.isPending && selectedRsvp === 'No'
                       ? 'Confirming...'
                       : event.type === 'Rehearsal' && selectedRsvp === 'No'
                         ? 'Confirm RSVP Decline'
@@ -545,12 +546,12 @@ export default function PublicRsvpView() {
                     </p>
                     <Button
                       onClick={() => handleConfirmRsvp('No')}
-                      disabled={isUpdating}
+                      disabled={quickRsvpMutation.isPending}
                       variant="primary"
                       size="small"
                       className="font-bold"
                     >
-                      {isUpdating ? 'Saving...' : 'Save Note'}
+                      {quickRsvpMutation.isPending ? 'Saving...' : 'Save Note'}
                     </Button>
                   </div>
                 )}
@@ -562,7 +563,7 @@ export default function PublicRsvpView() {
                   <div className="border-border flex h-12 w-full rounded-xl border bg-[var(--primary-light,#f1f5f9)] p-1 max-sm:h-auto max-sm:flex-col max-sm:gap-2 max-sm:border-none max-sm:bg-transparent max-sm:p-0">
                     <Button
                       onClick={() => handleConfirmRsvp('Yes')}
-                      disabled={isUpdating}
+                      disabled={quickRsvpMutation.isPending}
                       variant={isAttending ? 'primary' : 'outline'}
                       className={`h-full flex-1 text-sm font-bold transition-all ${
                         isAttending
@@ -570,7 +571,7 @@ export default function PublicRsvpView() {
                           : 'max-sm:border-border shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:bg-[var(--border-light,#f8fafc)]'
                       }`}
                     >
-                      {isUpdating && isAttending ? 'Updating...' : 'I Will Attend'}
+                      {quickRsvpMutation.isPending && isAttending ? 'Updating...' : 'I Will Attend'}
                     </Button>
                     <Button
                       onClick={() => {
@@ -580,7 +581,7 @@ export default function PublicRsvpView() {
                           handleConfirmRsvp('No');
                         }
                       }}
-                      disabled={isUpdating}
+                      disabled={quickRsvpMutation.isPending}
                       variant={!isAttending ? 'danger' : 'outline'}
                       className={`h-full flex-1 text-sm font-bold transition-all ${
                         !isAttending
@@ -588,7 +589,7 @@ export default function PublicRsvpView() {
                           : 'max-sm:border-border shadow-none max-sm:h-12 max-sm:rounded-lg max-sm:border max-sm:bg-[var(--border-light,#f8fafc)]'
                       }`}
                     >
-                      {isUpdating && !isAttending ? 'Updating...' : 'I Cannot Attend'}
+                      {quickRsvpMutation.isPending && !isAttending ? 'Updating...' : 'I Cannot Attend'}
                     </Button>
                   </div>
                 </div>
