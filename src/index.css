@@ -364,7 +364,7 @@ sl-dialog::part(panel) {
 
 sl-dialog::part(header) {
   border-bottom: 1px solid var(--color-border);
-  padding: 1.25rem 1.5rem;
+  padding: 0.75rem 1.5rem;
 }
 
 sl-dialog::part(title) {
