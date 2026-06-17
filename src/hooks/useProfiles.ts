@@ -33,6 +33,7 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
           onRateLimitRetryRef.current?.(attempt, delayMs, error);
         },
       }),
+    staleTime: 60_000,
   });
 
   const { voiceParts } = useVoiceParts();

@@ -72,12 +72,14 @@ export default function DonationsView() {
   const donationsQuery = useQuery({
     queryKey: queryKeys.donations.paid,
     queryFn: () => donationService.getDonations(),
+    staleTime: 30_000,
   });
   const donations = useMemo(() => donationsQuery.data ?? [], [donationsQuery.data]);
 
   const settingsQuery = useQuery({
     queryKey: queryKeys.donations.settings,
     queryFn: () => donationService.getDonationSettings(),
+    staleTime: 30_000,
   });
   const settings = settingsQuery.data ?? null;
 

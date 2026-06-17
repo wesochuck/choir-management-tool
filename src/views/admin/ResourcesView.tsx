@@ -63,6 +63,7 @@ export default function ResourcesView() {
   const resourcesQuery = useQuery({
     queryKey: queryKeys.resources.list(),
     queryFn: () => resourceService.getResources(),
+    staleTime: 60_000,
   });
   const resources = resourcesQuery.data ?? EMPTY_RESOURCES;
   const isLoading = resourcesQuery.isLoading;
@@ -94,6 +95,12 @@ export default function ResourcesView() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => resourceService.deleteResource(id),
+    onSuccess: invalidateResources,
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<SingerResource> }) =>
+      resourceService.updateResource(id, data),
     onSuccess: invalidateResources,
   });
 
@@ -232,7 +239,7 @@ export default function ResourcesView() {
     queryClient.setQueryData(queryKeys.resources.list(), reordered);
     try {
       await Promise.all(
-        reordered.map((r, i) => resourceService.updateResource(r.id, { sortOrder: i }))
+        reordered.map((r, i) => reorderMutation.mutateAsync({ id: r.id, data: { sortOrder: i } }))
       );
     } catch (err) {
       console.error('Failed to save reorder', err);

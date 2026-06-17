@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { Button, Modal, Select, Input, Textarea } from '../../../components/ui';
 import { useDialog } from '../../../contexts/DialogContext';
@@ -54,6 +54,7 @@ export interface MusicPieceModalProps {
   initialTitle?: string;
   onCreateGenre?: (label: string) => Promise<MusicGenreDef>;
   initialTab?: 'details' | 'tracks' | 'performances' | 'movements';
+  isSaving?: boolean;
 }
 
 export function MusicPieceModal({
@@ -70,6 +71,7 @@ export function MusicPieceModal({
   initialTitle,
   onCreateGenre,
   initialTab,
+  isSaving = false,
 }: MusicPieceModalProps) {
   const dialog = useDialog();
   const { timezone } = useChoirSettings();
@@ -97,7 +99,6 @@ export function MusicPieceModal({
   const [selectedPerformanceIds, setSelectedPerformanceIds] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [purchaseDateInput, setPurchaseDateInput] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [suggestedDuration, setSuggestedDuration] = useState<string | null>(null);
 
   // Active Tab state
@@ -121,8 +122,6 @@ export function MusicPieceModal({
   const [quickTitle, setQuickTitle] = useState('');
   const [quickDate, setQuickDate] = useState('');
   const [quickVenue, setQuickVenue] = useState('');
-  const [isQuickAdding, setIsQuickAdding] = useState(false);
-
   // Movements & Hierarchy state
   const [movements, setMovements] = useState<MusicPiece[]>([]);
   const [isMultiMovement, setIsMultiMovement] = useState(false);
@@ -144,6 +143,12 @@ export function MusicPieceModal({
     piece?.parentId && allPieces ? allPieces.find((p) => p.id === piece.parentId) : undefined;
 
   const queryClient = useQueryClient();
+
+  const quickAddPerformanceMutation = useMutation({
+    mutationFn: (data: Partial<Event>) => eventService.createEvent(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
+  });
+
   const { performances: eventsPerformances } = useEvents();
 
   const venuesQuery = useQuery({
@@ -732,29 +737,24 @@ export function MusicPieceModal({
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
-    setIsSaving(true);
-    try {
-      const normalizedDuration = duration.trim();
-      if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
-        await dialog.showMessage({
-          title: 'Invalid Duration',
-          message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
-          variant: 'danger',
-        });
-        return;
-      }
-      if (!title.trim()) {
-        await dialog.showMessage({
-          title: 'Title Required',
-          message: 'Please enter a title for the piece.',
-          variant: 'warning',
-        });
-        return;
-      }
-      await onSave(buildSavePayload());
-    } finally {
-      setIsSaving(false);
+    const normalizedDuration = duration.trim();
+    if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
+      await dialog.showMessage({
+        title: 'Invalid Duration',
+        message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
+        variant: 'danger',
+      });
+      return;
     }
+    if (!title.trim()) {
+      await dialog.showMessage({
+        title: 'Title Required',
+        message: 'Please enter a title for the piece.',
+        variant: 'warning',
+      });
+      return;
+    }
+    await onSave(buildSavePayload());
   };
 
   const resetFormToEmpty = () => {
@@ -801,14 +801,9 @@ export function MusicPieceModal({
       });
       return;
     }
-    setIsSaving(true);
-    try {
-      await onSaveAndAddAnother(buildSavePayload());
-      resetFormToEmpty();
-      setTimeout(() => titleInputRef.current?.focus(), 50);
-    } finally {
-      setIsSaving(false);
-    }
+    await onSaveAndAddAnother(buildSavePayload());
+    resetFormToEmpty();
+    setTimeout(() => titleInputRef.current?.focus(), 50);
   };
 
   const handleQuickAddPerformance = async () => {
@@ -821,18 +816,16 @@ export function MusicPieceModal({
       return;
     }
 
-    setIsQuickAdding(true);
     try {
       const utcDate = zonedInputValueToUtc(quickDate, timezone);
-      const newPerf = await eventService.createEvent({
+      const newPerf = await quickAddPerformanceMutation.mutateAsync({
         title: quickTitle,
         date: utcDate,
         type: 'Performance',
         venue: quickVenue,
         details: 'Quick added from music library historic logs',
-      });
+      } as Partial<Event>);
 
-      queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
       setAllPerformances((prev) => [newPerf, ...prev]);
       setSelectedPerformanceIds((prev) => [...prev, newPerf.id]);
 
@@ -854,8 +847,6 @@ export function MusicPieceModal({
         message: 'Failed to create the performance.',
         variant: 'danger',
       });
-    } finally {
-      setIsQuickAdding(false);
     }
   };
 
@@ -1469,9 +1460,9 @@ export function MusicPieceModal({
                       type="button"
                       className="bg-primary enabled:hover:bg-primary-deep mt-1 flex h-9 cursor-pointer items-center justify-center self-end rounded-md px-4 text-xs font-bold text-white shadow-md transition-all enabled:active:scale-95 disabled:opacity-50"
                       onClick={handleQuickAddPerformance}
-                      disabled={isQuickAdding}
+                      disabled={quickAddPerformanceMutation.isPending}
                     >
-                      {isQuickAdding ? 'Creating...' : 'Create & Link'}
+                      {quickAddPerformanceMutation.isPending ? 'Creating...' : 'Create & Link'}
                     </button>
                   </div>
                 </div>

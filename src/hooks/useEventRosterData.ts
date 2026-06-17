@@ -106,6 +106,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
     },
     enabled: !!eventId,
     retry: false,
+    staleTime: 15_000,
   });
 
   useEffect(() => {

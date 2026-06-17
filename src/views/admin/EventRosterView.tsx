@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
 import { SingerModal } from '../../components/admin/SingerModal';
@@ -23,6 +25,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   const navigate = useNavigate();
   const dialog = useDialog();
+  const queryClient = useQueryClient();
 
   const { user, updatePreferences } = useAuth();
 
@@ -75,6 +78,18 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     dialog,
   });
 
+  // Mutations
+  const profileSaveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ProfileInput }) =>
+      profileService.updateProfile(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
+  });
+
+  const profileDeleteMutation = useMutation({
+    mutationFn: (id: string) => profileService.deleteProfile(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
+  });
+
   // Singer modal states
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
   const [selectedSingerProfile, setSelectedSingerProfile] = useState<Profile | null>(null);
@@ -101,7 +116,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const handleSingerModalSave = async (formData: ProfileInput) => {
     if (!selectedSingerProfile) return;
     try {
-      await profileService.updateProfile(selectedSingerProfile.id, formData);
+      await profileSaveMutation.mutateAsync({ id: selectedSingerProfile.id, data: formData });
       await refreshProfiles();
       await refreshRosters();
     } catch (err) {
@@ -111,7 +126,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   const handleSingerModalDelete = async (profile: Profile) => {
     try {
-      await profileService.deleteProfile(profile.id);
+      await profileDeleteMutation.mutateAsync(profile.id);
       await refreshProfiles();
       await refreshRosters();
     } catch (err) {

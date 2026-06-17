@@ -41,6 +41,7 @@ export function TemplatesPanel({
   choirName,
   senderEmail,
 }: TemplatesPanelProps) {
+  void _setTemplates;
   const queryClient = useQueryClient();
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 

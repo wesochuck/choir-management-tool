@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { Button, Select, Input, Textarea } from '../components/ui';
-import { auditionService, type Audition } from '../services/auditionService';
+import { auditionService, type Audition, type AuditionInput } from '../services/auditionService';
 import { DEFAULT_AUDITION_SETTINGS, settingsService } from '../services/settingsService';
 import { eventService } from '../services/eventService';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
@@ -19,9 +19,18 @@ export default function PublicAuditionView() {
   const [requestedSlots, setRequestedSlots] = useState<string[]>([]);
   const [voicePart, setVoicePart] = useState('');
   const [experience, setExperience] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+
+  const createMutation = useMutation({
+    mutationFn: (data: AuditionInput) => auditionService.createAudition(data),
+    onSuccess: () => {
+      setSubmitted(true);
+    },
+    onError: () => {
+      setError('We could not submit your audition request. Please try again.');
+    },
+  });
   const { labels: voicePartLabels } = useVoiceParts();
 
   const settingsQuery = useQuery({
@@ -58,36 +67,26 @@ export default function PublicAuditionView() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setIsSubmitting(true);
     setError('');
 
     if (requestedSlots.length === 0) {
       setError('Please select at least one available audition time slot.');
-      setIsSubmitting(false);
       return;
     }
 
-    try {
-      if (contact.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())) {
-        setError('Enter a valid email address or use a phone number.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      await auditionService.createAudition({
-        name,
-        contact,
-        requestedSlots,
-        ...(voicePart ? { voicePart: voicePart as Audition['voicePart'] } : {}),
-        experience,
-        performance: settings.defaultPerformanceId || undefined,
-      });
-      setSubmitted(true);
-    } catch {
-      setError('We could not submit your audition request. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+    if (contact.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.trim())) {
+      setError('Enter a valid email address or use a phone number.');
+      return;
     }
+
+    await createMutation.mutateAsync({
+      name,
+      contact,
+      requestedSlots,
+      ...(voicePart ? { voicePart: voicePart as Audition['voicePart'] } : {}),
+      experience,
+      performance: settings.defaultPerformanceId || undefined,
+    });
   };
 
   const isFormActive = settings.enabled && targetPerformance;
@@ -296,8 +295,8 @@ export default function PublicAuditionView() {
                 />
               </div>
               {error && <p className="text-danger-text m-0">{error}</p>}
-              <Button type="submit" disabled={isSubmitting} variant="primary">
-                {isSubmitting ? 'Submitting...' : 'Request Audition'}
+              <Button type="submit" disabled={createMutation.isPending} variant="primary">
+                {createMutation.isPending ? 'Submitting...' : 'Request Audition'}
               </Button>
             </form>
           </div>

@@ -31,6 +31,7 @@ export function useSingerRsvpHistory({ isOpen, singerId, isActive }: UseSingerRs
       };
     },
     enabled: !!isOpen && !!singerId && isActive,
+    staleTime: 5 * 60_000,
   });
 
   const rsvpMutation = useMutation({

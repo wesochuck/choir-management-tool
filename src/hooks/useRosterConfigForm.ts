@@ -87,6 +87,8 @@ export function useRosterConfigForm({
   refreshRoster: _refreshRoster,
   refreshVoiceParts: _refreshVoiceParts,
 }: UseRosterConfigFormOptions) {
+  void _refreshRoster;
+  void _refreshVoiceParts;
   const [configDefaultStatus, setConfigDefaultStatus] = useState('');
   const [configSeason, setConfigSeason] = useState('');
   const [configSections, setConfigSections] = useState<SectionDef[]>([]);

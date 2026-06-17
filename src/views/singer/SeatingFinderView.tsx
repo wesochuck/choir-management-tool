@@ -67,7 +67,7 @@ export default function SeatingFinderView() {
     if (seatingProfilesQuery.error) {
       dialog.showToast('Failed to load seating profiles');
     }
-  }, [seatingProfilesQuery.error]);
+  }, [seatingProfilesQuery.error, dialog]);
 
   const assignedSingerProfiles = useMemo(
     () => seatingProfilesQuery.data ?? [],

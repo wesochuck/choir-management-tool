@@ -42,7 +42,7 @@ import { Modal, Input } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { Button, Select, Spinner, Divider, CopyButton } from '../../components/ui';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 
 export default function SetListView() {
@@ -51,6 +51,19 @@ export default function SetListView() {
   const [searchParams] = useSearchParams();
   const dialog = useDialog();
   const queryClient = useQueryClient();
+
+  const setListMutation = useMutation({
+    mutationFn: ({ eventId, items }: { eventId: string; items: SetListItem[] }) =>
+      eventService.updateEvent(eventId, { setList: items }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
+  });
+
+  const eventUpdateMutation = useMutation({
+    mutationFn: ({ eventId, data }: { eventId: string; data: Record<string, unknown> }) =>
+      eventService.updateEvent(eventId, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
+  });
+
   const hasDefaultedRef = useRef(false);
 
   const [selectedEventId, setSelectedEventId] = useState('');
@@ -82,8 +95,6 @@ export default function SetListView() {
   const itemsWithDetails = useMemo(() => {
     return resolveSetListDisplayRows(items, library);
   }, [items, library]);
-
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error' | null>(null);
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
@@ -335,21 +346,15 @@ export default function SetListView() {
       setLocalGapSeconds(0);
       setLocalApproved(true);
     }
-    setSaveStatus(null);
   }, [selectedEventId, events]);
 
   const handleToggleApproved = async (checked: boolean) => {
     if (!selectedEventId) return;
     setLocalApproved(checked);
-    setSaveStatus('saving');
     try {
-      await eventService.updateEvent(selectedEventId, { setListApproved: checked });
-      await refresh();
-      setSaveStatus('saved');
+      await eventUpdateMutation.mutateAsync({ eventId: selectedEventId, data: { setListApproved: checked } });
     } catch (error) {
       console.error('Failed to update set list approval status:', error);
-      setSaveStatus('error');
-      // Revert local state on error
       const ev = events.find((e) => e.id === selectedEventId);
       setLocalApproved(ev?.setListApproved !== false);
     }
@@ -362,22 +367,18 @@ export default function SetListView() {
     (seconds: number) => {
       setLocalGapSeconds(seconds);
       if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
-      // eslint-disable-next-line react-hooks/immutability -- ref mutation is standard pattern for debounce timers
+      // eslint-disable-next-line react-hooks/immutability
       gapSaveTimerRef.current = setTimeout(async () => {
         const eventId = selectedEventIdRef.current;
         if (!eventId) return;
-        setSaveStatus('saving');
         try {
-          await eventService.updateEvent(eventId, { announcementGapSeconds: seconds });
-          await refresh();
-          setSaveStatus('saved');
+          await eventUpdateMutation.mutateAsync({ eventId, data: { announcementGapSeconds: seconds } });
         } catch (error) {
           console.error('Failed to save announcement gap:', error);
-          setSaveStatus('error');
         }
       }, 500);
     },
-    [refresh]
+    [eventUpdateMutation],
   );
 
   const updateItems = async (newItems: SetListItem[]): Promise<boolean> => {
@@ -392,14 +393,11 @@ export default function SetListView() {
 
   const saveSetList = async (newItems: SetListItem[]): Promise<boolean> => {
     if (!selectedEventId) return false;
-    setSaveStatus('saving');
     try {
-      await eventService.updateEvent(selectedEventId, { setList: newItems });
-      setSaveStatus('saved');
+      await setListMutation.mutateAsync({ eventId: selectedEventId, items: newItems });
       return true;
     } catch (error) {
       console.error('Failed to save set list:', error);
-      setSaveStatus('error');
       return false;
     }
   };
@@ -714,32 +712,20 @@ export default function SetListView() {
                     Tip: Drag the ⣿ handle on any row to reorder set list items. Changes are saved
                     automatically.
                   </span>
-                  {saveStatus && (
+                  {(setListMutation.isPending || eventUpdateMutation.isPending) && (
                     <div className="flex shrink-0 items-center gap-1.5 font-medium">
-                      {saveStatus === 'saving' && (
-                        <>
-                          <Spinner size="small" />
-                          <span>Saving...</span>
-                        </>
-                      )}
-                      {saveStatus === 'saved' && <span className="text-emerald-700">✓ Saved</span>}
-                      {saveStatus === 'error' && (
-                        <span className="text-red-600">✗ Save failed</span>
-                      )}
+                      <Spinner size="small" />
+                      <span>Saving...</span>
                     </div>
                   )}
                 </div>
               ) : (
-                saveStatus && (
+                (setListMutation.isPending || eventUpdateMutation.isPending) && (
                   <div className="text-text-muted flex justify-end px-2 py-1 text-xs font-medium">
-                    {saveStatus === 'saving' && (
-                      <div className="flex items-center gap-1.5">
-                        <Spinner size="small" />
-                        <span>Saving...</span>
-                      </div>
-                    )}
-                    {saveStatus === 'saved' && <span className="text-emerald-700">✓ Saved</span>}
-                    {saveStatus === 'error' && <span className="text-red-600">✗ Save failed</span>}
+                    <div className="flex items-center gap-1.5">
+                      <Spinner size="small" />
+                      <span>Saving...</span>
+                    </div>
                   </div>
                 )
               )}

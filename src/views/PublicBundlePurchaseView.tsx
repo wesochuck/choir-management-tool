@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
@@ -19,8 +20,22 @@ export default function PublicBundlePurchaseView() {
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+
+  const createBundleSessionMutation = useMutation({
+    mutationFn: (data: { bundleId: string; quantity: number; email: string; name: string }) =>
+      ticketService.createBundleCheckoutSession(data.bundleId, data.quantity, data.email, data.name),
+    onSuccess: (result) => {
+      if (result.url) {
+        window.location.assign(result.url);
+      } else {
+        setFormError('Stripe Checkout URL not returned');
+      }
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || 'Stripe redirection failed.');
+    },
+  });
 
   if (isLoading) {
     return (
@@ -74,25 +89,13 @@ export default function PublicBundlePurchaseView() {
       setFormError('Email addresses must match.');
       return;
     }
-    setSubmitting(true);
     setFormError('');
-    try {
-      const session = await ticketService.createBundleCheckoutSession(
-        bundle.id,
-        quantity,
-        email.trim(),
-        name.trim()
-      );
-      if (session.url) {
-        window.location.href = session.url;
-      } else {
-        throw new Error('Stripe Checkout URL not returned');
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setFormError(msg || 'Stripe redirection failed.');
-      setSubmitting(false);
-    }
+    await createBundleSessionMutation.mutateAsync({
+      bundleId: bundle.id,
+      quantity,
+      email: email.trim(),
+      name: name.trim(),
+    });
   };
 
   const includedEvents = bundle.expand?.events || [];
@@ -248,11 +251,11 @@ export default function PublicBundlePurchaseView() {
 
           <Button
             type="submit"
-            disabled={submitting}
+            disabled={createBundleSessionMutation.isPending}
             className="h-12 w-full font-semibold"
             variant="primary"
           >
-            {submitting ? 'Opening Secure Checkout…' : 'Proceed to Payment'}
+            {createBundleSessionMutation.isPending ? 'Opening Secure Checkout…' : 'Proceed to Payment'}
           </Button>
         </form>
       </AppCard>

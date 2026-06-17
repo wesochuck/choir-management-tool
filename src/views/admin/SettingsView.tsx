@@ -186,9 +186,10 @@ export default function SettingsView() {
 
       dialog.showToast('System settings saved successfully.');
     } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save system settings.';
       await dialog.showMessage({
         title: 'Error',
-        message: 'Failed to save system settings.',
+        message,
         variant: 'danger',
       });
     }

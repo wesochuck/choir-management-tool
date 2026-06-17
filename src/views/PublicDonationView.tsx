@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { donationService } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
@@ -48,7 +48,27 @@ export default function PublicDonationView() {
   const [tributeType, setTributeType] = useState<'none' | 'memory' | 'honor'>('none');
   const [tributeName, setTributeName] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+
+  const createSessionMutation = useMutation({
+    mutationFn: (data: {
+      amountCents: number;
+      email: string;
+      name: string;
+      tributeType: string;
+      tributeName: string;
+      isAnonymous: boolean;
+    }) => donationService.createDonationSession(data),
+    onSuccess: (result) => {
+      if (result.url) {
+        window.location.assign(result.url);
+      } else {
+        setError('Stripe Checkout URL not returned');
+      }
+    },
+    onError: (err: Error) => {
+      setError(err.message || 'Stripe redirection failed.');
+    },
+  });
 
   const getEffectiveAmount = () => {
     if (selectedLevelId === 'custom') {
@@ -73,27 +93,14 @@ export default function PublicDonationView() {
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const session = await donationService.createDonationSession({
-        amountCents: Math.round(amount * 100),
-        email: email.trim(),
-        name: name.trim(),
-        tributeType,
-        tributeName: tributeName.trim(),
-        isAnonymous,
-      });
-
-      if (session.url) {
-        window.location.href = session.url;
-      } else {
-        throw new Error('Stripe Checkout URL not returned');
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || 'Stripe redirection failed.');
-      setSubmitting(false);
-    }
+    await createSessionMutation.mutateAsync({
+      amountCents: Math.round(amount * 100),
+      email: email.trim(),
+      name: name.trim(),
+      tributeType,
+      tributeName: tributeName.trim(),
+      isAnonymous,
+    });
   };
 
   if (loading) {
@@ -259,11 +266,11 @@ export default function PublicDonationView() {
 
           <Button
             type="submit"
-            disabled={submitting || effectiveAmount < 5}
+            disabled={createSessionMutation.isPending || effectiveAmount < 5}
             className="h-12 w-full font-semibold"
             variant="primary"
           >
-            {submitting ? 'Opening Secure Checkout…' : `Donate $${effectiveAmount.toFixed(2)}`}
+            {createSessionMutation.isPending ? 'Opening Secure Checkout…' : `Donate $${effectiveAmount.toFixed(2)}`}
           </Button>
 
           <p className="text-text-muted m-0 text-center text-xs">

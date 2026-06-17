@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { donationService } from '../../services/donationService';
@@ -29,6 +29,18 @@ export default function PatronsView() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { profiles } = useProfiles();
+
+  const profileSaveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ProfileInput }) =>
+      profileService.updateProfile(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
+  });
+
+  const profileDeleteMutation = useMutation({
+    mutationFn: (id: string) => profileService.deleteProfile(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<'ltv' | 'name' | 'lastDate'>('ltv');
@@ -188,13 +200,13 @@ export default function PatronsView() {
 
   const handleSaveProfile = async (data: ProfileInput) => {
     if (selectedPatron) {
-      await profileService.updateProfile(selectedPatron.id, data);
+      await profileSaveMutation.mutateAsync({ id: selectedPatron.id, data });
       refresh();
     }
   };
 
   const handleDeleteProfile = async (profile: Profile) => {
-    await profileService.deleteProfile(profile.id);
+    await profileDeleteMutation.mutateAsync(profile.id);
     refresh();
   };
 

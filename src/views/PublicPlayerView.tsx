@@ -87,7 +87,7 @@ export default function PublicPlayerView() {
         setError('Failed to load playlist. Please check your link.');
       }
     });
-  }, [playlistQuery.isError, token, eventId]);
+  }, [playlistQuery.isError, token, eventId, playlistQuery.data]);
 
   const handleVoicePartChange = async (part: string) => {
     setSelectedVoicePart(part);

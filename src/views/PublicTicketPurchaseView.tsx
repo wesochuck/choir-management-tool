@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useMutation } from '@tanstack/react-query';
 import { pb } from '../lib/pocketbase';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
@@ -20,8 +21,22 @@ export default function PublicTicketPurchaseView() {
   const [email, setEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+
+  const createCheckoutSessionMutation = useMutation({
+    mutationFn: (data: { eventId: string; quantity: number; email: string; name: string }) =>
+      ticketService.createCheckoutSession(data.eventId, data.quantity, data.email, data.name),
+    onSuccess: (result) => {
+      if (result.url) {
+        window.location.assign(result.url);
+      } else {
+        setFormError('Stripe Checkout URL not returned');
+      }
+    },
+    onError: (err: Error) => {
+      setFormError(err.message || 'Stripe redirection failed.');
+    },
+  });
 
   if (isLoading) {
     return (
@@ -64,25 +79,13 @@ export default function PublicTicketPurchaseView() {
       setFormError('Email addresses must match.');
       return;
     }
-    setSubmitting(true);
     setFormError('');
-    try {
-      const session = await ticketService.createCheckoutSession(
-        event.id,
-        quantity,
-        email.trim(),
-        name.trim()
-      );
-      if (session.url) {
-        window.location.href = session.url;
-      } else {
-        throw new Error('Stripe Checkout URL not returned');
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setFormError(msg || 'Stripe redirection failed.');
-      setSubmitting(false);
-    }
+    await createCheckoutSessionMutation.mutateAsync({
+      eventId: event.id,
+      quantity,
+      email: email.trim(),
+      name: name.trim(),
+    });
   };
 
   return (
@@ -247,11 +250,11 @@ export default function PublicTicketPurchaseView() {
 
           <Button
             type="submit"
-            disabled={submitting}
+            disabled={createCheckoutSessionMutation.isPending}
             className="h-12 w-full font-semibold"
             variant="primary"
           >
-            {submitting ? 'Opening Secure Checkout…' : 'Proceed to Payment'}
+            {createCheckoutSessionMutation.isPending ? 'Opening Secure Checkout…' : 'Proceed to Payment'}
           </Button>
         </form>
       </AppCard>

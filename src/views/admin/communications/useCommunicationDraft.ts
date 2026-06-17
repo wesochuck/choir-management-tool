@@ -44,6 +44,7 @@ export function useCommunicationDraft({
   setTab,
   setWizardStep,
 }: UseCommunicationDraftArgs) {
+  void _setDrafts;
   const queryClient = useQueryClient();
 
   const [searchParams] = useSearchParams();
@@ -135,7 +136,7 @@ export function useCommunicationDraft({
     if (resolvedRecipientsQuery.error) {
       dialog.showToast('Failed to resolve recipients');
     }
-  }, [resolvedRecipientsQuery.error]);
+  }, [resolvedRecipientsQuery.error, dialog]);
 
   useEffect(() => {
     if (resolvedRecipientsQuery.data) {

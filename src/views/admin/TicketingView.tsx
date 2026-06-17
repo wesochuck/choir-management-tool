@@ -100,6 +100,7 @@ export default function TicketingView() {
         tz,
       };
     },
+    staleTime: 30_000,
   });
 
   const events = ticketingQuery.data?.allEvents ?? EMPTY_EVENTS;
@@ -112,6 +113,7 @@ export default function TicketingView() {
   const logoQuery = useQuery({
     queryKey: queryKeys.ticketing.logoUrl,
     queryFn: () => settingsService.getLogoUrl().catch(() => null),
+    staleTime: 30_000,
   });
   const logoUrl = logoQuery.data ?? null;
 

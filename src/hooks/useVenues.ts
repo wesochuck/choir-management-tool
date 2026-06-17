@@ -11,6 +11,7 @@ export const useVenues = () => {
   const venuesQuery = useQuery({
     queryKey: queryKeys.venues.list(),
     queryFn: () => venueService.getVenues(),
+    staleTime: 5 * 60_000,
   });
 
   const invalidateVenues = async () => {

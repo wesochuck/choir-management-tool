@@ -19,6 +19,7 @@ export const useMyEvents = () => {
       ]);
       return { allEvents, rosters, profile };
     },
+    staleTime: 10_000,
   });
 
   const myProfile = eventsQuery.data?.profile ?? null;

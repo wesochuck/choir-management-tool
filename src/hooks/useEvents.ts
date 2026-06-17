@@ -13,6 +13,7 @@ export const useEvents = () => {
   const eventsQuery = useQuery({
     queryKey: queryKeys.events.list(),
     queryFn: () => eventService.getEvents(),
+    staleTime: 30_000,
   });
 
   const invalidate = async () => {
