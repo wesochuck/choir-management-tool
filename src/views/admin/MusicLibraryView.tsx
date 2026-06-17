@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
@@ -37,6 +37,62 @@ export default function MusicLibraryView() {
   const queryClient = useQueryClient();
   const dialog = useDialog();
 
+  const invalidateMusicLibrary = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: queryKeys.musicLibrary.all }),
+    [queryClient]
+  );
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => musicLibraryService.bulkDelete(ids),
+    onSuccess: () => {
+      invalidateMusicLibrary();
+      setSelectedIds(new Set());
+    },
+  });
+
+  const configSaveMutation = useMutation({
+    mutationFn: (settings: MusicLibrarySettings) =>
+      settingsService.saveMusicLibrarySettings(settings),
+    onSuccess: invalidateMusicLibrary,
+  });
+
+  const genreCreateMutation = useMutation({
+    mutationFn: (settings: MusicLibrarySettings) =>
+      settingsService.saveMusicLibrarySettings(settings),
+    onSuccess: invalidateMusicLibrary,
+  });
+
+  const pieceSaveMutation = useMutation({
+    mutationFn: async (input: {
+      existingId?: string;
+      data: Partial<MusicPieceInput>;
+      tuttiFile?: File | null;
+      movements?: { title: string; duration?: string }[];
+    }) => {
+      if (input.existingId) {
+        const updateData = { ...input.data };
+        delete updateData.tuttiFile;
+        delete updateData.movements;
+        return musicLibraryService.updatePiece(input.existingId, updateData);
+      }
+      const { tuttiFile, movements, ...rest } = input.data;
+      if (tuttiFile || (movements && movements.length > 0)) {
+        return musicLibraryWorkflows.createPieceWithMovementsAndTutti(
+          rest as MusicPieceInput,
+          { tuttiFile: tuttiFile ?? undefined, movements: movements ?? [] }
+        );
+      }
+      return musicLibraryService.createPiece(rest);
+    },
+    onSuccess: invalidateMusicLibrary,
+  });
+
+  const pieceDeleteMutation = useMutation({
+    mutationFn: ({ id, unlinkChildren }: { id: string; unlinkChildren: boolean }) =>
+      musicLibraryService.deletePiece(id, { unlinkChildren }),
+    onSuccess: invalidateMusicLibrary,
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sectionFilters, setSectionFilters] = useState<string[]>([]);
   const [genreFilters, setGenreFilters] = useState<string[]>([]);
@@ -51,22 +107,23 @@ export default function MusicLibraryView() {
     catalogLookupUrlTemplate: '',
     genres: [],
   });
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
-
   const libraryQuery = useQuery({
     queryKey: queryKeys.musicLibrary.list(),
     queryFn: () => musicLibraryService.getLibrary(),
+    staleTime: 60_000,
   });
   const pieces = useMemo(() => libraryQuery.data ?? [], [libraryQuery.data]);
 
   const settingsLibQuery = useQuery({
     queryKey: queryKeys.appSettings.musicLibrary,
     queryFn: () => settingsService.getMusicLibrarySettings(),
+    staleTime: 60_000,
   });
 
   const voicePartsQuery = useQuery({
     queryKey: queryKeys.voiceParts.list(),
     queryFn: () => getVoicePartsAndSections(),
+    staleTime: 60_000,
   });
   const sections = useMemo(() => voicePartsQuery.data?.sections ?? [], [voicePartsQuery.data]);
 
@@ -156,7 +213,6 @@ export default function MusicLibraryView() {
     sortDirection,
     ignoreArticles,
   ]);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
     const csvContent = exportMusicToCSV(pieces, { genres: configuredGenres });
@@ -172,18 +228,17 @@ export default function MusicLibraryView() {
   };
 
   const handleConfigSave = async () => {
-    setIsSavingConfig(true);
+    const sortedSettings = {
+      ...musicLibrarySettings,
+      genres: [...musicLibrarySettings.genres].sort((a, b) => a.label.localeCompare(b.label)),
+    };
+
+    const deletedGenres = (initialSettings?.genres || []).filter(
+      (ig) => !sortedSettings.genres.some((g) => g.id === ig.id)
+    );
+
     try {
-      const sortedSettings = {
-        ...musicLibrarySettings,
-        genres: [...musicLibrarySettings.genres].sort((a, b) => a.label.localeCompare(b.label)),
-      };
-
-      const deletedGenres = (initialSettings?.genres || []).filter(
-        (ig) => !sortedSettings.genres.some((g) => g.id === ig.id)
-      );
-
-      await settingsService.saveMusicLibrarySettings(sortedSettings);
+      await configSaveMutation.mutateAsync(sortedSettings);
       setInitialSettings(JSON.parse(JSON.stringify(sortedSettings)));
       setCatalogLookupTemplate(sortedSettings.catalogLookupUrlTemplate || '');
       setConfiguredGenres(sortedSettings.genres || []);
@@ -210,7 +265,7 @@ export default function MusicLibraryView() {
                   },
                 }))
               );
-              await invalidateLibrary();
+              await invalidateMusicLibrary();
               dialog.showToast('Successfully cleaned up deleted genres from all music pieces.');
             } catch (err: unknown) {
               console.error('Failed to clean up deleted genres from pieces:', err);
@@ -230,8 +285,6 @@ export default function MusicLibraryView() {
         message: 'Failed to save Music Library settings.',
         variant: 'danger',
       });
-    } finally {
-      setIsSavingConfig(false);
     }
   };
 
@@ -248,23 +301,12 @@ export default function MusicLibraryView() {
     }
   ) => {
     try {
-      let savedPiece: MusicPiece;
-      if (editingPiece) {
-        const updateData = { ...data };
-        delete updateData.tuttiFile;
-        delete updateData.movements;
-        savedPiece = await musicLibraryService.updatePiece(editingPiece.id, updateData);
-      } else {
-        const { tuttiFile, movements, ...rest } = data;
-        if (tuttiFile || (movements && movements.length > 0)) {
-          savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, {
-            tuttiFile,
-            movements,
-          });
-        } else {
-          savedPiece = await musicLibraryService.createPiece(rest);
-        }
-      }
+      const savedPiece = await pieceSaveMutation.mutateAsync({
+        existingId: editingPiece?.id,
+        data: data as Partial<MusicPieceInput>,
+        tuttiFile: data.tuttiFile,
+        movements: data.movements,
+      });
 
       const oldPerformances = editingPiece?.performances || [];
       const newPerformances = data.performances || [];
@@ -302,7 +344,6 @@ export default function MusicLibraryView() {
       }
 
       setIsModalOpen(false);
-      await invalidateLibrary();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -319,16 +360,12 @@ export default function MusicLibraryView() {
     }
   ) => {
     try {
-      const { tuttiFile, movements, ...rest } = data;
-      let savedPiece: MusicPiece;
-      if (tuttiFile || (movements && movements.length > 0)) {
-        savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, {
-          tuttiFile,
-          movements,
-        });
-      } else {
-        savedPiece = await musicLibraryService.createPiece(rest);
-      }
+      const savedPiece = await pieceSaveMutation.mutateAsync({
+        existingId: undefined,
+        data: data as Partial<MusicPieceInput>,
+        tuttiFile: data.tuttiFile,
+        movements: data.movements,
+      });
 
       const newPerformances = data.performances || [];
       if (newPerformances.length > 0) {
@@ -363,7 +400,6 @@ export default function MusicLibraryView() {
 
       setEditingPiece(null);
       dialog.showToast(`"${savedPiece.title}" saved. Ready to add another piece.`);
-      await invalidateLibrary();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -397,8 +433,7 @@ export default function MusicLibraryView() {
         });
       }
 
-      await musicLibraryService.deletePiece(id, { unlinkChildren });
-      await invalidateLibrary();
+      await pieceDeleteMutation.mutateAsync({ id, unlinkChildren });
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -438,7 +473,7 @@ export default function MusicLibraryView() {
       genres: updatedGenres,
     };
 
-    await settingsService.saveMusicLibrarySettings(updatedSettings);
+    await genreCreateMutation.mutateAsync(updatedSettings);
 
     setMusicLibrarySettings(JSON.parse(JSON.stringify(updatedSettings)));
     setInitialSettings(JSON.parse(JSON.stringify(updatedSettings)));
@@ -502,19 +537,14 @@ export default function MusicLibraryView() {
     });
 
     if (confirm) {
-      setIsBulkDeleting(true);
       try {
-        await musicLibraryService.bulkDelete(Array.from(selectedIds));
-        setSelectedIds(new Set());
-        await invalidateLibrary();
+        await bulkDeleteMutation.mutateAsync(Array.from(selectedIds));
       } catch {
         dialog.showMessage({
           title: 'Error',
           message: 'Failed to delete some pieces.',
           variant: 'danger',
         });
-      } finally {
-        setIsBulkDeleting(false);
       }
     }
   };
@@ -655,7 +685,7 @@ export default function MusicLibraryView() {
             onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
             duplicateCount={duplicateIds.size}
             selectedCount={selectedIds.size}
-            isBulkDeleting={isBulkDeleting}
+            isBulkDeleting={bulkDeleteMutation.isPending}
             onBulkDelete={handleBulkDelete}
             pageSize={pageSize}
             onPageSizeChange={setPageSize}
@@ -844,7 +874,7 @@ export default function MusicLibraryView() {
 
           <FloatingSaveBar
             isDirty={isConfigDirty}
-            isSaving={isSavingConfig}
+            isSaving={configSaveMutation.isPending}
             onSave={handleConfigSave}
             onDiscard={handleConfigDiscard}
           />
@@ -864,6 +894,7 @@ export default function MusicLibraryView() {
         allGenres={configuredGenres}
         onCreateGenre={handleCreateGenre}
         initialTab={modalInitialTab}
+        isSaving={pieceSaveMutation.isPending}
       />
 
       <MusicImportModal
