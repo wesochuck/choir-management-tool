@@ -12,7 +12,8 @@ import { getFirstName, getLastName } from '../../lib/stringUtils';
 import { safeLocalStorage } from '../../lib/storage';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
-import { Button, FormField, Badge, EmptyState, Select, Input } from '../../components/ui';
+import { Button, FormField, Badge, Select, Input, DataTable } from '../../components/ui';
+import type { ColumnDef } from '../../components/ui';
 
 const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
@@ -169,24 +170,6 @@ export default function PatronsView() {
     return { count, totalLtvCents };
   }, [filteredPatrons]);
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === filteredPatrons.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredPatrons.map((p) => p.profile.id)));
-    }
-  };
-
-  const toggleSelect = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
-    setSelectedIds(next);
-  };
-
   const handleSendMessage = () => {
     if (selectedIds.size === 0) return;
     const ids = Array.from(selectedIds).join(',');
@@ -209,6 +192,75 @@ export default function PatronsView() {
     await profileDeleteMutation.mutateAsync(profile.id);
     refresh();
   };
+
+  const columns: ColumnDef<PatronData>[] = [
+    {
+      id: 'name',
+      header: 'Name',
+      accessorFn: (p) => p.profile.name,
+      cardSection: 0,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      cell: (_, p) => (
+        <Badge tone={p.isSinger ? 'rehearsal' : 'neutral'}>
+          {p.isSinger ? 'Singer' : 'Patron'}
+        </Badge>
+      ),
+      cardSection: 0,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+    {
+      id: 'email',
+      header: 'Email',
+      accessorFn: (p) => p.profile.expand?.user?.email || 'No email',
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'ltv',
+      header: 'LTV',
+      cell: (_, p) => (
+        <span className="font-extrabold text-emerald-700">
+          ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </span>
+      ),
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'LTV',
+      enableSorting: false,
+    },
+    {
+      id: 'lastDate',
+      header: 'Last Transaction',
+      cell: (_, p) =>
+        formatInTimezone(p.lastTransactionDate, 'America/New_York', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Last:',
+      enableSorting: false,
+    },
+    {
+      id: 'orders',
+      header: 'Orders',
+      accessorFn: (p) => p.transactionCount,
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Orders:',
+      enableSorting: false,
+    },
+  ];
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -417,207 +469,30 @@ export default function PatronsView() {
             </div>
           </div>
 
-          {/* Responsive Register View - Desktop Table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
-            <table className="min-w-full divide-y divide-slate-100 text-left">
-              <thead className="bg-slate-50/75">
-                <tr>
-                  <th className="w-12 px-6 py-3.5 text-left">
-                    <input
-                      type="checkbox"
-                      className="text-primary focus:ring-primary/25 cursor-pointer rounded border-slate-300"
-                      checked={
-                        filteredPatrons.length > 0 && selectedIds.size === filteredPatrons.length
-                      }
-                      onChange={toggleSelectAll}
-                    />
-                  </th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                    Email
-                  </th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                    Type
-                  </th>
-                  <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                    LTV
-                  </th>
-                  <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                    Last Transaction
-                  </th>
-                  <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                    Orders
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {isLoading ? (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-12 text-center text-sm font-medium text-slate-400"
-                    >
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                        Loading patrons...
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredPatrons.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <EmptyState
-                        title="No Patrons Found"
-                        description={
-                          searchQuery || startDate || endDate
-                            ? 'No patrons match your search/filter criteria.'
-                            : 'No patron records are available yet.'
-                        }
-                        icon="👥"
-                        action={
-                          searchQuery || startDate || endDate ? (
-                            <Button variant="secondary" onClick={handleClearFilters} size="small">
-                              Reset Filters
-                            </Button>
-                          ) : undefined
-                        }
-                      />
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPatrons.map((p) => (
-                    <tr
-                      key={p.profile.id}
-                      className="cursor-pointer transition-colors hover:bg-slate-50/40"
-                      onClick={() => handleOpenProfile(p.profile)}
-                    >
-                      <td
-                        className="w-12 px-6 py-4 text-center"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <input
-                          type="checkbox"
-                          className="text-primary focus:ring-primary/25 cursor-pointer rounded border-slate-300"
-                          checked={selectedIds.has(p.profile.id)}
-                          onChange={() => toggleSelect(p.profile.id)}
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-slate-800">
-                        {p.profile.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-500">
-                        {p.profile.expand?.user?.email || 'No email'}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <Badge tone={p.isSinger ? 'rehearsal' : 'neutral'}>
-                          {p.isSinger ? 'Singer' : 'Patron'}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-extrabold whitespace-nowrap text-emerald-700">
-                        $
-                        {(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                        {formatInTimezone(p.lastTransactionDate, 'America/New_York', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </td>
-                      <td className="px-6 py-4 text-right text-sm font-medium text-slate-500">
-                        {p.transactionCount}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Responsive Register View - Mobile Card List */}
-          <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
-            <div className="divide-y divide-slate-100">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
-                  <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                  Loading patrons...
-                </div>
-              ) : filteredPatrons.length === 0 ? (
-                <div className="p-6 text-center">
-                  <EmptyState
-                    title="No Patrons Found"
-                    description={
-                      searchQuery || startDate || endDate
-                        ? 'No patrons match your search/filter criteria.'
-                        : 'No patron records are available yet.'
-                    }
-                    icon="👥"
-                    action={
-                      searchQuery || startDate || endDate ? (
-                        <Button variant="secondary" onClick={handleClearFilters} size="small">
-                          Reset Filters
-                        </Button>
-                      ) : undefined
-                    }
-                  />
-                </div>
-              ) : (
-                filteredPatrons.map((p) => (
-                  <div
-                    key={p.profile.id}
-                    className="flex cursor-pointer flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40"
-                    onClick={() => handleOpenProfile(p.profile)}
-                  >
-                    {/* Row 1: Checkbox & Type Badge */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          className="text-primary focus:ring-primary/25 cursor-pointer rounded border-slate-300"
-                          checked={selectedIds.has(p.profile.id)}
-                          onChange={() => toggleSelect(p.profile.id)}
-                        />
-                        <span className="text-xs font-medium text-slate-400">
-                          Last:{' '}
-                          {formatInTimezone(p.lastTransactionDate, 'America/New_York', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                      <Badge tone={p.isSinger ? 'rehearsal' : 'neutral'}>
-                        {p.isSinger ? 'Singer' : 'Patron'}
-                      </Badge>
-                    </div>
-
-                    {/* Row 2: Patron Info & LTV Amount */}
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-bold text-slate-800">{p.profile.name}</span>
-                        <span className="text-xs font-medium break-all text-slate-500">
-                          {p.profile.expand?.user?.email || 'No email'}
-                        </span>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-0.5">
-                        <span className="text-base font-extrabold text-emerald-700">
-                          $
-                          {(p.ltvCents / 100).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                        <span className="text-[10px] font-medium text-slate-400">
-                          {p.transactionCount} order{p.transactionCount !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+          <DataTable
+            columns={columns}
+            data={filteredPatrons}
+            isLoading={isLoading}
+            emptyState={{
+              title: 'No Patrons Found',
+              description:
+                searchQuery || startDate || endDate
+                  ? 'No patrons match your search/filter criteria.'
+                  : 'No patron records are available yet.',
+              icon: '👥',
+              action:
+                searchQuery || startDate || endDate ? (
+                  <Button variant="secondary" onClick={handleClearFilters} size="small">
+                    Reset Filters
+                  </Button>
+                ) : undefined,
+            }}
+            enableSelection
+            onSelectionChange={(ids) => setSelectedIds(ids)}
+            onRowClick={(patron) => handleOpenProfile(patron.profile)}
+            manualPagination
+            getRowId={(patron) => patron.profile.id}
+          />
         </div>
       </AppCard>
 

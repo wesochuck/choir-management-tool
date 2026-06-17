@@ -180,6 +180,26 @@ When creating new Shoelace-wrapped components, follow this same test-vs-producti
 
 - **Shoelace `SlButton` props pass through React first, then Lit's lifecycle.** React sets the attribute/property, then Lit's `updated()` runs. Timing issues can cause double renders. Use the wrapper's `className` / `variant` / `size` props rather than raw Shoelace attributes.
 
+### Data Display
+
+- Use `DataTable` from `src/components/ui/DataTable` for all tabular data displays.
+  The component uses `@tanstack/react-table` internally for sort, selection,
+  pagination, and column visibility state. Our wrapper provides the UI and
+  mobile card layout.
+- `cardSection: 0 | 1` + `cardSide: 'left' | 'right'` control automatic mobile layout.
+  - Section 0: `justify-between` row (name + badge pattern)
+  - Section 1: left-stack / right-stack with separator
+- Selection, sort, and pagination are opt-in features.
+- `renderMobileCard` is the escape hatch for complex rows (e.g., RosterTable).
+- Sorting uses `enableSorting` on the column definition. For client-side sort,
+  TanStack handles it automatically. For server-side sort, pass `manualSorting`
+  and `onSortingChange`.
+- Pagination is inline (prev / page buttons / next) using TanStack's
+  `table.setPageIndex()` and `table.getPageCount()`. The `Pagination` component
+  in `src/components/common/Pagination.tsx` is still used by legacy views.
+- Use `getRowId` prop when row IDs should match data identities (e.g., `profile.id`)
+  instead of row index, especially when using `enableSelection` with external state.
+
 ### TanStack Query
 
 This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state. Migration progress and the basic `useQuery` / `useMutation` pattern live in `docs/tanstack-query-migration.md`. The points below are non-obvious gotchas observed during hook migrations.
