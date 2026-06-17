@@ -38,7 +38,7 @@ import {
 } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
-import { Modal, Input } from '../../components/ui';
+import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { Button, Select, Spinner, Divider, CopyButton } from '../../components/ui';
@@ -472,8 +472,8 @@ export default function SetListView() {
     <div className="flex flex-col gap-6">
       <div className="no-print flex flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">Set Lists</h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <h1 className="text-text text-4xl font-bold tracking-tight">Set Lists</h1>
+          <p className="text-text-muted mt-2 text-sm">
             Manage performance set lists, timings, and singer visibility
           </p>
         </div>
@@ -565,12 +565,12 @@ export default function SetListView() {
                   <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
                     Singer Visibility
                   </span>
-                  <label className="border-border flex h-11 cursor-pointer items-center gap-2.5 rounded-md border bg-slate-50 px-4 text-sm font-medium transition-colors select-none hover:bg-slate-100/70">
-                    <Input
+                  <label className="border-border bg-surface-muted flex h-11 cursor-pointer items-center gap-2.5 rounded-md border px-4 text-sm font-medium transition-colors select-none hover:bg-surface-muted/70">
+                    <input
                       type="checkbox"
                       checked={localApproved}
                       onChange={(e) => handleToggleApproved(e.target.checked)}
-                      className="focus:ring-primary/25 size-4 cursor-pointer rounded"
+                      className="accent-primary size-4 cursor-pointer"
                     />
                     <span>Approved for Singers</span>
                   </label>
@@ -591,7 +591,7 @@ export default function SetListView() {
                       🔗 Go to parent: {parentPerformance.title || 'Concert'}
                     </Button>
                   ) : (
-                    <div className="border-border text-text-muted flex h-11 items-center justify-center rounded-md border bg-slate-50 px-4 text-sm">
+                    <div className="border-border text-text-muted bg-surface-muted flex h-11 items-center justify-center rounded-md border px-4 text-sm">
                       No parent linked
                     </div>
                   )}
@@ -603,7 +603,7 @@ export default function SetListView() {
           {selectedEventId ? (
             <div className="flex flex-col gap-4 p-4">
               {selectedEvent?.type === 'Rehearsal' && (
-                <div className="rounded-r-md border-l-4 border-amber-500 bg-amber-50/70 p-3 text-sm leading-relaxed text-amber-900">
+                <div className="border-warning-border bg-warning-bg/70 text-warning-text rounded-r-md border-l-4 p-3 text-sm leading-relaxed">
                   <div className="mb-1 font-semibold">⚠️ Rehearsal Mode</div>
                   <p className="m-0">
                     This rehearsal inherits its set list and singer visibility from the parent
@@ -625,20 +625,20 @@ export default function SetListView() {
 
               <div className="flex flex-col gap-4">
                 {items.length > 0 && (
-                  <div className="flex flex-col justify-between gap-4 rounded-md border border-emerald-100 bg-emerald-50/50 px-4 py-2.5 text-sm font-semibold text-emerald-800 md:flex-row md:items-center">
+                  <div className="border-primary-light bg-primary-light/50 text-primary-deep flex flex-col justify-between gap-4 rounded-md border px-4 py-2.5 text-sm font-semibold md:flex-row md:items-center">
                     <div className="flex flex-row flex-wrap items-center gap-6">
                       <span>
-                        🎼 Songs: <span className="text-slate-900">{durationTotals.songs}</span>
+                        🎼 Songs: <span className="text-text">{durationTotals.songs}</span>
                       </span>
                       <span>
                         ⏸️ Intermissions:{' '}
-                        <span className="text-slate-900">{durationTotals.intermissions}</span>
+                        <span className="text-text">{durationTotals.intermissions}</span>
                       </span>
                       <span className="flex flex-row items-center gap-2">
                         📢 Gaps:
-                        <Input
+                        <input
                           type="number"
-                          className="h-7 w-12 rounded focus:outline-none"
+                          className="border-border bg-surface text-text focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] h-7 w-12 rounded-md border px-2 text-sm outline-none transition"
                           min={0}
                           step={1}
                           value={localGapSeconds}
@@ -647,14 +647,14 @@ export default function SetListView() {
                             handleAnnouncementGapChange(isNaN(val) ? 0 : val);
                           }}
                         />
-                        <span className="text-xs font-normal text-emerald-700/80">
+                        <span className="text-primary-deep/80 text-xs font-normal">
                           s × {Math.max(0, items.length - 1)} =
                         </span>
-                        <span className="text-slate-900">{durationTotals.gaps}</span>
+                        <span className="text-text">{durationTotals.gaps}</span>
                       </span>
                     </div>
-                    <div className="flex items-center gap-1 text-[0.95rem] font-bold text-emerald-800">
-                      ⏱️ Total: <span className="text-slate-900">{durationTotals.total}</span>
+                    <div className="text-primary-deep flex items-center gap-1 text-[0.95rem] font-bold">
+                      ⏱️ Total: <span className="text-text">{durationTotals.total}</span>
                     </div>
                   </div>
                 )}
@@ -673,7 +673,7 @@ export default function SetListView() {
                     No items in set list. Select event/add items above to build.
                   </div>
                 ) : (
-                  <div className="border-border flex flex-col gap-2 rounded-md border bg-slate-50/50 p-2">
+                  <div className="border-border bg-surface-muted/50 flex flex-col gap-2 rounded-md border p-2">
                     <DndContext
                       sensors={sensors}
                       collisionDetection={closestCenter}

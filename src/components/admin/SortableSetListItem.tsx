@@ -56,8 +56,8 @@ export const SortableSetListItem: React.FC<Props> = ({
       ref={setNodeRef}
       className={`border-border flex flex-row items-center gap-3 rounded-md border px-3.5 py-2.5 transition-colors ${
         item.type === 'intermission'
-          ? 'border-dashed border-emerald-300/80 bg-emerald-50/15'
-          : 'bg-white shadow-sm hover:bg-slate-50/70'
+          ? 'border-primary/40 border-dashed bg-primary-light/15'
+          : 'bg-surface shadow-sm hover:bg-surface-muted/70'
       }`}
       // @allow-inline-style - dnd-kit sortable transform and transition
       style={{
@@ -75,9 +75,9 @@ export const SortableSetListItem: React.FC<Props> = ({
       <div className="flex flex-1 flex-col gap-[2px]">
         {item.type === 'intermission' ? (
           <div className="flex flex-row flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-emerald-800">⏸️ {titleText}</span>
+            <span className="text-primary-deep text-lg font-semibold">⏸️ {titleText}</span>
             {displayDuration && (
-              <span className="inline-flex items-center rounded bg-emerald-100/70 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+              <span className="bg-primary-light text-primary-deep inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold">
                 {displayDuration}
               </span>
             )}
@@ -93,7 +93,7 @@ export const SortableSetListItem: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => onPieceClick((item.pieceId || linkedPiece?.id)!)}
-                className="text-primary decoration-primary/30 hover:text-primary-deep inline-flex cursor-pointer items-center gap-1 border-none bg-none p-0 text-left font-semibold underline decoration-1 underline-offset-2"
+                className="text-primary decoration-primary/30 hover:text-primary-deep inline-flex cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-left font-semibold underline decoration-1 underline-offset-2"
               >
                 {titleText}
                 <span title="Linked to Music Library" className="inline-block text-xs no-underline">
@@ -101,12 +101,12 @@ export const SortableSetListItem: React.FC<Props> = ({
                 </span>
               </button>
             ) : (
-              <span className="inline-flex items-center gap-1 text-slate-800">
+              <span className="text-text inline-flex items-center gap-1">
                 {onEdit ? (
                   <button
                     type="button"
                     onClick={() => onEdit(item)}
-                    className="hover:text-primary cursor-pointer border-none bg-none p-0 text-left font-semibold text-inherit underline decoration-slate-400 decoration-dotted underline-offset-2"
+                    className="hover:text-primary cursor-pointer border-none bg-transparent p-0 text-left font-semibold text-inherit underline decoration-border decoration-dotted underline-offset-2"
                   >
                     {titleText}
                   </button>
@@ -121,7 +121,7 @@ export const SortableSetListItem: React.FC<Props> = ({
               </span>
             )}
             {item.soloSmallGroup && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+              <span className="border-primary-light bg-primary-light text-primary-deep inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold">
                 🎤 Solo / Small Group
               </span>
             )}
@@ -147,7 +147,7 @@ export const SortableSetListItem: React.FC<Props> = ({
                     return (
                       <span
                         key={id}
-                        className="inline-flex rounded border border-emerald-100/70 bg-emerald-50/50 px-1.5 py-0.5 text-[11px] leading-none font-semibold text-emerald-800"
+                        className="border-primary-light/70 bg-primary-light/50 text-primary-deep inline-flex rounded border px-1.5 py-0.5 text-[11px] leading-none font-semibold"
                       >
                         {found ? found.label : id}
                       </span>
@@ -172,14 +172,33 @@ export const SortableSetListItem: React.FC<Props> = ({
               e.stopPropagation();
               if (linkedPiece) onPlayTrack(linkedPiece);
             }}
-            className="flex size-8 items-center justify-center !p-1.5 text-sm"
             title="Play default track"
           >
             🎵
           </Button>
         )}
-        <Button variant="danger" size="small" onClick={() => onDelete(item.id)}>
-          X
+        <Button
+          variant="outline"
+          size="small"
+          onClick={() => onDelete(item.id)}
+          title="Remove from set list"
+          aria-label="Remove from set list"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
         </Button>
       </div>
     </div>

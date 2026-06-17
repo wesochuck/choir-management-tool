@@ -81,13 +81,13 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
 
   return (
     <div ref={containerRef} className="relative flex flex-col gap-2">
-      <div className="border-border flex flex-row items-center gap-4 rounded-md border border-dashed bg-slate-50/50 p-3">
-        <div className="border-border flex flex-row gap-1 rounded-md border bg-white p-[2px]">
+      <div className="border-border bg-surface-muted/50 flex flex-row items-center gap-4 rounded-md border border-dashed p-3">
+        <div className="border-border bg-surface flex flex-row gap-1 rounded-md border p-[2px]">
           <Button
             type="button"
             variant={type === 'song' ? 'primary' : 'outline'}
             size="small"
-            className="!h-8"
+            className="!h-9"
             onClick={() => setType('song')}
             disabled={disabled}
           >
@@ -97,7 +97,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             type="button"
             variant={type === 'intermission' ? 'primary' : 'outline'}
             size="small"
-            className="!h-8"
+            className="!h-9"
             onClick={() => setType('intermission')}
             disabled={disabled}
           >
@@ -133,7 +133,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
           </svg>
 
           {showSuggestions && query.trim().length > 0 && (
-            <div className="border-border absolute inset-x-0 top-full z-[100] mt-1 flex max-h-[300px] flex-col gap-0.5 overflow-y-auto rounded-md border bg-white p-1 shadow-md">
+            <div className="border-border bg-surface absolute inset-x-0 top-full z-[100] mt-1 flex max-h-[300px] flex-col gap-0.5 overflow-y-auto rounded-md border p-1 shadow-md">
               {filteredLibrary.map((p) => (
                 <button
                   key={p.id}
