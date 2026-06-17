@@ -12,7 +12,7 @@ import {
 import { queryKeys } from '../../../lib/queryKeys';
 import { resolvePreviewContent } from '../../../lib/communicationUtils';
 import { useDialog } from '../../../contexts/DialogContext';
-import { Button, Select, Input } from '../../../components/ui';
+import { Button, Select, Input, DataTable, type ColumnDef } from '../../../components/ui';
 
 export interface TemplatesPanelProps {
   templates: TemplateRecord[];
@@ -234,107 +234,148 @@ export function TemplatesPanel({
           Manage message templates. Custom templates can be added, edited, or deleted.
           System-defined templates cannot be deleted.
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] border-collapse text-left">
-            <thead>
-              <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-                <th className="p-3 px-4 text-left">Title</th>
-                <th className="p-3 px-4 text-left">Type</th>
-                <th className="p-3 px-4 text-left">Subject</th>
-                <th className="p-3 px-4 text-left">Content</th>
-                <th className="p-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {templates.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
-                    No templates found.
-                  </td>
-                </tr>
-              ) : (
-                templates.map((tpl) => (
-                  <tr key={tpl.id} className="border-b border-gray-200 text-sm">
-                    <td className="p-3 px-4 font-semibold">
-                      <div className="flex items-center gap-1.5">
-                        <span>{tpl.title}</span>
-                        {tpl.isSystemTemplate && (
-                          <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
-                            System
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-3 px-4">
-                      <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-                        {tpl.type}
+        <DataTable
+          columns={
+            [
+              {
+                id: 'title',
+                header: 'Title',
+                cell: (_, tpl) => (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold">{tpl.title}</span>
+                    {tpl.isSystemTemplate && (
+                      <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
+                        System
                       </span>
-                    </td>
-                    <td className="text-muted max-w-[250px] truncate p-3 px-4">
-                      {tpl.subject || 'No Subject'}
-                    </td>
-                    <td className="text-muted max-w-[300px] truncate p-3 px-4">
-                      {tpl.content.substring(0, 60)}...
-                    </td>
-                    <td className="p-3 px-4 text-right whitespace-nowrap">
-                      <div className="flex justify-end gap-1.5">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="small"
-                          onClick={() => setEditingTemplate(tpl)}
-                        >
-                          Edit
-                        </Button>
-                        {onUseTemplate && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="small"
-                            onClick={() => onUseTemplate(tpl)}
-                          >
-                            Use
-                          </Button>
-                        )}
-                        {!tpl.isSystemTemplate && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="small"
-                            className=""
-                            onClick={async () => {
-                              if (
-                                await dialog.confirm({
-                                  title: 'Delete Template',
-                                  message: `Are you sure you want to delete the template "${tpl.title}"?`,
-                                  variant: 'danger',
-                                })
-                              ) {
-                                try {
-                                  await communicationService.deleteTemplate(tpl.id!);
-                                  queryClient.invalidateQueries({ queryKey: queryKeys.communications.templates() });
-                                } catch (e: unknown) {
-                                  const msg = e instanceof Error ? e.message : String(e);
-                                  await dialog.showMessage({
-                                    title: 'Error',
-                                    message: 'Failed to delete template: ' + msg,
-                                    variant: 'danger',
-                                  });
-                                }
-                              }
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    )}
+                  </div>
+                ),
+                cardSection: 0,
+                cardSide: 'left',
+              },
+              {
+                id: 'type',
+                header: 'Type',
+                cell: (_, tpl) => (
+                  <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+                    {tpl.type}
+                  </span>
+                ),
+                cardSection: 0,
+                cardSide: 'right',
+              },
+              {
+                id: 'subject',
+                header: 'Subject',
+                cell: (_, tpl) => (
+                  <span className="text-muted max-w-[250px] truncate">
+                    {tpl.subject || 'No Subject'}
+                  </span>
+                ),
+                cardSection: 1,
+                cardSide: 'left',
+                cardLabel: 'Subject',
+              },
+              {
+                id: 'content',
+                header: 'Content',
+                cell: (_, tpl) => (
+                  <span className="text-muted max-w-[300px] truncate">
+                    {tpl.content.substring(0, 60)}...
+                  </span>
+                ),
+                cardSection: 1,
+                cardSide: 'left',
+                cardLabel: 'Content',
+              },
+              {
+                id: 'actions',
+                header: 'Actions',
+                align: 'right',
+                cell: (_, tpl) => (
+                  <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="small"
+                      onClick={() => setEditingTemplate(tpl)}
+                    >
+                      Edit
+                    </Button>
+                    {onUseTemplate && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="small"
+                        onClick={() => onUseTemplate(tpl)}
+                      >
+                        Use
+                      </Button>
+                    )}
+                    {!tpl.isSystemTemplate && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="small"
+                        onClick={async () => {
+                          if (
+                            await dialog.confirm({
+                              title: 'Delete Template',
+                              message: `Are you sure you want to delete the template "${tpl.title}"?`,
+                              variant: 'danger',
+                            })
+                          ) {
+                            try {
+                              await communicationService.deleteTemplate(tpl.id!);
+                              queryClient.invalidateQueries({
+                                queryKey: queryKeys.communications.templates(),
+                              });
+                            } catch (e: unknown) {
+                              const msg = e instanceof Error ? e.message : String(e);
+                              await dialog.showMessage({
+                                title: 'Error',
+                                message: 'Failed to delete template: ' + msg,
+                                variant: 'danger',
+                              });
+                            }
+                          }
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                ),
+                cardSection: 1,
+                cardSide: 'right',
+              },
+            ] as ColumnDef<TemplateRecord>[]
+          }
+          data={templates}
+          isLoading={false}
+          emptyState={{
+            title: 'No templates found.',
+            icon: (
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-text-muted"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            ),
+          }}
+          hidePagination
+        />
       </div>
     </AppCard>
   );
