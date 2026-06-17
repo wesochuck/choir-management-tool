@@ -648,7 +648,7 @@ if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhos
     const url = meta?.appUrl || meta?.appURL || "";
     if (url) baseUrl = url;
 }
-baseUrl = baseUrl.trim().replace(/\/+$/g, "");
+baseUrl = baseUrl.trim().replace(/[\/]+$/g, "");
 
 events.forEach(event => {
     const purchases = $app.findRecordsByFilter(

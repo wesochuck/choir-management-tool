@@ -476,6 +476,31 @@ test('Generator output matches committed file', () => {
   );
 });
 
+test('Generated main.pb.js is structurally valid Goja-compatible JavaScript', () => {
+  const mainPath = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
+  const content = fs.readFileSync(mainPath, 'utf8');
+
+  // Strip await keyword first — Goja allows await in callback contexts where
+  // standard JS doesn't. After stripping, the file should parse cleanly with
+  // strict ES2022 syntax (no top-level await allowed).
+  const stripped = content.replace(/\bawait\s+/g, '/*await*/');
+  const acorn = require('acorn');
+  try {
+    acorn.parse(stripped, {
+      ecmaVersion: 2022,
+      sourceType: 'script',
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const loc = (e as { loc?: { line: number; column: number } }).loc;
+    const lineInfo = loc ? ` at line ${loc.line}:${loc.column}` : '';
+    assert.fail(
+      `Generated main.pb.js has a JavaScript syntax error${lineInfo}: ${msg}. ` +
+        `This will cause Goja to fail loading the hooks. Check cron/route templates in generate-main-pb-js.ts.`
+    );
+  }
+});
+
 test('Generated main.pb.js uses async callbacks when body has await', () => {
   const content = readGeneratedMain();
 

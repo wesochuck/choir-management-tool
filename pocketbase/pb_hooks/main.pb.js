@@ -1583,7 +1583,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         const url = meta?.appUrl || meta?.appURL || "";
         if (url) baseUrl = url;
     }
-    baseUrl = baseUrl.trim().replace(//+$/g, "");
+    baseUrl = baseUrl.trim().replace(/[/]+$/g, "");
 
     events.forEach(event => {
         const purchases = $app.findRecordsByFilter(
