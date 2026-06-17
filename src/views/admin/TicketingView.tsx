@@ -19,11 +19,12 @@ import {
   Button,
   FormField,
   Badge,
-  EmptyState,
   Select,
   Input,
   ProgressBar,
+  DataTable,
 } from '../../components/ui';
+import type { ColumnDef } from '../../components/ui';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
 import { settingsService } from '../../services/settingsService';
 
@@ -497,6 +498,326 @@ export default function TicketingView() {
     ? getBundleSoldQty(editingBundle.id, editingBundle.events) > 0
     : false;
 
+  interface BundleOrder {
+    stripeSessionId: string;
+    stripePaymentIntentId: string;
+    buyerName: string;
+    buyerEmail: string;
+    quantity: number;
+    amountPaidCents: number;
+    created: string;
+    status: string;
+    bundleTitle: string;
+    bundleId: string;
+  }
+
+  const willCallColumns: ColumnDef<TicketPurchase>[] = [
+    {
+      id: 'buyerName',
+      header: 'Buyer Name',
+      cell: (_, p) => (
+        <div className="flex flex-col gap-0.5">
+          <span>{p.buyerName}</span>
+          {p.expand?.bundle && (
+            <span className="inline-flex w-fit items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
+              Season Ticket: {p.expand.bundle.title}
+            </span>
+          )}
+        </div>
+      ),
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'email',
+      header: 'Email',
+      accessorFn: (p) => p.buyerEmail,
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'saleDate',
+      header: 'Sale Date',
+      cell: (_, p) =>
+        formatInTimezone(p.created, timezone, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      cardSection: 0,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'qty',
+      header: 'Qty',
+      accessorFn: (p) => p.quantity,
+      cardSection: 1,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+    {
+      id: 'amountPaid',
+      header: 'Amount Paid',
+      cell: (_, p) => (
+        <span className="font-extrabold">${(p.amountPaidCents / 100).toFixed(2)}</span>
+      ),
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Amount',
+      enableSorting: false,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: (_, p) => (
+        <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>{p.status}</Badge>
+      ),
+      align: 'center',
+      cardSection: 0,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (_, p) =>
+        p.status === 'paid' ? (
+          <Button
+            variant="danger"
+            size="small"
+            onClick={() => {
+              if (p.bundle) {
+                handleRefundBundle(p.stripePaymentIntentId);
+              } else {
+                handleRefund(p.id);
+              }
+            }}
+          >
+            Refund
+          </Button>
+        ) : null,
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+  ];
+
+  const bundlesColumns: ColumnDef<TicketBundle>[] = [
+    {
+      id: 'title',
+      header: 'Bundle Title',
+      accessorFn: (b) => b.title,
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'price',
+      header: 'Price',
+      cell: (_, b) => (
+        <span className="font-extrabold">${(b.priceCents / 100).toFixed(2)}</span>
+      ),
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Price',
+      enableSorting: false,
+    },
+    {
+      id: 'active',
+      header: 'Active',
+      cell: (_, b) => (
+        <Badge tone={b.isActive ? 'success' : 'neutral'}>
+          {b.isActive ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+      align: 'center',
+      cardSection: 0,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'capacitySold',
+      header: 'Capacity Sold',
+      cell: (_, b) => {
+        const sold = getBundleSoldQty(b.id, b.events);
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="font-medium text-slate-800">
+              {sold} / {b.capacity} sold
+            </span>
+            <ProgressBar
+              value={Math.min(100, (sold / b.capacity) * 100)}
+              className="h-1.5 w-[100px] [&::part(base)]:rounded"
+            />
+          </div>
+        );
+      },
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'saleEndDate',
+      header: 'Sale End Date',
+      cell: (_, b) =>
+        formatInTimezone(b.saleEndDate, timezone, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      cardSection: 0,
+      cardSide: 'right',
+      cardLabel: 'Ends:',
+      enableSorting: false,
+    },
+    {
+      id: 'includedEvents',
+      header: 'Included Events',
+      cell: (_, b) => (
+        <div className="flex flex-wrap gap-1">
+          {b.expand?.events?.map((ev) => (
+            <span
+              key={ev.id}
+              className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide whitespace-nowrap text-slate-700 uppercase"
+            >
+              {ev.title}
+            </span>
+          ))}
+        </div>
+      ),
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (_, b) => (
+        <div className="flex justify-end gap-2">
+          <Button
+            onClick={() => handleOpenEditModal(b)}
+            variant="secondary"
+            size="small"
+          >
+            Edit
+          </Button>
+          <Button
+            onClick={() => handleDeleteBundle(b.id, b.events)}
+            variant="danger"
+            size="small"
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+  ];
+
+  const ordersColumns: ColumnDef<BundleOrder>[] = [
+    {
+      id: 'buyerName',
+      header: 'Buyer Name',
+      accessorFn: (o) => o.buyerName,
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'email',
+      header: 'Email',
+      accessorFn: (o) => o.buyerEmail,
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'purchaseDate',
+      header: 'Purchase Date',
+      cell: (_, o) =>
+        formatInTimezone(o.created, timezone, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      cardSection: 0,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'bundleTitle',
+      header: 'Season Bundle',
+      accessorFn: (o) => o.bundleTitle,
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'qty',
+      header: 'Qty',
+      accessorFn: (o) => o.quantity,
+      cardSection: 1,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+    {
+      id: 'amountPaid',
+      header: 'Amount Paid',
+      cell: (_, o) => (
+        <span className="font-extrabold">${(o.amountPaidCents / 100).toFixed(2)}</span>
+      ),
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Amount',
+      enableSorting: false,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: (_, o) => (
+        <Badge tone={o.status === 'paid' ? 'success' : 'danger'}>{o.status}</Badge>
+      ),
+      align: 'center',
+      cardSection: 0,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (_, o) =>
+        o.status === 'paid' ? (
+          <Button
+            variant="danger"
+            size="small"
+            onClick={() => handleRefundBundle(o.stripePaymentIntentId)}
+          >
+            Refund Bundle
+          </Button>
+        ) : null,
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+  ];
+
   return (
     <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
@@ -908,243 +1229,82 @@ export default function TicketingView() {
               </div>
 
               {/* Will Call - Desktop Table View */}
-              <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
-                <table className="min-w-full divide-y divide-slate-100 text-left">
-                  <thead className="bg-slate-50/75">
-                    <tr>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Buyer Name
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Email
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Sale Date
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Qty
-                      </th>
-                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Amount Paid
-                      </th>
-                      <th className="px-6 py-3.5 text-center text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Status
-                      </th>
-                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {loading ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="px-6 py-12 text-center text-sm font-medium text-slate-400"
+              <DataTable
+                columns={willCallColumns}
+                data={filteredPurchases}
+                isLoading={loading}
+                emptyState={{
+                  title: 'No Purchases Found',
+                  description: searchQuery
+                    ? 'No purchases match your search query.'
+                    : 'No purchase records are available for this event yet.',
+                  icon: '🎟️',
+                  action: searchQuery ? (
+                    <Button variant="secondary" size="small" onClick={() => setSearchQuery('')}>
+                      Reset Search
+                    </Button>
+                  ) : undefined,
+                }}
+                manualPagination
+                getRowClassName={(p) => (p.status === 'refunded' ? 'opacity-60' : '')}
+                renderMobileCard={(p) => (
+                  <div className={`flex flex-col gap-3 ${p.status === 'refunded' ? 'opacity-60' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-400">
+                        {formatInTimezone(p.created, timezone, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
+                        {p.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-bold text-slate-800">{p.buyerName}</span>
+                        {p.expand?.bundle && (
+                          <span className="inline-flex w-fit items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-emerald-700 uppercase">
+                            Season Ticket: {p.expand.bundle.title}
+                          </span>
+                        )}
+                        <span className="text-xs font-medium break-all text-slate-500">
+                          {p.buyerEmail}
+                        </span>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-0.5">
+                        <span className="text-sm font-bold text-slate-900">
+                          {p.quantity} Ticket{p.quantity !== 1 ? 's' : ''}
+                        </span>
+                        <span className="text-base font-extrabold text-emerald-700">
+                          ${(p.amountPaidCents / 100).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    {p.status === 'paid' && (
+                      <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
+                        <Button
+                          variant="danger"
+                          size="small"
+                          className="w-full"
+                          onClick={() => {
+                            if (p.bundle) {
+                              handleRefundBundle(p.stripePaymentIntentId);
+                            } else {
+                              handleRefund(p.id);
+                            }
+                          }}
                         >
-                          <div className="flex flex-col items-center justify-center gap-2">
-                            <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                            Loading purchases...
-                          </div>
-                        </td>
-                      </tr>
-                    ) : filteredPurchases.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="px-6 py-12 text-center">
-                          <EmptyState
-                            title="No Purchases Found"
-                            description={
-                              searchQuery
-                                ? 'No purchases match your search query.'
-                                : 'No purchase records are available for this event yet.'
-                            }
-                            icon="🎟️"
-                            action={
-                              searchQuery ? (
-                                <Button
-                                  variant="secondary"
-                                  size="small"
-                                  onClick={() => setSearchQuery('')}
-                                >
-                                  Reset Search
-                                </Button>
-                              ) : undefined
-                            }
-                          />
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredPurchases.map((p) => {
-                        const isRefunded = p.status === 'refunded';
-                        return (
-                          <tr
-                            key={p.id}
-                            className={`transition-colors hover:bg-slate-50/40 ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
-                          >
-                            <td className="px-6 py-4 text-sm font-semibold whitespace-nowrap text-slate-800">
-                              <div className="flex flex-col gap-0.5">
-                                <span>{p.buyerName}</span>
-                                {p.expand?.bundle && (
-                                  <span className="inline-flex w-fit items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
-                                    Season Ticket: {p.expand.bundle.title}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                              {p.buyerEmail}
-                            </td>
-                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                              {formatInTimezone(p.created, timezone, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
-                            </td>
-                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                              {p.quantity}
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm font-extrabold text-slate-950">
-                              ${(p.amountPaidCents / 100).toFixed(2)}
-                            </td>
-                            <td className="px-6 py-4 text-center text-sm">
-                              <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
-                                {p.status}
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
-                              {p.status === 'paid' && (
-                                <Button
-                                  variant="danger"
-                                  size="small"
-                                  className=""
-                                  onClick={() => {
-                                    if (p.bundle) {
-                                      handleRefundBundle(p.stripePaymentIntentId);
-                                    } else {
-                                      handleRefund(p.id);
-                                    }
-                                  }}
-                                >
-                                  Refund
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })
+                          Refund
+                        </Button>
+                      </div>
                     )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Will Call - Mobile Card List View */}
-              <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
-                <div className="divide-y divide-slate-100">
-                  {loading ? (
-                    <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
-                      <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                      Loading purchases...
-                    </div>
-                  ) : filteredPurchases.length === 0 ? (
-                    <div className="p-6 text-center">
-                      <EmptyState
-                        title="No Purchases Found"
-                        description={
-                          searchQuery
-                            ? 'No purchases match your search query.'
-                            : 'No purchase records are available for this event yet.'
-                        }
-                        icon="🎟️"
-                        action={
-                          searchQuery ? (
-                            <Button
-                              variant="secondary"
-                              size="small"
-                              onClick={() => setSearchQuery('')}
-                            >
-                              Reset Search
-                            </Button>
-                          ) : undefined
-                        }
-                      />
-                    </div>
-                  ) : (
-                    filteredPurchases.map((p) => {
-                      const isRefunded = p.status === 'refunded';
-                      return (
-                        <div
-                          key={p.id}
-                          className={`flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}
-                        >
-                          {/* Row 1: Sale Date & Status Badge */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-slate-400">
-                              {formatInTimezone(p.created, timezone, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                            <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
-                              {p.status}
-                            </Badge>
-                          </div>
-
-                          {/* Row 2: Buyer Info & Tickets Qty/Paid */}
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-sm font-bold text-slate-800">
-                                {p.buyerName}
-                              </span>
-                              {p.expand?.bundle && (
-                                <span className="inline-flex w-fit items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-emerald-700 uppercase">
-                                  Season Ticket: {p.expand.bundle.title}
-                                </span>
-                              )}
-                              <span className="text-xs font-medium break-all text-slate-500">
-                                {p.buyerEmail}
-                              </span>
-                            </div>
-                            <div className="flex shrink-0 flex-col items-end gap-0.5">
-                              <span className="text-sm font-bold text-slate-900">
-                                {p.quantity} Ticket{p.quantity !== 1 ? 's' : ''}
-                              </span>
-                              <span className="text-base font-extrabold text-emerald-700">
-                                ${(p.amountPaidCents / 100).toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Row 3: Refund Actions */}
-                          {p.status === 'paid' && (
-                            <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
-                              <Button
-                                variant="danger"
-                                size="small"
-                                className="w-full"
-                                onClick={() => {
-                                  if (p.bundle) {
-                                    handleRefundBundle(p.stripePaymentIntentId);
-                                  } else {
-                                    handleRefund(p.id);
-                                  }
-                                }}
-                              >
-                                Refund
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
+              />
             </div>
           </AppCard>
         </>
@@ -1161,232 +1321,86 @@ export default function TicketingView() {
 
           <div className="p-6">
             {/* Season Bundles - Desktop Table View */}
-            <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm font-medium text-slate-400">
-                  <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                  Loading bundles...
-                </div>
-              ) : bundles.length === 0 ? (
-                <div className="px-6 py-12 text-center">
-                  <EmptyState
-                    title="No Season Bundles Configured"
-                    description="Create recognition tiers or pass bundles to offer discount packages to your ticket buyers."
-                    icon="🎟️"
-                    action={
-                      <Button
-                        variant="primary"
-                        size="small"
-                        className=""
-                        onClick={handleOpenCreateModal}
-                      >
-                        + Create New Bundle
-                      </Button>
-                    }
-                  />
-                </div>
-              ) : (
-                <table className="min-w-full divide-y divide-slate-100 text-left">
-                  <thead className="bg-slate-50/75">
-                    <tr>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Bundle Title
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Price
-                      </th>
-                      <th className="px-6 py-3.5 text-center text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Active
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Capacity Sold
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Sale End Date
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Included Events
-                      </th>
-                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {bundles.map((b) => {
-                      const sold = getBundleSoldQty(b.id, b.events);
-                      return (
-                        <tr key={b.id} className="transition-colors hover:bg-slate-50/40">
-                          <td className="px-6 py-4 text-sm font-semibold text-slate-800">
-                            {b.title}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-extrabold whitespace-nowrap text-slate-900">
-                            ${(b.priceCents / 100).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 text-center text-sm">
-                            <Badge tone={b.isActive ? 'success' : 'neutral'}>
-                              {b.isActive ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 text-sm whitespace-nowrap">
-                            <div className="flex flex-col gap-1">
-                              <span className="font-medium text-slate-800">
-                                {sold} / {b.capacity} sold
-                              </span>
-                              <ProgressBar
-                                value={Math.min(100, (sold / b.capacity) * 100)}
-                                className="h-1.5 w-[100px] [&::part(base)]:rounded"
-                              />
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                            {formatInTimezone(b.saleEndDate, timezone, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </td>
-                          <td className="max-w-[240px] px-6 py-4 text-sm whitespace-normal">
-                            <div className="flex flex-wrap gap-1">
-                              {b.expand?.events?.map((ev) => (
-                                <span
-                                  key={ev.id}
-                                  className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide whitespace-nowrap text-slate-700 uppercase"
-                                >
-                                  {ev.title}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                onClick={() => handleOpenEditModal(b)}
-                                variant="secondary"
-                                size="small"
-                                className=""
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                onClick={() => handleDeleteBundle(b.id, b.events)}
-                                variant="danger"
-                                size="small"
-                                className=""
-                              >
-                                Delete
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <DataTable
+              columns={bundlesColumns}
+              data={bundles}
+              isLoading={loading}
+              emptyState={{
+                title: 'No Season Bundles Configured',
+                description:
+                  'Create recognition tiers or pass bundles to offer discount packages to your ticket buyers.',
+                icon: '🎟️',
+                action: (
+                  <Button variant="primary" size="small" onClick={handleOpenCreateModal}>
+                    + Create New Bundle
+                  </Button>
+                ),
+              }}
+              manualPagination
+              renderMobileCard={(b) => {
+                const sold = getBundleSoldQty(b.id, b.events);
+                return (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <Badge tone={b.isActive ? 'success' : 'neutral'}>
+                        {b.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <span className="text-xs font-medium text-slate-400">
+                        Ends:{' '}
+                        {formatInTimezone(b.saleEndDate, timezone, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
 
-            {/* Season Bundles - Mobile Card View */}
-            <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
-              <div className="divide-y divide-slate-100">
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
-                    <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                    Loading bundles...
-                  </div>
-                ) : bundles.length === 0 ? (
-                  <div className="p-6 text-center">
-                    <EmptyState
-                      title="No Season Bundles Configured"
-                      description="Create recognition tiers or pass bundles to offer discount packages to your ticket buyers."
-                      icon="🎟️"
-                      action={
-                        <Button
-                          variant="primary"
-                          size="small"
-                          className=""
-                          onClick={handleOpenCreateModal}
-                        >
-                          + Create New Bundle
-                        </Button>
-                      }
-                    />
-                  </div>
-                ) : (
-                  bundles.map((b) => {
-                    const sold = getBundleSoldQty(b.id, b.events);
-                    return (
-                      <div
-                        key={b.id}
-                        className="flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40"
-                      >
-                        {/* Row 1: Active status & Sale end date */}
-                        <div className="flex items-center justify-between">
-                          <Badge tone={b.isActive ? 'success' : 'neutral'}>
-                            {b.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                          <span className="text-xs font-medium text-slate-400">
-                            Ends:{' '}
-                            {formatInTimezone(b.saleEndDate, timezone, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                        </div>
-
-                        {/* Row 2: Title & Price & Capacity */}
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-bold text-slate-800">{b.title}</span>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {b.expand?.events?.map((ev) => (
-                                <span
-                                  key={ev.id}
-                                  className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide whitespace-nowrap text-slate-600 uppercase"
-                                >
-                                  {ev.title}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-0.5">
-                            <span className="text-base font-extrabold text-emerald-700">
-                              ${(b.priceCents / 100).toFixed(2)}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-bold text-slate-800">{b.title}</span>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {b.expand?.events?.map((ev) => (
+                            <span
+                              key={ev.id}
+                              className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide whitespace-nowrap text-slate-600 uppercase"
+                            >
+                              {ev.title}
                             </span>
-                            <span className="text-xs font-medium text-slate-500">
-                              {sold} / {b.capacity} Sold
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Row 3: Actions */}
-                        <div className="mt-1 flex justify-end gap-2 border-t border-slate-50 pt-1.5">
-                          <Button
-                            variant="secondary"
-                            size="small"
-                            onClick={() => handleOpenEditModal(b)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="small"
-                            onClick={() => handleDeleteBundle(b.id, b.events)}
-                          >
-                            Delete
-                          </Button>
+                          ))}
                         </div>
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+                      <div className="flex shrink-0 flex-col items-end gap-0.5">
+                        <span className="text-base font-extrabold text-emerald-700">
+                          ${(b.priceCents / 100).toFixed(2)}
+                        </span>
+                        <span className="text-xs font-medium text-slate-500">
+                          {sold} / {b.capacity} Sold
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-1 flex justify-end gap-2 border-t border-slate-50 pt-1.5">
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        onClick={() => handleOpenEditModal(b)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="small"
+                        onClick={() => handleDeleteBundle(b.id, b.events)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }}
+            />
           </div>
         </AppCard>
       )}
@@ -1402,189 +1416,71 @@ export default function TicketingView() {
 
           <div className="p-6">
             {/* Season Pass Orders - Desktop Table View */}
-            <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm font-medium text-slate-400">
-                  <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                  Loading orders...
-                </div>
-              ) : bundleOrders.length === 0 ? (
-                <div className="px-6 py-12 text-center">
-                  <EmptyState
-                    title="No Orders Found"
-                    description="No season pass orders have been placed yet."
-                    icon="🎫"
-                  />
-                </div>
-              ) : (
-                <table className="min-w-full divide-y divide-slate-100 text-left">
-                  <thead className="bg-slate-50/75">
-                    <tr>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Buyer Name
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Email
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Purchase Date
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Season Bundle
-                      </th>
-                      <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Qty
-                      </th>
-                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Amount Paid
-                      </th>
-                      <th className="px-6 py-3.5 text-center text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Status
-                      </th>
-                      <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {bundleOrders.map((order) => {
-                      const isRefunded = order.status === 'refunded';
-                      return (
-                        <tr
-                          key={order.stripeSessionId}
-                          className={`transition-colors hover:bg-slate-50/40 ${isRefunded ? 'text-text-muted opacity-60' : ''}`}
-                        >
-                          <td className="px-6 py-4 text-sm font-semibold text-slate-800">
-                            {order.buyerName}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium text-slate-500">
-                            {order.buyerEmail}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                            {formatInTimezone(order.created, timezone, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium text-slate-800">
-                            {order.bundleTitle}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium text-slate-500">
-                            {order.quantity}
-                          </td>
-                          <td className="px-6 py-4 text-right text-sm font-extrabold text-slate-950">
-                            ${(order.amountPaidCents / 100).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 text-center text-sm">
-                            <Badge tone={order.status === 'paid' ? 'success' : 'danger'}>
-                              {order.status}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
-                            {order.status === 'paid' && (
-                              <Button
-                                onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
-                                variant="danger"
-                                size="small"
-                                className=""
-                              >
-                                Refund Bundle
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
+            <DataTable<BundleOrder>
+              columns={ordersColumns}
+              data={bundleOrders}
+              isLoading={loading}
+              emptyState={{
+                title: 'No Orders Found',
+                description: 'No season pass orders have been placed yet.',
+                icon: '🎫',
+              }}
+              manualPagination
+              getRowClassName={(o) => (o.status === 'refunded' ? 'opacity-60' : '')}
+              renderMobileCard={(order) => (
+                <div className={`flex flex-col gap-3 ${order.status === 'refunded' ? 'opacity-60' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-400">
+                      {formatInTimezone(order.created, timezone, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <Badge tone={order.status === 'paid' ? 'success' : 'danger'}>
+                      {order.status}
+                    </Badge>
+                  </div>
 
-            {/* Season Pass Orders - Mobile Card View */}
-            <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
-              <div className="divide-y divide-slate-100">
-                {loading ? (
-                  <div className="flex flex-col items-center justify-center gap-2 p-6 text-center text-sm font-medium text-slate-400">
-                    <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                    Loading orders...
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-bold text-slate-800">
+                        {order.buyerName}
+                      </span>
+                      <span className="text-xs font-medium break-all text-slate-500">
+                        {order.buyerEmail}
+                      </span>
+                      <span className="mt-1 block text-xs font-semibold text-slate-600">
+                        Bundle: {order.bundleTitle}
+                      </span>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <span className="text-sm font-bold text-slate-900">
+                        {order.quantity} Pass{order.quantity !== 1 ? 'es' : ''}
+                      </span>
+                      <span className="text-base font-extrabold text-emerald-700">
+                        ${(order.amountPaidCents / 100).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
-                ) : bundleOrders.length === 0 ? (
-                  <div className="p-6 text-center">
-                    <EmptyState
-                      title="No Orders Found"
-                      description="No season pass orders have been placed yet."
-                      icon="🎫"
-                    />
-                  </div>
-                ) : (
-                  bundleOrders.map((order) => {
-                    const isRefunded = order.status === 'refunded';
-                    return (
-                      <div
-                        key={order.stripeSessionId}
-                        className={`flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40 ${isRefunded ? 'opacity-60' : ''}`}
+
+                  {order.status === 'paid' && (
+                    <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
+                      <Button
+                        variant="danger"
+                        size="small"
+                        className="w-full"
+                        onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
                       >
-                        {/* Row 1: Date & Status Badge */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-slate-400">
-                            {formatInTimezone(order.created, timezone, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          <Badge tone={order.status === 'paid' ? 'success' : 'danger'}>
-                            {order.status}
-                          </Badge>
-                        </div>
-
-                        {/* Row 2: Buyer Info & Pass Info */}
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-bold text-slate-800">
-                              {order.buyerName}
-                            </span>
-                            <span className="text-xs font-medium break-all text-slate-500">
-                              {order.buyerEmail}
-                            </span>
-                            <span className="mt-1 block text-xs font-semibold text-slate-600">
-                              Bundle: {order.bundleTitle}
-                            </span>
-                          </div>
-                          <div className="flex shrink-0 flex-col items-end gap-0.5">
-                            <span className="text-sm font-bold text-slate-900">
-                              {order.quantity} Pass{order.quantity !== 1 ? 'es' : ''}
-                            </span>
-                            <span className="text-base font-extrabold text-emerald-700">
-                              ${(order.amountPaidCents / 100).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Row 3: Refund Actions */}
-                        {order.status === 'paid' && (
-                          <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
-                            <Button
-                              variant="danger"
-                              size="small"
-                              className="w-full"
-                              onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
-                            >
-                              Refund Bundle
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+                        Refund Bundle
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            />
           </div>
         </AppCard>
       )}

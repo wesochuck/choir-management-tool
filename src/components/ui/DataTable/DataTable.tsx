@@ -79,6 +79,7 @@ export function DataTable<T>({
   pageSize = 20,
   renderMobileCard: renderMobileCardProp,
   getRowId,
+  getRowClassName,
 }: DataTableProps<T>) {
   const tanStackColumns = useMemo(() => columns.map(toTanStackColumn), [columns]);
 
@@ -215,7 +216,7 @@ export function DataTable<T>({
                 key={row.id}
                 className={`border-b border-slate-100 transition-colors ${
                   onRowClick ? 'cursor-pointer hover:bg-slate-50/40' : ''
-                }`}
+                } ${getRowClassName?.(row.original) ?? ''}`}
                 onClick={() => onRowClick?.(row.original)}
               >
                 {enableSelection && (
@@ -273,7 +274,7 @@ export function DataTable<T>({
               key={row.id}
               className={`border-b border-slate-100 px-4 py-3 last:border-b-0 ${
                 onRowClick ? 'cursor-pointer' : ''
-              }`}
+              } ${getRowClassName?.(row.original) ?? ''}`}
               onClick={() => onRowClick?.(row.original)}
             >
               {hasSection0 && (

@@ -35,5 +35,6 @@ export interface DataTableProps<T> {
   pageCount?: number;
   pageSize?: number;
   getRowId?: (originalRow: T, index: number) => string;
+  getRowClassName?: (row: T) => string;
   renderMobileCard?: (row: T) => ReactNode;
 }
