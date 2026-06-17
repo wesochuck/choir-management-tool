@@ -5,6 +5,7 @@ import { ticketService } from '../../services/ticketService';
 import { donationService } from '../../services/donationService';
 import { formatInTimezone } from '../../lib/timezone';
 import { pb } from '../../lib/pocketbase';
+import { DataTable, type ColumnDef } from '../ui';
 
 interface SingerPatronageHistoryTabProps {
   profileId: string;
@@ -67,6 +68,53 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
       .reduce((sum, item) => sum + item.amountPaidCents, 0);
   }, [items]);
 
+  const columns: ColumnDef<PatronageHistoryItem>[] = [
+    {
+      id: 'description',
+      header: 'Description',
+      cell: (_, item) => (
+        <div className="flex flex-col">
+          <span className="text-sm font-medium">{item.description}</span>
+          <span className="text-muted text-xs">
+            {formatInTimezone(item.date, 'America/New_York', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </span>
+        </div>
+      ),
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'amount',
+      header: 'Amount',
+      align: 'right',
+      cell: (_, item) => (
+        <span className="text-sm font-bold">
+          ${(item.amountPaidCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </span>
+      ),
+      cardSection: 0,
+      cardSide: 'right',
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: (_, item) => (
+        <span
+          className={`text-xs font-bold uppercase ${item.status === 'paid' ? 'text-success-text' : 'text-danger-text'}`}
+        >
+          {item.status}
+        </span>
+      ),
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Status',
+    },
+  ];
+
   if (loading) {
     return <div className="text-muted p-4 text-sm">Loading patronage history...</div>;
   }
@@ -86,44 +134,31 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
         <h4 className="text-text-muted m-0 mb-2 text-xs tracking-wider uppercase">
           Transaction History ({items.length})
         </h4>
-        <div className="flex flex-col gap-2">
-          {items.length === 0 ? (
-            <p className="text-muted m-0 text-sm">No patronage history found.</p>
-          ) : (
-            items.map((item) => (
-              <div
-                key={`${item.type}-${item.id}`}
-                className="border-border bg-surface m-0 rounded-xl border p-3 px-4 shadow-none"
+        <DataTable
+          columns={columns}
+          data={items}
+          isLoading={false}
+          emptyState={{
+            title: 'No patronage history found.',
+            icon: (
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-text-muted"
               >
-                <div className="flex flex-row items-center justify-between">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{item.description}</span>
-                    <span className="text-muted text-xs">
-                      {formatInTimezone(item.date, 'America/New_York', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-end text-right">
-                    <span className="text-sm font-bold">
-                      $
-                      {(item.amountPaidCents / 100).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                    <span
-                      className={`text-xs font-bold uppercase ${item.status === 'paid' ? 'text-success-text' : 'text-danger-text'}`}
-                    >
-                      {item.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                <line x1="1" y1="10" x2="23" y2="10" />
+              </svg>
+            ),
+          }}
+          hidePagination
+        />
       </div>
     </div>
   );
