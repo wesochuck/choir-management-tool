@@ -96,7 +96,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
             <div className="border-border flex flex-row rounded-[4px] border bg-slate-50 p-[2px]">
               <button
                 type="button"
-                className={`min-h-auto cursor-pointer rounded-[2px] border-none bg-none px-[6px] py-[2px] text-[9px] font-bold transition-all duration-200 ${genreFilterMode === 'OR' ? 'bg-primary text-white' : 'text-muted'}`}
+                className={`min-h-auto cursor-pointer rounded-[2px] border-none bg-none px-[6px] py-[2px] text-xs font-bold transition-all duration-200 ${genreFilterMode === 'OR' ? 'bg-primary text-white' : 'text-muted'}`}
                 onClick={() => onGenreFilterModeChange('OR')}
                 title="OR: Match ANY selected genre"
               >
@@ -104,7 +104,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
               </button>
               <button
                 type="button"
-                className={`min-h-auto cursor-pointer rounded-[2px] border-none bg-none px-[6px] py-[2px] text-[9px] font-bold transition-all duration-200 ${genreFilterMode === 'AND' ? 'bg-primary text-white' : 'text-muted'}`}
+                className={`min-h-auto cursor-pointer rounded-[2px] border-none bg-none px-[6px] py-[2px] text-xs font-bold transition-all duration-200 ${genreFilterMode === 'AND' ? 'bg-primary text-white' : 'text-muted'}`}
                 onClick={() => onGenreFilterModeChange('AND')}
                 title="AND: Match ALL selected genres"
               >

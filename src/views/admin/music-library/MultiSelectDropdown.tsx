@@ -217,7 +217,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             </span>
           )}
           <span
-            className="flex-shrink-0 text-[10px] text-gray-500 transition-transform duration-200"
+            className="flex-shrink-0 text-xs text-gray-500 transition-transform duration-200"
             aria-hidden="true"
           >
             {isOpen ? '▴' : '▾'}
@@ -240,7 +240,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
             {getSummaryText()}
           </span>
           <span
-            className="flex-shrink-0 text-[10px] text-gray-500 transition-transform duration-200"
+            className="flex-shrink-0 text-xs text-gray-500 transition-transform duration-200"
             aria-hidden="true"
           >
             {isOpen ? '▴' : '▾'}
@@ -315,7 +315,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
                         <button
                           key={option.id}
                           type="button"
-                          className={`hover:border-primary inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] bg-white px-3 py-1 text-xs font-medium text-gray-500 transition-all duration-180 ease-in-out outline-none select-none hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--color-primary-light)] ${isChecked ? `font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${chipClass}` : ''}`}
+                          className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] px-3 py-1 text-xs font-medium transition-all duration-180 ease-in-out outline-none select-none focus-visible:shadow-[0_0_0_2px_var(--color-primary-light)] ${chipClass} ${isChecked ? 'font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'opacity-75 hover:opacity-100 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)]'}`}
                           role="option"
                           aria-selected={isChecked}
                           onClick={() => handleOptionToggle(option.id)}
