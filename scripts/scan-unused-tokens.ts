@@ -142,10 +142,7 @@ function findLines(content: string, searchTerm: string): number[] {
   return lines;
 }
 
-function scanTokenUsage(
-  tokens: ThemeToken[],
-  sourceFiles: string[],
-): TokenUsage[] {
+function scanTokenUsage(tokens: ThemeToken[], sourceFiles: string[]): TokenUsage[] {
   const usages: TokenUsage[] = tokens.map((token) => ({
     token,
     usageCount: 0,
@@ -182,7 +179,7 @@ function scanTokenUsage(
 
 function findStemReferences(
   stem: string,
-  files: string[],
+  files: string[]
 ): { file: string; line: number; snippet: string }[] {
   const results: { file: string; line: number; snippet: string }[] = [];
   const stemRegex = new RegExp(`\\b${stem}\\b`, 'i');
@@ -204,42 +201,60 @@ function printCliReport(
   usages: TokenUsage[],
   tokens: ThemeToken[],
   sourceFiles: string[],
-  options: ScanOptions,
+  options: ScanOptions
 ): void {
   const unused = usages.filter((u) => u.usageCount === 0);
   const total = usages.length;
   const used = total - unused.length;
   const pct = total > 0 ? Math.round((used / total) * 100) : 100;
 
-  console.log('\nUNUSED THEME TOKENS');
-  console.log('━'.repeat(72));
-  if (unused.length === 0) {
-    console.log(` All theme tokens are in use. (${pct}% usage)\n`);
-    return;
-  }
-  console.log(` Token${' '.repeat(22)}Possible classes${' '.repeat(24)}Matches`);
-  console.log('─'.repeat(72));
-  for (const u of unused) {
-    const classes = u.token.generatedClasses.slice(0, 3).join(', ');
-    const suffix = u.token.generatedClasses.length > 3 ? ', ...' : '';
-    const clsDisplay = (classes + suffix).padEnd(40).slice(0, 40);
-    console.log(` ${u.token.rawName.padEnd(24)}${clsDisplay}${String(u.usageCount).padStart(5)}`);
-    if (options.context) {
-      const stem = u.token.name;
-      const refs = findStemReferences(stem, sourceFiles);
-      if (refs.length > 0) {
-        console.log(` ${' '.repeat(24)}potential indirect refs for "${stem}":`);
-        for (const ref of refs.slice(0, 3)) {
-          const shortPath = relative(process.cwd(), ref.file);
-          console.log(` ${' '.repeat(28)}${shortPath}:${ref.line}  ${ref.snippet}`);
-        }
-        if (refs.length > 3) {
-          console.log(` ${' '.repeat(28)}... and ${refs.length - 3} more`);
+  if (unused.length > 0) {
+    console.log('\nUNUSED THEME TOKENS');
+    console.log('━'.repeat(72));
+    console.log(` Token${' '.repeat(22)}Possible classes${' '.repeat(24)}Matches`);
+    console.log('─'.repeat(72));
+    for (const u of unused) {
+      const classes = u.token.generatedClasses.slice(0, 3).join(', ');
+      const suffix = u.token.generatedClasses.length > 3 ? ', ...' : '';
+      const clsDisplay = (classes + suffix).padEnd(40).slice(0, 40);
+      console.log(` ${u.token.rawName.padEnd(24)}${clsDisplay}${String(u.usageCount).padStart(5)}`);
+      if (options.context) {
+        const stem = u.token.name;
+        const refs = findStemReferences(stem, sourceFiles);
+        if (refs.length > 0) {
+          console.log(` ${' '.repeat(24)}potential indirect refs for "${stem}":`);
+          for (const ref of refs.slice(0, 5)) {
+            const shortPath = relative(process.cwd(), ref.file);
+            console.log(` ${' '.repeat(28)}${shortPath}:${ref.line}  ${ref.snippet}`);
+          }
+          if (refs.length > 5) {
+            console.log(` ${' '.repeat(28)}... and ${refs.length - 5} more`);
+          }
         }
       }
     }
+    console.log('─'.repeat(72));
   }
-  console.log('─'.repeat(72));
+
+  const usedTokens = usages.filter((u) => u.usageCount > 0);
+  if (usedTokens.length > 0) {
+    console.log('\nUSED THEME TOKENS');
+    console.log('━'.repeat(72));
+    console.log(` Token${' '.repeat(22)}Matches  Sample locations`);
+    console.log('─'.repeat(72));
+    for (const u of usedTokens) {
+      const locations = u.usageLocations
+        .slice(0, 3)
+        .map((l) => `${relative(process.cwd(), l.file)}:${l.line}`);
+      const hasMore = u.usageLocations.length > 3;
+      const locDisplay = locations.join(', ') + (hasMore ? ', ...' : '');
+      console.log(
+        ` ${u.token.rawName.padEnd(24)}${String(u.usageCount).padStart(7)}  ${locDisplay}`
+      );
+    }
+    console.log('─'.repeat(72));
+  }
+
   console.log(` ${unused.length} of ${total} tokens unused (${pct}% usage)\n`);
 }
 
