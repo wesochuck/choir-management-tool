@@ -85,7 +85,9 @@ Use Tailwind utility classes for layout, spacing, colors, sizing, typography, an
 Inline styles are allowed only for truly dynamic values such as drag position, animation values, or canvas calculations. Mark each exception with a JSX comment:
 
 ```tsx
-{/* @allow-inline-style - explanation */}
+{
+  /* @allow-inline-style - explanation */
+}
 ```
 
 Use `{/* */}` syntax, not `//`. A `//` comment inside JSX renders as visible text in the DOM (see `PhotoUploader.tsx:717` for a real fix). The `{/* */}` JSX comment is stripped at build time and never reaches the browser.
@@ -123,12 +125,12 @@ import { safeSlProps } from '../shared';
 <SlComponent
   ref={slRef}
   {...safeSlProps({
-    prop1: value,          // stripped if undefined
-    className: className,   // stripped if undefined
+    prop1: value, // stripped if undefined
+    className: className, // stripped if undefined
     // ...rest spread goes inside safeSlProps, not outside
     ...(consumerRest as Record<string, unknown>),
   } as Record<string, unknown>)}
-/>
+/>;
 ```
 
 Never spread `{...rest}` directly onto a Shoelace component — rest values may be `undefined`.
@@ -186,19 +188,29 @@ When creating new Shoelace-wrapped components, follow this same test-vs-producti
   The component uses `@tanstack/react-table` internally for sort, selection,
   pagination, and column visibility state. Our wrapper provides the UI and
   mobile card layout.
-- `cardSection: 0 | 1` + `cardSide: 'left' | 'right'` control automatic mobile layout.
+- `cardSection: 0 | 1` + `cardSide: 'left' | 'right'` control automatic mobile
+  card layout. These are optional — columns without them are hidden on mobile.
   - Section 0: `justify-between` row (name + badge pattern)
   - Section 1: left-stack / right-stack with separator
 - Selection, sort, and pagination are opt-in features.
-- `renderMobileCard` is the escape hatch for complex rows (e.g., RosterTable).
+- `renderMobileCard` is the escape hatch for complex mobile rows (e.g., RosterTable).
+  When provided, `cardSection`/`cardSide` on columns are ignored and the custom
+  renderer takes over.
+- `renderRow` is the ultimate escape hatch — replaces the entire row (desktop +
+  mobile). Use sparingly.
+- `getRowClassName` provides per-row Tailwind classes (e.g., striping, dimming).
 - Sorting uses `enableSorting` on the column definition. For client-side sort,
   TanStack handles it automatically. For server-side sort, pass `manualSorting`
-  and `onSortingChange`.
-- Pagination is inline (prev / page buttons / next) using TanStack's
-  `table.setPageIndex()` and `table.getPageCount()`. The `Pagination` component
-  in `src/components/common/Pagination.tsx` is still used by legacy views.
+  and `onSortingChange`. Use `defaultSorting` to set initial sort state.
+- Pagination is inline (prev / page buttons / next). Use `hidePagination` to
+  suppress it (e.g., small datasets). The `Pagination` component in
+  `src/components/common/Pagination.tsx` is still used by legacy views.
 - Use `getRowId` prop when row IDs should match data identities (e.g., `profile.id`)
   instead of row index, especially when using `enableSelection` with external state.
+- `onSelectionChange` receives a `Set<string>`, not an array.
+- `useReactTable()` triggers a benign `react-hooks/incompatible-library` lint
+  warning from React Compiler. This is a known TanStack Table limitation and
+  does not indicate a bug.
 
 ### TanStack Query
 
@@ -225,7 +237,7 @@ This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state.
   ```ts
   const refresh = useCallback(
     () => queryClient.invalidateQueries({ queryKey: queryKeys.foo.list() }),
-    [queryClient],
+    [queryClient]
   );
   ```
 
@@ -242,9 +254,12 @@ This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state.
     if (didAutoCreateRef.current === guardKey) return;
     didAutoCreateRef.current = guardKey;
 
-    thingMutation.mutateAsync(payload)
+    thingMutation
+      .mutateAsync(payload)
       .then(() => refresh())
-      .catch(() => { didAutoCreateRef.current = null; });
+      .catch(() => {
+        didAutoCreateRef.current = null;
+      });
   }, [shouldCreate, a, b, refresh, thingMutation]);
   ```
 

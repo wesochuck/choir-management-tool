@@ -352,7 +352,10 @@ export default function SetListView() {
     if (!selectedEventId) return;
     setLocalApproved(checked);
     try {
-      await eventUpdateMutation.mutateAsync({ eventId: selectedEventId, data: { setListApproved: checked } });
+      await eventUpdateMutation.mutateAsync({
+        eventId: selectedEventId,
+        data: { setListApproved: checked },
+      });
     } catch (error) {
       console.error('Failed to update set list approval status:', error);
       const ev = events.find((e) => e.id === selectedEventId);
@@ -372,13 +375,16 @@ export default function SetListView() {
         const eventId = selectedEventIdRef.current;
         if (!eventId) return;
         try {
-          await eventUpdateMutation.mutateAsync({ eventId, data: { announcementGapSeconds: seconds } });
+          await eventUpdateMutation.mutateAsync({
+            eventId,
+            data: { announcementGapSeconds: seconds },
+          });
         } catch (error) {
           console.error('Failed to save announcement gap:', error);
         }
       }, 500);
     },
-    [eventUpdateMutation],
+    [eventUpdateMutation]
   );
 
   const updateItems = async (newItems: SetListItem[]): Promise<boolean> => {
@@ -565,7 +571,7 @@ export default function SetListView() {
                   <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
                     Singer Visibility
                   </span>
-                  <label className="border-border bg-surface-muted flex h-11 cursor-pointer items-center gap-2.5 rounded-md border px-4 text-sm font-medium transition-colors select-none hover:bg-surface-muted/70">
+                  <label className="border-border bg-surface-muted hover:bg-surface-muted/70 flex h-11 cursor-pointer items-center gap-2.5 rounded-md border px-4 text-sm font-medium transition-colors select-none">
                     <input
                       type="checkbox"
                       checked={localApproved}
@@ -638,7 +644,7 @@ export default function SetListView() {
                         📢 Gaps:
                         <input
                           type="number"
-                          className="border-border bg-surface text-text focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)] h-7 w-12 rounded-md border px-2 text-sm outline-none transition"
+                          className="border-border bg-surface text-text focus:border-primary focus:ring-primary/30 h-9 w-16 rounded-md border px-2 text-sm transition outline-none focus:ring-2"
                           min={0}
                           step={1}
                           value={localGapSeconds}
