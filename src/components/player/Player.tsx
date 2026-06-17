@@ -235,7 +235,13 @@ export const Player: React.FC<PlayerProps> = ({
               disabled={isDownloadNeeded}
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
-              {isPlaying ? <PauseIcon /> : <PlayIcon />}
+              {isPlaying ? (
+                <PauseIcon />
+              ) : (
+                <span className="ml-0.5 text-[28px] leading-none">
+                  <PlayIcon />
+                </span>
+              )}
             </button>
             <button
               onClick={handleNext}
