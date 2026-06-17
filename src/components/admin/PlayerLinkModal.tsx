@@ -25,6 +25,19 @@ export const PlayerLinkModal: React.FC<PlayerLinkModalProps> = ({
         </span>
       }
       maxWidth="520px"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+          >
+            Open Practice Player
+          </Button>
+        </>
+      }
     >
       <div className="flex flex-col gap-2">
         <p className="text-text-muted m-0 text-sm leading-snug">
@@ -43,15 +56,6 @@ export const PlayerLinkModal: React.FC<PlayerLinkModalProps> = ({
         <p className="text-text-muted m-0 text-xs">
           Links do not require an account and can be sent via email or text.
         </p>
-      </div>
-
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
-        <Button variant="primary" onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}>
-          Open Practice Player
-        </Button>
       </div>
     </Modal>
   );
