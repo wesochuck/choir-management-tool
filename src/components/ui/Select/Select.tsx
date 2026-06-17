@@ -172,6 +172,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 
     const convertedChildren = convertOptions(children);
     const slSize = size === 'compact' || size === 'small' ? 'small' : 'medium';
+    const combinedClassName = 'w-full' + (className ? ' ' + layoutOnly(className) : '');
 
     return (
       <SlSelect
@@ -188,7 +189,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           onSlBlur: onBlur
             ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLSelectElement>)
             : undefined,
-          className: layoutOnly(className),
+          className: combinedClassName,
           // @allow-inline-style - dynamic invalid border color override
           style: invalid
             ? ({ '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties)

@@ -199,8 +199,7 @@ export default function ReportsView() {
     {
       id: 'lastPerformed',
       header: 'Last Performed',
-      cell: (_, row) =>
-        row.lastPerformed ? row.lastPerformed.toLocaleDateString() : '-',
+      cell: (_, row) => (row.lastPerformed ? row.lastPerformed.toLocaleDateString() : '-'),
       cardSection: 1,
       cardSide: 'right',
       cardLabel: 'Last Performed',
@@ -298,6 +297,7 @@ export default function ReportsView() {
                 <Select
                   value={selectedPerformanceId}
                   onChange={(e) => setSelectedPerformanceId(e.target.value)}
+                  className="w-full max-w-md"
                 >
                   <option value="">-- Choose a performance --</option>
                   {performances.map((p) => (
@@ -379,7 +379,7 @@ export default function ReportsView() {
                   }}
                   manualPagination
                   getRowId={(r) => r.profileId}
-                  getRowClassName={(r) => r.absences >= 2 ? 'bg-danger-bg text-danger-text' : ''}
+                  getRowClassName={(r) => (r.absences >= 2 ? 'bg-danger-bg text-danger-text' : '')}
                 />
               </div>
 
