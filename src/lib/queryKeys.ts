@@ -1,6 +1,7 @@
 export const queryKeys = {
   choirSettings: {
     all: ['choirSettings'] as const,
+    admin: ['choirSettings', 'admin'] as const,
   },
   appSettings: {
     all: ['appSettings'] as const,
@@ -168,5 +169,7 @@ export const queryKeys = {
     config: () => [...queryKeys.communications.all, 'config'] as const,
     choirName: () => [...queryKeys.communications.all, 'choirName'] as const,
     automatedTasks: () => [...queryKeys.communications.all, 'automatedTasks'] as const,
+    resolvedRecipients: (filters: unknown) =>
+      [...queryKeys.communications.all, 'resolvedRecipients', filters] as const,
   },
 } as const;

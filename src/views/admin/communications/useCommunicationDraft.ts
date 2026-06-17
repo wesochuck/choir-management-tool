@@ -106,7 +106,7 @@ export function useCommunicationDraft({
   }, [content, subject, messageType, filters.eventId]);
 
   const resolvedRecipientsQuery = useQuery({
-    queryKey: ['communicationResolveRecipients', filters],
+    queryKey: queryKeys.communications.resolvedRecipients(filters),
     queryFn: () => communicationService.resolveRecipients(filters),
     enabled: tab === 'compose' && !(lockInitialRecipients && recipients.length > 0),
   });
