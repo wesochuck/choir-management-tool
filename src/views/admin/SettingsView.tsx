@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
@@ -8,8 +8,6 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
-import { LandingPageSettingsPanel } from '../../components/admin/LandingPageSettingsPanel';
-import type { LandingPageSettingsPanelHandle } from '../../components/admin/LandingPageSettingsPanel';
 import { Button, Select, Input, CopyButton } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
@@ -20,7 +18,7 @@ const COMMON_TIMEZONES = [
   { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
   { value: 'America/Anchorage', label: 'Alaska Time' },
   { value: 'Pacific/Honolulu', label: 'Hawaii Time' },
-  { value: 'Europe/London', label: 'London, Greenwich Mean Time' },
+  { value: 'Europe/London', label: 'London, Greenwich Mean Mean' },
   { value: 'Europe/Paris', label: 'Paris, Central European Time' },
   { value: 'Asia/Tokyo', label: 'Tokyo, Japan Standard Time' },
   { value: 'Australia/Sydney', label: 'Sydney, Eastern Australian Time' },
@@ -52,36 +50,20 @@ export default function SettingsView() {
   const { setChoirName: setContextChoirName, setTimezone: setContextTimezone } = useChoirSettings();
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
-  const [homepageUrl, setHomepageUrl] = useState('');
   const [message, setMessage] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLogoRemoved, setIsLogoRemoved] = useState(false);
-  const [landingDirty, setLandingDirty] = useState(false);
-  const landingPanelRef = useRef<LandingPageSettingsPanelHandle>(null);
-  const handleLandingDirtyChange = useCallback((dirty: boolean) => {
-    setLandingDirty(dirty);
-  }, []);
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
-      const landingSettings = landingPanelRef.current?.getSettings();
-      const heroChanges = landingPanelRef.current?.getHeroImageChanges();
-
       await Promise.all([
         choirName ? settingsService.saveChoirName(choirName) : Promise.resolve(),
         settingsService.saveTimezone(timezone),
-        homepageUrl ? settingsService.saveHomepageUrl(homepageUrl) : Promise.resolve(),
         logoFile
           ? settingsService.saveLogo(logoFile)
           : logoUrl === null
             ? settingsService.saveLogo(null)
-            : Promise.resolve(),
-        landingSettings ? settingsService.saveLandingSettings(landingSettings) : Promise.resolve(),
-        heroChanges?.file
-          ? settingsService.saveHeroImage(heroChanges.file)
-          : heroChanges?.file === null
-            ? settingsService.saveHeroImage(null)
             : Promise.resolve(),
       ]);
     },
@@ -97,26 +79,21 @@ export default function SettingsView() {
   const settingsQuery = useQuery({
     queryKey: queryKeys.choirSettings.admin,
     queryFn: async () => {
-      const [loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl] = await Promise.all(
-        [
-          settingsService.getChoirName(),
-          settingsService.getTimezone(),
-          settingsService.getHomepageUrl(),
-          settingsService.getLogoUrl(),
-        ]
-      );
-      return { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl };
+      const [loadedChoirName, loadedTimezone, loadedLogoUrl] = await Promise.all([
+        settingsService.getChoirName(),
+        settingsService.getTimezone(),
+        settingsService.getLogoUrl(),
+      ]);
+      return { loadedChoirName, loadedTimezone, loadedLogoUrl };
     },
     staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
     if (!settingsQuery.data) return;
-    const { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl } =
-      settingsQuery.data;
+    const { loadedChoirName, loadedTimezone, loadedLogoUrl } = settingsQuery.data;
     setChoirName(loadedChoirName);
     setTimezone(loadedTimezone);
-    setHomepageUrl(loadedHomepageUrl);
     setLogoUrl(loadedLogoUrl);
   }, [settingsQuery.data]);
 
@@ -128,24 +105,20 @@ export default function SettingsView() {
       {
         choirName: settingsData?.loadedChoirName ?? '',
         timezone: settingsData?.loadedTimezone ?? 'America/New_York',
-        homepageUrl: settingsData?.loadedHomepageUrl ?? '',
       },
-      { choirName, timezone, homepageUrl }
+      { choirName, timezone }
     );
     const logoDirty = logoFile !== null || isLogoRemoved;
-    return fieldsDirty || logoDirty || landingDirty;
-  }, [settingsData, choirName, timezone, homepageUrl, logoFile, isLogoRemoved, landingDirty]);
+    return fieldsDirty || logoDirty;
+  }, [settingsData, choirName, timezone, logoFile, isLogoRemoved]);
 
   const handleGlobalDiscard = () => {
     setChoirName(settingsData?.loadedChoirName ?? '');
     setTimezone(settingsData?.loadedTimezone ?? 'America/New_York');
-    setHomepageUrl(settingsData?.loadedHomepageUrl ?? '');
     if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
     setLogoUrl(settingsData?.loadedLogoUrl ?? null);
     setLogoFile(null);
     setIsLogoRemoved(false);
-    landingPanelRef.current?.reset();
-    setLandingDirty(false);
   };
 
   const handleSave = async () => {
@@ -154,15 +127,7 @@ export default function SettingsView() {
     try {
       await saveSettingsMutation.mutateAsync();
 
-      const landingSettings = landingPanelRef.current?.getSettings();
-      const heroChanges = landingPanelRef.current?.getHeroImageChanges();
-
-      const [newLogoUrl, newHeroUrl] = await Promise.all([
-        logoFile ? settingsService.getLogoUrl() : Promise.resolve(logoUrl),
-        heroChanges?.file || heroChanges?.removed
-          ? settingsService.getHeroImageUrl()
-          : Promise.resolve(null),
-      ]);
+      const newLogoUrl = logoFile ? await settingsService.getLogoUrl() : logoUrl;
 
       setContextChoirName(choirName);
       setContextTimezone(timezone);
@@ -174,11 +139,6 @@ export default function SettingsView() {
       }
       setLogoFile(null);
       setIsLogoRemoved(false);
-
-      landingPanelRef.current?.markSaved(
-        landingSettings ?? (await settingsService.getLandingSettings()),
-        newHeroUrl
-      );
 
       dialog.showToast('System settings saved successfully.');
     } catch (err: unknown) {
@@ -196,9 +156,14 @@ export default function SettingsView() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6 pb-24">
       <div>
-        <h1 className="text-4xl font-bold tracking-tight text-slate-900">System Settings</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <h1 className="text-text text-4xl font-bold tracking-tight">System Settings</h1>
+        <p className="text-text-muted mt-2 text-sm">
           Configure global metadata, timezone options, organization logos, and email queue webhooks.
+          Public-facing website settings live under{' '}
+          <a href="/admin/website" className="text-primary hover:text-primary-deep underline">
+            Public Website
+          </a>
+          .
         </p>
       </div>
 
@@ -219,7 +184,7 @@ export default function SettingsView() {
               placeholder="e.g. Downtown Community Chorale"
               className={inputClasses}
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-text-muted text-xs">
               Displayed in the browser tab title across all pages (e.g. "Roster Management - My
               Choir").
             </p>
@@ -254,7 +219,7 @@ export default function SettingsView() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
-                  '⬆️'
+                  ⬆️
                   {logoUrl ? 'Replace Logo' : 'Upload Logo'}
                   <Input
                     type="file"
@@ -297,23 +262,6 @@ export default function SettingsView() {
           </div>
         </AppCard>
 
-        <AppCard title="Public Homepage URL">
-          <div className="flex flex-col gap-2">
-            <Input
-              id="homepage-url"
-              type="url"
-              value={homepageUrl}
-              onChange={(event) => setHomepageUrl(event.target.value)}
-              placeholder="e.g. https://www.mychoir.org"
-              className={inputClasses}
-            />
-            <p className="text-xs text-slate-500">
-              The main public website address where applicants are redirected after submitting their
-              audition sheet successfully.
-            </p>
-          </div>
-        </AppCard>
-
         <AppCard title="Choir Timezone">
           <div className="flex flex-col gap-2">
             <Select
@@ -337,14 +285,12 @@ export default function SettingsView() {
                 ))}
               </optgroup>
             </Select>
-            <p className="text-xs text-slate-500">
+            <p className="text-text-muted text-xs">
               This timezone controls all event scheduling, display clocks, and email/SMS automatic
               reminders.
             </p>
           </div>
         </AppCard>
-
-        <LandingPageSettingsPanel ref={landingPanelRef} onDirtyChange={handleLandingDirtyChange} />
 
         <QueueWebhookSettings setMessage={setMessage} />
       </div>
@@ -410,18 +356,18 @@ function QueueWebhookSettings({ setMessage }: { setMessage: (msg: string) => voi
   const webhookUrl = `${pbBaseUrl}/api/queue/process?token=${token}`;
 
   if (isLoading)
-    return <div className="text-xs text-slate-400">Loading queue configurations...</div>;
+    return <div className="text-text-muted text-xs">Loading queue configurations...</div>;
 
   return (
     <AppCard title="Email Queue Webhook">
       <div className="flex flex-col gap-4">
-        <p className="text-xs text-slate-500">
+        <p className="text-text-muted text-xs">
           PocketHost triggers this URL to process single-recipient messages sequentially in the
           background.
         </p>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-semibold text-slate-700" htmlFor="webhook-url">
+          <label className="text-text text-xs font-semibold" htmlFor="webhook-url">
             Target Webhook URL
           </label>
           <div className="flex items-center gap-2">
@@ -443,10 +389,10 @@ function QueueWebhookSettings({ setMessage }: { setMessage: (msg: string) => voi
         </div>
 
         <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-4">
-          <div className="text-xs text-slate-500">
+          <div className="text-text-muted text-xs">
             <strong>Status:</strong>{' '}
             {token ? (
-              <span className="font-semibold text-emerald-700">
+              <span className="text-success-text font-semibold">
                 Active ({token.substring(0, 8)}...)
               </span>
             ) : (

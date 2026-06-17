@@ -43,6 +43,7 @@ const SeatingView = lazyWithReload(() => import('./views/admin/SeatingView'));
 const AttendanceView = lazyWithReload(() => import('./views/admin/AttendanceView'));
 const AuditionsView = lazyWithReload(() => import('./views/admin/AuditionsView'));
 const SettingsView = lazyWithReload(() => import('./views/admin/SettingsView'));
+const PublicWebsiteView = lazyWithReload(() => import('./views/admin/PublicWebsiteView'));
 const CommunicationView = lazyWithReload(() => import('./views/admin/CommunicationView'));
 const SetListView = lazyWithReload(() => import('./views/admin/SetListView'));
 const ReportsView = lazyWithReload(() => import('./views/admin/ReportsView'));
@@ -310,6 +311,17 @@ export default function App() {
                 <ProtectedRoute adminOnly>
                   <PageLayout title="Music Library" backTo="/dashboard">
                     <MusicLibraryView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/website"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Public Website" backTo="/dashboard">
+                    <PublicWebsiteView />
                   </PageLayout>
                 </ProtectedRoute>
               }

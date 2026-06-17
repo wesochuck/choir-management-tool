@@ -140,6 +140,13 @@ const dashboardSections = [
         desc: 'Attendance trends and concert summaries',
       },
       {
+        to: '/admin/website',
+        icon: '🌐',
+        colorClass: 'bg-slate-500/10 text-slate-500',
+        label: 'Public Website',
+        desc: 'Landing page, hero image, and public branding',
+      },
+      {
         to: '/admin/settings',
         icon: '⚙️',
         colorClass: 'bg-slate-500/10 text-slate-500',
