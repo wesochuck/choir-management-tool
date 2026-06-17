@@ -46,7 +46,7 @@ function toTanStackColumn<T>(col: OurColumnDef<T>): TanStackColumnDef<T> {
   return tanStackCol;
 }
 
-function getCellMeta(cell: { column: { columnDef: { meta: unknown } } }): OurCellMeta | undefined {
+function getCellMeta(cell: { column: { columnDef: { meta?: unknown } } }): OurCellMeta | undefined {
   return cell.column.columnDef.meta as OurCellMeta | undefined;
 }
 
