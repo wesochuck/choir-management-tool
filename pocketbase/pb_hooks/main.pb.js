@@ -558,8 +558,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
                                     missCount: missCount
                                 });
                             }
-                        }
-                    });
+                        });
 
                     if (exceededSingers.length > 0) {
                         exceededLimitListHtml = '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' + 
