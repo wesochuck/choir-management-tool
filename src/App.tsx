@@ -68,6 +68,9 @@ const PublicDonationView = lazyWithReload(() => import('./views/PublicDonationVi
 const PublicDonationSuccessView = lazyWithReload(() => import('./views/PublicDonationSuccessView'));
 const PublicLandingView = lazyWithReload(() => import('./views/PublicLandingView'));
 const PublicHistoryView = lazyWithReload(() => import('./views/PublicHistoryView'));
+const PublicPastPerformancesView = lazyWithReload(
+  () => import('./views/PublicPastPerformancesView')
+);
 const AdminTicketingView = lazyWithReload(() => import('./views/admin/TicketingView'));
 const DonationsView = lazyWithReload(() => import('./views/admin/DonationsView'));
 const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
@@ -175,6 +178,7 @@ export default function App() {
             <Route path="/donate/success" element={<PublicDonationSuccessView />} />
             <Route path="/" element={<PublicLandingView />} />
             <Route path="/history" element={<PublicHistoryView />} />
+            <Route path="/performances" element={<PublicPastPerformancesView />} />
             <Route
               path="/dashboard"
               element={

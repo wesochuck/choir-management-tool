@@ -71,6 +71,9 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             <Link to="/auditions" className={getLinkClass('/auditions')}>
               Auditions
             </Link>
+            <Link to="/performances" className={getLinkClass('/performances')}>
+              Performances
+            </Link>
             <Link to="/history" className={getLinkClass('/history')}>
               History
             </Link>
@@ -112,6 +115,13 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               onClick={() => setMobileNavOpen(false)}
             >
               Auditions
+            </Link>
+            <Link
+              to="/performances"
+              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/performances' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Performances
             </Link>
             <Link
               to="/history"
