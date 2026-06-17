@@ -476,37 +476,48 @@ test('Generator output matches committed file', () => {
   );
 });
 
-test('Generated main.pb.js uses async cron callbacks when body has await', () => {
+test('Generated main.pb.js uses async callbacks when body has await', () => {
   const content = readGeneratedMain();
 
+  // 1. Check cron registrations
   const ticketBuyerCron = extractCronCallback(content, 'ticket_buyer_reminder');
   assert.ok(
     ticketBuyerCron.includes('await '),
     'ticket_buyer_reminder cron body should contain await calls'
   );
-
-  // Verify the cron registration itself has the async keyword
-  const cronRegex = /cronAdd\("ticket_buyer_reminder",\s*"[^"]*",\s*async\s*\(\)\s*=>\s*\{/;
   assert.match(
     content,
-    cronRegex,
+    /cronAdd\("ticket_buyer_reminder",\s*"[^"]*",\s*async\s*\(\)\s*=>\s*\{/,
     'ticket_buyer_reminder cron registration should use async callback'
   );
-
-  // Verify other crons (no await) use plain callbacks
-  const postEventRegex = /cronAdd\("post_event_report",\s*"[^"]*",\s*\(\)\s*=>\s*\{/;
   assert.match(
     content,
-    postEventRegex,
-    'post_event_report cron should use plain (non-async) callback'
+    /cronAdd\("post_event_report",\s*"[^"]*",\s*\(\)\s*=>\s*\{/,
+    'post_event_report cron should use plain callback'
   );
-
-  const queueRegex = /cronAdd\("process_email_queue_job",\s*"[^"]*",\s*\(\)\s*=>\s*\{/;
   assert.match(
     content,
-    queueRegex,
-    'process_email_queue_job cron should use plain (non-async) callback'
+    /cronAdd\("process_email_queue_job",\s*"[^"]*",\s*\(\)\s*=>\s*\{/,
+    'process_email_queue_job cron should use plain callback'
   );
+
+  // 2. Check all router registrations — verify routes using await are async
+  const routeMatches = content.matchAll(
+    /routerAdd\("([A-Z]+)",\s*"([^"]+)",\s*((?:async\s*)?\([^)]*\)\s*=>\s*\{)/g
+  );
+  if (routeMatches) {
+    for (const match of routeMatches) {
+      const routePath = match[2];
+      const callbackOpen = match[3];
+      const callbackBody = extractRouteCallback(content, routePath);
+      const usesAwait = callbackBody.includes('await ');
+      if (usesAwait && !callbackOpen.startsWith('async ')) {
+        assert.fail(
+          `Route ${routePath} uses await in its body but lacks async keyword on callback.`
+        );
+      }
+    }
+  }
 });
 
 test('Manual pb_hooks self-containment validation', () => {

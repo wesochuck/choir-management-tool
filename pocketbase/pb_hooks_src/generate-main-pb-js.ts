@@ -351,9 +351,10 @@ function renderCron(
   body: string,
   options: CallbackOptions = {}
 ): string {
-  const isAsync = body.includes('await ');
+  const fullBody = withUtilities(body, options);
+  const isAsync = fullBody.includes('await ');
   const asyncPrefix = isAsync ? 'async ' : '';
-  return `cronAdd(${JSON.stringify(name)}, ${JSON.stringify(schedule)}, ${asyncPrefix}() => {\n${indent(withUtilities(body, options), 4)}\n});`;
+  return `cronAdd(${JSON.stringify(name)}, ${JSON.stringify(schedule)}, ${asyncPrefix}() => {\n${indent(fullBody, 4)}\n});`;
 }
 
 function renderRecordHook(
@@ -371,7 +372,10 @@ function renderRoute(
   body: string,
   options: CallbackOptions = {}
 ): string {
-  return `routerAdd(${JSON.stringify(method)}, ${JSON.stringify(routePath)}, (e) => {\n${indent(withUtilities(body, options), 4)}\n});`;
+  const fullBody = withUtilities(body, options);
+  const isAsync = fullBody.includes('await ');
+  const asyncPrefix = isAsync ? 'async ' : '';
+  return `routerAdd(${JSON.stringify(method)}, ${JSON.stringify(routePath)}, ${asyncPrefix}(e) => {\n${indent(fullBody, 4)}\n});`;
 }
 
 function indent(text: string, spaces: number): string {
@@ -663,7 +667,7 @@ events.forEach(event => {
     const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
 
-    purchases.forEach(purchase => {
+    purchases.forEach(async purchase => {
         const buyerName = purchase.get("buyerName") || "Music Lover";
         const quantity = purchase.get("quantity") || 0;
         

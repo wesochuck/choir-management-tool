@@ -1602,7 +1602,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
         const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
 
-        purchases.forEach(purchase => {
+        purchases.forEach(async purchase => {
             const buyerName = purchase.get("buyerName") || "Music Lover";
             const quantity = purchase.get("quantity") || 0;
             
@@ -11977,7 +11977,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     return handleGeneratePlayerToken(e);
 });
 
-routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
+routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -13548,7 +13548,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     return handleCreateTicketsSession(e);
 });
 
-routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
+routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -15119,7 +15119,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
     return handleCreateBundleSession(e);
 });
 
-routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
+routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -16690,7 +16690,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
     return handleCreateDonationSession(e);
 });
 
-routerAdd("POST", "/api/webhook/stripe", (e) => {
+routerAdd("POST", "/api/webhook/stripe", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -18261,7 +18261,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     return handleStripeWebhook(e);
 });
 
-routerAdd("POST", "/api/admin/refund-ticket", (e) => {
+routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -19832,7 +19832,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     return handleAdminRefundTicket(e);
 });
 
-routerAdd("POST", "/api/admin/refund-bundle", (e) => {
+routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -21403,7 +21403,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
     return handleAdminRefundBundle(e);
 });
 
-routerAdd("POST", "/api/admin/refund-donation", (e) => {
+routerAdd("POST", "/api/admin/refund-donation", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -22974,7 +22974,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
     return handleAdminRefundDonation(e);
 });
 
-routerAdd("POST", "/api/tickets/validate", (e) => {
+routerAdd("POST", "/api/tickets/validate", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
@@ -23477,7 +23477,7 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
     return handleValidateScan(e);
 });
 
-routerAdd("GET", "/api/tickets/scan-context", (e) => {
+routerAdd("GET", "/api/tickets/scan-context", async (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
