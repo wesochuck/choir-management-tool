@@ -215,7 +215,7 @@ export function Modal({
       >
         <div
           ref={testModalRef}
-          className="animate-modal-slide-up border-border bg-surface flex max-h-[calc(100dvh-2rem)] max-h-[calc(100vh-2rem)] w-full flex-col gap-4 rounded-lg border p-4 shadow-md sm:p-6"
+          className="animate-modal-slide-up border-border bg-surface flex max-h-[calc(100dvh-2rem)] w-full flex-col gap-4 rounded-lg border p-4 shadow-md sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}

@@ -29,7 +29,7 @@ export default defineConfig([
     },
     rules: {
       'tailwindcss/no-custom-classname': [
-        'warn',
+        'error',
         {
           whitelist: [
             'no-print',
@@ -44,6 +44,7 @@ export default defineConfig([
           ],
         },
       ],
+      'tailwindcss/no-contradicting-classname': 'error',
     },
   },
   {
