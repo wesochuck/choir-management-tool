@@ -277,19 +277,6 @@ export function TemplatesPanel({
                 cardLabel: 'Subject',
               },
               {
-                id: 'content',
-                header: 'Content',
-                cell: (_, tpl) => (
-                  <span className="text-muted max-w-[300px] truncate">
-                    {tpl.content.substring(0, 60)}...
-                  </span>
-                ),
-                hideBelow: 'md',
-                cardSection: 1,
-                cardSide: 'left',
-                cardLabel: 'Content',
-              },
-              {
                 id: 'actions',
                 header: 'Actions',
                 align: 'right',
