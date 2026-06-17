@@ -151,14 +151,13 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         return (
           <div onClick={(e) => e.stopPropagation()}>
             {row.audioTrackMapping && Object.keys(row.audioTrackMapping).length > 0 ? (
-              <Button
-                variant="outline"
-                size="tiny"
-                className="!m-0"
+              <button
+                type="button"
+                className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-sm font-semibold"
                 onClick={() => onPlayTrack(row)}
               >
                 ▶ Play
-              </Button>
+              </button>
             ) : isParent && totalMovementTracksCount > 0 ? (
               <span
                 onClick={(e) => {
