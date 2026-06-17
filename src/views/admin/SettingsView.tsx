@@ -382,9 +382,8 @@ function QueueWebhookSettings({ setMessage }: { setMessage: (msg: string) => voi
               value={webhookUrl}
               disabled={!token}
               className={`${!token ? 'cursor-not-allowed opacity-50' : ''}`}
-            >
-              Copy Link
-            </CopyButton>
+            />
+            <span className="text-text-muted hidden text-xs md:inline">Copy Link</span>
           </div>
         </div>
 

@@ -828,10 +828,11 @@ export default function SetListView() {
                 <Button variant="outline" onClick={() => setIsPrintModalOpen(false)}>
                   Close
                 </Button>
-                <div className="flex-1 sm:flex-none">
-                  <CopyButton value={plainText} className="flex w-full items-center gap-[6px]">
+                <div className="flex flex-1 items-center gap-1 sm:flex-none">
+                  <CopyButton value={plainText} />
+                  <span className="text-text-muted hidden text-xs md:inline">
                     📋 Copy Plain Text
-                  </CopyButton>
+                  </span>
                 </div>
               </div>
               <Button variant="primary" className="w-full sm:w-auto" onClick={handlePrintList}>

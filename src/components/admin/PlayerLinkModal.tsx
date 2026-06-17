@@ -50,7 +50,8 @@ export const PlayerLinkModal: React.FC<PlayerLinkModalProps> = ({
           <div className="text-text-muted flex-1 overflow-x-auto px-1.5 py-0.5 font-mono text-[0.8rem] whitespace-nowrap select-all">
             {url}
           </div>
-          <CopyButton value={url}>Copy</CopyButton>
+          <CopyButton value={url} />
+          <span className="text-text-muted hidden text-xs md:inline">Copy</span>
         </div>
 
         <p className="text-text-muted m-0 text-xs">

@@ -145,11 +145,13 @@ export default function ProfileView() {
     mutationFn: async (profileId: string) => {
       const currentUser = user;
       if (currentUser?.role === 'admin') {
-        await profileService.ensureProfileForAdmin(
-          currentUser.id,
-          profileId || null,
-          { name, email, receiveAttendanceReports, receiveRsvpDeclineNotices, receiveAdminNotifications }
-        );
+        await profileService.ensureProfileForAdmin(currentUser.id, profileId || null, {
+          name,
+          email,
+          receiveAttendanceReports,
+          receiveRsvpDeclineNotices,
+          receiveAdminNotifications,
+        });
       } else {
         await profileService.updateProfile(profileId, { name, phone, email });
       }
@@ -348,12 +350,12 @@ export default function ProfileView() {
                         className="sm:flex-1"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
-                      <CopyButton
-                        value={calendarFeedUrls.httpsUrl}
-                        className="h-10 w-full min-w-[180px] sm:w-auto"
-                      >
-                        Copy Google Calendar URL
-                      </CopyButton>
+                      <span className="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-1 sm:w-auto">
+                        <CopyButton value={calendarFeedUrls.httpsUrl} />
+                        <span className="hidden text-sm font-medium md:inline">
+                          Copy Google Calendar URL
+                        </span>
+                      </span>
                     </div>
                     <span className="text-muted text-xs">
                       For Google Calendar, copy the HTTPS URL and add it with Other calendars → From

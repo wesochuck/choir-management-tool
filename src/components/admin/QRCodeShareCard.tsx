@@ -175,13 +175,11 @@ export const QRCodeShareCard: React.FC<QRCodeShareCardProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="mt-2 flex flex-wrap gap-2.5">
-            <CopyButton
-              value={absoluteUrl}
-              className="min-w-[100px] font-bold shadow-xs transition-all duration-150"
-            >
-              🔗 Copy Link
-            </CopyButton>
+          <div className="mt-2 flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex items-center gap-1">
+              <CopyButton value={absoluteUrl} className="shrink-0" />
+              <span className="hidden text-sm font-bold sm:inline">Copy Link</span>
+            </span>
 
             <Button
               onClick={handleDownloadPNG}

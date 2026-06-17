@@ -13,6 +13,7 @@ Mandatory instructions for AI coding agents working in this repository.
 - Do not modify hosted or production data unless credentials, environment configuration, and explicit user authorization are present.
 - Do not log secrets, `HMAC_SECRET`, or full signed tokens.
 - Avoid unbounded network fan-out.
+- **Prefer Shoelace (`@shoelace-style/shoelace`) and Web Awesome (`@web-awesome/web-awesome`) wrappers under `src/components/ui/` over custom HTML/fallback solutions.** These components are already integrated, tested, and consistent with the app's design system. Building custom fallbacks (plain `<button>`, raw file inputs, hand-rolled clipboard buttons, etc.) duplicates effort and introduces visual/behavioral inconsistencies. If a Shoelace/Web Awesome component exists as a wrapper, use it. If no wrapper exists, create one following the existing patterns (`safeSlProps`, test mode duality, variant mapping) rather than dropping to raw HTML.
 
 ## 2. Commands and Verification
 
