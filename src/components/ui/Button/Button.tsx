@@ -2,7 +2,7 @@ import type { ElementType, MouseEventHandler, ReactNode } from 'react';
 import SlButton from '@shoelace-style/shoelace/dist/react/button/index.js';
 import { Spinner } from '../Spinner/Spinner';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
 export type ButtonSize = 'default' | 'small' | 'tiny';
 
 export interface ButtonProps {
@@ -23,6 +23,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline:
     'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
   danger: 'bg-danger-bg text-danger-text hover:bg-red-200 hover:border-red-300',
+  ghost: 'bg-transparent text-text-muted border-transparent hover:text-primary-deep',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -70,7 +71,11 @@ export function Button({
   }
 
   const slVariant =
-    variant === 'secondary' ? 'neutral' : variant === 'danger' ? 'danger' : 'primary';
+    variant === 'secondary' || variant === 'ghost'
+      ? 'neutral'
+      : variant === 'danger'
+        ? 'danger'
+        : 'primary';
   const slSize = size === 'tiny' || size === 'small' ? 'small' : 'medium';
   const isOutline = variant === 'outline';
 
