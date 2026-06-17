@@ -110,7 +110,12 @@ function walkDir(dir: string, extensions: string[]): string[] {
     for (const entry of entries) {
       const full = join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (!entry.name.startsWith('.') && entry.name !== 'node_modules') {
+        if (
+          !entry.name.startsWith('.') &&
+          entry.name !== 'node_modules' &&
+          entry.name !== 'dist' &&
+          entry.name !== 'pocketbase'
+        ) {
           results.push(...walkDir(full, extensions));
         }
       } else if (entry.isFile()) {
@@ -167,8 +172,10 @@ function scanTokenUsage(tokens: ThemeToken[], sourceFiles: string[]): TokenUsage
       if (content.includes(term)) {
         const matchedLines = findLines(content, term);
         for (const tokenIdx of indexes) {
-          usages[tokenIdx].usageCount++;
-          usages[tokenIdx].usageLocations.push({ file, line: matchedLines[0] });
+          usages[tokenIdx].usageCount += matchedLines.length;
+          for (const line of matchedLines) {
+            usages[tokenIdx].usageLocations.push({ file, line });
+          }
         }
       }
     }
