@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { AuditionModal } from '../../components/admin/AuditionModal';
@@ -17,6 +17,37 @@ export default function AuditionsView() {
   const dialog = useDialog();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const auditionUpdateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Audition> }) =>
+      auditionService.updateAudition(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.auditions.all }),
+  });
+
+  const auditionCreateMutation = useMutation({
+    mutationFn: (data: AuditionInput) => auditionService.createAudition(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.auditions.all }),
+  });
+
+  const auditionDeleteMutation = useMutation({
+    mutationFn: (id: string) => auditionService.deleteAudition(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.auditions.all }),
+  });
+
+  const auditionConvertMutation = useMutation({
+    mutationFn: (id: string) => auditionService.convertAuditionToSinger(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.auditions.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all });
+    },
+  });
+
+  const saveAuditionSettingsMutation = useMutation({
+    mutationFn: (settings: AuditionSettings) =>
+      settingsService.saveAuditionSettings(settings),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.auditions.settings }),
+  });
+
   const { timezone } = useChoirSettings();
   const { performances } = useEvents();
 
@@ -39,7 +70,6 @@ export default function AuditionsView() {
     });
   };
 
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'general' | 'slots'>('general');
   // Form draft: only populated when the settings modal is open. Read-only
@@ -61,11 +91,13 @@ export default function AuditionsView() {
   const auditionsQuery = useQuery({
     queryKey: queryKeys.auditions.list,
     queryFn: auditionService.getAuditions,
+    staleTime: 30_000,
   });
 
   const settingsQuery = useQuery({
     queryKey: queryKeys.auditions.settings,
     queryFn: settingsService.getAuditionSettings,
+    staleTime: 30_000,
   });
 
   const adminsQuery = useQuery({
@@ -173,13 +205,12 @@ export default function AuditionsView() {
     if (!finalSlot) return;
 
     try {
-      await auditionService.updateAudition(schedulingAudition.id, {
-        status: 'Scheduled',
-        scheduledTimeSlot: finalSlot,
+      await auditionUpdateMutation.mutateAsync({
+        id: schedulingAudition.id,
+        data: { status: 'Scheduled', scheduledTimeSlot: finalSlot },
       });
       dialog.showToast('Audition scheduled and confirmation email sent.');
       setSchedulingAudition(null);
-      refresh();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -187,13 +218,6 @@ export default function AuditionsView() {
         variant: 'danger',
       });
     }
-  };
-
-  const refresh = () => {
-    return Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.auditions.list }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.auditions.settings }),
-    ]);
   };
 
   // Auto-expand settings to guide user if no audition time slots are set.
@@ -211,9 +235,8 @@ export default function AuditionsView() {
 
   const handleSaveSettings = async () => {
     if (!settingsDraft) return;
-    setIsSavingSettings(true);
     try {
-      await settingsService.saveAuditionSettings(settingsDraft);
+      await saveAuditionSettingsMutation.mutateAsync(settingsDraft);
       setSettingsDraft(null);
       setBackupDraft(null);
       setShowSettings(false);
@@ -224,8 +247,6 @@ export default function AuditionsView() {
         message: 'Failed to save settings.',
         variant: 'danger',
       });
-    } finally {
-      setIsSavingSettings(false);
     }
   };
 
@@ -236,14 +257,13 @@ export default function AuditionsView() {
   };
 
   const updateStatus = async (audition: Audition, status: Audition['status']) => {
-    await auditionService.updateAudition(audition.id, { status });
-    refresh();
+    await auditionUpdateMutation.mutateAsync({ id: audition.id, data: { status } });
   };
 
   const handleSaveAudition = async (id: string | null, data: Partial<Audition>) => {
     try {
       if (id) {
-        await auditionService.updateAudition(id, data);
+        await auditionUpdateMutation.mutateAsync({ id, data });
         dialog.showToast('Audition updated.');
       } else {
         const payload: AuditionInput = {
@@ -257,11 +277,10 @@ export default function AuditionsView() {
           notes: data.notes,
           status: data.status,
         };
-        await auditionService.createAudition(payload);
+        await auditionCreateMutation.mutateAsync(payload);
         dialog.showToast('Audition created successfully.');
       }
       setIsModalOpen(false);
-      refresh();
     } catch (err: unknown) {
       dialog.showMessage({
         title: 'Error',
@@ -280,9 +299,8 @@ export default function AuditionsView() {
     if (!shouldConvert) return;
 
     try {
-      await auditionService.convertAuditionToSinger(audition.id);
+      await auditionConvertMutation.mutateAsync(audition.id);
       dialog.showToast(`${audition.name} has been added to the choir roster.`);
-      refresh();
     } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Conversion Failed',
@@ -304,8 +322,7 @@ export default function AuditionsView() {
     });
     if (!shouldDelete) return;
 
-    await auditionService.deleteAudition(audition.id);
-    refresh();
+    await auditionDeleteMutation.mutateAsync(audition.id);
   };
 
   const [sortField, setSortField] = useState<'scheduledTimeSlot' | 'name'>('scheduledTimeSlot');
@@ -463,7 +480,7 @@ export default function AuditionsView() {
               </Button>
               <Button
                 onClick={handleSaveSettings}
-                loading={isSavingSettings}
+                loading={saveAuditionSettingsMutation.isPending}
                 disabled={
                   !settingsDraft || !settingsDraft.slots || settingsDraft.slots.length === 0
                 }

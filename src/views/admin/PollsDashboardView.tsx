@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { Button, FormField, Badge, Modal, EmptyState, Input } from '../../components/ui';
 import { pollService } from '../../services/pollService';
@@ -42,35 +42,46 @@ export default function PollsDashboardView() {
   const { events } = useEvents();
   const { timezone } = useChoirSettings();
 
+  const deletePollMutation = useMutation({
+    mutationFn: (id: string) => pollService.deletePoll(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.polls.all }),
+  });
+
+  const createPollMutation = useMutation({
+    mutationFn: (data: { question: string; archiveAt: string }) =>
+      pollService.createPoll(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.polls.all }),
+  });
+
+  const savePollSettingsMutation = useMutation({
+    mutationFn: (settings: PollSettings) => settingsService.savePollSettings(settings),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.polls.settings }),
+  });
+
   // ── Data queries ──
   const pollsQuery = useQuery({
     queryKey: queryKeys.polls.list,
     queryFn: () => pollService.getPolls(),
+    staleTime: 30_000,
   });
 
   const responsesQuery = useQuery({
     queryKey: queryKeys.polls.responses,
     queryFn: () => pollService.getPollResponses(),
+    staleTime: 30_000,
   });
 
   const pollMessagesQuery = useQuery({
     queryKey: queryKeys.polls.messages,
     queryFn: () => communicationService.getSentPollMessages(),
+    staleTime: 30_000,
   });
 
   const pollSettingsQuery = useQuery({
     queryKey: queryKeys.polls.settings,
     queryFn: () => settingsService.getPollSettings(),
+    staleTime: 30_000,
   });
-
-  const refresh = () => {
-    return Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.polls.list }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.polls.responses }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.polls.messages }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.polls.settings }),
-    ]);
-  };
 
   const polls = useMemo(() => (pollsQuery.data ?? []) as PollRecord[], [pollsQuery.data]);
   const responses = useMemo(() => (responsesQuery.data ?? []) as PollResponseRecord[], [responsesQuery.data]);
@@ -101,13 +112,10 @@ export default function PollsDashboardView() {
   const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
   const [quickCreateStep, setQuickCreateStep] = useState<1 | 2>(1);
   const [quickPollQuestion, setQuickPollQuestion] = useState('');
-  const [isCreatingQuickPoll, setIsCreatingQuickPoll] = useState(false);
-
   // Auto-Archive and Pagination States
   const [pollSettings, setPollSettings] = useState<PollSettings>({ defaultAutoArchiveDays: 3 });
   const [globalDefaultDays, setGlobalDefaultDays] = useState(3);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   const [quickPollDays, setQuickPollDays] = useState(3);
   const [currentPage, setCurrentPage] = useState(1);
@@ -182,8 +190,7 @@ export default function PollsDashboardView() {
     if (!confirmed) return;
 
     try {
-      await pollService.deletePoll(id);
-      refresh();
+      await deletePollMutation.mutateAsync(id);
       dialog.showToast('Poll deleted.');
     } catch {
       await dialog.showMessage({
@@ -205,13 +212,12 @@ export default function PollsDashboardView() {
     const trimmedQuestion = quickPollQuestion.trim();
     if (!trimmedQuestion) return;
 
-    setIsCreatingQuickPoll(true);
     try {
       // Calculate archive target timestamp
       const archiveAt = new Date(Date.now() + quickPollDays * 24 * 60 * 60 * 1000).toISOString();
 
       // 1. Create the poll record
-      const poll = await pollService.createPoll({
+      const poll = await createPollMutation.mutateAsync({
         question: trimmedQuestion,
         archiveAt,
       }) as PollRecord;
@@ -242,7 +248,6 @@ export default function PollsDashboardView() {
       });
 
       setIsQuickCreateOpen(false);
-      refresh();
 
       // 4. Navigate to Communications → Drafts tab, passing the draft ID and poll question
       // so the preview can show the actual question without the fallback text.
@@ -260,15 +265,12 @@ export default function PollsDashboardView() {
         message,
         variant: 'danger',
       });
-    } finally {
-      setIsCreatingQuickPoll(false);
     }
   };
 
   const handleSaveSettings = async () => {
-    setIsSavingSettings(true);
     try {
-      await settingsService.savePollSettings({ defaultAutoArchiveDays: globalDefaultDays });
+      await savePollSettingsMutation.mutateAsync({ defaultAutoArchiveDays: globalDefaultDays });
       setPollSettings({ defaultAutoArchiveDays: globalDefaultDays });
       setIsSettingsModalOpen(false);
       dialog.showToast('Poll settings saved successfully.');
@@ -278,8 +280,6 @@ export default function PollsDashboardView() {
         message: 'Failed to save poll settings.',
         variant: 'danger',
       });
-    } finally {
-      setIsSavingSettings(false);
     }
   };
 
@@ -825,17 +825,17 @@ export default function PollsDashboardView() {
               <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
                 <Button
                   variant="secondary"
-                  disabled={isCreatingQuickPoll}
+                  disabled={createPollMutation.isPending}
                   onClick={() => setQuickCreateStep(1)}
                 >
                   Back
                 </Button>
                 <Button
                   variant="primary"
-                  disabled={isCreatingQuickPoll}
+                  disabled={createPollMutation.isPending}
                   onClick={() => void handleQuickCreateAndOpenReview()}
                 >
-                  {isCreatingQuickPoll ? 'Saving draft...' : 'Create + Save as Draft'}
+                  {createPollMutation.isPending ? 'Saving draft...' : 'Create + Save as Draft'}
                 </Button>
               </div>
             </>
@@ -873,17 +873,17 @@ export default function PollsDashboardView() {
             <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
               <Button
                 variant="secondary"
-                disabled={isSavingSettings}
+                disabled={savePollSettingsMutation.isPending}
                 onClick={() => setIsSettingsModalOpen(false)}
               >
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                disabled={isSavingSettings}
+                disabled={savePollSettingsMutation.isPending}
                 onClick={() => void handleSaveSettings()}
               >
-                {isSavingSettings ? 'Saving...' : 'Save Settings'}
+                {savePollSettingsMutation.isPending ? 'Saving...' : 'Save Settings'}
               </Button>
             </div>
           </div>
