@@ -20,7 +20,9 @@ import {
   TabGroup,
   Tab,
   TabPanel,
+  DataTable,
 } from '../../components/ui';
+import type { ColumnDef } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle, useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
@@ -322,6 +324,116 @@ export default function DonationsView() {
     }
   };
 
+  const columns: ColumnDef<DonationRecord>[] = [
+    {
+      id: 'date',
+      header: 'Date',
+      cell: (_, d) =>
+        formatInTimezone(d.created, timezone, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      cardSection: 0,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'donor',
+      header: 'Donor',
+      cell: (_, d) => (
+        <div className="flex flex-col gap-0.5">
+          <span>{d.donorName}</span>
+          {d.isAnonymous && (
+            <span className="inline-flex w-fit items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-600 uppercase">
+              Anonymous
+            </span>
+          )}
+        </div>
+      ),
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'email',
+      header: 'Email',
+      accessorFn: (d) => d.donorEmail,
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'amount',
+      header: 'Amount',
+      cell: (_, d) => (
+        <span className="font-extrabold">
+          ${(d.amountPaidCents / 100).toFixed(2)}
+        </span>
+      ),
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Amount',
+      enableSorting: false,
+    },
+    {
+      id: 'tribute',
+      header: 'Tribute',
+      cell: (_, d) =>
+        d.tributeType !== 'none' ? (
+          <span className="inline-flex flex-wrap items-center gap-1">
+            <span className="text-slate-400">
+              In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of
+            </span>
+            <strong className="font-semibold text-slate-700">{d.tributeName}</strong>
+          </span>
+        ) : (
+          <span className="text-slate-300">—</span>
+        ),
+      cardSection: 1,
+      cardSide: 'left',
+      enableSorting: false,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: (_, d) => (
+        <Badge
+          tone={
+            d.status === 'paid'
+              ? 'success'
+              : d.status === 'refunded'
+                ? 'danger'
+                : 'neutral'
+          }
+        >
+          {d.status}
+        </Badge>
+      ),
+      align: 'center',
+      cardSection: 0,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: (_, d) =>
+        d.status === 'paid' ? (
+          <Button variant="danger" size="small" onClick={() => handleRefund(d.id)}>
+            Refund
+          </Button>
+        ) : null,
+      align: 'right',
+      cardSection: 1,
+      cardSide: 'right',
+      enableSorting: false,
+    },
+  ];
+
   return (
     <div className="flex w-full flex-col gap-6">
       {/* Header Area */}
@@ -593,253 +705,91 @@ export default function DonationsView() {
                   </div>
                 </div>
 
-                {/* Responsive Register View - Desktop Table */}
-                <div className="hidden overflow-x-auto rounded-xl border border-slate-100 shadow-sm md:block">
-                  <table className="min-w-full divide-y divide-slate-100 text-left">
-                    <thead className="bg-slate-50/75">
-                      <tr>
-                        <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                          Date
-                        </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                          Donor
-                        </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                          Email
-                        </th>
-                        <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                          Amount
-                        </th>
-                        <th className="px-6 py-3.5 text-left text-xs font-bold tracking-wider text-slate-500 uppercase">
-                          Tribute
-                        </th>
-                        <th className="px-6 py-3.5 text-center text-xs font-bold tracking-wider text-slate-500 uppercase">
-                          Status
-                        </th>
-                        <th className="px-6 py-3.5 text-right text-xs font-bold tracking-wider text-slate-500 uppercase">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
-                      {loading ? (
-                        <tr>
-                          <td
-                            colSpan={7}
-                            className="px-6 py-12 text-center text-sm font-medium text-slate-400"
-                          >
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                              Loading donations history...
-                            </div>
-                          </td>
-                        </tr>
-                      ) : sortedDonations.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center">
-                            <EmptyState
-                              title="No Donations Found"
-                              description={
-                                searchQuery || startDate || endDate
-                                  ? 'No gifts match your search/filter criteria.'
-                                  : 'No donation records are available yet.'
-                              }
-                              icon="💝"
-                              action={
-                                searchQuery || startDate || endDate ? (
-                                  <Button
-                                    variant="secondary"
-                                    onClick={handleClearFilters}
-                                    size="small"
-                                  >
-                                    Reset Filters
-                                  </Button>
-                                ) : undefined
-                              }
-                            />
-                          </td>
-                        </tr>
-                      ) : (
-                        sortedDonations.map((d) => (
-                          <tr key={d.id} className="transition-colors hover:bg-slate-50/40">
-                            <td className="px-6 py-4 text-sm font-medium whitespace-nowrap text-slate-500">
-                              {formatInTimezone(d.created, timezone, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
-                            </td>
-                            <td className="px-6 py-4 text-sm font-semibold text-slate-800">
-                              <div className="flex flex-col gap-0.5">
-                                <span>{d.donorName}</span>
-                                {d.isAnonymous && (
-                                  <span className="inline-flex w-fit items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-600 uppercase">
-                                    Anonymous
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm font-medium text-slate-500">
-                              {d.donorEmail}
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm font-extrabold whitespace-nowrap text-slate-900">
-                              ${(d.amountPaidCents / 100).toFixed(2)}
-                            </td>
-                            <td className="px-6 py-4 text-sm leading-relaxed text-slate-500">
-                              {d.tributeType !== 'none' ? (
-                                <span className="inline-flex flex-wrap items-center gap-1">
-                                  <span className="text-slate-400">
-                                    In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of
-                                  </span>
-                                  <strong className="font-semibold text-slate-700">
-                                    {d.tributeName}
-                                  </strong>
-                                </span>
-                              ) : (
-                                <span className="text-slate-300">—</span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 text-center text-sm">
-                              <Badge
-                                tone={
-                                  d.status === 'paid'
-                                    ? 'success'
-                                    : d.status === 'refunded'
-                                      ? 'danger'
-                                      : 'neutral'
-                                }
-                              >
-                                {d.status}
-                              </Badge>
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm whitespace-nowrap">
-                              {d.status === 'paid' && (
-                                <Button
-                                  variant="danger"
-                                  size="small"
-                                  className=""
-                                  onClick={() => handleRefund(d.id)}
-                                >
-                                  Refund
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Responsive Register View - Mobile Card List */}
-                <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm md:hidden">
-                  <div className="divide-y divide-slate-100">
-                    {loading ? (
-                      <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm font-medium text-slate-400">
-                        <span className="border-t-primary size-6 animate-spin rounded-full border-2 border-slate-200" />
-                        Loading donations history...
-                      </div>
-                    ) : sortedDonations.length === 0 ? (
-                      <div className="px-6 py-12 text-center">
-                        <EmptyState
-                          title="No Donations Found"
-                          description={
-                            searchQuery || startDate || endDate
-                              ? 'No gifts match your search/filter criteria.'
-                              : 'No donation records are available yet.'
+                <DataTable
+                  columns={columns}
+                  data={sortedDonations}
+                  isLoading={loading}
+                  emptyState={{
+                    title: 'No Donations Found',
+                    description:
+                      searchQuery || startDate || endDate
+                        ? 'No gifts match your search/filter criteria.'
+                        : 'No donation records are available yet.',
+                    icon: '💝',
+                    action:
+                      searchQuery || startDate || endDate ? (
+                        <Button variant="secondary" onClick={handleClearFilters} size="small">
+                          Reset Filters
+                        </Button>
+                      ) : undefined,
+                  }}
+                  manualPagination
+                  renderMobileCard={(d) => (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-400">
+                          {formatInTimezone(d.created, timezone, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                        <Badge
+                          tone={
+                            d.status === 'paid'
+                              ? 'success'
+                              : d.status === 'refunded'
+                                ? 'danger'
+                                : 'neutral'
                           }
-                          icon="💝"
-                          action={
-                            searchQuery || startDate || endDate ? (
-                              <Button variant="secondary" onClick={handleClearFilters} size="small">
-                                Reset Filters
-                              </Button>
-                            ) : undefined
-                          }
-                        />
-                      </div>
-                    ) : (
-                      sortedDonations.map((d) => (
-                        <div
-                          key={d.id}
-                          className="flex flex-col gap-3 p-4 transition-colors hover:bg-slate-50/40"
                         >
-                          {/* Row 1: Date and Status badge */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium text-slate-400">
-                              {formatInTimezone(d.created, timezone, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                              })}
+                          {d.status}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-bold text-slate-800">{d.donorName}</span>
+                          {d.isAnonymous && (
+                            <span className="inline-flex w-fit items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-slate-600 uppercase">
+                              Anonymous
                             </span>
-                            <Badge
-                              tone={
-                                d.status === 'paid'
-                                  ? 'success'
-                                  : d.status === 'refunded'
-                                    ? 'danger'
-                                    : 'neutral'
-                              }
-                            >
-                              {d.status}
-                            </Badge>
-                          </div>
-
-                          {/* Row 2: Donor info & Amount */}
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="text-sm font-bold text-slate-800">
-                                {d.donorName}
-                              </span>
-                              {d.isAnonymous && (
-                                <span className="inline-flex w-fit items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-slate-600 uppercase">
-                                  Anonymous
-                                </span>
-                              )}
-                              <span className="text-xs font-medium break-all text-slate-500">
-                                {d.donorEmail}
-                              </span>
-                            </div>
-                            <span className="shrink-0 text-base font-extrabold text-slate-900">
-                              ${(d.amountPaidCents / 100).toFixed(2)}
-                            </span>
-                          </div>
-
-                          {/* Row 3: Tribute type and info */}
-                          {d.tributeType !== 'none' && (
-                            <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-xs leading-relaxed text-slate-500">
-                              <span className="text-slate-400">
-                                In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of
-                              </span>{' '}
-                              <strong className="font-semibold text-slate-700">
-                                {d.tributeName}
-                              </strong>
-                            </div>
                           )}
-
-                          {/* Row 4: Actions (if status is 'paid') */}
-                          {d.status === 'paid' && (
-                            <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
-                              <Button
-                                variant="danger"
-                                size="small"
-                                className="w-full"
-                                onClick={() => handleRefund(d.id)}
-                              >
-                                Refund
-                              </Button>
-                            </div>
-                          )}
+                          <span className="text-xs font-medium break-all text-slate-500">
+                            {d.donorEmail}
+                          </span>
                         </div>
-                      ))
-                    )}
-                  </div>
-                </div>
+                        <span className="shrink-0 text-base font-extrabold text-slate-900">
+                          ${(d.amountPaidCents / 100).toFixed(2)}
+                        </span>
+                      </div>
+
+                      {d.tributeType !== 'none' && (
+                        <div className="rounded-lg border border-slate-100 bg-slate-50/50 p-2 text-xs leading-relaxed text-slate-500">
+                          <span className="text-slate-400">
+                            In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of
+                          </span>{' '}
+                          <strong className="font-semibold text-slate-700">{d.tributeName}</strong>
+                        </div>
+                      )}
+
+                      {d.status === 'paid' && (
+                        <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
+                          <Button
+                            variant="danger"
+                            size="small"
+                            className="w-full"
+                            onClick={() => handleRefund(d.id)}
+                          >
+                            Refund
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                />
               </div>
             </AppCard>
           </div>
