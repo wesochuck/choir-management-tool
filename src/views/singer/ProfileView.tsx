@@ -82,7 +82,7 @@ export default function ProfileView() {
       setPhone(p.phone || '');
       setEmail(user?.email || '');
     }
-  }, [profileQuery.data]);
+  }, [profileQuery.data, user]);
 
   const calendarQuery = useQuery({
     queryKey: queryKeys.myProfile.calendarFeed(),
