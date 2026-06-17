@@ -118,19 +118,6 @@ export const EventTable: React.FC<EventTableProps> = ({
       cardLabel: 'Venue',
     },
     {
-      id: 'details',
-      header: 'Details',
-      cell: (_, event) =>
-        event.details ? (
-          <div className="text-text-muted line-clamp-2 text-xs leading-relaxed">
-            {event.details}
-          </div>
-        ) : null,
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Details',
-    },
-    {
       id: 'actions',
       header: '',
       align: 'right',
@@ -372,12 +359,6 @@ export const EventTable: React.FC<EventTableProps> = ({
                   {event.expand?.venue?.name}
                 </strong>
               </a>
-            )}
-
-            {event.details && (
-              <div className="text-text-muted line-clamp-2 text-xs leading-relaxed">
-                {event.details}
-              </div>
             )}
 
             <div className="border-border/60 flex items-center justify-end gap-2 border-t pt-2">
