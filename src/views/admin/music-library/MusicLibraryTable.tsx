@@ -4,7 +4,11 @@ import type { MusicGenreDef } from '../../../services/settingsService';
 import { type MusicLibrarySortField, type SortDirection } from '../../../lib/music/libraryRows';
 import { Pagination } from '../../../components/common/Pagination';
 import { MusicLibraryTitleCell } from './table/MusicLibraryTitleCell';
-import { resolveCatalogLookupUrl, formatSecondsToDuration, parseDurationToSeconds } from '../../../lib/musicPieceUtils';
+import {
+  resolveCatalogLookupUrl,
+  formatSecondsToDuration,
+  parseDurationToSeconds,
+} from '../../../lib/musicPieceUtils';
 import { getEffectiveMostRecentPerformanceDate } from '../../../lib/music/performanceHistory';
 import { getMovementTrackCount, isParentPiece } from './table/musicLibraryTableUtils';
 import { Button, DataTable, type ColumnDef } from '../../../components/ui';
@@ -118,7 +122,9 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
       cell: (_, row) =>
         row.performances && row.performances.length > 0 ? (
           <span className="font-semibold">{row.performances.length}</span>
-        ) : '-',
+        ) : (
+          '-'
+        ),
       cardSection: 1,
       cardSide: 'right',
       cardLabel: 'Perf',
@@ -145,7 +151,12 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         return (
           <div onClick={(e) => e.stopPropagation()}>
             {row.audioTrackMapping && Object.keys(row.audioTrackMapping).length > 0 ? (
-              <Button variant="secondary" size="tiny" className="!m-0" onClick={() => onPlayTrack(row)}>
+              <Button
+                variant="secondary"
+                size="tiny"
+                className="!m-0"
+                onClick={() => onPlayTrack(row)}
+              >
                 🎵 Play
               </Button>
             ) : isParent && totalMovementTracksCount > 0 ? (
@@ -185,11 +196,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
             title={`View Catalog ID: ${row.catalogId}`}
             className="text-primary inline-flex size-6 items-center justify-center rounded-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-              <polyline points="15 3 21 3 21 9" />
-              <line x1="10" y1="14" x2="21" y2="3" />
-            </svg>
+            🔗
           </a>
         ) : null;
       },
@@ -200,12 +207,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
       align: 'center',
       cell: (_, row) => (
         <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <Button
-            variant="outline"
-            size="tiny"
-            className="!m-0"
-            onClick={() => onEditPiece(row)}
-          >
+          <Button variant="outline" size="tiny" className="!m-0" onClick={() => onEditPiece(row)}>
             Edit
           </Button>
         </div>
@@ -230,7 +232,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         hidePagination
         onRowClick={(piece) => onEditPiece(piece)}
         getRowId={(p) => p.id}
-        getRowClassName={(p) => duplicateIds.has(p.id) ? 'bg-[rgb(255_138_101_/_5%)]' : ''}
+        getRowClassName={(p) => (duplicateIds.has(p.id) ? 'bg-[rgb(255_138_101_/_5%)]' : '')}
         manualSorting
         onSortingChange={(sorting) => {
           if (sorting.length > 0) onSortChange(sorting[0].id as MusicLibrarySortField);
