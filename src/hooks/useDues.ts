@@ -8,7 +8,7 @@ export function useDues() {
   const queryClient = useQueryClient();
 
   const seasonQuery = useQuery({
-    queryKey: ['settings', 'roster'] as const,
+    queryKey: queryKeys.settings.roster,
     queryFn: () => settingsService.getRosterSettings(),
     staleTime: 5 * 60_000,
   });

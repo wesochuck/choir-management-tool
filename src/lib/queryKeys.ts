@@ -73,6 +73,9 @@ export const queryKeys = {
     data: (performanceId: string, venueId: string) => [...queryKeys.seating.all, 'data', performanceId, venueId] as const,
     settings: ['seating', 'settings'] as const,
   },
+  settings: {
+    roster: ['settings', 'roster'] as const,
+  },
   reports: {
     all: ['reports'] as const,
     performances: ['reports', 'performances'] as const,
