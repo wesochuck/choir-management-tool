@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import type { MusicPiece } from '../../../types/musicLibrary';
 import type { MusicGenreDef } from '../../../services/settingsService';
-import {
-  toggleIdInSet,
-  type MusicLibrarySortField,
-  type SortDirection,
-} from '../../../lib/music/libraryRows';
+import { type MusicLibrarySortField, type SortDirection } from '../../../lib/music/libraryRows';
 import { Pagination } from '../../../components/common/Pagination';
-import { MusicLibraryRow } from './table/MusicLibraryRow';
-import { getChildMovements } from './table/musicLibraryTableUtils';
+import { MusicLibraryTitleCell } from './table/MusicLibraryTitleCell';
+import { resolveCatalogLookupUrl, formatSecondsToDuration, parseDurationToSeconds } from '../../../lib/musicPieceUtils';
+import { getEffectiveMostRecentPerformanceDate } from '../../../lib/music/performanceHistory';
+import { getMovementTrackCount, isParentPiece } from './table/musicLibraryTableUtils';
+import { Button, DataTable, type ColumnDef } from '../../../components/ui';
 
 export interface MusicLibraryTableProps {
   pieces: MusicPiece[];
@@ -42,7 +41,6 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
   duplicateIds,
   selectedIds,
   onToggleSelection,
-  onSelectAll,
   onEditPiece,
   onPlayTrack,
   catalogLookupTemplate,
@@ -54,130 +52,186 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
   sortDirection,
   onSortChange,
 }) => {
-  const [expandedParentIds, setExpandedParentIds] = useState<Set<string>>(new Set());
-
-  const toggleRowExpansion = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedParentIds((prev) => toggleIdInSet(prev, id));
-  };
-
   const totalPages = Math.max(1, Math.ceil(totalParentCount / pageSize));
 
-  const renderSortHeader = (label: string, field: MusicLibrarySortField) => {
-    const isActive = sortField === field;
-    return (
-      <th
-        className={`text-label border-border cursor-pointer border px-[10px] py-[6px] font-semibold select-none ${isActive ? 'text-primary' : 'text-text-muted'}`}
-        onClick={() => onSortChange(field)}
-      >
-        <div className="flex items-center gap-1">
-          <span>{label}</span>
-          <span
-            className={`inline-block text-[10px] ${isActive ? 'opacity-100' : 'opacity-[0.35]'}`}
-          >
-            {!isActive ? '⇅' : sortDirection === 'asc' ? '▲' : '▼'}
-          </span>
+  const columns: ColumnDef<MusicPiece>[] = [
+    {
+      id: 'select',
+      header: '',
+      cell: (_, row) => (
+        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={selectedIds.has(row.id)}
+            onChange={() => onToggleSelection(row.id)}
+            className="!m-0 !h-[14px] !min-h-auto !w-[14px] cursor-pointer align-middle"
+          />
         </div>
-      </th>
-    );
-  };
+      ),
+    },
+    {
+      id: 'title',
+      header: 'Title',
+      enableSorting: true,
+      cell: (_, row) => (
+        <MusicLibraryTitleCell
+          piece={row}
+          allPieces={pieces}
+          isDuplicate={duplicateIds.has(row.id)}
+          genres={genres}
+        />
+      ),
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'composer',
+      header: 'Composer/Arranger',
+      enableSorting: true,
+      cell: (_, row) =>
+        row.composer && row.arranger
+          ? `${row.composer} / arr. ${row.arranger}`
+          : row.composer || row.arranger || '-',
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Composer',
+    },
+    {
+      id: 'duration',
+      header: 'Duration',
+      enableSorting: true,
+      cell: (_, row) =>
+        row.duration ? formatSecondsToDuration(parseDurationToSeconds(row.duration)) : '-',
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Duration',
+    },
+    {
+      id: 'performances',
+      header: 'Perf',
+      align: 'center',
+      cell: (_, row) =>
+        row.performances && row.performances.length > 0 ? (
+          <span className="font-semibold">{row.performances.length}</span>
+        ) : '-',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Perf',
+    },
+    {
+      id: 'lastPerformed',
+      header: 'Last Performed',
+      enableSorting: true,
+      cell: (_, row) => {
+        const lastPerformedDate = getEffectiveMostRecentPerformanceDate(row, pieces);
+        return lastPerformedDate || '-';
+      },
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Last Performed',
+    },
+    {
+      id: 'tracks',
+      header: 'Tracks',
+      cell: (_, row) => {
+        const isParent = isParentPiece(row, pieces);
+        const totalMovementTracksCount = getMovementTrackCount(row, pieces);
+
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            {row.audioTrackMapping && Object.keys(row.audioTrackMapping).length > 0 ? (
+              <Button variant="secondary" size="tiny" className="!m-0" onClick={() => onPlayTrack(row)}>
+                🎵 Play
+              </Button>
+            ) : isParent && totalMovementTracksCount > 0 ? (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditPiece(row, 'tracks');
+                }}
+                className="text-primary inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap transition-colors hover:bg-[rgb(27_77_62_/_12%)]"
+              >
+                🎧 {totalMovementTracksCount} in mvts
+              </span>
+            ) : (
+              <span className="text-muted text-xs">-</span>
+            )}
+          </div>
+        );
+      },
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Tracks',
+    },
+    {
+      id: 'link',
+      header: 'Link',
+      align: 'center',
+      cell: (_, row) => {
+        const catalogLookupUrl = row.catalogId
+          ? resolveCatalogLookupUrl(catalogLookupTemplate, row.catalogId)
+          : null;
+        return row.catalogId && catalogLookupUrl ? (
+          <a
+            href={catalogLookupUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            title={`View Catalog ID: ${row.catalogId}`}
+            className="text-primary inline-flex size-6 items-center justify-center rounded-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+          </a>
+        ) : null;
+      },
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      align: 'center',
+      cell: (_, row) => (
+        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="outline"
+            size="tiny"
+            className="!m-0"
+            onClick={() => onEditPiece(row)}
+          >
+            Edit
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="!m-0">
-      <div className="overflow-x-auto">
-        <table className="border-border w-full min-w-[760px] border-collapse border text-left">
-          <thead>
-            <tr className="bg-primary-light">
-              <th className="text-label text-muted border-border w-10 border px-[10px] py-[6px] text-center font-semibold">
-                <input
-                  type="checkbox"
-                  checked={
-                    filteredPieces.length > 0 && filteredPieces.every((p) => selectedIds.has(p.id))
-                  }
-                  onChange={(e) => onSelectAll(e.target.checked)}
-                  className="!m-0 !h-[14px] !min-h-auto !w-[14px] cursor-pointer align-middle"
-                />
-              </th>
-              {renderSortHeader('Title', 'title')}
-              {renderSortHeader('Composer/Arranger', 'composer')}
-              {renderSortHeader('Duration', 'duration')}
-              <th className="text-label text-muted border-border w-[50px] border px-[10px] py-[6px] text-center font-semibold">
-                Perf
-              </th>
-              {renderSortHeader('Last Performed', 'lastPerformed')}
-              <th className="text-label text-muted border-border border px-[10px] py-[6px] font-semibold">
-                Tracks
-              </th>
-              <th className="text-label text-muted border-border w-[60px] border px-[10px] py-[6px] text-center font-semibold">
-                Link
-              </th>
-              <th className="text-label text-muted border-border w-20 border px-[10px] py-[6px] font-semibold">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              <tr>
-                <td colSpan={9} className="text-text-muted px-6 py-12 text-center text-sm">
-                  <p>Loading library...</p>
-                </td>
-              </tr>
-            ) : filteredPieces.length === 0 ? (
-              <tr>
-                <td colSpan={9} className="text-text-muted px-6 py-12 text-center text-sm">
-                  <p>No pieces found.</p>
-                </td>
-              </tr>
-            ) : (
-              filteredPieces.map((piece) => {
-                if (piece.parentId) return null;
-
-                const isExpanded = expandedParentIds.has(piece.id);
-                const movements = getChildMovements(piece, pieces);
-
-                return (
-                  <React.Fragment key={piece.id}>
-                    <MusicLibraryRow
-                      piece={piece}
-                      allPieces={pieces}
-                      isChildMovement={false}
-                      isExpanded={isExpanded}
-                      duplicateIds={duplicateIds}
-                      selectedIds={selectedIds}
-                      genres={genres}
-                      catalogLookupTemplate={catalogLookupTemplate}
-                      onToggleSelection={onToggleSelection}
-                      onToggleExpansion={toggleRowExpansion}
-                      onEditPiece={onEditPiece}
-                      onPlayTrack={onPlayTrack}
-                    />
-
-                    {isExpanded &&
-                      movements.map((movement) => (
-                        <MusicLibraryRow
-                          key={movement.id}
-                          piece={movement}
-                          allPieces={pieces}
-                          isChildMovement={true}
-                          isExpanded={false}
-                          duplicateIds={duplicateIds}
-                          selectedIds={selectedIds}
-                          genres={genres}
-                          catalogLookupTemplate={catalogLookupTemplate}
-                          onToggleSelection={onToggleSelection}
-                          onToggleExpansion={toggleRowExpansion}
-                          onEditPiece={onEditPiece}
-                          onPlayTrack={onPlayTrack}
-                        />
-                      ))}
-                  </React.Fragment>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={filteredPieces}
+        isLoading={isLoading}
+        emptyState={{
+          title: 'No pieces found.',
+          icon: '🎵',
+        }}
+        manualPagination
+        pageCount={totalPages}
+        onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
+        pageSize={pageSize}
+        hidePagination
+        onRowClick={(piece) => onEditPiece(piece)}
+        getRowId={(p) => p.id}
+        getRowClassName={(p) => duplicateIds.has(p.id) ? 'bg-[rgb(255_138_101_/_5%)]' : ''}
+        manualSorting
+        onSortingChange={(sorting) => {
+          if (sorting.length > 0) onSortChange(sorting[0].id as MusicLibrarySortField);
+        }}
+        defaultSorting={sortField ? [{ id: sortField, desc: sortDirection === 'desc' }] : undefined}
+      />
 
       {!isLoading && totalParentCount > 0 && (
         <div className="border-border flex items-center justify-between rounded-b-md border-x border-b bg-[var(--bg-card,#fff)] px-6 py-4">
@@ -185,7 +239,6 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
             Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–
             {Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
           </span>
-
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

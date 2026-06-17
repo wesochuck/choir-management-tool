@@ -156,10 +156,10 @@ test('codebase integrity: DialogContext must declare showToast API', () => {
 
 test('codebase integrity: Music Library UI policies', () => {
   const modalFile = resolveProjectPath('src/views/admin/music-library/MusicPieceModal.tsx');
-  const tableRowFile = resolveProjectPath('src/views/admin/music-library/table/MusicLibraryRow.tsx');
+  const tableFile = resolveProjectPath('src/views/admin/music-library/MusicLibraryTable.tsx');
   
   const modalContent = fs.readFileSync(modalFile, 'utf8');
-  const tableRowContent = fs.readFileSync(tableRowFile, 'utf8');
+  const tableContent = fs.readFileSync(tableFile, 'utf8');
 
   // Policy: MusicPieceModal must listen to Enter onNewMovement inputs
   const hasAddMovementHandler = /const\s+handleAddMovement\s*=\s*async\s*\(\s*e\??\s*:\s*/.test(modalContent);
@@ -168,9 +168,9 @@ test('codebase integrity: Music Library UI policies', () => {
   assert.ok(hasAddMovementHandler, 'MusicPieceModal must define handleAddMovement handler');
   assert.ok(hasEnterKeyCheck, 'MusicPieceModal must trigger handleAddMovement on Enter key');
 
-  // Policy: MusicLibraryRow must render headphone indicators for tracks
-  const hasHeadphoneLogic = tableRowContent.includes('totalMovementTracksCount') && tableRowContent.includes('hasTracks');
-  assert.ok(hasHeadphoneLogic, 'MusicLibraryRow must compute and render headphone indicators for pieces with tracks');
+  // Policy: MusicLibraryTable must render headphone indicators for tracks
+  const hasHeadphoneLogic = tableContent.includes('totalMovementTracksCount') && tableContent.includes('onPlayTrack');
+  assert.ok(hasHeadphoneLogic, 'MusicLibraryTable must compute movement track counts and render Play button');
 });
 
 test('codebase integrity: player integration consistency', () => {
