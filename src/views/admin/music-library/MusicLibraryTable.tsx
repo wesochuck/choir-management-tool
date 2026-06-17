@@ -74,12 +74,14 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
       header: 'Title',
       enableSorting: true,
       cell: (_, row) => (
-        <MusicLibraryTitleCell
-          piece={row}
-          allPieces={pieces}
-          isDuplicate={duplicateIds.has(row.id)}
-          genres={genres}
-        />
+        <div className="whitespace-normal">
+          <MusicLibraryTitleCell
+            piece={row}
+            allPieces={pieces}
+            isDuplicate={duplicateIds.has(row.id)}
+            genres={genres}
+          />
+        </div>
       ),
       cardSection: 0,
       cardSide: 'left',
@@ -88,10 +90,13 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
       id: 'composer',
       header: 'Composer/Arranger',
       enableSorting: true,
-      cell: (_, row) =>
-        row.composer && row.arranger
-          ? `${row.composer} / arr. ${row.arranger}`
-          : row.composer || row.arranger || '-',
+      cell: (_, row) => (
+        <div className="whitespace-normal">
+          {row.composer && row.arranger
+            ? `${row.composer} / arr. ${row.arranger}`
+            : row.composer || row.arranger || '-'}
+        </div>
+      ),
       cardSection: 1,
       cardSide: 'left',
       cardLabel: 'Composer',
