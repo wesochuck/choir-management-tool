@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
 import {
   settingsService,
@@ -84,8 +84,8 @@ export interface UseRosterConfigFormOptions {
 
 export function useRosterConfigForm({
   setFilter,
-  refreshRoster,
-  refreshVoiceParts,
+  refreshRoster: _refreshRoster,
+  refreshVoiceParts: _refreshVoiceParts,
 }: UseRosterConfigFormOptions) {
   const [configDefaultStatus, setConfigDefaultStatus] = useState('');
   const [configSeason, setConfigSeason] = useState('');
@@ -96,17 +96,41 @@ export function useRosterConfigForm({
   const [configAutomationRecoveryEnabled, setConfigAutomationRecoveryEnabled] = useState(true);
   const [configMaxRehearsalMisses, setConfigMaxRehearsalMisses] = useState(3);
   const [initialConfigState, setInitialConfigState] = useState<RosterConfigState | null>(null);
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
+
   const [configMessage, setConfigMessage] = useState('');
 
   const { data: rosterSettings, refetch: refetchRoster } = useQuery({
     queryKey: queryKeys.appSettings.roster,
     queryFn: () => settingsService.getRosterSettings(),
+    staleTime: 5 * 60_000,
   });
 
   const { data: voiceSettings, refetch: refetchVoice } = useQuery({
     queryKey: queryKeys.voiceParts.list(),
     queryFn: () => getVoicePartsAndSections(),
+    staleTime: 5 * 60_000,
+  });
+
+  const queryClient = useQueryClient();
+
+  const configSaveMutation = useMutation({
+    mutationFn: async () => {
+      const current = await settingsService.getRosterSettings();
+      await settingsService.saveRosterSettings({
+        ...current,
+        defaultStatus: configDefaultStatus,
+        currentSeason: configSeason,
+        statusAutomationEnabled: configAutomationEnabled,
+        statusAutomationMissThreshold: configAutomationMissThreshold,
+        statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
+        maxRehearsalMisses: configMaxRehearsalMisses,
+      });
+      await saveVoicePartsAndSections(configVoiceParts, configSections);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.roster });
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceParts.all });
+    },
   });
 
   useEffect(() => {
@@ -213,7 +237,6 @@ export function useRosterConfigForm({
   ]);
 
   const handleConfigSave = async () => {
-    setIsSavingConfig(true);
     setConfigMessage('');
 
     const validationError = validateRosterConfig({
@@ -223,36 +246,15 @@ export function useRosterConfigForm({
 
     if (validationError) {
       setConfigMessage(validationError);
-      setIsSavingConfig(false);
       return;
     }
 
     try {
-      const rosterSettings = await settingsService.getRosterSettings();
-      await settingsService.saveRosterSettings({
-        ...rosterSettings,
-        defaultStatus: configDefaultStatus,
-        currentSeason: configSeason,
-        statusAutomationEnabled: configAutomationEnabled,
-        statusAutomationMissThreshold: configAutomationMissThreshold,
-        statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
-        maxRehearsalMisses: configMaxRehearsalMisses,
-      });
-      await saveVoicePartsAndSections(configVoiceParts, configSections);
-
-      // Refresh roster data & sections
-      await refreshRoster();
-      await refreshVoiceParts();
-
-      // Reload config state
-      await loadConfig();
-
+      await configSaveMutation.mutateAsync();
       setConfigMessage('Configuration saved successfully.');
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setConfigMessage(`Error saving configuration: ${errMsg}`);
-    } finally {
-      setIsSavingConfig(false);
     }
   };
 
@@ -287,7 +289,7 @@ export function useRosterConfigForm({
     configMaxRehearsalMisses,
     setConfigMaxRehearsalMisses,
     initialConfigState,
-    isSavingConfig,
+    isSavingConfig: configSaveMutation.isPending,
     configMessage,
     setConfigMessage,
     isConfigDirty,
