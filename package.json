@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "scan:theme": "node --experimental-strip-types scripts/scan-unused-tokens.ts",
     "format": "prettier --write .",
     "generate:pb-hooks": "node pocketbase/pb_hooks_src/generate-main-pb-js.ts",
     "check:pb-hooks": "npm run generate:pb-hooks && vitest run test/pb-hooks/integrity.test.ts",
