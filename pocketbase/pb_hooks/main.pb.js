@@ -12415,79 +12415,83 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -12502,19 +12506,19 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -12527,7 +12531,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -12535,44 +12539,44 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -12580,9 +12584,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -12607,40 +12611,40 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
-            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
         }
         catch (_a) {
             // Try finding by name as a fallback
             try {
-                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
             }
             catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
                 let userId;
                 try {
-                    const user = $app.findAuthRecordByEmail("users", email);
+                    const user = $app.findAuthRecordByEmail('users', email);
                     userId = user.id;
                 }
                 catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const usersCollection = $app.findCollectionByNameOrId('users');
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
                         email: email,
                         password: password,
                         passwordConfirm: password,
-                        role: "singer", // Patrons are singers with no voice part
-                        name: name || email
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
                     });
                     $app.save(newUser);
                     userId = newUser.id;
                 }
-                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
                 const newProfile = new Record(profilesCollection, {
                     user: userId,
                     name: name || email,
-                    globalStatus: "Active",
-                    voicePart: ""
+                    globalStatus: 'Active',
+                    voicePart: '',
                 });
                 $app.save(newProfile);
                 return newProfile;
@@ -12655,47 +12659,47 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket quantity" });
+            return e.json(400, { error: 'Invalid ticket quantity' });
         }
         let event;
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (_b) {
-            return e.json(404, { error: "Event not found" });
+            return e.json(404, { error: 'Event not found' });
         }
-        if (event.get("isArchived")) {
-            return e.json(400, { error: "Event has been archived" });
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
         }
-        if (!event.get("isTicketingEnabled")) {
-            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
-            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-            paidPurchases.forEach(p => {
-                const q = p.get("quantity");
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
                 soldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const capacity = event.get("ticketCapacity");
+        const capacity = event.get('ticketCapacity');
         const capacityNum = typeof capacity === 'number' ? capacity : 0;
         if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
         }
         // Select price based on day-of rules in event timezone
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const val = settingsRecord.get("value");
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
             const parsed = parseJsonField(val);
             if (parsed && parsed.timezone) {
                 timezone = parsed.timezone;
@@ -12705,61 +12709,65 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get("date");
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
-        const nowStr = nowFormatted.split(",")[0];
-        const eventDateStr = eventFormatted.split(",")[0];
+        const eventDateRaw = event.get('date');
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get("advancePriceCents");
-        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
         const unitPriceCents = isShowDay
-            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
-            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
         if (unitPriceCents < 0) {
-            return e.json(400, { error: "Invalid ticket price configuration" });
+            return e.json(400, { error: 'Invalid ticket price configuration' });
         }
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
-                    unit_amount: unitPriceCents
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "ticket",
+            paymentType: 'ticket',
             eventId,
             quantity: String(qty),
             unitPriceCents: String(unitPriceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 event: eventId,
                 profile: profile.id,
@@ -12769,16 +12777,16 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                 unitPriceCents: unitPriceCents,
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateBundleSession(e) {
@@ -12789,140 +12797,145 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket bundle quantity" });
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
         }
         let bundle;
         try {
-            bundle = $app.findRecordById("ticketBundles", bundleId);
+            bundle = $app.findRecordById('ticketBundles', bundleId);
         }
         catch (_b) {
-            return e.json(404, { error: "Bundle not found" });
+            return e.json(404, { error: 'Bundle not found' });
         }
-        if (!bundle.get("isActive")) {
-            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get("saleEndDate");
+        const saleEndDateStr = bundle.get('saleEndDate');
         if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
             if (new Date() > saleEndDate) {
-                return e.json(400, { error: "The sale period for this bundle has ended" });
+                return e.json(400, { error: 'The sale period for this bundle has ended' });
             }
         }
-        const bundleEventsVal = bundle.get("events");
+        const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
         if (bundleEventIds.length === 0) {
-            return e.json(400, { error: "This bundle does not contain any events" });
+            return e.json(400, { error: 'This bundle does not contain any events' });
         }
         // 1. Check bundle capacity
         let bundleSoldCount = 0;
         const firstEventId = bundleEventIds[0];
         try {
-            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach(p => {
-                const q = p.get("quantity");
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
                 bundleSoldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
         if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
         }
         // 2. Check individual event capacities
         for (const eventId of bundleEventIds) {
             let event;
             try {
-                event = $app.findRecordById("events", eventId);
+                event = $app.findRecordById('events', eventId);
             }
             catch (_c) {
                 return e.json(404, { error: `Included event ${eventId} not found` });
             }
-            if (event.get("isArchived")) {
-                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
             }
             let eventSoldCount = 0;
             try {
-                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                eventPurchases.forEach(p => {
-                    const q = p.get("quantity");
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
                     eventSoldCount += typeof q === 'number' ? q : 0;
                 });
             }
             catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
             }
-            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
             if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
             }
         }
-        const priceCents = Number(bundle.get("priceCents") || 0);
+        const priceCents = Number(bundle.get('priceCents') || 0);
         const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
-                    unit_amount: priceCents
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "bundle",
+            paymentType: 'bundle',
             bundleId,
             quantity: String(qty),
             unitPriceCents: String(priceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 bundle: bundleId,
                 profile: profile.id,
                 buyerName: name,
                 buyerEmail: email,
                 quantity: qty,
-                unitPriceCents: bundle.get("priceCents"),
+                unitPriceCents: bundle.get('priceCents'),
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateDonationSession(e) {
@@ -12931,19 +12944,19 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         const amountCents = Number(body.amountCents || 0);
         const name = body.name;
         const email = body.email;
-        const tributeType = body.tributeType || "none";
-        const tributeName = body.tributeName || "";
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
         if (!amountCents || !name || !email) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         if (amountCents < 500) {
-            return e.json(400, { error: "Donation amount must be at least $5.00" });
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
         }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
@@ -12951,34 +12964,34 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             // default
         }
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
+                    currency: 'usd',
                     product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents
+                    unit_amount: amountCents,
                 },
-                quantity: 1
-            }
+                quantity: 1,
+            },
         ];
         const metadata = {
-            paymentType: "donation",
+            paymentType: 'donation',
             amountPaidCents: String(amountCents),
             donorName: name,
             donorEmail: email,
             tributeType,
             tributeName,
-            isAnonymous: String(isAnonymous)
+            isAnonymous: String(isAnonymous),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
             const record = new Record(collection, {
                 amountPaidCents: amountCents,
                 donorName: name,
@@ -12987,15 +13000,15 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                 tributeType: tributeType,
                 tributeName: tributeName,
                 isAnonymous: isAnonymous,
-                status: "pending",
-                stripeSessionId: session.id
+                status: 'pending',
+                stripeSessionId: session.id,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     async function handleStripeWebhook(e) {
@@ -13005,115 +13018,115 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             rawBody = readerToString(e.request.body);
         }
         catch (_e) {
-            return e.json(400, { error: "Failed to read request body" });
+            return e.json(400, { error: 'Failed to read request body' });
         }
-        const sig = e.request.header.get("Stripe-Signature") || "";
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
         if (!sig || !webhookSecret) {
-            return e.json(400, { error: "Missing signature or webhook config" });
+            return e.json(400, { error: 'Missing signature or webhook config' });
         }
         // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = "";
-        let signature = "";
-        sig.split(",").forEach((part) => {
-            const pair = part.split("=");
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
             if (pair.length === 2) {
                 const k = pair[0].trim();
                 const v = pair[1].trim();
-                if (k === "t")
+                if (k === 't')
                     timestamp = v;
-                if (k === "v1")
+                if (k === 'v1')
                     signature = v;
             }
         });
         if (!timestamp || !signature) {
-            return e.json(400, { error: "Invalid signature format" });
+            return e.json(400, { error: 'Invalid signature format' });
         }
         // Validate replay attacks
         const nowSecs = Math.floor(Date.now() / 1000);
         if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: "Expired timestamp" });
+            return e.json(400, { error: 'Expired timestamp' });
         }
         // Compute local signature
-        const signedPayload = timestamp + "." + rawBody;
+        const signedPayload = timestamp + '.' + rawBody;
         const localSig = $security.hs256(signedPayload, webhookSecret);
         if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: "Signature verification failed" });
+            return e.json(400, { error: 'Signature verification failed' });
         }
         let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
         catch (_f) {
-            return e.json(400, { error: "Invalid JSON body" });
+            return e.json(400, { error: 'Invalid JSON body' });
         }
-        if (eventObj.type === "checkout.session.completed") {
+        if (eventObj.type === 'checkout.session.completed') {
             const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
             if (!session) {
-                return e.json(400, { error: "Missing session object" });
+                return e.json(400, { error: 'Missing session object' });
             }
             const metadata = session.metadata || {};
             const paymentType = metadata.paymentType;
-            if (paymentType === "ticket") {
+            if (paymentType === 'ticket') {
                 const eventId = metadata.eventId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_g) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         event: eventId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
                 // Look up event for email
                 let targetEvent;
                 try {
-                    targetEvent = $app.findRecordById("events", eventId);
+                    targetEvent = $app.findRecordById('events', eventId);
                 }
                 catch (_h) {
-                    return e.json(400, { error: "Event not found during webhook processing" });
+                    return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -13122,99 +13135,106 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     catch (_j) {
                         // default
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_k) {
                         // default
                     }
-                    const eventTitle = targetEvent.get("title") || "";
-                    const eventDateRaw = targetEvent.get("date") || "";
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const eventTitle = targetEvent.get('title') || '';
+                    const eventDateRaw = targetEvent.get('date') || '';
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{eventTitle}/g, eventTitle)
                         .replace(/{eventDate}/g, eventDateStr)
-                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "bundle") {
+            else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_l) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         bundle: bundleId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
@@ -13222,22 +13242,22 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                 let targetBundle;
                 let bundleEventIds;
                 try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                    const bundleEventsVal = targetBundle.get("events");
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
                 catch (_m) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -13246,10 +13266,10 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     catch (_o) {
                         // Use default America/New_York timezone
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
@@ -13257,23 +13277,29 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
-                    bundleEventIds.forEach(eventId => {
+                    bundleEventIds.forEach((eventId) => {
                         try {
-                            const ev = $app.findRecordById("events", eventId);
-                            const evTitle = ev.get("title") || "";
-                            const evDate = ev.get("date") || "";
-                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const ev = $app.findRecordById('events', eventId);
+                            const evTitle = ev.get('title') || '';
+                            const evDate = ev.get('date') || '';
+                            const evDateStr = formatInTimezone(evDate, timezone, {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                            });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
                         catch (_a) {
                             // Ignore individual event loading error
                         }
                     });
-                    const eventDetailsStr = eventDetailsParts.join("\n");
-                    const bundleTitle = targetBundle.get("title") || "";
+                    const eventDetailsStr = eventDetailsParts.join('\n');
+                    const bundleTitle = targetBundle.get('title') || '';
                     const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{bundleTitle}/g, bundleTitle)
                         .replace(/{eventDetails}/g, eventDetailsStr)
                         .replace(/{quantity}/g, String(quantity))
@@ -13281,61 +13307,64 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "donation") {
-                const stripeSessionId = session.id || "";
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
                 if (!stripeSessionId) {
-                    return e.json(400, { error: "Missing session ID" });
+                    return e.json(400, { error: 'Missing session ID' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || "";
-                const donorEmail = metadata.donorEmail || "";
-                const tributeType = metadata.tributeType || "none";
-                const tributeName = metadata.tributeName || "";
-                const isAnonymous = metadata.isAnonymous === "true";
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
                 try {
-                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
                 catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
                     record = new Record(collection, {
                         amountPaidCents,
                         donorName,
@@ -13344,32 +13373,32 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         tributeType,
                         tributeName,
                         isAnonymous,
-                        status: "paid",
+                        status: 'paid',
                         stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || ""
+                        stripePaymentIntentId: session.payment_intent || '',
                     });
                 }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const subject = template.get("subject") || "";
-                    let choirName = "Choir Management Tool";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_r) {
                         // default
                     }
-                    let tributeSection = "";
-                    if (tributeType === "memory" && tributeName) {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
                         tributeSection = `This donation was made in memory of ${tributeName}.`;
                     }
-                    else if (tributeType === "honor" && tributeName) {
+                    else if (tributeType === 'honor' && tributeName) {
                         tributeSection = `This donation was made in honor of ${tributeName}.`;
                     }
                     content = content
@@ -13377,67 +13406,71 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName)
                         .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "donor_" + stripeSessionId,
+                        recipientId: 'donor_' + stripeSessionId,
                         recipientEmail: donorEmail,
-                        recipientName: donorName || "Donor",
+                        recipientName: donorName || 'Donor',
                         subject: subject.replace(/{choirName}/g, choirName),
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify({ type: "Donation Receipt" })
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "dues") {
+            else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
                 if (profileId && season) {
                     try {
                         let duesRecord;
                         try {
-                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
-                            duesRecord.set("paid", true);
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
                         }
                         catch (_s) {
-                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
                                 season: season,
-                                paid: true
+                                paid: true,
                             });
                         }
                         $app.save(duesRecord);
                     }
                     catch (err) {
-                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
                     }
                 }
             }
         }
-        else if (eventObj.type === "charge.refunded") {
+        else if (eventObj.type === 'charge.refunded') {
             const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
-                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
-                            purchases.forEach(p => {
-                                p.set("status", "refunded");
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
                                 tx.save(p);
                             });
                         });
                     }
                 }
                 catch (err) {
-                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
                 }
             }
         }
@@ -13445,62 +13478,62 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
     }
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const purchaseId = body.purchaseId;
         if (!purchaseId) {
-            return e.json(400, { error: "Missing purchaseId" });
+            return e.json(400, { error: 'Missing purchaseId' });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase record not found" });
+            return e.json(404, { error: 'Purchase record not found' });
         }
-        const pi = purchase.get("stripePaymentIntentId");
+        const pi = purchase.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            purchase.set("status", "refunded");
+            purchase.set('status', 'refunded');
             $app.save(purchase);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const paymentIntentId = body.paymentIntentId;
         if (!paymentIntentId) {
-            return e.json(400, { error: "Missing paymentIntentId" });
+            return e.json(400, { error: 'Missing paymentIntentId' });
         }
         let purchases;
         try {
-            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
         }
         catch (_a) {
-            return e.json(404, { error: "No purchases found for the payment intent" });
+            return e.json(404, { error: 'No purchases found for the payment intent' });
         }
         if (purchases.length === 0) {
-            return e.json(404, { error: "No purchase records found" });
+            return e.json(404, { error: 'No purchase records found' });
         }
         try {
             refundPaymentIntent(paymentIntentId);
             const txApp = $app;
             txApp.runInTransaction((tx) => {
-                purchases.forEach(p => {
-                    p.set("status", "refunded");
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
                     tx.save(p);
                 });
             });
@@ -13508,39 +13541,39 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const donationId = body.donationId;
         if (!donationId) {
-            return e.json(400, { error: "Missing donationId" });
+            return e.json(400, { error: 'Missing donationId' });
         }
         let donation;
         try {
-            donation = $app.findRecordById("donations", donationId);
+            donation = $app.findRecordById('donations', donationId);
         }
         catch (_a) {
-            return e.json(404, { error: "Donation record not found" });
+            return e.json(404, { error: 'Donation record not found' });
         }
-        const pi = donation.get("stripePaymentIntentId");
+        const pi = donation.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            donation.set("status", "refunded");
+            donation.set('status', 'refunded');
             $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -13986,79 +14019,83 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -14073,19 +14110,19 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -14098,7 +14135,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -14106,44 +14143,44 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -14151,9 +14188,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -14178,40 +14215,40 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
-            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
         }
         catch (_a) {
             // Try finding by name as a fallback
             try {
-                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
             }
             catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
                 let userId;
                 try {
-                    const user = $app.findAuthRecordByEmail("users", email);
+                    const user = $app.findAuthRecordByEmail('users', email);
                     userId = user.id;
                 }
                 catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const usersCollection = $app.findCollectionByNameOrId('users');
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
                         email: email,
                         password: password,
                         passwordConfirm: password,
-                        role: "singer", // Patrons are singers with no voice part
-                        name: name || email
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
                     });
                     $app.save(newUser);
                     userId = newUser.id;
                 }
-                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
                 const newProfile = new Record(profilesCollection, {
                     user: userId,
                     name: name || email,
-                    globalStatus: "Active",
-                    voicePart: ""
+                    globalStatus: 'Active',
+                    voicePart: '',
                 });
                 $app.save(newProfile);
                 return newProfile;
@@ -14226,47 +14263,47 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket quantity" });
+            return e.json(400, { error: 'Invalid ticket quantity' });
         }
         let event;
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (_b) {
-            return e.json(404, { error: "Event not found" });
+            return e.json(404, { error: 'Event not found' });
         }
-        if (event.get("isArchived")) {
-            return e.json(400, { error: "Event has been archived" });
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
         }
-        if (!event.get("isTicketingEnabled")) {
-            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
-            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-            paidPurchases.forEach(p => {
-                const q = p.get("quantity");
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
                 soldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const capacity = event.get("ticketCapacity");
+        const capacity = event.get('ticketCapacity');
         const capacityNum = typeof capacity === 'number' ? capacity : 0;
         if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
         }
         // Select price based on day-of rules in event timezone
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const val = settingsRecord.get("value");
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
             const parsed = parseJsonField(val);
             if (parsed && parsed.timezone) {
                 timezone = parsed.timezone;
@@ -14276,61 +14313,65 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get("date");
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
-        const nowStr = nowFormatted.split(",")[0];
-        const eventDateStr = eventFormatted.split(",")[0];
+        const eventDateRaw = event.get('date');
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get("advancePriceCents");
-        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
         const unitPriceCents = isShowDay
-            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
-            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
         if (unitPriceCents < 0) {
-            return e.json(400, { error: "Invalid ticket price configuration" });
+            return e.json(400, { error: 'Invalid ticket price configuration' });
         }
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
-                    unit_amount: unitPriceCents
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "ticket",
+            paymentType: 'ticket',
             eventId,
             quantity: String(qty),
             unitPriceCents: String(unitPriceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 event: eventId,
                 profile: profile.id,
@@ -14340,16 +14381,16 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                 unitPriceCents: unitPriceCents,
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateBundleSession(e) {
@@ -14360,140 +14401,145 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket bundle quantity" });
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
         }
         let bundle;
         try {
-            bundle = $app.findRecordById("ticketBundles", bundleId);
+            bundle = $app.findRecordById('ticketBundles', bundleId);
         }
         catch (_b) {
-            return e.json(404, { error: "Bundle not found" });
+            return e.json(404, { error: 'Bundle not found' });
         }
-        if (!bundle.get("isActive")) {
-            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get("saleEndDate");
+        const saleEndDateStr = bundle.get('saleEndDate');
         if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
             if (new Date() > saleEndDate) {
-                return e.json(400, { error: "The sale period for this bundle has ended" });
+                return e.json(400, { error: 'The sale period for this bundle has ended' });
             }
         }
-        const bundleEventsVal = bundle.get("events");
+        const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
         if (bundleEventIds.length === 0) {
-            return e.json(400, { error: "This bundle does not contain any events" });
+            return e.json(400, { error: 'This bundle does not contain any events' });
         }
         // 1. Check bundle capacity
         let bundleSoldCount = 0;
         const firstEventId = bundleEventIds[0];
         try {
-            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach(p => {
-                const q = p.get("quantity");
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
                 bundleSoldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
         if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
         }
         // 2. Check individual event capacities
         for (const eventId of bundleEventIds) {
             let event;
             try {
-                event = $app.findRecordById("events", eventId);
+                event = $app.findRecordById('events', eventId);
             }
             catch (_c) {
                 return e.json(404, { error: `Included event ${eventId} not found` });
             }
-            if (event.get("isArchived")) {
-                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
             }
             let eventSoldCount = 0;
             try {
-                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                eventPurchases.forEach(p => {
-                    const q = p.get("quantity");
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
                     eventSoldCount += typeof q === 'number' ? q : 0;
                 });
             }
             catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
             }
-            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
             if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
             }
         }
-        const priceCents = Number(bundle.get("priceCents") || 0);
+        const priceCents = Number(bundle.get('priceCents') || 0);
         const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
-                    unit_amount: priceCents
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "bundle",
+            paymentType: 'bundle',
             bundleId,
             quantity: String(qty),
             unitPriceCents: String(priceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 bundle: bundleId,
                 profile: profile.id,
                 buyerName: name,
                 buyerEmail: email,
                 quantity: qty,
-                unitPriceCents: bundle.get("priceCents"),
+                unitPriceCents: bundle.get('priceCents'),
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateDonationSession(e) {
@@ -14502,19 +14548,19 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         const amountCents = Number(body.amountCents || 0);
         const name = body.name;
         const email = body.email;
-        const tributeType = body.tributeType || "none";
-        const tributeName = body.tributeName || "";
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
         if (!amountCents || !name || !email) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         if (amountCents < 500) {
-            return e.json(400, { error: "Donation amount must be at least $5.00" });
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
         }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
@@ -14522,34 +14568,34 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             // default
         }
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
+                    currency: 'usd',
                     product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents
+                    unit_amount: amountCents,
                 },
-                quantity: 1
-            }
+                quantity: 1,
+            },
         ];
         const metadata = {
-            paymentType: "donation",
+            paymentType: 'donation',
             amountPaidCents: String(amountCents),
             donorName: name,
             donorEmail: email,
             tributeType,
             tributeName,
-            isAnonymous: String(isAnonymous)
+            isAnonymous: String(isAnonymous),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
             const record = new Record(collection, {
                 amountPaidCents: amountCents,
                 donorName: name,
@@ -14558,15 +14604,15 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                 tributeType: tributeType,
                 tributeName: tributeName,
                 isAnonymous: isAnonymous,
-                status: "pending",
-                stripeSessionId: session.id
+                status: 'pending',
+                stripeSessionId: session.id,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     async function handleStripeWebhook(e) {
@@ -14576,115 +14622,115 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             rawBody = readerToString(e.request.body);
         }
         catch (_e) {
-            return e.json(400, { error: "Failed to read request body" });
+            return e.json(400, { error: 'Failed to read request body' });
         }
-        const sig = e.request.header.get("Stripe-Signature") || "";
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
         if (!sig || !webhookSecret) {
-            return e.json(400, { error: "Missing signature or webhook config" });
+            return e.json(400, { error: 'Missing signature or webhook config' });
         }
         // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = "";
-        let signature = "";
-        sig.split(",").forEach((part) => {
-            const pair = part.split("=");
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
             if (pair.length === 2) {
                 const k = pair[0].trim();
                 const v = pair[1].trim();
-                if (k === "t")
+                if (k === 't')
                     timestamp = v;
-                if (k === "v1")
+                if (k === 'v1')
                     signature = v;
             }
         });
         if (!timestamp || !signature) {
-            return e.json(400, { error: "Invalid signature format" });
+            return e.json(400, { error: 'Invalid signature format' });
         }
         // Validate replay attacks
         const nowSecs = Math.floor(Date.now() / 1000);
         if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: "Expired timestamp" });
+            return e.json(400, { error: 'Expired timestamp' });
         }
         // Compute local signature
-        const signedPayload = timestamp + "." + rawBody;
+        const signedPayload = timestamp + '.' + rawBody;
         const localSig = $security.hs256(signedPayload, webhookSecret);
         if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: "Signature verification failed" });
+            return e.json(400, { error: 'Signature verification failed' });
         }
         let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
         catch (_f) {
-            return e.json(400, { error: "Invalid JSON body" });
+            return e.json(400, { error: 'Invalid JSON body' });
         }
-        if (eventObj.type === "checkout.session.completed") {
+        if (eventObj.type === 'checkout.session.completed') {
             const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
             if (!session) {
-                return e.json(400, { error: "Missing session object" });
+                return e.json(400, { error: 'Missing session object' });
             }
             const metadata = session.metadata || {};
             const paymentType = metadata.paymentType;
-            if (paymentType === "ticket") {
+            if (paymentType === 'ticket') {
                 const eventId = metadata.eventId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_g) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         event: eventId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
                 // Look up event for email
                 let targetEvent;
                 try {
-                    targetEvent = $app.findRecordById("events", eventId);
+                    targetEvent = $app.findRecordById('events', eventId);
                 }
                 catch (_h) {
-                    return e.json(400, { error: "Event not found during webhook processing" });
+                    return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -14693,99 +14739,106 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     catch (_j) {
                         // default
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_k) {
                         // default
                     }
-                    const eventTitle = targetEvent.get("title") || "";
-                    const eventDateRaw = targetEvent.get("date") || "";
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const eventTitle = targetEvent.get('title') || '';
+                    const eventDateRaw = targetEvent.get('date') || '';
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{eventTitle}/g, eventTitle)
                         .replace(/{eventDate}/g, eventDateStr)
-                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "bundle") {
+            else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_l) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         bundle: bundleId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
@@ -14793,22 +14846,22 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                 let targetBundle;
                 let bundleEventIds;
                 try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                    const bundleEventsVal = targetBundle.get("events");
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
                 catch (_m) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -14817,10 +14870,10 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     catch (_o) {
                         // Use default America/New_York timezone
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
@@ -14828,23 +14881,29 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
-                    bundleEventIds.forEach(eventId => {
+                    bundleEventIds.forEach((eventId) => {
                         try {
-                            const ev = $app.findRecordById("events", eventId);
-                            const evTitle = ev.get("title") || "";
-                            const evDate = ev.get("date") || "";
-                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const ev = $app.findRecordById('events', eventId);
+                            const evTitle = ev.get('title') || '';
+                            const evDate = ev.get('date') || '';
+                            const evDateStr = formatInTimezone(evDate, timezone, {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                            });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
                         catch (_a) {
                             // Ignore individual event loading error
                         }
                     });
-                    const eventDetailsStr = eventDetailsParts.join("\n");
-                    const bundleTitle = targetBundle.get("title") || "";
+                    const eventDetailsStr = eventDetailsParts.join('\n');
+                    const bundleTitle = targetBundle.get('title') || '';
                     const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{bundleTitle}/g, bundleTitle)
                         .replace(/{eventDetails}/g, eventDetailsStr)
                         .replace(/{quantity}/g, String(quantity))
@@ -14852,61 +14911,64 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "donation") {
-                const stripeSessionId = session.id || "";
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
                 if (!stripeSessionId) {
-                    return e.json(400, { error: "Missing session ID" });
+                    return e.json(400, { error: 'Missing session ID' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || "";
-                const donorEmail = metadata.donorEmail || "";
-                const tributeType = metadata.tributeType || "none";
-                const tributeName = metadata.tributeName || "";
-                const isAnonymous = metadata.isAnonymous === "true";
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
                 try {
-                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
                 catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
                     record = new Record(collection, {
                         amountPaidCents,
                         donorName,
@@ -14915,32 +14977,32 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         tributeType,
                         tributeName,
                         isAnonymous,
-                        status: "paid",
+                        status: 'paid',
                         stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || ""
+                        stripePaymentIntentId: session.payment_intent || '',
                     });
                 }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const subject = template.get("subject") || "";
-                    let choirName = "Choir Management Tool";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_r) {
                         // default
                     }
-                    let tributeSection = "";
-                    if (tributeType === "memory" && tributeName) {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
                         tributeSection = `This donation was made in memory of ${tributeName}.`;
                     }
-                    else if (tributeType === "honor" && tributeName) {
+                    else if (tributeType === 'honor' && tributeName) {
                         tributeSection = `This donation was made in honor of ${tributeName}.`;
                     }
                     content = content
@@ -14948,67 +15010,71 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName)
                         .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "donor_" + stripeSessionId,
+                        recipientId: 'donor_' + stripeSessionId,
                         recipientEmail: donorEmail,
-                        recipientName: donorName || "Donor",
+                        recipientName: donorName || 'Donor',
                         subject: subject.replace(/{choirName}/g, choirName),
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify({ type: "Donation Receipt" })
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "dues") {
+            else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
                 if (profileId && season) {
                     try {
                         let duesRecord;
                         try {
-                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
-                            duesRecord.set("paid", true);
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
                         }
                         catch (_s) {
-                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
                                 season: season,
-                                paid: true
+                                paid: true,
                             });
                         }
                         $app.save(duesRecord);
                     }
                     catch (err) {
-                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
                     }
                 }
             }
         }
-        else if (eventObj.type === "charge.refunded") {
+        else if (eventObj.type === 'charge.refunded') {
             const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
-                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
-                            purchases.forEach(p => {
-                                p.set("status", "refunded");
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
                                 tx.save(p);
                             });
                         });
                     }
                 }
                 catch (err) {
-                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
                 }
             }
         }
@@ -15016,62 +15082,62 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
     }
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const purchaseId = body.purchaseId;
         if (!purchaseId) {
-            return e.json(400, { error: "Missing purchaseId" });
+            return e.json(400, { error: 'Missing purchaseId' });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase record not found" });
+            return e.json(404, { error: 'Purchase record not found' });
         }
-        const pi = purchase.get("stripePaymentIntentId");
+        const pi = purchase.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            purchase.set("status", "refunded");
+            purchase.set('status', 'refunded');
             $app.save(purchase);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const paymentIntentId = body.paymentIntentId;
         if (!paymentIntentId) {
-            return e.json(400, { error: "Missing paymentIntentId" });
+            return e.json(400, { error: 'Missing paymentIntentId' });
         }
         let purchases;
         try {
-            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
         }
         catch (_a) {
-            return e.json(404, { error: "No purchases found for the payment intent" });
+            return e.json(404, { error: 'No purchases found for the payment intent' });
         }
         if (purchases.length === 0) {
-            return e.json(404, { error: "No purchase records found" });
+            return e.json(404, { error: 'No purchase records found' });
         }
         try {
             refundPaymentIntent(paymentIntentId);
             const txApp = $app;
             txApp.runInTransaction((tx) => {
-                purchases.forEach(p => {
-                    p.set("status", "refunded");
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
                     tx.save(p);
                 });
             });
@@ -15079,39 +15145,39 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const donationId = body.donationId;
         if (!donationId) {
-            return e.json(400, { error: "Missing donationId" });
+            return e.json(400, { error: 'Missing donationId' });
         }
         let donation;
         try {
-            donation = $app.findRecordById("donations", donationId);
+            donation = $app.findRecordById('donations', donationId);
         }
         catch (_a) {
-            return e.json(404, { error: "Donation record not found" });
+            return e.json(404, { error: 'Donation record not found' });
         }
-        const pi = donation.get("stripePaymentIntentId");
+        const pi = donation.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            donation.set("status", "refunded");
+            donation.set('status', 'refunded');
             $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -15557,79 +15623,83 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -15644,19 +15714,19 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -15669,7 +15739,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -15677,44 +15747,44 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -15722,9 +15792,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -15749,40 +15819,40 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
-            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
         }
         catch (_a) {
             // Try finding by name as a fallback
             try {
-                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
             }
             catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
                 let userId;
                 try {
-                    const user = $app.findAuthRecordByEmail("users", email);
+                    const user = $app.findAuthRecordByEmail('users', email);
                     userId = user.id;
                 }
                 catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const usersCollection = $app.findCollectionByNameOrId('users');
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
                         email: email,
                         password: password,
                         passwordConfirm: password,
-                        role: "singer", // Patrons are singers with no voice part
-                        name: name || email
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
                     });
                     $app.save(newUser);
                     userId = newUser.id;
                 }
-                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
                 const newProfile = new Record(profilesCollection, {
                     user: userId,
                     name: name || email,
-                    globalStatus: "Active",
-                    voicePart: ""
+                    globalStatus: 'Active',
+                    voicePart: '',
                 });
                 $app.save(newProfile);
                 return newProfile;
@@ -15797,47 +15867,47 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket quantity" });
+            return e.json(400, { error: 'Invalid ticket quantity' });
         }
         let event;
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (_b) {
-            return e.json(404, { error: "Event not found" });
+            return e.json(404, { error: 'Event not found' });
         }
-        if (event.get("isArchived")) {
-            return e.json(400, { error: "Event has been archived" });
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
         }
-        if (!event.get("isTicketingEnabled")) {
-            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
-            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-            paidPurchases.forEach(p => {
-                const q = p.get("quantity");
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
                 soldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const capacity = event.get("ticketCapacity");
+        const capacity = event.get('ticketCapacity');
         const capacityNum = typeof capacity === 'number' ? capacity : 0;
         if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
         }
         // Select price based on day-of rules in event timezone
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const val = settingsRecord.get("value");
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
             const parsed = parseJsonField(val);
             if (parsed && parsed.timezone) {
                 timezone = parsed.timezone;
@@ -15847,61 +15917,65 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get("date");
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
-        const nowStr = nowFormatted.split(",")[0];
-        const eventDateStr = eventFormatted.split(",")[0];
+        const eventDateRaw = event.get('date');
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get("advancePriceCents");
-        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
         const unitPriceCents = isShowDay
-            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
-            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
         if (unitPriceCents < 0) {
-            return e.json(400, { error: "Invalid ticket price configuration" });
+            return e.json(400, { error: 'Invalid ticket price configuration' });
         }
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
-                    unit_amount: unitPriceCents
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "ticket",
+            paymentType: 'ticket',
             eventId,
             quantity: String(qty),
             unitPriceCents: String(unitPriceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 event: eventId,
                 profile: profile.id,
@@ -15911,16 +15985,16 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                 unitPriceCents: unitPriceCents,
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateBundleSession(e) {
@@ -15931,140 +16005,145 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket bundle quantity" });
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
         }
         let bundle;
         try {
-            bundle = $app.findRecordById("ticketBundles", bundleId);
+            bundle = $app.findRecordById('ticketBundles', bundleId);
         }
         catch (_b) {
-            return e.json(404, { error: "Bundle not found" });
+            return e.json(404, { error: 'Bundle not found' });
         }
-        if (!bundle.get("isActive")) {
-            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get("saleEndDate");
+        const saleEndDateStr = bundle.get('saleEndDate');
         if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
             if (new Date() > saleEndDate) {
-                return e.json(400, { error: "The sale period for this bundle has ended" });
+                return e.json(400, { error: 'The sale period for this bundle has ended' });
             }
         }
-        const bundleEventsVal = bundle.get("events");
+        const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
         if (bundleEventIds.length === 0) {
-            return e.json(400, { error: "This bundle does not contain any events" });
+            return e.json(400, { error: 'This bundle does not contain any events' });
         }
         // 1. Check bundle capacity
         let bundleSoldCount = 0;
         const firstEventId = bundleEventIds[0];
         try {
-            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach(p => {
-                const q = p.get("quantity");
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
                 bundleSoldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
         if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
         }
         // 2. Check individual event capacities
         for (const eventId of bundleEventIds) {
             let event;
             try {
-                event = $app.findRecordById("events", eventId);
+                event = $app.findRecordById('events', eventId);
             }
             catch (_c) {
                 return e.json(404, { error: `Included event ${eventId} not found` });
             }
-            if (event.get("isArchived")) {
-                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
             }
             let eventSoldCount = 0;
             try {
-                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                eventPurchases.forEach(p => {
-                    const q = p.get("quantity");
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
                     eventSoldCount += typeof q === 'number' ? q : 0;
                 });
             }
             catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
             }
-            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
             if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
             }
         }
-        const priceCents = Number(bundle.get("priceCents") || 0);
+        const priceCents = Number(bundle.get('priceCents') || 0);
         const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
-                    unit_amount: priceCents
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "bundle",
+            paymentType: 'bundle',
             bundleId,
             quantity: String(qty),
             unitPriceCents: String(priceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 bundle: bundleId,
                 profile: profile.id,
                 buyerName: name,
                 buyerEmail: email,
                 quantity: qty,
-                unitPriceCents: bundle.get("priceCents"),
+                unitPriceCents: bundle.get('priceCents'),
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateDonationSession(e) {
@@ -16073,19 +16152,19 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         const amountCents = Number(body.amountCents || 0);
         const name = body.name;
         const email = body.email;
-        const tributeType = body.tributeType || "none";
-        const tributeName = body.tributeName || "";
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
         if (!amountCents || !name || !email) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         if (amountCents < 500) {
-            return e.json(400, { error: "Donation amount must be at least $5.00" });
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
         }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
@@ -16093,34 +16172,34 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             // default
         }
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
+                    currency: 'usd',
                     product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents
+                    unit_amount: amountCents,
                 },
-                quantity: 1
-            }
+                quantity: 1,
+            },
         ];
         const metadata = {
-            paymentType: "donation",
+            paymentType: 'donation',
             amountPaidCents: String(amountCents),
             donorName: name,
             donorEmail: email,
             tributeType,
             tributeName,
-            isAnonymous: String(isAnonymous)
+            isAnonymous: String(isAnonymous),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
             const record = new Record(collection, {
                 amountPaidCents: amountCents,
                 donorName: name,
@@ -16129,15 +16208,15 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                 tributeType: tributeType,
                 tributeName: tributeName,
                 isAnonymous: isAnonymous,
-                status: "pending",
-                stripeSessionId: session.id
+                status: 'pending',
+                stripeSessionId: session.id,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     async function handleStripeWebhook(e) {
@@ -16147,115 +16226,115 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             rawBody = readerToString(e.request.body);
         }
         catch (_e) {
-            return e.json(400, { error: "Failed to read request body" });
+            return e.json(400, { error: 'Failed to read request body' });
         }
-        const sig = e.request.header.get("Stripe-Signature") || "";
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
         if (!sig || !webhookSecret) {
-            return e.json(400, { error: "Missing signature or webhook config" });
+            return e.json(400, { error: 'Missing signature or webhook config' });
         }
         // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = "";
-        let signature = "";
-        sig.split(",").forEach((part) => {
-            const pair = part.split("=");
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
             if (pair.length === 2) {
                 const k = pair[0].trim();
                 const v = pair[1].trim();
-                if (k === "t")
+                if (k === 't')
                     timestamp = v;
-                if (k === "v1")
+                if (k === 'v1')
                     signature = v;
             }
         });
         if (!timestamp || !signature) {
-            return e.json(400, { error: "Invalid signature format" });
+            return e.json(400, { error: 'Invalid signature format' });
         }
         // Validate replay attacks
         const nowSecs = Math.floor(Date.now() / 1000);
         if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: "Expired timestamp" });
+            return e.json(400, { error: 'Expired timestamp' });
         }
         // Compute local signature
-        const signedPayload = timestamp + "." + rawBody;
+        const signedPayload = timestamp + '.' + rawBody;
         const localSig = $security.hs256(signedPayload, webhookSecret);
         if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: "Signature verification failed" });
+            return e.json(400, { error: 'Signature verification failed' });
         }
         let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
         catch (_f) {
-            return e.json(400, { error: "Invalid JSON body" });
+            return e.json(400, { error: 'Invalid JSON body' });
         }
-        if (eventObj.type === "checkout.session.completed") {
+        if (eventObj.type === 'checkout.session.completed') {
             const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
             if (!session) {
-                return e.json(400, { error: "Missing session object" });
+                return e.json(400, { error: 'Missing session object' });
             }
             const metadata = session.metadata || {};
             const paymentType = metadata.paymentType;
-            if (paymentType === "ticket") {
+            if (paymentType === 'ticket') {
                 const eventId = metadata.eventId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_g) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         event: eventId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
                 // Look up event for email
                 let targetEvent;
                 try {
-                    targetEvent = $app.findRecordById("events", eventId);
+                    targetEvent = $app.findRecordById('events', eventId);
                 }
                 catch (_h) {
-                    return e.json(400, { error: "Event not found during webhook processing" });
+                    return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -16264,99 +16343,106 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     catch (_j) {
                         // default
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_k) {
                         // default
                     }
-                    const eventTitle = targetEvent.get("title") || "";
-                    const eventDateRaw = targetEvent.get("date") || "";
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const eventTitle = targetEvent.get('title') || '';
+                    const eventDateRaw = targetEvent.get('date') || '';
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{eventTitle}/g, eventTitle)
                         .replace(/{eventDate}/g, eventDateStr)
-                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "bundle") {
+            else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_l) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         bundle: bundleId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
@@ -16364,22 +16450,22 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                 let targetBundle;
                 let bundleEventIds;
                 try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                    const bundleEventsVal = targetBundle.get("events");
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
                 catch (_m) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -16388,10 +16474,10 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     catch (_o) {
                         // Use default America/New_York timezone
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
@@ -16399,23 +16485,29 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
-                    bundleEventIds.forEach(eventId => {
+                    bundleEventIds.forEach((eventId) => {
                         try {
-                            const ev = $app.findRecordById("events", eventId);
-                            const evTitle = ev.get("title") || "";
-                            const evDate = ev.get("date") || "";
-                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const ev = $app.findRecordById('events', eventId);
+                            const evTitle = ev.get('title') || '';
+                            const evDate = ev.get('date') || '';
+                            const evDateStr = formatInTimezone(evDate, timezone, {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                            });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
                         catch (_a) {
                             // Ignore individual event loading error
                         }
                     });
-                    const eventDetailsStr = eventDetailsParts.join("\n");
-                    const bundleTitle = targetBundle.get("title") || "";
+                    const eventDetailsStr = eventDetailsParts.join('\n');
+                    const bundleTitle = targetBundle.get('title') || '';
                     const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{bundleTitle}/g, bundleTitle)
                         .replace(/{eventDetails}/g, eventDetailsStr)
                         .replace(/{quantity}/g, String(quantity))
@@ -16423,61 +16515,64 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "donation") {
-                const stripeSessionId = session.id || "";
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
                 if (!stripeSessionId) {
-                    return e.json(400, { error: "Missing session ID" });
+                    return e.json(400, { error: 'Missing session ID' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || "";
-                const donorEmail = metadata.donorEmail || "";
-                const tributeType = metadata.tributeType || "none";
-                const tributeName = metadata.tributeName || "";
-                const isAnonymous = metadata.isAnonymous === "true";
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
                 try {
-                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
                 catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
                     record = new Record(collection, {
                         amountPaidCents,
                         donorName,
@@ -16486,32 +16581,32 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         tributeType,
                         tributeName,
                         isAnonymous,
-                        status: "paid",
+                        status: 'paid',
                         stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || ""
+                        stripePaymentIntentId: session.payment_intent || '',
                     });
                 }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const subject = template.get("subject") || "";
-                    let choirName = "Choir Management Tool";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_r) {
                         // default
                     }
-                    let tributeSection = "";
-                    if (tributeType === "memory" && tributeName) {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
                         tributeSection = `This donation was made in memory of ${tributeName}.`;
                     }
-                    else if (tributeType === "honor" && tributeName) {
+                    else if (tributeType === 'honor' && tributeName) {
                         tributeSection = `This donation was made in honor of ${tributeName}.`;
                     }
                     content = content
@@ -16519,67 +16614,71 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName)
                         .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "donor_" + stripeSessionId,
+                        recipientId: 'donor_' + stripeSessionId,
                         recipientEmail: donorEmail,
-                        recipientName: donorName || "Donor",
+                        recipientName: donorName || 'Donor',
                         subject: subject.replace(/{choirName}/g, choirName),
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify({ type: "Donation Receipt" })
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "dues") {
+            else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
                 if (profileId && season) {
                     try {
                         let duesRecord;
                         try {
-                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
-                            duesRecord.set("paid", true);
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
                         }
                         catch (_s) {
-                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
                                 season: season,
-                                paid: true
+                                paid: true,
                             });
                         }
                         $app.save(duesRecord);
                     }
                     catch (err) {
-                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
                     }
                 }
             }
         }
-        else if (eventObj.type === "charge.refunded") {
+        else if (eventObj.type === 'charge.refunded') {
             const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
-                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
-                            purchases.forEach(p => {
-                                p.set("status", "refunded");
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
                                 tx.save(p);
                             });
                         });
                     }
                 }
                 catch (err) {
-                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
                 }
             }
         }
@@ -16587,62 +16686,62 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
     }
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const purchaseId = body.purchaseId;
         if (!purchaseId) {
-            return e.json(400, { error: "Missing purchaseId" });
+            return e.json(400, { error: 'Missing purchaseId' });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase record not found" });
+            return e.json(404, { error: 'Purchase record not found' });
         }
-        const pi = purchase.get("stripePaymentIntentId");
+        const pi = purchase.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            purchase.set("status", "refunded");
+            purchase.set('status', 'refunded');
             $app.save(purchase);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const paymentIntentId = body.paymentIntentId;
         if (!paymentIntentId) {
-            return e.json(400, { error: "Missing paymentIntentId" });
+            return e.json(400, { error: 'Missing paymentIntentId' });
         }
         let purchases;
         try {
-            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
         }
         catch (_a) {
-            return e.json(404, { error: "No purchases found for the payment intent" });
+            return e.json(404, { error: 'No purchases found for the payment intent' });
         }
         if (purchases.length === 0) {
-            return e.json(404, { error: "No purchase records found" });
+            return e.json(404, { error: 'No purchase records found' });
         }
         try {
             refundPaymentIntent(paymentIntentId);
             const txApp = $app;
             txApp.runInTransaction((tx) => {
-                purchases.forEach(p => {
-                    p.set("status", "refunded");
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
                     tx.save(p);
                 });
             });
@@ -16650,39 +16749,39 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const donationId = body.donationId;
         if (!donationId) {
-            return e.json(400, { error: "Missing donationId" });
+            return e.json(400, { error: 'Missing donationId' });
         }
         let donation;
         try {
-            donation = $app.findRecordById("donations", donationId);
+            donation = $app.findRecordById('donations', donationId);
         }
         catch (_a) {
-            return e.json(404, { error: "Donation record not found" });
+            return e.json(404, { error: 'Donation record not found' });
         }
-        const pi = donation.get("stripePaymentIntentId");
+        const pi = donation.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            donation.set("status", "refunded");
+            donation.set('status', 'refunded');
             $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -17128,79 +17227,83 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -17215,19 +17318,19 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -17240,7 +17343,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -17248,44 +17351,44 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -17293,9 +17396,9 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -17320,40 +17423,40 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
-            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
         }
         catch (_a) {
             // Try finding by name as a fallback
             try {
-                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
             }
             catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
                 let userId;
                 try {
-                    const user = $app.findAuthRecordByEmail("users", email);
+                    const user = $app.findAuthRecordByEmail('users', email);
                     userId = user.id;
                 }
                 catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const usersCollection = $app.findCollectionByNameOrId('users');
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
                         email: email,
                         password: password,
                         passwordConfirm: password,
-                        role: "singer", // Patrons are singers with no voice part
-                        name: name || email
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
                     });
                     $app.save(newUser);
                     userId = newUser.id;
                 }
-                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
                 const newProfile = new Record(profilesCollection, {
                     user: userId,
                     name: name || email,
-                    globalStatus: "Active",
-                    voicePart: ""
+                    globalStatus: 'Active',
+                    voicePart: '',
                 });
                 $app.save(newProfile);
                 return newProfile;
@@ -17368,47 +17471,47 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket quantity" });
+            return e.json(400, { error: 'Invalid ticket quantity' });
         }
         let event;
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (_b) {
-            return e.json(404, { error: "Event not found" });
+            return e.json(404, { error: 'Event not found' });
         }
-        if (event.get("isArchived")) {
-            return e.json(400, { error: "Event has been archived" });
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
         }
-        if (!event.get("isTicketingEnabled")) {
-            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
-            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-            paidPurchases.forEach(p => {
-                const q = p.get("quantity");
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
                 soldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const capacity = event.get("ticketCapacity");
+        const capacity = event.get('ticketCapacity');
         const capacityNum = typeof capacity === 'number' ? capacity : 0;
         if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
         }
         // Select price based on day-of rules in event timezone
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const val = settingsRecord.get("value");
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
             const parsed = parseJsonField(val);
             if (parsed && parsed.timezone) {
                 timezone = parsed.timezone;
@@ -17418,61 +17521,65 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get("date");
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
-        const nowStr = nowFormatted.split(",")[0];
-        const eventDateStr = eventFormatted.split(",")[0];
+        const eventDateRaw = event.get('date');
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get("advancePriceCents");
-        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
         const unitPriceCents = isShowDay
-            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
-            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
         if (unitPriceCents < 0) {
-            return e.json(400, { error: "Invalid ticket price configuration" });
+            return e.json(400, { error: 'Invalid ticket price configuration' });
         }
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
-                    unit_amount: unitPriceCents
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "ticket",
+            paymentType: 'ticket',
             eventId,
             quantity: String(qty),
             unitPriceCents: String(unitPriceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 event: eventId,
                 profile: profile.id,
@@ -17482,16 +17589,16 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                 unitPriceCents: unitPriceCents,
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateBundleSession(e) {
@@ -17502,140 +17609,145 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket bundle quantity" });
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
         }
         let bundle;
         try {
-            bundle = $app.findRecordById("ticketBundles", bundleId);
+            bundle = $app.findRecordById('ticketBundles', bundleId);
         }
         catch (_b) {
-            return e.json(404, { error: "Bundle not found" });
+            return e.json(404, { error: 'Bundle not found' });
         }
-        if (!bundle.get("isActive")) {
-            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get("saleEndDate");
+        const saleEndDateStr = bundle.get('saleEndDate');
         if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
             if (new Date() > saleEndDate) {
-                return e.json(400, { error: "The sale period for this bundle has ended" });
+                return e.json(400, { error: 'The sale period for this bundle has ended' });
             }
         }
-        const bundleEventsVal = bundle.get("events");
+        const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
         if (bundleEventIds.length === 0) {
-            return e.json(400, { error: "This bundle does not contain any events" });
+            return e.json(400, { error: 'This bundle does not contain any events' });
         }
         // 1. Check bundle capacity
         let bundleSoldCount = 0;
         const firstEventId = bundleEventIds[0];
         try {
-            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach(p => {
-                const q = p.get("quantity");
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
                 bundleSoldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
         if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
         }
         // 2. Check individual event capacities
         for (const eventId of bundleEventIds) {
             let event;
             try {
-                event = $app.findRecordById("events", eventId);
+                event = $app.findRecordById('events', eventId);
             }
             catch (_c) {
                 return e.json(404, { error: `Included event ${eventId} not found` });
             }
-            if (event.get("isArchived")) {
-                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
             }
             let eventSoldCount = 0;
             try {
-                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                eventPurchases.forEach(p => {
-                    const q = p.get("quantity");
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
                     eventSoldCount += typeof q === 'number' ? q : 0;
                 });
             }
             catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
             }
-            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
             if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
             }
         }
-        const priceCents = Number(bundle.get("priceCents") || 0);
+        const priceCents = Number(bundle.get('priceCents') || 0);
         const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
-                    unit_amount: priceCents
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "bundle",
+            paymentType: 'bundle',
             bundleId,
             quantity: String(qty),
             unitPriceCents: String(priceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 bundle: bundleId,
                 profile: profile.id,
                 buyerName: name,
                 buyerEmail: email,
                 quantity: qty,
-                unitPriceCents: bundle.get("priceCents"),
+                unitPriceCents: bundle.get('priceCents'),
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateDonationSession(e) {
@@ -17644,19 +17756,19 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         const amountCents = Number(body.amountCents || 0);
         const name = body.name;
         const email = body.email;
-        const tributeType = body.tributeType || "none";
-        const tributeName = body.tributeName || "";
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
         if (!amountCents || !name || !email) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         if (amountCents < 500) {
-            return e.json(400, { error: "Donation amount must be at least $5.00" });
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
         }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
@@ -17664,34 +17776,34 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             // default
         }
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
+                    currency: 'usd',
                     product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents
+                    unit_amount: amountCents,
                 },
-                quantity: 1
-            }
+                quantity: 1,
+            },
         ];
         const metadata = {
-            paymentType: "donation",
+            paymentType: 'donation',
             amountPaidCents: String(amountCents),
             donorName: name,
             donorEmail: email,
             tributeType,
             tributeName,
-            isAnonymous: String(isAnonymous)
+            isAnonymous: String(isAnonymous),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
             const record = new Record(collection, {
                 amountPaidCents: amountCents,
                 donorName: name,
@@ -17700,15 +17812,15 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                 tributeType: tributeType,
                 tributeName: tributeName,
                 isAnonymous: isAnonymous,
-                status: "pending",
-                stripeSessionId: session.id
+                status: 'pending',
+                stripeSessionId: session.id,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     async function handleStripeWebhook(e) {
@@ -17718,115 +17830,115 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             rawBody = readerToString(e.request.body);
         }
         catch (_e) {
-            return e.json(400, { error: "Failed to read request body" });
+            return e.json(400, { error: 'Failed to read request body' });
         }
-        const sig = e.request.header.get("Stripe-Signature") || "";
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
         if (!sig || !webhookSecret) {
-            return e.json(400, { error: "Missing signature or webhook config" });
+            return e.json(400, { error: 'Missing signature or webhook config' });
         }
         // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = "";
-        let signature = "";
-        sig.split(",").forEach((part) => {
-            const pair = part.split("=");
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
             if (pair.length === 2) {
                 const k = pair[0].trim();
                 const v = pair[1].trim();
-                if (k === "t")
+                if (k === 't')
                     timestamp = v;
-                if (k === "v1")
+                if (k === 'v1')
                     signature = v;
             }
         });
         if (!timestamp || !signature) {
-            return e.json(400, { error: "Invalid signature format" });
+            return e.json(400, { error: 'Invalid signature format' });
         }
         // Validate replay attacks
         const nowSecs = Math.floor(Date.now() / 1000);
         if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: "Expired timestamp" });
+            return e.json(400, { error: 'Expired timestamp' });
         }
         // Compute local signature
-        const signedPayload = timestamp + "." + rawBody;
+        const signedPayload = timestamp + '.' + rawBody;
         const localSig = $security.hs256(signedPayload, webhookSecret);
         if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: "Signature verification failed" });
+            return e.json(400, { error: 'Signature verification failed' });
         }
         let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
         catch (_f) {
-            return e.json(400, { error: "Invalid JSON body" });
+            return e.json(400, { error: 'Invalid JSON body' });
         }
-        if (eventObj.type === "checkout.session.completed") {
+        if (eventObj.type === 'checkout.session.completed') {
             const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
             if (!session) {
-                return e.json(400, { error: "Missing session object" });
+                return e.json(400, { error: 'Missing session object' });
             }
             const metadata = session.metadata || {};
             const paymentType = metadata.paymentType;
-            if (paymentType === "ticket") {
+            if (paymentType === 'ticket') {
                 const eventId = metadata.eventId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_g) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         event: eventId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
                 // Look up event for email
                 let targetEvent;
                 try {
-                    targetEvent = $app.findRecordById("events", eventId);
+                    targetEvent = $app.findRecordById('events', eventId);
                 }
                 catch (_h) {
-                    return e.json(400, { error: "Event not found during webhook processing" });
+                    return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -17835,99 +17947,106 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     catch (_j) {
                         // default
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_k) {
                         // default
                     }
-                    const eventTitle = targetEvent.get("title") || "";
-                    const eventDateRaw = targetEvent.get("date") || "";
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const eventTitle = targetEvent.get('title') || '';
+                    const eventDateRaw = targetEvent.get('date') || '';
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{eventTitle}/g, eventTitle)
                         .replace(/{eventDate}/g, eventDateStr)
-                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "bundle") {
+            else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_l) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         bundle: bundleId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
@@ -17935,22 +18054,22 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                 let targetBundle;
                 let bundleEventIds;
                 try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                    const bundleEventsVal = targetBundle.get("events");
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
                 catch (_m) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -17959,10 +18078,10 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     catch (_o) {
                         // Use default America/New_York timezone
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
@@ -17970,23 +18089,29 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
-                    bundleEventIds.forEach(eventId => {
+                    bundleEventIds.forEach((eventId) => {
                         try {
-                            const ev = $app.findRecordById("events", eventId);
-                            const evTitle = ev.get("title") || "";
-                            const evDate = ev.get("date") || "";
-                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const ev = $app.findRecordById('events', eventId);
+                            const evTitle = ev.get('title') || '';
+                            const evDate = ev.get('date') || '';
+                            const evDateStr = formatInTimezone(evDate, timezone, {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                            });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
                         catch (_a) {
                             // Ignore individual event loading error
                         }
                     });
-                    const eventDetailsStr = eventDetailsParts.join("\n");
-                    const bundleTitle = targetBundle.get("title") || "";
+                    const eventDetailsStr = eventDetailsParts.join('\n');
+                    const bundleTitle = targetBundle.get('title') || '';
                     const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{bundleTitle}/g, bundleTitle)
                         .replace(/{eventDetails}/g, eventDetailsStr)
                         .replace(/{quantity}/g, String(quantity))
@@ -17994,61 +18119,64 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "donation") {
-                const stripeSessionId = session.id || "";
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
                 if (!stripeSessionId) {
-                    return e.json(400, { error: "Missing session ID" });
+                    return e.json(400, { error: 'Missing session ID' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || "";
-                const donorEmail = metadata.donorEmail || "";
-                const tributeType = metadata.tributeType || "none";
-                const tributeName = metadata.tributeName || "";
-                const isAnonymous = metadata.isAnonymous === "true";
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
                 try {
-                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
                 catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
                     record = new Record(collection, {
                         amountPaidCents,
                         donorName,
@@ -18057,32 +18185,32 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         tributeType,
                         tributeName,
                         isAnonymous,
-                        status: "paid",
+                        status: 'paid',
                         stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || ""
+                        stripePaymentIntentId: session.payment_intent || '',
                     });
                 }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const subject = template.get("subject") || "";
-                    let choirName = "Choir Management Tool";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_r) {
                         // default
                     }
-                    let tributeSection = "";
-                    if (tributeType === "memory" && tributeName) {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
                         tributeSection = `This donation was made in memory of ${tributeName}.`;
                     }
-                    else if (tributeType === "honor" && tributeName) {
+                    else if (tributeType === 'honor' && tributeName) {
                         tributeSection = `This donation was made in honor of ${tributeName}.`;
                     }
                     content = content
@@ -18090,67 +18218,71 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName)
                         .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "donor_" + stripeSessionId,
+                        recipientId: 'donor_' + stripeSessionId,
                         recipientEmail: donorEmail,
-                        recipientName: donorName || "Donor",
+                        recipientName: donorName || 'Donor',
                         subject: subject.replace(/{choirName}/g, choirName),
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify({ type: "Donation Receipt" })
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "dues") {
+            else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
                 if (profileId && season) {
                     try {
                         let duesRecord;
                         try {
-                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
-                            duesRecord.set("paid", true);
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
                         }
                         catch (_s) {
-                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
                                 season: season,
-                                paid: true
+                                paid: true,
                             });
                         }
                         $app.save(duesRecord);
                     }
                     catch (err) {
-                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
                     }
                 }
             }
         }
-        else if (eventObj.type === "charge.refunded") {
+        else if (eventObj.type === 'charge.refunded') {
             const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
-                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
-                            purchases.forEach(p => {
-                                p.set("status", "refunded");
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
                                 tx.save(p);
                             });
                         });
                     }
                 }
                 catch (err) {
-                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
                 }
             }
         }
@@ -18158,62 +18290,62 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
     }
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const purchaseId = body.purchaseId;
         if (!purchaseId) {
-            return e.json(400, { error: "Missing purchaseId" });
+            return e.json(400, { error: 'Missing purchaseId' });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase record not found" });
+            return e.json(404, { error: 'Purchase record not found' });
         }
-        const pi = purchase.get("stripePaymentIntentId");
+        const pi = purchase.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            purchase.set("status", "refunded");
+            purchase.set('status', 'refunded');
             $app.save(purchase);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const paymentIntentId = body.paymentIntentId;
         if (!paymentIntentId) {
-            return e.json(400, { error: "Missing paymentIntentId" });
+            return e.json(400, { error: 'Missing paymentIntentId' });
         }
         let purchases;
         try {
-            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
         }
         catch (_a) {
-            return e.json(404, { error: "No purchases found for the payment intent" });
+            return e.json(404, { error: 'No purchases found for the payment intent' });
         }
         if (purchases.length === 0) {
-            return e.json(404, { error: "No purchase records found" });
+            return e.json(404, { error: 'No purchase records found' });
         }
         try {
             refundPaymentIntent(paymentIntentId);
             const txApp = $app;
             txApp.runInTransaction((tx) => {
-                purchases.forEach(p => {
-                    p.set("status", "refunded");
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
                     tx.save(p);
                 });
             });
@@ -18221,39 +18353,39 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const donationId = body.donationId;
         if (!donationId) {
-            return e.json(400, { error: "Missing donationId" });
+            return e.json(400, { error: 'Missing donationId' });
         }
         let donation;
         try {
-            donation = $app.findRecordById("donations", donationId);
+            donation = $app.findRecordById('donations', donationId);
         }
         catch (_a) {
-            return e.json(404, { error: "Donation record not found" });
+            return e.json(404, { error: 'Donation record not found' });
         }
-        const pi = donation.get("stripePaymentIntentId");
+        const pi = donation.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            donation.set("status", "refunded");
+            donation.set('status', 'refunded');
             $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -18699,79 +18831,83 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -18786,19 +18922,19 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -18811,7 +18947,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -18819,44 +18955,44 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -18864,9 +19000,9 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -18891,40 +19027,40 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
-            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
         }
         catch (_a) {
             // Try finding by name as a fallback
             try {
-                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
             }
             catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
                 let userId;
                 try {
-                    const user = $app.findAuthRecordByEmail("users", email);
+                    const user = $app.findAuthRecordByEmail('users', email);
                     userId = user.id;
                 }
                 catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const usersCollection = $app.findCollectionByNameOrId('users');
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
                         email: email,
                         password: password,
                         passwordConfirm: password,
-                        role: "singer", // Patrons are singers with no voice part
-                        name: name || email
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
                     });
                     $app.save(newUser);
                     userId = newUser.id;
                 }
-                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
                 const newProfile = new Record(profilesCollection, {
                     user: userId,
                     name: name || email,
-                    globalStatus: "Active",
-                    voicePart: ""
+                    globalStatus: 'Active',
+                    voicePart: '',
                 });
                 $app.save(newProfile);
                 return newProfile;
@@ -18939,47 +19075,47 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket quantity" });
+            return e.json(400, { error: 'Invalid ticket quantity' });
         }
         let event;
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (_b) {
-            return e.json(404, { error: "Event not found" });
+            return e.json(404, { error: 'Event not found' });
         }
-        if (event.get("isArchived")) {
-            return e.json(400, { error: "Event has been archived" });
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
         }
-        if (!event.get("isTicketingEnabled")) {
-            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
-            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-            paidPurchases.forEach(p => {
-                const q = p.get("quantity");
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
                 soldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const capacity = event.get("ticketCapacity");
+        const capacity = event.get('ticketCapacity');
         const capacityNum = typeof capacity === 'number' ? capacity : 0;
         if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
         }
         // Select price based on day-of rules in event timezone
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const val = settingsRecord.get("value");
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
             const parsed = parseJsonField(val);
             if (parsed && parsed.timezone) {
                 timezone = parsed.timezone;
@@ -18989,61 +19125,65 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get("date");
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
-        const nowStr = nowFormatted.split(",")[0];
-        const eventDateStr = eventFormatted.split(",")[0];
+        const eventDateRaw = event.get('date');
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get("advancePriceCents");
-        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
         const unitPriceCents = isShowDay
-            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
-            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
         if (unitPriceCents < 0) {
-            return e.json(400, { error: "Invalid ticket price configuration" });
+            return e.json(400, { error: 'Invalid ticket price configuration' });
         }
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
-                    unit_amount: unitPriceCents
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "ticket",
+            paymentType: 'ticket',
             eventId,
             quantity: String(qty),
             unitPriceCents: String(unitPriceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 event: eventId,
                 profile: profile.id,
@@ -19053,16 +19193,16 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                 unitPriceCents: unitPriceCents,
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateBundleSession(e) {
@@ -19073,140 +19213,145 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket bundle quantity" });
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
         }
         let bundle;
         try {
-            bundle = $app.findRecordById("ticketBundles", bundleId);
+            bundle = $app.findRecordById('ticketBundles', bundleId);
         }
         catch (_b) {
-            return e.json(404, { error: "Bundle not found" });
+            return e.json(404, { error: 'Bundle not found' });
         }
-        if (!bundle.get("isActive")) {
-            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get("saleEndDate");
+        const saleEndDateStr = bundle.get('saleEndDate');
         if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
             if (new Date() > saleEndDate) {
-                return e.json(400, { error: "The sale period for this bundle has ended" });
+                return e.json(400, { error: 'The sale period for this bundle has ended' });
             }
         }
-        const bundleEventsVal = bundle.get("events");
+        const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
         if (bundleEventIds.length === 0) {
-            return e.json(400, { error: "This bundle does not contain any events" });
+            return e.json(400, { error: 'This bundle does not contain any events' });
         }
         // 1. Check bundle capacity
         let bundleSoldCount = 0;
         const firstEventId = bundleEventIds[0];
         try {
-            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach(p => {
-                const q = p.get("quantity");
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
                 bundleSoldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
         if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
         }
         // 2. Check individual event capacities
         for (const eventId of bundleEventIds) {
             let event;
             try {
-                event = $app.findRecordById("events", eventId);
+                event = $app.findRecordById('events', eventId);
             }
             catch (_c) {
                 return e.json(404, { error: `Included event ${eventId} not found` });
             }
-            if (event.get("isArchived")) {
-                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
             }
             let eventSoldCount = 0;
             try {
-                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                eventPurchases.forEach(p => {
-                    const q = p.get("quantity");
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
                     eventSoldCount += typeof q === 'number' ? q : 0;
                 });
             }
             catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
             }
-            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
             if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
             }
         }
-        const priceCents = Number(bundle.get("priceCents") || 0);
+        const priceCents = Number(bundle.get('priceCents') || 0);
         const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
-                    unit_amount: priceCents
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "bundle",
+            paymentType: 'bundle',
             bundleId,
             quantity: String(qty),
             unitPriceCents: String(priceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 bundle: bundleId,
                 profile: profile.id,
                 buyerName: name,
                 buyerEmail: email,
                 quantity: qty,
-                unitPriceCents: bundle.get("priceCents"),
+                unitPriceCents: bundle.get('priceCents'),
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateDonationSession(e) {
@@ -19215,19 +19360,19 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         const amountCents = Number(body.amountCents || 0);
         const name = body.name;
         const email = body.email;
-        const tributeType = body.tributeType || "none";
-        const tributeName = body.tributeName || "";
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
         if (!amountCents || !name || !email) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         if (amountCents < 500) {
-            return e.json(400, { error: "Donation amount must be at least $5.00" });
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
         }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
@@ -19235,34 +19380,34 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             // default
         }
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
+                    currency: 'usd',
                     product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents
+                    unit_amount: amountCents,
                 },
-                quantity: 1
-            }
+                quantity: 1,
+            },
         ];
         const metadata = {
-            paymentType: "donation",
+            paymentType: 'donation',
             amountPaidCents: String(amountCents),
             donorName: name,
             donorEmail: email,
             tributeType,
             tributeName,
-            isAnonymous: String(isAnonymous)
+            isAnonymous: String(isAnonymous),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
             const record = new Record(collection, {
                 amountPaidCents: amountCents,
                 donorName: name,
@@ -19271,15 +19416,15 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                 tributeType: tributeType,
                 tributeName: tributeName,
                 isAnonymous: isAnonymous,
-                status: "pending",
-                stripeSessionId: session.id
+                status: 'pending',
+                stripeSessionId: session.id,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     async function handleStripeWebhook(e) {
@@ -19289,115 +19434,115 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             rawBody = readerToString(e.request.body);
         }
         catch (_e) {
-            return e.json(400, { error: "Failed to read request body" });
+            return e.json(400, { error: 'Failed to read request body' });
         }
-        const sig = e.request.header.get("Stripe-Signature") || "";
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
         if (!sig || !webhookSecret) {
-            return e.json(400, { error: "Missing signature or webhook config" });
+            return e.json(400, { error: 'Missing signature or webhook config' });
         }
         // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = "";
-        let signature = "";
-        sig.split(",").forEach((part) => {
-            const pair = part.split("=");
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
             if (pair.length === 2) {
                 const k = pair[0].trim();
                 const v = pair[1].trim();
-                if (k === "t")
+                if (k === 't')
                     timestamp = v;
-                if (k === "v1")
+                if (k === 'v1')
                     signature = v;
             }
         });
         if (!timestamp || !signature) {
-            return e.json(400, { error: "Invalid signature format" });
+            return e.json(400, { error: 'Invalid signature format' });
         }
         // Validate replay attacks
         const nowSecs = Math.floor(Date.now() / 1000);
         if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: "Expired timestamp" });
+            return e.json(400, { error: 'Expired timestamp' });
         }
         // Compute local signature
-        const signedPayload = timestamp + "." + rawBody;
+        const signedPayload = timestamp + '.' + rawBody;
         const localSig = $security.hs256(signedPayload, webhookSecret);
         if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: "Signature verification failed" });
+            return e.json(400, { error: 'Signature verification failed' });
         }
         let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
         catch (_f) {
-            return e.json(400, { error: "Invalid JSON body" });
+            return e.json(400, { error: 'Invalid JSON body' });
         }
-        if (eventObj.type === "checkout.session.completed") {
+        if (eventObj.type === 'checkout.session.completed') {
             const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
             if (!session) {
-                return e.json(400, { error: "Missing session object" });
+                return e.json(400, { error: 'Missing session object' });
             }
             const metadata = session.metadata || {};
             const paymentType = metadata.paymentType;
-            if (paymentType === "ticket") {
+            if (paymentType === 'ticket') {
                 const eventId = metadata.eventId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_g) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         event: eventId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
                 // Look up event for email
                 let targetEvent;
                 try {
-                    targetEvent = $app.findRecordById("events", eventId);
+                    targetEvent = $app.findRecordById('events', eventId);
                 }
                 catch (_h) {
-                    return e.json(400, { error: "Event not found during webhook processing" });
+                    return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -19406,99 +19551,106 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     catch (_j) {
                         // default
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_k) {
                         // default
                     }
-                    const eventTitle = targetEvent.get("title") || "";
-                    const eventDateRaw = targetEvent.get("date") || "";
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const eventTitle = targetEvent.get('title') || '';
+                    const eventDateRaw = targetEvent.get('date') || '';
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{eventTitle}/g, eventTitle)
                         .replace(/{eventDate}/g, eventDateStr)
-                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "bundle") {
+            else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_l) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         bundle: bundleId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
@@ -19506,22 +19658,22 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                 let targetBundle;
                 let bundleEventIds;
                 try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                    const bundleEventsVal = targetBundle.get("events");
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
                 catch (_m) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -19530,10 +19682,10 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     catch (_o) {
                         // Use default America/New_York timezone
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
@@ -19541,23 +19693,29 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
-                    bundleEventIds.forEach(eventId => {
+                    bundleEventIds.forEach((eventId) => {
                         try {
-                            const ev = $app.findRecordById("events", eventId);
-                            const evTitle = ev.get("title") || "";
-                            const evDate = ev.get("date") || "";
-                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const ev = $app.findRecordById('events', eventId);
+                            const evTitle = ev.get('title') || '';
+                            const evDate = ev.get('date') || '';
+                            const evDateStr = formatInTimezone(evDate, timezone, {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                            });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
                         catch (_a) {
                             // Ignore individual event loading error
                         }
                     });
-                    const eventDetailsStr = eventDetailsParts.join("\n");
-                    const bundleTitle = targetBundle.get("title") || "";
+                    const eventDetailsStr = eventDetailsParts.join('\n');
+                    const bundleTitle = targetBundle.get('title') || '';
                     const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{bundleTitle}/g, bundleTitle)
                         .replace(/{eventDetails}/g, eventDetailsStr)
                         .replace(/{quantity}/g, String(quantity))
@@ -19565,61 +19723,64 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "donation") {
-                const stripeSessionId = session.id || "";
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
                 if (!stripeSessionId) {
-                    return e.json(400, { error: "Missing session ID" });
+                    return e.json(400, { error: 'Missing session ID' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || "";
-                const donorEmail = metadata.donorEmail || "";
-                const tributeType = metadata.tributeType || "none";
-                const tributeName = metadata.tributeName || "";
-                const isAnonymous = metadata.isAnonymous === "true";
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
                 try {
-                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
                 catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
                     record = new Record(collection, {
                         amountPaidCents,
                         donorName,
@@ -19628,32 +19789,32 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         tributeType,
                         tributeName,
                         isAnonymous,
-                        status: "paid",
+                        status: 'paid',
                         stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || ""
+                        stripePaymentIntentId: session.payment_intent || '',
                     });
                 }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const subject = template.get("subject") || "";
-                    let choirName = "Choir Management Tool";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_r) {
                         // default
                     }
-                    let tributeSection = "";
-                    if (tributeType === "memory" && tributeName) {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
                         tributeSection = `This donation was made in memory of ${tributeName}.`;
                     }
-                    else if (tributeType === "honor" && tributeName) {
+                    else if (tributeType === 'honor' && tributeName) {
                         tributeSection = `This donation was made in honor of ${tributeName}.`;
                     }
                     content = content
@@ -19661,67 +19822,71 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName)
                         .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "donor_" + stripeSessionId,
+                        recipientId: 'donor_' + stripeSessionId,
                         recipientEmail: donorEmail,
-                        recipientName: donorName || "Donor",
+                        recipientName: donorName || 'Donor',
                         subject: subject.replace(/{choirName}/g, choirName),
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify({ type: "Donation Receipt" })
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "dues") {
+            else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
                 if (profileId && season) {
                     try {
                         let duesRecord;
                         try {
-                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
-                            duesRecord.set("paid", true);
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
                         }
                         catch (_s) {
-                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
                                 season: season,
-                                paid: true
+                                paid: true,
                             });
                         }
                         $app.save(duesRecord);
                     }
                     catch (err) {
-                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
                     }
                 }
             }
         }
-        else if (eventObj.type === "charge.refunded") {
+        else if (eventObj.type === 'charge.refunded') {
             const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
-                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
-                            purchases.forEach(p => {
-                                p.set("status", "refunded");
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
                                 tx.save(p);
                             });
                         });
                     }
                 }
                 catch (err) {
-                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
                 }
             }
         }
@@ -19729,62 +19894,62 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
     }
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const purchaseId = body.purchaseId;
         if (!purchaseId) {
-            return e.json(400, { error: "Missing purchaseId" });
+            return e.json(400, { error: 'Missing purchaseId' });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase record not found" });
+            return e.json(404, { error: 'Purchase record not found' });
         }
-        const pi = purchase.get("stripePaymentIntentId");
+        const pi = purchase.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            purchase.set("status", "refunded");
+            purchase.set('status', 'refunded');
             $app.save(purchase);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const paymentIntentId = body.paymentIntentId;
         if (!paymentIntentId) {
-            return e.json(400, { error: "Missing paymentIntentId" });
+            return e.json(400, { error: 'Missing paymentIntentId' });
         }
         let purchases;
         try {
-            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
         }
         catch (_a) {
-            return e.json(404, { error: "No purchases found for the payment intent" });
+            return e.json(404, { error: 'No purchases found for the payment intent' });
         }
         if (purchases.length === 0) {
-            return e.json(404, { error: "No purchase records found" });
+            return e.json(404, { error: 'No purchase records found' });
         }
         try {
             refundPaymentIntent(paymentIntentId);
             const txApp = $app;
             txApp.runInTransaction((tx) => {
-                purchases.forEach(p => {
-                    p.set("status", "refunded");
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
                     tx.save(p);
                 });
             });
@@ -19792,39 +19957,39 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const donationId = body.donationId;
         if (!donationId) {
-            return e.json(400, { error: "Missing donationId" });
+            return e.json(400, { error: 'Missing donationId' });
         }
         let donation;
         try {
-            donation = $app.findRecordById("donations", donationId);
+            donation = $app.findRecordById('donations', donationId);
         }
         catch (_a) {
-            return e.json(404, { error: "Donation record not found" });
+            return e.json(404, { error: 'Donation record not found' });
         }
-        const pi = donation.get("stripePaymentIntentId");
+        const pi = donation.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            donation.set("status", "refunded");
+            donation.set('status', 'refunded');
             $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -20270,79 +20435,83 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -20357,19 +20526,19 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -20382,7 +20551,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -20390,44 +20559,44 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -20435,9 +20604,9 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -20462,40 +20631,40 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
-            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
         }
         catch (_a) {
             // Try finding by name as a fallback
             try {
-                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
             }
             catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
                 let userId;
                 try {
-                    const user = $app.findAuthRecordByEmail("users", email);
+                    const user = $app.findAuthRecordByEmail('users', email);
                     userId = user.id;
                 }
                 catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const usersCollection = $app.findCollectionByNameOrId('users');
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
                         email: email,
                         password: password,
                         passwordConfirm: password,
-                        role: "singer", // Patrons are singers with no voice part
-                        name: name || email
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
                     });
                     $app.save(newUser);
                     userId = newUser.id;
                 }
-                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
                 const newProfile = new Record(profilesCollection, {
                     user: userId,
                     name: name || email,
-                    globalStatus: "Active",
-                    voicePart: ""
+                    globalStatus: 'Active',
+                    voicePart: '',
                 });
                 $app.save(newProfile);
                 return newProfile;
@@ -20510,47 +20679,47 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket quantity" });
+            return e.json(400, { error: 'Invalid ticket quantity' });
         }
         let event;
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (_b) {
-            return e.json(404, { error: "Event not found" });
+            return e.json(404, { error: 'Event not found' });
         }
-        if (event.get("isArchived")) {
-            return e.json(400, { error: "Event has been archived" });
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
         }
-        if (!event.get("isTicketingEnabled")) {
-            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
-            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-            paidPurchases.forEach(p => {
-                const q = p.get("quantity");
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
                 soldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const capacity = event.get("ticketCapacity");
+        const capacity = event.get('ticketCapacity');
         const capacityNum = typeof capacity === 'number' ? capacity : 0;
         if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
         }
         // Select price based on day-of rules in event timezone
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const val = settingsRecord.get("value");
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
             const parsed = parseJsonField(val);
             if (parsed && parsed.timezone) {
                 timezone = parsed.timezone;
@@ -20560,61 +20729,65 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get("date");
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
-        const nowStr = nowFormatted.split(",")[0];
-        const eventDateStr = eventFormatted.split(",")[0];
+        const eventDateRaw = event.get('date');
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get("advancePriceCents");
-        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
         const unitPriceCents = isShowDay
-            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
-            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
         if (unitPriceCents < 0) {
-            return e.json(400, { error: "Invalid ticket price configuration" });
+            return e.json(400, { error: 'Invalid ticket price configuration' });
         }
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
-                    unit_amount: unitPriceCents
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "ticket",
+            paymentType: 'ticket',
             eventId,
             quantity: String(qty),
             unitPriceCents: String(unitPriceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 event: eventId,
                 profile: profile.id,
@@ -20624,16 +20797,16 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                 unitPriceCents: unitPriceCents,
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateBundleSession(e) {
@@ -20644,140 +20817,145 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket bundle quantity" });
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
         }
         let bundle;
         try {
-            bundle = $app.findRecordById("ticketBundles", bundleId);
+            bundle = $app.findRecordById('ticketBundles', bundleId);
         }
         catch (_b) {
-            return e.json(404, { error: "Bundle not found" });
+            return e.json(404, { error: 'Bundle not found' });
         }
-        if (!bundle.get("isActive")) {
-            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get("saleEndDate");
+        const saleEndDateStr = bundle.get('saleEndDate');
         if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
             if (new Date() > saleEndDate) {
-                return e.json(400, { error: "The sale period for this bundle has ended" });
+                return e.json(400, { error: 'The sale period for this bundle has ended' });
             }
         }
-        const bundleEventsVal = bundle.get("events");
+        const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
         if (bundleEventIds.length === 0) {
-            return e.json(400, { error: "This bundle does not contain any events" });
+            return e.json(400, { error: 'This bundle does not contain any events' });
         }
         // 1. Check bundle capacity
         let bundleSoldCount = 0;
         const firstEventId = bundleEventIds[0];
         try {
-            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach(p => {
-                const q = p.get("quantity");
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
                 bundleSoldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
         if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
         }
         // 2. Check individual event capacities
         for (const eventId of bundleEventIds) {
             let event;
             try {
-                event = $app.findRecordById("events", eventId);
+                event = $app.findRecordById('events', eventId);
             }
             catch (_c) {
                 return e.json(404, { error: `Included event ${eventId} not found` });
             }
-            if (event.get("isArchived")) {
-                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
             }
             let eventSoldCount = 0;
             try {
-                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                eventPurchases.forEach(p => {
-                    const q = p.get("quantity");
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
                     eventSoldCount += typeof q === 'number' ? q : 0;
                 });
             }
             catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
             }
-            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
             if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
             }
         }
-        const priceCents = Number(bundle.get("priceCents") || 0);
+        const priceCents = Number(bundle.get('priceCents') || 0);
         const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
-                    unit_amount: priceCents
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "bundle",
+            paymentType: 'bundle',
             bundleId,
             quantity: String(qty),
             unitPriceCents: String(priceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 bundle: bundleId,
                 profile: profile.id,
                 buyerName: name,
                 buyerEmail: email,
                 quantity: qty,
-                unitPriceCents: bundle.get("priceCents"),
+                unitPriceCents: bundle.get('priceCents'),
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateDonationSession(e) {
@@ -20786,19 +20964,19 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         const amountCents = Number(body.amountCents || 0);
         const name = body.name;
         const email = body.email;
-        const tributeType = body.tributeType || "none";
-        const tributeName = body.tributeName || "";
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
         if (!amountCents || !name || !email) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         if (amountCents < 500) {
-            return e.json(400, { error: "Donation amount must be at least $5.00" });
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
         }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
@@ -20806,34 +20984,34 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             // default
         }
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
+                    currency: 'usd',
                     product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents
+                    unit_amount: amountCents,
                 },
-                quantity: 1
-            }
+                quantity: 1,
+            },
         ];
         const metadata = {
-            paymentType: "donation",
+            paymentType: 'donation',
             amountPaidCents: String(amountCents),
             donorName: name,
             donorEmail: email,
             tributeType,
             tributeName,
-            isAnonymous: String(isAnonymous)
+            isAnonymous: String(isAnonymous),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
             const record = new Record(collection, {
                 amountPaidCents: amountCents,
                 donorName: name,
@@ -20842,15 +21020,15 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                 tributeType: tributeType,
                 tributeName: tributeName,
                 isAnonymous: isAnonymous,
-                status: "pending",
-                stripeSessionId: session.id
+                status: 'pending',
+                stripeSessionId: session.id,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     async function handleStripeWebhook(e) {
@@ -20860,115 +21038,115 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             rawBody = readerToString(e.request.body);
         }
         catch (_e) {
-            return e.json(400, { error: "Failed to read request body" });
+            return e.json(400, { error: 'Failed to read request body' });
         }
-        const sig = e.request.header.get("Stripe-Signature") || "";
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
         if (!sig || !webhookSecret) {
-            return e.json(400, { error: "Missing signature or webhook config" });
+            return e.json(400, { error: 'Missing signature or webhook config' });
         }
         // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = "";
-        let signature = "";
-        sig.split(",").forEach((part) => {
-            const pair = part.split("=");
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
             if (pair.length === 2) {
                 const k = pair[0].trim();
                 const v = pair[1].trim();
-                if (k === "t")
+                if (k === 't')
                     timestamp = v;
-                if (k === "v1")
+                if (k === 'v1')
                     signature = v;
             }
         });
         if (!timestamp || !signature) {
-            return e.json(400, { error: "Invalid signature format" });
+            return e.json(400, { error: 'Invalid signature format' });
         }
         // Validate replay attacks
         const nowSecs = Math.floor(Date.now() / 1000);
         if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: "Expired timestamp" });
+            return e.json(400, { error: 'Expired timestamp' });
         }
         // Compute local signature
-        const signedPayload = timestamp + "." + rawBody;
+        const signedPayload = timestamp + '.' + rawBody;
         const localSig = $security.hs256(signedPayload, webhookSecret);
         if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: "Signature verification failed" });
+            return e.json(400, { error: 'Signature verification failed' });
         }
         let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
         catch (_f) {
-            return e.json(400, { error: "Invalid JSON body" });
+            return e.json(400, { error: 'Invalid JSON body' });
         }
-        if (eventObj.type === "checkout.session.completed") {
+        if (eventObj.type === 'checkout.session.completed') {
             const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
             if (!session) {
-                return e.json(400, { error: "Missing session object" });
+                return e.json(400, { error: 'Missing session object' });
             }
             const metadata = session.metadata || {};
             const paymentType = metadata.paymentType;
-            if (paymentType === "ticket") {
+            if (paymentType === 'ticket') {
                 const eventId = metadata.eventId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_g) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         event: eventId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
                 // Look up event for email
                 let targetEvent;
                 try {
-                    targetEvent = $app.findRecordById("events", eventId);
+                    targetEvent = $app.findRecordById('events', eventId);
                 }
                 catch (_h) {
-                    return e.json(400, { error: "Event not found during webhook processing" });
+                    return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -20977,99 +21155,106 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     catch (_j) {
                         // default
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_k) {
                         // default
                     }
-                    const eventTitle = targetEvent.get("title") || "";
-                    const eventDateRaw = targetEvent.get("date") || "";
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const eventTitle = targetEvent.get('title') || '';
+                    const eventDateRaw = targetEvent.get('date') || '';
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{eventTitle}/g, eventTitle)
                         .replace(/{eventDate}/g, eventDateStr)
-                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "bundle") {
+            else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_l) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         bundle: bundleId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
@@ -21077,22 +21262,22 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                 let targetBundle;
                 let bundleEventIds;
                 try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                    const bundleEventsVal = targetBundle.get("events");
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
                 catch (_m) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -21101,10 +21286,10 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     catch (_o) {
                         // Use default America/New_York timezone
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
@@ -21112,23 +21297,29 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
-                    bundleEventIds.forEach(eventId => {
+                    bundleEventIds.forEach((eventId) => {
                         try {
-                            const ev = $app.findRecordById("events", eventId);
-                            const evTitle = ev.get("title") || "";
-                            const evDate = ev.get("date") || "";
-                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const ev = $app.findRecordById('events', eventId);
+                            const evTitle = ev.get('title') || '';
+                            const evDate = ev.get('date') || '';
+                            const evDateStr = formatInTimezone(evDate, timezone, {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                            });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
                         catch (_a) {
                             // Ignore individual event loading error
                         }
                     });
-                    const eventDetailsStr = eventDetailsParts.join("\n");
-                    const bundleTitle = targetBundle.get("title") || "";
+                    const eventDetailsStr = eventDetailsParts.join('\n');
+                    const bundleTitle = targetBundle.get('title') || '';
                     const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{bundleTitle}/g, bundleTitle)
                         .replace(/{eventDetails}/g, eventDetailsStr)
                         .replace(/{quantity}/g, String(quantity))
@@ -21136,61 +21327,64 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "donation") {
-                const stripeSessionId = session.id || "";
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
                 if (!stripeSessionId) {
-                    return e.json(400, { error: "Missing session ID" });
+                    return e.json(400, { error: 'Missing session ID' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || "";
-                const donorEmail = metadata.donorEmail || "";
-                const tributeType = metadata.tributeType || "none";
-                const tributeName = metadata.tributeName || "";
-                const isAnonymous = metadata.isAnonymous === "true";
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
                 try {
-                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
                 catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
                     record = new Record(collection, {
                         amountPaidCents,
                         donorName,
@@ -21199,32 +21393,32 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         tributeType,
                         tributeName,
                         isAnonymous,
-                        status: "paid",
+                        status: 'paid',
                         stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || ""
+                        stripePaymentIntentId: session.payment_intent || '',
                     });
                 }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const subject = template.get("subject") || "";
-                    let choirName = "Choir Management Tool";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_r) {
                         // default
                     }
-                    let tributeSection = "";
-                    if (tributeType === "memory" && tributeName) {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
                         tributeSection = `This donation was made in memory of ${tributeName}.`;
                     }
-                    else if (tributeType === "honor" && tributeName) {
+                    else if (tributeType === 'honor' && tributeName) {
                         tributeSection = `This donation was made in honor of ${tributeName}.`;
                     }
                     content = content
@@ -21232,67 +21426,71 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName)
                         .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "donor_" + stripeSessionId,
+                        recipientId: 'donor_' + stripeSessionId,
                         recipientEmail: donorEmail,
-                        recipientName: donorName || "Donor",
+                        recipientName: donorName || 'Donor',
                         subject: subject.replace(/{choirName}/g, choirName),
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify({ type: "Donation Receipt" })
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "dues") {
+            else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
                 if (profileId && season) {
                     try {
                         let duesRecord;
                         try {
-                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
-                            duesRecord.set("paid", true);
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
                         }
                         catch (_s) {
-                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
                                 season: season,
-                                paid: true
+                                paid: true,
                             });
                         }
                         $app.save(duesRecord);
                     }
                     catch (err) {
-                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
                     }
                 }
             }
         }
-        else if (eventObj.type === "charge.refunded") {
+        else if (eventObj.type === 'charge.refunded') {
             const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
-                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
-                            purchases.forEach(p => {
-                                p.set("status", "refunded");
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
                                 tx.save(p);
                             });
                         });
                     }
                 }
                 catch (err) {
-                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
                 }
             }
         }
@@ -21300,62 +21498,62 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
     }
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const purchaseId = body.purchaseId;
         if (!purchaseId) {
-            return e.json(400, { error: "Missing purchaseId" });
+            return e.json(400, { error: 'Missing purchaseId' });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase record not found" });
+            return e.json(404, { error: 'Purchase record not found' });
         }
-        const pi = purchase.get("stripePaymentIntentId");
+        const pi = purchase.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            purchase.set("status", "refunded");
+            purchase.set('status', 'refunded');
             $app.save(purchase);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const paymentIntentId = body.paymentIntentId;
         if (!paymentIntentId) {
-            return e.json(400, { error: "Missing paymentIntentId" });
+            return e.json(400, { error: 'Missing paymentIntentId' });
         }
         let purchases;
         try {
-            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
         }
         catch (_a) {
-            return e.json(404, { error: "No purchases found for the payment intent" });
+            return e.json(404, { error: 'No purchases found for the payment intent' });
         }
         if (purchases.length === 0) {
-            return e.json(404, { error: "No purchase records found" });
+            return e.json(404, { error: 'No purchase records found' });
         }
         try {
             refundPaymentIntent(paymentIntentId);
             const txApp = $app;
             txApp.runInTransaction((tx) => {
-                purchases.forEach(p => {
-                    p.set("status", "refunded");
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
                     tx.save(p);
                 });
             });
@@ -21363,39 +21561,39 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const donationId = body.donationId;
         if (!donationId) {
-            return e.json(400, { error: "Missing donationId" });
+            return e.json(400, { error: 'Missing donationId' });
         }
         let donation;
         try {
-            donation = $app.findRecordById("donations", donationId);
+            donation = $app.findRecordById('donations', donationId);
         }
         catch (_a) {
-            return e.json(404, { error: "Donation record not found" });
+            return e.json(404, { error: 'Donation record not found' });
         }
-        const pi = donation.get("stripePaymentIntentId");
+        const pi = donation.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            donation.set("status", "refunded");
+            donation.set('status', 'refunded');
             $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -21841,79 +22039,83 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -21928,19 +22130,19 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -21953,7 +22155,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -21961,44 +22163,44 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -22006,9 +22208,9 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -22033,40 +22235,40 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
-            return $app.findFirstRecordByFilter("profiles", "user.email = {:email}", { email });
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
         }
         catch (_a) {
             // Try finding by name as a fallback
             try {
-                return $app.findFirstRecordByFilter("profiles", "name = {:name}", { name });
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
             }
             catch (_b) {
                 // No profile found, create a new Patron profile.
                 // We create a user account so they can be linked to this email in the future.
                 let userId;
                 try {
-                    const user = $app.findAuthRecordByEmail("users", email);
+                    const user = $app.findAuthRecordByEmail('users', email);
                     userId = user.id;
                 }
                 catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId("users");
+                    const usersCollection = $app.findCollectionByNameOrId('users');
                     const password = $security.randomString(32);
                     const newUser = new Record(usersCollection, {
                         email: email,
                         password: password,
                         passwordConfirm: password,
-                        role: "singer", // Patrons are singers with no voice part
-                        name: name || email
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
                     });
                     $app.save(newUser);
                     userId = newUser.id;
                 }
-                const profilesCollection = $app.findCollectionByNameOrId("profiles");
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
                 const newProfile = new Record(profilesCollection, {
                     user: userId,
                     name: name || email,
-                    globalStatus: "Active",
-                    voicePart: ""
+                    globalStatus: 'Active',
+                    voicePart: '',
                 });
                 $app.save(newProfile);
                 return newProfile;
@@ -22081,47 +22283,47 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket quantity" });
+            return e.json(400, { error: 'Invalid ticket quantity' });
         }
         let event;
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (_b) {
-            return e.json(404, { error: "Event not found" });
+            return e.json(404, { error: 'Event not found' });
         }
-        if (event.get("isArchived")) {
-            return e.json(400, { error: "Event has been archived" });
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
         }
-        if (!event.get("isTicketingEnabled")) {
-            return e.json(400, { error: "Ticketing is not enabled for this event" });
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
-            const paidPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-            paidPurchases.forEach(p => {
-                const q = p.get("quantity");
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
                 soldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying paid purchases: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const capacity = event.get("ticketCapacity");
+        const capacity = event.get('ticketCapacity');
         const capacityNum = typeof capacity === 'number' ? capacity : 0;
         if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: "Requested quantity exceeds remaining ticket capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
         }
         // Select price based on day-of rules in event timezone
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const settingsRecord = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const val = settingsRecord.get("value");
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
             const parsed = parseJsonField(val);
             if (parsed && parsed.timezone) {
                 timezone = parsed.timezone;
@@ -22131,61 +22333,65 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get("date");
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ""), timezone, {});
-        const nowStr = nowFormatted.split(",")[0];
-        const eventDateStr = eventFormatted.split(",")[0];
+        const eventDateRaw = event.get('date');
+        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get("advancePriceCents");
-        const dayOfPriceCents = event.get("dayOfPriceCents");
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
         const unitPriceCents = isShowDay
-            ? (typeof dayOfPriceCents === 'number' ? dayOfPriceCents : 0)
-            : (typeof advancePriceCents === 'number' ? advancePriceCents : 0);
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
         if (unitPriceCents < 0) {
-            return e.json(400, { error: "Invalid ticket price configuration" });
+            return e.json(400, { error: 'Invalid ticket price configuration' });
         }
         // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
         const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets/${eventId}`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Ticket: ${String(event.get("title") || "Event")}` },
-                    unit_amount: unitPriceCents
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "ticket",
+            paymentType: 'ticket',
             eventId,
             quantity: String(qty),
             unitPriceCents: String(unitPriceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 event: eventId,
                 profile: profile.id,
@@ -22195,16 +22401,16 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                 unitPriceCents: unitPriceCents,
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateBundleSession(e) {
@@ -22215,140 +22421,145 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         const email = body.email;
         const name = body.name;
         if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         const qty = Number(quantity);
         if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: "Invalid ticket bundle quantity" });
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
         }
         let bundle;
         try {
-            bundle = $app.findRecordById("ticketBundles", bundleId);
+            bundle = $app.findRecordById('ticketBundles', bundleId);
         }
         catch (_b) {
-            return e.json(404, { error: "Bundle not found" });
+            return e.json(404, { error: 'Bundle not found' });
         }
-        if (!bundle.get("isActive")) {
-            return e.json(400, { error: "This bundle is not currently active for purchase" });
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get("saleEndDate");
+        const saleEndDateStr = bundle.get('saleEndDate');
         if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(" ", "T"));
+            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
             if (new Date() > saleEndDate) {
-                return e.json(400, { error: "The sale period for this bundle has ended" });
+                return e.json(400, { error: 'The sale period for this bundle has ended' });
             }
         }
-        const bundleEventsVal = bundle.get("events");
+        const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
         if (bundleEventIds.length === 0) {
-            return e.json(400, { error: "This bundle does not contain any events" });
+            return e.json(400, { error: 'This bundle does not contain any events' });
         }
         // 1. Check bundle capacity
         let bundleSoldCount = 0;
         const firstEventId = bundleEventIds[0];
         try {
-            const bundlePurchases = $app.findRecordsByFilter("ticketPurchases", "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", "", 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach(p => {
-                const q = p.get("quantity");
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
                 bundleSoldCount += typeof q === 'number' ? q : 0;
             });
         }
         catch (err) {
-            console.log("Error querying bundle sales: " + (err instanceof Error ? err.message : String(err)));
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
         }
-        const bundleCapacity = Number(bundle.get("capacity") || 0);
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
         if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: "Requested quantity exceeds remaining bundle capacity" });
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
         }
         // 2. Check individual event capacities
         for (const eventId of bundleEventIds) {
             let event;
             try {
-                event = $app.findRecordById("events", eventId);
+                event = $app.findRecordById('events', eventId);
             }
             catch (_c) {
                 return e.json(404, { error: `Included event ${eventId} not found` });
             }
-            if (event.get("isArchived")) {
-                return e.json(400, { error: `Included event "${event.get("title")}" is archived` });
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
             }
             let eventSoldCount = 0;
             try {
-                const eventPurchases = $app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid'", "", 10000, 0, { eventId });
-                eventPurchases.forEach(p => {
-                    const q = p.get("quantity");
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
                     eventSoldCount += typeof q === 'number' ? q : 0;
                 });
             }
             catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` + (err instanceof Error ? err.message : String(err)));
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
             }
-            const eventCapacity = Number(event.get("ticketCapacity") || 0);
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
             if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, { error: `Requested quantity exceeds remaining capacity for event "${event.get("title")}"` });
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
             }
         }
-        const priceCents = Number(bundle.get("priceCents") || 0);
+        const priceCents = Number(bundle.get('priceCents') || 0);
         const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? (Math.round(totalTicketsCents * 0.029) + 30) : 0;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/tickets`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: `Season Ticket Bundle: ${String(bundle.get("title") || "Season Pass")}` },
-                    unit_amount: priceCents
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
                 },
-                quantity: qty
-            }
+                quantity: qty,
+            },
         ];
         if (feeCents > 0) {
             lineItems.push({
                 price_data: {
-                    currency: "usd",
-                    product_data: { name: "Processing Fee" },
-                    unit_amount: feeCents
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
                 },
-                quantity: 1
+                quantity: 1,
             });
         }
         const metadata = {
-            paymentType: "bundle",
+            paymentType: 'bundle',
             bundleId,
             quantity: String(qty),
             unitPriceCents: String(priceCents),
             feeCents: String(feeCents),
             buyerName: name,
-            buyerEmail: email
+            buyerEmail: email,
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
             const record = new Record(collection, {
                 bundle: bundleId,
                 profile: profile.id,
                 buyerName: name,
                 buyerEmail: email,
                 quantity: qty,
-                unitPriceCents: bundle.get("priceCents"),
+                unitPriceCents: bundle.get('priceCents'),
                 feeCents: feeCents,
                 amountPaidCents: totalTicketsCents + feeCents,
-                currency: "usd",
+                currency: 'usd',
                 stripeSessionId: session.id,
-                status: "pending"
+                status: 'pending',
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     function handleCreateDonationSession(e) {
@@ -22357,19 +22568,19 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         const amountCents = Number(body.amountCents || 0);
         const name = body.name;
         const email = body.email;
-        const tributeType = body.tributeType || "none";
-        const tributeName = body.tributeName || "";
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
         if (!amountCents || !name || !email) {
-            return e.json(400, { error: "Missing required fields" });
+            return e.json(400, { error: 'Missing required fields' });
         }
         if (amountCents < 500) {
-            return e.json(400, { error: "Donation amount must be at least $5.00" });
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
         }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
@@ -22377,34 +22588,34 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             // default
         }
         const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-        const appUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
         const cancelUrl = `${appUrl}/donate`;
         const lineItems = [
             {
                 price_data: {
-                    currency: "usd",
+                    currency: 'usd',
                     product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents
+                    unit_amount: amountCents,
                 },
-                quantity: 1
-            }
+                quantity: 1,
+            },
         ];
         const metadata = {
-            paymentType: "donation",
+            paymentType: 'donation',
             amountPaidCents: String(amountCents),
             donorName: name,
             donorEmail: email,
             tributeType,
             tributeName,
-            isAnonymous: String(isAnonymous)
+            isAnonymous: String(isAnonymous),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
             // Pre-save pending record
             const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
             const record = new Record(collection, {
                 amountPaidCents: amountCents,
                 donorName: name,
@@ -22413,15 +22624,15 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                 tributeType: tributeType,
                 tributeName: tributeName,
                 isAnonymous: isAnonymous,
-                status: "pending",
-                stripeSessionId: session.id
+                status: 'pending',
+                stripeSessionId: session.id,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to create Stripe Checkout session", details: message });
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
     async function handleStripeWebhook(e) {
@@ -22431,115 +22642,115 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             rawBody = readerToString(e.request.body);
         }
         catch (_e) {
-            return e.json(400, { error: "Failed to read request body" });
+            return e.json(400, { error: 'Failed to read request body' });
         }
-        const sig = e.request.header.get("Stripe-Signature") || "";
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
         if (!sig || !webhookSecret) {
-            return e.json(400, { error: "Missing signature or webhook config" });
+            return e.json(400, { error: 'Missing signature or webhook config' });
         }
         // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = "";
-        let signature = "";
-        sig.split(",").forEach((part) => {
-            const pair = part.split("=");
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
             if (pair.length === 2) {
                 const k = pair[0].trim();
                 const v = pair[1].trim();
-                if (k === "t")
+                if (k === 't')
                     timestamp = v;
-                if (k === "v1")
+                if (k === 'v1')
                     signature = v;
             }
         });
         if (!timestamp || !signature) {
-            return e.json(400, { error: "Invalid signature format" });
+            return e.json(400, { error: 'Invalid signature format' });
         }
         // Validate replay attacks
         const nowSecs = Math.floor(Date.now() / 1000);
         if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: "Expired timestamp" });
+            return e.json(400, { error: 'Expired timestamp' });
         }
         // Compute local signature
-        const signedPayload = timestamp + "." + rawBody;
+        const signedPayload = timestamp + '.' + rawBody;
         const localSig = $security.hs256(signedPayload, webhookSecret);
         if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: "Signature verification failed" });
+            return e.json(400, { error: 'Signature verification failed' });
         }
         let eventObj;
         try {
             eventObj = JSON.parse(rawBody);
         }
         catch (_f) {
-            return e.json(400, { error: "Invalid JSON body" });
+            return e.json(400, { error: 'Invalid JSON body' });
         }
-        if (eventObj.type === "checkout.session.completed") {
+        if (eventObj.type === 'checkout.session.completed') {
             const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
             if (!session) {
-                return e.json(400, { error: "Missing session object" });
+                return e.json(400, { error: 'Missing session object' });
             }
             const metadata = session.metadata || {};
             const paymentType = metadata.paymentType;
-            if (paymentType === "ticket") {
+            if (paymentType === 'ticket') {
                 const eventId = metadata.eventId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate event ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_g) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         event: eventId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
                 // Look up event for email
                 let targetEvent;
                 try {
-                    targetEvent = $app.findRecordById("events", eventId);
+                    targetEvent = $app.findRecordById('events', eventId);
                 }
                 catch (_h) {
-                    return e.json(400, { error: "Event not found during webhook processing" });
+                    return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -22548,99 +22759,106 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     catch (_j) {
                         // default
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_k) {
                         // default
                     }
-                    const eventTitle = targetEvent.get("title") || "";
-                    const eventDateRaw = targetEvent.get("date") || "";
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const eventTitle = targetEvent.get('title') || '';
+                    const eventDateRaw = targetEvent.get('date') || '';
+                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{eventTitle}/g, eventTitle)
                         .replace(/{eventDate}/g, eventDateStr)
-                        .replace(/{doorsOpenTime}/g, String(targetEvent.get("doorsOpenTime") || "N/A"))
+                        .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
                         .replace(/{quantity}/g, String(quantity))
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "bundle") {
+            else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || "";
+                const stripeSessionId = session.id || '';
                 const quantity = Number(metadata.quantity || 0);
                 if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: "Invalid session metadata" });
+                    return e.json(400, { error: 'Invalid session metadata' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 try {
-                    record = $app.findFirstRecordByFilter("ticketPurchases", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate bundle purchase ignored" });
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
-                    record.set("stripeCustomerId", session.customer || "");
-                    record.set("fulfilledAt", new Date().toISOString());
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
                 }
                 catch (_l) {
                     // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || "", metadata.buyerName || "");
-                    const collection = $app.findCollectionByNameOrId("pbc_ticketPurchases_001");
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
                     record = new Record(collection, {
                         bundle: bundleId,
                         profile: profile.id,
-                        buyerName: metadata.buyerName || "",
-                        buyerEmail: metadata.buyerEmail || "",
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
                         quantity: quantity,
                         unitPriceCents: Number(metadata.unitPriceCents || 0),
                         feeCents: Number(metadata.feeCents || 0),
                         amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
+                        currency: session.currency || 'usd',
                         stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || "",
-                        stripeCustomerId: session.customer || "",
-                        status: "paid",
-                        marketingOptIn: metadata.marketingOptIn === "true",
-                        fulfilledAt: new Date().toISOString()
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
                     });
                 }
                 $app.save(record);
@@ -22648,22 +22866,22 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                 let targetBundle;
                 let bundleEventIds;
                 try {
-                    targetBundle = $app.findRecordById("ticketBundles", bundleId);
-                    const bundleEventsVal = targetBundle.get("events");
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
                 catch (_m) {
-                    return e.json(400, { error: "Bundle not found during webhook processing" });
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const rawSubject = template.get("subject") || "";
-                    let timezone = "America/New_York";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const rawSubject = template.get('subject') || '';
+                    let timezone = 'America/New_York';
                     try {
-                        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-                        const valueStr = tzSetting.get("value");
+                        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+                        const valueStr = tzSetting.get('value');
                         const tzP = parseJsonField(valueStr);
                         if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone) {
                             timezone = tzP.timezone;
@@ -22672,10 +22890,10 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     catch (_o) {
                         // Use default America/New_York timezone
                     }
-                    let choirName = "Choir Management Tool";
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
@@ -22683,23 +22901,29 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
-                    bundleEventIds.forEach(eventId => {
+                    bundleEventIds.forEach((eventId) => {
                         try {
-                            const ev = $app.findRecordById("events", eventId);
-                            const evTitle = ev.get("title") || "";
-                            const evDate = ev.get("date") || "";
-                            const evDateStr = formatInTimezone(evDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            const ev = $app.findRecordById('events', eventId);
+                            const evTitle = ev.get('title') || '';
+                            const evDate = ev.get('date') || '';
+                            const evDateStr = formatInTimezone(evDate, timezone, {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                            });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
                         catch (_a) {
                             // Ignore individual event loading error
                         }
                     });
-                    const eventDetailsStr = eventDetailsParts.join("\n");
-                    const bundleTitle = targetBundle.get("title") || "";
+                    const eventDetailsStr = eventDetailsParts.join('\n');
+                    const bundleTitle = targetBundle.get('title') || '';
                     const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
                     content = content
-                        .replace(/{buyerName}/g, metadata.buyerName || "")
+                        .replace(/{buyerName}/g, metadata.buyerName || '')
                         .replace(/{bundleTitle}/g, bundleTitle)
                         .replace(/{eventDetails}/g, eventDetailsStr)
                         .replace(/{quantity}/g, String(quantity))
@@ -22707,61 +22931,64 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
                     const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || "";
-                    const baseUrl = process.env.APP_URL || settingsAppUrl || "http://localhost:5173";
+                    const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+                    const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
                     const qrSvg = await renderQrSvg(scanUrl);
                     const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "buyer_" + stripeSessionId,
-                        recipientEmail: metadata.buyerEmail || "",
-                        recipientName: metadata.buyerName || "Buyer",
+                        recipientId: 'buyer_' + stripeSessionId,
+                        recipientEmail: metadata.buyerEmail || '',
+                        recipientName: metadata.buyerName || 'Buyer',
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue bundle confirmation email: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "donation") {
-                const stripeSessionId = session.id || "";
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
                 if (!stripeSessionId) {
-                    return e.json(400, { error: "Missing session ID" });
+                    return e.json(400, { error: 'Missing session ID' });
                 }
                 // Idempotency & Reconciliation: Check if record exists
                 let record;
                 const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || "";
-                const donorEmail = metadata.donorEmail || "";
-                const tributeType = metadata.tributeType || "none";
-                const tributeName = metadata.tributeName || "";
-                const isAnonymous = metadata.isAnonymous === "true";
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
                 try {
-                    record = $app.findFirstRecordByFilter("donations", "stripeSessionId = {:stripeSessionId}", { stripeSessionId });
-                    if (record.get("status") === "paid") {
-                        return e.json(200, { success: true, message: "Duplicate donation ignored" });
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
                     }
                     // Update existing pending record
-                    record.set("status", "paid");
-                    record.set("stripePaymentIntentId", session.payment_intent || "");
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
                 catch (_q) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId("pbc_donations_001");
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
                     record = new Record(collection, {
                         amountPaidCents,
                         donorName,
@@ -22770,32 +22997,32 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         tributeType,
                         tributeName,
                         isAnonymous,
-                        status: "paid",
+                        status: 'paid',
                         stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || ""
+                        stripePaymentIntentId: session.payment_intent || '',
                     });
                 }
                 $app.save(record);
                 // Enqueue Donation Receipt
                 try {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get("content") || "";
-                    const subject = template.get("subject") || "";
-                    let choirName = "Choir Management Tool";
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
                     try {
-                        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get("value"));
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
                         if (val)
                             choirName = val;
                     }
                     catch (_r) {
                         // default
                     }
-                    let tributeSection = "";
-                    if (tributeType === "memory" && tributeName) {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
                         tributeSection = `This donation was made in memory of ${tributeName}.`;
                     }
-                    else if (tributeType === "honor" && tributeName) {
+                    else if (tributeType === 'honor' && tributeName) {
                         tributeSection = `This donation was made in honor of ${tributeName}.`;
                     }
                     content = content
@@ -22803,67 +23030,71 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName)
                         .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: "donor_" + stripeSessionId,
+                        recipientId: 'donor_' + stripeSessionId,
                         recipientEmail: donorEmail,
-                        recipientName: donorName || "Donor",
+                        recipientName: donorName || 'Donor',
                         subject: subject.replace(/{choirName}/g, choirName),
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify({ type: "Donation Receipt" })
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
                     });
                     $app.save(mailRecord);
                 }
                 catch (mailErr) {
-                    console.log("Failed to enqueue donation receipt: " + (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
             }
-            else if (paymentType === "dues") {
+            else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
                 const season = metadata.season;
                 if (profileId && season) {
                     try {
                         let duesRecord;
                         try {
-                            duesRecord = $app.findFirstRecordByFilter("seasonalDues", "profile = {:profileId} && season = {:season}", { profileId, season });
-                            duesRecord.set("paid", true);
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
                         }
                         catch (_s) {
-                            const duesColl = $app.findCollectionByNameOrId("pbc_seasonalDues_001");
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
                                 season: season,
-                                paid: true
+                                paid: true,
                             });
                         }
                         $app.save(duesRecord);
                     }
                     catch (err) {
-                        console.log("Failed to fulfill dues payment: " + (err instanceof Error ? err.message : String(err)));
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
                     }
                 }
             }
         }
-        else if (eventObj.type === "charge.refunded") {
+        else if (eventObj.type === 'charge.refunded') {
             const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
-                    const purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
-                            purchases.forEach(p => {
-                                p.set("status", "refunded");
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
                                 tx.save(p);
                             });
                         });
                     }
                 }
                 catch (err) {
-                    console.log("Refunded purchase records not found or error for Payment Intent ID: " + paymentIntentId + ". Error: " + (err instanceof Error ? err.message : String(err)));
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
                 }
             }
         }
@@ -22871,62 +23102,62 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
     }
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const purchaseId = body.purchaseId;
         if (!purchaseId) {
-            return e.json(400, { error: "Missing purchaseId" });
+            return e.json(400, { error: 'Missing purchaseId' });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", purchaseId);
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase record not found" });
+            return e.json(404, { error: 'Purchase record not found' });
         }
-        const pi = purchase.get("stripePaymentIntentId");
+        const pi = purchase.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            purchase.set("status", "refunded");
+            purchase.set('status', 'refunded');
             $app.save(purchase);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const paymentIntentId = body.paymentIntentId;
         if (!paymentIntentId) {
-            return e.json(400, { error: "Missing paymentIntentId" });
+            return e.json(400, { error: 'Missing paymentIntentId' });
         }
         let purchases;
         try {
-            purchases = $app.findRecordsByFilter("ticketPurchases", "stripePaymentIntentId = {:paymentIntentId}", "", 1000, 0, { paymentIntentId });
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
         }
         catch (_a) {
-            return e.json(404, { error: "No purchases found for the payment intent" });
+            return e.json(404, { error: 'No purchases found for the payment intent' });
         }
         if (purchases.length === 0) {
-            return e.json(404, { error: "No purchase records found" });
+            return e.json(404, { error: 'No purchase records found' });
         }
         try {
             refundPaymentIntent(paymentIntentId);
             const txApp = $app;
             txApp.runInTransaction((tx) => {
-                purchases.forEach(p => {
-                    p.set("status", "refunded");
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
                     tx.save(p);
                 });
             });
@@ -22934,39 +23165,39 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
         }
         const body = e.requestInfo().body;
         const donationId = body.donationId;
         if (!donationId) {
-            return e.json(400, { error: "Missing donationId" });
+            return e.json(400, { error: 'Missing donationId' });
         }
         let donation;
         try {
-            donation = $app.findRecordById("donations", donationId);
+            donation = $app.findRecordById('donations', donationId);
         }
         catch (_a) {
-            return e.json(404, { error: "Donation record not found" });
+            return e.json(404, { error: 'Donation record not found' });
         }
-        const pi = donation.get("stripePaymentIntentId");
+        const pi = donation.get('stripePaymentIntentId');
         if (!pi) {
-            return e.json(400, { error: "Stripe payment intent missing on record" });
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
         }
         try {
             refundPaymentIntent(pi);
-            donation.set("status", "refunded");
+            donation.set('status', 'refunded');
             $app.save(donation);
             return e.json(200, { success: true });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: "Failed to issue Stripe refund", details: message });
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -23289,79 +23520,83 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -23376,19 +23611,19 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -23401,7 +23636,7 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -23409,44 +23644,44 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -23454,9 +23689,9 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
@@ -23792,79 +24027,83 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
     };
     function getHmacSecretFromApp(app) {
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
+            const parsed = parseJsonField(record.get('value'));
+            return parsed && parsed.secret ? parsed.secret : '';
         }
         catch (_a) {
-            return "";
+            return '';
         }
     }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
-            const record = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(record.get("value"));
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, "");
+                return comms.frontendUrl.replace(/\/+$/, '');
         }
         catch (_e) {
             /* use default */
         }
         try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || "";
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
             if (url)
-                return url.replace(/\/+$/, "");
+                return url.replace(/\/+$/, '');
         }
         catch (_f) {
             /* use default */
         }
-        return "http://localhost:5173";
+        return 'http://localhost:5173';
     }
     async function handleValidateScan(e) {
         const body = e.requestInfo().body;
         const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
         const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
         if (!token || !eventId) {
-            return e.json(400, { error: "Missing token or eventId" });
+            return e.json(400, { error: 'Missing token or eventId' });
         }
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Admin access required" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
         }
-        const parsed = parseSignedToken(token, ["t", "s"]);
+        const parsed = parseSignedToken(token, ['t', 's']);
         if (!parsed) {
-            return e.json(200, { valid: false, reason: "malformed", message: REASON_MESSAGES.malformed });
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const payload = `t=${parsed.t}`;
         const expectedSig = $security.hs256(payload, secret);
         if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, { valid: false, reason: "bad_signature", message: REASON_MESSAGES.bad_signature });
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
         }
         let purchase;
         try {
-            purchase = $app.findRecordById("ticketPurchases", parsed.t);
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
         }
         catch (_a) {
-            return e.json(200, { valid: false, reason: "not_found", message: REASON_MESSAGES.not_found });
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(200, { valid: false, reason: "not_paid", message: REASON_MESSAGES.not_paid });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
         }
-        const buyerName = String(purchase.get("buyerName") || "");
-        const quantity = Number(purchase.get("quantity") || 0);
-        const purchaseEventId = purchase.get("event");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
         if (purchaseEventId === eventId) {
-            let eventTitle = "";
-            let eventDate = "";
+            let eventTitle = '';
+            let eventDate = '';
             try {
-                const event = $app.findRecordById("events", eventId);
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_b) {
                 // keep empty values
@@ -23879,19 +24118,19 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
                 isBundlePass: false,
             });
         }
-        const bundleId = purchase.get("bundle");
+        const bundleId = purchase.get('bundle');
         if (bundleId && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                const bundleEvents = bundle.get("events");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
                 const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
                 if (eventIds.includes(eventId)) {
-                    let eventTitle = "";
-                    let eventDate = "";
+                    let eventTitle = '';
+                    let eventDate = '';
                     try {
-                        const scannedEvent = $app.findRecordById("events", eventId);
-                        eventTitle = String(scannedEvent.get("title") || "");
-                        eventDate = String(scannedEvent.get("date") || "");
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
                     }
                     catch (_c) {
                         // keep empty values
@@ -23904,7 +24143,7 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
                         eventTitle,
                         eventDate,
                         isBundlePass: true,
-                        bundleTitle: String(bundle.get("title") || ""),
+                        bundleTitle: String(bundle.get('title') || ''),
                     });
                 }
             }
@@ -23912,44 +24151,44 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
                 // bundle not found — fall through to wrong_event
             }
         }
-        return e.json(200, { valid: false, reason: "wrong_event", message: REASON_MESSAGES.wrong_event });
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
     }
     async function handleGetScanContext(e) {
         const query = e.requestInfo().query;
-        const sessionId = typeof query["session_id"] === 'string' ? query["session_id"] : '';
-        const purchaseId = typeof query["purchase_id"] === 'string' ? query["purchase_id"] : '';
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
         if (!sessionId || !purchaseId) {
-            return e.json(400, { error: "Missing session_id or purchase_id" });
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
         }
         let purchase;
         try {
-            purchase = $app.findFirstRecordByFilter("ticketPurchases", "id = {:purchaseId} && stripeSessionId = {:sessionId}", { purchaseId, sessionId });
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
         }
         catch (_a) {
-            return e.json(404, { error: "Purchase not found" });
+            return e.json(404, { error: 'Purchase not found' });
         }
-        if (purchase.get("status") !== "paid") {
-            return e.json(409, { error: "Purchase is not yet paid" });
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
         }
         const secret = getHmacSecretFromApp($app);
         if (!secret) {
-            return e.json(500, { error: "Server configuration error" });
+            return e.json(500, { error: 'Server configuration error' });
         }
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const qrSvg = await renderQrSvg(scanUrl);
         const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-        const buyerName = String(purchase.get("buyerName") || "");
-        const bundleId = purchase.get("bundle");
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
-        let eventTitle = "";
-        let eventDate = "";
+        let eventTitle = '';
+        let eventDate = '';
         let bundleTitle;
         if (isBundlePass && typeof bundleId === 'string') {
             try {
-                const bundle = $app.findRecordById("ticketBundles", bundleId);
-                bundleTitle = String(bundle.get("title") || "");
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
             }
             catch (_b) {
                 // bundle not found
@@ -23957,9 +24196,9 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
         }
         else {
             try {
-                const event = $app.findRecordById("events", String(purchase.get("event") || ""));
-                eventTitle = String(event.get("title") || "");
-                eventDate = String(event.get("date") || "");
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
             }
             catch (_c) {
                 // event not found
