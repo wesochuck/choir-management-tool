@@ -575,9 +575,7 @@ export default function TicketingView() {
     {
       id: 'status',
       header: 'Status',
-      cell: (_, p) => (
-        <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>{p.status}</Badge>
-      ),
+      cell: (_, p) => <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>{p.status}</Badge>,
       align: 'center',
       cardSection: 0,
       cardSide: 'right',
@@ -621,9 +619,7 @@ export default function TicketingView() {
     {
       id: 'price',
       header: 'Price',
-      cell: (_, b) => (
-        <span className="font-extrabold">${(b.priceCents / 100).toFixed(2)}</span>
-      ),
+      cell: (_, b) => <span className="font-extrabold">${(b.priceCents / 100).toFixed(2)}</span>,
       align: 'right',
       cardSection: 1,
       cardSide: 'right',
@@ -704,18 +700,10 @@ export default function TicketingView() {
       header: 'Actions',
       cell: (_, b) => (
         <div className="flex justify-end gap-2">
-          <Button
-            onClick={() => handleOpenEditModal(b)}
-            variant="secondary"
-            size="small"
-          >
+          <Button onClick={() => handleOpenEditModal(b)} variant="secondary" size="small">
             Edit
           </Button>
-          <Button
-            onClick={() => handleDeleteBundle(b.id, b.events)}
-            variant="danger"
-            size="small"
-          >
+          <Button onClick={() => handleDeleteBundle(b.id, b.events)} variant="danger" size="small">
             Delete
           </Button>
         </div>
@@ -790,9 +778,7 @@ export default function TicketingView() {
     {
       id: 'status',
       header: 'Status',
-      cell: (_, o) => (
-        <Badge tone={o.status === 'paid' ? 'success' : 'danger'}>{o.status}</Badge>
-      ),
+      cell: (_, o) => <Badge tone={o.status === 'paid' ? 'success' : 'danger'}>{o.status}</Badge>,
       align: 'center',
       cardSection: 0,
       cardSide: 'right',
@@ -889,21 +875,7 @@ export default function TicketingView() {
               className="animate-pulse-once"
               onClick={handleOpenCreateModal}
               title="Create New Bundle"
-              icon={
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              }
+              icon={'➕'}
             >
               <span className="hidden md:inline">Create New Bundle</span>
             </Button>
@@ -914,22 +886,7 @@ export default function TicketingView() {
               onClick={handleExportCSV}
               disabled={activePurchases.length === 0}
               title="Export Will Call CSV"
-              icon={
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-              }
+              icon={'⬇️'}
             >
               <span className="hidden md:inline">Export Will Call CSV</span>
             </Button>
@@ -1020,21 +977,7 @@ export default function TicketingView() {
                         </p>
                       </div>
                       <div className="rounded-xl bg-slate-50 p-3 text-slate-500 transition-colors group-hover:bg-slate-100">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
+                        '📅'
                       </div>
                     </div>
                   </div>
@@ -1058,19 +1001,7 @@ export default function TicketingView() {
                         </p>
                       </div>
                       <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <line x1="12" y1="1" x2="12" y2="23" />
-                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
+                        '💵'
                       </div>
                     </div>
                   </div>
@@ -1248,7 +1179,9 @@ export default function TicketingView() {
                 manualPagination
                 getRowClassName={(p) => (p.status === 'refunded' ? 'opacity-60' : '')}
                 renderMobileCard={(p) => (
-                  <div className={`flex flex-col gap-3 ${p.status === 'refunded' ? 'opacity-60' : ''}`}>
+                  <div
+                    className={`flex flex-col gap-3 ${p.status === 'refunded' ? 'opacity-60' : ''}`}
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-slate-400">
                         {formatInTimezone(p.created, timezone, {
@@ -1259,9 +1192,7 @@ export default function TicketingView() {
                           minute: '2-digit',
                         })}
                       </span>
-                      <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>
-                        {p.status}
-                      </Badge>
+                      <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>{p.status}</Badge>
                     </div>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex flex-col gap-0.5">
@@ -1428,7 +1359,9 @@ export default function TicketingView() {
               manualPagination
               getRowClassName={(o) => (o.status === 'refunded' ? 'opacity-60' : '')}
               renderMobileCard={(order) => (
-                <div className={`flex flex-col gap-3 ${order.status === 'refunded' ? 'opacity-60' : ''}`}>
+                <div
+                  className={`flex flex-col gap-3 ${order.status === 'refunded' ? 'opacity-60' : ''}`}
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-slate-400">
                       {formatInTimezone(order.created, timezone, {
@@ -1446,9 +1379,7 @@ export default function TicketingView() {
 
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm font-bold text-slate-800">
-                        {order.buyerName}
-                      </span>
+                      <span className="text-sm font-bold text-slate-800">{order.buyerName}</span>
                       <span className="text-xs font-medium break-all text-slate-500">
                         {order.buyerEmail}
                       </span>

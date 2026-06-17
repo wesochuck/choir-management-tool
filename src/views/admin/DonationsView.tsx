@@ -369,9 +369,7 @@ export default function DonationsView() {
       id: 'amount',
       header: 'Amount',
       cell: (_, d) => (
-        <span className="font-extrabold">
-          ${(d.amountPaidCents / 100).toFixed(2)}
-        </span>
+        <span className="font-extrabold">${(d.amountPaidCents / 100).toFixed(2)}</span>
       ),
       align: 'right',
       cardSection: 1,
@@ -402,13 +400,7 @@ export default function DonationsView() {
       header: 'Status',
       cell: (_, d) => (
         <Badge
-          tone={
-            d.status === 'paid'
-              ? 'success'
-              : d.status === 'refunded'
-                ? 'danger'
-                : 'neutral'
-          }
+          tone={d.status === 'paid' ? 'success' : d.status === 'refunded' ? 'danger' : 'neutral'}
         >
           {d.status}
         </Badge>
@@ -456,22 +448,7 @@ export default function DonationsView() {
               onClick={handleExportCSV}
               disabled={sortedDonations.length === 0}
               title="Export CSV"
-              icon={
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-              }
+              icon={'⬇️'}
             >
               <span className="hidden md:inline">Export CSV</span>
             </Button>
@@ -482,21 +459,7 @@ export default function DonationsView() {
               className="animate-pulse-once"
               onClick={() => openLevelModal()}
               title="Add Level"
-              icon={
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              }
+              icon={'➕'}
             >
               <span className="hidden md:inline">Add Level</span>
             </Button>
@@ -564,19 +527,7 @@ export default function DonationsView() {
                     </p>
                   </div>
                   <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="12" y1="1" x2="12" y2="23" />
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
+                    '💵'
                   </div>
                 </div>
               </div>
@@ -954,19 +905,7 @@ export default function DonationsView() {
                         className="group flex min-h-[150px] cursor-pointer flex-col items-center justify-center transition-all"
                       >
                         <div className="group-hover:border-primary/40 group-hover:text-primary rounded-xl border border-dashed border-slate-300 bg-white p-2.5 text-slate-400 shadow-sm transition-colors">
-                          <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
+                          '➕'
                         </div>
                         <span className="group-hover:text-primary mt-3 text-sm font-bold text-slate-500 transition-colors">
                           + Add Donor Level

@@ -120,19 +120,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
             disabled={disabled}
             className="h-9 w-full pr-10"
           />
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-text-muted pointer-events-none absolute right-3 size-4"
-          >
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-
+          '🔍'
           {showSuggestions && query.trim().length > 0 && (
             <div className="border-border bg-surface absolute inset-x-0 top-full z-[100] mt-1 flex max-h-[300px] flex-col gap-0.5 overflow-y-auto rounded-md border p-1 shadow-md">
               {filteredLibrary.map((p) => (
