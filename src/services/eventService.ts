@@ -102,8 +102,8 @@ export const eventService = {
     });
   },
 
-  async getPastPerformances(): Promise<Event[]> {
-    const result = await pb.collection('events').getList<Event>(1, 5, {
+  async getRecentPerformances(limit: number): Promise<Event[]> {
+    const result = await pb.collection('events').getList<Event>(1, limit, {
       filter: 'type = "Performance" && date < @now && isArchived != true',
       sort: '-date',
       fields:
@@ -111,6 +111,24 @@ export const eventService = {
       expand: 'venue',
     });
     return result.items;
+  },
+
+  async getPastPerformancesPaginated(
+    page: number,
+    perPage: number
+  ): Promise<{ items: Event[]; totalPages: number; totalItems: number }> {
+    const result = await pb.collection('events').getList<Event>(page, perPage, {
+      filter: 'type = "Performance" && date < @now && isArchived != true',
+      sort: '-date',
+      fields:
+        'id,collectionId,collectionName,title,date,venue,publicDetails,eventGraphic,expand.venue',
+      expand: 'venue',
+    });
+    return {
+      items: result.items,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    };
   },
 
   async getRehearsalsForPerformance(performanceId: string) {

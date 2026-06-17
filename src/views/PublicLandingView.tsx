@@ -25,7 +25,7 @@ function PublicLandingView() {
 
   const performancesQuery = useQuery({
     queryKey: queryKeys.events.publicList,
-    queryFn: () => eventService.getPastPerformances(),
+    queryFn: () => eventService.getRecentPerformances(5),
   });
 
   const isLoading = landingQuery.isLoading || performancesQuery.isLoading;
