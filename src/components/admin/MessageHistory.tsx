@@ -210,8 +210,8 @@ export function MessageHistory({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="mb-1 flex gap-2">
-        <div className="relative flex-1">
+      <div className="mb-1 flex items-center gap-2">
+        <div className="relative flex-[3]">
           <Input
             type="text"
             placeholder="Search message history (subject, content, type)..."
@@ -236,7 +236,8 @@ export function MessageHistory({
         <Select
           value={sourceFilter}
           onChange={(e) => onSourceFilterChange(e.target.value as SourceFilter)}
-          size="small"
+          size="compact"
+          className="max-w-[130px]"
         >
           <option value="all">All Sources</option>
           <option value="manual">Manual</option>
