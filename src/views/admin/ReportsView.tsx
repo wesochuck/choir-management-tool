@@ -4,9 +4,19 @@ import { queryKeys } from '../../lib/queryKeys';
 import { reportService } from '../../services/reportService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { useEvents } from '../../hooks/useEvents';
-import { Button, Select } from '../../components/ui';
+import { Button, Select, DataTable, type ColumnDef } from '../../components/ui';
 
 type ReportTab = 'attendance' | 'repertoire';
+
+interface SingerReport {
+  profileId: string;
+  name: string;
+  voicePart: string;
+  absences: number;
+  presenceCount: number;
+  totalEvents: number;
+  attendanceRate: number;
+}
 
 interface RepertoireStats {
   piece: MusicPiece;
@@ -98,6 +108,104 @@ export default function ReportsView() {
       return a.piece.title.localeCompare(b.piece.title);
     });
   }, [library, allEvents]);
+
+  const attendanceColumns: ColumnDef<SingerReport>[] = [
+    {
+      id: 'singer',
+      header: 'Singer',
+      accessorKey: 'name',
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'part',
+      header: 'Part',
+      accessorKey: 'voicePart',
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Part',
+    },
+    {
+      id: 'absences',
+      header: 'Absences',
+      align: 'center',
+      cell: (_, row) =>
+        row.absences >= 2 ? (
+          <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+            {row.absences}
+          </span>
+        ) : (
+          row.absences
+        ),
+      cardSection: 0,
+      cardSide: 'right',
+    },
+    {
+      id: 'present',
+      header: 'Present',
+      align: 'center',
+      cell: (_, row) => `${row.presenceCount} / ${row.totalEvents}`,
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Present',
+    },
+    {
+      id: 'rate',
+      header: 'Rate',
+      align: 'center',
+      cell: (_, row) => `${row.attendanceRate.toFixed(1)}%`,
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Rate',
+    },
+  ];
+
+  const repertoireColumns: ColumnDef<RepertoireStats>[] = [
+    {
+      id: 'title',
+      header: 'Title',
+      cell: (_, row) => <strong>{row.piece.title}</strong>,
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'composer',
+      header: 'Composer',
+      cell: (_, row) => row.piece.composer || '-',
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Composer',
+    },
+    {
+      id: 'arranger',
+      header: 'Arranger',
+      cell: (_, row) => row.piece.arranger || '-',
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Arranger',
+    },
+    {
+      id: 'totalPerformances',
+      header: 'Total Performances',
+      align: 'center',
+      cell: (_, row) => (
+        <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+          {row.totalPerformances}
+        </span>
+      ),
+      cardSection: 0,
+      cardSide: 'right',
+    },
+    {
+      id: 'lastPerformed',
+      header: 'Last Performed',
+      cell: (_, row) =>
+        row.lastPerformed ? row.lastPerformed.toLocaleDateString() : '-',
+      cardSection: 1,
+      cardSide: 'right',
+      cardLabel: 'Last Performed',
+    },
+  ];
 
   const handleExportCSV = () => {
     if (tab === 'attendance') {
@@ -261,50 +369,18 @@ export default function ReportsView() {
                     Singers with 2 or more absences are highlighted in red.
                   </p>
                 </div>
-
-                <div className="overflow-x-auto">
-                  <table className="table w-full border-collapse">
-                    <thead>
-                      <tr className="bg-primary-light text-left">
-                        <th className="p-4">Singer</th>
-                        <th className="p-4">Part</th>
-                        <th className="p-4 text-center">Absences</th>
-                        <th className="p-4 text-center">Present</th>
-                        <th className="p-4 text-center">Rate</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {concertSummary.singerReports.map((report) => (
-                        <tr
-                          key={report.profileId}
-                          className={report.absences >= 2 ? 'bg-danger-bg text-danger-text' : ''}
-                        >
-                          <td className="border-border border-b p-4 font-semibold">
-                            {report.name}
-                          </td>
-                          <td className="border-border border-b p-4">{report.voicePart}</td>
-                          <td className="border-border border-b p-4 text-center">
-                            <span
-                              className={
-                                report.absences >= 2
-                                  ? 'bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase'
-                                  : ''
-                              }
-                            >
-                              {report.absences}
-                            </span>
-                          </td>
-                          <td className="border-border border-b p-4 text-center">
-                            {report.presenceCount} / {report.totalEvents}
-                          </td>
-                          <td className="border-border border-b p-4 text-center">
-                            {report.attendanceRate.toFixed(1)}%
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={attendanceColumns}
+                  data={concertSummary.singerReports}
+                  isLoading={false}
+                  emptyState={{
+                    title: 'No attendance records found.',
+                    icon: '📊',
+                  }}
+                  manualPagination
+                  getRowId={(r) => r.profileId}
+                  getRowClassName={(r) => r.absences >= 2 ? 'bg-danger-bg text-danger-text' : ''}
+                />
               </div>
 
               <div className="hidden print:block">
@@ -360,50 +436,17 @@ export default function ReportsView() {
             </div>
           </div>
 
-          {isRepertoireLoading ? (
-            <div className="p-8 text-center">
-              <div className="text-muted">Loading repertoire data...</div>
-            </div>
-          ) : repertoireStats.length === 0 ? (
-            <div className="border-border bg-surface flex flex-col items-center justify-center gap-2 rounded-xl border p-8 text-center shadow-sm">
-              <p className="text-muted">No pieces in the music library.</p>
-            </div>
-          ) : (
-            <div className="border-border bg-surface overflow-hidden rounded-xl border p-0 shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="table w-full border-collapse">
-                  <thead>
-                    <tr className="bg-primary-light text-left">
-                      <th className="p-4">Title</th>
-                      <th className="p-4">Composer</th>
-                      <th className="p-4">Arranger</th>
-                      <th className="p-4 text-center">Total Performances</th>
-                      <th className="p-4">Last Performed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {repertoireStats.map((stat) => (
-                      <tr key={stat.piece.id}>
-                        <td className="border-border border-b p-4">
-                          <strong>{stat.piece.title}</strong>
-                        </td>
-                        <td className="border-border border-b p-4">{stat.piece.composer || '-'}</td>
-                        <td className="border-border border-b p-4">{stat.piece.arranger || '-'}</td>
-                        <td className="border-border border-b p-4 text-center">
-                          <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
-                            {stat.totalPerformances}
-                          </span>
-                        </td>
-                        <td className="border-border border-b p-4">
-                          {stat.lastPerformed ? stat.lastPerformed.toLocaleDateString() : '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          <DataTable
+            columns={repertoireColumns}
+            data={repertoireStats}
+            isLoading={isRepertoireLoading}
+            emptyState={{
+              title: 'No pieces in the music library.',
+              icon: '🎵',
+            }}
+            manualPagination
+            getRowId={(r) => r.piece.id}
+          />
         </div>
       )}
     </div>
