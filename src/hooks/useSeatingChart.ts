@@ -37,13 +37,11 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
   // ── UI state ──
   const [activeChartId, setActiveChartId] = useState<string>('');
-  const [optimisticAssignments, setOptimisticAssignments] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
 
   // ── Auto-save / dirty tracking refs ──
   const chartRef = useRef<SeatingChart | null>(null);
-  const optimisticAssignmentsRef = useRef<Record<string, string>>({});
   const dirtyPayloadRef = useRef<Partial<SeatingChart> | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
@@ -86,6 +84,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
       };
     },
     enabled: !!performanceId,
+    staleTime: 30_000,
   });
 
   // ── Derived data ──
@@ -133,16 +132,12 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   useEffect(() => {
     if (!activeChart) {
       chartRef.current = null;
-      optimisticAssignmentsRef.current = {};
-      setOptimisticAssignments({});
       setChart(null);
       return;
     }
 
     if (!isDirtyRef.current || !dirtyPayloadRef.current) {
       chartRef.current = activeChart;
-      optimisticAssignmentsRef.current = activeChart.assignments ?? {};
-      setOptimisticAssignments(activeChart.assignments ?? {});
       setChart(activeChart);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watch only id + assignments so unrelated activeChart fields do not re-sync local state
@@ -283,19 +278,17 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
           if (lastEditIdRef.current === requestId) {
             chartRef.current = updated;
-            optimisticAssignmentsRef.current = updated.assignments ?? {};
             dirtyPayloadRef.current = null;
             isDirtyRef.current = false;
             setIsDirty(false);
 
             setChart(updated);
-            setOptimisticAssignments(updated.assignments ?? {});
             setError(null);
           } else {
             const merged = mergeSeatingResponseWithDirtyState(
               updated,
               dirtyPayloadRef.current ?? {},
-              optimisticAssignmentsRef.current,
+              chartRef.current?.assignments ?? {},
               performanceId,
               venueId
             );
@@ -376,11 +369,6 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
       chartRef.current = nextChart;
 
-      if (updates.assignments) {
-        optimisticAssignmentsRef.current = updates.assignments;
-        setOptimisticAssignments(updates.assignments);
-      }
-
       dirtyPayloadRef.current = {
         ...(dirtyPayloadRef.current ?? {}),
         ...updates,
@@ -402,7 +390,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     async (seatKey: string, profileId: string, fromSeatKey?: string) => {
       if (!venue || !performanceId) return;
 
-      const newAssignments: Record<string, string> = { ...optimisticAssignmentsRef.current };
+      const newAssignments: Record<string, string> = { ...(chartRef.current?.assignments ?? {}) };
 
       if (profileId) {
         if (fromSeatKey && newAssignments[seatKey] && newAssignments[seatKey] !== profileId) {
@@ -608,7 +596,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     renameChart,
     deleteChart,
     reorderCharts,
-    optimisticAssignments,
+    optimisticAssignments: chart?.assignments ?? {},
     activeProfiles,
     allProfiles,
     sectionCounts,
