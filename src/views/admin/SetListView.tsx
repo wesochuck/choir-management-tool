@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
-import { eventService, type SetListItem, type Event } from '../../services/eventService';
-import { playerService } from '../../services/playerService';
+import { eventService, type SetListItem } from '../../services/eventService';
 import {
   musicLibraryService,
   type MusicPiece,
@@ -13,6 +12,8 @@ import { AppCard } from '../../components/common/AppCard';
 import { SortableSetListItem } from '../../components/admin/SortableSetListItem';
 import { SetListInlineCreator } from '../../components/admin/SetListInlineCreator';
 import { SetListItemEditModal } from '../../components/admin/SetListItemEditModal';
+import { PlayerLinkModal } from '../../components/admin/PlayerLinkModal';
+import { useEventPlayerLink } from './events/useEventPlayerLink';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
 import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
@@ -41,7 +42,7 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
-import { Button, Select, Spinner, Divider, CopyButton } from '../../components/ui';
+import { Button, Select, Spinner, Divider } from '../../components/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 
@@ -145,42 +146,13 @@ export default function SetListView() {
     setActiveAudioPart(key === 'tutti' ? 'Tutti' : key);
   };
 
-  const handleOpenPlayer = async (event: Event) => {
-    try {
-      const token = await playerService.generateToken(event.id);
-      const url = `${window.location.origin}/player?token=${encodeURIComponent(token)}`;
-
-      await dialog.showMessage({
-        title: 'Player Link Generated',
-        message: (
-          <div className="flex flex-col gap-4">
-            <p>A standalone practice link has been generated for "{event.title || event.type}".</p>
-            <div className="border-border bg-bg rounded-lg border p-2 text-[0.85rem] break-all">
-              {url}
-            </div>
-            <div className="flex flex-row gap-2">
-              <CopyButton value={url}>Copy Link</CopyButton>
-              <Button
-                variant="secondary"
-                size="small"
-                onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
-              >
-                Open Player
-              </Button>
-            </div>
-          </div>
-        ),
-      });
-    } catch (err: unknown) {
-      console.error(err);
-      const message = err instanceof Error ? err.message : String(err);
-      await dialog.showMessage({
-        title: 'Error',
-        message: `Could not generate player link: ${message}`,
-        variant: 'danger',
-      });
-    }
-  };
+  const {
+    handleOpenPlayer,
+    isOpen: isPlayerLinkOpen,
+    url: playerLinkUrl,
+    eventTitle: playerLinkEventTitle,
+    setIsOpen: setPlayerLinkOpen,
+  } = useEventPlayerLink(dialog);
 
   const handleOpenPieceEditor = (pieceId: string) => {
     const selectedPiece = library.find((p) => p.id === pieceId);
@@ -924,6 +896,13 @@ export default function SetListView() {
             </div>
           </div>
         </Modal>
+
+        <PlayerLinkModal
+          isOpen={isPlayerLinkOpen}
+          onClose={() => setPlayerLinkOpen(false)}
+          url={playerLinkUrl}
+          eventTitle={playerLinkEventTitle}
+        />
       </div>
     </div>
   );

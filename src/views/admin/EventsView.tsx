@@ -5,6 +5,7 @@ import { useVenues } from '../../hooks/useVenues';
 import { EventTable } from '../../components/admin/EventTable';
 import { EventModal } from '../../components/admin/EventModal';
 import { BulkEventModal } from '../../components/admin/BulkEventModal';
+import { PlayerLinkModal } from '../../components/admin/PlayerLinkModal';
 import type { Event } from '../../services/eventService';
 import { useDialog } from '../../contexts/DialogContext';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
@@ -57,7 +58,13 @@ export default function EventsView(): React.JSX.Element {
     setIsModalOpen,
   });
 
-  const { handleOpenPlayer } = useEventPlayerLink({ dialog });
+  const {
+    handleOpenPlayer,
+    isOpen: isPlayerLinkOpen,
+    url: playerLinkUrl,
+    eventTitle: playerLinkEventTitle,
+    setIsOpen: setPlayerLinkOpen,
+  } = useEventPlayerLink(dialog);
 
   const { handleSendMessage } = useEventCommunicationDraft({
     navigate,
@@ -233,6 +240,13 @@ export default function EventsView(): React.JSX.Element {
         onSave={bulkAddRehearsals}
         performances={performances}
         venues={venues}
+      />
+
+      <PlayerLinkModal
+        isOpen={isPlayerLinkOpen}
+        onClose={() => setPlayerLinkOpen(false)}
+        url={playerLinkUrl}
+        eventTitle={playerLinkEventTitle}
       />
     </div>
   );
