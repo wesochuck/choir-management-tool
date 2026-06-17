@@ -32,6 +32,7 @@ describe('PublicLandingView', () => {
     mock.method(settingsService, 'getHeroImageUrl', async () => null);
     mock.method(settingsService, 'getTimezone', async () => 'America/New_York');
     mock.method(eventService, 'getRecentPerformances', async () => []);
+    mock.method(eventService, 'getPublicEvents', async () => []);
 
     const mod = await import('../../src/views/PublicLandingView');
     PublicLandingView = mod.default;

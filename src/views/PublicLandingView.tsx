@@ -7,6 +7,7 @@ import { settingsService } from '../services/settingsService';
 import { eventService } from '../services/eventService';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { AppCard } from '../components/common/AppCard';
+import { Button } from '../components/ui/Button/Button';
 import { formatInTimezone } from '../lib/timezone';
 import { PublicLayout } from '../components/common/PublicLayout';
 import { queryKeys } from '../lib/queryKeys';
@@ -31,9 +32,16 @@ function PublicLandingView() {
     queryFn: () => eventService.getRecentPerformances(3),
   });
 
-  const isLoading = landingQuery.isLoading || performancesQuery.isLoading;
+  const ticketedQuery = useQuery({
+    queryKey: queryKeys.events.publicList,
+    queryFn: () => eventService.getPublicEvents(),
+  });
+
+  const isLoading =
+    landingQuery.isLoading || performancesQuery.isLoading || ticketedQuery.isLoading;
   const landingData = landingQuery.data;
   const performanceList = performancesQuery.data ?? [];
+  const ticketedEvents = ticketedQuery.data ?? [];
 
   if (isLoading) {
     return (
@@ -74,6 +82,57 @@ function PublicLandingView() {
           </p>
         </div>
       </section>
+
+      {ticketedEvents.length > 0 && (
+        <section className="mx-auto max-w-4xl px-6 py-16">
+          <div className="grid gap-10">
+            {ticketedEvents.map((event) => {
+              const venueName =
+                event.expand?.venue &&
+                typeof event.expand.venue === 'object' &&
+                'name' in event.expand.venue
+                  ? (event.expand.venue as { name: string }).name
+                  : '';
+              const graphicUrl = event.eventGraphic
+                ? pb.files.getURL(event, event.eventGraphic)
+                : null;
+
+              return (
+                <div
+                  key={event.id}
+                  className="border-border bg-surface flex flex-col items-center gap-6 rounded-2xl border p-8 text-center shadow-lg"
+                >
+                  {graphicUrl && (
+                    <img
+                      src={graphicUrl}
+                      alt={event.title}
+                      className="h-64 w-full rounded-xl object-cover"
+                    />
+                  )}
+                  <h2 className="text-text m-0 text-3xl font-bold">{event.title}</h2>
+                  <p className="text-text-muted m-0 text-lg">
+                    {formatInTimezone(event.date, timezone, {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                  {venueName && <p className="text-text-muted m-0">{venueName}</p>}
+                  <Button
+                    as={Link}
+                    to={`/tickets/${event.id}`}
+                    variant="primary"
+                    className="min-w-[200px] px-8 py-3 text-center text-lg no-underline"
+                  >
+                    Buy Tickets
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {settings.aboutUsText && (
         <section className="mx-auto max-w-3xl px-6 py-16">
