@@ -9,6 +9,7 @@ import { AppCard } from '../../components/common/AppCard';
 import { Button } from '../../components/ui';
 import { type Profile } from '../../services/profileService';
 import { seatingService, type SeatingSingerProfile } from '../../services/seatingService';
+import { useDialog } from '../../contexts/DialogContext';
 
 type SingerDisplayProfile = Pick<Profile, 'id' | 'name' | 'voicePart'> | SeatingSingerProfile;
 
@@ -52,6 +53,8 @@ export default function SeatingFinderView() {
     isLoading: chartLoading,
   } = useSeatingChart(eventId || '', event?.expand?.venue || null);
 
+  const dialog = useDialog();
+
   const isLoading = eventsLoading || chartLoading;
 
   const seatingProfilesQuery = useQuery({
@@ -59,6 +62,13 @@ export default function SeatingFinderView() {
     queryFn: () => seatingService.getSingerSeatingProfiles(eventId!, chart!.id),
     enabled: !!eventId && !!chart?.id && !isOpenSeating,
   });
+
+  useEffect(() => {
+    if (seatingProfilesQuery.error) {
+      dialog.showToast('Failed to load seating profiles');
+    }
+  }, [seatingProfilesQuery.error]);
+
   const assignedSingerProfiles = useMemo(
     () => seatingProfilesQuery.data ?? [],
     [seatingProfilesQuery.data]

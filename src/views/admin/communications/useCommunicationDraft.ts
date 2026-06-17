@@ -132,6 +132,12 @@ export function useCommunicationDraft({
   });
 
   useEffect(() => {
+    if (resolvedRecipientsQuery.error) {
+      dialog.showToast('Failed to resolve recipients');
+    }
+  }, [resolvedRecipientsQuery.error]);
+
+  useEffect(() => {
     if (resolvedRecipientsQuery.data) {
       setRecipients(resolvedRecipientsQuery.data);
       setSelectedIds(new Set(resolvedRecipientsQuery.data.map((r) => r.id)));
