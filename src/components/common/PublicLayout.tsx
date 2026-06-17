@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useChoirName } from '../../hooks/useDocumentTitle';
@@ -13,6 +13,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   const { user } = useAuth();
   const { choirName } = useChoirName();
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const getLinkClass = (path: string) => {
     return location.pathname === path
@@ -28,7 +29,39 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             <PublicLogo />
             <span className="text-text text-lg font-semibold">{choirName || 'Choir'}</span>
           </Link>
-          <nav className="flex items-center gap-4">
+
+          <button
+            type="button"
+            className="text-text-muted hover:text-text inline-flex size-9 cursor-pointer items-center justify-center rounded-lg border-none bg-transparent p-0 transition-colors md:hidden"
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              {mobileNavOpen ? (
+                <>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </>
+              ) : (
+                <>
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </>
+              )}
+            </svg>
+          </button>
+
+          <nav className="hidden items-center gap-4 md:flex">
             <Link to="/tickets" className={getLinkClass('/tickets')}>
               Tickets
             </Link>
@@ -56,6 +89,54 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             )}
           </nav>
         </div>
+
+        {mobileNavOpen && (
+          <div className="border-border bg-bg flex flex-col gap-1 border-t px-6 py-3 md:hidden">
+            <Link
+              to="/tickets"
+              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/tickets' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Tickets
+            </Link>
+            <Link
+              to="/donate"
+              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/donate' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Donate
+            </Link>
+            <Link
+              to="/auditions"
+              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/auditions' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Auditions
+            </Link>
+            <Link
+              to="/history"
+              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/history' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+              onClick={() => setMobileNavOpen(false)}
+            >
+              History
+            </Link>
+            <div className="border-border/50 border-t pt-2">
+              {user ? (
+                <Link to="/dashboard" onClick={() => setMobileNavOpen(false)}>
+                  <Button variant="secondary" size="small" className="w-full">
+                    Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/login" onClick={() => setMobileNavOpen(false)}>
+                  <Button variant="primary" size="small" className="w-full">
+                    Login
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       <main>{children}</main>
