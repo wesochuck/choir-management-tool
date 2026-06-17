@@ -133,6 +133,19 @@ export const SingerModal: React.FC<SingerModalProps> = ({
     e?.preventDefault?.();
     setIsLoading(true);
 
+    if (!(formData.name ?? '').trim()) {
+      setActiveTab('profile');
+      dialog.showToast('Please enter a name.');
+      setIsLoading(false);
+      return;
+    }
+    if (formData.role !== 'admin' && !formData.voicePart) {
+      setActiveTab('profile');
+      dialog.showToast('Please select a voice part.');
+      setIsLoading(false);
+      return;
+    }
+
     if (!validateEmailField()) {
       emailInputRef.current?.reportValidity?.();
       setIsLoading(false);

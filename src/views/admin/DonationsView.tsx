@@ -7,7 +7,6 @@ import {
   type DonationLevel,
   DEFAULT_DONATION_SETTINGS,
 } from '../../services/donationService';
-import { settingsService } from '../../services/settingsService';
 import { AppCard } from '../../components/common/AppCard';
 import {
   Button,
@@ -23,7 +22,7 @@ import {
   TabPanel,
 } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
-import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { safeLocalStorage } from '../../lib/storage';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
@@ -34,6 +33,7 @@ export default function DonationsView() {
   const queryClient = useQueryClient();
   useDocumentTitle('Donations');
   const dialog = useDialog();
+  const { timezone } = useChoirSettings();
   const [activeTab, setActiveTab] = useState<'history' | 'levels'>('history');
 
   const [donationButtonText, setDonationButtonText] = useState('');
@@ -81,13 +81,7 @@ export default function DonationsView() {
   });
   const settings = settingsQuery.data ?? null;
 
-  const timezoneQuery = useQuery({
-    queryKey: queryKeys.choirSettings.all,
-    queryFn: () => settingsService.getTimezone(),
-  });
-  const timezone = timezoneQuery.data ?? 'America/New_York';
-
-  const loading = donationsQuery.isLoading || settingsQuery.isLoading || timezoneQuery.isLoading;
+  const loading = donationsQuery.isLoading || settingsQuery.isLoading;
 
   useEffect(() => {
     if (settingsQuery.data) {

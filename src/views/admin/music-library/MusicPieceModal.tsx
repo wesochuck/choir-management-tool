@@ -743,6 +743,14 @@ export function MusicPieceModal({
         });
         return;
       }
+      if (!title.trim()) {
+        await dialog.showMessage({
+          title: 'Title Required',
+          message: 'Please enter a title for the piece.',
+          variant: 'warning',
+        });
+        return;
+      }
       await onSave(buildSavePayload());
     } finally {
       setIsSaving(false);

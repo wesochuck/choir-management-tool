@@ -76,6 +76,7 @@ export default function ResourcesView() {
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [titleError, setTitleError] = useState(false);
 
   const invalidateResources = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.resources.all });
@@ -118,11 +119,17 @@ export default function ResourcesView() {
     setFile(null);
     setEditingId(null);
     setIsAdding(false);
+    setTitleError(false);
   };
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setTitleError(true);
+      dialog.showToast('Please enter a resource title.');
+      return;
+    }
+    setTitleError(false);
 
     setIsSaving(true);
     try {
@@ -285,10 +292,13 @@ export default function ResourcesView() {
         }
       >
         <form id="resource-form" onSubmit={handleSave} className="flex flex-col gap-4">
-          <FormField label="Resource Title" required>
+          <FormField label="Resource Title" required error={titleError ? 'Title is required' : undefined}>
             <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (titleError) setTitleError(false);
+              }}
               required
               placeholder="e.g. Choir Singer Handbook"
             />

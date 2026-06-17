@@ -36,6 +36,10 @@ export default function VenuesView() {
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
+    if (!name.trim()) {
+      dialog.showToast('Please enter a venue name.');
+      return;
+    }
     const rowCounts = isOpenSeating
       ? []
       : rowCountsStr

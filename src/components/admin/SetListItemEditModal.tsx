@@ -24,6 +24,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   const [notes, setNotes] = useState('');
   const [type, setType] = useState<'song' | 'intermission'>('song');
   const [soloSmallGroup, setSoloSmallGroup] = useState(false);
+  const [validationError, setValidationError] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -71,7 +72,12 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault?.();
     if (!item) return;
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setValidationError(true);
+      dialog.showToast('Please enter a title for this set list item.');
+      return;
+    }
+    setValidationError(false);
 
     const normalizedDuration = duration.trim();
     if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
@@ -136,8 +142,21 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-label">Title</label>
-          <Input required value={title} onChange={(e) => setTitle(e.target.value)} />
+          <label className="text-label">
+            Title <span className="text-danger-text">*</span>
+          </label>
+          <Input
+            required
+            invalid={validationError}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setValidationError(false);
+            }}
+          />
+          {validationError && (
+            <p className="text-danger-text m-0 text-xs">Title is required.</p>
+          )}
         </div>
 
         {type === 'song' && (

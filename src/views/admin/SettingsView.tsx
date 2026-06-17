@@ -68,7 +68,7 @@ export default function SettingsView() {
   }, []);
 
   const settingsQuery = useQuery({
-    queryKey: queryKeys.choirSettings.all,
+    queryKey: [...queryKeys.choirSettings.all, 'admin'] as const,
     queryFn: async () => {
       const [loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl] = await Promise.all(
         [
