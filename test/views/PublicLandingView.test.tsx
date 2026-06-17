@@ -10,7 +10,9 @@ import { settingsService } from '../../src/services/settingsService';
 import { eventService } from '../../src/services/eventService';
 
 function createWrapper() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   };
@@ -29,7 +31,7 @@ describe('PublicLandingView', () => {
     }));
     mock.method(settingsService, 'getHeroImageUrl', async () => null);
     mock.method(settingsService, 'getTimezone', async () => 'America/New_York');
-    mock.method(eventService, 'getPastPerformances', async () => []);
+    mock.method(eventService, 'getRecentPerformances', async () => []);
 
     const mod = await import('../../src/views/PublicLandingView');
     PublicLandingView = mod.default;
@@ -47,9 +49,12 @@ describe('PublicLandingView', () => {
       { wrapper: createWrapper() }
     );
 
-    await waitFor(() => {
-      assert.ok(container.querySelector('h1'));
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        assert.ok(container.querySelector('h1'));
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('renders navigation links', async () => {
@@ -60,13 +65,35 @@ describe('PublicLandingView', () => {
       { wrapper: createWrapper() }
     );
 
-    await waitFor(() => {
-      const links = container.querySelectorAll('a');
-      const hrefs = Array.from(links).map(a => a.getAttribute('href'));
-      assert.ok(hrefs.some(h => h === '/tickets'));
-      assert.ok(hrefs.some(h => h === '/donate'));
-      assert.ok(hrefs.some(h => h === '/history'));
-      assert.ok(hrefs.some(h => h === '/auditions'));
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        const links = container.querySelectorAll('a');
+        const hrefs = Array.from(links).map((a) => a.getAttribute('href'));
+        assert.ok(hrefs.some((h) => h === '/tickets'));
+        assert.ok(hrefs.some((h) => h === '/donate'));
+        assert.ok(hrefs.some((h) => h === '/history'));
+        assert.ok(hrefs.some((h) => h === '/auditions'));
+        assert.ok(hrefs.some((h) => h === '/performances'));
+      },
+      { timeout: 5000 }
+    );
+  });
+
+  it('renders See All Past Performances link', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <PublicLandingView />
+      </MemoryRouter>,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(
+      () => {
+        const links = container.querySelectorAll('a');
+        const hrefs = Array.from(links).map((a) => a.getAttribute('href'));
+        assert.ok(hrefs.some((h) => h === '/performances'));
+      },
+      { timeout: 5000 }
+    );
   });
 });
