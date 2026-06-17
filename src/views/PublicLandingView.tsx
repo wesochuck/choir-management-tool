@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { Link } from 'react-router-dom';
 import { pb } from '../lib/pocketbase';
 import { settingsService } from '../services/settingsService';
 import { eventService } from '../services/eventService';
@@ -25,7 +26,7 @@ function PublicLandingView() {
 
   const performancesQuery = useQuery({
     queryKey: queryKeys.events.publicList,
-    queryFn: () => eventService.getRecentPerformances(5),
+    queryFn: () => eventService.getRecentPerformances(3),
   });
 
   const isLoading = landingQuery.isLoading || performancesQuery.isLoading;
@@ -115,7 +116,7 @@ function PublicLandingView() {
                     <img
                       src={graphicUrl}
                       alt={perf.title}
-                      className="mb-3 h-40 w-full rounded object-cover"
+                      className="mb-3 h-48 w-full rounded object-cover"
                     />
                   )}
                   {venueName && <p className="text-text-muted mb-2 text-sm">{venueName}</p>}
@@ -132,6 +133,27 @@ function PublicLandingView() {
                 </AppCard>
               );
             })}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              to="/performances"
+              className="text-primary hover:text-primary-deep inline-flex items-center gap-1 text-sm font-medium transition-colors"
+            >
+              See All Past Performances
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </section>
       )}
