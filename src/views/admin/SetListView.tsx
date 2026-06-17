@@ -42,7 +42,7 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
-import { Button, Select, Spinner, Divider } from '../../components/ui';
+import { Button, CopyButton, Select, Spinner, Divider } from '../../components/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 
