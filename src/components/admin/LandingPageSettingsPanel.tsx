@@ -170,16 +170,20 @@ export const LandingPageSettingsPanel = forwardRef<
               <img src={heroImageUrl} alt="Hero" className="max-h-48 rounded border" />
             </div>
           )}
-          <div className="flex gap-2">
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/svg+xml,image/webp"
-              onChange={handleHeroFileChange}
-              className=""
-            />
+          <div className="flex items-center gap-2">
+            <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
+              ⬆️
+              {heroImageUrl ? 'Replace Hero Image' : 'Upload Hero Image'}
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                className="hidden"
+                onChange={handleHeroFileChange}
+              />
+            </label>
             {heroImageUrl && (
-              <Button variant="secondary" onClick={handleRemoveHero}>
+              <Button variant="danger" size="small" onClick={handleRemoveHero}>
                 Remove
               </Button>
             )}
