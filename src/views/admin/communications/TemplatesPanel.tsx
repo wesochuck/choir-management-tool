@@ -284,6 +284,7 @@ export function TemplatesPanel({
                     {tpl.content.substring(0, 60)}...
                   </span>
                 ),
+                hideBelow: 'md',
                 cardSection: 1,
                 cardSide: 'left',
                 cardLabel: 'Content',
