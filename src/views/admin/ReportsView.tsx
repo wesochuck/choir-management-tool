@@ -297,7 +297,6 @@ export default function ReportsView() {
                 <Select
                   value={selectedPerformanceId}
                   onChange={(e) => setSelectedPerformanceId(e.target.value)}
-                  className="w-full max-w-md"
                 >
                   <option value="">-- Choose a performance --</option>
                   {performances.map((p) => (
