@@ -49,6 +49,8 @@ export const EventTable: React.FC<EventTableProps> = ({
     {
       id: 'date',
       header: 'Date',
+      enableSorting: true,
+      accessorFn: (event) => event.date,
       cell: (_, event) => {
         const weekday = formatInTimezone(event.date, timezone, { weekday: 'short' });
         const day = formatInTimezone(event.date, timezone, { day: 'numeric' });
@@ -273,6 +275,7 @@ export const EventTable: React.FC<EventTableProps> = ({
           : {}),
       }}
       onRowClick={(event) => onEdit(event)}
+      defaultSorting={[{ id: 'date', desc: true }]}
       getRowClassName={() => 'hover:bg-primary-light/45 cursor-pointer'}
       hidePagination
       renderMobileCard={(event) => {
