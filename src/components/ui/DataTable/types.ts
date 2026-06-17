@@ -28,6 +28,7 @@ export interface DataTableProps<T> {
   onSelectionChange?: (ids: Set<string>) => void;
   renderSelectionActions?: (info: { selectedCount: number }) => ReactNode;
   onRowClick?: (row: T) => void;
+  defaultSorting?: { id: string; desc: boolean }[];
   manualSorting?: boolean;
   onSortingChange?: (sorting: { id: string; desc: boolean }[]) => void;
   manualPagination?: boolean;

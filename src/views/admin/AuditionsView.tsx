@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
-import { AppCard } from '../../components/common/AppCard';
 import { AuditionModal } from '../../components/admin/AuditionModal';
 import { useDialog } from '../../contexts/DialogContext';
 import { auditionService, type Audition, type AuditionInput } from '../../services/auditionService';
@@ -11,7 +10,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 import { profileService } from '../../services/profileService';
-import { Button, Select, Input, Badge, Modal, Textarea } from '../../components/ui';
+import { Button, Select, Input, Badge, Modal, Textarea, DataTable, type ColumnDef } from '../../components/ui';
 
 export default function AuditionsView() {
   const dialog = useDialog();
@@ -328,14 +327,160 @@ export default function AuditionsView() {
   const [sortField, setSortField] = useState<'scheduledTimeSlot' | 'name'>('scheduledTimeSlot');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const handleSort = (field: 'scheduledTimeSlot' | 'name') => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
+  const handleSortChange = (sorting: { id: string; desc: boolean }[]) => {
+    if (sorting.length === 0) return;
+    const s = sorting[0];
+    setSortField(s.id as 'scheduledTimeSlot' | 'name');
+    setSortDirection(s.desc ? 'desc' : 'asc');
   };
+
+  const auditionColumns: ColumnDef<Audition>[] = [
+    {
+      id: 'name',
+      header: 'Name / Contact',
+      enableSorting: true,
+      cell: (_, row) => (
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-row items-center gap-2">
+            <span className="text-sm font-semibold text-slate-900">{row.name}</span>
+            {row.voicePart && <Badge tone="rehearsal">{row.voicePart}</Badge>}
+          </div>
+          {row.contact.includes('@') ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEmailClick(row.contact, row.name, row.voicePart || '');
+              }}
+              className="text-text-muted hover:text-primary cursor-pointer border-none bg-transparent p-0 text-left text-sm font-medium underline transition-colors"
+            >
+              {row.contact}
+            </button>
+          ) : (
+            <a
+              href={`tel:${row.contact}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-text-muted hover:text-primary text-sm font-medium transition-colors hover:underline"
+            >
+              {row.contact}
+            </a>
+          )}
+        </div>
+      ),
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'performance',
+      header: 'Target Performance',
+      cell: (_, row) =>
+        row.expand?.performance ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/admin/events?eventId=${row.performance}&openModal=true`);
+            }}
+            className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-left font-semibold underline transition-colors"
+            title="Click to edit performance details"
+          >
+            {row.expand.performance.title}
+          </button>
+        ) : (
+          <span className="text-text-muted text-sm">None</span>
+        ),
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Performance',
+    },
+    {
+      id: 'scheduledTimeSlot',
+      header: 'Audition Time',
+      enableSorting: true,
+      cell: (_, row) =>
+        row.status === 'Scheduled' && row.scheduledTimeSlot ? (
+          <span className="text-sm font-semibold text-slate-900">
+            {formatInTimezone(row.scheduledTimeSlot, timezone, {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+            })}
+          </span>
+        ) : (
+          <Badge tone="neutral">
+            {row.requestedSlots && row.requestedSlots.length > 0
+              ? `${row.requestedSlots.length} slot${row.requestedSlots.length > 1 ? 's' : ''} requested`
+              : 'No times requested'}
+          </Badge>
+        ),
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Time',
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: (_, row) => (
+        <Badge
+          tone={
+            row.status === 'New'
+              ? 'rehearsal'
+              : row.status === 'Scheduled'
+                ? 'success'
+                : 'neutral'
+          }
+        >
+          {row.status}
+        </Badge>
+      ),
+      cardSection: 0,
+      cardSide: 'right',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      align: 'right',
+      cell: (_, row) => (
+        <div
+          className="flex flex-row flex-wrap justify-end gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {row.contact.includes('@') && (
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => handleEmailClick(row.contact, row.name, row.voicePart || '')}
+            >
+              ✉️ Email
+            </Button>
+          )}
+          {row.status === 'New' && (
+            <Button variant="secondary" size="small" onClick={() => openScheduleModal(row)}>
+              Schedule
+            </Button>
+          )}
+          {row.status === 'Scheduled' && (
+            <Button variant="secondary" size="small" onClick={() => convertToSinger(row)}>
+              Convert to Singer
+            </Button>
+          )}
+          {row.status !== 'Closed' && (
+            <Button variant="outline" size="small" onClick={() => updateStatus(row, 'Closed')}>
+              Close
+            </Button>
+          )}
+          <Button variant="danger" size="small" onClick={() => removeAudition(row)}>
+            Delete
+          </Button>
+        </div>
+      ),
+      cardSection: 1,
+      cardSide: 'right',
+    },
+  ];
 
   const filteredAuditions = auditions.filter(
     (a) =>
@@ -813,206 +958,24 @@ export default function AuditionsView() {
         </div>
       </div>
 
-      {/* Auditions Table Card */}
-      <AppCard noPadding>
-        <div className="w-full overflow-x-auto text-left">
-          <table className="w-full border-collapse text-left">
-            <thead>
-              <tr className="border-border bg-bg/50 border-b">
-                <th
-                  onClick={() => handleSort('name')}
-                  className="text-overline text-text-muted hover:text-text cursor-pointer p-4 transition-colors select-none"
-                >
-                  <div className="flex flex-row items-center gap-1.5">
-                    <span>Name / Contact</span>
-                    {sortField === 'name' && (
-                      <span className="text-primary text-xs">
-                        {sortDirection === 'asc' ? '▲' : '▼'}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th className="text-overline text-text-muted p-4">Target Performance</th>
-                <th
-                  onClick={() => handleSort('scheduledTimeSlot')}
-                  className="text-overline text-text-muted hover:text-text cursor-pointer p-4 transition-colors select-none"
-                >
-                  <div className="flex flex-row items-center gap-1.5">
-                    <span>Audition Time</span>
-                    {sortField === 'scheduledTimeSlot' && (
-                      <span className="text-primary text-xs">
-                        {sortDirection === 'asc' ? '▲' : '▼'}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th className="text-overline text-text-muted w-[120px] p-4">Status</th>
-                <th className="text-overline text-text-muted p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedAuditions.map((audition) => (
-                <tr
-                  key={audition.id}
-                  className="group border-border hover:bg-primary-light/45 cursor-pointer border-b transition-colors"
-                  onClick={() => {
-                    setEditingAudition(audition);
-                    setIsModalOpen(true);
-                  }}
-                >
-                  <td data-label="Name" className="p-4">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex flex-row items-center gap-2">
-                        <span className="text-text group-hover:text-primary-deep font-semibold transition-colors">
-                          {audition.name}
-                        </span>
-                        {audition.voicePart && <Badge tone="rehearsal">{audition.voicePart}</Badge>}
-                      </div>
-                      {audition.contact.includes('@') ? (
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleEmailClick(
-                              audition.contact,
-                              audition.name,
-                              audition.voicePart || ''
-                            );
-                          }}
-                          className="text-text-muted hover:text-primary cursor-pointer border-none bg-transparent p-0 text-left text-sm font-medium underline transition-colors"
-                        >
-                          {audition.contact}
-                        </button>
-                      ) : (
-                        <a
-                          href={`tel:${audition.contact}`}
-                          onClick={(event) => event.stopPropagation()}
-                          className="text-text-muted hover:text-primary text-sm font-medium transition-colors hover:underline"
-                        >
-                          {audition.contact}
-                        </a>
-                      )}
-                    </div>
-                  </td>
-                  <td data-label="Target Performance" className="p-4">
-                    {audition.expand?.performance ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/admin/events?eventId=${audition.performance}&openModal=true`);
-                        }}
-                        className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-left font-semibold underline transition-colors"
-                        title="Click to edit performance details"
-                      >
-                        {audition.expand.performance.title}
-                      </button>
-                    ) : (
-                      <span className="text-text-muted text-sm">None</span>
-                    )}
-                  </td>
-                  <td data-label="Audition Time" className="text-text-muted p-4 text-sm">
-                    {audition.status === 'Scheduled' && audition.scheduledTimeSlot ? (
-                      <span className="text-text font-semibold">
-                        {formatInTimezone(audition.scheduledTimeSlot, timezone, {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    ) : (
-                      <Badge tone="neutral">
-                        {audition.requestedSlots && audition.requestedSlots.length > 0
-                          ? `${audition.requestedSlots.length} slot${audition.requestedSlots.length > 1 ? 's' : ''} requested`
-                          : 'No times requested'}
-                      </Badge>
-                    )}
-                  </td>
-                  <td data-label="Status" className="p-4">
-                    <Badge
-                      tone={
-                        audition.status === 'New'
-                          ? 'rehearsal'
-                          : audition.status === 'Scheduled'
-                            ? 'success'
-                            : 'neutral'
-                      }
-                    >
-                      {audition.status}
-                    </Badge>
-                  </td>
-                  <td data-label="Actions" className="p-4 text-right">
-                    <div
-                      className="flex flex-row flex-wrap justify-end gap-2"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {audition.contact.includes('@') && (
-                        <Button
-                          variant="secondary"
-                          size="small"
-                          onClick={() =>
-                            handleEmailClick(
-                              audition.contact,
-                              audition.name,
-                              audition.voicePart || ''
-                            )
-                          }
-                        >
-                          ✉️ Email
-                        </Button>
-                      )}
-                      {audition.status === 'New' && (
-                        <Button
-                          variant="secondary"
-                          size="small"
-                          onClick={() => openScheduleModal(audition)}
-                        >
-                          Schedule
-                        </Button>
-                      )}
-                      {audition.status === 'Scheduled' && (
-                        <Button
-                          variant="secondary"
-                          size="small"
-                          onClick={() => convertToSinger(audition)}
-                        >
-                          Convert to Singer
-                        </Button>
-                      )}
-                      {audition.status !== 'Closed' && (
-                        <Button
-                          variant="outline"
-                          size="small"
-                          onClick={() => updateStatus(audition, 'Closed')}
-                        >
-                          Close
-                        </Button>
-                      )}
-                      <Button
-                        variant="danger"
-                        size="small"
-                        onClick={() => removeAudition(audition)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {sortedAuditions.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-text-muted p-8 text-center text-sm">
-                    No auditions found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </AppCard>
+      <DataTable
+        columns={auditionColumns}
+        data={sortedAuditions}
+        isLoading={false}
+        emptyState={{
+          title: 'No auditions found.',
+          icon: '🎭',
+        }}
+        manualPagination
+        defaultSorting={[{ id: 'scheduledTimeSlot', desc: false }]}
+        onSortingChange={handleSortChange}
+        onRowClick={(row) => {
+          setEditingAudition(row);
+          setIsModalOpen(true);
+        }}
+        getRowId={(r) => r.id}
+        getRowClassName={() => 'hover:bg-primary-light/45'}
+      />
 
       <AuditionModal
         audition={editingAudition}

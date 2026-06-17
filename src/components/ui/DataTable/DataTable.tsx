@@ -81,10 +81,11 @@ export function DataTable<T>({
   getRowId,
   getRowClassName,
   renderRow,
+  defaultSorting,
 }: DataTableProps<T>) {
   const tanStackColumns = useMemo(() => columns.map(toTanStackColumn), [columns]);
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(defaultSorting ?? []);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize,
