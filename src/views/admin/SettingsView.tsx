@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { pb } from '../../lib/pocketbase';
@@ -48,17 +48,13 @@ const inputClasses = 'max-w-lg';
 
 export default function SettingsView() {
   const dialog = useDialog();
+  const queryClient = useQueryClient();
   const { setChoirName: setContextChoirName, setTimezone: setContextTimezone } = useChoirSettings();
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
   const [homepageUrl, setHomepageUrl] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
-  const [initialChoirName, setInitialChoirName] = useState('');
-  const [initialTimezone, setInitialTimezone] = useState('America/New_York');
-  const [initialHomepageUrl, setInitialHomepageUrl] = useState('');
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [initialLogoUrl, setInitialLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLogoRemoved, setIsLogoRemoved] = useState(false);
   const [landingDirty, setLandingDirty] = useState(false);
@@ -66,6 +62,37 @@ export default function SettingsView() {
   const handleLandingDirtyChange = useCallback((dirty: boolean) => {
     setLandingDirty(dirty);
   }, []);
+
+  const saveSettingsMutation = useMutation({
+    mutationFn: async () => {
+      const landingSettings = landingPanelRef.current?.getSettings();
+      const heroChanges = landingPanelRef.current?.getHeroImageChanges();
+
+      await Promise.all([
+        choirName ? settingsService.saveChoirName(choirName) : Promise.resolve(),
+        settingsService.saveTimezone(timezone),
+        homepageUrl ? settingsService.saveHomepageUrl(homepageUrl) : Promise.resolve(),
+        logoFile
+          ? settingsService.saveLogo(logoFile)
+          : logoUrl === null
+            ? settingsService.saveLogo(null)
+            : Promise.resolve(),
+        landingSettings ? settingsService.saveLandingSettings(landingSettings) : Promise.resolve(),
+        heroChanges?.file
+          ? settingsService.saveHeroImage(heroChanges.file)
+          : heroChanges?.file === null
+            ? settingsService.saveHeroImage(null)
+            : Promise.resolve(),
+      ]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.choirSettings.all });
+      setMessage('Settings saved successfully');
+    },
+    onError: (err: unknown) => {
+      setMessage(err instanceof Error ? err.message : 'Failed to save settings');
+    },
+  });
 
   const settingsQuery = useQuery({
     queryKey: queryKeys.choirSettings.admin,
@@ -80,6 +107,7 @@ export default function SettingsView() {
       );
       return { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl };
     },
+    staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
@@ -87,30 +115,25 @@ export default function SettingsView() {
     const { loadedChoirName, loadedTimezone, loadedHomepageUrl, loadedLogoUrl } =
       settingsQuery.data;
     setChoirName(loadedChoirName);
-    setInitialChoirName(loadedChoirName);
     setTimezone(loadedTimezone);
-    setInitialTimezone(loadedTimezone);
     setHomepageUrl(loadedHomepageUrl);
-    setInitialHomepageUrl(loadedHomepageUrl);
     setLogoUrl(loadedLogoUrl);
-    setInitialLogoUrl(loadedLogoUrl);
   }, [settingsQuery.data]);
 
   const isLoading = settingsQuery.isLoading;
 
+  const settingsData = settingsQuery.data;
   const isDirty = useMemo(() => {
     const fieldsDirty = calculateSettingsDirty(
-      { choirName: initialChoirName, timezone: initialTimezone, homepageUrl: initialHomepageUrl },
+      { choirName: settingsData?.loadedChoirName ?? '', timezone: settingsData?.loadedTimezone ?? 'America/New_York', homepageUrl: settingsData?.loadedHomepageUrl ?? '' },
       { choirName, timezone, homepageUrl }
     );
     const logoDirty = logoFile !== null || isLogoRemoved;
     return fieldsDirty || logoDirty || landingDirty;
   }, [
-    initialChoirName,
+    settingsData,
     choirName,
-    initialTimezone,
     timezone,
-    initialHomepageUrl,
     homepageUrl,
     logoFile,
     isLogoRemoved,
@@ -118,11 +141,11 @@ export default function SettingsView() {
   ]);
 
   const handleGlobalDiscard = () => {
-    setChoirName(initialChoirName);
-    setTimezone(initialTimezone);
-    setHomepageUrl(initialHomepageUrl);
+    setChoirName(settingsData?.loadedChoirName ?? '');
+    setTimezone(settingsData?.loadedTimezone ?? 'America/New_York');
+    setHomepageUrl(settingsData?.loadedHomepageUrl ?? '');
     if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
-    setLogoUrl(initialLogoUrl);
+    setLogoUrl(settingsData?.loadedLogoUrl ?? null);
     setLogoFile(null);
     setIsLogoRemoved(false);
     landingPanelRef.current?.reset();
@@ -130,29 +153,13 @@ export default function SettingsView() {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
     setMessage('');
 
     try {
+      await saveSettingsMutation.mutateAsync();
+
       const landingSettings = landingPanelRef.current?.getSettings();
       const heroChanges = landingPanelRef.current?.getHeroImageChanges();
-
-      await Promise.all([
-        choirName ? settingsService.saveChoirName(choirName) : Promise.resolve(),
-        settingsService.saveTimezone(timezone),
-        homepageUrl ? settingsService.saveHomepageUrl(homepageUrl) : Promise.resolve(),
-        logoFile !== null
-          ? settingsService.saveLogo(logoFile)
-          : isLogoRemoved
-            ? settingsService.saveLogo(null)
-            : Promise.resolve(),
-        landingSettings ? settingsService.saveLandingSettings(landingSettings) : Promise.resolve(),
-        heroChanges?.removed
-          ? settingsService.saveHeroImage(null)
-          : heroChanges?.file
-            ? settingsService.saveHeroImage(heroChanges.file)
-            : Promise.resolve(),
-      ]);
 
       const [newLogoUrl, newHeroUrl] = await Promise.all([
         logoFile ? settingsService.getLogoUrl() : Promise.resolve(logoUrl),
@@ -163,16 +170,11 @@ export default function SettingsView() {
 
       setContextChoirName(choirName);
       setContextTimezone(timezone);
-      setInitialChoirName(choirName);
-      setInitialTimezone(timezone);
-      setInitialHomepageUrl(homepageUrl);
       if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
       if (logoFile) {
         setLogoUrl(newLogoUrl);
-        setInitialLogoUrl(newLogoUrl);
       } else if (isLogoRemoved) {
         setLogoUrl(null);
-        setInitialLogoUrl(null);
       }
       setLogoFile(null);
       setIsLogoRemoved(false);
@@ -182,18 +184,13 @@ export default function SettingsView() {
         newHeroUrl
       );
 
-      setMessage('System settings saved.');
       dialog.showToast('System settings saved successfully.');
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      setMessage(`Error: ${errMsg}`);
       await dialog.showMessage({
         title: 'Error',
         message: 'Failed to save system settings.',
         variant: 'danger',
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -365,12 +362,12 @@ export default function SettingsView() {
 
         <LandingPageSettingsPanel ref={landingPanelRef} onDirtyChange={handleLandingDirtyChange} />
 
-        <QueueWebhookSettings />
+        <QueueWebhookSettings setMessage={setMessage} />
       </div>
 
       <FloatingSaveBar
         isDirty={isDirty}
-        isSaving={isSaving}
+        isSaving={saveSettingsMutation.isPending}
         onSave={handleSave}
         onDiscard={handleGlobalDiscard}
       />
@@ -378,14 +375,25 @@ export default function SettingsView() {
   );
 }
 
-function QueueWebhookSettings() {
+function QueueWebhookSettings({ setMessage }: { setMessage: (msg: string) => void }) {
   const dialog = useDialog();
   const [token, setToken] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateTokenMutation = useMutation({
+    mutationFn: () => queueSettingsService.generateToken(),
+    onSuccess: (data) => {
+      setToken(data.secret);
+      setMessage('');
+    },
+    onError: (err: unknown) => {
+      setMessage(err instanceof Error ? err.message : 'Failed to generate token');
+    },
+  });
 
   const webhookQuery = useQuery({
     queryKey: queryKeys.queueWebhookSettings.all,
     queryFn: () => queueSettingsService.getSettings(),
+    staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
@@ -394,7 +402,7 @@ function QueueWebhookSettings() {
     }
   }, [webhookQuery.data]);
 
-  const isLoading = webhookQuery.isLoading || isGenerating;
+  const isLoading = webhookQuery.isLoading || generateTokenMutation.isPending;
 
   const handleGenerate = async () => {
     const confirmed = await dialog.confirm({
@@ -407,18 +415,10 @@ function QueueWebhookSettings() {
 
     if (!confirmed) return;
 
-    setIsGenerating(true);
     try {
-      const data = await queueSettingsService.generateToken();
-      setToken(data.secret);
+      await generateTokenMutation.mutateAsync();
     } catch {
-      await dialog.showMessage({
-        title: 'Error',
-        message: 'Failed to generate token',
-        variant: 'danger',
-      });
-    } finally {
-      setIsGenerating(false);
+      // Error handled by mutation onError
     }
   };
 
