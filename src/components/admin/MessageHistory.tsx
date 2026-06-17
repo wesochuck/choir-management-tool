@@ -198,9 +198,6 @@ export function MessageHistory({
       enableSorting: false,
       cell: (_, row) => (
         <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button type="button" variant="outline" size="small" onClick={() => onViewDetails(row)}>
-            Details
-          </Button>
           <Button type="button" variant="secondary" size="small" onClick={() => onCopyDraft(row)}>
             Copy to Draft
           </Button>
@@ -260,6 +257,7 @@ export function MessageHistory({
         manualPagination
         pageCount={totalPages}
         onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
+        onRowClick={(row) => onViewDetails(row)}
         hidePagination
         getRowId={(message) => message.id}
       />
