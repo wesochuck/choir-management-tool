@@ -7,7 +7,7 @@ import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Pagination } from '../common/Pagination';
-import { Button, Select, Input } from '../ui';
+import { Button, Select, Input, DataTable, type ColumnDef } from '../ui';
 
 export type SourceFilter = 'all' | 'manual' | 'automated';
 
@@ -67,6 +67,159 @@ export function MessageHistory({
           return sourceFilter === 'automated' ? isAutomated : !isAutomated;
         });
 
+  const getMessageMeta = (message: MessageRecord) => {
+    const mFilters = message.filters as Record<string, unknown>;
+    const mType = mFilters?.type as string | undefined;
+    const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+    return { mType, isAutomated };
+  };
+
+  const getResolvedSubject = (message: MessageRecord) => {
+    const mFilters = message.filters as Record<string, unknown>;
+    const eventId = mFilters?.eventId as string | undefined;
+    const linkedEvent = events.find((e) => e.id === eventId) || null;
+    return resolvePreviewContent(
+      message.subject || 'SMS message',
+      linkedEvent,
+      null,
+      commSettings.mailingAddress,
+    );
+  };
+
+  const columns: ColumnDef<MessageRecord>[] = [
+    {
+      id: 'date',
+      header: 'Date',
+      enableSorting: false,
+      cell: (_, row) => (
+        <span className="whitespace-nowrap">{new Date(row.created).toLocaleString()}</span>
+      ),
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Date',
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      enableSorting: false,
+      cell: (_, row) => {
+        const { mType, isAutomated } = getMessageMeta(row);
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+              {row.type}
+            </span>
+            {isAutomated && mType && (
+              <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
+                {mType}
+              </span>
+            )}
+          </div>
+        );
+      },
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Type',
+    },
+    {
+      id: 'subject',
+      header: 'Subject',
+      enableSorting: false,
+      cell: (_, row) => (
+        <span className="block max-w-[250px] truncate font-semibold">
+          {getResolvedSubject(row)}
+        </span>
+      ),
+      cardSection: 0,
+      cardSide: 'left',
+    },
+    {
+      id: 'source',
+      header: 'Source',
+      enableSorting: false,
+      cell: (_, row) => {
+        const { isAutomated } = getMessageMeta(row);
+        return isAutomated ? (
+          <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+            Automated
+          </span>
+        ) : (
+          <span className="inline-flex w-fit items-center rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
+            Manual
+          </span>
+        );
+      },
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Source',
+    },
+    {
+      id: 'recipients',
+      header: 'Recipients',
+      align: 'center',
+      enableSorting: false,
+      cell: (_, row) => (
+        <Button
+          type="button"
+          variant="outline"
+          className="h-auto min-h-0 cursor-pointer"
+          onClick={() =>
+            onViewRecipients(row.recipients, `Recipients — ${getResolvedSubject(row)}`)
+          }
+        >
+          {row.recipients.length} recipient{row.recipients.length !== 1 ? 's' : ''}
+        </Button>
+      ),
+      cardSection: 1,
+      cardSide: 'right',
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      enableSorting: false,
+      cell: (_, row) =>
+        row.status === 'Archived' ? (
+          <span className="inline-flex items-center rounded bg-slate-400 px-2 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
+            Archived
+          </span>
+        ) : (
+          <span className="bg-success-bg text-success-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+            Sent
+          </span>
+        ),
+      cardSection: 0,
+      cardSide: 'right',
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      align: 'right',
+      enableSorting: false,
+      cell: (_, row) => (
+        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="small"
+            onClick={() => onViewDetails(row)}
+          >
+            Details
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="small"
+            onClick={() => onCopyDraft(row)}
+          >
+            Copy to Draft
+          </Button>
+        </div>
+      ),
+      cardSection: 1,
+      cardSide: 'right',
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
       <div className="mb-1 flex gap-2">
@@ -103,125 +256,22 @@ export function MessageHistory({
         </Select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] border-collapse text-left">
-          <thead>
-            <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-              <th className="p-3 px-4 text-left">Date</th>
-              <th className="p-3 px-4 text-left">Type</th>
-              <th className="p-3 px-4 text-left">Subject</th>
-              <th className="p-3 px-4 text-left">Source</th>
-              <th className="p-3 px-4 text-center">Recipients</th>
-              <th className="p-3 px-4 text-left">Status</th>
-              <th className="p-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredHistory.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
-                  {historySearchQuery
-                    ? `No messages found matching "${historySearchQuery}".`
-                    : 'No messages logged yet.'}
-                </td>
-              </tr>
-            ) : (
-              filteredHistory.map((message) => {
-                const mFilters = message.filters as Record<string, unknown>;
-                const mType = mFilters?.type as string | undefined;
-                const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
-
-                const eventId = mFilters?.eventId as string | undefined;
-                const linkedEvent = events.find((e) => e.id === eventId) || null;
-                const resolvedSubject = resolvePreviewContent(
-                  message.subject || 'SMS message',
-                  linkedEvent,
-                  null,
-                  commSettings.mailingAddress
-                );
-
-                return (
-                  <tr key={message.id} className="border-b border-gray-200 text-sm">
-                    <td className="p-3 px-4 whitespace-nowrap">
-                      {new Date(message.created).toLocaleString()}
-                    </td>
-                    <td className="p-3 px-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-                          {message.type}
-                        </span>
-                        {isAutomated && (
-                          <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
-                            {mType}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="max-w-[250px] truncate p-3 px-4 font-semibold">
-                      {resolvedSubject}
-                    </td>
-                    <td className="p-3 px-4">
-                      {isAutomated ? (
-                        <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-                          Automated
-                        </span>
-                      ) : (
-                        <span className="inline-flex w-fit items-center rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
-                          Manual
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 px-4 text-center">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-auto min-h-0 cursor-pointer"
-                        onClick={() =>
-                          onViewRecipients(message.recipients, `Recipients — ${resolvedSubject}`)
-                        }
-                      >
-                        {message.recipients.length} recipient
-                        {message.recipients.length !== 1 ? 's' : ''}
-                      </Button>
-                    </td>
-                    <td className="p-3 px-4">
-                      {message.status === 'Archived' ? (
-                        <span className="inline-flex items-center rounded bg-slate-400 px-2 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
-                          Archived
-                        </span>
-                      ) : (
-                        <span className="bg-success-bg text-success-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
-                          Sent
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 px-4 text-right whitespace-nowrap">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="small"
-                          onClick={() => onViewDetails(message)}
-                        >
-                          Details
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="small"
-                          onClick={() => onCopyDraft(message)}
-                        >
-                          Copy to Draft
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+      <DataTable
+        columns={columns}
+        data={filteredHistory}
+        isLoading={false}
+        emptyState={{
+          title: historySearchQuery
+            ? `No messages found matching "${historySearchQuery}".`
+            : 'No messages logged yet.',
+          icon: '📬',
+        }}
+        manualPagination
+        pageCount={totalPages}
+        onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
+        hidePagination
+        getRowId={(message) => message.id}
+      />
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
