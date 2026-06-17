@@ -37,6 +37,9 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
   const [activeTab, setActiveTab] = useState<'info' | 'slots'>('info');
   const [formData, setFormData] = useState<AuditionInput>({ ...defaultAuditionInput });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
   const { labels: voicePartLabels } = useVoiceParts();
 
   useEffect(() => {
@@ -68,7 +71,16 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
   const handleSubmit = async (event?: React.FormEvent) => {
     event?.preventDefault?.();
 
-    if (!formData.name.trim() || !formData.contact.trim()) {
+    setValidationErrors({});
+
+    const errors: Record<string, string> = {};
+    if (!formData.name.trim()) errors.name = 'Name is required.';
+    if (!formData.contact.trim()) errors.contact = 'Email or phone is required.';
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setActiveTab('info');
+      dialog.showToast('Please fill in the required fields.');
       return;
     }
 
@@ -176,25 +188,55 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
         {/* Tab 1: Information Form Fields */}
         <div className={`flex-col gap-4 ${activeTab === 'info' ? 'flex' : 'hidden'}`}>
           <div className="flex flex-col gap-1">
-            <label className="text-label">Name</label>
+            <label className="text-label">
+              Name <span className="text-danger-text">*</span>
+            </label>
             <Input
               className="h-[44px] transition-colors outline-none"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                if (validationErrors.name) {
+                  setValidationErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.name;
+                    return next;
+                  });
+                }
+              }}
               required
+              invalid={!!validationErrors.name}
               placeholder="Applicant's Full Name"
             />
+            {validationErrors.name && (
+              <p className="text-danger-text m-0 text-xs">{validationErrors.name}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-label">Email or Phone</label>
+            <label className="text-label">
+              Email or Phone <span className="text-danger-text">*</span>
+            </label>
             <Input
               className="h-[44px] transition-colors outline-none"
               value={formData.contact}
-              onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, contact: e.target.value });
+                if (validationErrors.contact) {
+                  setValidationErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.contact;
+                    return next;
+                  });
+                }
+              }}
               required
+              invalid={!!validationErrors.contact}
               placeholder="e.g. test@example.com or 555-0199"
             />
+            {validationErrors.contact && (
+              <p className="text-danger-text m-0 text-xs">{validationErrors.contact}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
