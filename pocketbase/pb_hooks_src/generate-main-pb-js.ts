@@ -351,7 +351,9 @@ function renderCron(
   body: string,
   options: CallbackOptions = {}
 ): string {
-  return `cronAdd(${JSON.stringify(name)}, ${JSON.stringify(schedule)}, () => {\n${indent(withUtilities(body, options), 4)}\n});`;
+  const isAsync = body.includes('await ');
+  const asyncPrefix = isAsync ? 'async ' : '';
+  return `cronAdd(${JSON.stringify(name)}, ${JSON.stringify(schedule)}, ${asyncPrefix}() => {\n${indent(withUtilities(body, options), 4)}\n});`;
 }
 
 function renderRecordHook(

@@ -596,7 +596,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
     });
 });
 
-cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
+cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
