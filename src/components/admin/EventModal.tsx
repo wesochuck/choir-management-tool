@@ -578,7 +578,9 @@ export const EventModal: React.FC<EventModalProps> = ({
                   </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-label">Date & Time</label>
+                  <label className="text-label">
+                    Date & Time <span className="text-danger-text">*</span>
+                  </label>
                   <Input
                     type="datetime-local"
                     value={formData.date}
@@ -643,7 +645,9 @@ export const EventModal: React.FC<EventModalProps> = ({
               </label>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-label">Venue</label>
+                <label className="text-label">
+                  Venue <span className="text-danger-text">*</span>
+                </label>
                 <Select
                   value={formData.venue || ''}
                   onChange={(e) => {
