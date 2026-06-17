@@ -102,6 +102,7 @@ export function MessageHistory({
       id: 'type',
       header: 'Type',
       enableSorting: false,
+      hideBelow: 'sm',
       cell: (_, row) => {
         const { mType, isAutomated } = getMessageMeta(row);
         return (
@@ -137,6 +138,7 @@ export function MessageHistory({
       id: 'source',
       header: 'Source',
       enableSorting: false,
+      hideBelow: 'sm',
       cell: (_, row) => {
         const { isAutomated } = getMessageMeta(row);
         return isAutomated ? (
@@ -178,11 +180,11 @@ export function MessageHistory({
       enableSorting: false,
       cell: (_, row) =>
         row.status === 'Archived' ? (
-          <span className="inline-flex items-center rounded bg-slate-400 px-2 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
+          <span className="inline-flex items-center rounded bg-slate-400 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
             Archived
           </span>
         ) : (
-          <span className="bg-success-bg text-success-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+          <span className="bg-success-bg text-success-text inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold tracking-wider uppercase">
             Sent
           </span>
         ),
