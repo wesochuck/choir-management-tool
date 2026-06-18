@@ -161,7 +161,8 @@ function enqueueTicketConfirmationEmail(options: {
         (options.amountPaidCents ?? Number(options.purchase.get('amountPaidCents') || 0)) / 100
       ).toFixed(2)
     )
-    .replace(/{choirName}/g, choirName);
+    .replace(/{choirName}/g, choirName)
+    .replace(/{successUrl}/g, successUrl);
 
   const ticketToken = generateSignedTicketToken($app, options.purchase.id);
   const stripeSessionId =
@@ -256,7 +257,8 @@ function enqueueBundleTicketConfirmationEmail(options: {
         (options.amountPaidCents ?? Number(options.purchase.get('amountPaidCents') || 0)) / 100
       ).toFixed(2)
     )
-    .replace(/{choirName}/g, choirName);
+    .replace(/{choirName}/g, choirName)
+    .replace(/{successUrl}/g, successUrl);
 
   const ticketToken = generateSignedTicketToken($app, options.purchase.id);
   const stripeSessionId =

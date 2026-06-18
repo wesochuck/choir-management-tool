@@ -13950,7 +13950,8 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -14015,7 +14016,8 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -15694,7 +15696,8 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -15759,7 +15762,8 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -17438,7 +17442,8 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -17503,7 +17508,8 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -19182,7 +19188,8 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -19247,7 +19254,8 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -20926,7 +20934,8 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -20991,7 +21000,8 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -22670,7 +22680,8 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -22735,7 +22746,8 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -24414,7 +24426,8 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -24479,7 +24492,8 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -26157,7 +26171,8 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -26222,7 +26237,8 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName);
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
         const ticketToken = generateSignedTicketToken($app, options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
