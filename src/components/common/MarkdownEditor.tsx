@@ -27,7 +27,9 @@ export function MarkdownEditor({
   const initialMinHeightRef = useRef(minHeight);
   const initialPlaceholderRef = useRef(placeholder);
 
-  // Keep refs up to date to avoid stale closures in EasyMDE callback
+  const isTest = process.env.NODE_ENV === 'test';
+
+  // Keep refs up to date to avoid stale closures
   useEffect(() => {
     onChangeRef.current = onChange;
     valueRef.current = value;
@@ -43,6 +45,7 @@ export function MarkdownEditor({
   // effect doesn't need to depend on changing props. The sync effect below
   // handles external value changes without destroying the editor.
   useEffect(() => {
+    if (isTest) return;
     if (localInstanceRef.current) return;
     if (!textareaRef.current) return;
 
@@ -92,10 +95,11 @@ export function MarkdownEditor({
         instanceRefLocal.current.current = null;
       }
     };
-  }, []);
+  }, [isTest]);
 
   // Synchronize external value changes (e.g. from templates) into EasyMDE
   useEffect(() => {
+    if (isTest) return;
     const mde = localInstanceRef.current;
     if (!mde) return;
 
@@ -110,7 +114,25 @@ export function MarkdownEditor({
         ch: cursor.ch,
       });
     }
-  }, [value]);
+  }, [value, isTest]);
+
+  if (isTest) {
+    // Test mode: render a plain textarea instead of EasyMDE. CodeMirror
+    // crashes in jsdom (getBoundingClientRect not implemented).
+    return (
+      <div className={className}>
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          // @allow-inline-style - dynamic minHeight value
+          style={{ minHeight }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
