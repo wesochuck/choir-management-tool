@@ -33,6 +33,7 @@ import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistor
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
 import { AddToSetListModal } from './music-library/AddToSetListModal';
+import { MusicLibrarySelectionToolbar } from './music-library/MusicLibrarySelectionToolbar';
 import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
 import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
@@ -693,20 +694,21 @@ export default function MusicLibraryView() {
             showDuplicatesOnly={showDuplicatesOnly}
             onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
             duplicateCount={duplicateIds.size}
-            selectedCount={selectedIds.size}
-            isBulkDeleting={bulkDeleteMutation.isPending}
-            onBulkDelete={handleBulkDelete}
-            onAddSelectedToSetList={
-              performancesQuery.data && performancesQuery.data.length > 0
-                ? () => setIsAddToSetListOpen(true)
-                : undefined
-            }
             pageSize={pageSize}
             onPageSizeChange={setPageSize}
             recencyFilter={recencyFilter}
             onRecencyFilterChange={setRecencyFilter}
             ignoreArticles={ignoreArticles}
             onIgnoreArticlesChange={setIgnoreArticles}
+          />
+
+          <MusicLibrarySelectionToolbar
+            selectedCount={selectedIds.size}
+            isBulkDeleting={bulkDeleteMutation.isPending}
+            isAddingToSetList={addSelectedToSetListMutation.isPending}
+            onAddToSetList={() => setIsAddToSetListOpen(true)}
+            onDeleteSelected={handleBulkDelete}
+            onClearSelection={() => setSelectedIds(new Set())}
           />
 
           <MusicLibraryTable

@@ -3,7 +3,7 @@ import type { SectionDef, MusicGenreDef } from '../../../services/settingsServic
 import type { PerformanceRecencyFilter } from '../../../lib/music/performanceHistory';
 import type { FilterMode } from '../../../lib/music/libraryRows';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
-import { Input, Button, Select } from '../../../components/ui';
+import { Input, Select } from '../../../components/ui';
 
 export interface MusicLibraryFiltersProps {
   searchTerm: string;
@@ -19,10 +19,6 @@ export interface MusicLibraryFiltersProps {
   showDuplicatesOnly: boolean;
   onShowDuplicatesOnlyChange: (value: boolean) => void;
   duplicateCount: number;
-  selectedCount: number;
-  isBulkDeleting: boolean;
-  onBulkDelete: () => void;
-  onAddSelectedToSetList?: () => void;
   pageSize: number;
   onPageSizeChange: (value: number) => void;
   recencyFilter: PerformanceRecencyFilter;
@@ -45,10 +41,6 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
   showDuplicatesOnly,
   onShowDuplicatesOnlyChange,
   duplicateCount,
-  selectedCount,
-  isBulkDeleting,
-  onBulkDelete,
-  onAddSelectedToSetList,
   pageSize,
   onPageSizeChange,
   recencyFilter,
@@ -182,19 +174,6 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
           />
           <span className="text-text text-sm font-medium">Ignore articles (A, An, The)</span>
         </label>
-
-        {selectedCount > 0 && (
-          <div className="ml-auto flex items-center gap-2">
-            {onAddSelectedToSetList && (
-              <Button variant="secondary" size="small" onClick={onAddSelectedToSetList}>
-                Add to Set List ({selectedCount})
-              </Button>
-            )}
-            <Button variant="danger" size="small" onClick={onBulkDelete} disabled={isBulkDeleting}>
-              {isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedCount})`}
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
