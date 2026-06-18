@@ -38,7 +38,7 @@ export const PUBLIC_FONT_OPTIONS = [
 
 export type PublicFontChoice = (typeof PUBLIC_FONT_OPTIONS)[number]['id'];
 
-export const DEFAULT_PUBLIC_FONT: PublicFontChoice = 'system';
+const DEFAULT_PUBLIC_FONT: PublicFontChoice = 'system';
 
 export function getPublicFontStack(fontId: PublicFontChoice | undefined): string {
   return (
