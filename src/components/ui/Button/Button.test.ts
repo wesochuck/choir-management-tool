@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen, within } from '@testing-library/react';
 import { Button } from './Button';
 
 test('Button renders with default variant (primary)', () => {
@@ -108,4 +108,11 @@ test('Button passes className when using as prop', () => {
   const el = container.firstElementChild;
   assert.ok(el, 'renders');
   assert.ok(el.classList.contains('custom-link'), 'has custom className');
+});
+
+test('Button renders icon as decorative when text label is present', () => {
+  render(React.createElement(Button, { icon: '➕' }, 'Add Piece'));
+  const button = screen.getByRole('button', { name: 'Add Piece' });
+  const icon = within(button).getByText('➕');
+  assert.ok(icon.hasAttribute('aria-hidden'), 'icon has aria-hidden');
 });

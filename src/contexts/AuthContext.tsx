@@ -17,6 +17,8 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
+export { AuthContext };
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<ChoirUser | null>(pb.authStore.model as ChoirUser | null);
   const [isLoading, setIsLoading] = useState(true);

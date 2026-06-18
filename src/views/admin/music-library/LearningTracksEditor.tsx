@@ -120,14 +120,16 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
                   className="!m-0 !h-auto min-h-auto cursor-pointer"
                   onClick={() => onDelete(partLabel)}
                   title="Delete track"
+                  aria-label="Delete track"
                 >
-                  🗑️
+                  <span aria-hidden="true">🗑️</span>
                 </Button>
               </div>
             ) : (
               <div className="flex flex-1 flex-row items-center justify-end">
                 <Button as="label" variant="secondary" size="tiny" className="!m-0 cursor-pointer">
-                  📤 Upload
+                  <span aria-hidden="true">📤</span>
+                  <span>Upload</span>
                   <input
                     type="file"
                     accept="audio/*"
@@ -149,7 +151,8 @@ export const LearningTracksEditor: React.FC<LearningTracksEditorProps> = ({
       {addableParts.length > 0 && (
         <div className="animate-fade-in border-border mt-1 flex flex-row items-center justify-start gap-1 border-t border-dashed pt-1">
           <span className="text-muted text-[11px] font-semibold">
-            ➕ Add voice part track slot:
+            <span aria-hidden="true">➕</span>
+            <span>Add voice part track slot:</span>
           </span>
           <Select
             value=""

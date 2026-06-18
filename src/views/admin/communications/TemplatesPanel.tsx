@@ -247,7 +247,8 @@ export function TemplatesPanel({
             })
           }
         >
-          ➕ Add Custom Template
+          <span aria-hidden="true">➕</span>
+          <span>Add Custom Template</span>
         </Button>
       }
     >

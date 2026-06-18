@@ -242,7 +242,7 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
     <div className="border-border bg-surface sticky top-6 flex max-h-[calc(100vh-120px)] flex-col gap-4 rounded-xl border p-4 shadow-sm">
       <div className="border-border border-b pb-2">
         <div className="flex items-center gap-2">
-          <span>⚡</span>
+          <span aria-hidden="true">⚡</span>
           <h4 className="text-primary-deep m-0 text-sm font-bold">Placeholders</h4>
         </div>
         <p className="text-muted m-0 mt-1 text-xs">

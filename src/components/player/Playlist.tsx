@@ -131,7 +131,8 @@ export const Playlist: React.FC<PlaylistProps> = ({
               title="Remove all offline downloads"
               aria-label="Clear all downloads"
             >
-              🗑️ Clear ({downloadedCount})
+              <span aria-hidden="true">🗑️</span>
+              <span>Clear ({downloadedCount})</span>
             </button>
           )}
           {!allDownloaded && (
@@ -160,7 +161,10 @@ export const Playlist: React.FC<PlaylistProps> = ({
                   Downloading…
                 </>
               ) : (
-                <>⬇️ Download All</>
+                <>
+                  <span aria-hidden="true">⬇️</span>
+                  <span>Download All</span>
+                </>
               )}
             </button>
           )}

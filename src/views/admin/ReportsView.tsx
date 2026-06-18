@@ -326,10 +326,12 @@ export default function ReportsView() {
               {concertSummary && (
                 <div className="flex flex-row gap-2">
                   <Button onClick={handleExportCSV} variant="secondary" size="small">
-                    📥 Download CSV
+                    <span aria-hidden="true">📥</span>
+                    <span>Download CSV</span>
                   </Button>
                   <Button onClick={handlePrint} variant="outline" size="small">
-                    🖨️ Print Report
+                    <span aria-hidden="true">🖨️</span>
+                    <span>Print Report</span>
                   </Button>
                 </div>
               )}
@@ -446,7 +448,8 @@ export default function ReportsView() {
                 size="small"
                 disabled={isRepertoireLoading || repertoireStats.length === 0}
               >
-                🖨️ Print Report
+                <span aria-hidden="true">🖨️</span>
+                <span>Print Report</span>
               </Button>
             </div>
           </div>

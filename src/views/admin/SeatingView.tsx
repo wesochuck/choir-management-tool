@@ -602,7 +602,8 @@ export default function SeatingView() {
                 />
 
                 <Button variant="primary" size="small" onClick={handlePrint}>
-                  🖨️ Print
+                  <span aria-hidden="true">🖨️</span>
+                  <span>Print</span>
                 </Button>
                 <div className="flex flex-row items-center gap-1">
                   <SavingIndicator isSaving={isSaving} error={saveError} />

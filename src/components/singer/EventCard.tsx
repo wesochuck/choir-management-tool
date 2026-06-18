@@ -118,7 +118,8 @@ export const EventCard: React.FC<EventCardProps> = ({
                 onClick={handleOpenPlayer}
                 className={`${baseBtnClasses} bg-primary text-surface hover:bg-primary-deep hover:shadow-md max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
               >
-                🎧 Practice
+                <span aria-hidden="true">🎧</span>
+                <span>Practice</span>
               </button>
             )}
             {isPerformance && rsvp !== 'No' && (
@@ -126,7 +127,8 @@ export const EventCard: React.FC<EventCardProps> = ({
                 to={`/seating/${event.id}`}
                 className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-primary-deep/10 max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
               >
-                🪑 Seating
+                <span aria-hidden="true">🪑</span>
+                <span>Seating</span>
               </Link>
             )}
           </div>

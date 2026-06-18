@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useAuth } from '../../contexts/AuthContext';
+import { Button } from '../ui';
 interface PageLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -24,36 +25,27 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
     <div className="bg-bg min-h-screen">
       <header className="no-print border-border bg-surface sticky top-0 z-40 border-b shadow-sm">
         <div
-          className="mx-auto flex items-center justify-between gap-6 px-6 py-3"
+          className="mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6"
           // @allow-inline-style - dynamic maxWidth from props
           style={{ maxWidth }}
         >
-          <div className="flex items-center gap-6">
-            <Link
-              to="/dashboard"
-              className="border-border text-text-muted hover:bg-primary-light hover:text-primary-deep inline-flex h-[38px] items-center justify-center rounded-md border bg-transparent px-4 text-sm font-semibold whitespace-nowrap no-underline transition-all duration-200"
-              title="Dashboard"
-            >
-              🏠 Home
-            </Link>
+          <div className="flex min-w-0 items-center gap-2">
+            <Button as={Link} to="/dashboard" variant="outline" size="default" title="Dashboard">
+              <span aria-hidden="true">🏠</span>
+              <span>Home</span>
+            </Button>
           </div>
           {(actions || user?.role === 'admin') && (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {actions}
               {user?.role === 'admin' && (
                 <>
-                  <Link
-                    to="/profile"
-                    className="border-border text-text-muted hover:bg-primary-light hover:text-primary-deep inline-flex items-center justify-center rounded-md border bg-transparent px-3 py-1.5 text-sm font-medium"
-                  >
+                  <Button as={Link} to="/profile" variant="ghost" size="default">
                     My Profile
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="border-border text-text-muted hover:bg-primary-light hover:text-primary-deep inline-flex cursor-pointer items-center justify-center rounded-md border bg-transparent px-3 py-1.5 text-sm font-medium"
-                  >
+                  </Button>
+                  <Button type="button" variant="outline" size="default" onClick={logout}>
                     Logout
-                  </button>
+                  </Button>
                 </>
               )}
             </div>

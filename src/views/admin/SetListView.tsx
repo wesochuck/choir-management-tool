@@ -460,14 +460,16 @@ export default function SetListView() {
                 onClick={() => handleOpenPlayer(selectedEvent)}
                 title="Open practice player link generator"
               >
-                🎧 Practice Player
+                <span aria-hidden="true">🎧</span>
+                <span>Practice Player</span>
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => setIsPrintModalOpen(true)}
                 title="View printable set list"
               >
-                🖨️ Print & Copy
+                <span aria-hidden="true">🖨️</span>
+                <span>Print &amp; Copy</span>
               </Button>
             </>
           ) : null
@@ -832,7 +834,8 @@ export default function SetListView() {
                 </div>
               </div>
               <Button variant="primary" className="w-full sm:w-auto" onClick={handlePrintList}>
-                🖨️ Print List
+                <span aria-hidden="true">🖨️</span>
+                <span>Print List</span>
               </Button>
             </div>
           }

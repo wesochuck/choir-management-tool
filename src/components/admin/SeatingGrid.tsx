@@ -244,7 +244,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           className="no-print border-primary bg-primary-light text-primary-deep mb-1 rounded-md border-dashed text-[0.8125rem] font-semibold"
           title="Add a new row with 10 seats at the back"
         >
-          ➕ Add Row to Back
+          <span aria-hidden="true">➕</span>
+          <span>Add Row to Back</span>
         </Button>
       )}
 
@@ -298,7 +299,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                 </span>
               </div>
 
-              {/* "🗑️" remove row button */}
+              {/* remove row button */}
               {!isReadOnly && onUpdateRowCounts && (
                 <button
                   className="seating-row-action-btn no-print hover:bg-danger-bg/80 bg-danger-bg text-danger-text ml-1.5 inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full p-0 text-[13px] font-bold shadow-sm transition-all duration-200 active:scale-95"
@@ -323,8 +324,9 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     }
                   }}
                   title="Remove this row"
+                  aria-label="Remove this row"
                 >
-                  🗑️
+                  <span aria-hidden="true">🗑️</span>
                 </button>
               )}
               {Array.from({ length: seatCount }).map((_, seatIndex) => {
@@ -727,7 +729,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           className="no-print border-primary bg-primary-light text-primary-deep mt-1 rounded-md border-dashed text-[0.8125rem] font-semibold"
           title="Add a new row with 10 seats at the front"
         >
-          ➕ Add Row to Front
+          <span aria-hidden="true">➕</span>
+          <span>Add Row to Front</span>
         </Button>
       )}
 

@@ -219,8 +219,8 @@ export default function SettingsView() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2">
                 <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
-                  ⬆️
-                  {logoUrl ? 'Replace Logo' : 'Upload Logo'}
+                  <span aria-hidden="true">⬆️</span>
+                  <span>{logoUrl ? 'Replace Logo' : 'Upload Logo'}</span>
                   <Input
                     type="file"
                     accept="image/png,image/jpeg,image/svg+xml,image/webp"

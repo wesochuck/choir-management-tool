@@ -269,6 +269,50 @@ This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state.
 
 - **Hook tests need `// @vitest-environment jsdom` and a `QueryClientProvider` wrapper.** Use `retry: false` on both `queries` and `mutations`. The canonical pattern is `test/useVenuesQuery.test.tsx`; the in-place pattern is `src/hooks/useEventRosterData.test.ts`.
 
+### Decorative icons and emoji in buttons/links
+
+When a button or link includes a decorative emoji/icon plus visible label text, render the icon separately and hide it from assistive technology.
+
+Preferred pattern:
+
+```tsx
+<Button>
+  <span aria-hidden="true">🏠</span>
+  <span>Home</span>
+</Button>
+```
+
+For button-like links:
+
+```tsx
+<Button as={Link} to="/dashboard">
+  <span aria-hidden="true">🏠</span>
+  <span>Home</span>
+</Button>
+```
+
+Emoji must be placed directly between JSX tags — do not wrap in quote characters:
+
+```tsx
+// correct
+<span aria-hidden="true">⬆️</span>
+
+// incorrect
+<span aria-hidden="true">'⬆️'</span>
+```
+
+Avoid collapsing decorative icons into a single text node:
+
+```tsx
+// avoid
+<Button>🏠 Home</Button>
+
+// also avoid
+'⬆️' Choose File
+```
+
+When the shared `Button` `icon` prop is used, the component automatically wraps the icon with `aria-hidden="true"`. For icon-only buttons, provide an `aria-label`.
+
 ## 4. PocketBase Rules
 
 Always assume PocketBase `0.36.9` is currently installed. Verify against `package.json` and the hosted instance before relying on SDK features.

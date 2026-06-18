@@ -210,8 +210,8 @@ export const EventTable: React.FC<EventTableProps> = ({
                         item.action(event);
                       }}
                     >
-                      <span>{item.icon}</span>
-                      {item.label}
+                      <span aria-hidden="true">{item.icon}</span>
+                      <span>{item.label}</span>
                     </button>
                   ))}
                   <div className="my-1 border-t border-slate-200" />
@@ -225,8 +225,8 @@ export const EventTable: React.FC<EventTableProps> = ({
                       onEdit(event);
                     }}
                   >
-                    <span>✏️</span>
-                    Edit Event
+                    <span aria-hidden="true">✏️</span>
+                    <span>Edit Event</span>
                   </button>
                 </div>
               )}
@@ -395,8 +395,8 @@ export const EventTable: React.FC<EventTableProps> = ({
                           item.action(event);
                         }}
                       >
-                        <span>{item.icon}</span>
-                        {item.label}
+                        <span aria-hidden="true">{item.icon}</span>
+                        <span>{item.label}</span>
                       </button>
                     ))}
                     <div className="my-1 border-t border-slate-200" />
@@ -410,8 +410,8 @@ export const EventTable: React.FC<EventTableProps> = ({
                         onEdit(event);
                       }}
                     >
-                      <span>✏️</span>
-                      Edit Event
+                      <span aria-hidden="true">✏️</span>
+                      <span>Edit Event</span>
                     </button>
                   </div>
                 )}

@@ -64,7 +64,11 @@ export function Button({
         {...rest}
       >
         {loading && <Spinner size="small" />}
-        {!loading && icon}
+        {!loading && icon && (
+          <span aria-hidden="true" className="inline-flex shrink-0 items-center">
+            {icon}
+          </span>
+        )}
         {children}
       </Component>
     );
@@ -94,7 +98,11 @@ export function Button({
 
   return (
     <SlButton {...slProps}>
-      {icon && <span slot="prefix">{icon}</span>}
+      {icon && (
+        <span slot="prefix" aria-hidden="true">
+          {icon}
+        </span>
+      )}
       {children}
     </SlButton>
   );
