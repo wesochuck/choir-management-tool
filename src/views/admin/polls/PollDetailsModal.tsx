@@ -3,7 +3,7 @@ import { Button, Badge, Modal } from '../../../components/ui';
 import { formatInTimezone } from '../../../lib/timezone';
 import type { CommunicationRecipient } from '../../../services/communicationService';
 import type { Event } from '../../../services/eventService';
-import type { PollRecord, PollStat, PollMessage } from './types';
+import type { PollRecord, PollResponseRecord, PollStat, PollMessage } from './types';
 
 interface PollDetailsModalProps {
   poll: PollRecord | null;

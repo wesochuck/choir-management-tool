@@ -457,7 +457,7 @@ export default function PollsDashboardView() {
         event={
           viewingPoll?.eventId ? (events.find((e) => e.id === viewingPoll.eventId) ?? null) : null
         }
-        pollMessages={pollMessages as import('./polls/types').PollMessage[]}
+        pollMessages={pollMessages as unknown as import('./polls/types').PollMessage[]}
         timezone={timezone}
         isDeleting={deletePollMutation.isPending}
         onClose={() => setViewingPoll(null)}
