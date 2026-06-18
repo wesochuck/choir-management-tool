@@ -11,7 +11,9 @@ export type MusicLibrarySortField =
   | 'duration'
   | 'copies'
   | 'catalogId'
-  | 'lastPerformed';
+  | 'lastPerformed'
+  | 'performances'
+  | 'tracks';
 export type SortDirection = 'asc' | 'desc';
 export type FilterMode = 'OR' | 'AND';
 
@@ -33,6 +35,24 @@ export interface BuildVisibleMusicLibraryRowsOptions {
 function getSortTitle(title: string, ignoreArticles: boolean): string {
   if (!ignoreArticles) return title;
   return title.replace(/^(?:a|an|the)\s+/i, '');
+}
+
+export function getTrackSortCount(piece: MusicPiece, allPieces: MusicPiece[]): number {
+  const directTracks = piece.audioTrackMapping
+    ? Object.keys(piece.audioTrackMapping).filter((key) => piece.audioTrackMapping?.[key]).length
+    : 0;
+
+  const movementTracks = allPieces
+    .filter((candidate) => candidate.parentId === piece.id)
+    .reduce((sum, movement) => {
+      const count = movement.audioTrackMapping
+        ? Object.keys(movement.audioTrackMapping).filter((key) => movement.audioTrackMapping?.[key])
+            .length
+        : 0;
+      return sum + count;
+    }, 0);
+
+  return directTracks + movementTracks;
 }
 
 /**
@@ -195,9 +215,19 @@ export function buildVisibleMusicLibraryRows(
         const dateA = getEffectiveMostRecentPerformanceDate(a, pieces);
         const dateB = getEffectiveMostRecentPerformanceDate(b, pieces);
         if (!dateA && !dateB) return 0;
-        if (!dateA) return 1; // Put never-performed at the end (always)
-        if (!dateB) return -1; // Put never-performed at the end (always)
+        if (!dateA) return 1;
+        if (!dateB) return -1;
         const comp = dateA.localeCompare(dateB);
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+      case 'performances': {
+        const countA = Array.isArray(a.performances) ? a.performances.length : 0;
+        const countB = Array.isArray(b.performances) ? b.performances.length : 0;
+        const comp = countA - countB;
+        return sortDirection === 'asc' ? comp : -comp;
+      }
+      case 'tracks': {
+        const comp = getTrackSortCount(a, pieces) - getTrackSortCount(b, pieces);
         return sortDirection === 'asc' ? comp : -comp;
       }
       case 'title':

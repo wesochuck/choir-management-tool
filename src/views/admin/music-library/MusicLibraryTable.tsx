@@ -34,7 +34,7 @@ export interface MusicLibraryTableProps {
   onPageChange: (page: number) => void;
   sortField: MusicLibrarySortField;
   sortDirection: SortDirection;
-  onSortChange: (field: MusicLibrarySortField) => void;
+  onSortChange: (field: MusicLibrarySortField, direction: SortDirection) => void;
 }
 
 export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
@@ -118,6 +118,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'performances',
       header: 'Perf',
+      enableSorting: true,
       align: 'center',
       cell: (_, row) =>
         row.performances && row.performances.length > 0 ? (
@@ -144,6 +145,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'tracks',
       header: 'Tracks',
+      enableSorting: true,
       cell: (_, row) => {
         const isParent = isParentPiece(row, pieces);
         const totalMovementTracksCount = getMovementTrackCount(row, pieces);
@@ -235,9 +237,14 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         getRowClassName={(p) => (duplicateIds.has(p.id) ? 'bg-[rgb(255_138_101_/_5%)]' : '')}
         manualSorting
         onSortingChange={(sorting) => {
-          if (sorting.length > 0) onSortChange(sorting[0].id as MusicLibrarySortField);
+          const next = sorting[0];
+          if (!next) {
+            onSortChange('title', 'asc');
+            return;
+          }
+          onSortChange(next.id as MusicLibrarySortField, next.desc ? 'desc' : 'asc');
         }}
-        defaultSorting={sortField ? [{ id: sortField, desc: sortDirection === 'desc' }] : undefined}
+        sorting={sortField ? [{ id: sortField, desc: sortDirection === 'desc' }] : []}
       />
 
       {!isLoading && totalParentCount > 0 && (

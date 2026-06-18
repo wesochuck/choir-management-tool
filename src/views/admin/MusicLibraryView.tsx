@@ -681,13 +681,9 @@ export default function MusicLibraryView() {
             onPageChange={setCurrentPage}
             sortField={sortField}
             sortDirection={sortDirection}
-            onSortChange={(field) => {
-              if (sortField === field) {
-                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-              } else {
-                setSortField(field);
-                setSortDirection('asc');
-              }
+            onSortChange={(field, direction) => {
+              setSortField(field);
+              setSortDirection(direction);
             }}
           />
         </AppCard>

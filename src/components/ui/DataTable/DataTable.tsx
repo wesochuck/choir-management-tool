@@ -82,11 +82,13 @@ export function DataTable<T>({
   getRowClassName,
   renderRow,
   defaultSorting,
+  sorting: controlledSorting,
   hidePagination,
 }: DataTableProps<T>) {
   const tanStackColumns = useMemo(() => columns.map(toTanStackColumn), [columns]);
 
-  const [sorting, setSorting] = useState<SortingState>(defaultSorting ?? []);
+  const [internalSorting, setInternalSorting] = useState<SortingState>(defaultSorting ?? []);
+  const sorting = controlledSorting ?? internalSorting;
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize,
@@ -106,7 +108,11 @@ export function DataTable<T>({
     },
     onSortingChange: (updater) => {
       const next = typeof updater === 'function' ? updater(sorting) : updater;
-      setSorting(next);
+
+      if (!controlledSorting) {
+        setInternalSorting(next);
+      }
+
       onSortingChange?.(next);
     },
     onPaginationChange: (updater) => {
@@ -190,17 +196,37 @@ export function DataTable<T>({
                 {headerGroup.headers.map((header) => {
                   const meta = header.column.columnDef.meta as OurCellMeta | undefined;
                   const sortable = header.column.getCanSort();
+                  const sortState = header.column.getIsSorted();
                   return (
                     <th
                       key={header.id}
                       className={`px-4 py-3 text-xs font-semibold tracking-wider whitespace-nowrap text-slate-500 uppercase ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)} ${sortable ? 'cursor-pointer select-none hover:text-slate-700' : ''}`}
                       onClick={sortable ? header.column.getToggleSortingHandler() : undefined}
+                      title={sortable ? 'Click to sort' : undefined}
+                      aria-sort={
+                        sortable
+                          ? sortState === 'asc'
+                            ? 'ascending'
+                            : sortState === 'desc'
+                              ? 'descending'
+                              : 'none'
+                          : undefined
+                      }
                     >
                       <span className="inline-flex items-center gap-1">
                         {flexRender(header.column.columnDef.header, header.getContext())}
-                        {sortable && header.column.getIsSorted() && (
-                          <span className="text-primary text-xs">
-                            {header.column.getIsSorted() === 'asc' ? '\u25B2' : '\u25BC'}
+                        {sortable && (
+                          <span
+                            className={`text-xs transition-colors ${
+                              sortState ? 'text-primary' : 'text-slate-300'
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {sortState === 'asc'
+                              ? '\u25B2'
+                              : sortState === 'desc'
+                                ? '\u25BC'
+                                : '\u2195'}
                           </span>
                         )}
                       </span>

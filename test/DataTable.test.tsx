@@ -27,6 +27,7 @@ const columns: ColumnDef<TestItem>[] = [
     id: 'name',
     header: 'Name',
     accessorKey: 'name',
+    enableSorting: false,
     cardSection: 0,
     cardSide: 'left',
   },
@@ -34,6 +35,7 @@ const columns: ColumnDef<TestItem>[] = [
     id: 'role',
     header: 'Role',
     accessorKey: 'role',
+    enableSorting: false,
     cardSection: 0,
     cardSide: 'right',
   },
@@ -41,6 +43,7 @@ const columns: ColumnDef<TestItem>[] = [
     id: 'email',
     header: 'Email',
     accessorKey: 'email',
+    enableSorting: false,
     cardSection: 1,
     cardSide: 'left',
     cardLabel: 'Email:',
@@ -59,7 +62,7 @@ function renderTable(props: Partial<React.ComponentProps<typeof DataTable<TestIt
         icon: '📦',
       }}
       {...props}
-    />,
+    />
   );
 }
 
@@ -125,16 +128,18 @@ describe('DataTable', () => {
 
     renderTable({ enableSelection: true, onSelectionChange: spy });
 
-    const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      'input[type="checkbox"]',
-    );
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
     assert.equal(checkboxes.length >= 6, true, 'should render checkboxes (select-all + 5 rows)');
 
-    act(() => { checkboxes[1]!.click(); });
+    act(() => {
+      checkboxes[1]!.click();
+    });
     assert.equal(calls.length, 1, 'should call onSelectionChange after first click');
     assert.equal(calls[0]!.size, 1, 'should have 1 selected id');
 
-    act(() => { checkboxes[1]!.click(); });
+    act(() => {
+      checkboxes[1]!.click();
+    });
     assert.equal(calls.length, 2, 'should call onSelectionChange after second click');
     assert.equal(calls[1]!.size, 0, 'should have 0 selected ids after uncheck');
   });
@@ -147,21 +152,28 @@ describe('DataTable', () => {
 
     renderTable({ enableSelection: true, onSelectionChange: spy });
 
-    const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      'input[type="checkbox"]',
-    );
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
     const selectAll = checkboxes[0]!;
 
-    act(() => { selectAll.click(); });
+    act(() => {
+      selectAll.click();
+    });
     assert.equal(calls.length, 1, 'should call onSelectionChange');
     assert.equal(calls[0]!.size, 5, 'should select all 5 rows');
 
-    act(() => { selectAll.click(); });
+    act(() => {
+      selectAll.click();
+    });
     assert.equal(calls[1]!.size, 0, 'should deselect all');
   });
 
   it('sort: clicking a sortable header toggles sort direction', () => {
-    renderTable();
+    const sortColumns: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name', enableSorting: true },
+      { id: 'role', header: 'Role', accessorKey: 'role', enableSorting: false },
+      { id: 'email', header: 'Email', accessorKey: 'email', enableSorting: false },
+    ];
+    renderTable({ columns: sortColumns });
 
     const nameHeader = screen.getByText('Name');
     assert.ok(nameHeader, 'should find Name header');
@@ -169,15 +181,22 @@ describe('DataTable', () => {
     const th = nameHeader.closest('th');
     assert.ok(th, 'should find th element');
 
-    assert.equal(th!.className.includes('cursor-pointer'), true,
-      'sortable header should have cursor-pointer');
+    assert.equal(
+      th!.className.includes('cursor-pointer'),
+      true,
+      'sortable header should have cursor-pointer'
+    );
 
-    act(() => { th!.click(); });
+    act(() => {
+      th!.click();
+    });
     const sortedSpan = th!.querySelector('.text-primary');
     assert.ok(sortedSpan, 'sort indicator should appear after click');
     assert.equal(sortedSpan!.textContent, '\u25B2', 'first click should sort ascending');
 
-    act(() => { th!.click(); });
+    act(() => {
+      th!.click();
+    });
     assert.equal(sortedSpan!.textContent, '\u25BC', 'second click should sort descending');
   });
 
@@ -198,7 +217,58 @@ describe('DataTable', () => {
     const nameHeader = screen.getByText('Name');
     const th = nameHeader.closest('th');
     assert.ok(th);
-    assert.equal(th!.className.includes('cursor-pointer'), false, 'non-sortable header should not have cursor-pointer');
+    assert.equal(
+      th!.className.includes('cursor-pointer'),
+      false,
+      'non-sortable header should not have cursor-pointer'
+    );
+  });
+
+  it('sort: controlled sorting prop shows active direction arrow', () => {
+    const sortColumns: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name', enableSorting: true },
+      { id: 'role', header: 'Role', accessorKey: 'role', enableSorting: false },
+    ];
+    const { container } = renderTable({
+      columns: sortColumns,
+      sorting: [{ id: 'name', desc: false }],
+    });
+
+    const ths = container.querySelectorAll('th');
+    assert.equal(ths.length, 2);
+    const nameTh = ths[0]!;
+    const sortSpan = nameTh.querySelector('.text-primary');
+    assert.ok(sortSpan, 'sort indicator should appear with controlled sorting');
+    assert.equal(sortSpan!.textContent, '\u25B2', 'should show ascending arrow');
+  });
+
+  it('sort: controlled sorting desc shows descending arrow', () => {
+    const sortColumns: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name', enableSorting: true },
+    ];
+    const { container } = renderTable({
+      columns: sortColumns,
+      sorting: [{ id: 'name', desc: true }],
+    });
+
+    const nameTh = container.querySelector('th')!;
+    const sortSpan = nameTh.querySelector('.text-primary');
+    assert.ok(sortSpan, 'sort indicator should appear');
+    assert.equal(sortSpan!.textContent, '\u25BC', 'should show descending arrow');
+  });
+
+  it('sort: controlled sorting empty clears active arrow', () => {
+    const sortColumns: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name', enableSorting: true },
+    ];
+    const { container } = renderTable({ columns: sortColumns, sorting: [] });
+
+    const nameTh = container.querySelector('th')!;
+    const sortSpan = nameTh.querySelector('.text-primary');
+    assert.equal(sortSpan, null, 'should not have active sort indicator');
+    const unsortedSpan = nameTh.querySelector('.text-slate-300');
+    assert.ok(unsortedSpan, 'should have unsorted indicator');
+    assert.equal(unsortedSpan!.textContent, '\u2195', 'should show unsorted icon');
   });
 
   it('row click: fires onRowClick, checkbox click does not', () => {
@@ -225,15 +295,11 @@ describe('DataTable', () => {
     assert.ok(prevBtn, 'should render Prev button');
     assert.ok(nextBtn, 'should render Next button');
 
-    assert.equal(
-      prevBtn!.hasAttribute('disabled'),
-      true,
-      'Prev should be disabled on first page',
-    );
+    assert.equal(prevBtn!.hasAttribute('disabled'), true, 'Prev should be disabled on first page');
     assert.equal(
       nextBtn!.hasAttribute('disabled'),
       false,
-      'Next should be enabled when there are more pages',
+      'Next should be enabled when there are more pages'
     );
   });
 
@@ -286,7 +352,10 @@ describe('DataTable', () => {
 
     const emailTh = ths[1]!;
     assert.ok(emailTh.className.includes('hidden'), 'email th should have hidden class');
-    assert.ok(emailTh.className.includes('sm:table-cell'), 'email th should have sm:table-cell class');
+    assert.ok(
+      emailTh.className.includes('sm:table-cell'),
+      'email th should have sm:table-cell class'
+    );
   });
 
   it('renders correct number of data rows', () => {
@@ -301,17 +370,21 @@ describe('DataTable', () => {
 
     renderTable({
       enableSelection: true,
-      onRowClick: (row) => { rowCalls.push(row); },
-      onSelectionChange: (ids) => { selCalls.push(ids); },
+      onRowClick: (row) => {
+        rowCalls.push(row);
+      },
+      onSelectionChange: (ids) => {
+        selCalls.push(ids);
+      },
     });
 
-    const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      'tbody input[type="checkbox"]',
-    );
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]');
     assert.equal(checkboxes.length, 5);
 
     // Click a checkbox
-    act(() => { checkboxes[0]!.click(); });
+    act(() => {
+      checkboxes[0]!.click();
+    });
 
     // Row click should NOT have fired
     assert.equal(rowCalls.length, 0, 'onRowClick should not fire when clicking checkbox');
@@ -324,19 +397,17 @@ describe('DataTable', () => {
     renderTable({
       enableSelection: true,
       onSelectionChange: () => {},
-      renderSelectionActions: ({ selectedCount }) => (
-        <span>Action for {selectedCount}</span>
-      ),
+      renderSelectionActions: ({ selectedCount }) => <span>Action for {selectedCount}</span>,
     });
 
     // Initially no selection actions
     assert.equal(screen.queryByText(/Action for/), null);
 
     // Select one row
-    const checkboxes = document.querySelectorAll<HTMLInputElement>(
-      'input[type="checkbox"]',
-    );
-    act(() => { checkboxes[1]!.click(); });
+    const checkboxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+    act(() => {
+      checkboxes[1]!.click();
+    });
 
     assert.ok(screen.getByText('Action for 1'), 'should show selection actions');
     assert.ok(screen.getByText('1 selected'), 'should show selection count');
