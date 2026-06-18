@@ -94,6 +94,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'emailRendering',
       'mailjetRenderer',
       'hmacTokens',
+      'pocketbaseDate',
     ],
   },
   calendarEndpoint: {
@@ -104,7 +105,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'handleCalendarFeedUrl',
       'handleCalendarFeedReset',
     ],
-    dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens'],
+    dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens', 'pocketbaseDate'],
   },
   singerSeatingEndpoint: {
     files: ['singerSeatingEndpoint.ts'],
@@ -147,6 +148,10 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     files: ['rsvpValidation.ts'],
     symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
   },
+  pocketbaseDate: {
+    files: ['pocketbaseDate.ts'],
+    symbols: ['coercePocketBaseDate', 'isPocketBaseDateAtOrAfter', 'isPocketBaseDateBefore'],
+  },
   stripeService: {
     files: ['stripeService.ts'],
     symbols: ['createCheckoutSession', 'retrieveCheckoutSession', 'refundPaymentIntent'],
@@ -170,6 +175,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'qrHelper',
       'hmacTokens',
       'ticketScanValidation',
+      'pocketbaseDate',
     ],
   },
   qrHelper: {
@@ -478,8 +484,10 @@ events.forEach(event => {
     const total = rosters.length;
     const present = rosters.filter(r => r.get("attendance") === "Present").length;
     const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
-    const eventDateObj = new Date(event.get("date"));
-    const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear();
+    const eventDateObj = coercePocketBaseDate(event.get("date"));
+    const eventDateStr = eventDateObj
+      ? (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear()
+      : "";
     const eventTitle = String(event.get("title") || "");
     const subject = sanitizeEmailSubject(
         commSettings.reportSubjectTemplate
@@ -663,8 +671,11 @@ events.forEach(event => {
     if (!purchases || purchases.length === 0) return;
 
     const eventTitle = event.get("title") || "";
-    const eventDateRaw = event.get("date");
-    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const eventDateStr = formatInTimezone(
+      coercePocketBaseDate(event.get("date")) ?? new Date(""),
+      timezone,
+      { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+    );
     const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
 
     purchases.forEach(async purchase => {

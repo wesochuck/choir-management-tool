@@ -4,6 +4,7 @@ import { createCheckoutSession, refundPaymentIntent } from './stripeService';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 import { generateSignedTicketToken } from './hmacTokens';
 import { renderQrSvg } from './email/qrHelper';
+import { coercePocketBaseDate } from './pocketbaseDate';
 
 declare const $app: PocketBaseApp & {
   findAuthRecordByEmail(collectionName: string, email: string): PocketBaseRecord;
@@ -114,15 +115,9 @@ export async function handleCreateTicketsSession(e: PocketBaseRequestEvent): Pro
     return e.json(400, { error: 'Ticketing is not enabled for this event' });
   }
 
-  const checkoutEventDateRaw = event.get('date');
-  const checkoutEventDate =
-    typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+  const checkoutEventDate = coercePocketBaseDate(event.get('date'));
 
-  if (
-    !checkoutEventDate ||
-    Number.isNaN(checkoutEventDate.getTime()) ||
-    checkoutEventDate < new Date()
-  ) {
+  if (!checkoutEventDate || checkoutEventDate < new Date()) {
     return e.json(400, { error: 'Ticket sales are closed for this event' });
   }
 
@@ -167,9 +162,9 @@ export async function handleCreateTicketsSession(e: PocketBaseRequestEvent): Pro
   }
 
   const nowFormatted = formatInTimezone(new Date(), timezone, {});
-  const eventDateRaw = event.get('date');
+  const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
   const eventFormatted = formatInTimezone(
-    new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''),
+    checkoutEventDateForFormatting ?? new Date(''),
     timezone,
     {}
   );
@@ -289,12 +284,9 @@ export function handleCreateBundleSession(e: PocketBaseRequestEvent): unknown {
     return e.json(400, { error: 'This bundle is not currently active for purchase' });
   }
 
-  const saleEndDateStr = bundle.get('saleEndDate') as string;
-  if (saleEndDateStr) {
-    const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-    if (new Date() > saleEndDate) {
-      return e.json(400, { error: 'The sale period for this bundle has ended' });
-    }
+  const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+  if (saleEndDate && new Date() > saleEndDate) {
+    return e.json(400, { error: 'The sale period for this bundle has ended' });
   }
 
   const bundleEventsVal = bundle.get('events');
@@ -690,14 +682,17 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         }
 
         const eventTitle = (targetEvent.get('title') as string) || '';
-        const eventDateRaw = (targetEvent.get('date') as string) || '';
-        const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        });
+        const eventDateStr = formatInTimezone(
+          coercePocketBaseDate(targetEvent.get('date')) ?? new Date(''),
+          timezone,
+          {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          }
+        );
 
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
 
@@ -843,14 +838,17 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
           try {
             const ev = $app.findRecordById('events', eventId);
             const evTitle = (ev.get('title') as string) || '';
-            const evDate = (ev.get('date') as string) || '';
-            const evDateStr = formatInTimezone(evDate, timezone, {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
-            });
+            const evDateStr = formatInTimezone(
+              coercePocketBaseDate(ev.get('date')) ?? new Date(''),
+              timezone,
+              {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              }
+            );
             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
           } catch {
             // Ignore individual event loading error

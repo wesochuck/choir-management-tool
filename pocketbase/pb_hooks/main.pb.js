@@ -426,6 +426,76 @@ cronAdd("post_event_report", "0 * * * *", () => {
             reason: "",
         };
     }
+
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
     // --- END CALLBACK-LOCAL UTILITIES ---
 
     const hoursAfter = 12;
@@ -474,8 +544,10 @@ cronAdd("post_event_report", "0 * * * *", () => {
         const total = rosters.length;
         const present = rosters.filter(r => r.get("attendance") === "Present").length;
         const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
-        const eventDateObj = new Date(event.get("date"));
-        const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear();
+        const eventDateObj = coercePocketBaseDate(event.get("date"));
+        const eventDateStr = eventDateObj
+          ? (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear()
+          : "";
         const eventTitle = String(event.get("title") || "");
         const subject = sanitizeEmailSubject(
             commSettings.reportSubjectTemplate
@@ -1061,6 +1133,76 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
@@ -1186,6 +1328,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
             totalClaimed += records.length;
             console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
             records.forEach((record) => {
+                var _a, _b, _c;
                 try {
                     const rawContent = record.get("rawContent") || "";
                     const recipientId = record.get("recipientId");
@@ -1250,7 +1393,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                         try {
                             event = app.findRecordById("events", filters.eventId);
                         }
-                        catch (_a) {
+                        catch (_d) {
                             // event not found
                         }
                     }
@@ -1258,7 +1401,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = event.get("date");
+                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                         const eventTitle = (event.get("title") || event.get("type") || "Event");
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
@@ -1269,7 +1412,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                             venueName = (venueRecord.get("name") || "TBD");
                             venueAddress = (venueRecord.get("address") || "");
                         }
-                        catch (_b) {
+                        catch (_e) {
                             // venue not found
                         }
                         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -1301,7 +1444,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                                 const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = firstReh.get("date");
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                     const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                     const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                     // Generate a direct link to the backend ICS download route
@@ -1325,7 +1468,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                                     `.trim();
                                 }
                             }
-                            catch (_c) {
+                            catch (_f) {
                                 // Ignore rehearsals fetching or formatting errors
                             }
                         }
@@ -1344,13 +1487,13 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
                                         const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = audition.get("scheduledTimeSlot");
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                         if (auditionSlot) {
                                             slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                             slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                         }
                                     }
-                                    catch (_d) {
+                                    catch (_g) {
                                         // Ignore audition record resolution/formatting errors
                                     }
                                 }
@@ -1598,8 +1741,11 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         if (!purchases || purchases.length === 0) return;
 
         const eventTitle = event.get("title") || "";
-        const eventDateRaw = event.get("date");
-        const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        const eventDateStr = formatInTimezone(
+          coercePocketBaseDate(event.get("date")) ?? new Date(""),
+          timezone,
+          { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+        );
         const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
 
         purchases.forEach(async purchase => {
@@ -2135,6 +2281,76 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
@@ -2260,6 +2476,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             totalClaimed += records.length;
             console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
             records.forEach((record) => {
+                var _a, _b, _c;
                 try {
                     const rawContent = record.get("rawContent") || "";
                     const recipientId = record.get("recipientId");
@@ -2324,7 +2541,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                         try {
                             event = app.findRecordById("events", filters.eventId);
                         }
-                        catch (_a) {
+                        catch (_d) {
                             // event not found
                         }
                     }
@@ -2332,7 +2549,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = event.get("date");
+                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                         const eventTitle = (event.get("title") || event.get("type") || "Event");
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
@@ -2343,7 +2560,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             venueName = (venueRecord.get("name") || "TBD");
                             venueAddress = (venueRecord.get("address") || "");
                         }
-                        catch (_b) {
+                        catch (_e) {
                             // venue not found
                         }
                         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -2375,7 +2592,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                 const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = firstReh.get("date");
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                     const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                     const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                     // Generate a direct link to the backend ICS download route
@@ -2399,7 +2616,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     `.trim();
                                 }
                             }
-                            catch (_c) {
+                            catch (_f) {
                                 // Ignore rehearsals fetching or formatting errors
                             }
                         }
@@ -2418,13 +2635,13 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
                                         const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = audition.get("scheduledTimeSlot");
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                         if (auditionSlot) {
                                             slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                             slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                         }
                                     }
-                                    catch (_d) {
+                                    catch (_g) {
                                         // Ignore audition record resolution/formatting errors
                                     }
                                 }
@@ -3148,6 +3365,76 @@ onRecordAfterCreateSuccess((e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
@@ -3273,6 +3560,7 @@ onRecordAfterCreateSuccess((e) => {
             totalClaimed += records.length;
             console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
             records.forEach((record) => {
+                var _a, _b, _c;
                 try {
                     const rawContent = record.get("rawContent") || "";
                     const recipientId = record.get("recipientId");
@@ -3337,7 +3625,7 @@ onRecordAfterCreateSuccess((e) => {
                         try {
                             event = app.findRecordById("events", filters.eventId);
                         }
-                        catch (_a) {
+                        catch (_d) {
                             // event not found
                         }
                     }
@@ -3345,7 +3633,7 @@ onRecordAfterCreateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = event.get("date");
+                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                         const eventTitle = (event.get("title") || event.get("type") || "Event");
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
@@ -3356,7 +3644,7 @@ onRecordAfterCreateSuccess((e) => {
                             venueName = (venueRecord.get("name") || "TBD");
                             venueAddress = (venueRecord.get("address") || "");
                         }
-                        catch (_b) {
+                        catch (_e) {
                             // venue not found
                         }
                         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -3388,7 +3676,7 @@ onRecordAfterCreateSuccess((e) => {
                                 const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = firstReh.get("date");
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                     const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                     const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                     // Generate a direct link to the backend ICS download route
@@ -3412,7 +3700,7 @@ onRecordAfterCreateSuccess((e) => {
                                     `.trim();
                                 }
                             }
-                            catch (_c) {
+                            catch (_f) {
                                 // Ignore rehearsals fetching or formatting errors
                             }
                         }
@@ -3431,13 +3719,13 @@ onRecordAfterCreateSuccess((e) => {
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
                                         const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = audition.get("scheduledTimeSlot");
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                         if (auditionSlot) {
                                             slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                             slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                         }
                                     }
-                                    catch (_d) {
+                                    catch (_g) {
                                         // Ignore audition record resolution/formatting errors
                                     }
                                 }
@@ -4170,6 +4458,76 @@ onRecordAfterUpdateSuccess((e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
@@ -4295,6 +4653,7 @@ onRecordAfterUpdateSuccess((e) => {
             totalClaimed += records.length;
             console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
             records.forEach((record) => {
+                var _a, _b, _c;
                 try {
                     const rawContent = record.get("rawContent") || "";
                     const recipientId = record.get("recipientId");
@@ -4359,7 +4718,7 @@ onRecordAfterUpdateSuccess((e) => {
                         try {
                             event = app.findRecordById("events", filters.eventId);
                         }
-                        catch (_a) {
+                        catch (_d) {
                             // event not found
                         }
                     }
@@ -4367,7 +4726,7 @@ onRecordAfterUpdateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = event.get("date");
+                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                         const eventTitle = (event.get("title") || event.get("type") || "Event");
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
@@ -4378,7 +4737,7 @@ onRecordAfterUpdateSuccess((e) => {
                             venueName = (venueRecord.get("name") || "TBD");
                             venueAddress = (venueRecord.get("address") || "");
                         }
-                        catch (_b) {
+                        catch (_e) {
                             // venue not found
                         }
                         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -4410,7 +4769,7 @@ onRecordAfterUpdateSuccess((e) => {
                                 const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = firstReh.get("date");
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                     const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                     const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                     // Generate a direct link to the backend ICS download route
@@ -4434,7 +4793,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     `.trim();
                                 }
                             }
-                            catch (_c) {
+                            catch (_f) {
                                 // Ignore rehearsals fetching or formatting errors
                             }
                         }
@@ -4453,13 +4812,13 @@ onRecordAfterUpdateSuccess((e) => {
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
                                         const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = audition.get("scheduledTimeSlot");
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                         if (auditionSlot) {
                                             slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                             slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                         }
                                     }
-                                    catch (_d) {
+                                    catch (_g) {
                                         // Ignore audition record resolution/formatting errors
                                     }
                                 }
@@ -5112,6 +5471,76 @@ onRecordAfterCreateSuccess((e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
@@ -5237,6 +5666,7 @@ onRecordAfterCreateSuccess((e) => {
             totalClaimed += records.length;
             console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
             records.forEach((record) => {
+                var _a, _b, _c;
                 try {
                     const rawContent = record.get("rawContent") || "";
                     const recipientId = record.get("recipientId");
@@ -5301,7 +5731,7 @@ onRecordAfterCreateSuccess((e) => {
                         try {
                             event = app.findRecordById("events", filters.eventId);
                         }
-                        catch (_a) {
+                        catch (_d) {
                             // event not found
                         }
                     }
@@ -5309,7 +5739,7 @@ onRecordAfterCreateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = event.get("date");
+                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                         const eventTitle = (event.get("title") || event.get("type") || "Event");
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
@@ -5320,7 +5750,7 @@ onRecordAfterCreateSuccess((e) => {
                             venueName = (venueRecord.get("name") || "TBD");
                             venueAddress = (venueRecord.get("address") || "");
                         }
-                        catch (_b) {
+                        catch (_e) {
                             // venue not found
                         }
                         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -5352,7 +5782,7 @@ onRecordAfterCreateSuccess((e) => {
                                 const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = firstReh.get("date");
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                     const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                     const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                     // Generate a direct link to the backend ICS download route
@@ -5376,7 +5806,7 @@ onRecordAfterCreateSuccess((e) => {
                                     `.trim();
                                 }
                             }
-                            catch (_c) {
+                            catch (_f) {
                                 // Ignore rehearsals fetching or formatting errors
                             }
                         }
@@ -5395,13 +5825,13 @@ onRecordAfterCreateSuccess((e) => {
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
                                         const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = audition.get("scheduledTimeSlot");
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                         if (auditionSlot) {
                                             slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                             slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                         }
                                     }
-                                    catch (_d) {
+                                    catch (_g) {
                                         // Ignore audition record resolution/formatting errors
                                     }
                                 }
@@ -6203,6 +6633,76 @@ onRecordAfterUpdateSuccess((e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
@@ -6328,6 +6828,7 @@ onRecordAfterUpdateSuccess((e) => {
             totalClaimed += records.length;
             console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
             records.forEach((record) => {
+                var _a, _b, _c;
                 try {
                     const rawContent = record.get("rawContent") || "";
                     const recipientId = record.get("recipientId");
@@ -6392,7 +6893,7 @@ onRecordAfterUpdateSuccess((e) => {
                         try {
                             event = app.findRecordById("events", filters.eventId);
                         }
-                        catch (_a) {
+                        catch (_d) {
                             // event not found
                         }
                     }
@@ -6400,7 +6901,7 @@ onRecordAfterUpdateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = event.get("date");
+                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                         const eventTitle = (event.get("title") || event.get("type") || "Event");
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
@@ -6411,7 +6912,7 @@ onRecordAfterUpdateSuccess((e) => {
                             venueName = (venueRecord.get("name") || "TBD");
                             venueAddress = (venueRecord.get("address") || "");
                         }
-                        catch (_b) {
+                        catch (_e) {
                             // venue not found
                         }
                         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -6443,7 +6944,7 @@ onRecordAfterUpdateSuccess((e) => {
                                 const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = firstReh.get("date");
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                     const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                     const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                     // Generate a direct link to the backend ICS download route
@@ -6467,7 +6968,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     `.trim();
                                 }
                             }
-                            catch (_c) {
+                            catch (_f) {
                                 // Ignore rehearsals fetching or formatting errors
                             }
                         }
@@ -6486,13 +6987,13 @@ onRecordAfterUpdateSuccess((e) => {
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
                                         const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = audition.get("scheduledTimeSlot");
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                         if (auditionSlot) {
                                             slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                             slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                         }
                                     }
-                                    catch (_d) {
+                                    catch (_g) {
                                         // Ignore audition record resolution/formatting errors
                                     }
                                 }
@@ -7698,6 +8199,76 @@ function parseSignedToken(token, requiredKeys) {
     return parts;
 }
 
+// --- Utility source: pocketbaseDate.ts ---
+"use strict";
+function coercePocketBaseDate(value) {
+    if (!value)
+        return null;
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+    if (typeof value === 'string') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (typeof value === 'number') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (typeof value === 'object') {
+        const dateLike = value;
+        if (typeof dateLike.toISOString === 'function') {
+            try {
+                const parsed = new Date(dateLike.toISOString());
+                if (!Number.isNaN(parsed.getTime()))
+                    return parsed;
+            }
+            catch (_a) {
+                // Fall through.
+            }
+        }
+        if (typeof dateLike.valueOf === 'function') {
+            try {
+                const valueOfResult = dateLike.valueOf();
+                if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                    const parsed = new Date(valueOfResult);
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                    return valueOfResult;
+                }
+            }
+            catch (_b) {
+                // Fall through.
+            }
+        }
+        if (typeof dateLike.toString === 'function') {
+            try {
+                const stringValue = dateLike.toString();
+                // Avoid parsing the default "[object Object]" output.
+                if (stringValue && stringValue !== '[object Object]') {
+                    const parsed = new Date(stringValue);
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+            }
+            catch (_c) {
+                // Fall through.
+            }
+        }
+    }
+    return null;
+}
+function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+    const parsed = coercePocketBaseDate(value);
+    return !!parsed && parsed >= comparisonDate;
+}
+function isPocketBaseDateBefore(value, comparisonDate) {
+    const parsed = coercePocketBaseDate(value);
+    return !!parsed && parsed < comparisonDate;
+}
+
 // --- Utility source: email/queueProcessor.ts ---
 "use strict";
 function processEmailQueue(app) {
@@ -7823,6 +8394,7 @@ function processEmailQueue(app) {
         totalClaimed += records.length;
         console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
         records.forEach((record) => {
+            var _a, _b, _c;
             try {
                 const rawContent = record.get("rawContent") || "";
                 const recipientId = record.get("recipientId");
@@ -7887,7 +8459,7 @@ function processEmailQueue(app) {
                     try {
                         event = app.findRecordById("events", filters.eventId);
                     }
-                    catch (_a) {
+                    catch (_d) {
                         // event not found
                     }
                 }
@@ -7895,7 +8467,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                 htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                 if (event) {
-                    const eventDate = event.get("date");
+                    const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                     const eventTitle = (event.get("title") || event.get("type") || "Event");
                     const eventType = (event.get("type") || "Performance");
                     const eventDetails = (event.get("details") || "");
@@ -7906,7 +8478,7 @@ function processEmailQueue(app) {
                         venueName = (venueRecord.get("name") || "TBD");
                         venueAddress = (venueRecord.get("address") || "");
                     }
-                    catch (_b) {
+                    catch (_e) {
                         // venue not found
                     }
                     const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -7938,7 +8510,7 @@ function processEmailQueue(app) {
                             const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                             if (rehearsals && rehearsals.length > 0) {
                                 const firstReh = rehearsals[0];
-                                const rehDate = firstReh.get("date");
+                                const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                 const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                 const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                 // Generate a direct link to the backend ICS download route
@@ -7962,7 +8534,7 @@ function processEmailQueue(app) {
                                 `.trim();
                             }
                         }
-                        catch (_c) {
+                        catch (_f) {
                             // Ignore rehearsals fetching or formatting errors
                         }
                     }
@@ -7981,13 +8553,13 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 try {
                                     const audition = app.findRecordById("auditions", auditionId);
-                                    const auditionSlot = audition.get("scheduledTimeSlot");
+                                    const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                     if (auditionSlot) {
                                         slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                         slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                     }
                                 }
-                                catch (_d) {
+                                catch (_g) {
                                     // Ignore audition record resolution/formatting errors
                                 }
                             }
@@ -9886,6 +10458,76 @@ function parseSignedToken(token, requiredKeys) {
     return parts;
 }
 
+// --- Utility source: pocketbaseDate.ts ---
+"use strict";
+function coercePocketBaseDate(value) {
+    if (!value)
+        return null;
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+    if (typeof value === 'string') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (typeof value === 'number') {
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (typeof value === 'object') {
+        const dateLike = value;
+        if (typeof dateLike.toISOString === 'function') {
+            try {
+                const parsed = new Date(dateLike.toISOString());
+                if (!Number.isNaN(parsed.getTime()))
+                    return parsed;
+            }
+            catch (_a) {
+                // Fall through.
+            }
+        }
+        if (typeof dateLike.valueOf === 'function') {
+            try {
+                const valueOfResult = dateLike.valueOf();
+                if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                    const parsed = new Date(valueOfResult);
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                    return valueOfResult;
+                }
+            }
+            catch (_b) {
+                // Fall through.
+            }
+        }
+        if (typeof dateLike.toString === 'function') {
+            try {
+                const stringValue = dateLike.toString();
+                // Avoid parsing the default "[object Object]" output.
+                if (stringValue && stringValue !== '[object Object]') {
+                    const parsed = new Date(stringValue);
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+            }
+            catch (_c) {
+                // Fall through.
+            }
+        }
+    }
+    return null;
+}
+function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+    const parsed = coercePocketBaseDate(value);
+    return !!parsed && parsed >= comparisonDate;
+}
+function isPocketBaseDateBefore(value, comparisonDate) {
+    const parsed = coercePocketBaseDate(value);
+    return !!parsed && parsed < comparisonDate;
+}
+
 // --- Utility source: email/queueProcessor.ts ---
 "use strict";
 function processEmailQueue(app) {
@@ -10011,6 +10653,7 @@ function processEmailQueue(app) {
         totalClaimed += records.length;
         console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
         records.forEach((record) => {
+            var _a, _b, _c;
             try {
                 const rawContent = record.get("rawContent") || "";
                 const recipientId = record.get("recipientId");
@@ -10075,7 +10718,7 @@ function processEmailQueue(app) {
                     try {
                         event = app.findRecordById("events", filters.eventId);
                     }
-                    catch (_a) {
+                    catch (_d) {
                         // event not found
                     }
                 }
@@ -10083,7 +10726,7 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                 htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                 if (event) {
-                    const eventDate = event.get("date");
+                    const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                     const eventTitle = (event.get("title") || event.get("type") || "Event");
                     const eventType = (event.get("type") || "Performance");
                     const eventDetails = (event.get("details") || "");
@@ -10094,7 +10737,7 @@ function processEmailQueue(app) {
                         venueName = (venueRecord.get("name") || "TBD");
                         venueAddress = (venueRecord.get("address") || "");
                     }
-                    catch (_b) {
+                    catch (_e) {
                         // venue not found
                     }
                     const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -10126,7 +10769,7 @@ function processEmailQueue(app) {
                             const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                             if (rehearsals && rehearsals.length > 0) {
                                 const firstReh = rehearsals[0];
-                                const rehDate = firstReh.get("date");
+                                const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                 const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                 const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                 // Generate a direct link to the backend ICS download route
@@ -10150,7 +10793,7 @@ function processEmailQueue(app) {
                                 `.trim();
                             }
                         }
-                        catch (_c) {
+                        catch (_f) {
                             // Ignore rehearsals fetching or formatting errors
                         }
                     }
@@ -10169,13 +10812,13 @@ function processEmailQueue(app) {
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 try {
                                     const audition = app.findRecordById("auditions", auditionId);
-                                    const auditionSlot = audition.get("scheduledTimeSlot");
+                                    const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                     if (auditionSlot) {
                                         slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                         slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                     }
                                 }
-                                catch (_d) {
+                                catch (_g) {
                                     // Ignore audition record resolution/formatting errors
                                 }
                             }
@@ -11158,6 +11801,76 @@ routerAdd("POST", "/api/queue/process", (e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
@@ -11283,6 +11996,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             totalClaimed += records.length;
             console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
             records.forEach((record) => {
+                var _a, _b, _c;
                 try {
                     const rawContent = record.get("rawContent") || "";
                     const recipientId = record.get("recipientId");
@@ -11347,7 +12061,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                         try {
                             event = app.findRecordById("events", filters.eventId);
                         }
-                        catch (_a) {
+                        catch (_d) {
                             // event not found
                         }
                     }
@@ -11355,7 +12069,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = event.get("date");
+                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
                         const eventTitle = (event.get("title") || event.get("type") || "Event");
                         const eventType = (event.get("type") || "Performance");
                         const eventDetails = (event.get("details") || "");
@@ -11366,7 +12080,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             venueName = (venueRecord.get("name") || "TBD");
                             venueAddress = (venueRecord.get("address") || "");
                         }
-                        catch (_b) {
+                        catch (_e) {
                             // venue not found
                         }
                         const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -11398,7 +12112,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                 const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = firstReh.get("date");
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
                                     const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
                                     const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
                                     // Generate a direct link to the backend ICS download route
@@ -11422,7 +12136,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     `.trim();
                                 }
                             }
-                            catch (_c) {
+                            catch (_f) {
                                 // Ignore rehearsals fetching or formatting errors
                             }
                         }
@@ -11441,13 +12155,13 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
                                         const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = audition.get("scheduledTimeSlot");
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
                                         if (auditionSlot) {
                                             slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                                             slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
                                         }
                                     }
-                                    catch (_d) {
+                                    catch (_g) {
                                         // Ignore audition record resolution/formatting errors
                                     }
                                 }
@@ -12603,6 +13317,76 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         });
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     /**
@@ -12678,10 +13462,8 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
-        const checkoutEventDateRaw = event.get('date');
-        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
         if (!checkoutEventDate ||
-            Number.isNaN(checkoutEventDate.getTime()) ||
             checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
@@ -12716,8 +13498,8 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get('date');
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
         const nowStr = nowFormatted.split(',')[0];
         const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
@@ -12820,12 +13602,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         if (!bundle.get('isActive')) {
             return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get('saleEndDate');
-        if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-            if (new Date() > saleEndDate) {
-                return e.json(400, { error: 'The sale period for this bundle has ended' });
-            }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
         }
         const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
@@ -13019,12 +13798,12 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         }
     }
     async function handleStripeWebhook(e) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_e) {
+        catch (_f) {
             return e.json(400, { error: 'Failed to read request body' });
         }
         const sig = e.request.header.get('Stripe-Signature') || '';
@@ -13064,7 +13843,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_f) {
+        catch (_g) {
             return e.json(400, { error: 'Invalid JSON body' });
         }
         if (eventObj.type === 'checkout.session.completed') {
@@ -13094,7 +13873,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_g) {
+                catch (_h) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -13122,7 +13901,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                 try {
                     targetEvent = $app.findRecordById('events', eventId);
                 }
-                catch (_h) {
+                catch (_j) {
                     return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
@@ -13139,7 +13918,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_j) {
+                    catch (_k) {
                         // default
                     }
                     let choirName = 'Choir Management Tool';
@@ -13149,12 +13928,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_k) {
+                    catch (_l) {
                         // default
                     }
                     const eventTitle = targetEvent.get('title') || '';
-                    const eventDateRaw = targetEvent.get('date') || '';
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                    const eventDateStr = formatInTimezone((_b = coercePocketBaseDate(targetEvent.get('date'))) !== null && _b !== void 0 ? _b : new Date(''), timezone, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -13171,7 +13949,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -13222,7 +14000,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_l) {
+                catch (_m) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -13253,7 +14031,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_m) {
+                catch (_o) {
                     return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -13270,7 +14048,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_o) {
+                    catch (_p) {
                         // Use default America/New_York timezone
                     }
                     let choirName = 'Choir Management Tool';
@@ -13280,16 +14058,16 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_q) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
                     bundleEventIds.forEach((eventId) => {
+                        var _a;
                         try {
                             const ev = $app.findRecordById('events', eventId);
                             const evTitle = ev.get('title') || '';
-                            const evDate = ev.get('date') || '';
-                            const evDateStr = formatInTimezone(evDate, timezone, {
+                            const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -13298,7 +14076,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                             });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
-                        catch (_a) {
+                        catch (_b) {
                             // Ignore individual event loading error
                         }
                     });
@@ -13313,7 +14091,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const meta = (_d = $app.settings()) === null || _d === void 0 ? void 0 : _d.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -13368,7 +14146,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
-                catch (_q) {
+                catch (_r) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId('pbc_donations_001');
@@ -13398,7 +14176,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_s) {
                         // default
                     }
                     let tributeSection = '';
@@ -13441,7 +14219,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                             duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
                             duesRecord.set('paid', true);
                         }
-                        catch (_s) {
+                        catch (_t) {
                             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -13458,7 +14236,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             }
         }
         else if (eventObj.type === 'charge.refunded') {
-            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
+            const charge = (_e = eventObj.data) === null || _e === void 0 ? void 0 : _e.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -14214,6 +14992,76 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         });
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     /**
@@ -14289,10 +15137,8 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
-        const checkoutEventDateRaw = event.get('date');
-        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
         if (!checkoutEventDate ||
-            Number.isNaN(checkoutEventDate.getTime()) ||
             checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
@@ -14327,8 +15173,8 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get('date');
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
         const nowStr = nowFormatted.split(',')[0];
         const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
@@ -14431,12 +15277,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         if (!bundle.get('isActive')) {
             return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get('saleEndDate');
-        if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-            if (new Date() > saleEndDate) {
-                return e.json(400, { error: 'The sale period for this bundle has ended' });
-            }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
         }
         const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
@@ -14630,12 +15473,12 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         }
     }
     async function handleStripeWebhook(e) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_e) {
+        catch (_f) {
             return e.json(400, { error: 'Failed to read request body' });
         }
         const sig = e.request.header.get('Stripe-Signature') || '';
@@ -14675,7 +15518,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_f) {
+        catch (_g) {
             return e.json(400, { error: 'Invalid JSON body' });
         }
         if (eventObj.type === 'checkout.session.completed') {
@@ -14705,7 +15548,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_g) {
+                catch (_h) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -14733,7 +15576,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                 try {
                     targetEvent = $app.findRecordById('events', eventId);
                 }
-                catch (_h) {
+                catch (_j) {
                     return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
@@ -14750,7 +15593,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_j) {
+                    catch (_k) {
                         // default
                     }
                     let choirName = 'Choir Management Tool';
@@ -14760,12 +15603,11 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_k) {
+                    catch (_l) {
                         // default
                     }
                     const eventTitle = targetEvent.get('title') || '';
-                    const eventDateRaw = targetEvent.get('date') || '';
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                    const eventDateStr = formatInTimezone((_b = coercePocketBaseDate(targetEvent.get('date'))) !== null && _b !== void 0 ? _b : new Date(''), timezone, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -14782,7 +15624,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -14833,7 +15675,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_l) {
+                catch (_m) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -14864,7 +15706,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_m) {
+                catch (_o) {
                     return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -14881,7 +15723,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_o) {
+                    catch (_p) {
                         // Use default America/New_York timezone
                     }
                     let choirName = 'Choir Management Tool';
@@ -14891,16 +15733,16 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_q) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
                     bundleEventIds.forEach((eventId) => {
+                        var _a;
                         try {
                             const ev = $app.findRecordById('events', eventId);
                             const evTitle = ev.get('title') || '';
-                            const evDate = ev.get('date') || '';
-                            const evDateStr = formatInTimezone(evDate, timezone, {
+                            const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -14909,7 +15751,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                             });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
-                        catch (_a) {
+                        catch (_b) {
                             // Ignore individual event loading error
                         }
                     });
@@ -14924,7 +15766,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const meta = (_d = $app.settings()) === null || _d === void 0 ? void 0 : _d.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -14979,7 +15821,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
-                catch (_q) {
+                catch (_r) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId('pbc_donations_001');
@@ -15009,7 +15851,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_s) {
                         // default
                     }
                     let tributeSection = '';
@@ -15052,7 +15894,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                             duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
                             duesRecord.set('paid', true);
                         }
-                        catch (_s) {
+                        catch (_t) {
                             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -15069,7 +15911,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             }
         }
         else if (eventObj.type === 'charge.refunded') {
-            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
+            const charge = (_e = eventObj.data) === null || _e === void 0 ? void 0 : _e.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -15825,6 +16667,76 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         });
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     /**
@@ -15900,10 +16812,8 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
-        const checkoutEventDateRaw = event.get('date');
-        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
         if (!checkoutEventDate ||
-            Number.isNaN(checkoutEventDate.getTime()) ||
             checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
@@ -15938,8 +16848,8 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get('date');
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
         const nowStr = nowFormatted.split(',')[0];
         const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
@@ -16042,12 +16952,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         if (!bundle.get('isActive')) {
             return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get('saleEndDate');
-        if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-            if (new Date() > saleEndDate) {
-                return e.json(400, { error: 'The sale period for this bundle has ended' });
-            }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
         }
         const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
@@ -16241,12 +17148,12 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         }
     }
     async function handleStripeWebhook(e) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_e) {
+        catch (_f) {
             return e.json(400, { error: 'Failed to read request body' });
         }
         const sig = e.request.header.get('Stripe-Signature') || '';
@@ -16286,7 +17193,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_f) {
+        catch (_g) {
             return e.json(400, { error: 'Invalid JSON body' });
         }
         if (eventObj.type === 'checkout.session.completed') {
@@ -16316,7 +17223,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_g) {
+                catch (_h) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -16344,7 +17251,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                 try {
                     targetEvent = $app.findRecordById('events', eventId);
                 }
-                catch (_h) {
+                catch (_j) {
                     return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
@@ -16361,7 +17268,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_j) {
+                    catch (_k) {
                         // default
                     }
                     let choirName = 'Choir Management Tool';
@@ -16371,12 +17278,11 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_k) {
+                    catch (_l) {
                         // default
                     }
                     const eventTitle = targetEvent.get('title') || '';
-                    const eventDateRaw = targetEvent.get('date') || '';
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                    const eventDateStr = formatInTimezone((_b = coercePocketBaseDate(targetEvent.get('date'))) !== null && _b !== void 0 ? _b : new Date(''), timezone, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -16393,7 +17299,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -16444,7 +17350,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_l) {
+                catch (_m) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -16475,7 +17381,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_m) {
+                catch (_o) {
                     return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -16492,7 +17398,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_o) {
+                    catch (_p) {
                         // Use default America/New_York timezone
                     }
                     let choirName = 'Choir Management Tool';
@@ -16502,16 +17408,16 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_q) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
                     bundleEventIds.forEach((eventId) => {
+                        var _a;
                         try {
                             const ev = $app.findRecordById('events', eventId);
                             const evTitle = ev.get('title') || '';
-                            const evDate = ev.get('date') || '';
-                            const evDateStr = formatInTimezone(evDate, timezone, {
+                            const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -16520,7 +17426,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                             });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
-                        catch (_a) {
+                        catch (_b) {
                             // Ignore individual event loading error
                         }
                     });
@@ -16535,7 +17441,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const meta = (_d = $app.settings()) === null || _d === void 0 ? void 0 : _d.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -16590,7 +17496,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
-                catch (_q) {
+                catch (_r) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId('pbc_donations_001');
@@ -16620,7 +17526,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_s) {
                         // default
                     }
                     let tributeSection = '';
@@ -16663,7 +17569,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                             duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
                             duesRecord.set('paid', true);
                         }
-                        catch (_s) {
+                        catch (_t) {
                             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -16680,7 +17586,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             }
         }
         else if (eventObj.type === 'charge.refunded') {
-            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
+            const charge = (_e = eventObj.data) === null || _e === void 0 ? void 0 : _e.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -17436,6 +18342,76 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         });
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     /**
@@ -17511,10 +18487,8 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
-        const checkoutEventDateRaw = event.get('date');
-        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
         if (!checkoutEventDate ||
-            Number.isNaN(checkoutEventDate.getTime()) ||
             checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
@@ -17549,8 +18523,8 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get('date');
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
         const nowStr = nowFormatted.split(',')[0];
         const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
@@ -17653,12 +18627,9 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         if (!bundle.get('isActive')) {
             return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get('saleEndDate');
-        if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-            if (new Date() > saleEndDate) {
-                return e.json(400, { error: 'The sale period for this bundle has ended' });
-            }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
         }
         const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
@@ -17852,12 +18823,12 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         }
     }
     async function handleStripeWebhook(e) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_e) {
+        catch (_f) {
             return e.json(400, { error: 'Failed to read request body' });
         }
         const sig = e.request.header.get('Stripe-Signature') || '';
@@ -17897,7 +18868,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_f) {
+        catch (_g) {
             return e.json(400, { error: 'Invalid JSON body' });
         }
         if (eventObj.type === 'checkout.session.completed') {
@@ -17927,7 +18898,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_g) {
+                catch (_h) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -17955,7 +18926,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                 try {
                     targetEvent = $app.findRecordById('events', eventId);
                 }
-                catch (_h) {
+                catch (_j) {
                     return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
@@ -17972,7 +18943,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_j) {
+                    catch (_k) {
                         // default
                     }
                     let choirName = 'Choir Management Tool';
@@ -17982,12 +18953,11 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_k) {
+                    catch (_l) {
                         // default
                     }
                     const eventTitle = targetEvent.get('title') || '';
-                    const eventDateRaw = targetEvent.get('date') || '';
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                    const eventDateStr = formatInTimezone((_b = coercePocketBaseDate(targetEvent.get('date'))) !== null && _b !== void 0 ? _b : new Date(''), timezone, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -18004,7 +18974,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -18055,7 +19025,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_l) {
+                catch (_m) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -18086,7 +19056,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_m) {
+                catch (_o) {
                     return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -18103,7 +19073,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_o) {
+                    catch (_p) {
                         // Use default America/New_York timezone
                     }
                     let choirName = 'Choir Management Tool';
@@ -18113,16 +19083,16 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_q) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
                     bundleEventIds.forEach((eventId) => {
+                        var _a;
                         try {
                             const ev = $app.findRecordById('events', eventId);
                             const evTitle = ev.get('title') || '';
-                            const evDate = ev.get('date') || '';
-                            const evDateStr = formatInTimezone(evDate, timezone, {
+                            const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -18131,7 +19101,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                             });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
-                        catch (_a) {
+                        catch (_b) {
                             // Ignore individual event loading error
                         }
                     });
@@ -18146,7 +19116,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const meta = (_d = $app.settings()) === null || _d === void 0 ? void 0 : _d.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -18201,7 +19171,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
-                catch (_q) {
+                catch (_r) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId('pbc_donations_001');
@@ -18231,7 +19201,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_s) {
                         // default
                     }
                     let tributeSection = '';
@@ -18274,7 +19244,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                             duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
                             duesRecord.set('paid', true);
                         }
-                        catch (_s) {
+                        catch (_t) {
                             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -18291,7 +19261,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             }
         }
         else if (eventObj.type === 'charge.refunded') {
-            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
+            const charge = (_e = eventObj.data) === null || _e === void 0 ? void 0 : _e.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -19047,6 +20017,76 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         });
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     /**
@@ -19122,10 +20162,8 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
-        const checkoutEventDateRaw = event.get('date');
-        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
         if (!checkoutEventDate ||
-            Number.isNaN(checkoutEventDate.getTime()) ||
             checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
@@ -19160,8 +20198,8 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get('date');
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
         const nowStr = nowFormatted.split(',')[0];
         const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
@@ -19264,12 +20302,9 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         if (!bundle.get('isActive')) {
             return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get('saleEndDate');
-        if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-            if (new Date() > saleEndDate) {
-                return e.json(400, { error: 'The sale period for this bundle has ended' });
-            }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
         }
         const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
@@ -19463,12 +20498,12 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         }
     }
     async function handleStripeWebhook(e) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_e) {
+        catch (_f) {
             return e.json(400, { error: 'Failed to read request body' });
         }
         const sig = e.request.header.get('Stripe-Signature') || '';
@@ -19508,7 +20543,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_f) {
+        catch (_g) {
             return e.json(400, { error: 'Invalid JSON body' });
         }
         if (eventObj.type === 'checkout.session.completed') {
@@ -19538,7 +20573,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_g) {
+                catch (_h) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -19566,7 +20601,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                 try {
                     targetEvent = $app.findRecordById('events', eventId);
                 }
-                catch (_h) {
+                catch (_j) {
                     return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
@@ -19583,7 +20618,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_j) {
+                    catch (_k) {
                         // default
                     }
                     let choirName = 'Choir Management Tool';
@@ -19593,12 +20628,11 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_k) {
+                    catch (_l) {
                         // default
                     }
                     const eventTitle = targetEvent.get('title') || '';
-                    const eventDateRaw = targetEvent.get('date') || '';
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                    const eventDateStr = formatInTimezone((_b = coercePocketBaseDate(targetEvent.get('date'))) !== null && _b !== void 0 ? _b : new Date(''), timezone, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -19615,7 +20649,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -19666,7 +20700,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_l) {
+                catch (_m) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -19697,7 +20731,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_m) {
+                catch (_o) {
                     return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -19714,7 +20748,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_o) {
+                    catch (_p) {
                         // Use default America/New_York timezone
                     }
                     let choirName = 'Choir Management Tool';
@@ -19724,16 +20758,16 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_q) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
                     bundleEventIds.forEach((eventId) => {
+                        var _a;
                         try {
                             const ev = $app.findRecordById('events', eventId);
                             const evTitle = ev.get('title') || '';
-                            const evDate = ev.get('date') || '';
-                            const evDateStr = formatInTimezone(evDate, timezone, {
+                            const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -19742,7 +20776,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                             });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
-                        catch (_a) {
+                        catch (_b) {
                             // Ignore individual event loading error
                         }
                     });
@@ -19757,7 +20791,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const meta = (_d = $app.settings()) === null || _d === void 0 ? void 0 : _d.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -19812,7 +20846,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
-                catch (_q) {
+                catch (_r) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId('pbc_donations_001');
@@ -19842,7 +20876,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_s) {
                         // default
                     }
                     let tributeSection = '';
@@ -19885,7 +20919,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                             duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
                             duesRecord.set('paid', true);
                         }
-                        catch (_s) {
+                        catch (_t) {
                             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -19902,7 +20936,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             }
         }
         else if (eventObj.type === 'charge.refunded') {
-            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
+            const charge = (_e = eventObj.data) === null || _e === void 0 ? void 0 : _e.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -20658,6 +21692,76 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         });
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     /**
@@ -20733,10 +21837,8 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
-        const checkoutEventDateRaw = event.get('date');
-        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
         if (!checkoutEventDate ||
-            Number.isNaN(checkoutEventDate.getTime()) ||
             checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
@@ -20771,8 +21873,8 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get('date');
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
         const nowStr = nowFormatted.split(',')[0];
         const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
@@ -20875,12 +21977,9 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         if (!bundle.get('isActive')) {
             return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get('saleEndDate');
-        if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-            if (new Date() > saleEndDate) {
-                return e.json(400, { error: 'The sale period for this bundle has ended' });
-            }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
         }
         const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
@@ -21074,12 +22173,12 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         }
     }
     async function handleStripeWebhook(e) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_e) {
+        catch (_f) {
             return e.json(400, { error: 'Failed to read request body' });
         }
         const sig = e.request.header.get('Stripe-Signature') || '';
@@ -21119,7 +22218,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_f) {
+        catch (_g) {
             return e.json(400, { error: 'Invalid JSON body' });
         }
         if (eventObj.type === 'checkout.session.completed') {
@@ -21149,7 +22248,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_g) {
+                catch (_h) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -21177,7 +22276,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                 try {
                     targetEvent = $app.findRecordById('events', eventId);
                 }
-                catch (_h) {
+                catch (_j) {
                     return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
@@ -21194,7 +22293,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_j) {
+                    catch (_k) {
                         // default
                     }
                     let choirName = 'Choir Management Tool';
@@ -21204,12 +22303,11 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_k) {
+                    catch (_l) {
                         // default
                     }
                     const eventTitle = targetEvent.get('title') || '';
-                    const eventDateRaw = targetEvent.get('date') || '';
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                    const eventDateStr = formatInTimezone((_b = coercePocketBaseDate(targetEvent.get('date'))) !== null && _b !== void 0 ? _b : new Date(''), timezone, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -21226,7 +22324,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -21277,7 +22375,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_l) {
+                catch (_m) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -21308,7 +22406,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_m) {
+                catch (_o) {
                     return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -21325,7 +22423,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_o) {
+                    catch (_p) {
                         // Use default America/New_York timezone
                     }
                     let choirName = 'Choir Management Tool';
@@ -21335,16 +22433,16 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_q) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
                     bundleEventIds.forEach((eventId) => {
+                        var _a;
                         try {
                             const ev = $app.findRecordById('events', eventId);
                             const evTitle = ev.get('title') || '';
-                            const evDate = ev.get('date') || '';
-                            const evDateStr = formatInTimezone(evDate, timezone, {
+                            const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -21353,7 +22451,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                             });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
-                        catch (_a) {
+                        catch (_b) {
                             // Ignore individual event loading error
                         }
                     });
@@ -21368,7 +22466,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const meta = (_d = $app.settings()) === null || _d === void 0 ? void 0 : _d.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -21423,7 +22521,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
-                catch (_q) {
+                catch (_r) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId('pbc_donations_001');
@@ -21453,7 +22551,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_s) {
                         // default
                     }
                     let tributeSection = '';
@@ -21496,7 +22594,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                             duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
                             duesRecord.set('paid', true);
                         }
-                        catch (_s) {
+                        catch (_t) {
                             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -21513,7 +22611,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             }
         }
         else if (eventObj.type === 'charge.refunded') {
-            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
+            const charge = (_e = eventObj.data) === null || _e === void 0 ? void 0 : _e.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -22269,6 +23367,76 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         });
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: checkoutEndpoints.ts ---
     "use strict";
     /**
@@ -22344,10 +23512,8 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
-        const checkoutEventDateRaw = event.get('date');
-        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
         if (!checkoutEventDate ||
-            Number.isNaN(checkoutEventDate.getTime()) ||
             checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
@@ -22382,8 +23548,8 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             // use default timezone
         }
         const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const eventDateRaw = event.get('date');
-        const eventFormatted = formatInTimezone(new Date(typeof eventDateRaw === 'string' ? eventDateRaw : ''), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
         const nowStr = nowFormatted.split(',')[0];
         const eventDateStr = eventFormatted.split(',')[0];
         const isShowDay = nowStr === eventDateStr;
@@ -22486,12 +23652,9 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         if (!bundle.get('isActive')) {
             return e.json(400, { error: 'This bundle is not currently active for purchase' });
         }
-        const saleEndDateStr = bundle.get('saleEndDate');
-        if (saleEndDateStr) {
-            const saleEndDate = new Date(saleEndDateStr.replace(' ', 'T'));
-            if (new Date() > saleEndDate) {
-                return e.json(400, { error: 'The sale period for this bundle has ended' });
-            }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
         }
         const bundleEventsVal = bundle.get('events');
         const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
@@ -22685,12 +23848,12 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         }
     }
     async function handleStripeWebhook(e) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e;
         let rawBody;
         try {
             rawBody = readerToString(e.request.body);
         }
-        catch (_e) {
+        catch (_f) {
             return e.json(400, { error: 'Failed to read request body' });
         }
         const sig = e.request.header.get('Stripe-Signature') || '';
@@ -22730,7 +23893,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         try {
             eventObj = JSON.parse(rawBody);
         }
-        catch (_f) {
+        catch (_g) {
             return e.json(400, { error: 'Invalid JSON body' });
         }
         if (eventObj.type === 'checkout.session.completed') {
@@ -22760,7 +23923,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_g) {
+                catch (_h) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -22788,7 +23951,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                 try {
                     targetEvent = $app.findRecordById('events', eventId);
                 }
-                catch (_h) {
+                catch (_j) {
                     return e.json(400, { error: 'Event not found during webhook processing' });
                 }
                 // Enqueue Ticket Confirmation email
@@ -22805,7 +23968,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_j) {
+                    catch (_k) {
                         // default
                     }
                     let choirName = 'Choir Management Tool';
@@ -22815,12 +23978,11 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_k) {
+                    catch (_l) {
                         // default
                     }
                     const eventTitle = targetEvent.get('title') || '';
-                    const eventDateRaw = targetEvent.get('date') || '';
-                    const eventDateStr = formatInTimezone(eventDateRaw, timezone, {
+                    const eventDateStr = formatInTimezone((_b = coercePocketBaseDate(targetEvent.get('date'))) !== null && _b !== void 0 ? _b : new Date(''), timezone, {
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
@@ -22837,7 +23999,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_b = $app.settings()) === null || _b === void 0 ? void 0 : _b.meta;
+                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -22888,7 +24050,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     record.set('stripeCustomerId', session.customer || '');
                     record.set('fulfilledAt', new Date().toISOString());
                 }
-                catch (_l) {
+                catch (_m) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
                     const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
@@ -22919,7 +24081,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     const bundleEventsVal = targetBundle.get('events');
                     bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
                 }
-                catch (_m) {
+                catch (_o) {
                     return e.json(400, { error: 'Bundle not found during webhook processing' });
                 }
                 // Enqueue Consolidated Ticket Confirmation email
@@ -22936,7 +24098,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                             timezone = tzP.timezone;
                         }
                     }
-                    catch (_o) {
+                    catch (_p) {
                         // Use default America/New_York timezone
                     }
                     let choirName = 'Choir Management Tool';
@@ -22946,16 +24108,16 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_p) {
+                    catch (_q) {
                         // Use default choir name
                     }
                     const eventDetailsParts = [];
                     bundleEventIds.forEach((eventId) => {
+                        var _a;
                         try {
                             const ev = $app.findRecordById('events', eventId);
                             const evTitle = ev.get('title') || '';
-                            const evDate = ev.get('date') || '';
-                            const evDateStr = formatInTimezone(evDate, timezone, {
+                            const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
                                 weekday: 'short',
                                 month: 'short',
                                 day: 'numeric',
@@ -22964,7 +24126,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                             });
                             eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
                         }
-                        catch (_a) {
+                        catch (_b) {
                             // Ignore individual event loading error
                         }
                     });
@@ -22979,7 +24141,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
                         .replace(/{choirName}/g, choirName);
                     const ticketToken = generateSignedTicketToken($app, record.id);
-                    const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
+                    const meta = (_d = $app.settings()) === null || _d === void 0 ? void 0 : _d.meta;
                     const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -23034,7 +24196,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                 }
-                catch (_q) {
+                catch (_r) {
                     // Record not found, fallback to creation (existing logic)
                     const profile = getOrCreatePatronProfile(donorEmail, donorName);
                     const collection = $app.findCollectionByNameOrId('pbc_donations_001');
@@ -23064,7 +24226,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         if (val)
                             choirName = val;
                     }
-                    catch (_r) {
+                    catch (_s) {
                         // default
                     }
                     let tributeSection = '';
@@ -23107,7 +24269,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                             duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
                             duesRecord.set('paid', true);
                         }
-                        catch (_s) {
+                        catch (_t) {
                             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
                             duesRecord = new Record(duesColl, {
                                 profile: profileId,
@@ -23124,7 +24286,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             }
         }
         else if (eventObj.type === 'charge.refunded') {
-            const charge = (_d = eventObj.data) === null || _d === void 0 ? void 0 : _d.object;
+            const charge = (_e = eventObj.data) === null || _e === void 0 ? void 0 : _e.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
                 try {
@@ -24837,6 +25999,76 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function escapeIcsText(value = '') {
@@ -24905,7 +26137,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
-    function parseSafeUtcDate(dateStr, timezone) {
+    function parseSafeUtcDate(dateValue, timezone) {
+        const dateStr = String(dateValue || "");
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
@@ -25144,7 +26377,15 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                return new Date(a.get("date")).getTime() - new Date(b.get("date")).getTime();
+                const dateA = coercePocketBaseDate(a.get("date"));
+                const dateB = coercePocketBaseDate(b.get("date"));
+                if (!dateA && !dateB)
+                    return 0;
+                if (!dateA)
+                    return 1;
+                if (!dateB)
+                    return -1;
+                return dateA.getTime() - dateB.getTime();
             });
             // Build the VEVENT list
             const vevents = [];
@@ -25638,6 +26879,76 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function escapeIcsText(value = '') {
@@ -25706,7 +27017,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
-    function parseSafeUtcDate(dateStr, timezone) {
+    function parseSafeUtcDate(dateValue, timezone) {
+        const dateStr = String(dateValue || "");
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
@@ -25945,7 +27257,15 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                return new Date(a.get("date")).getTime() - new Date(b.get("date")).getTime();
+                const dateA = coercePocketBaseDate(a.get("date"));
+                const dateB = coercePocketBaseDate(b.get("date"));
+                if (!dateA && !dateB)
+                    return 0;
+                if (!dateA)
+                    return 1;
+                if (!dateB)
+                    return -1;
+                return dateA.getTime() - dateB.getTime();
             });
             // Build the VEVENT list
             const vevents = [];
@@ -26439,6 +27759,76 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function escapeIcsText(value = '') {
@@ -26507,7 +27897,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
-    function parseSafeUtcDate(dateStr, timezone) {
+    function parseSafeUtcDate(dateValue, timezone) {
+        const dateStr = String(dateValue || "");
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
@@ -26746,7 +28137,15 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                return new Date(a.get("date")).getTime() - new Date(b.get("date")).getTime();
+                const dateA = coercePocketBaseDate(a.get("date"));
+                const dateB = coercePocketBaseDate(b.get("date"));
+                if (!dateA && !dateB)
+                    return 0;
+                if (!dateA)
+                    return 1;
+                if (!dateB)
+                    return -1;
+                return dateA.getTime() - dateB.getTime();
             });
             // Build the VEVENT list
             const vevents = [];
@@ -27240,6 +28639,76 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         return parts;
     }
 
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
     // --- Utility source: calendarEndpoint.ts ---
     "use strict";
     function escapeIcsText(value = '') {
@@ -27308,7 +28777,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
      * Robustly parses a date string in Goja VM to guarantee UTC timezone alignment.
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
-    function parseSafeUtcDate(dateStr, timezone) {
+    function parseSafeUtcDate(dateValue, timezone) {
+        const dateStr = String(dateValue || "");
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
@@ -27547,7 +29017,15 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                return new Date(a.get("date")).getTime() - new Date(b.get("date")).getTime();
+                const dateA = coercePocketBaseDate(a.get("date"));
+                const dateB = coercePocketBaseDate(b.get("date"));
+                if (!dateA && !dateB)
+                    return 0;
+                if (!dateA)
+                    return 1;
+                if (!dateB)
+                    return -1;
+                return dateA.getTime() - dateB.getTime();
             });
             // Build the VEVENT list
             const vevents = [];
