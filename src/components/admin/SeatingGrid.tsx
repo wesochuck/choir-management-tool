@@ -525,6 +525,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                       <div className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center rounded-[inherit] bg-blue-500/18">
                         <span
                           className={`animate-bounce-subtle inline-block leading-none ${isCompact ? 'text-lg' : 'text-2xl'}`}
+                          aria-hidden="true"
                         >
                           {assignedProfile ? '🔄' : '📥'}
                         </span>

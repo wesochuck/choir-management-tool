@@ -643,7 +643,6 @@ export default function MusicLibraryView() {
                 <>
                   <Button
                     variant="secondary"
-                    className=""
                     onClick={handleExportCSV}
                     title="Export CSV"
                     icon={'⬇️'}
@@ -652,7 +651,6 @@ export default function MusicLibraryView() {
                   </Button>
                   <Button
                     variant="secondary"
-                    className=""
                     onClick={() => setIsImportModalOpen(true)}
                     title="Import CSV"
                     icon={'⬆️'}
@@ -661,7 +659,6 @@ export default function MusicLibraryView() {
                   </Button>
                   <Button
                     variant="primary"
-                    className=""
                     onClick={() => {
                       setEditingPiece(null);
                       setIsModalOpen(true);

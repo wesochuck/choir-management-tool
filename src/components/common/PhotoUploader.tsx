@@ -605,7 +605,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 }}
                 className="cursor-pointer text-slate-400 transition-colors hover:text-slate-600"
               >
-                {'❌'}
+                <span aria-hidden="true">❌</span>
               </button>
             </div>
 

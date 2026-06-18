@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import type { MessageTemplate } from '../types/Communication';
 import { Input } from './ui';
 
-const CalendarIcon = () => '📅';
-const DollarSignIcon = () => '💵';
-const AlertTriangleIcon = () => '⚠️';
-const MailIcon = () => '✉️';
-const FileTextIcon = () => '📄';
+const CalendarIcon = () => <span aria-hidden="true">📅</span>;
+const DollarSignIcon = () => <span aria-hidden="true">💵</span>;
+const AlertTriangleIcon = () => <span aria-hidden="true">⚠️</span>;
+const MailIcon = () => <span aria-hidden="true">✉️</span>;
+const FileTextIcon = () => <span aria-hidden="true">📄</span>;
 
 const iconMap = {
   rehearsal: CalendarIcon,
@@ -121,7 +121,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
             className="text-text-muted hover:text-text flex items-center rounded-full p-0.5"
             aria-label="Clear search"
           >
-            '❌'
+            <span aria-hidden="true">❌</span>
           </button>
         )}
       </Input>

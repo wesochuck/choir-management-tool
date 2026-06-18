@@ -404,7 +404,10 @@ export default function DashboardView() {
                         rel="noopener noreferrer"
                         className="border-border text-text hover:border-primary hover:bg-primary-light hover:text-primary-deep flex items-center gap-2 rounded-md border bg-[rgba(74,124,89,0.02)] p-[10px_12px] text-sm font-semibold no-underline transition-all duration-200 hover:translate-x-[2px]"
                       >
-                        <span className="text-xl">{res.url ? '🔗' : '📄'}</span> {res.title}
+                        <span className="text-xl" aria-hidden="true">
+                          {res.url ? '🔗' : '📄'}
+                        </span>{' '}
+                        {res.title}
                       </a>
                     );
                   })}

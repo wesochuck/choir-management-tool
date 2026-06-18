@@ -210,7 +210,6 @@ export default function RosterView() {
               <Button
                 onClick={handleExportCSV}
                 variant="secondary"
-                className=""
                 title="Export Roster"
                 icon={'⬇️'}
               >
@@ -219,19 +218,12 @@ export default function RosterView() {
               <Button
                 onClick={() => setIsImportModalOpen(true)}
                 variant="secondary"
-                className=""
                 title="Import CSV"
                 icon={'⬆️'}
               >
                 <span className="hidden md:inline">Import CSV</span>
               </Button>
-              <Button
-                onClick={handleAdd}
-                variant="primary"
-                className=""
-                title="Add Singer"
-                icon={'➕'}
-              >
+              <Button onClick={handleAdd} variant="primary" title="Add Singer" icon={'➕'}>
                 <span className="hidden md:inline">Add Singer</span>
               </Button>
             </>

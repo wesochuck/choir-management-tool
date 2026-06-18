@@ -437,7 +437,6 @@ export default function DonationsView() {
             {activeTab === 'history' && (
               <Button
                 variant="secondary"
-                className=""
                 onClick={handleExportCSV}
                 disabled={sortedDonations.length === 0}
                 title="Export CSV"
@@ -521,7 +520,7 @@ export default function DonationsView() {
                     </p>
                   </div>
                   <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
-                    '💵'
+                    <span aria-hidden="true">💵</span>
                   </div>
                 </div>
               </div>
@@ -827,12 +826,7 @@ export default function DonationsView() {
                         description="Create recognition tiers to prompt donors with suggesting amounts."
                         icon="🌟"
                         action={
-                          <Button
-                            variant="primary"
-                            size="small"
-                            className=""
-                            onClick={() => openLevelModal()}
-                          >
+                          <Button variant="primary" size="small" onClick={() => openLevelModal()}>
                             + Create First Level
                           </Button>
                         }
@@ -908,17 +902,11 @@ export default function DonationsView() {
         maxWidth="500px"
         footer={
           <div className="flex w-full justify-end gap-2">
-            <Button
-              variant="outline"
-              className=""
-              onClick={() => setIsModalOpen(false)}
-              disabled={saving}
-            >
+            <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={saving}>
               Cancel
             </Button>
             <Button
               variant="primary"
-              className=""
               onClick={handleSaveLevel}
               disabled={saving || !levelLabel.trim() || levelAmount <= 0}
             >

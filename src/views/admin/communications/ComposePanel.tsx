@@ -170,7 +170,7 @@ export function ComposePanel({
     if (!content.toLowerCase().includes('{setlist}')) return null;
     return (
       <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-        '⚠️'
+        <span aria-hidden="true">⚠️</span>
         <span>
           <strong>Set list not approved.</strong> The set list hasn't been approved for singers yet.{' '}
           <Link
@@ -849,7 +849,7 @@ export function ComposePanel({
                 <div className="flex flex-col gap-2">
                   {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
                     <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                      '⚠️'
+                      <span aria-hidden="true">⚠️</span>
                       <span>
                         <strong>Subject is empty.</strong> Add a subject line for better open rates.
                       </span>
@@ -857,7 +857,7 @@ export function ComposePanel({
                   )}
                   {content.length < 10 && (
                     <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                      '⚠️'
+                      <span aria-hidden="true">⚠️</span>
                       <span>
                         <strong>Very short message body.</strong>
                       </span>
@@ -865,7 +865,7 @@ export function ComposePanel({
                   )}
                   {selectedRecipients.length === 0 && (
                     <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                      '⚠️'
+                      <span aria-hidden="true">⚠️</span>
                       <span>
                         <strong>No recipients selected.</strong>
                       </span>
@@ -893,7 +893,7 @@ export function ComposePanel({
                       if (foundPlaceholders.length > 0) {
                         return (
                           <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                            '⚠️'
+                            <span aria-hidden="true">⚠️</span>
                             <span>
                               <strong>No event selected</strong> but active event placeholders
                               exist: <code>{foundPlaceholders.join(', ')}</code>.
@@ -917,7 +917,7 @@ export function ComposePanel({
                       if (!hasApprovedSetList && hasPlayerPlaceholder) {
                         return (
                           <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                            '⚠️'
+                            <span aria-hidden="true">⚠️</span>
                             <span>
                               <strong>Practice player not approved.</strong> Set list is unapproved;{' '}
                               <code>{'{{PLAYER_LINK}}'}</code> button will not render.
@@ -984,7 +984,7 @@ export function ComposePanel({
                   {commSettings.mailingAddress.includes('123 Choir St') &&
                     (messageType === 'Email' || messageType === 'Both') && (
                       <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                        '⚠️'
+                        <span aria-hidden="true">⚠️</span>
                         <span>
                           <strong>Default physical address active.</strong> Please{' '}
                           <button

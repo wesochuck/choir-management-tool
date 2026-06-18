@@ -320,7 +320,7 @@ export default function PatronsView() {
               </p>
             </div>
             <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
-              '💵'
+              <span aria-hidden="true">💵</span>
             </div>
           </div>
         </div>
@@ -429,7 +429,6 @@ export default function PatronsView() {
             <div className="flex items-center gap-2 pb-1.5">
               <Button
                 variant="primary"
-                className=""
                 onClick={handleSendMessage}
                 disabled={selectedIds.size === 0}
                 title="Send Message"

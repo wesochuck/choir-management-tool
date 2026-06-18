@@ -147,7 +147,6 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             <Button
               variant="secondary"
               size="small"
-              className=""
               onClick={() => {
                 const query = new URLSearchParams({
                   eventId: event.id,
@@ -178,7 +177,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             title="Voice Part RSVP Balance"
             actions={
               <div className="flex flex-row items-center gap-2">
-                <Button onClick={handleExportCSV} variant="secondary" size="small" className="">
+                <Button onClick={handleExportCSV} variant="secondary" size="small">
                   📥 Export CSV
                 </Button>
                 <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold tracking-wider uppercase">
@@ -323,7 +322,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                   className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
                   aria-label="Clear search"
                 >
-                  '❌'
+                  <span aria-hidden="true">❌</span>
                 </button>
               )}
             </Input>

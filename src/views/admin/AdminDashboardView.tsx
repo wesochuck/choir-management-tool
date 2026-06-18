@@ -260,31 +260,46 @@ export default function AdminDashboardView() {
               to="/admin/attendance"
               className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
             >
-              <span className="text-lg">✅</span> Take Attendance
+              <span className="text-lg" aria-hidden="true">
+                ✅
+              </span>{' '}
+              Take Attendance
             </Link>
             <Link
               to="/admin/communications"
               className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
             >
-              <span className="text-lg">✉️</span> Send Announcement
+              <span className="text-lg" aria-hidden="true">
+                ✉️
+              </span>{' '}
+              Send Announcement
             </Link>
             <Link
               to="/admin/roster?add=true"
               className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
             >
-              <span className="text-lg">👥</span> Add Singer
+              <span className="text-lg" aria-hidden="true">
+                👥
+              </span>{' '}
+              Add Singer
             </Link>
             <Link
               to="/admin/events?add=true"
               className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
             >
-              <span className="text-lg">📅</span> New Event
+              <span className="text-lg" aria-hidden="true">
+                📅
+              </span>{' '}
+              New Event
             </Link>
             <Link
               to="/admin/library"
               className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
             >
-              <span className="text-lg">🎼</span> Add Music
+              <span className="text-lg" aria-hidden="true">
+                🎼
+              </span>{' '}
+              Add Music
             </Link>
           </div>
         </section>
@@ -309,7 +324,7 @@ export default function AdminDashboardView() {
                   <div
                     className={`mb-4 flex size-12 items-center justify-center rounded-lg text-2xl transition-transform duration-200 group-hover:scale-105 ${link.colorClass}`}
                   >
-                    {link.icon}
+                    <span aria-hidden="true">{link.icon}</span>
                   </div>
                   <h3 className="m-0 mb-1 text-lg font-semibold text-gray-800">{link.label}</h3>
                   <p className="m-0 mb-4 flex-1 text-sm leading-relaxed text-gray-500">

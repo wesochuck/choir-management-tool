@@ -1004,7 +1004,7 @@ export default function TicketingView() {
                         </p>
                       </div>
                       <div className="rounded-xl bg-slate-50 p-3 text-slate-500 transition-colors group-hover:bg-slate-100">
-                        '📅'
+                        <span aria-hidden="true">📅</span>
                       </div>
                     </div>
                   </div>
@@ -1028,7 +1028,7 @@ export default function TicketingView() {
                         </p>
                       </div>
                       <div className="rounded-xl bg-pink-50 p-3 text-pink-500 transition-colors group-hover:bg-pink-100/80">
-                        '💵'
+                        <span aria-hidden="true">💵</span>
                       </div>
                     </div>
                   </div>
@@ -1626,12 +1626,7 @@ export default function TicketingView() {
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              disabled={saving}
-              className=""
-              onClick={() => handleSaveBundle()}
-            >
+            <Button variant="primary" disabled={saving} onClick={() => handleSaveBundle()}>
               {saving ? 'Saving...' : 'Save Bundle'}
             </Button>
           </div>

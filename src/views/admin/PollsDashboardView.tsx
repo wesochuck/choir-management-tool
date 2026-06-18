@@ -305,7 +305,6 @@ export default function PollsDashboardView() {
             <div className="flex items-center gap-2 pb-1.5">
               <Button
                 variant="secondary"
-                className=""
                 onClick={() => setIsSettingsModalOpen(true)}
                 title="Settings"
                 icon={

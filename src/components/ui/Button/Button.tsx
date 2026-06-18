@@ -6,6 +6,14 @@ export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'gh
 export type ButtonSize = 'default' | 'small' | 'tiny';
 
 export interface ButtonProps {
+  /**
+   * Render Button as another component, such as React Router Link.
+   *
+   * Example:
+   * <Button as={Link} to="/dashboard" variant="outline">
+   *   Dashboard
+   * </Button>
+   */
   as?: ElementType;
   variant?: ButtonVariant;
   size?: ButtonSize;

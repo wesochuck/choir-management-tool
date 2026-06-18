@@ -546,7 +546,7 @@ export default function AttendanceView() {
                         className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
                         aria-label="Clear search"
                       >
-                        '❌'
+                        <span aria-hidden="true">❌</span>
                       </button>
                     )}
                   </Input>
@@ -684,7 +684,6 @@ export default function AttendanceView() {
                       }
                     }}
                     variant="primary"
-                    className=""
                   >
                     Mark Present
                   </Button>
@@ -712,7 +711,6 @@ export default function AttendanceView() {
                       }
                     }}
                     variant="danger"
-                    className=""
                     disabled={remainingUnmarkedProfileIds.length === 0}
                   >
                     Mark Remaining Absent
@@ -746,7 +744,6 @@ export default function AttendanceView() {
                       }
                     }}
                     variant="secondary"
-                    className=""
                   >
                     Reset All
                   </Button>
@@ -827,7 +824,6 @@ export default function AttendanceView() {
                           disabled={!selectedDeclinedProfileId}
                           onClick={() => handleRescueDeclined(selectedDeclinedProfileId)}
                           variant="danger"
-                          className=""
                         >
                           + Add Back
                         </Button>
