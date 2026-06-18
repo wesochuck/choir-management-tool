@@ -25,7 +25,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
       sections.length > 0 ? sections : getSectionsFromVoiceParts(voiceParts);
 
     voiceParts.forEach((part) => (pc[part.label] = 0));
-    sectionsListToUse.forEach((sec: SectionDef) => (sc[sec.code] = 0));
+    sectionsListToUse.forEach((sec) => (sc[sec.code] = 0));
 
     profiles.forEach((p) => {
       if (p.voicePart) {
