@@ -23,6 +23,9 @@ export function MarkdownEditor({
   const localInstanceRef = useRef<EasyMDE | null>(null);
   const onChangeRef = useRef(onChange);
   const valueRef = useRef(value);
+  const initialValueRef = useRef(value ?? '');
+  const initialMinHeightRef = useRef(minHeight);
+  const initialPlaceholderRef = useRef(placeholder);
 
   // Keep refs up to date to avoid stale closures in EasyMDE callback
   useEffect(() => {
@@ -36,21 +39,20 @@ export function MarkdownEditor({
     instanceRefLocal.current = instanceRef;
   });
 
-  // Mount EasyMDE once. Props (minHeight, placeholder, value) are deps only to
-  // satisfy the linter — the early return guard prevents re-initialization.
-  // Refs keep the callbacks fresh without triggering reinit.
+  // Mount EasyMDE once. Initial prop values are captured in refs so the
+  // effect doesn't need to depend on changing props. The sync effect below
+  // handles external value changes without destroying the editor.
   useEffect(() => {
     if (localInstanceRef.current) return;
-
     if (!textareaRef.current) return;
 
     const mde = new EasyMDE({
       element: textareaRef.current,
-      initialValue: value ?? '',
+      initialValue: initialValueRef.current,
       spellChecker: false,
       status: false,
-      minHeight,
-      placeholder,
+      minHeight: initialMinHeightRef.current,
+      placeholder: initialPlaceholderRef.current,
       toolbar: [
         'bold',
         'italic',
@@ -90,7 +92,7 @@ export function MarkdownEditor({
         instanceRefLocal.current.current = null;
       }
     };
-  }, [minHeight, placeholder, value]);
+  }, []);
 
   // Synchronize external value changes (e.g. from templates) into EasyMDE
   useEffect(() => {
@@ -101,8 +103,12 @@ export function MarkdownEditor({
     const nextValue = value ?? '';
 
     if (currentValue !== nextValue) {
-      // Use value() to set content, which preserves cursor position if possible or handles full replacement
+      const cursor = mde.codemirror.getCursor();
       mde.value(nextValue);
+      mde.codemirror.setCursor({
+        line: Math.min(cursor.line, mde.codemirror.lineCount() - 1),
+        ch: cursor.ch,
+      });
     }
   }, [value]);
 
