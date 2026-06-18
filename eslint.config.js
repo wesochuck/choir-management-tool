@@ -41,6 +41,7 @@ export default defineConfig([
             'seating-row-action-btn',
             'seating-toolbar',
             'prose',
+            'public-site',
           ],
         },
       ],
@@ -49,10 +50,7 @@ export default defineConfig([
   },
   {
     files: ['**/*.{ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-    ],
+    extends: [js.configs.recommended, tseslint.configs.recommended],
     languageOptions: {
       globals: globals.browser,
     },
@@ -64,10 +62,7 @@ export default defineConfig([
   },
   {
     files: ['src/**/*.{ts,tsx}'],
-    extends: [
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-    ],
+    extends: [reactHooks.configs.flat.recommended, reactRefresh.configs.vite],
     rules: {
       'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': 'off',

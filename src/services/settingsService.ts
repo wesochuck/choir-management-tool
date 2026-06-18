@@ -1,5 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
+import type { PublicFontChoice } from '../lib/publicFonts';
 export { renderCommunicationTemplate } from '../lib/messageTemplates';
 
 export interface AppSetting<T> extends RecordModel {
@@ -81,6 +82,8 @@ export interface LandingPageSettings {
   historyText: string;
   contactEmail: string;
   showBrandingHeaderFooter?: boolean;
+  headerFont?: PublicFontChoice;
+  bodyFont?: PublicFontChoice;
 }
 
 export const DEFAULT_LANDING_SETTINGS: LandingPageSettings = {
@@ -90,6 +93,8 @@ export const DEFAULT_LANDING_SETTINGS: LandingPageSettings = {
   historyText: '',
   contactEmail: '',
   showBrandingHeaderFooter: false,
+  headerFont: 'system',
+  bodyFont: 'system',
 };
 
 export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {

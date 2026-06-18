@@ -390,3 +390,17 @@ sl-dialog::part(close-button) {
 sl-dialog::part(close-button__base):hover {
   color: var(--color-primary-deep);
 }
+
+/* Public site font selection */
+.public-site {
+  font-family: var(--public-body-font);
+}
+
+.public-site h1,
+.public-site h2,
+.public-site h3,
+.public-site h4,
+.public-site h5,
+.public-site h6 {
+  font-family: var(--public-header-font);
+}

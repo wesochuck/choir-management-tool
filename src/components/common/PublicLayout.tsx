@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
+import { settingsService } from '../../services/settingsService';
+import { getPublicFontStack } from '../../lib/publicFonts';
 import { useAuth } from '../../contexts/AuthContext';
 import { useChoirName } from '../../hooks/useDocumentTitle';
 import PublicLogo from './PublicLogo';
@@ -15,6 +19,15 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  const { data: landingSettings } = useQuery({
+    queryKey: queryKeys.publicLanding.settings,
+    queryFn: () => settingsService.getLandingSettings(),
+    staleTime: 5 * 60_000,
+  });
+
+  const headerFontStack = getPublicFontStack(landingSettings?.headerFont);
+  const bodyFontStack = getPublicFontStack(landingSettings?.bodyFont);
+
   const getLinkClass = (path: string) => {
     return location.pathname === path
       ? 'text-sm font-medium text-text'
@@ -22,7 +35,15 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="bg-bg min-h-screen">
+    <div
+      className="public-site bg-bg min-h-screen"
+      style={
+        {
+          '--public-header-font': headerFontStack,
+          '--public-body-font': bodyFontStack,
+        } as React.CSSProperties
+      }
+    >
       <header className="no-print bg-bg border-border sticky top-0 z-40 border-b shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
           <Link to="/" className="flex items-center gap-3 no-underline">

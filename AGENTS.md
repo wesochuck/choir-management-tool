@@ -34,6 +34,7 @@ Run checks that match the change:
   rtk npm run check:pb-hooks
   ```
 - Single Vitest file: `rtk npx vitest run path/to/file.test.ts`
+- ESLint: `rtk node_modules/.bin/eslint --fix --no-warn-ignored --max-warnings 0` (do not use `rtk npx eslint` — `rtk` misidentifies it as a Python tool)
 
 Every non-trivial change must include a final verification summary covering checks run, skipped checks, risks, and any follow-up needed.
 

@@ -4,12 +4,13 @@ import { queryKeys } from '../../lib/queryKeys';
 import { MarkdownEditor } from '../common/MarkdownEditor';
 import { AppCard } from '../common/AppCard';
 import { Button } from '../ui/Button/Button';
-import { Input } from '../ui';
+import { Input, Select } from '../ui';
 import {
   settingsService,
   type LandingPageSettings,
   DEFAULT_LANDING_SETTINGS,
 } from '../../services/settingsService';
+import { PUBLIC_FONT_OPTIONS, type PublicFontChoice } from '../../lib/publicFonts';
 import type EasyMDE from 'easymde';
 
 export interface LandingPageSettingsPanelHandle {
@@ -83,6 +84,8 @@ export const LandingPageSettingsPanel = forwardRef<
       settings.historyText !== initialSettings.historyText ||
       settings.contactEmail !== initialSettings.contactEmail ||
       settings.showBrandingHeaderFooter !== initialSettings.showBrandingHeaderFooter ||
+      settings.headerFont !== initialSettings.headerFont ||
+      settings.bodyFont !== initialSettings.bodyFont ||
       heroImageFile !== null ||
       heroImageRemoved ||
       heroImageUrl !== initialHeroImageUrl;
@@ -241,6 +244,40 @@ export const LandingPageSettingsPanel = forwardRef<
             className="w-full"
             placeholder="contact@example.com"
           />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium" htmlFor="headerFont">
+            Header font
+          </label>
+          <Select
+            id="headerFont"
+            value={settings.headerFont ?? 'system'}
+            onChange={(e) => handleChange('headerFont', e.target.value as PublicFontChoice)}
+          >
+            {PUBLIC_FONT_OPTIONS.map((font) => (
+              <option key={font.id} value={font.id}>
+                {font.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium" htmlFor="bodyFont">
+            Body font
+          </label>
+          <Select
+            id="bodyFont"
+            value={settings.bodyFont ?? 'system'}
+            onChange={(e) => handleChange('bodyFont', e.target.value as PublicFontChoice)}
+          >
+            {PUBLIC_FONT_OPTIONS.map((font) => (
+              <option key={font.id} value={font.id}>
+                {font.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <div className="border-border mt-4 flex flex-row items-center gap-4 rounded-lg border bg-neutral-100 p-4">

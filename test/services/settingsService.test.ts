@@ -26,6 +26,8 @@ describe('LandingPageSettings', () => {
       assert.strictEqual(DEFAULT_LANDING_SETTINGS.historyText, '');
       assert.strictEqual(DEFAULT_LANDING_SETTINGS.contactEmail, '');
       assert.strictEqual(DEFAULT_LANDING_SETTINGS.showBrandingHeaderFooter, false);
+      assert.strictEqual(DEFAULT_LANDING_SETTINGS.headerFont, 'system');
+      assert.strictEqual(DEFAULT_LANDING_SETTINGS.bodyFont, 'system');
     });
 
     it('has the correct keys', async () => {
@@ -33,7 +35,9 @@ describe('LandingPageSettings', () => {
       const keys = Object.keys(DEFAULT_LANDING_SETTINGS).sort();
       assert.deepStrictEqual(keys, [
         'aboutUsText',
+        'bodyFont',
         'contactEmail',
+        'headerFont',
         'heroHeadline',
         'heroSubtitle',
         'historyText',
