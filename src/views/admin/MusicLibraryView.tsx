@@ -669,65 +669,67 @@ export default function MusicLibraryView() {
       />
 
       {activeTab === 'catalog' ? (
-        <AppCard noPadding>
-          <MusicLibraryFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            sectionFilters={sectionFilters}
-            onSectionFiltersChange={setSectionFilters}
-            genreFilters={genreFilters}
-            onGenreFiltersChange={setGenreFilters}
-            genreFilterMode={genreFilterMode}
-            onGenreFilterModeChange={setGenreFilterMode}
-            genres={configuredGenres}
-            sections={sections}
-            showDuplicatesOnly={showDuplicatesOnly}
-            onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
-            duplicateCount={duplicateIds.size}
-            pageSize={pageSize}
-            onPageSizeChange={setPageSize}
-            recencyFilter={recencyFilter}
-            onRecencyFilterChange={setRecencyFilter}
-            ignoreArticles={ignoreArticles}
-            onIgnoreArticlesChange={setIgnoreArticles}
-          />
+        <div className={selectedIds.size > 0 ? 'pb-36 sm:pb-28' : undefined}>
+          <AppCard noPadding>
+            <MusicLibraryFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              sectionFilters={sectionFilters}
+              onSectionFiltersChange={setSectionFilters}
+              genreFilters={genreFilters}
+              onGenreFiltersChange={setGenreFilters}
+              genreFilterMode={genreFilterMode}
+              onGenreFilterModeChange={setGenreFilterMode}
+              genres={configuredGenres}
+              sections={sections}
+              showDuplicatesOnly={showDuplicatesOnly}
+              onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
+              duplicateCount={duplicateIds.size}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+              recencyFilter={recencyFilter}
+              onRecencyFilterChange={setRecencyFilter}
+              ignoreArticles={ignoreArticles}
+              onIgnoreArticlesChange={setIgnoreArticles}
+            />
 
-          <MusicLibrarySelectionToolbar
-            selectedCount={selectedIds.size}
-            isBulkDeleting={bulkDeleteMutation.isPending}
-            isAddingToSetList={addSelectedToSetListMutation.isPending}
-            onAddToSetList={() => setIsAddToSetListOpen(true)}
-            onDeleteSelected={handleBulkDelete}
-            onClearSelection={() => setSelectedIds(new Set())}
-          />
+            <MusicLibrarySelectionToolbar
+              selectedCount={selectedIds.size}
+              isBulkDeleting={bulkDeleteMutation.isPending}
+              isAddingToSetList={addSelectedToSetListMutation.isPending}
+              onAddToSetList={() => setIsAddToSetListOpen(true)}
+              onDeleteSelected={handleBulkDelete}
+              onClearSelection={() => setSelectedIds(new Set())}
+            />
 
-          <MusicLibraryTable
-            pieces={pieces}
-            filteredPieces={paginatedPieces}
-            genres={configuredGenres}
-            isLoading={isLoading}
-            duplicateIds={duplicateIds}
-            selectedIds={selectedIds}
-            onSelectionChange={setSelectedIds}
-            onEditPiece={(piece, tab) => {
-              setEditingPiece(piece);
-              setModalInitialTab(tab || 'details');
-              setIsModalOpen(true);
-            }}
-            onPlayTrack={handlePlayDefaultTrack}
-            catalogLookupTemplate={catalogLookupTemplate}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            totalParentCount={filteredPieces.length}
-            onPageChange={setCurrentPage}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSortChange={(field, direction) => {
-              setSortField(field);
-              setSortDirection(direction);
-            }}
-          />
-        </AppCard>
+            <MusicLibraryTable
+              pieces={pieces}
+              filteredPieces={paginatedPieces}
+              genres={configuredGenres}
+              isLoading={isLoading}
+              duplicateIds={duplicateIds}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              onEditPiece={(piece, tab) => {
+                setEditingPiece(piece);
+                setModalInitialTab(tab || 'details');
+                setIsModalOpen(true);
+              }}
+              onPlayTrack={handlePlayDefaultTrack}
+              catalogLookupTemplate={catalogLookupTemplate}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalParentCount={filteredPieces.length}
+              onPageChange={setCurrentPage}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSortChange={(field, direction) => {
+                setSortField(field);
+                setSortDirection(direction);
+              }}
+            />
+          </AppCard>
+        </div>
       ) : (
         <div className="flex flex-col gap-6">
           <AppCard title="Music Library Settings">

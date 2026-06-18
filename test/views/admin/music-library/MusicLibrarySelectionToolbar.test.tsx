@@ -31,6 +31,12 @@ describe('MusicLibrarySelectionToolbar', () => {
     renderToolbar({ selectedCount: 0 });
     assert.equal(screen.queryByText(/selected/), null);
     assert.equal(screen.queryByRole('button'), null);
+    assert.equal(screen.queryByLabelText('Selected music title actions'), null);
+  });
+
+  it('renders accessible region when selectedCount > 0', () => {
+    renderToolbar({ selectedCount: 1 });
+    assert.ok(screen.getByLabelText('Selected music title actions'));
   });
 
   it('renders singular copy for 1 selected title', () => {
