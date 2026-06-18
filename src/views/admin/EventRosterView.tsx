@@ -254,7 +254,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
         <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-4">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_260px] md:items-center">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px_auto] lg:items-center">
               <Input
                 type="text"
                 placeholder="Search active singers..."
@@ -299,38 +299,25 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 <option value="lastName">Sort: Last Name</option>
                 <option value="voicePart">Sort: Voice Part + Last Name</option>
               </Select>
+
+              {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
+                <Button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedVoiceParts([]);
+                    setRsvpFilter('All');
+                  }}
+                  variant="outline"
+                  size="small"
+                  className="h-10 px-3 whitespace-nowrap"
+                >
+                  Reset Filters
+                </Button>
+              )}
             </div>
 
             <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex flex-wrap items-center gap-2">
-                {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
-                  <Button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedVoiceParts([]);
-                      setRsvpFilter('All');
-                    }}
-                    variant="secondary"
-                    size="small"
-                    className="flex items-center gap-1"
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                      <path d="M3 3v5h5"></path>
-                    </svg>
-                    Reset Filters
-                  </Button>
-                )}
-
                 <span className="text-xs font-bold whitespace-nowrap text-gray-500">
                   {sortedSingers.length} shown
                 </span>
