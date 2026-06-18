@@ -1053,7 +1053,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
-                            '⬆️'
+                            ⬆️
                             {graphicPreviewUrl ? 'Replace Image' : 'Upload Image'}
                             <input
                               type="file"
