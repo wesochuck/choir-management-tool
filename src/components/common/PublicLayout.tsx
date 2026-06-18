@@ -26,7 +26,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
       <header className="no-print bg-bg border-border sticky top-0 z-40 border-b shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
           <Link to="/" className="flex items-center gap-3 no-underline">
-            <PublicLogo />
+            <PublicLogo variant="header" />
             <span className="text-text text-lg font-semibold">{choirName || 'Choir'}</span>
           </Link>
 
