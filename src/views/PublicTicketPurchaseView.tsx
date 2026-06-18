@@ -24,8 +24,20 @@ export default function PublicTicketPurchaseView() {
   const [formError, setFormError] = useState('');
 
   const createCheckoutSessionMutation = useMutation({
-    mutationFn: (data: { eventId: string; quantity: number; email: string; name: string }) =>
-      ticketService.createCheckoutSession(data.eventId, data.quantity, data.email, data.name),
+    mutationFn: (data: {
+      eventId: string;
+      quantity: number;
+      email: string;
+      name: string;
+      marketingOptIn: boolean;
+    }) =>
+      ticketService.createCheckoutSession(
+        data.eventId,
+        data.quantity,
+        data.email,
+        data.name,
+        data.marketingOptIn
+      ),
     onSuccess: (result) => {
       if (result.url) {
         window.location.assign(result.url);
@@ -75,9 +87,16 @@ export default function PublicTicketPurchaseView() {
   const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
   const totalCents = totalTicketsCents + feeCents;
 
+  const trimmedEmail = email.trim();
+  const trimmedConfirmEmail = confirmEmail.trim();
+  const emailMismatch =
+    trimmedEmail.length > 0 &&
+    trimmedConfirmEmail.length > 0 &&
+    trimmedEmail.toLowerCase() !== trimmedConfirmEmail.toLowerCase();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() !== confirmEmail.trim()) {
+    if (emailMismatch) {
       setFormError('Email addresses must match.');
       return;
     }
@@ -85,8 +104,9 @@ export default function PublicTicketPurchaseView() {
     await createCheckoutSessionMutation.mutateAsync({
       eventId: event.id,
       quantity,
-      email: email.trim(),
+      email: trimmedEmail,
       name: name.trim(),
+      marketingOptIn,
     });
   };
 
@@ -182,7 +202,11 @@ export default function PublicTicketPurchaseView() {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                invalid={emailMismatch}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (formError) setFormError('');
+                }}
               />
             </div>
             <div className="flex flex-1 flex-col gap-1">
@@ -191,8 +215,15 @@ export default function PublicTicketPurchaseView() {
                 type="email"
                 required
                 value={confirmEmail}
-                onChange={(e) => setConfirmEmail(e.target.value)}
+                invalid={emailMismatch}
+                onChange={(e) => {
+                  setConfirmEmail(e.target.value);
+                  if (formError) setFormError('');
+                }}
               />
+              {emailMismatch && (
+                <p className="text-danger-text m-0 text-xs">Email addresses do not match.</p>
+              )}
             </div>
           </div>
 
@@ -229,11 +260,11 @@ export default function PublicTicketPurchaseView() {
             </div>
           </div>
 
-          <div className="border-border mt-1 flex flex-row items-start gap-4 rounded-lg border bg-neutral-100 p-4">
-            <Input
+          <div className="border-border mt-1 flex items-start gap-3 rounded-lg border bg-neutral-100 p-4">
+            <input
               id="marketingOptIn"
               type="checkbox"
-              className="accent-primary size-[18px] cursor-pointer"
+              className="accent-primary mt-0.5 size-[18px] shrink-0 cursor-pointer"
               checked={marketingOptIn}
               onChange={(e) => setMarketingOptIn(e.target.checked)}
             />
@@ -252,7 +283,7 @@ export default function PublicTicketPurchaseView() {
 
           <Button
             type="submit"
-            disabled={createCheckoutSessionMutation.isPending}
+            disabled={createCheckoutSessionMutation.isPending || emailMismatch}
             className="h-12 w-full font-semibold"
             variant="primary"
           >

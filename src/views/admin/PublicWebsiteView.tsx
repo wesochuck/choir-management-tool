@@ -32,7 +32,7 @@ export default function PublicWebsiteView() {
         landingSettings ? settingsService.saveLandingSettings(landingSettings) : Promise.resolve(),
         heroChanges?.file
           ? settingsService.saveHeroImage(heroChanges.file)
-          : heroChanges?.file === null
+          : heroChanges?.removed
             ? settingsService.saveHeroImage(null)
             : Promise.resolve(),
       ]);

@@ -299,6 +299,7 @@ export async function handleCreateTicketsSession(e: PocketBaseRequestEvent): Pro
   const quantity = body.quantity;
   const email = body.email as string;
   const name = body.name as string;
+  const marketingOptIn = body.marketingOptIn === true;
 
   if (!eventId || !quantity || !email || !name) {
     return e.json(400, { error: 'Missing required fields' });
@@ -436,6 +437,7 @@ export async function handleCreateTicketsSession(e: PocketBaseRequestEvent): Pro
     feeCents: String(feeCents),
     buyerName: name,
     buyerEmail: email,
+    marketingOptIn: marketingOptIn ? 'true' : 'false',
   };
 
   try {
@@ -455,6 +457,7 @@ export async function handleCreateTicketsSession(e: PocketBaseRequestEvent): Pro
       amountPaidCents: totalTicketsCents + feeCents,
       currency: 'usd',
       stripeSessionId: session.id,
+      marketingOptIn,
       status: 'pending',
     });
     $app.save(record);
@@ -472,6 +475,7 @@ export function handleCreateBundleSession(e: PocketBaseRequestEvent): unknown {
   const quantity = body.quantity;
   const email = body.email as string;
   const name = body.name as string;
+  const marketingOptIn = body.marketingOptIn === true;
 
   if (!bundleId || !quantity || !email || !name) {
     return e.json(400, { error: 'Missing required fields' });
@@ -615,6 +619,7 @@ export function handleCreateBundleSession(e: PocketBaseRequestEvent): unknown {
     feeCents: String(feeCents),
     buyerName: name,
     buyerEmail: email,
+    marketingOptIn: marketingOptIn ? 'true' : 'false',
   };
 
   try {
@@ -634,6 +639,7 @@ export function handleCreateBundleSession(e: PocketBaseRequestEvent): unknown {
       amountPaidCents: totalTicketsCents + feeCents,
       currency: 'usd',
       stripeSessionId: session.id,
+      marketingOptIn,
       status: 'pending',
     });
     $app.save(record);

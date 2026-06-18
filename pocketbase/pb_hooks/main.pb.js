@@ -14053,6 +14053,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -14161,6 +14162,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -14178,6 +14180,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -14195,6 +14198,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -14307,6 +14311,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -14324,6 +14329,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -15799,6 +15805,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -15907,6 +15914,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -15924,6 +15932,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -15941,6 +15950,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -16053,6 +16063,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -16070,6 +16081,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -17545,6 +17557,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -17653,6 +17666,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -17670,6 +17684,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -17687,6 +17702,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -17799,6 +17815,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -17816,6 +17833,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -19291,6 +19309,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -19399,6 +19418,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -19416,6 +19436,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -19433,6 +19454,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -19545,6 +19567,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -19562,6 +19585,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -21037,6 +21061,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -21145,6 +21170,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -21162,6 +21188,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -21179,6 +21206,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -21291,6 +21319,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -21308,6 +21337,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -22783,6 +22813,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -22891,6 +22922,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -22908,6 +22940,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -22925,6 +22958,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -23037,6 +23071,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -23054,6 +23089,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -24529,6 +24565,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -24637,6 +24674,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -24654,6 +24692,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -24671,6 +24710,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -24783,6 +24823,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -24800,6 +24841,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -26274,6 +26316,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!eventId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -26382,6 +26425,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -26399,6 +26443,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);
@@ -26416,6 +26461,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const quantity = body.quantity;
         const email = body.email;
         const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
         if (!bundleId || !quantity || !email || !name) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -26528,6 +26574,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             feeCents: String(feeCents),
             buyerName: name,
             buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -26545,6 +26592,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                 amountPaidCents: totalTicketsCents + feeCents,
                 currency: 'usd',
                 stripeSessionId: session.id,
+                marketingOptIn,
                 status: 'pending',
             });
             $app.save(record);

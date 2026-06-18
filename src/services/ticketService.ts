@@ -69,13 +69,14 @@ export const ticketService = {
     eventId: string,
     quantity: number,
     email: string,
-    name: string
+    name: string,
+    marketingOptIn: boolean
   ): Promise<{ url: string; sessionId: string }> {
     return await pb.send<{ url: string; sessionId: string }>(
       '/api/checkout/create-tickets-session',
       {
         method: 'POST',
-        body: { eventId, quantity, email, name },
+        body: { eventId, quantity, email, name, marketingOptIn },
       }
     );
   },
@@ -84,13 +85,14 @@ export const ticketService = {
     bundleId: string,
     quantity: number,
     email: string,
-    name: string
+    name: string,
+    marketingOptIn: boolean
   ): Promise<{ url: string; sessionId: string }> {
     return await pb.send<{ url: string; sessionId: string }>(
       '/api/checkout/create-bundle-session',
       {
         method: 'POST',
-        body: { bundleId, quantity, email, name },
+        body: { bundleId, quantity, email, name, marketingOptIn },
       }
     );
   },
