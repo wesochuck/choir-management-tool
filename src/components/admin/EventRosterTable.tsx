@@ -194,7 +194,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           </Button>
         ) : undefined,
       }}
-      manualPagination
+      pageSize={25}
+      paginationLabel="singers"
       onRowClick={onSingerClick ? (row) => onSingerClick(row.profile) : undefined}
       getRowId={(s) => s.profile.id}
     />

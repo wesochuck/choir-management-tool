@@ -115,6 +115,7 @@ export default function ReportsView() {
       id: 'singer',
       header: 'Singer',
       accessorKey: 'name',
+      enableSorting: true,
       meta: {
         cardSection: 0,
         cardSide: 'left',
@@ -124,6 +125,7 @@ export default function ReportsView() {
       id: 'part',
       header: 'Part',
       accessorKey: 'voicePart',
+      enableSorting: true,
       meta: {
         cardSection: 1,
         cardSide: 'left',
@@ -415,7 +417,7 @@ export default function ReportsView() {
                     title: 'No attendance records found.',
                     icon: '📊',
                   }}
-                  manualPagination
+                  hidePagination={true}
                   getRowId={(r) => r.profileId}
                   getRowClassName={(r) => (r.absences >= 2 ? 'bg-danger-bg text-danger-text' : '')}
                 />
@@ -483,7 +485,7 @@ export default function ReportsView() {
               title: 'No pieces in the music library.',
               icon: '🎵',
             }}
-            manualPagination
+            hidePagination={true}
             getRowId={(r) => r.piece.id}
           />
         </div>

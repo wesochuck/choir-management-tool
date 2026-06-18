@@ -348,6 +348,7 @@ export default function AuditionsView() {
       id: 'name',
       header: 'Name / Contact',
       enableSorting: true,
+      accessorFn: (r) => r.name,
       cell: ({ row }) => (
         <div className="flex flex-col gap-1">
           <div className="flex flex-row items-center gap-2">
@@ -407,6 +408,7 @@ export default function AuditionsView() {
       id: 'scheduledTimeSlot',
       header: 'Audition Time',
       enableSorting: true,
+      accessorFn: (r) => r.scheduledTimeSlot,
       cell: ({ row }) =>
         row.original.status === 'Scheduled' && row.original.scheduledTimeSlot ? (
           <span className="text-sm font-semibold text-slate-900">
@@ -988,8 +990,9 @@ export default function AuditionsView() {
           title: 'No auditions found.',
           icon: '🎭',
         }}
-        manualPagination
+        hidePagination
         defaultSorting={[{ id: 'scheduledTimeSlot', desc: false }]}
+        manualSorting
         onSortingChange={handleSortChange}
         onRowClick={(row) => {
           setEditingAudition(row);

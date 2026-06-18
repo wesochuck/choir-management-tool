@@ -687,7 +687,8 @@ export default function DonationsView() {
                         </Button>
                       ) : undefined,
                   }}
-                  manualPagination
+                  pageSize={25}
+                  paginationLabel="donations"
                   renderMobileCard={(d) => (
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">

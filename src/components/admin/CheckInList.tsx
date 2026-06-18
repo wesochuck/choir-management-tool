@@ -233,7 +233,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
               data={notCheckedIn}
               isLoading={false}
               emptyState={{ title: '', icon: '' }}
-              manualPagination
+              hidePagination={true}
               onRowClick={(item) => onEdit(item.profileId)}
               getRowId={(item) => item.id}
               renderMobileCard={(item) => (
@@ -269,7 +269,7 @@ export const CheckInList: React.FC<CheckInListProps> = ({
               data={checkedIn}
               isLoading={false}
               emptyState={{ title: '', icon: '' }}
-              manualPagination
+              hidePagination={true}
               onRowClick={(item) => onEdit(item.profileId)}
               getRowId={(item) => item.id}
               renderMobileCard={(item) => (

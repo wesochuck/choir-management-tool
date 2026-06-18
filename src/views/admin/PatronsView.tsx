@@ -487,7 +487,8 @@ export default function PatronsView() {
             enableSelection
             onSelectionChange={(ids) => setSelectedIds(ids)}
             onRowClick={(patron) => handleOpenProfile(patron.profile)}
-            manualPagination
+            pageSize={25}
+            paginationLabel="patrons"
             getRowId={(patron) => patron.profile.id}
           />
         </div>

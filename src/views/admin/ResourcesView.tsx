@@ -470,7 +470,7 @@ export default function ResourcesView() {
                 </Button>
               ),
             }}
-            manualPagination
+            hidePagination
             renderRow={SortableRow}
           />
         </SortableContext>

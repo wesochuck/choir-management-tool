@@ -1186,7 +1186,7 @@ export default function TicketingView() {
                     </Button>
                   ) : undefined,
                 }}
-                manualPagination
+                pageSize={20}
                 getRowClassName={(p) => (p.status === 'refunded' ? 'opacity-60' : '')}
                 renderMobileCard={(p) => (
                   <div
@@ -1285,7 +1285,7 @@ export default function TicketingView() {
                   </Button>
                 ),
               }}
-              manualPagination
+              pageSize={20}
               renderMobileCard={(b) => {
                 const sold = getBundleSoldQty(b.id, b.events);
                 return (
@@ -1374,7 +1374,7 @@ export default function TicketingView() {
                 description: 'No season pass orders have been placed yet.',
                 icon: '🎫',
               }}
-              manualPagination
+              pageSize={20}
               getRowClassName={(o) => (o.status === 'refunded' ? 'opacity-60' : '')}
               renderMobileCard={(order) => (
                 <div
