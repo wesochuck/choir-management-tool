@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export interface AdminPageTab<T extends string> {
+interface AdminPageTab<T extends string> {
   value: T;
   label: ReactNode;
 }

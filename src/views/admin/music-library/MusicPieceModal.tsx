@@ -31,8 +31,6 @@ import { zonedInputValueToUtc } from '../../../lib/timezone';
 import { AutocompleteInput } from '../../../components/admin/AutocompleteInput';
 import { getNextMovementNumber } from '../../../lib/musicLibraryUtils';
 
-export { getNextMovementNumber };
-
 export interface MusicPieceModalProps {
   isOpen: boolean;
   piece: MusicPiece | null;

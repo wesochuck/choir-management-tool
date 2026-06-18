@@ -62,13 +62,13 @@
     "jsdom": "^29.1.1",
     "knip": "^6.16.1",
     "lint-staged": "^17.0.7",
+    "acorn": "^8.14.1",
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "vite-node": "^6.0.0",
     "vitest": "^4.1.8"
   }
 }
