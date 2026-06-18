@@ -23,6 +23,31 @@ export function linkSetListItemToPiece(
  *  - updated: boolean indicating if a new item was appended
  *  - setList: the updated set list array
  */
+/**
+ * Batch version: appends multiple pieces to a set list.
+ * Returns counts of added vs skipped (duplicate) items and the updated array.
+ */
+export function appendPiecesToSetList(
+  setList: SetListItem[] | undefined,
+  pieces: { id: string; title: string; composer?: string; duration?: string; notes?: string }[]
+): { addedCount: number; skippedCount: number; setList: SetListItem[] } {
+  let nextSetList = setList ? [...setList] : [];
+  let addedCount = 0;
+  let skippedCount = 0;
+
+  pieces.forEach((piece) => {
+    const result = appendPieceToSetList(nextSetList, piece);
+    nextSetList = result.setList;
+    if (result.updated) {
+      addedCount += 1;
+    } else {
+      skippedCount += 1;
+    }
+  });
+
+  return { addedCount, skippedCount, setList: nextSetList };
+}
+
 export function appendPieceToSetList(
   setList: SetListItem[] | undefined,
   piece: { id: string; title: string; composer?: string; duration?: string; notes?: string }

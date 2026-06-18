@@ -17,7 +17,12 @@ import {
   type MusicLibrarySettings,
 } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
-import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
+import {
+  exportMusicToCSV,
+  findDuplicates,
+  appendPieceToSetList,
+  appendPiecesToSetList,
+} from '../../lib/musicPieceUtils';
 import {
   buildVisibleMusicLibraryRows,
   type MusicLibrarySortField,
@@ -27,6 +32,7 @@ import {
 import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistory';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
+import { AddToSetListModal } from './music-library/AddToSetListModal';
 import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
 import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
@@ -192,6 +198,7 @@ export default function MusicLibraryView() {
 
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isAddToSetListOpen, setIsAddToSetListOpen] = useState(false);
 
   const [sortField, setSortField] = useState<MusicLibrarySortField>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -522,6 +529,71 @@ export default function MusicLibraryView() {
     return filteredPieces.slice(startIndex, startIndex + pageSize);
   }, [filteredPieces, currentPage, pageSize]);
 
+  const selectedPieces = useMemo(() => {
+    return pieces.filter((piece) => selectedIds.has(piece.id) && !piece.parentId);
+  }, [pieces, selectedIds]);
+
+  const performancesQuery = useQuery({
+    queryKey: queryKeys.events.list(),
+    queryFn: async () => {
+      const events = await eventService.getEvents();
+      const now = Date.now();
+      return events
+        .filter((event) => event.type === 'Performance')
+        .sort((a, b) => {
+          const aTime = new Date(a.date).getTime();
+          const bTime = new Date(b.date).getTime();
+          const aIsUpcoming = aTime >= now;
+          const bIsUpcoming = bTime >= now;
+          if (aIsUpcoming !== bIsUpcoming) return aIsUpcoming ? -1 : 1;
+          return aTime - bTime;
+        });
+    },
+    staleTime: 60_000,
+  });
+
+  const addSelectedToSetListMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      const event = await eventService.getEventById(eventId);
+      const pieceData = selectedPieces.map((p) => ({
+        id: p.id,
+        title: p.title,
+        composer: p.composer,
+        duration: p.duration,
+        notes: p.notes,
+      }));
+      const result = appendPiecesToSetList(event.setList, pieceData);
+      if (result.addedCount > 0) {
+        await eventService.updateEvent(eventId, { setList: result.setList });
+      }
+      return { event, addedCount: result.addedCount, skippedCount: result.skippedCount };
+    },
+    onSuccess: ({ event, addedCount, skippedCount }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
+      if (addedCount > 0 && skippedCount > 0) {
+        dialog.showToast(
+          `Added ${addedCount} title${addedCount === 1 ? '' : 's'} to "${event.title}". ${skippedCount} already ${skippedCount === 1 ? 'was' : 'were'} on the set list.`
+        );
+      } else if (addedCount > 0) {
+        dialog.showToast(
+          `Added ${addedCount} title${addedCount === 1 ? '' : 's'} to "${event.title}".`
+        );
+      } else {
+        dialog.showToast('All selected titles were already on that set list.');
+      }
+      setSelectedIds(new Set());
+      setIsAddToSetListOpen(false);
+    },
+    onError: async (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      await dialog.showMessage({
+        title: 'Could Not Update Set List',
+        message,
+        variant: 'danger',
+      });
+    },
+  });
+
   const toggleSelection = (id: string) => {
     const newSet = new Set(selectedIds);
     if (newSet.has(id)) newSet.delete(id);
@@ -624,6 +696,11 @@ export default function MusicLibraryView() {
             selectedCount={selectedIds.size}
             isBulkDeleting={bulkDeleteMutation.isPending}
             onBulkDelete={handleBulkDelete}
+            onAddSelectedToSetList={
+              performancesQuery.data && performancesQuery.data.length > 0
+                ? () => setIsAddToSetListOpen(true)
+                : undefined
+            }
             pageSize={pageSize}
             onPageSizeChange={setPageSize}
             recencyFilter={recencyFilter}
@@ -828,6 +905,17 @@ export default function MusicLibraryView() {
         onCreateGenre={handleCreateGenre}
         initialTab={modalInitialTab}
         isSaving={pieceSaveMutation.isPending}
+      />
+
+      <AddToSetListModal
+        isOpen={isAddToSetListOpen}
+        selectedPieces={selectedPieces}
+        performances={performancesQuery.data ?? []}
+        isSaving={addSelectedToSetListMutation.isPending}
+        onClose={() => setIsAddToSetListOpen(false)}
+        onConfirm={(eventId) => {
+          addSelectedToSetListMutation.mutateAsync(eventId);
+        }}
       />
 
       <MusicImportModal

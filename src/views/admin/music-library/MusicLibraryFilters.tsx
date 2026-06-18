@@ -22,6 +22,7 @@ export interface MusicLibraryFiltersProps {
   selectedCount: number;
   isBulkDeleting: boolean;
   onBulkDelete: () => void;
+  onAddSelectedToSetList?: () => void;
   pageSize: number;
   onPageSizeChange: (value: number) => void;
   recencyFilter: PerformanceRecencyFilter;
@@ -47,6 +48,7 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
   selectedCount,
   isBulkDeleting,
   onBulkDelete,
+  onAddSelectedToSetList,
   pageSize,
   onPageSizeChange,
   recencyFilter,
@@ -182,15 +184,16 @@ export const MusicLibraryFilters: React.FC<MusicLibraryFiltersProps> = ({
         </label>
 
         {selectedCount > 0 && (
-          <Button
-            variant="danger"
-            size="small"
-            className="ml-auto"
-            onClick={onBulkDelete}
-            disabled={isBulkDeleting}
-          >
-            {isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedCount})`}
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            {onAddSelectedToSetList && (
+              <Button variant="secondary" size="small" onClick={onAddSelectedToSetList}>
+                Add to Set List ({selectedCount})
+              </Button>
+            )}
+            <Button variant="danger" size="small" onClick={onBulkDelete} disabled={isBulkDeleting}>
+              {isBulkDeleting ? 'Deleting...' : `Delete Selected (${selectedCount})`}
+            </Button>
+          </div>
         )}
       </div>
     </div>
