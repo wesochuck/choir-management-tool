@@ -20,14 +20,22 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   ];
 
   return (
-    <div className="border-border flex w-full items-center justify-between gap-4 overflow-x-auto border-b pb-1 whitespace-nowrap">
-      <div className="flex items-center gap-2">
+    <nav
+      className="border-border flex w-full items-center gap-6 overflow-x-auto border-b"
+      aria-label="Communications sections"
+    >
+      <div className="flex min-w-max items-center gap-6">
         {secondaryTabs.map((tab) => (
           <button
             key={tab.value}
             type="button"
-            className={`text-text-muted hover:bg-primary-light/50 hover:text-text inline-flex cursor-pointer items-center gap-1.5 rounded-lg border-0 bg-transparent px-3 py-2 text-sm transition-all duration-150 ${activeTab === tab.value ? 'bg-primary-light text-primary-deep font-semibold' : 'font-medium'}`}
+            className={`relative -mb-px flex min-h-[44px] cursor-pointer items-center gap-1.5 border-b-2 px-1 py-2.5 text-sm font-semibold transition-colors duration-150 ${
+              activeTab === tab.value
+                ? 'border-primary text-primary'
+                : 'text-text-muted hover:text-text border-transparent hover:border-slate-300'
+            }`}
             onClick={() => onTabChange(tab.value)}
+            aria-current={activeTab === tab.value ? 'page' : undefined}
           >
             <span>{tab.label}</span>
             {tab.value === 'drafts' && draftsCount > 0 && (
@@ -38,15 +46,6 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
           </button>
         ))}
       </div>
-
-      <button
-        type="button"
-        className={`ml-auto inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold transition-all duration-150 ${activeTab === 'compose' ? 'border-primary bg-primary text-white' : 'border-primary-light bg-primary-light text-primary-deep hover:border-primary hover:bg-primary hover:text-white'}`}
-        onClick={() => onTabChange('compose')}
-      >
-        <span aria-hidden="true">+</span>
-        <span>New Message</span>
-      </button>
-    </div>
+    </nav>
   );
 };

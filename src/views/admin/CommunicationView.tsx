@@ -11,6 +11,7 @@ import { CommunicationTabs } from '../../components/CommunicationTabs';
 import type { CommunicationTab } from '../../types/Communication';
 import type { CommunicationRecipient, MessageRecord } from '../../services/communicationService';
 import { pb } from '../../lib/pocketbase';
+import { Button } from '../../components/ui';
 import { communicationService } from '../../services/communicationService';
 import { queryKeys } from '../../lib/queryKeys';
 import { settingsService, type CommunicationSettings } from '../../services/settingsService';
@@ -76,8 +77,7 @@ export default function CommunicationView() {
   });
 
   const testSmtpMutation = useMutation({
-    mutationFn: (email: string) =>
-      pb.send('/api/test-smtp', { method: 'POST', body: { email } }),
+    mutationFn: (email: string) => pb.send('/api/test-smtp', { method: 'POST', body: { email } }),
   });
 
   const automated = useAutomatedCommunicationTasks({
@@ -337,24 +337,38 @@ export default function CommunicationView() {
 
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-display m-0">Communications</h1>
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-display m-0">Communications</h1>
 
-          {routeState?.returnToPolls && (
-            <Link to="/admin/polls" className="text-muted text-sm underline">
-              Back to Polls
-            </Link>
-          )}
+            {routeState?.returnToPolls && (
+              <Link to="/admin/polls" className="text-muted text-sm underline">
+                Back to Polls
+              </Link>
+            )}
+          </div>
+
+          <Button
+            type="button"
+            variant={tab === 'compose' ? 'primary' : 'secondary'}
+            onClick={() => {
+              setTab('compose');
+              if (wizardStep === 'REVIEW') {
+                setWizardStep('TARGETS');
+              }
+            }}
+            className="w-full whitespace-nowrap sm:w-auto"
+          >
+            <span aria-hidden="true">+</span>
+            <span>New Message</span>
+          </Button>
         </div>
 
         <CommunicationTabs
           activeTab={tab}
           onTabChange={(nextTab) => {
             setTab(nextTab);
-            if (nextTab === 'compose' && wizardStep === 'REVIEW') {
-              setWizardStep('TARGETS');
-            }
           }}
           draftsCount={library.drafts.length}
         />
