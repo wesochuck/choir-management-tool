@@ -13931,6 +13931,13 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -13944,7 +13951,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -13952,13 +13959,6 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -13985,6 +13985,13 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -14011,20 +14018,13 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -15683,6 +15683,13 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -15696,7 +15703,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -15704,13 +15711,6 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -15737,6 +15737,13 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -15763,20 +15770,13 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -17435,6 +17435,13 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -17448,7 +17455,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -17456,13 +17463,6 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -17489,6 +17489,13 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -17515,20 +17522,13 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -19187,6 +19187,13 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -19200,7 +19207,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -19208,13 +19215,6 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -19241,6 +19241,13 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -19267,20 +19274,13 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -20939,6 +20939,13 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -20952,7 +20959,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -20960,13 +20967,6 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -20993,6 +20993,13 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -21019,20 +21026,13 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -22691,6 +22691,13 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -22704,7 +22711,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -22712,13 +22719,6 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -22745,6 +22745,13 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -22771,20 +22778,13 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -24443,6 +24443,13 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -24456,7 +24463,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -24464,13 +24471,6 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -24497,6 +24497,13 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -24523,20 +24530,13 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -26194,6 +26194,13 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventTitle = String(options.event.get('title') || '');
         const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
             weekday: 'short',
@@ -26207,7 +26214,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const rawSubject = String(template.get('subject') || '');
         const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{eventTitle}/g, eventTitle)
             .replace(/{eventDate}/g, eventDateStr)
             .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -26215,13 +26222,6 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,
@@ -26248,6 +26248,13 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const eventDetailsParts = [];
         options.bundleEventIds.forEach((eventId) => {
             var _a;
@@ -26274,20 +26281,13 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const bundleTitle = String(options.bundle.get('title') || '');
         const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
         content = content
-            .replace(/{buyerName}/g, options.recipientName || String(options.purchase.get('buyerName') || 'Buyer'))
+            .replace(/{buyerName}/g, finalRecipientName)
             .replace(/{bundleTitle}/g, bundleTitle)
             .replace(/{eventDetails}/g, eventDetailsStr)
             .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
             .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
             .replace(/{choirName}/g, choirName)
             .replace(/{successUrl}/g, successUrl);
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
             recipientId: 'buyer_' + stripeSessionId,

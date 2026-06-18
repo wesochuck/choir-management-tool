@@ -125,6 +125,17 @@ function enqueueTicketConfirmationEmail(options: {
   const choirName = getChoirNameSetting();
   const baseUrl = getBaseUrl();
 
+  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+  const stripeSessionId =
+    options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+  const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+  const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+  const qrSvgSrc = '';
+  const finalRecipientEmail =
+    options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+  const finalRecipientName =
+    options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
+
   const eventTitle = String(options.event.get('title') || '');
   const eventDateStr = formatInTimezone(
     coercePocketBaseDate(options.event.get('date')) ?? new Date(''),
@@ -147,10 +158,7 @@ function enqueueTicketConfirmationEmail(options: {
   const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
 
   content = content
-    .replace(
-      /{buyerName}/g,
-      options.recipientName || String(options.purchase.get('buyerName') || 'Buyer')
-    )
+    .replace(/{buyerName}/g, finalRecipientName)
     .replace(/{eventTitle}/g, eventTitle)
     .replace(/{eventDate}/g, eventDateStr)
     .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
@@ -163,17 +171,6 @@ function enqueueTicketConfirmationEmail(options: {
     )
     .replace(/{choirName}/g, choirName)
     .replace(/{successUrl}/g, successUrl);
-
-  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-  const stripeSessionId =
-    options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-  const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-  const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-  const qrSvgSrc = '';
-  const finalRecipientEmail =
-    options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-  const finalRecipientName =
-    options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
 
   const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
   const mailRecord = new Record(emailQueueCollection, {
@@ -211,6 +208,17 @@ function enqueueBundleTicketConfirmationEmail(options: {
   const choirName = getChoirNameSetting();
   const baseUrl = getBaseUrl();
 
+  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+  const stripeSessionId =
+    options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+  const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+  const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+  const qrSvgSrc = '';
+  const finalRecipientEmail =
+    options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+  const finalRecipientName =
+    options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
+
   const eventDetailsParts: string[] = [];
   options.bundleEventIds.forEach((eventId) => {
     try {
@@ -244,10 +252,7 @@ function enqueueBundleTicketConfirmationEmail(options: {
   const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
 
   content = content
-    .replace(
-      /{buyerName}/g,
-      options.recipientName || String(options.purchase.get('buyerName') || 'Buyer')
-    )
+    .replace(/{buyerName}/g, finalRecipientName)
     .replace(/{bundleTitle}/g, bundleTitle)
     .replace(/{eventDetails}/g, eventDetailsStr)
     .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
@@ -259,17 +264,6 @@ function enqueueBundleTicketConfirmationEmail(options: {
     )
     .replace(/{choirName}/g, choirName)
     .replace(/{successUrl}/g, successUrl);
-
-  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
-  const stripeSessionId =
-    options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-  const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-  const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-  const qrSvgSrc = '';
-  const finalRecipientEmail =
-    options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-  const finalRecipientName =
-    options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
 
   const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
   const mailRecord = new Record(emailQueueCollection, {
