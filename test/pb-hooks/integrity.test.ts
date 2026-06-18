@@ -13,6 +13,19 @@ function countOccurrences(str: string, needle: string): number {
   return str.split(needle).length - 1;
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function countRouteRegistrations(content: string, method: string, routePath: string): number {
+  const regex = new RegExp(
+    `routerAdd\\(\\s*['"]${escapeRegExp(method)}['"]\\s*,\\s*['"]${escapeRegExp(routePath)}['"]`,
+    'g'
+  );
+
+  return [...content.matchAll(regex)].length;
+}
+
 function readGeneratedMain(): string {
   const mainPath = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
   return fs.readFileSync(mainPath, 'utf8');
@@ -105,13 +118,11 @@ test('Generated main.pb.js integrity', () => {
   assert.ok(content.includes('onRecordAfterCreateSuccess'), 'Should contain create hook');
   assert.ok(content.includes('onRecordAfterUpdateSuccess'), 'Should contain update hook');
   assert.ok(
-    content.includes("routerAdd('POST', '/api/queue/process'") ||
-      content.includes('routerAdd("POST", "/api/queue/process"'),
+    countRouteRegistrations(content, 'POST', '/api/queue/process') === 1,
     'Should contain queue process route'
   );
   assert.ok(
-    content.includes("routerAdd('POST', '/api/test-smtp'") ||
-      content.includes('routerAdd("POST", "/api/test-smtp"'),
+    countRouteRegistrations(content, 'POST', '/api/test-smtp') === 1,
     'Should contain test-smtp route'
   );
   assert.ok(content.includes('shouldQueueMessage'), 'Should utilize shouldQueueMessage check');
@@ -145,21 +156,21 @@ test('Generated main.pb.js integrity', () => {
   );
 
   const requiredRoutes = [
-    "routerAdd('POST', '/api/generate-rsvp-tokens'",
-    "routerAdd('POST', '/api/rsvp-details'",
-    "routerAdd('POST', '/api/quick-rsvp'",
-    "routerAdd('POST', '/api/unsubscribe'",
-    "routerAdd('POST', '/api/admin/bulk-update-rsvps'",
-    "routerAdd('POST', '/api/admin/bulk-upsert-attendance'",
-    "routerAdd('POST', '/api/singer/resolve-placeholders'",
-    "routerAdd('POST', '/api/singer/rsvp'",
-  ];
+    ['POST', '/api/generate-rsvp-tokens'],
+    ['POST', '/api/rsvp-details'],
+    ['POST', '/api/quick-rsvp'],
+    ['POST', '/api/unsubscribe'],
+    ['POST', '/api/admin/bulk-update-rsvps'],
+    ['POST', '/api/admin/bulk-upsert-attendance'],
+    ['POST', '/api/singer/resolve-placeholders'],
+    ['POST', '/api/singer/rsvp'],
+  ] as const;
 
-  for (const route of requiredRoutes) {
+  for (const [method, routePath] of requiredRoutes) {
     assert.strictEqual(
-      countOccurrences(content, route),
+      countRouteRegistrations(content, method, routePath),
       1,
-      `Generated main file should contain exactly one registration for ${route}`
+      `Generated main file should contain exactly one registration for ${method} ${routePath}`
     );
   }
 });
