@@ -48,7 +48,7 @@ export function VoicePartBalanceCard({
     >
       {filters && <div className="border-border flex flex-wrap gap-2 border-b pb-3">{filters}</div>}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {sections.map((section) => {
           const Component = section.onClick ? 'button' : 'div';
           return (
@@ -73,7 +73,7 @@ export function VoicePartBalanceCard({
         })}
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-8">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
         {voiceParts.map((voicePart) => {
           const Component = voicePart.onClick ? 'button' : 'div';
           return (
