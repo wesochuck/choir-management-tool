@@ -32,6 +32,7 @@ import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { Button, FormField, Input } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 
 export default function MusicLibraryView() {
   const queryClient = useQueryClient();
@@ -551,43 +552,11 @@ export default function MusicLibraryView() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Header Area */}
-      <div className="no-print flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Music Library</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Manage choir repertoire, movements, and learning tracks
-        </p>
-      </div>
-
-      {/* Tabs / Actions Navigation Bar */}
-      <div className="no-print flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
-        <div className="flex gap-3 md:gap-6">
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'catalog'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('catalog')}
-          >
-            Music Catalog
-          </button>
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'config'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('config')}
-          >
-            Library Settings
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 pb-1.5">
-          {activeTab === 'catalog' && (
+      <AdminPageHeader
+        title="Music Library"
+        description="Manage choir repertoire, movements, and learning tracks"
+        actions={
+          activeTab === 'catalog' && (
             <>
               <Button
                 variant="secondary"
@@ -620,9 +589,37 @@ export default function MusicLibraryView() {
                 <span className="hidden md:inline">Add Piece</span>
               </Button>
             </>
-          )}
-        </div>
-      </div>
+          )
+        }
+        below={
+          <div className="flex w-full items-center border-b border-slate-200 pb-px">
+            <div className="flex gap-3 md:gap-6">
+              <button
+                type="button"
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  activeTab === 'catalog'
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+                onClick={() => setActiveTab('catalog')}
+              >
+                Music Catalog
+              </button>
+              <button
+                type="button"
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  activeTab === 'config'
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+                onClick={() => setActiveTab('config')}
+              >
+                Library Settings
+              </button>
+            </div>
+          </div>
+        }
+      />
 
       {activeTab === 'catalog' ? (
         <AppCard noPadding>

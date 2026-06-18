@@ -15,6 +15,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
 import { Input, Divider } from '../../components/ui';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { useClickOutside } from '../../hooks/useClickOutside';
@@ -200,39 +201,11 @@ export default function RosterView() {
 
   return (
     <div className="flex w-full flex-col gap-6 pb-8">
-      {/* Header Area */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Global Roster</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Manage choir members, voice parts, sections, and configurations. Import or export roster
-          data.
-        </p>
-      </div>
-
-      {/* Tabs / Actions Navigation Bar */}
-      <div className="no-print flex w-full flex-row flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-px">
-        <div className="flex gap-3 md:gap-6">
-          {(['roster', 'config'] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                type="button"
-                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'border-primary text-primary font-bold'
-                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab === 'roster' ? 'Singer Directory' : 'Roster Settings'}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 pb-1.5">
-          {activeTab === 'roster' && (
+      <AdminPageHeader
+        title="Global Roster"
+        description="Manage choir members, voice parts, sections, and configurations. Import or export roster data."
+        actions={
+          activeTab === 'roster' && (
             <>
               <Button
                 onClick={handleExportCSV}
@@ -262,9 +235,32 @@ export default function RosterView() {
                 <span className="hidden md:inline">Add Singer</span>
               </Button>
             </>
-          )}
-        </div>
-      </div>
+          )
+        }
+        below={
+          <div className="flex w-full items-center border-b border-slate-200 pb-px">
+            <div className="flex gap-3 md:gap-6">
+              {(['roster', 'config'] as const).map((tab) => {
+                const isActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                      isActive
+                        ? 'border-primary text-primary font-bold'
+                        : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                    }`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab === 'roster' ? 'Singer Directory' : 'Roster Settings'}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        }
+      />
 
       {activeTab === 'roster' ? (
         <>

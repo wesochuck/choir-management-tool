@@ -117,6 +117,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       );
     }
 
+    const focusRingStyles: React.CSSProperties = {
+      '--sl-input-focus-ring-color': 'rgba(74,124,89,0.25)',
+      '--sl-input-focus-ring-width': '3px',
+      '--sl-input-border-color-focus': 'var(--color-primary)',
+    } as React.CSSProperties;
+
     const handleInput = (e: unknown) => {
       if (onChange || onInput) {
         const customEvent = e as CustomEvent;
@@ -142,34 +148,37 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <SlInput
-        ref={slRef}
-        {...safeSlProps({
-          type: type as SlInputElement['type'],
-          value: value !== undefined ? String(value) : undefined,
-          defaultValue: defaultValue !== undefined ? String(defaultValue) : undefined,
-          placeholder,
-          disabled,
-          required,
-          readonly: readOnly,
-          name,
-          className: layoutOnly(className),
-          onSlInput: handleInput,
-          onSlBlur: onBlur
-            ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>)
-            : undefined,
-          onSlFocus: onFocus
-            ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>)
-            : undefined,
-          // @allow-inline-style - dynamic invalid border color override
-          style: invalid
-            ? ({ '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties)
-            : undefined,
-          ...(rest as Record<string, unknown>),
-        } as Record<string, unknown>)}
-      >
-        {children}
-      </SlInput>
+      <div className={`overflow-visible py-[3px] ${layoutOnly(className)}`}>
+        <SlInput
+          ref={slRef}
+          {...safeSlProps({
+            type: type as SlInputElement['type'],
+            value: value !== undefined ? String(value) : undefined,
+            defaultValue: defaultValue !== undefined ? String(defaultValue) : undefined,
+            placeholder,
+            disabled,
+            required,
+            readonly: readOnly,
+            name,
+            className: 'w-full',
+            onSlInput: handleInput,
+            onSlBlur: onBlur
+              ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>)
+              : undefined,
+            onSlFocus: onFocus
+              ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLInputElement>)
+              : undefined,
+            // @allow-inline-style - Shoelace CSS variable overrides for focus ring and border
+            style: {
+              ...focusRingStyles,
+              ...(invalid ? { '--sl-input-border-color': 'var(--color-danger)' } : {}),
+            } as React.CSSProperties,
+            ...(rest as Record<string, unknown>),
+          } as Record<string, unknown>)}
+        >
+          {children}
+        </SlInput>
+      </div>
     );
   }
 );
