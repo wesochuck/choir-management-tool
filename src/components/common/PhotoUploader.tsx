@@ -513,7 +513,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               }}
               className="text-primary hover:text-primary-deep flex cursor-pointer items-center gap-1 font-medium transition-colors"
             >
-              '⬆️' Choose File
+              <span aria-hidden="true">⬆️</span>
+              <span>Choose File</span>
             </button>
 
             <span className="text-slate-300">|</span>
@@ -551,7 +552,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                   onClick={handleRemovePhoto}
                   className="flex cursor-pointer items-center gap-1 font-medium text-red-600 transition-colors hover:text-red-700"
                 >
-                  '🗑️' Remove
+                  <span aria-hidden="true">🗑️</span>
+                  <span>Remove</span>
                 </button>
               </>
             )}
@@ -570,7 +572,8 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               onClick={handleRemovePhoto}
               className="flex cursor-pointer items-center gap-1 text-xs font-medium text-red-600 transition-colors hover:text-red-700"
             >
-              '🗑️' Remove Photo
+              <span aria-hidden="true">🗑️</span>
+              <span>Remove Photo</span>
             </button>
           )}
         </div>
@@ -602,7 +605,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
                 }}
                 className="cursor-pointer text-slate-400 transition-colors hover:text-slate-600"
               >
-                '❌'
+                {'❌'}
               </button>
             </div>
 

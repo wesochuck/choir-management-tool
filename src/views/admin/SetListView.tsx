@@ -43,6 +43,7 @@ import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { Button, CopyButton, Select, Spinner, Divider } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 
@@ -448,16 +449,11 @@ export default function SetListView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="no-print flex flex-row items-center justify-between gap-4">
-        <div>
-          <h1 className="text-text text-4xl font-bold tracking-tight">Set Lists</h1>
-          <p className="text-text-muted mt-2 text-sm">
-            Manage performance set lists, timings, and singer visibility
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {selectedEvent && (
+      <AdminPageHeader
+        title="Set Lists"
+        description="Manage performance set lists, timings, and singer visibility"
+        actions={
+          selectedEvent ? (
             <>
               <Button
                 variant="secondary"
@@ -474,14 +470,14 @@ export default function SetListView() {
                 🖨️ Print & Copy
               </Button>
             </>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       <div className="no-print">
         <AppCard noPadding>
           <div className="border-border flex flex-col gap-4 border-b px-4 py-3">
-            <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[1.5fr_1.5fr_1fr]">
+            <div className="grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(260px,0.8fr)]">
               <div>
                 <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
                   Select Event
@@ -543,7 +539,7 @@ export default function SetListView() {
                   <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
                     Singer Visibility
                   </span>
-                  <label className="border-border bg-surface-muted hover:bg-surface-muted/70 flex h-11 cursor-pointer items-center gap-2.5 rounded-md border px-4 text-sm font-medium transition-colors select-none">
+                  <label className="border-border bg-surface text-text flex h-[44px] w-full cursor-pointer items-center gap-2.5 rounded-md border px-4 text-sm font-semibold shadow-sm transition-colors select-none hover:bg-slate-50">
                     <input
                       type="checkbox"
                       checked={localApproved}
@@ -603,8 +599,8 @@ export default function SetListView() {
 
               <div className="flex flex-col gap-4">
                 {items.length > 0 && (
-                  <div className="border-primary-light bg-primary-light/50 text-primary-deep flex flex-col justify-between gap-4 rounded-md border px-4 py-2.5 text-sm font-semibold md:flex-row md:items-center">
-                    <div className="flex flex-row flex-wrap items-center gap-6">
+                  <div className="border-primary-light bg-primary-light/40 text-primary-deep flex flex-col gap-3 rounded-lg border px-4 py-3 text-sm font-semibold lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                       <span>
                         🎼 Songs: <span className="text-text">{durationTotals.songs}</span>
                       </span>
@@ -612,7 +608,7 @@ export default function SetListView() {
                         ⏸️ Intermissions:{' '}
                         <span className="text-text">{durationTotals.intermissions}</span>
                       </span>
-                      <span className="flex flex-row items-center gap-2">
+                      <span className="flex items-center gap-2">
                         📢 Gaps:
                         <input
                           type="number"
@@ -626,7 +622,7 @@ export default function SetListView() {
                           }}
                         />
                         <span className="text-primary-deep/80 text-xs font-normal">
-                          s × {Math.max(0, items.length - 1)} =
+                          sec × {Math.max(0, items.length - 1)} =
                         </span>
                         <span className="text-text">{durationTotals.gaps}</span>
                       </span>
@@ -637,7 +633,7 @@ export default function SetListView() {
                   </div>
                 )}
 
-                <div className="border-border border-b pb-4">
+                <div>
                   <SetListInlineCreator
                     library={library}
                     onAddItem={handleInlineAddItem}

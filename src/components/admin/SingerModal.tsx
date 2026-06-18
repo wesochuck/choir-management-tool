@@ -305,19 +305,21 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                     />
                   </div>
 
-                  <div className="flex w-full flex-col items-start gap-1">
+                  <div className="flex min-w-0 flex-col gap-1">
                     <label className="text-label">Name</label>
                     <Input
+                      className="w-full"
                       value={formData.name || ''}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                     />
                   </div>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="flex flex-col items-start gap-1">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <label className="text-label">Login Email (Optional)</label>
                       <Input
                         ref={emailInputRef}
+                        className="w-full"
                         type="email"
                         value={formData.email || ''}
                         onChange={(e) => handleEmailChange(e.target.value)}
@@ -358,9 +360,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col items-start gap-1">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <label className="text-label">Phone (Optional)</label>
                       <Input
+                        className="w-full"
                         value={formData.phone || ''}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="e.g. 555-123-4567"
@@ -368,9 +371,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="flex flex-col items-start gap-1">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <label className="text-label">Voice Part</label>
                       <Select
+                        className="w-full"
                         value={formData.voicePart}
                         onChange={(e) =>
                           setFormData({
@@ -379,7 +383,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                           })
                         }
                         required={formData.role !== 'admin'}
-                        size="small"
                       >
                         {formData.role === 'admin' ? (
                           <option value="">-- Not Applicable (Admin) --</option>
@@ -395,9 +398,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                         ))}
                       </Select>
                     </div>
-                    <div className="flex flex-col items-start gap-1">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <label className="text-label">Status</label>
                       <Select
+                        className="w-full"
                         value={formData.globalStatus}
                         onChange={(e) =>
                           setFormData({
@@ -405,7 +409,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                             globalStatus: e.target.value as Profile['globalStatus'],
                           })
                         }
-                        size="small"
                       >
                         <option value="Active">Active</option>
                         <option value="Idle">Idle</option>
@@ -504,7 +507,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                     </div>
                   )}
 
-                  <div className="flex w-full flex-col items-start gap-1">
+                  <div className="flex min-w-0 flex-col gap-1">
                     <label className="text-label">Notes</label>
                     <Textarea
                       value={formData.notes}
@@ -544,19 +547,21 @@ export const SingerModal: React.FC<SingerModalProps> = ({
               <span className="text-muted text-xs">Save first to add a photo</span>
             </div>
 
-            <div className="flex w-full flex-col items-start gap-1">
+            <div className="flex min-w-0 flex-col gap-1">
               <label className="text-label">Name</label>
               <Input
+                className="w-full"
                 value={formData.name || ''}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex flex-col items-start gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <label className="text-label">Login Email (Optional)</label>
                 <Input
                   ref={emailInputRef}
+                  className="w-full"
                   type="email"
                   value={formData.email || ''}
                   onChange={(e) => handleEmailChange(e.target.value)}
@@ -567,9 +572,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                   Provides portal access via password reset email.
                 </p>
               </div>
-              <div className="flex flex-col items-start gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <label className="text-label">Phone (Optional)</label>
                 <Input
+                  className="w-full"
                   value={formData.phone || ''}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="e.g. 555-123-4567"
@@ -577,15 +583,15 @@ export const SingerModal: React.FC<SingerModalProps> = ({
               </div>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex flex-col items-start gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <label className="text-label">Voice Part</label>
                 <Select
+                  className="w-full"
                   value={formData.voicePart}
                   onChange={(e) =>
                     setFormData({ ...formData, voicePart: e.target.value as Profile['voicePart'] })
                   }
                   required={formData.role !== 'admin'}
-                  size="small"
                 >
                   <option value="" disabled>
                     -- Please Select --
@@ -597,9 +603,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                   ))}
                 </Select>
               </div>
-              <div className="flex flex-col items-start gap-1">
+              <div className="flex min-w-0 flex-col gap-1">
                 <label className="text-label">Status</label>
                 <Select
+                  className="w-full"
                   value={formData.globalStatus}
                   onChange={(e) =>
                     setFormData({
@@ -607,7 +614,6 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                       globalStatus: e.target.value as Profile['globalStatus'],
                     })
                   }
-                  size="small"
                 >
                   <option value="Active">Active</option>
                   <option value="Idle">Idle</option>
@@ -636,7 +642,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({
               </Checkbox>
             </div>
 
-            <div className="flex w-full flex-col items-start gap-1">
+            <div className="flex min-w-0 flex-col gap-1">
               <label className="text-label">Notes</label>
               <Textarea
                 value={formData.notes}
