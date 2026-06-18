@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
-import { PlaceholderPanel } from '../../../components/admin/PlaceholderPanel';
+import {
+  PlaceholderPanel,
+  type PlaceholderContext,
+} from '../../../components/admin/PlaceholderPanel';
 import { MarkdownEditor } from '../../../components/common/MarkdownEditor';
 import {
   communicationService,
@@ -26,6 +29,22 @@ export interface TemplatesPanelProps {
   editorRef: React.MutableRefObject<EasyMDE | null>;
   choirName: string;
   senderEmail: string;
+}
+
+function getTemplatePlaceholderContext(
+  template: Partial<TemplateRecord> | null
+): PlaceholderContext {
+  const title = (template?.title || '').toLowerCase();
+
+  if (title.includes('bundle ticket confirmation')) {
+    return 'bundleTicketConfirmation';
+  }
+
+  if (title.includes('ticket confirmation')) {
+    return 'ticketConfirmation';
+  }
+
+  return 'standard';
 }
 
 export function TemplatesPanel({
@@ -202,7 +221,10 @@ export function TemplatesPanel({
             </Button>
           </div>
         </div>
-        <PlaceholderPanel onInsert={onInsertPlaceholder} />
+        <PlaceholderPanel
+          context={getTemplatePlaceholderContext(editingTemplate)}
+          onInsert={onInsertPlaceholder}
+        />
       </div>
     );
   }

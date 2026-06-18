@@ -1,14 +1,16 @@
 import React from 'react';
 
+export type PlaceholderContext = 'standard' | 'ticketConfirmation' | 'bundleTicketConfirmation';
+
 interface Placeholder {
   tag: string;
   label: string;
   desc: string;
-  category: 'Recipient' | 'Event' | 'RSVP';
+  category: 'Recipient' | 'Event' | 'RSVP' | 'Ticket' | 'Order' | 'Bundle' | 'Confirmation Page';
   className: string;
 }
 
-const PLACEHOLDERS: Placeholder[] = [
+const STANDARD_PLACEHOLDERS: Placeholder[] = [
   {
     tag: '{singerName}',
     label: 'Singer Name',
@@ -88,8 +90,120 @@ const PLACEHOLDERS: Placeholder[] = [
   },
 ];
 
+const TICKET_CONFIRMATION_PLACEHOLDERS: Placeholder[] = [
+  {
+    tag: '{buyerName}',
+    label: 'Buyer Name',
+    desc: "Ticket buyer's name for Will Call",
+    category: 'Ticket',
+    className: 'text-emerald-600 bg-emerald-50',
+  },
+  {
+    tag: '{eventTitle}',
+    label: 'Event Title',
+    desc: 'The title of the purchased event',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{eventDate}',
+    label: 'Event Date',
+    desc: 'Formatted date and time of the purchased event',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{doorsOpenTime}',
+    label: 'Doors Open Time',
+    desc: 'Doors-open time for the event',
+    category: 'Event',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{quantity}',
+    label: 'Ticket Quantity',
+    desc: 'Number of tickets purchased',
+    category: 'Order',
+    className: 'text-purple-600 bg-purple-50',
+  },
+  {
+    tag: '{amountPaid}',
+    label: 'Amount Paid',
+    desc: 'Total amount paid including fees',
+    category: 'Order',
+    className: 'text-purple-600 bg-purple-50',
+  },
+  {
+    tag: '{choirName}',
+    label: 'Choir Name',
+    desc: 'Public choir name',
+    category: 'Ticket',
+    className: 'text-emerald-600 bg-emerald-50',
+  },
+  {
+    tag: '{successUrl}',
+    label: 'Ticket Confirmation Page',
+    desc: 'Link back to the buyer\xe2\x80\x99s ticket confirmation page',
+    category: 'Confirmation Page',
+    className: 'text-amber-600 bg-amber-50',
+  },
+];
+
+const BUNDLE_TICKET_CONFIRMATION_PLACEHOLDERS: Placeholder[] = [
+  {
+    tag: '{buyerName}',
+    label: 'Buyer Name',
+    desc: "Ticket buyer's name for Will Call",
+    category: 'Ticket',
+    className: 'text-emerald-600 bg-emerald-50',
+  },
+  {
+    tag: '{bundleTitle}',
+    label: 'Bundle Title',
+    desc: 'Name of the ticket bundle or season pass',
+    category: 'Bundle',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{eventDetails}',
+    label: 'Included Events',
+    desc: 'Formatted list of events included in the bundle',
+    category: 'Bundle',
+    className: 'text-blue-600 bg-blue-50',
+  },
+  {
+    tag: '{quantity}',
+    label: 'Bundle Quantity',
+    desc: 'Number of bundle passes purchased',
+    category: 'Order',
+    className: 'text-purple-600 bg-purple-50',
+  },
+  {
+    tag: '{amountPaid}',
+    label: 'Amount Paid',
+    desc: 'Total amount paid including fees',
+    category: 'Order',
+    className: 'text-purple-600 bg-purple-50',
+  },
+  {
+    tag: '{choirName}',
+    label: 'Choir Name',
+    desc: 'Public choir name',
+    category: 'Ticket',
+    className: 'text-emerald-600 bg-emerald-50',
+  },
+  {
+    tag: '{successUrl}',
+    label: 'Ticket Confirmation Page',
+    desc: 'Link back to the buyer\xe2\x80\x99s ticket confirmation page',
+    category: 'Confirmation Page',
+    className: 'text-amber-600 bg-amber-50',
+  },
+];
+
 interface PlaceholderPanelProps {
   onInsert: (tag: string) => void;
+  context?: PlaceholderContext;
   hasEvent?: boolean;
   hasApprovedSetList?: boolean;
   hasCallTime?: boolean;
@@ -97,11 +211,21 @@ interface PlaceholderPanelProps {
 
 export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
   onInsert,
+  context = 'standard',
   hasEvent = true,
   hasApprovedSetList = true,
   hasCallTime = true,
 }) => {
-  const visiblePlaceholders = PLACEHOLDERS.filter((p) => {
+  const basePlaceholders =
+    context === 'ticketConfirmation'
+      ? TICKET_CONFIRMATION_PLACEHOLDERS
+      : context === 'bundleTicketConfirmation'
+        ? BUNDLE_TICKET_CONFIRMATION_PLACEHOLDERS
+        : STANDARD_PLACEHOLDERS;
+
+  const visiblePlaceholders = basePlaceholders.filter((p) => {
+    if (context !== 'standard') return true;
+
     if (p.category === 'Recipient') return true;
     if (p.tag.startsWith('{{POLL_LINK:')) return true;
     if (!hasEvent) return false;
