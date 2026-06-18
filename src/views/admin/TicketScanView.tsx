@@ -5,12 +5,13 @@ import { eventService } from '../../services/eventService';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { ScanResultCard } from '../../components/admin/ScanResultCard';
 import type { ValidationResult } from '../../services/ticketService';
-import { Button, Input, Spinner, Select } from '../../components/ui';
+import { Button, Input, Spinner, Select, Modal } from '../../components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 
 const STORAGE_KEY = 'ticket-scan-event-id';
-const HISTORY_SIZE = 5;
+const HISTORY_SIZE = 50;
+const RECENT_PREVIEW_SIZE = 3;
 
 function extractToken(input: string): string {
   try {
@@ -27,6 +28,37 @@ interface HistoryItem {
   result: ValidationResult;
   timestamp: number;
   token: string;
+}
+
+function ScanHistoryRow({ item }: { item: HistoryItem }) {
+  const valid = item.result.valid;
+
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+        valid
+          ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
+          : 'border-rose-300 bg-rose-50 text-rose-950'
+      }`}
+    >
+      <span className="shrink-0 text-xs font-black uppercase">{valid ? 'OK' : 'Bad'}</span>
+
+      <span className="min-w-0 flex-1 truncate font-medium">
+        {item.result.buyerName || `Token ${item.token.slice(0, 12)}...`}
+      </span>
+
+      {item.result.quantity ? (
+        <span className="shrink-0 text-xs">x{item.result.quantity}</span>
+      ) : null}
+
+      <span className="shrink-0 text-xs opacity-70">
+        {new Date(item.timestamp).toLocaleTimeString([], {
+          hour: 'numeric',
+          minute: '2-digit',
+        })}
+      </span>
+    </div>
+  );
 }
 
 export default function TicketScanView() {
@@ -59,6 +91,7 @@ export default function TicketScanView() {
   const [validating, setValidating] = useState(false);
   const [scanResult, setScanResult] = useState<ValidationResult | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showScanHistory, setShowScanHistory] = useState(false);
 
   /* Camera scanning state */
   const [cameraActive, setCameraActive] = useState(false);
@@ -286,171 +319,196 @@ export default function TicketScanView() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      {/* Event selector */}
-      <div>
-        <label htmlFor="event-select" className="text-text mb-1.5 block text-sm font-medium">
-          Event
-        </label>
-        {eventsLoading ? (
-          <div className="text-muted flex items-center gap-2 text-sm">
-            <Spinner size="small" />
-            Loading events...
-          </div>
-        ) : eventsError ? (
-          <p className="text-danger-text text-sm">{eventsErrorMsg}</p>
-        ) : (
-          <Select id="event-select" value={selectedEventId} onChange={handleEventChange}>
-            <option value="">Select an event...</option>
-            {events.map((event) => (
-              <option key={event.id} value={event.id}>
-                {event.title} — {new Date(event.date).toLocaleDateString()}
-              </option>
-            ))}
-          </Select>
+    <div className="mx-auto flex min-h-dvh flex-col md:max-w-4xl">
+      {/* Top bar */}
+      <header className="border-border bg-surface sticky top-0 z-40 flex items-center gap-3 border-b px-4 py-3">
+        <div className="flex-1">
+          {eventsLoading ? (
+            <div className="text-muted flex items-center gap-2 text-sm">
+              <Spinner size="small" />
+              Loading events...
+            </div>
+          ) : eventsError ? (
+            <p className="text-danger-text text-sm">{eventsErrorMsg}</p>
+          ) : (
+            <Select id="event-select" value={selectedEventId} onChange={handleEventChange}>
+              <option value="">Select an event...</option>
+              {events.map((event) => (
+                <option key={event.id} value={event.id}>
+                  {event.title} — {new Date(event.date).toLocaleDateString()}
+                </option>
+              ))}
+            </Select>
+          )}
+        </div>
+        {cameraActive && (
+          <Button variant="outline" size="small" onClick={stopCamera}>
+            Stop
+          </Button>
         )}
-      </div>
+      </header>
 
       {!selectedEventId && (
-        <div className="border-border bg-surface rounded-xl border p-8 text-center shadow-sm">
+        <div className="flex flex-1 items-center justify-center p-8">
           <p className="text-muted text-sm">Select an event to start scanning tickets.</p>
         </div>
       )}
 
       {selectedEventId && (
-        <>
-          {/* Camera scanner */}
-          <div className="border-border bg-surface rounded-xl border p-4 shadow-sm">
-            <h3 className="text-text mb-3 text-sm font-semibold">Camera Scanner</h3>
-            {cameraError && <p className="text-danger-text mb-3 text-sm">{cameraError}</p>}
-            {cameraActive ? (
-              <div className="space-y-3">
-                <div className="border-border overflow-hidden rounded-lg border bg-black">
+        <div className="flex flex-1 flex-col md:grid md:grid-cols-2 md:gap-6 md:p-6">
+          {/* Left column - Camera */}
+          <div className="flex flex-col">
+            {!cameraActive && (
+              <div className="p-4 md:p-0">
+                <div className="flex justify-center">
+                  <Button
+                    variant="secondary"
+                    onClick={startCamera}
+                    disabled={eventsLoading || !!eventsError}
+                    className="min-h-12 w-full md:w-auto"
+                  >
+                    Start Camera
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {cameraError && (
+              <p className="text-danger-text px-4 pt-2 text-sm md:px-0">{cameraError}</p>
+            )}
+
+            {cameraActive && (
+              <>
+                <div className="relative aspect-[4/3] max-h-[42vh] overflow-hidden bg-black">
                   <video
                     ref={videoRef}
                     autoPlay
                     playsInline
                     muted
-                    className="block aspect-video w-full bg-black object-cover"
+                    className="h-full w-full object-contain"
                   />
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
-                {cameraActive && scanPaused && (
-                  <p className="text-success-text text-center text-sm font-semibold">
-                    Scan paused. Review the result, then tap Scan Next Ticket.
-                  </p>
-                )}
-                {cameraActive && !scanPaused && !validating && (
-                  <p className="text-text-muted text-center text-sm">
-                    Point the camera at one ticket QR code.
-                  </p>
-                )}
-                <div className="flex justify-center">
-                  <Button variant="outline" size="small" onClick={stopCamera}>
-                    Stop Camera
-                  </Button>
+
+                <div className="px-4 py-2 md:px-0">
+                  {scanPaused && (
+                    <p className="text-success-text text-center text-sm font-semibold">
+                      Scan paused. Review the result, then tap Scan Next Ticket.
+                    </p>
+                  )}
+                  {!scanPaused && !validating && (
+                    <p className="text-text-muted text-center text-sm">
+                      Point the camera at one ticket QR code.
+                    </p>
+                  )}
                 </div>
+              </>
+            )}
+
+            {/* Validating spinner */}
+            {validating && !scanResult && (
+              <div className="text-muted flex items-center justify-center gap-2 py-4 text-sm">
+                <Spinner size="small" />
+                Validating ticket...
               </div>
-            ) : (
-              <div className="flex justify-center">
-                <Button
-                  variant="secondary"
-                  onClick={startCamera}
-                  disabled={eventsLoading || !!eventsError}
-                >
-                  Start Camera
-                </Button>
+            )}
+
+            {/* Current result */}
+            {scanResult && (
+              <div className="px-4 pb-4 md:px-0">
+                <ScanResultCard result={scanResult} />
               </div>
             )}
           </div>
 
-          {/* Manual entry */}
-          <form
-            onSubmit={handleManualSubmit}
-            className="border-border bg-surface rounded-xl border p-4 shadow-sm"
-          >
-            <h3 className="text-text mb-3 text-sm font-semibold">Manual Entry</h3>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Paste ticket code or URL..."
-                value={manualToken}
-                onChange={(e) => setManualToken(e.target.value)}
-                className="flex-1"
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                loading={validating}
-                disabled={!manualToken.trim() || validating}
-              >
-                {validating ? 'Validating...' : 'Validate'}
-              </Button>
-            </div>
-          </form>
+          {/* Right column - Recent scans + Manual entry (desktop) / Below on mobile */}
+          <div className="flex flex-col gap-4 px-4 pb-28 md:px-0 md:pb-0">
+            {/* Recent scans */}
+            {history.length > 0 && (
+              <section className="border-border bg-surface rounded-xl border p-3 shadow-sm">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <h3 className="m-0 text-xs font-semibold tracking-wide text-slate-400 uppercase">
+                    Recent Scans
+                  </h3>
 
-          {/* Result panel */}
-          {validating && !scanResult && (
-            <div className="text-muted flex items-center justify-center gap-2 py-8 text-sm">
-              <Spinner size="small" />
-              Validating ticket...
-            </div>
-          )}
-
-          {scanResult && (
-            <div className="space-y-4">
-              <ScanResultCard result={scanResult} />
-
-              {cameraActive && scanPaused && (
-                <Button
-                  variant="primary"
-                  className="w-full py-3 text-lg font-bold"
-                  onClick={handleScanNextTicket}
-                >
-                  Scan Next Ticket
-                </Button>
-              )}
-            </div>
-          )}
-
-          {/* History strip */}
-          {history.length > 0 && (
-            <div className="border-border bg-surface rounded-xl border p-4 shadow-sm">
-              <h3 className="text-muted mb-2 text-xs font-semibold tracking-wide uppercase">
-                Recent Scans
-              </h3>
-              <div className="flex flex-col gap-2">
-                {history.map((item, idx) => (
-                  <div
-                    key={`${item.timestamp}-${idx}`}
-                    className={`flex items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
-                      item.result.valid
-                        ? 'border-emerald-200 bg-emerald-50'
-                        : 'border-rose-200 bg-rose-50'
-                    }`}
-                  >
-                    <span
-                      className={`text-sm font-bold ${item.result.valid ? 'text-emerald-700' : 'text-rose-700'}`}
+                  {history.length > RECENT_PREVIEW_SIZE && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="small"
+                      onClick={() => setShowScanHistory(true)}
                     >
-                      {item.result.valid ? 'OK' : 'BAD'}
-                    </span>
-                    <span className="text-muted flex-1 truncate">
-                      {item.result.buyerName || `Token: ${item.token.slice(0, 16)}...`}
-                    </span>
-                    {item.result.eventTitle && (
-                      <span className="text-muted hidden text-xs sm:inline">
-                        {item.result.eventTitle}
-                      </span>
-                    )}
-                    <span className="text-muted shrink-0 text-xs">
-                      {new Date(item.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                ))}
+                      View All
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {history.slice(0, RECENT_PREVIEW_SIZE).map((item, idx) => (
+                    <ScanHistoryRow key={`${item.timestamp}-${idx}`} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Manual entry */}
+            <form
+              onSubmit={handleManualSubmit}
+              className="border-border bg-surface rounded-xl border p-3 shadow-sm"
+            >
+              <h3 className="text-text mb-2 text-xs font-semibold">Manual Entry</h3>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Paste ticket code or URL..."
+                  value={manualToken}
+                  onChange={(e) => setManualToken(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  loading={validating}
+                  disabled={!manualToken.trim() || validating}
+                >
+                  {validating ? '...' : 'Go'}
+                </Button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky mobile Scan Next Ticket */}
+      {cameraActive && scanPaused && (
+        <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-slate-950/95 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] backdrop-blur md:relative md:border-t-0 md:bg-transparent md:p-4 md:backdrop-blur-none">
+          <Button
+            variant="primary"
+            className="min-h-14 w-full text-lg font-bold"
+            onClick={handleScanNextTicket}
+          >
+            Scan Next Ticket
+          </Button>
+        </div>
+      )}
+
+      {/* Scan history modal */}
+      <Modal
+        isOpen={showScanHistory}
+        onClose={() => setShowScanHistory(false)}
+        title="Scan History"
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          {history.length === 0 ? (
+            <p className="text-text-muted text-sm">No scans yet.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {history.map((item, idx) => (
+                <ScanHistoryRow key={`${item.timestamp}-${idx}`} item={item} />
+              ))}
             </div>
           )}
-        </>
-      )}
+        </div>
+      </Modal>
     </div>
   );
 }
