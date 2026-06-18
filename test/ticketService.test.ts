@@ -94,7 +94,9 @@ test('ticketService.pollForPurchaseRecord finds record on first try', async (t) 
     assert.equal(mockFilter.mock.calls[0].arguments[0], 'stripeSessionId = {:sessionId}');
     assert.deepEqual(mockFilter.mock.calls[0].arguments[1], { sessionId: 'session_1' });
     assert.equal(mockGetFirstListItem.mock.calls[0].arguments[0], 'stripeSessionId = "session_1"');
-    assert.deepEqual(mockGetFirstListItem.mock.calls[0].arguments[1], { expand: 'event,bundle' });
+    assert.deepEqual(mockGetFirstListItem.mock.calls[0].arguments[1], {
+      expand: 'event.venue,bundle',
+    });
   } finally {
     pb.collection = originalCollection;
     pb.filter = originalFilter;

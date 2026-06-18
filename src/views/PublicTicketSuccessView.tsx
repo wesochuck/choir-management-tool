@@ -3,10 +3,12 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode';
 import { ticketService } from '../services/ticketService';
+import type { Event } from '../services/eventService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { formatTime12h } from '../lib/dateUtils';
 import { pb } from '../lib/pocketbase';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { queryKeys } from '../lib/queryKeys';
@@ -131,20 +133,7 @@ export default function PublicTicketSuccessView() {
                 </p>
               </div>
             ) : purchase.expand?.event ? (
-              <div className="border-border mt-1 flex flex-col gap-1 border-t pt-1">
-                <span className="text-text-muted text-xs">Event Details</span>
-                <strong>{purchase.expand.event.title}</strong>
-                <span className="text-text-muted text-xs">
-                  {new Date(purchase.expand.event.date).toLocaleString()}
-                </span>
-                {purchase.expand.event.eventGraphic && (
-                  <img
-                    src={pb.files.getURL(purchase.expand.event, purchase.expand.event.eventGraphic)}
-                    alt={purchase.expand.event.title}
-                    className="mt-1 max-h-30 w-full rounded-sm object-cover"
-                  />
-                )}
-              </div>
+              <EventDetails event={purchase.expand.event} />
             ) : null}
             <p className="border-border text-text-muted m-0 border-t pt-1 text-center text-xs">
               A confirmation email has been sent with a link back to this page. Your tickets will be
@@ -196,5 +185,68 @@ export default function PublicTicketSuccessView() {
         </Button>
       </AppCard>
     </PublicBrandingWrapper>
+  );
+}
+
+function EventDetails({ event }: { event: Event }) {
+  const venue = event.expand?.venue;
+  const eventDate = new Date(event.date);
+
+  return (
+    <div className="border-border mt-1 flex flex-col gap-3 border-t pt-3">
+      <span className="text-text-muted text-xs font-semibold tracking-wide uppercase">
+        Event Details
+      </span>
+
+      <div>
+        <strong className="block text-base">{event.title}</strong>
+        <span className="text-text-muted block text-sm">
+          {eventDate.toLocaleString([], {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })}
+        </span>
+      </div>
+
+      {event.doorsOpenTime && (
+        <div className="rounded-lg bg-white p-3 text-sm">
+          <span className="text-text-muted block text-xs font-semibold tracking-wide uppercase">
+            Doors Open
+          </span>
+          <strong>{formatTime12h(event.doorsOpenTime)}</strong>
+        </div>
+      )}
+
+      {venue && (
+        <div className="rounded-lg bg-white p-3 text-sm">
+          <span className="text-text-muted block text-xs font-semibold tracking-wide uppercase">
+            Venue
+          </span>
+          <strong>{venue.name}</strong>
+          {venue.address && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-deep mt-1 block underline"
+            >
+              {venue.address}
+            </a>
+          )}
+        </div>
+      )}
+
+      {event.eventGraphic && (
+        <img
+          src={pb.files.getURL(event, event.eventGraphic)}
+          alt={event.title}
+          className="max-h-30 w-full rounded-sm object-cover"
+        />
+      )}
+    </div>
   );
 }

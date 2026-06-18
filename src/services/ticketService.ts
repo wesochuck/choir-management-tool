@@ -109,7 +109,7 @@ export const ticketService = {
           .collection('ticketPurchases')
           .getFirstListItem<TicketPurchase>(
             pb.filter('stripeSessionId = {:sessionId}', { sessionId }),
-            { expand: 'event,bundle' }
+            { expand: 'event.venue,bundle' }
           );
         if (record) return record;
       } catch {
