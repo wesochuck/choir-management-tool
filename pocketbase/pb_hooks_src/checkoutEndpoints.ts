@@ -114,6 +114,18 @@ export async function handleCreateTicketsSession(e: PocketBaseRequestEvent): Pro
     return e.json(400, { error: 'Ticketing is not enabled for this event' });
   }
 
+  const checkoutEventDateRaw = event.get('date');
+  const checkoutEventDate =
+    typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+
+  if (
+    !checkoutEventDate ||
+    Number.isNaN(checkoutEventDate.getTime()) ||
+    checkoutEventDate < new Date()
+  ) {
+    return e.json(400, { error: 'Ticket sales are closed for this event' });
+  }
+
   // Derive sold count from paid ticketPurchases
   let soldCount = 0;
   try {

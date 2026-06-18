@@ -28,12 +28,12 @@ function PublicLandingView() {
   });
 
   const performancesQuery = useQuery({
-    queryKey: queryKeys.events.publicList,
+    queryKey: queryKeys.events.recentPublicPerformances(3),
     queryFn: () => eventService.getRecentPerformances(3),
   });
 
   const ticketedQuery = useQuery({
-    queryKey: queryKeys.events.publicList,
+    queryKey: queryKeys.events.publicTicketedList,
     queryFn: () => eventService.getPublicEvents(),
   });
 
@@ -41,9 +41,8 @@ function PublicLandingView() {
     landingQuery.isLoading || performancesQuery.isLoading || ticketedQuery.isLoading;
   const landingData = landingQuery.data;
   const performanceList = performancesQuery.data ?? [];
-  const ticketedEvents = (ticketedQuery.data ?? []).filter(
-    (event) => new Date(event.date) > new Date()
-  );
+  const ticketedEvents = ticketedQuery.data ?? [];
+  const highlightedTicketedEvent = ticketedEvents[0] ?? null;
 
   if (isLoading) {
     return (
@@ -85,35 +84,34 @@ function PublicLandingView() {
         </div>
       </section>
 
-      {ticketedEvents.length > 0 && (
+      {highlightedTicketedEvent && (
         <section className="mx-auto max-w-4xl px-6 py-16">
-          <div className="grid gap-10">
-            {ticketedEvents.map((event) => {
+          <div className="border-border bg-surface flex flex-col items-center gap-6 rounded-2xl border p-8 text-center shadow-lg">
+            {(() => {
               const venueName =
-                event.expand?.venue &&
-                typeof event.expand.venue === 'object' &&
-                'name' in event.expand.venue
-                  ? (event.expand.venue as { name: string }).name
+                highlightedTicketedEvent.expand?.venue &&
+                typeof highlightedTicketedEvent.expand.venue === 'object' &&
+                'name' in highlightedTicketedEvent.expand.venue
+                  ? (highlightedTicketedEvent.expand.venue as { name: string }).name
                   : '';
-              const graphicUrl = event.eventGraphic
-                ? pb.files.getURL(event, event.eventGraphic)
+              const graphicUrl = highlightedTicketedEvent.eventGraphic
+                ? pb.files.getURL(highlightedTicketedEvent, highlightedTicketedEvent.eventGraphic)
                 : null;
 
               return (
-                <div
-                  key={event.id}
-                  className="border-border bg-surface flex flex-col items-center gap-6 rounded-2xl border p-8 text-center shadow-lg"
-                >
+                <>
                   {graphicUrl && (
                     <img
                       src={graphicUrl}
-                      alt={event.title}
+                      alt={highlightedTicketedEvent.title}
                       className="h-64 w-full rounded-xl object-cover"
                     />
                   )}
-                  <h2 className="text-text m-0 text-3xl font-bold">{event.title}</h2>
+                  <h2 className="text-text m-0 text-3xl font-bold">
+                    {highlightedTicketedEvent.title}
+                  </h2>
                   <p className="text-text-muted m-0 text-lg">
-                    {formatInTimezone(event.date, timezone, {
+                    {formatInTimezone(highlightedTicketedEvent.date, timezone, {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
@@ -123,15 +121,15 @@ function PublicLandingView() {
                   {venueName && <p className="text-text-muted m-0">{venueName}</p>}
                   <Button
                     as={Link}
-                    to={`/tickets/${event.id}`}
+                    to={`/tickets/${highlightedTicketedEvent.id}`}
                     variant="primary"
                     className="min-w-[200px] px-8 py-3 text-center text-lg no-underline"
                   >
                     Buy Tickets
                   </Button>
-                </div>
+                </>
               );
-            })}
+            })()}
           </div>
         </section>
       )}

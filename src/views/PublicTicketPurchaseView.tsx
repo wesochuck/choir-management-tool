@@ -46,7 +46,9 @@ export default function PublicTicketPurchaseView() {
     );
   }
 
-  if (isError || !event || !event.isTicketingEnabled || event.isArchived) {
+  const eventIsPast = event ? new Date(event.date) < new Date() : false;
+
+  if (isError || !event || !event.isTicketingEnabled || event.isArchived || eventIsPast) {
     return (
       <div className="flex min-h-screen w-screen flex-col items-center justify-center p-4">
         <AppCard className="w-full max-w-[480px] text-center">
@@ -254,7 +256,9 @@ export default function PublicTicketPurchaseView() {
             className="h-12 w-full font-semibold"
             variant="primary"
           >
-            {createCheckoutSessionMutation.isPending ? 'Opening Secure Checkout…' : 'Proceed to Payment'}
+            {createCheckoutSessionMutation.isPending
+              ? 'Opening Secure Checkout…'
+              : 'Proceed to Payment'}
           </Button>
         </form>
       </AppCard>

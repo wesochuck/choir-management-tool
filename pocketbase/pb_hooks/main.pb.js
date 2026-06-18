@@ -12678,6 +12678,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
+        const checkoutEventDateRaw = event.get('date');
+        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        if (!checkoutEventDate || Number.isNaN(checkoutEventDate.getTime()) || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
+        }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
@@ -14281,6 +14286,11 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         }
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
+        }
+        const checkoutEventDateRaw = event.get('date');
+        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        if (!checkoutEventDate || Number.isNaN(checkoutEventDate.getTime()) || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
@@ -15886,6 +15896,11 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
+        const checkoutEventDateRaw = event.get('date');
+        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        if (!checkoutEventDate || Number.isNaN(checkoutEventDate.getTime()) || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
+        }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
@@ -17489,6 +17504,11 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         }
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
+        }
+        const checkoutEventDateRaw = event.get('date');
+        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        if (!checkoutEventDate || Number.isNaN(checkoutEventDate.getTime()) || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
@@ -19094,6 +19114,11 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
+        const checkoutEventDateRaw = event.get('date');
+        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        if (!checkoutEventDate || Number.isNaN(checkoutEventDate.getTime()) || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
+        }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
@@ -20698,6 +20723,11 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
+        const checkoutEventDateRaw = event.get('date');
+        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        if (!checkoutEventDate || Number.isNaN(checkoutEventDate.getTime()) || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
+        }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
         try {
@@ -22301,6 +22331,11 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         }
         if (!event.get('isTicketingEnabled')) {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
+        }
+        const checkoutEventDateRaw = event.get('date');
+        const checkoutEventDate = typeof checkoutEventDateRaw === 'string' ? new Date(checkoutEventDateRaw) : null;
+        if (!checkoutEventDate || Number.isNaN(checkoutEventDate.getTime()) || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
         let soldCount = 0;
