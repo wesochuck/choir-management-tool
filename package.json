@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:pb-hooks && tsc -b && vite build",
+    "build": "npm run check:pb-hooks && tsc -b && vite build && npm audit --audit-level=high",
     "lint": "eslint .",
     "scan:theme": "node --experimental-strip-types scripts/scan-unused-tokens.ts",
     "format": "prettier --write .",
