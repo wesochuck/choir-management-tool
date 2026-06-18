@@ -28,7 +28,7 @@ function PollResponseList({
   count: number;
   tone: 'yes' | 'no';
   emptyText: string;
-  responses: PollRecord['id'][];
+  responses: PollResponseRecord[];
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -124,14 +124,13 @@ export function PollDetailsModal({
         <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <Button
             variant="danger"
-            size="medium"
             disabled={isDeleting}
             onClick={() => poll && void onDelete(poll.id)}
             className="w-full sm:w-auto"
           >
             {isDeleting ? 'Deleting\u2026' : 'Delete Poll'}
           </Button>
-          <Button variant="secondary" size="medium" onClick={onClose} className="w-full sm:w-auto">
+          <Button variant="secondary" onClick={onClose} className="w-full sm:w-auto">
             Close
           </Button>
         </div>
