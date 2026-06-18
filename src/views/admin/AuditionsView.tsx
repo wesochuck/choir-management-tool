@@ -348,68 +348,69 @@ export default function AuditionsView() {
       id: 'name',
       header: 'Name / Contact',
       enableSorting: true,
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div className="flex flex-col gap-1">
           <div className="flex flex-row items-center gap-2">
-            <span className="text-sm font-semibold text-slate-900">{row.name}</span>
-            {row.voicePart && <Badge tone="rehearsal">{row.voicePart}</Badge>}
+            <span className="text-sm font-semibold text-slate-900">{row.original.name}</span>
+            {row.original.voicePart && <Badge tone="rehearsal">{row.original.voicePart}</Badge>}
           </div>
-          {row.contact.includes('@') ? (
+          {row.original.contact.includes('@') ? (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                handleEmailClick(row.contact, row.name, row.voicePart || '');
+                handleEmailClick(
+                  row.original.contact,
+                  row.original.name,
+                  row.original.voicePart || ''
+                );
               }}
               className="text-text-muted hover:text-primary cursor-pointer border-none bg-transparent p-0 text-left text-sm font-medium underline transition-colors"
             >
-              {row.contact}
+              {row.original.contact}
             </button>
           ) : (
             <a
-              href={`tel:${row.contact}`}
+              href={`tel:${row.original.contact}`}
               onClick={(e) => e.stopPropagation()}
               className="text-text-muted hover:text-primary text-sm font-medium transition-colors hover:underline"
             >
-              {row.contact}
+              {row.original.contact}
             </a>
           )}
         </div>
       ),
-      cardSection: 0,
-      cardSide: 'left',
+      meta: { cardSection: 0, cardSide: 'left' },
     },
     {
       id: 'performance',
       header: 'Target Performance',
-      cell: (_, row) =>
-        row.expand?.performance ? (
+      cell: ({ row }) =>
+        row.original.expand?.performance ? (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/admin/events?eventId=${row.performance}&openModal=true`);
+              navigate(`/admin/events?eventId=${row.original.performance}&openModal=true`);
             }}
             className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-left font-semibold underline transition-colors"
             title="Click to edit performance details"
           >
-            {row.expand.performance.title}
+            {row.original.expand.performance.title}
           </button>
         ) : (
           <span className="text-text-muted text-sm">None</span>
         ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Performance',
+      meta: { cardSection: 1, cardSide: 'left', cardLabel: 'Performance' },
     },
     {
       id: 'scheduledTimeSlot',
       header: 'Audition Time',
       enableSorting: true,
-      cell: (_, row) =>
-        row.status === 'Scheduled' && row.scheduledTimeSlot ? (
+      cell: ({ row }) =>
+        row.original.status === 'Scheduled' && row.original.scheduledTimeSlot ? (
           <span className="text-sm font-semibold text-slate-900">
-            {formatInTimezone(row.scheduledTimeSlot, timezone, {
+            {formatInTimezone(row.original.scheduledTimeSlot, timezone, {
               weekday: 'short',
               month: 'short',
               day: 'numeric',
@@ -420,70 +421,83 @@ export default function AuditionsView() {
           </span>
         ) : (
           <Badge tone="neutral">
-            {row.requestedSlots && row.requestedSlots.length > 0
-              ? `${row.requestedSlots.length} slot${row.requestedSlots.length > 1 ? 's' : ''} requested`
+            {row.original.requestedSlots && row.original.requestedSlots.length > 0
+              ? `${row.original.requestedSlots.length} slot${row.original.requestedSlots.length > 1 ? 's' : ''} requested`
               : 'No times requested'}
           </Badge>
         ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Time',
+      meta: { cardSection: 1, cardSide: 'left', cardLabel: 'Time' },
     },
     {
       id: 'status',
       header: 'Status',
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <Badge
           tone={
-            row.status === 'New' ? 'rehearsal' : row.status === 'Scheduled' ? 'success' : 'neutral'
+            row.original.status === 'New'
+              ? 'rehearsal'
+              : row.original.status === 'Scheduled'
+                ? 'success'
+                : 'neutral'
           }
         >
-          {row.status}
+          {row.original.status}
         </Badge>
       ),
-      cardSection: 0,
-      cardSide: 'right',
+      meta: { cardSection: 0, cardSide: 'right' },
     },
     {
       id: 'actions',
       header: 'Actions',
-      align: 'right',
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div
           className="flex flex-row flex-wrap justify-end gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {row.contact.includes('@') && (
+          {row.original.contact.includes('@') && (
             <Button
               variant="secondary"
               size="small"
-              onClick={() => handleEmailClick(row.contact, row.name, row.voicePart || '')}
+              onClick={() =>
+                handleEmailClick(
+                  row.original.contact,
+                  row.original.name,
+                  row.original.voicePart || ''
+                )
+              }
             >
               ✉️ Email
             </Button>
           )}
-          {row.status === 'New' && (
-            <Button variant="secondary" size="small" onClick={() => openScheduleModal(row)}>
+          {row.original.status === 'New' && (
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => openScheduleModal(row.original)}
+            >
               Schedule
             </Button>
           )}
-          {row.status === 'Scheduled' && (
-            <Button variant="secondary" size="small" onClick={() => convertToSinger(row)}>
+          {row.original.status === 'Scheduled' && (
+            <Button variant="secondary" size="small" onClick={() => convertToSinger(row.original)}>
               Convert to Singer
             </Button>
           )}
-          {row.status !== 'Closed' && (
-            <Button variant="outline" size="small" onClick={() => updateStatus(row, 'Closed')}>
+          {row.original.status !== 'Closed' && (
+            <Button
+              variant="outline"
+              size="small"
+              onClick={() => updateStatus(row.original, 'Closed')}
+            >
               Close
             </Button>
           )}
-          <Button variant="danger" size="small" onClick={() => removeAudition(row)}>
+          <Button variant="danger" size="small" onClick={() => removeAudition(row.original)}>
             Delete
           </Button>
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'right',
+      meta: { align: 'right', cardSection: 1, cardSide: 'right' },
     },
   ];
 

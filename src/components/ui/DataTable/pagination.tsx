@@ -10,7 +10,7 @@ export function DataTablePagination<T>({ table, label }: DataTablePaginationProp
   if (pageCount <= 1) return null;
 
   const { pageIndex, pageSize } = table.getState().pagination;
-  const totalCount = table.getFilteredRowModel().rows.length;
+  const totalCount = table.options.rowCount ?? table.getFilteredRowModel().rows.length;
   const firstItem = pageIndex * pageSize + 1;
   const lastItem = Math.min((pageIndex + 1) * pageSize, totalCount);
 

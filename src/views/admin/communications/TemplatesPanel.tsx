@@ -263,53 +263,58 @@ export function TemplatesPanel({
               {
                 id: 'title',
                 header: 'Title',
-                cell: (_, tpl) => (
+                cell: ({ row }) => (
                   <div className="flex items-center gap-1.5">
-                    <span className="font-semibold">{tpl.title}</span>
-                    {tpl.isSystemTemplate && (
+                    <span className="font-semibold">{row.original.title}</span>
+                    {row.original.isSystemTemplate && (
                       <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
                         System
                       </span>
                     )}
                   </div>
                 ),
-                cardSection: 0,
-                cardSide: 'left',
+                meta: {
+                  cardSection: 0,
+                  cardSide: 'left',
+                },
               },
               {
                 id: 'type',
                 header: 'Type',
-                cell: (_, tpl) => (
+                cell: ({ row }) => (
                   <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-                    {tpl.type}
+                    {row.original.type}
                   </span>
                 ),
-                cardSection: 0,
-                cardSide: 'right',
+                meta: {
+                  cardSection: 0,
+                  cardSide: 'right',
+                },
               },
               {
                 id: 'subject',
                 header: 'Subject',
-                cell: (_, tpl) => (
+                cell: ({ row }) => (
                   <span className="text-muted max-w-[250px] truncate">
-                    {tpl.subject || 'No Subject'}
+                    {row.original.subject || 'No Subject'}
                   </span>
                 ),
-                cardSection: 1,
-                cardSide: 'left',
-                cardLabel: 'Subject',
+                meta: {
+                  cardSection: 1,
+                  cardSide: 'left',
+                  cardLabel: 'Subject',
+                },
               },
               {
                 id: 'actions',
                 header: 'Actions',
-                align: 'right',
-                cell: (_, tpl) => (
+                cell: ({ row }) => (
                   <div className="flex justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <Button
                       type="button"
                       variant="outline"
                       size="small"
-                      onClick={() => setEditingTemplate(tpl)}
+                      onClick={() => setEditingTemplate(row.original)}
                     >
                       Edit
                     </Button>
@@ -318,12 +323,12 @@ export function TemplatesPanel({
                         type="button"
                         variant="outline"
                         size="small"
-                        onClick={() => onUseTemplate(tpl)}
+                        onClick={() => onUseTemplate(row.original)}
                       >
                         Use
                       </Button>
                     )}
-                    {!tpl.isSystemTemplate && (
+                    {!row.original.isSystemTemplate && (
                       <Button
                         type="button"
                         variant="outline"
@@ -332,12 +337,12 @@ export function TemplatesPanel({
                           if (
                             await dialog.confirm({
                               title: 'Delete Template',
-                              message: `Are you sure you want to delete the template "${tpl.title}"?`,
+                              message: `Are you sure you want to delete the template "${row.original.title}"?`,
                               variant: 'danger',
                             })
                           ) {
                             try {
-                              await communicationService.deleteTemplate(tpl.id!);
+                              await communicationService.deleteTemplate(row.original.id!);
                               queryClient.invalidateQueries({
                                 queryKey: queryKeys.communications.templates(),
                               });
@@ -357,8 +362,11 @@ export function TemplatesPanel({
                     )}
                   </div>
                 ),
-                cardSection: 1,
-                cardSide: 'right',
+                meta: {
+                  align: 'right',
+                  cardSection: 1,
+                  cardSide: 'right',
+                },
               },
             ] as ColumnDef<TemplateRecord>[]
           }

@@ -199,67 +199,79 @@ export default function PatronsView() {
       id: 'name',
       header: 'Name',
       accessorFn: (p) => p.profile.name,
-      cardSection: 0,
-      cardSide: 'left',
       enableSorting: false,
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'type',
       header: 'Type',
-      cell: (_, p) => (
-        <Badge tone={p.isSinger ? 'rehearsal' : 'neutral'}>
-          {p.isSinger ? 'Singer' : 'Patron'}
+      cell: ({ row }) => (
+        <Badge tone={row.original.isSinger ? 'rehearsal' : 'neutral'}>
+          {row.original.isSinger ? 'Singer' : 'Patron'}
         </Badge>
       ),
-      cardSection: 0,
-      cardSide: 'right',
       enableSorting: false,
+      meta: {
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'email',
       header: 'Email',
       accessorFn: (p) => p.profile.expand?.user?.email || 'No email',
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+      },
     },
     {
       id: 'ltv',
       header: 'LTV',
-      cell: (_, p) => (
+      cell: ({ row }) => (
         <span className="font-extrabold text-emerald-700">
-          ${(p.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          ${(row.original.ltvCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </span>
       ),
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'LTV',
       enableSorting: false,
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'LTV',
+      },
     },
     {
       id: 'lastDate',
       header: 'Last Transaction',
-      cell: (_, p) =>
-        formatInTimezone(p.lastTransactionDate, 'America/New_York', {
+      cell: ({ row }) =>
+        formatInTimezone(row.original.lastTransactionDate, 'America/New_York', {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
         }),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Last:',
       enableSorting: false,
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Last:',
+      },
     },
     {
       id: 'orders',
       header: 'Orders',
       accessorFn: (p) => p.transactionCount,
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Orders:',
       enableSorting: false,
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Orders:',
+      },
     },
   ];
 

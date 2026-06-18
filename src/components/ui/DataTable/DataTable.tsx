@@ -4,54 +4,23 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   getPaginationRowModel,
+  getFilteredRowModel,
   flexRender,
-  type ColumnDef as TanStackColumnDef,
   type SortingState,
   type PaginationState,
   type RowSelectionState,
+  type ColumnFiltersState,
+  type VisibilityState,
 } from '@tanstack/react-table';
 import { Spinner } from '../Spinner/Spinner';
 import { EmptyState } from '../EmptyState/EmptyState';
 import { DataTablePagination } from './pagination';
-import type { ColumnDef as OurColumnDef, DataTableProps } from './types';
+import type { DataTableColumnMeta, DataTableProps } from './types';
 
-interface OurCellMeta {
-  align?: 'left' | 'center' | 'right';
-  hideBelow?: 'sm' | 'md' | 'lg' | 'xl';
-  headerClassName?: string;
-  cellClassName?: string;
-  cardSection?: 0 | 1;
-  cardSide?: 'left' | 'right';
-  cardLabel?: string;
-}
-
-function toTanStackColumn<T>(col: OurColumnDef<T>): TanStackColumnDef<T> {
-  const tanStackCol: TanStackColumnDef<T> = {
-    id: col.id,
-    header: col.header,
-    accessorKey: col.accessorKey,
-    accessorFn: col.accessorFn,
-    enableSorting: col.enableSorting,
-    meta: {
-      align: col.align,
-      hideBelow: col.hideBelow,
-      headerClassName: col.headerClassName,
-      cellClassName: col.cellClassName,
-      cardSection: col.cardSection,
-      cardSide: col.cardSide,
-      cardLabel: col.cardLabel,
-    } satisfies OurCellMeta,
-  };
-
-  if (col.cell) {
-    tanStackCol.cell = ({ getValue, row }) => col.cell!(getValue(), row.original);
-  }
-
-  return tanStackCol;
-}
-
-function getCellMeta(cell: { column: { columnDef: { meta?: unknown } } }): OurCellMeta | undefined {
-  return cell.column.columnDef.meta as OurCellMeta | undefined;
+function getCellMeta(cell: {
+  column: { columnDef: { meta?: unknown } };
+}): DataTableColumnMeta | undefined {
+  return cell.column.columnDef.meta as DataTableColumnMeta | undefined;
 }
 
 function alignClass(align?: 'left' | 'center' | 'right'): string {
@@ -82,6 +51,7 @@ export function DataTable<T>({
   manualPagination,
   pagination: controlledPagination,
   onPaginationChange,
+  rowCount,
   pageCount,
   pageSize = 20,
   renderMobileCard: renderMobileCardProp,
@@ -92,19 +62,42 @@ export function DataTable<T>({
   sorting: controlledSorting,
   hidePagination,
   paginationLabel,
+  rowSelection: controlledRowSelection,
+  onRowSelectionChange,
+  globalFilter: controlledGlobalFilter,
+  onGlobalFilterChange,
+  columnFilters: controlledColumnFilters,
+  onColumnFiltersChange,
+  manualFiltering,
+  enableGlobalFilter,
+  columnVisibility: controlledColumnVisibility,
+  onColumnVisibilityChange,
+  defaultColumnVisibility,
+  renderToolbar,
+  renderPagination,
 }: DataTableProps<T>) {
-  const tanStackColumns = useMemo(() => columns.map(toTanStackColumn), [columns]);
-
   const [internalSorting, setInternalSorting] = useState<SortingState>(defaultSorting ?? []);
   const sorting = controlledSorting ?? internalSorting;
+
   const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize,
   });
   const pagination = controlledPagination ?? internalPagination;
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-  const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length;
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
+  const rowSelection = controlledRowSelection ?? internalRowSelection;
+
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState<unknown>('');
+  const globalFilter = controlledGlobalFilter ?? internalGlobalFilter;
+
+  const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([]);
+  const columnFilters = controlledColumnFilters ?? internalColumnFilters;
+
+  const [internalColumnVisibility, setInternalColumnVisibility] = useState<VisibilityState>(
+    defaultColumnVisibility ?? {}
+  );
+  const columnVisibility = controlledColumnVisibility ?? internalColumnVisibility;
 
   useEffect(() => {
     if (!manualPagination && !controlledPagination) {
@@ -115,45 +108,74 @@ export function DataTable<T>({
     }
   }, [data.length, pageSize, manualPagination, controlledPagination]);
 
+  const columnsMemo = useMemo(() => columns, [columns]);
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
-    columns: tanStackColumns,
+    columns: columnsMemo,
     state: {
       sorting,
       pagination,
       rowSelection,
+      globalFilter,
+      columnFilters,
+      columnVisibility,
     },
     onSortingChange: (updater) => {
       const next = typeof updater === 'function' ? updater(sorting) : updater;
-
-      if (!controlledSorting) {
+      if (controlledSorting === undefined) {
         setInternalSorting(next);
       }
-
       onSortingChange?.(next);
     },
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater(pagination) : updater;
-
-      if (!controlledPagination) {
+      if (controlledPagination === undefined) {
         setInternalPagination(next);
       }
-
       onPaginationChange?.(next);
     },
     onRowSelectionChange: (updater) => {
       const next = typeof updater === 'function' ? updater(rowSelection) : updater;
-      setRowSelection(next);
+      if (controlledRowSelection === undefined) {
+        setInternalRowSelection(next);
+      }
+      onRowSelectionChange?.(next);
       onSelectionChange?.(new Set(Object.keys(next).filter((k) => next[k])));
+    },
+    onGlobalFilterChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(globalFilter) : updater;
+      if (controlledGlobalFilter === undefined) {
+        setInternalGlobalFilter(next);
+      }
+      onGlobalFilterChange?.(next);
+    },
+    onColumnFiltersChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(columnFilters) : updater;
+      if (controlledColumnFilters === undefined) {
+        setInternalColumnFilters(next);
+      }
+      onColumnFiltersChange?.(next);
+    },
+    onColumnVisibilityChange: (updater) => {
+      const next = typeof updater === 'function' ? updater(columnVisibility) : updater;
+      if (controlledColumnVisibility === undefined) {
+        setInternalColumnVisibility(next);
+      }
+      onColumnVisibilityChange?.(next);
     },
     getCoreRowModel: getCoreRowModel(),
     ...(!manualSorting && { getSortedRowModel: getSortedRowModel() }),
     ...(!manualPagination && { getPaginationRowModel: getPaginationRowModel() }),
+    ...(!manualFiltering && { getFilteredRowModel: getFilteredRowModel() }),
     manualSorting,
     manualPagination,
+    manualFiltering,
+    rowCount: manualPagination ? rowCount : undefined,
     pageCount: manualPagination ? pageCount : undefined,
     enableRowSelection: !!enableSelection,
+    enableGlobalFilter,
     getRowId: getRowId ?? ((_originalRow: T, index: number) => String(index)),
     meta: {
       onRowClick,
@@ -185,9 +207,12 @@ export function DataTable<T>({
   }
 
   const rows = table.getRowModel().rows;
+  const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length;
 
   return (
     <div>
+      {renderToolbar && <div className="mb-3">{renderToolbar(table)}</div>}
+
       {selectedCount > 0 && renderSelectionActions && (
         <div className="mb-3 flex items-center gap-3">
           <span className="text-sm text-slate-500">{selectedCount} selected</span>
@@ -216,7 +241,7 @@ export function DataTable<T>({
                   </th>
                 )}
                 {headerGroup.headers.map((header) => {
-                  const meta = header.column.columnDef.meta as OurCellMeta | undefined;
+                  const meta = header.column.columnDef.meta as DataTableColumnMeta | undefined;
                   const sortable = header.column.getCanSort();
                   const sortState = header.column.getIsSorted();
                   return (
@@ -416,7 +441,9 @@ export function DataTable<T>({
             })}
       </div>
 
-      {!hidePagination && <DataTablePagination table={table} label={paginationLabel} />}
+      {renderPagination
+        ? renderPagination(table)
+        : !hidePagination && <DataTablePagination table={table} label={paginationLabel} />}
     </div>
   );
 }

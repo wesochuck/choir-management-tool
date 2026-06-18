@@ -72,11 +72,11 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
     {
       id: 'description',
       header: 'Description',
-      cell: (_, item) => (
+      cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="text-sm font-medium">{item.description}</span>
+          <span className="text-sm font-medium">{row.original.description}</span>
           <span className="text-muted text-xs">
-            {formatInTimezone(item.date, 'America/New_York', {
+            {formatInTimezone(row.original.date, 'America/New_York', {
               month: 'short',
               day: 'numeric',
               year: 'numeric',
@@ -84,34 +84,43 @@ export const SingerPatronageHistoryTab: React.FC<SingerPatronageHistoryTabProps>
           </span>
         </div>
       ),
-      cardSection: 0,
-      cardSide: 'left',
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'amount',
       header: 'Amount',
-      align: 'right',
-      cell: (_, item) => (
+      cell: ({ row }) => (
         <span className="text-sm font-bold">
-          ${(item.amountPaidCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          $
+          {(row.original.amountPaidCents / 100).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+          })}
         </span>
       ),
-      cardSection: 0,
-      cardSide: 'right',
+      meta: {
+        cardSection: 0,
+        cardSide: 'right',
+        align: 'right',
+      },
     },
     {
       id: 'status',
       header: 'Status',
-      cell: (_, item) => (
+      cell: ({ row }) => (
         <span
-          className={`text-xs font-bold uppercase ${item.status === 'paid' ? 'text-success-text' : 'text-danger-text'}`}
+          className={`text-xs font-bold uppercase ${row.original.status === 'paid' ? 'text-success-text' : 'text-danger-text'}`}
         >
-          {item.status}
+          {row.original.status}
         </span>
       ),
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Status',
+      meta: {
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Status',
+      },
     },
   ];
 

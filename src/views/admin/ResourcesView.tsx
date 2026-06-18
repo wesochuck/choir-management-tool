@@ -234,61 +234,57 @@ export default function ResourcesView() {
       id: 'title',
       header: 'Resource Title',
       accessorKey: 'title',
-      cardSection: 0,
-      cardSide: 'left',
+      meta: { cardSection: 0, cardSide: 'left' },
     },
     {
       id: 'type',
       header: 'Type',
-      cell: (_, row) => (
-        <Badge tone={row.url ? 'neutral' : 'rehearsal'}>{row.url ? 'Link' : 'File'}</Badge>
+      cell: ({ row }) => (
+        <Badge tone={row.original.url ? 'neutral' : 'rehearsal'}>
+          {row.original.url ? 'Link' : 'File'}
+        </Badge>
       ),
-      cardSection: 0,
-      cardSide: 'right',
+      meta: { cardSection: 0, cardSide: 'right' },
     },
     {
       id: 'destination',
       header: 'Destination / Link',
-      cell: (_, row) =>
-        row.url ? (
+      cell: ({ row }) =>
+        row.original.url ? (
           <a
-            href={row.url}
+            href={row.original.url}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
           >
-            {row.url}
+            {row.original.url}
           </a>
         ) : (
           <a
-            href={resourceService.getResourceFileUrl(row, row.file || '')}
+            href={resourceService.getResourceFileUrl(row.original, row.original.file || '')}
             target="_blank"
             rel="noopener noreferrer"
             className="text-primary hover:underline"
           >
-            {row.file || 'Download File'}
+            {row.original.file || 'Download File'}
           </a>
         ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Link',
+      meta: { cardSection: 1, cardSide: 'left', cardLabel: 'Link' },
     },
     {
       id: 'actions',
       header: 'Actions',
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div className="flex justify-end gap-2">
-          <Button onClick={() => handleEdit(row)} variant="outline" size="small">
+          <Button onClick={() => handleEdit(row.original)} variant="outline" size="small">
             Edit
           </Button>
-          <Button onClick={() => handleDelete(row)} variant="danger" size="small">
+          <Button onClick={() => handleDelete(row.original)} variant="danger" size="small">
             Delete
           </Button>
         </div>
       ),
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
+      meta: { align: 'right', cardSection: 1, cardSide: 'right' },
     },
   ];
 

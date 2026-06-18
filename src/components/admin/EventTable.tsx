@@ -51,11 +51,11 @@ export const EventTable: React.FC<EventTableProps> = ({
       header: 'Date',
       enableSorting: true,
       accessorFn: (event) => event.date,
-      cell: (_, event) => {
-        const weekday = formatInTimezone(event.date, timezone, { weekday: 'short' });
-        const day = formatInTimezone(event.date, timezone, { day: 'numeric' });
-        const month = formatInTimezone(event.date, timezone, { month: 'short' });
-        const year = formatInTimezone(event.date, timezone, { year: 'numeric' });
+      cell: ({ row }) => {
+        const weekday = formatInTimezone(row.original.date, timezone, { weekday: 'short' });
+        const day = formatInTimezone(row.original.date, timezone, { day: 'numeric' });
+        const month = formatInTimezone(row.original.date, timezone, { month: 'short' });
+        const year = formatInTimezone(row.original.date, timezone, { year: 'numeric' });
         return (
           <div className="flex min-w-14 flex-col items-center">
             <span className="text-text-muted text-[11px] font-semibold tracking-wider uppercase">
@@ -68,42 +68,48 @@ export const EventTable: React.FC<EventTableProps> = ({
           </div>
         );
       },
-      cardSection: 0,
-      cardSide: 'left',
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'event',
       header: 'Event',
-      cell: (_, event) => {
-        const isPerformance = event.type === 'Performance';
-        const hasAuditions = openAuditionEventId === event.id;
+      cell: ({ row }) => {
+        const isPerformance = row.original.type === 'Performance';
+        const hasAuditions = openAuditionEventId === row.original.id;
         return (
           <div className="flex min-w-0 flex-col gap-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge tone={isPerformance ? 'performance' : 'rehearsal'}>{event.type}</Badge>
+              <Badge tone={isPerformance ? 'performance' : 'rehearsal'}>{row.original.type}</Badge>
               {hasAuditions && <Badge tone="success">🎵 Auditions Open</Badge>}
-              {event.callTime && (
+              {row.original.callTime && (
                 <span className="inline-flex items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-1.5 py-px text-xs font-bold text-indigo-700">
-                  📢 Call: {formatTime12h(event.callTime)}
+                  📢 Call: {formatTime12h(row.original.callTime)}
                 </span>
               )}
             </div>
-            {event.title && (
-              <div className="text-text text-base leading-snug font-semibold">{event.title}</div>
+            {row.original.title && (
+              <div className="text-text text-base leading-snug font-semibold">
+                {row.original.title}
+              </div>
             )}
           </div>
         );
       },
-      cardSection: 0,
-      cardSide: 'right',
+      meta: {
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'venue',
       header: 'Venue',
-      cell: (_, event) =>
-        event.expand?.venue?.name ? (
+      cell: ({ row }) =>
+        row.original.expand?.venue?.name ? (
           <a
-            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.expand?.venue?.address || event.expand?.venue?.name || '')}`}
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(row.original.expand?.venue?.address || row.original.expand?.venue?.name || '')}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
@@ -111,21 +117,22 @@ export const EventTable: React.FC<EventTableProps> = ({
           >
             📍{' '}
             <strong className="text-text group-hover:text-primary-deep">
-              {event.expand?.venue?.name}
+              {row.original.expand?.venue?.name}
             </strong>
           </a>
         ) : null,
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Venue',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Venue',
+      },
     },
     {
       id: 'actions',
       header: '',
-      align: 'right',
-      cell: (_, event) => {
-        const isPerformance = event.type === 'Performance';
-        const isDropdownOpen = activeDropdownId === event.id;
+      cell: ({ row }) => {
+        const isPerformance = row.original.type === 'Performance';
+        const isDropdownOpen = activeDropdownId === row.original.id;
 
         const overflowItems = [
           {
@@ -169,8 +176,12 @@ export const EventTable: React.FC<EventTableProps> = ({
         return (
           <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
             <Button
-              onClick={() => onViewRoster(event)}
-              variant={event.type === 'Rehearsal' && !event.isOpenForRSVP ? 'secondary' : 'primary'}
+              onClick={() => onViewRoster(row.original)}
+              variant={
+                row.original.type === 'Rehearsal' && !row.original.isOpenForRSVP
+                  ? 'secondary'
+                  : 'primary'
+              }
               size="small"
               className="font-bold"
             >
@@ -187,7 +198,7 @@ export const EventTable: React.FC<EventTableProps> = ({
                 }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setActiveDropdownId(isDropdownOpen ? null : event.id);
+                  setActiveDropdownId(isDropdownOpen ? null : row.original.id);
                 }}
               >
                 ⋮
@@ -207,7 +218,7 @@ export const EventTable: React.FC<EventTableProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         setActiveDropdownId(null);
-                        item.action(event);
+                        item.action(row.original);
                       }}
                     >
                       <span aria-hidden="true">{item.icon}</span>
@@ -222,7 +233,7 @@ export const EventTable: React.FC<EventTableProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       setActiveDropdownId(null);
-                      onEdit(event);
+                      onEdit(row.original);
                     }}
                   >
                     <span aria-hidden="true">✏️</span>
@@ -234,8 +245,11 @@ export const EventTable: React.FC<EventTableProps> = ({
           </div>
         );
       },
-      cardSection: 1,
-      cardSide: 'right',
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+      },
     },
   ];
 

@@ -546,82 +546,77 @@ export default function TicketingView() {
     {
       id: 'buyerName',
       header: 'Buyer Name',
-      cell: (_, p) => (
+      cell: ({ row }) => (
         <div className="flex flex-col gap-0.5">
-          <span>{p.buyerName}</span>
-          {p.expand?.bundle && (
+          <span>{row.original.buyerName}</span>
+          {row.original.expand?.bundle && (
             <span className="inline-flex w-fit items-center rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-emerald-700 uppercase">
-              Season Ticket: {p.expand.bundle.title}
+              Season Ticket: {row.original.expand.bundle.title}
             </span>
           )}
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'email',
       header: 'Email',
       accessorFn: (p) => p.buyerEmail,
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'saleDate',
       header: 'Sale Date',
-      cell: (_, p) =>
-        formatInTimezone(p.created, timezone, {
+      cell: ({ row }) =>
+        formatInTimezone(row.original.created, timezone, {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
           hour: 'numeric',
           minute: '2-digit',
         }),
-      cardSection: 0,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 0, cardSide: 'left' },
     },
     {
       id: 'qty',
       header: 'Qty',
       accessorFn: (p) => p.quantity,
-      cardSection: 1,
-      cardSide: 'right',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'right' },
     },
     {
       id: 'amountPaid',
       header: 'Amount Paid',
-      cell: (_, p) => (
-        <span className="font-extrabold">${(p.amountPaidCents / 100).toFixed(2)}</span>
+      cell: ({ row }) => (
+        <span className="font-extrabold">${(row.original.amountPaidCents / 100).toFixed(2)}</span>
       ),
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Amount',
       enableSorting: false,
+      meta: { align: 'right', cardSection: 1, cardSide: 'right', cardLabel: 'Amount' },
     },
     {
       id: 'status',
       header: 'Status',
-      cell: (_, p) => <Badge tone={p.status === 'paid' ? 'success' : 'danger'}>{p.status}</Badge>,
-      align: 'center',
-      cardSection: 0,
-      cardSide: 'right',
+      cell: ({ row }) => (
+        <Badge tone={row.original.status === 'paid' ? 'success' : 'danger'}>
+          {row.original.status}
+        </Badge>
+      ),
       enableSorting: false,
+      meta: { align: 'center', cardSection: 0, cardSide: 'right' },
     },
     {
       id: 'actions',
       header: 'Actions',
-      cell: (_, p) =>
-        p.status === 'paid' ? (
+      cell: ({ row }) =>
+        row.original.status === 'paid' ? (
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"
               size="small"
-              onClick={() => handleOpenResendConfirmation(p)}
+              onClick={() => handleOpenResendConfirmation(row.original)}
             >
               Resend
             </Button>
@@ -629,10 +624,10 @@ export default function TicketingView() {
               variant="danger"
               size="small"
               onClick={() => {
-                if (p.bundle) {
-                  handleRefundBundle(p.stripePaymentIntentId);
+                if (row.original.bundle) {
+                  handleRefundBundle(row.original.stripePaymentIntentId);
                 } else {
-                  handleRefund(p.id);
+                  handleRefund(row.original.id);
                 }
               }}
             >
@@ -640,10 +635,8 @@ export default function TicketingView() {
             </Button>
           </div>
         ) : null,
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
       enableSorting: false,
+      meta: { align: 'right', cardSection: 1, cardSide: 'right' },
     },
   ];
 
@@ -652,76 +645,69 @@ export default function TicketingView() {
       id: 'title',
       header: 'Bundle Title',
       accessorFn: (b) => b.title,
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'price',
       header: 'Price',
-      cell: (_, b) => <span className="font-extrabold">${(b.priceCents / 100).toFixed(2)}</span>,
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Price',
+      cell: ({ row }) => (
+        <span className="font-extrabold">${(row.original.priceCents / 100).toFixed(2)}</span>
+      ),
       enableSorting: false,
+      meta: { align: 'right', cardSection: 1, cardSide: 'right', cardLabel: 'Price' },
     },
     {
       id: 'active',
       header: 'Active',
-      cell: (_, b) => (
-        <Badge tone={b.isActive ? 'success' : 'neutral'}>
-          {b.isActive ? 'Active' : 'Inactive'}
+      cell: ({ row }) => (
+        <Badge tone={row.original.isActive ? 'success' : 'neutral'}>
+          {row.original.isActive ? 'Active' : 'Inactive'}
         </Badge>
       ),
-      align: 'center',
-      cardSection: 0,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { align: 'center', cardSection: 0, cardSide: 'left' },
     },
     {
       id: 'capacitySold',
       header: 'Capacity Sold',
-      cell: (_, b) => {
-        const sold = getBundleSoldQty(b.id, b.events);
+      cell: ({ row }) => {
+        const sold = getBundleSoldQty(row.original.id, row.original.events);
         return (
           <div className="flex flex-col gap-1">
             <span className="font-medium text-slate-800">
-              {sold} / {b.capacity} sold
+              {sold} / {row.original.capacity} sold
             </span>
             <ProgressBar
-              value={Math.min(100, (sold / b.capacity) * 100)}
+              value={Math.min(100, (sold / row.original.capacity) * 100)}
               className="h-1.5 w-[100px] [&::part(base)]:rounded"
             />
           </div>
         );
       },
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'saleEndDate',
       header: 'Sale End Date',
-      cell: (_, b) =>
-        formatInTimezone(b.saleEndDate, timezone, {
+      cell: ({ row }) =>
+        formatInTimezone(row.original.saleEndDate, timezone, {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
           hour: 'numeric',
           minute: '2-digit',
         }),
-      cardSection: 0,
-      cardSide: 'right',
-      cardLabel: 'Ends:',
       enableSorting: false,
+      meta: { cardSection: 0, cardSide: 'right', cardLabel: 'Ends:' },
     },
     {
       id: 'includedEvents',
       header: 'Included Events',
-      cell: (_, b) => (
+      cell: ({ row }) => (
         <div className="flex flex-wrap gap-1">
-          {b.expand?.events?.map((ev) => (
+          {row.original.expand?.events?.map((ev) => (
             <span
               key={ev.id}
               className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide whitespace-nowrap text-slate-700 uppercase"
@@ -731,27 +717,32 @@ export default function TicketingView() {
           ))}
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'actions',
       header: 'Actions',
-      cell: (_, b) => (
+      cell: ({ row }) => (
         <div className="flex justify-end gap-2">
-          <Button onClick={() => handleOpenEditModal(b)} variant="secondary" size="small">
+          <Button
+            onClick={() => handleOpenEditModal(row.original)}
+            variant="secondary"
+            size="small"
+          >
             Edit
           </Button>
-          <Button onClick={() => handleDeleteBundle(b.id, b.events)} variant="danger" size="small">
+          <Button
+            onClick={() => handleDeleteBundle(row.original.id, row.original.events)}
+            variant="danger"
+            size="small"
+          >
             Delete
           </Button>
         </div>
       ),
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
       enableSorting: false,
+      meta: { align: 'right', cardSection: 1, cardSide: 'right' },
     },
   ];
 
@@ -760,91 +751,85 @@ export default function TicketingView() {
       id: 'buyerName',
       header: 'Buyer Name',
       accessorFn: (o) => o.buyerName,
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'email',
       header: 'Email',
       accessorFn: (o) => o.buyerEmail,
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'purchaseDate',
       header: 'Purchase Date',
-      cell: (_, o) =>
-        formatInTimezone(o.created, timezone, {
+      cell: ({ row }) =>
+        formatInTimezone(row.original.created, timezone, {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
           hour: 'numeric',
           minute: '2-digit',
         }),
-      cardSection: 0,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 0, cardSide: 'left' },
     },
     {
       id: 'bundleTitle',
       header: 'Season Bundle',
       accessorFn: (o) => o.bundleTitle,
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'left' },
     },
     {
       id: 'qty',
       header: 'Qty',
       accessorFn: (o) => o.quantity,
-      cardSection: 1,
-      cardSide: 'right',
       enableSorting: false,
+      meta: { cardSection: 1, cardSide: 'right' },
     },
     {
       id: 'amountPaid',
       header: 'Amount Paid',
-      cell: (_, o) => (
-        <span className="font-extrabold">${(o.amountPaidCents / 100).toFixed(2)}</span>
+      cell: ({ row }) => (
+        <span className="font-extrabold">${(row.original.amountPaidCents / 100).toFixed(2)}</span>
       ),
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Amount',
       enableSorting: false,
+      meta: { align: 'right', cardSection: 1, cardSide: 'right', cardLabel: 'Amount' },
     },
     {
       id: 'status',
       header: 'Status',
-      cell: (_, o) => <Badge tone={o.status === 'paid' ? 'success' : 'danger'}>{o.status}</Badge>,
-      align: 'center',
-      cardSection: 0,
-      cardSide: 'right',
+      cell: ({ row }) => (
+        <Badge tone={row.original.status === 'paid' ? 'success' : 'danger'}>
+          {row.original.status}
+        </Badge>
+      ),
       enableSorting: false,
+      meta: { align: 'center', cardSection: 0, cardSide: 'right' },
     },
     {
       id: 'actions',
       header: 'Actions',
-      cell: (_, o) =>
-        o.status === 'paid' ? (
+      cell: ({ row }) =>
+        row.original.status === 'paid' ? (
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"
               size="small"
               onClick={() =>
                 handleOpenResendConfirmation({
-                  id: o.purchaseId,
-                  buyerName: o.buyerName,
-                  buyerEmail: o.buyerEmail,
-                  quantity: o.quantity,
-                  amountPaidCents: o.amountPaidCents,
-                  created: o.created,
-                  status: o.status as TicketPurchase['status'],
-                  bundle: o.bundleId,
-                  stripeSessionId: o.stripeSessionId,
-                  stripePaymentIntentId: o.stripePaymentIntentId,
+                  id: row.original.purchaseId,
+                  buyerName: row.original.buyerName,
+                  buyerEmail: row.original.buyerEmail,
+                  quantity: row.original.quantity,
+                  amountPaidCents: row.original.amountPaidCents,
+                  created: row.original.created,
+                  status: row.original.status as TicketPurchase['status'],
+                  bundle: row.original.bundleId,
+                  stripeSessionId: row.original.stripeSessionId,
+                  stripePaymentIntentId: row.original.stripePaymentIntentId,
                 } as unknown as TicketPurchase)
               }
             >
@@ -854,16 +839,14 @@ export default function TicketingView() {
             <Button
               variant="danger"
               size="small"
-              onClick={() => handleRefundBundle(o.stripePaymentIntentId)}
+              onClick={() => handleRefundBundle(row.original.stripePaymentIntentId)}
             >
               Refund Bundle
             </Button>
           </div>
         ) : null,
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
       enableSorting: false,
+      meta: { align: 'right', cardSection: 1, cardSide: 'right' },
     },
   ];
 

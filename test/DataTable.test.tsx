@@ -28,25 +28,31 @@ const columns: ColumnDef<TestItem>[] = [
     header: 'Name',
     accessorKey: 'name',
     enableSorting: false,
-    cardSection: 0,
-    cardSide: 'left',
+    meta: {
+      cardSection: 0,
+      cardSide: 'left',
+    },
   },
   {
     id: 'role',
     header: 'Role',
     accessorKey: 'role',
     enableSorting: false,
-    cardSection: 0,
-    cardSide: 'right',
+    meta: {
+      cardSection: 0,
+      cardSide: 'right',
+    },
   },
   {
     id: 'email',
     header: 'Email',
     accessorKey: 'email',
     enableSorting: false,
-    cardSection: 1,
-    cardSide: 'left',
-    cardLabel: 'Email:',
+    meta: {
+      cardSection: 1,
+      cardSide: 'left',
+      cardLabel: 'Email:',
+    },
   },
 ];
 
@@ -207,8 +213,7 @@ describe('DataTable', () => {
         header: 'Name',
         accessorKey: 'name',
         enableSorting: false,
-        cardSection: 0,
-        cardSide: 'left',
+        meta: { cardSection: 0, cardSide: 'left' },
       },
     ];
 
@@ -332,16 +337,13 @@ describe('DataTable', () => {
         id: 'name',
         header: 'Name',
         accessorKey: 'name',
-        cardSection: 0,
-        cardSide: 'left',
+        meta: { cardSection: 0, cardSide: 'left' },
       },
       {
         id: 'email',
         header: 'Email',
         accessorKey: 'email',
-        hideBelow: 'sm',
-        cardSection: 1,
-        cardSide: 'left',
+        meta: { hideBelow: 'sm', cardSection: 1, cardSide: 'left' },
       },
     ];
 
@@ -361,7 +363,7 @@ describe('DataTable', () => {
   it('column hiding: hideBelow=md applies md:table-cell', () => {
     const hideColumns: ColumnDef<TestItem>[] = [
       { id: 'name', header: 'Name', accessorKey: 'name' },
-      { id: 'email', header: 'Email', accessorKey: 'email', hideBelow: 'md' },
+      { id: 'email', header: 'Email', accessorKey: 'email', meta: { hideBelow: 'md' } },
     ];
     renderTable({ columns: hideColumns });
 
@@ -373,7 +375,7 @@ describe('DataTable', () => {
   it('column hiding: hideBelow=lg applies lg:table-cell', () => {
     const hideColumns: ColumnDef<TestItem>[] = [
       { id: 'name', header: 'Name', accessorKey: 'name' },
-      { id: 'email', header: 'Email', accessorKey: 'email', hideBelow: 'lg' },
+      { id: 'email', header: 'Email', accessorKey: 'email', meta: { hideBelow: 'lg' } },
     ];
     renderTable({ columns: hideColumns });
 
@@ -385,7 +387,7 @@ describe('DataTable', () => {
   it('column hiding: hideBelow=xl applies xl:table-cell', () => {
     const hideColumns: ColumnDef<TestItem>[] = [
       { id: 'name', header: 'Name', accessorKey: 'name' },
-      { id: 'email', header: 'Email', accessorKey: 'email', hideBelow: 'xl' },
+      { id: 'email', header: 'Email', accessorKey: 'email', meta: { hideBelow: 'xl' } },
     ];
     renderTable({ columns: hideColumns });
 
@@ -396,7 +398,12 @@ describe('DataTable', () => {
 
   it('headerClassName is applied to table header', () => {
     const cols: ColumnDef<TestItem>[] = [
-      { id: 'name', header: 'Name', accessorKey: 'name', headerClassName: 'test-head-class' },
+      {
+        id: 'name',
+        header: 'Name',
+        accessorKey: 'name',
+        meta: { headerClassName: 'test-head-class' },
+      },
     ];
     renderTable({ columns: cols });
 
@@ -406,7 +413,12 @@ describe('DataTable', () => {
 
   it('cellClassName is applied to table cells', () => {
     const cols: ColumnDef<TestItem>[] = [
-      { id: 'name', header: 'Name', accessorKey: 'name', cellClassName: 'test-cell-class' },
+      {
+        id: 'name',
+        header: 'Name',
+        accessorKey: 'name',
+        meta: { cellClassName: 'test-cell-class' },
+      },
     ];
     renderTable({ columns: cols });
 

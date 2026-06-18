@@ -115,49 +115,59 @@ export default function ReportsView() {
       id: 'singer',
       header: 'Singer',
       accessorKey: 'name',
-      cardSection: 0,
-      cardSide: 'left',
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'part',
       header: 'Part',
       accessorKey: 'voicePart',
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Part',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Part',
+      },
     },
     {
       id: 'absences',
       header: 'Absences',
-      align: 'center',
-      cell: (_, row) =>
-        row.absences >= 2 ? (
+      cell: ({ row }) =>
+        row.original.absences >= 2 ? (
           <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
-            {row.absences}
+            {row.original.absences}
           </span>
         ) : (
-          row.absences
+          row.original.absences
         ),
-      cardSection: 0,
-      cardSide: 'right',
+      meta: {
+        align: 'center',
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'present',
       header: 'Present',
-      align: 'center',
-      cell: (_, row) => `${row.presenceCount} / ${row.totalEvents}`,
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Present',
+      cell: ({ row }) => `${row.original.presenceCount} / ${row.original.totalEvents}`,
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Present',
+      },
     },
     {
       id: 'rate',
       header: 'Rate',
-      align: 'center',
-      cell: (_, row) => `${row.attendanceRate.toFixed(1)}%`,
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Rate',
+      cell: ({ row }) => `${row.original.attendanceRate.toFixed(1)}%`,
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Rate',
+      },
     },
   ];
 
@@ -165,45 +175,56 @@ export default function ReportsView() {
     {
       id: 'title',
       header: 'Title',
-      cell: (_, row) => <strong>{row.piece.title}</strong>,
-      cardSection: 0,
-      cardSide: 'left',
+      cell: ({ row }) => <strong>{row.original.piece.title}</strong>,
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'composer',
       header: 'Composer',
-      cell: (_, row) => row.piece.composer || '-',
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Composer',
+      cell: ({ row }) => row.original.piece.composer || '-',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Composer',
+      },
     },
     {
       id: 'arranger',
       header: 'Arranger',
-      cell: (_, row) => row.piece.arranger || '-',
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Arranger',
+      cell: ({ row }) => row.original.piece.arranger || '-',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Arranger',
+      },
     },
     {
       id: 'totalPerformances',
       header: 'Total Performances',
-      align: 'center',
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
-          {row.totalPerformances}
+          {row.original.totalPerformances}
         </span>
       ),
-      cardSection: 0,
-      cardSide: 'right',
+      meta: {
+        align: 'center',
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'lastPerformed',
       header: 'Last Performed',
-      cell: (_, row) => (row.lastPerformed ? row.lastPerformed.toLocaleDateString() : '-'),
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Last Performed',
+      cell: ({ row }) =>
+        row.original.lastPerformed ? row.original.lastPerformed.toLocaleDateString() : '-',
+      meta: {
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Last Performed',
+      },
     },
   ];
 

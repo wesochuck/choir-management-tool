@@ -20,8 +20,7 @@ export interface MusicLibraryTableProps {
   isLoading: boolean;
   duplicateIds: Set<string>;
   selectedIds: Set<string>;
-  onToggleSelection: (id: string) => void;
-  onSelectAll: (checked: boolean) => void;
+  onSelectionChange: (ids: Set<string>) => void;
   onEditPiece: (
     piece: MusicPiece,
     tab?: 'details' | 'tracks' | 'performances' | 'movements'
@@ -44,7 +43,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
   isLoading,
   duplicateIds,
   selectedIds,
-  onToggleSelection,
+  onSelectionChange,
   onEditPiece,
   onPlayTrack,
   catalogLookupTemplate,
@@ -60,92 +59,90 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
 
   const columns: ColumnDef<MusicPiece>[] = [
     {
-      id: 'select',
-      header: '',
-      cell: (_, row) => (
-        <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={selectedIds.has(row.id)}
-            onChange={() => onToggleSelection(row.id)}
-            className="!m-0 !h-[14px] !min-h-auto !w-[14px] cursor-pointer align-middle"
-          />
-        </div>
-      ),
-    },
-    {
       id: 'title',
       header: 'Title',
       accessorFn: (row) => row.title,
       enableSorting: true,
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div className="whitespace-normal">
           <MusicLibraryTitleCell
-            piece={row}
+            piece={row.original}
             allPieces={pieces}
-            isDuplicate={duplicateIds.has(row.id)}
+            isDuplicate={duplicateIds.has(row.original.id)}
             genres={genres}
           />
         </div>
       ),
-      cardSection: 0,
-      cardSide: 'left',
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'composer',
       header: 'Composer/Arranger',
       accessorFn: (row) => row.composer || row.arranger || '',
       enableSorting: true,
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div className="whitespace-normal">
-          {row.composer && row.arranger
-            ? `${row.composer} / arr. ${row.arranger}`
-            : row.composer || row.arranger || '-'}
+          {row.original.composer && row.original.arranger
+            ? `${row.original.composer} / arr. ${row.original.arranger}`
+            : row.original.composer || row.original.arranger || '-'}
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Composer',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Composer',
+      },
     },
     {
       id: 'duration',
       header: 'Duration',
       accessorFn: (row) => parseDurationToSeconds(row.duration),
       enableSorting: true,
-      cell: (_, row) =>
-        row.duration ? formatSecondsToDuration(parseDurationToSeconds(row.duration)) : '-',
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Duration',
+      cell: ({ row }) =>
+        row.original.duration
+          ? formatSecondsToDuration(parseDurationToSeconds(row.original.duration))
+          : '-',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Duration',
+      },
     },
     {
       id: 'performances',
       header: 'Perf',
       accessorFn: (row) => row.performances?.length ?? 0,
       enableSorting: true,
-      align: 'center',
-      cell: (_, row) =>
-        row.performances && row.performances.length > 0 ? (
-          <span className="font-semibold">{row.performances.length}</span>
+      cell: ({ row }) =>
+        row.original.performances && row.original.performances.length > 0 ? (
+          <span className="font-semibold">{row.original.performances.length}</span>
         ) : (
           '-'
         ),
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Perf',
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Perf',
+      },
     },
     {
       id: 'lastPerformed',
       header: 'Last Performed',
       accessorFn: (row) => getEffectiveMostRecentPerformanceDate(row, pieces) || '',
       enableSorting: true,
-      cell: (_, row) => {
-        const lastPerformedDate = getEffectiveMostRecentPerformanceDate(row, pieces);
+      cell: ({ row }) => {
+        const lastPerformedDate = getEffectiveMostRecentPerformanceDate(row.original, pieces);
         return lastPerformedDate || '-';
       },
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Last Performed',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Last Performed',
+      },
     },
     {
       id: 'tracks',
@@ -158,18 +155,19 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
         return directTracks + movementTracks;
       },
       enableSorting: true,
-      cell: (_, row) => {
-        const isParent = isParentPiece(row, pieces);
-        const totalMovementTracksCount = getMovementTrackCount(row, pieces);
+      cell: ({ row }) => {
+        const isParent = isParentPiece(row.original, pieces);
+        const totalMovementTracksCount = getMovementTrackCount(row.original, pieces);
 
         return (
           <div onClick={(e) => e.stopPropagation()}>
-            {row.audioTrackMapping && Object.keys(row.audioTrackMapping).length > 0 ? (
+            {row.original.audioTrackMapping &&
+            Object.keys(row.original.audioTrackMapping).length > 0 ? (
               <Button
                 variant="secondary"
                 size="tiny"
                 className="!m-0"
-                onClick={() => onPlayTrack(row)}
+                onClick={() => onPlayTrack(row.original)}
               >
                 ▶ Play
               </Button>
@@ -177,7 +175,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEditPiece(row, 'tracks');
+                  onEditPiece(row.original, 'tracks');
                 }}
                 className="text-primary inline-flex cursor-pointer items-center gap-1 rounded-full border border-[rgb(27_77_62_/_15%)] bg-[rgb(27_77_62_/_8%)] px-2 py-[2px] text-[11px] font-medium whitespace-nowrap transition-colors hover:bg-[rgb(27_77_62_/_12%)]"
               >
@@ -189,43 +187,54 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
           </div>
         );
       },
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Tracks',
+      meta: {
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Tracks',
+      },
     },
     {
       id: 'link',
       header: 'Link',
-      align: 'center',
-      cell: (_, row) => {
-        const catalogLookupUrl = row.catalogId
-          ? resolveCatalogLookupUrl(catalogLookupTemplate, row.catalogId)
+      cell: ({ row }) => {
+        const catalogLookupUrl = row.original.catalogId
+          ? resolveCatalogLookupUrl(catalogLookupTemplate, row.original.catalogId)
           : null;
-        return row.catalogId && catalogLookupUrl ? (
+        return row.original.catalogId && catalogLookupUrl ? (
           <a
             href={catalogLookupUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            title={`View Catalog ID: ${row.catalogId}`}
+            title={`View Catalog ID: ${row.original.catalogId}`}
             className="text-primary inline-flex size-6 items-center justify-center rounded-sm"
           >
             🔗
           </a>
         ) : null;
       },
+      meta: {
+        align: 'center',
+      },
     },
     {
       id: 'actions',
       header: 'Actions',
-      align: 'center',
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
-          <Button variant="outline" size="tiny" className="!m-0" onClick={() => onEditPiece(row)}>
+          <Button
+            variant="outline"
+            size="tiny"
+            className="!m-0"
+            onClick={() => onEditPiece(row.original)}
+          >
             Edit
           </Button>
         </div>
       ),
+      meta: {
+        align: 'center',
+      },
     },
   ];
 
@@ -239,11 +248,14 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
           title: 'No pieces found.',
           icon: '🎵',
         }}
+        enableSelection
+        rowSelection={Object.fromEntries(Array.from(selectedIds).map((id) => [id, true]))}
+        onSelectionChange={onSelectionChange}
         manualPagination
+        rowCount={totalParentCount}
         pageCount={totalPages}
         onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
         pageSize={pageSize}
-        hidePagination
         onRowClick={(piece) => onEditPiece(piece)}
         getRowId={(p) => p.id}
         getRowClassName={(p) => (duplicateIds.has(p.id) ? 'bg-[rgb(255_138_101_/_5%)]' : '')}
@@ -257,21 +269,25 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
           onSortChange(next.id as MusicLibrarySortField, next.desc ? 'desc' : 'asc');
         }}
         sorting={sortField ? [{ id: sortField, desc: sortDirection === 'desc' }] : []}
+        renderPagination={(table) => {
+          if (isLoading) return null;
+          const pagState = table.getState().pagination;
+          const first = pagState.pageIndex * pagState.pageSize + 1;
+          const last = Math.min((pagState.pageIndex + 1) * pagState.pageSize, totalParentCount);
+          return (
+            <div className="border-border flex items-center justify-between rounded-b-md border-x border-b bg-[var(--bg-card,#fff)] px-6 py-4">
+              <span className="text-muted text-sm font-medium">
+                Showing {first}–{last} of {totalParentCount} pieces
+              </span>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={onPageChange}
+              />
+            </div>
+          );
+        }}
       />
-
-      {!isLoading && totalParentCount > 0 && (
-        <div className="border-border flex items-center justify-between rounded-b-md border-x border-b bg-[var(--bg-card,#fff)] px-6 py-4">
-          <span className="text-muted text-sm font-medium">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, totalParentCount)}–
-            {Math.min(currentPage * pageSize, totalParentCount)} of {totalParentCount} pieces
-          </span>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
-        </div>
-      )}
     </div>
   );
 };

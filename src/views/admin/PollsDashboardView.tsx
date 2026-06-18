@@ -351,13 +351,14 @@ export default function PollsDashboardView() {
             {
               id: 'question',
               header: 'Question',
-              cell: (_, row) => {
-                const event = row.eventId ? events.find((e) => e.id === row.eventId) : null;
+              cell: ({ row }) => {
+                const r = row.original;
+                const event = r.eventId ? events.find((e) => e.id === r.eventId) : null;
                 const isArchived =
                   (event ? new Date(event.date) < new Date() : false) ||
-                  (row.archiveAt ? new Date(row.archiveAt.replace(' ', 'T')) < new Date() : false);
-                const archiveLabel = row.archiveAt
-                  ? formatInTimezone(row.archiveAt, timezone, {
+                  (r.archiveAt ? new Date(r.archiveAt.replace(' ', 'T')) < new Date() : false);
+                const archiveLabel = r.archiveAt
+                  ? formatInTimezone(r.archiveAt, timezone, {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
@@ -365,9 +366,7 @@ export default function PollsDashboardView() {
                   : null;
                 return (
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="truncate text-sm font-bold text-slate-900">
-                      {row.question}
-                    </span>
+                    <span className="truncate text-sm font-bold text-slate-900">{r.question}</span>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-semibold text-slate-400">
                       {archiveLabel && (
                         <span className="flex items-center gap-1">
@@ -383,32 +382,36 @@ export default function PollsDashboardView() {
                   </div>
                 );
               },
-              cardSection: 0,
-              cardSide: 'left',
+              meta: {
+                cardSection: 0,
+                cardSide: 'left',
+              },
             },
             {
               id: 'status',
               header: 'Status',
-              cell: (_, row) => {
-                const event = row.eventId ? events.find((e) => e.id === row.eventId) : null;
+              cell: ({ row }) => {
+                const r = row.original;
+                const event = r.eventId ? events.find((e) => e.id === r.eventId) : null;
                 const isArchived =
                   (event ? new Date(event.date) < new Date() : false) ||
-                  (row.archiveAt ? new Date(row.archiveAt.replace(' ', 'T')) < new Date() : false);
+                  (r.archiveAt ? new Date(r.archiveAt.replace(' ', 'T')) < new Date() : false);
                 return (
                   <Badge tone={isArchived ? 'neutral' : 'success'}>
                     {isArchived ? 'Archived' : 'Active'}
                   </Badge>
                 );
               },
-              cardSection: 0,
-              cardSide: 'right',
+              meta: {
+                cardSection: 0,
+                cardSide: 'right',
+              },
             },
             {
               id: 'yes',
               header: 'Yes',
-              align: 'center',
-              cell: (_, row) => {
-                const stat = pollStats[row.id];
+              cell: ({ row }) => {
+                const stat = pollStats[row.original.id];
                 return (
                   <div className="border-primary/20 bg-primary/5 flex min-w-[48px] flex-col rounded-lg border p-1 text-center shadow-xs">
                     <span className="text-primary text-sm leading-tight font-black">
@@ -418,16 +421,18 @@ export default function PollsDashboardView() {
                   </div>
                 );
               },
-              cardSection: 1,
-              cardSide: 'right',
-              cardLabel: 'Yes',
+              meta: {
+                align: 'center',
+                cardSection: 1,
+                cardSide: 'right',
+                cardLabel: 'Yes',
+              },
             },
             {
               id: 'no',
               header: 'No',
-              align: 'center',
-              cell: (_, row) => {
-                const stat = pollStats[row.id];
+              cell: ({ row }) => {
+                const stat = pollStats[row.original.id];
                 return (
                   <div className="border-danger-text/20 bg-danger-bg flex min-w-[48px] flex-col rounded-lg border p-1 text-center shadow-xs">
                     <span className="text-danger-text text-sm leading-tight font-black">
@@ -437,9 +442,12 @@ export default function PollsDashboardView() {
                   </div>
                 );
               },
-              cardSection: 1,
-              cardSide: 'right',
-              cardLabel: 'No',
+              meta: {
+                align: 'center',
+                cardSection: 1,
+                cardSide: 'right',
+                cardLabel: 'No',
+              },
             },
           ]}
           data={filteredPolls}

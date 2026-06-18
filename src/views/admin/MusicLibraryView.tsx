@@ -595,13 +595,6 @@ export default function MusicLibraryView() {
     },
   });
 
-  const toggleSelection = (id: string) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedIds(newSet);
-  };
-
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     const confirm = await dialog.confirm({
@@ -715,16 +708,7 @@ export default function MusicLibraryView() {
             isLoading={isLoading}
             duplicateIds={duplicateIds}
             selectedIds={selectedIds}
-            onToggleSelection={toggleSelection}
-            onSelectAll={(checked) => {
-              const newSet = new Set(selectedIds);
-              if (checked) {
-                filteredPieces.forEach((p) => newSet.add(p.id));
-              } else {
-                filteredPieces.forEach((p) => newSet.delete(p.id));
-              }
-              setSelectedIds(newSet);
-            }}
+            onSelectionChange={setSelectedIds}
             onEditPiece={(piece, tab) => {
               setEditingPiece(piece);
               setModalInitialTab(tab || 'details');

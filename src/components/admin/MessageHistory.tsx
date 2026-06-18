@@ -90,24 +90,25 @@ export function MessageHistory({
       id: 'date',
       header: 'Date',
       enableSorting: false,
-      cell: (_, row) => (
-        <span className="whitespace-nowrap">{new Date(row.created).toLocaleString()}</span>
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{new Date(row.original.created).toLocaleString()}</span>
       ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Date',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Date',
+      },
     },
     {
       id: 'type',
       header: 'Type',
       enableSorting: false,
-      hideBelow: 'sm',
-      cell: (_, row) => {
-        const { mType, isAutomated } = getMessageMeta(row);
+      cell: ({ row }) => {
+        const { mType, isAutomated } = getMessageMeta(row.original);
         return (
           <div className="flex flex-col gap-1">
             <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-              {row.type}
+              {row.original.type}
             </span>
             {isAutomated && mType && (
               <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
@@ -117,29 +118,33 @@ export function MessageHistory({
           </div>
         );
       },
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Type',
+      meta: {
+        hideBelow: 'sm',
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Type',
+      },
     },
     {
       id: 'subject',
       header: 'Subject',
       enableSorting: false,
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <span className="block max-w-[250px] truncate font-semibold">
-          {getResolvedSubject(row)}
+          {getResolvedSubject(row.original)}
         </span>
       ),
-      cardSection: 0,
-      cardSide: 'left',
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'source',
       header: 'Source',
       enableSorting: false,
-      hideBelow: 'sm',
-      cell: (_, row) => {
-        const { isAutomated } = getMessageMeta(row);
+      cell: ({ row }) => {
+        const { isAutomated } = getMessageMeta(row.original);
         return isAutomated ? (
           <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
             Automated
@@ -150,35 +155,44 @@ export function MessageHistory({
           </span>
         );
       },
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Source',
+      meta: {
+        hideBelow: 'sm',
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Source',
+      },
     },
     {
       id: 'recipients',
       header: 'Recipients',
-      align: 'center',
       enableSorting: false,
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <button
           type="button"
           className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-sm font-semibold underline decoration-dotted underline-offset-2 transition-colors"
           onClick={() =>
-            onViewRecipients(row.recipients, `Recipients — ${getResolvedSubject(row)}`)
+            onViewRecipients(
+              row.original.recipients,
+              `Recipients — ${getResolvedSubject(row.original)}`
+            )
           }
         >
-          {row.recipients.length} recipient{row.recipients.length !== 1 ? 's' : ''}
+          {row.original.recipients.length} recipient
+          {row.original.recipients.length !== 1 ? 's' : ''}
         </button>
       ),
-      cardSection: 1,
-      cardSide: 'right',
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'right',
+      },
     },
     {
       id: 'status',
       header: 'Status',
       enableSorting: false,
-      cell: (_, row) =>
-        row.status === 'Archived' ? (
+      cell: ({ row }) =>
+        row.original.status === 'Archived' ? (
           <span className="inline-flex w-[70px] items-center justify-center rounded bg-slate-400 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
             Archived
           </span>
@@ -187,23 +201,32 @@ export function MessageHistory({
             Sent
           </span>
         ),
-      cardSection: 0,
-      cardSide: 'right',
+      meta: {
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'actions',
       header: 'Actions',
-      align: 'right',
       enableSorting: false,
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button type="button" variant="secondary" size="small" onClick={() => onCopyDraft(row)}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="small"
+            onClick={() => onCopyDraft(row.original)}
+          >
             Copy to Draft
           </Button>
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'right',
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+      },
     },
   ];
 

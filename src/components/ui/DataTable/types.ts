@@ -1,13 +1,16 @@
+import type {
+  ColumnDef as TanStackColumnDef,
+  SortingState,
+  PaginationState,
+  RowSelectionState,
+  ColumnFiltersState,
+  VisibilityState,
+  Table,
+} from '@tanstack/react-table';
 import type { ComponentType, ReactNode } from 'react';
 
-export interface ColumnDef<T> {
-  id: string;
-  header: string;
-  accessorKey?: keyof T & string;
-  accessorFn?: (row: T) => unknown;
-  cell?: (value: unknown, row: T) => ReactNode;
+export interface DataTableColumnMeta {
   align?: 'left' | 'center' | 'right';
-  enableSorting?: boolean;
   hideBelow?: 'sm' | 'md' | 'lg' | 'xl';
   headerClassName?: string;
   cellClassName?: string;
@@ -15,6 +18,10 @@ export interface ColumnDef<T> {
   cardSide?: 'left' | 'right';
   cardLabel?: string;
 }
+
+export type ColumnDef<T> = TanStackColumnDef<T, unknown> & {
+  meta?: DataTableColumnMeta;
+};
 
 export interface DataTableProps<T> {
   columns: ColumnDef<T>[];
@@ -30,13 +37,14 @@ export interface DataTableProps<T> {
   onSelectionChange?: (ids: Set<string>) => void;
   renderSelectionActions?: (info: { selectedCount: number }) => ReactNode;
   onRowClick?: (row: T) => void;
-  defaultSorting?: { id: string; desc: boolean }[];
-  sorting?: { id: string; desc: boolean }[];
+  defaultSorting?: SortingState;
+  sorting?: SortingState;
   manualSorting?: boolean;
-  onSortingChange?: (sorting: { id: string; desc: boolean }[]) => void;
+  onSortingChange?: (sorting: SortingState) => void;
   manualPagination?: boolean;
-  pagination?: { pageIndex: number; pageSize: number };
-  onPaginationChange?: (state: { pageIndex: number; pageSize: number }) => void;
+  pagination?: PaginationState;
+  onPaginationChange?: (state: PaginationState) => void;
+  rowCount?: number;
   pageCount?: number;
   pageSize?: number;
   paginationLabel?: string;
@@ -45,4 +53,17 @@ export interface DataTableProps<T> {
   getRowClassName?: (row: T) => string;
   renderMobileCard?: (row: T) => ReactNode;
   renderRow?: ComponentType<{ row: T }>;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: (state: RowSelectionState) => void;
+  globalFilter?: unknown;
+  onGlobalFilterChange?: (value: unknown) => void;
+  columnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: (state: ColumnFiltersState) => void;
+  manualFiltering?: boolean;
+  enableGlobalFilter?: boolean;
+  columnVisibility?: VisibilityState;
+  onColumnVisibilityChange?: (state: VisibilityState) => void;
+  defaultColumnVisibility?: VisibilityState;
+  renderToolbar?: (table: Table<T>) => ReactNode;
+  renderPagination?: (table: Table<T>) => ReactNode;
 }

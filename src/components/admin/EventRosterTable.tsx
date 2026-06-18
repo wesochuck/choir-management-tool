@@ -35,8 +35,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
     {
       id: 'name',
       header: 'Name',
-      cell: (_, row) => {
-        const p = row.profile;
+      cell: ({ row }) => {
+        const p = row.original.profile;
         return (
           <div className="flex items-center gap-3">
             <PhotoUploader
@@ -61,30 +61,37 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           </div>
         );
       },
-      cardSection: 0,
-      cardSide: 'left',
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'voice',
       header: 'Voice',
-      cell: (_, row) => (
-        <span className="font-semibold text-emerald-700">{row.profile.voicePart || '--'}</span>
+      cell: ({ row }) => (
+        <span className="font-semibold text-emerald-700">
+          {row.original.profile.voicePart || '--'}
+        </span>
       ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Voice',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Voice',
+      },
     },
     {
       id: 'missedRehearsals',
       header: 'Missed Rehearsals',
-      align: 'center',
-      cell: (_, row) => {
-        const id = row.profile.id;
+      cell: ({ row }) => {
+        const id = row.original.profile.id;
         const count = missCounts?.[id];
         return count !== undefined && count > 0 ? (
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              count > (maxRehearsalMisses ?? 3) ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+              count > (maxRehearsalMisses ?? 3)
+                ? 'bg-red-50 text-red-700'
+                : 'bg-amber-50 text-amber-700'
             }`}
           >
             ⚠️ {count} missed
@@ -93,42 +100,46 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           <span className="text-slate-400">0</span>
         );
       },
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Missed',
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Missed',
+      },
     },
     {
       id: 'rsvp',
       header: 'RSVP Status',
-      align: 'center',
-      cell: (_, row) => {
-        const rsvpDisplay = getRsvpDisplay(row.rsvp, { variant: 'eventRoster' });
+      cell: ({ row }) => {
+        const rsvpDisplay = getRsvpDisplay(row.original.rsvp, { variant: 'eventRoster' });
         return (
           <div className="flex flex-col items-center gap-1">
             <Badge label={rsvpDisplay.label} tone={rsvpDisplay.tone} size="sm" />
-            {row.roster?.rsvpNote && row.rsvp === 'No' && (
+            {row.original.roster?.rsvpNote && row.original.rsvp === 'No' && (
               <div className="max-w-[160px] text-xs leading-tight font-normal text-slate-400 italic">
-                &quot;{row.roster.rsvpNote}&quot;
+                &quot;{row.original.roster.rsvpNote}&quot;
               </div>
             )}
           </div>
         );
       },
-      cardSection: 0,
-      cardSide: 'right',
+      meta: {
+        align: 'center',
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'actions',
       header: 'Actions',
-      align: 'right',
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
             disabled={isUpdating}
-            onClick={() => onUpdateRSVP(row.profile.id, 'Yes')}
+            onClick={() => onUpdateRSVP(row.original.profile.id, 'Yes')}
             className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              row.rsvp === 'Yes'
+              row.original.rsvp === 'Yes'
                 ? 'bg-emerald-700 text-white'
                 : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
             } disabled:cursor-not-allowed disabled:opacity-50`}
@@ -138,9 +149,9 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           <button
             type="button"
             disabled={isUpdating}
-            onClick={() => onUpdateRSVP(row.profile.id, 'No')}
+            onClick={() => onUpdateRSVP(row.original.profile.id, 'No')}
             className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              row.rsvp === 'No'
+              row.original.rsvp === 'No'
                 ? 'bg-red-600 text-white'
                 : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
             } disabled:cursor-not-allowed disabled:opacity-50`}
@@ -150,9 +161,9 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           <button
             type="button"
             disabled={isUpdating}
-            onClick={() => onUpdateRSVP(row.profile.id, 'Pending')}
+            onClick={() => onUpdateRSVP(row.original.profile.id, 'Pending')}
             className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              row.rsvp === 'Pending'
+              row.original.rsvp === 'Pending'
                 ? 'bg-slate-500 text-white'
                 : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
             } disabled:cursor-not-allowed disabled:opacity-50`}
@@ -161,8 +172,11 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
           </button>
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'right',
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+      },
     },
   ];
 

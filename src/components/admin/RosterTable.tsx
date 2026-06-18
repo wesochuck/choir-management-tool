@@ -46,35 +46,38 @@ export const RosterTable: React.FC<RosterTableProps> = ({
     const duesColumn: ColumnDef<Profile> = {
       id: 'dues',
       header: 'Dues Paid',
-      cell: (_, row) => (
+      cell: ({ row }) => (
         <div onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
-            checked={duesMap?.[row.id]?.paid || false}
-            onChange={(e) => onToggleDues?.(row.id, e.target.checked)}
+            checked={duesMap?.[row.original.id]?.paid || false}
+            onChange={(e) => onToggleDues?.(row.original.id, e.target.checked)}
             className="text-primary focus:ring-primary size-4 cursor-pointer rounded border-slate-300 focus:ring-offset-2"
           />
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Dues',
+      meta: {
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Dues',
+      },
     };
 
     return [
       {
         id: 'name',
         header: 'Name',
-        cell: (_, row) => {
-          const photoUrl = row.photo ? pb.files.getURL(row, row.photo) : undefined;
-          const initials = getInitials(row.name);
+        cell: ({ row }) => {
+          const p = row.original;
+          const photoUrl = p.photo ? pb.files.getURL(p, p.photo) : undefined;
+          const initials = getInitials(p.name);
           return (
             <div className="flex items-center gap-3">
               <div
                 onClick={(e) => {
                   if (photoUrl) {
                     e.stopPropagation();
-                    setActivePhoto({ url: photoUrl, name: row.name, voicePart: row.voicePart });
+                    setActivePhoto({ url: photoUrl, name: p.name, voicePart: p.voicePart });
                   }
                 }}
                 className={`relative flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 transition-all duration-200 select-none ${
@@ -86,7 +89,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 {photoUrl ? (
                   <img
                     src={photoUrl}
-                    alt={row.name}
+                    alt={p.name}
                     className="size-full rounded-full object-cover"
                   />
                 ) : (
@@ -94,8 +97,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 )}
               </div>
               <div className="flex flex-col items-start">
-                <span className="font-semibold text-slate-900">{row.name}</span>
-                {row.expand?.user?.role === 'admin' && (
+                <span className="font-semibold text-slate-900">{p.name}</span>
+                {p.expand?.user?.role === 'admin' && (
                   <span className="text-overline mt-1 inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-800">
                     Admin
                   </span>
@@ -104,67 +107,81 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             </div>
           );
         },
-        cardSection: 0,
-        cardSide: 'left',
+        meta: {
+          cardSection: 0,
+          cardSide: 'left',
+        },
       },
       {
         id: 'login',
         header: 'Login',
-        cell: (_, row) =>
-          row.expand?.user?.email || <span className="text-slate-300 italic">No login</span>,
-        hideBelow: 'sm',
-        cardSection: 1,
-        cardSide: 'left',
-        cardLabel: 'Login',
+        cell: ({ row }) =>
+          row.original.expand?.user?.email || (
+            <span className="text-slate-300 italic">No login</span>
+          ),
+        meta: {
+          hideBelow: 'sm',
+          cardSection: 1,
+          cardSide: 'left',
+          cardLabel: 'Login',
+        },
       },
       {
         id: 'voice',
         header: 'Voice',
-        cell: (_, row) =>
-          row.voicePart ? (
+        cell: ({ row }) =>
+          row.original.voicePart ? (
             <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold">
-              {row.voicePart}
+              {row.original.voicePart}
             </span>
           ) : (
             <span className="text-slate-300">—</span>
           ),
-        cardSection: 0,
-        cardSide: 'right',
+        meta: {
+          cardSection: 0,
+          cardSide: 'right',
+        },
       },
       {
         id: 'status',
         header: 'Status',
-        cell: (_, row) => {
-          const statusDisplay = getGlobalStatusDisplay(row.globalStatus);
+        cell: ({ row }) => {
+          const statusDisplay = getGlobalStatusDisplay(row.original.globalStatus);
           return <Badge label={statusDisplay.label} tone={statusDisplay.tone} size="sm" />;
         },
-        cardSection: 1,
-        cardSide: 'left',
-        cardLabel: 'Status',
+        meta: {
+          cardSection: 1,
+          cardSide: 'left',
+          cardLabel: 'Status',
+        },
       },
       ...(currentSeason ? [duesColumn] : []),
       {
         id: 'phone',
         header: 'Phone',
-        cell: (_, row) => row.phone || <span className="text-slate-300">—</span>,
-        hideBelow: 'md',
-        cardSection: 1,
-        cardSide: 'left',
-        cardLabel: 'Phone',
+        cell: ({ row }) => row.original.phone || <span className="text-slate-300">—</span>,
+        meta: {
+          hideBelow: 'md',
+          cardSection: 1,
+          cardSide: 'left',
+          cardLabel: 'Phone',
+        },
       },
       {
         id: 'actions',
         header: 'Actions',
-        align: 'right',
-        cell: (_, row) => (
+        cell: ({ row }) => (
           <div onClick={(e) => e.stopPropagation()}>
-            <Button onClick={() => onEdit(row)} variant="outline" size="small">
+            <Button onClick={() => onEdit(row.original)} variant="outline" size="small">
               Edit
             </Button>
           </div>
         ),
-        cardSection: 1,
-        cardSide: 'right',
+        meta: {
+          align: 'right',
+          cardSection: 1,
+          cardSide: 'right',
+        },
       },
     ];
   }, [currentSeason, duesMap, onEdit, onToggleDues]);

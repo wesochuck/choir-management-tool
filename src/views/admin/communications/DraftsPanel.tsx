@@ -12,63 +12,73 @@ export function DraftsPanel({ drafts, onResumeDraft, onDeleteDraft }: DraftsPane
     {
       id: 'updated',
       header: 'Last Updated',
-      cell: (_, draft) => (
-        <span className="whitespace-nowrap">{new Date(draft.updated).toLocaleString()}</span>
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{new Date(row.original.updated).toLocaleString()}</span>
       ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Updated',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Updated',
+      },
     },
     {
       id: 'type',
       header: 'Type',
-      cell: (_, draft) => (
+      cell: ({ row }) => (
         <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-          {draft.type}
+          {row.original.type}
         </span>
       ),
-      cardSection: 0,
-      cardSide: 'left',
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'subject',
       header: 'Subject',
-      cell: (_, draft) => (
+      cell: ({ row }) => (
         <span className="max-w-[300px] truncate font-semibold">
-          {draft.subject || '(No Subject)'}
+          {row.original.subject || '(No Subject)'}
         </span>
       ),
-      cardSection: 0,
-      cardSide: 'right',
+      meta: {
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'content',
       header: 'Content',
-      cell: (_, draft) => (
+      cell: ({ row }) => (
         <span className="text-muted max-w-[400px] truncate">
-          {draft.content.substring(0, 100)}...
+          {row.original.content.substring(0, 100)}...
         </span>
       ),
-      cardSection: 1,
-      cardSide: 'left',
-      cardLabel: 'Preview',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Preview',
+      },
     },
     {
       id: 'actions',
       header: 'Actions',
-      align: 'right',
-      cell: (_, draft) => (
+      cell: ({ row }) => (
         <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button variant="outline" size="small" onClick={() => onDeleteDraft(draft)}>
+          <Button variant="outline" size="small" onClick={() => onDeleteDraft(row.original)}>
             Delete
           </Button>
-          <Button variant="primary" size="small" onClick={() => onResumeDraft(draft)}>
+          <Button variant="primary" size="small" onClick={() => onResumeDraft(row.original)}>
             Resume Draft
           </Button>
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'right',
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+      },
     },
   ];
 

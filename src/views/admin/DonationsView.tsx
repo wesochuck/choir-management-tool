@@ -329,101 +329,121 @@ export default function DonationsView() {
     {
       id: 'date',
       header: 'Date',
-      cell: (_, d) =>
-        formatInTimezone(d.created, timezone, {
+      cell: ({ row }) =>
+        formatInTimezone(row.original.created, timezone, {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
           hour: 'numeric',
           minute: '2-digit',
         }),
-      cardSection: 0,
-      cardSide: 'left',
       enableSorting: false,
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
     },
     {
       id: 'donor',
       header: 'Donor',
-      cell: (_, d) => (
+      cell: ({ row }) => (
         <div className="flex flex-col gap-0.5">
-          <span>{d.donorName}</span>
-          {d.isAnonymous && (
+          <span>{row.original.donorName}</span>
+          {row.original.isAnonymous && (
             <span className="inline-flex w-fit items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-600 uppercase">
               Anonymous
             </span>
           )}
         </div>
       ),
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+      },
     },
     {
       id: 'email',
       header: 'Email',
       accessorFn: (d) => d.donorEmail,
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+      },
     },
     {
       id: 'amount',
       header: 'Amount',
-      cell: (_, d) => (
-        <span className="font-extrabold">${(d.amountPaidCents / 100).toFixed(2)}</span>
+      cell: ({ row }) => (
+        <span className="font-extrabold">${(row.original.amountPaidCents / 100).toFixed(2)}</span>
       ),
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
-      cardLabel: 'Amount',
       enableSorting: false,
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Amount',
+      },
     },
     {
       id: 'tribute',
       header: 'Tribute',
-      cell: (_, d) =>
-        d.tributeType !== 'none' ? (
+      cell: ({ row }) =>
+        row.original.tributeType !== 'none' ? (
           <span className="inline-flex flex-wrap items-center gap-1">
             <span className="text-slate-400">
-              In {d.tributeType === 'memory' ? 'Memory' : 'Honor'} of
+              In {row.original.tributeType === 'memory' ? 'Memory' : 'Honor'} of
             </span>
-            <strong className="font-semibold text-slate-700">{d.tributeName}</strong>
+            <strong className="font-semibold text-slate-700">{row.original.tributeName}</strong>
           </span>
         ) : (
           <span className="text-slate-300">—</span>
         ),
-      cardSection: 1,
-      cardSide: 'left',
       enableSorting: false,
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+      },
     },
     {
       id: 'status',
       header: 'Status',
-      cell: (_, d) => (
+      cell: ({ row }) => (
         <Badge
-          tone={d.status === 'paid' ? 'success' : d.status === 'refunded' ? 'danger' : 'neutral'}
+          tone={
+            row.original.status === 'paid'
+              ? 'success'
+              : row.original.status === 'refunded'
+                ? 'danger'
+                : 'neutral'
+          }
         >
-          {d.status}
+          {row.original.status}
         </Badge>
       ),
-      align: 'center',
-      cardSection: 0,
-      cardSide: 'right',
       enableSorting: false,
+      meta: {
+        align: 'center',
+        cardSection: 0,
+        cardSide: 'right',
+      },
     },
     {
       id: 'actions',
       header: 'Actions',
-      cell: (_, d) =>
-        d.status === 'paid' ? (
-          <Button variant="danger" size="small" onClick={() => handleRefund(d.id)}>
+      cell: ({ row }) =>
+        row.original.status === 'paid' ? (
+          <Button variant="danger" size="small" onClick={() => handleRefund(row.original.id)}>
             Refund
           </Button>
         ) : null,
-      align: 'right',
-      cardSection: 1,
-      cardSide: 'right',
       enableSorting: false,
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+      },
     },
   ];
 
