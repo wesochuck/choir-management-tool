@@ -26,6 +26,8 @@ import {
 } from '../../components/ui';
 import type { ColumnDef } from '../../components/ui';
 import { QRCodeShareCard } from '../../components/admin/QRCodeShareCard';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { AdminPageTabs } from '../../components/admin/AdminPageTabs';
 import { settingsService } from '../../services/settingsService';
 
 interface TicketingData {
@@ -867,93 +869,57 @@ export default function TicketingView() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Header Area */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-          Ticketing Dashboard
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Manage ticket sales, configure season bundles, and view check-in checklists.
-        </p>
-      </div>
-
-      {/* Tabs / Actions Navigation Bar */}
-      <div className="flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
-        <div className="flex gap-3 md:gap-6">
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'willcall'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('willcall')}
-          >
-            Concert Will Call
-          </button>
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'bundles'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('bundles')}
-          >
-            Season Bundles
-          </button>
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'orders'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('orders')}
-          >
-            Bundle Orders
-          </button>
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'share'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('share')}
-          >
-            Share & QR Codes
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 pb-1.5">
-          <Button as={Link} to="/admin/tickets/scan" variant="primary" className="no-underline">
-            Scan Tickets
-          </Button>
-          {activeTab === 'bundles' && (
-            <Button
-              variant="primary"
-              className="animate-pulse-once"
-              onClick={handleOpenCreateModal}
-              title="Create New Bundle"
-              icon={'➕'}
-            >
-              <span className="hidden md:inline">Create New Bundle</span>
-            </Button>
-          )}
-          {activeTab === 'willcall' && selectedEventId && (
-            <Button
-              variant="secondary"
-              onClick={handleExportCSV}
-              disabled={activePurchases.length === 0}
-              title="Export Will Call CSV"
-              icon={'⬇️'}
-            >
-              <span className="hidden md:inline">Export Will Call CSV</span>
-            </Button>
-          )}
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Ticketing Dashboard"
+        description="Manage ticket sales, configure season bundles, and view check-in checklists."
+        below={
+          <AdminPageTabs
+            ariaLabel="Ticketing sections"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={[
+              { value: 'willcall', label: 'Concert Will Call' },
+              { value: 'bundles', label: 'Season Bundles' },
+              { value: 'orders', label: 'Bundle Orders' },
+              { value: 'share', label: 'Share & QR Codes' },
+            ]}
+            actions={
+              <>
+                <Button
+                  as={Link}
+                  to="/admin/tickets/scan"
+                  variant="primary"
+                  className="no-underline"
+                >
+                  Scan Tickets
+                </Button>
+                {activeTab === 'bundles' && (
+                  <Button
+                    variant="primary"
+                    className="animate-pulse-once"
+                    onClick={handleOpenCreateModal}
+                    title="Create New Bundle"
+                    icon={'➕'}
+                  >
+                    <span className="hidden md:inline">Create New Bundle</span>
+                  </Button>
+                )}
+                {activeTab === 'willcall' && selectedEventId && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleExportCSV}
+                    disabled={activePurchases.length === 0}
+                    title="Export Will Call CSV"
+                    icon={'⬇️'}
+                  >
+                    <span className="hidden md:inline">Export Will Call CSV</span>
+                  </Button>
+                )}
+              </>
+            }
+          />
+        }
+      />
 
       {activeTab === 'willcall' && (
         <>

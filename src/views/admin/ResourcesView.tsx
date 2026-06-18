@@ -3,7 +3,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { resourceService, type SingerResource } from '../../services/resourceService';
 import { useDialog } from '../../contexts/DialogContext';
-import { Button, Input, FormField, Badge, Modal, RadioGroup, Radio, DataTable, type ColumnDef } from '../../components/ui';
+import {
+  Button,
+  Input,
+  FormField,
+  Badge,
+  Modal,
+  RadioGroup,
+  Radio,
+  DataTable,
+  type ColumnDef,
+} from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import {
   DndContext,
   closestCenter,
@@ -230,9 +241,7 @@ export default function ResourcesView() {
       id: 'type',
       header: 'Type',
       cell: (_, row) => (
-        <Badge tone={row.url ? 'neutral' : 'rehearsal'}>
-          {row.url ? 'Link' : 'File'}
-        </Badge>
+        <Badge tone={row.url ? 'neutral' : 'rehearsal'}>{row.url ? 'Link' : 'File'}</Badge>
       ),
       cardSection: 0,
       cardSide: 'right',
@@ -242,12 +251,21 @@ export default function ResourcesView() {
       header: 'Destination / Link',
       cell: (_, row) =>
         row.url ? (
-          <a href={row.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <a
+            href={row.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
             {row.url}
           </a>
         ) : (
-          <a href={resourceService.getResourceFileUrl(row, row.file || '')}
-             target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+          <a
+            href={resourceService.getResourceFileUrl(row, row.file || '')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
             {row.file || 'Download File'}
           </a>
         ),
@@ -299,18 +317,25 @@ export default function ResourcesView() {
         </td>
         <td className="px-4 py-2.5 text-sm font-semibold text-slate-900">{row.title}</td>
         <td className="px-4 py-2.5 text-sm">
-          <Badge tone={row.url ? 'neutral' : 'rehearsal'}>
-            {row.url ? 'Link' : 'File'}
-          </Badge>
+          <Badge tone={row.url ? 'neutral' : 'rehearsal'}>{row.url ? 'Link' : 'File'}</Badge>
         </td>
         <td className="max-w-xs truncate px-4 py-2.5 text-sm text-slate-500">
           {row.url ? (
-            <a href={row.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            <a
+              href={row.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
               {row.url}
             </a>
           ) : (
-            <a href={resourceService.getResourceFileUrl(row, row.file || '')}
-               target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+            <a
+              href={resourceService.getResourceFileUrl(row, row.file || '')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
               {row.file || 'Download File'}
             </a>
           )}
@@ -331,19 +356,15 @@ export default function ResourcesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-row items-start justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">Singer Resources</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Upload documents or reference URLs for active singers to view on their dashboard.
-          </p>
-        </div>
-        <div className="mt-1 flex-shrink-0">
+      <AdminPageHeader
+        title="Singer Resources"
+        description="Upload documents or reference URLs for active singers to view on their dashboard."
+        actions={
           <Button onClick={() => setIsAdding(true)} variant="primary">
             + New Resource
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="border-border bg-surface rounded-xl border px-6 py-5 shadow-sm">
@@ -381,7 +402,11 @@ export default function ResourcesView() {
         }
       >
         <form id="resource-form" onSubmit={handleSave} className="flex flex-col gap-4">
-          <FormField label="Resource Title" required error={titleError ? 'Title is required' : undefined}>
+          <FormField
+            label="Resource Title"
+            required
+            error={titleError ? 'Title is required' : undefined}
+          >
             <Input
               value={title}
               onChange={(e) => {
@@ -434,15 +459,8 @@ export default function ResourcesView() {
         </form>
       </Modal>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={resources.map((r) => r.id)}
-          strategy={verticalListSortingStrategy}
-        >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={resources.map((r) => r.id)} strategy={verticalListSortingStrategy}>
           <DataTable
             columns={columns}
             data={resources}
@@ -464,8 +482,7 @@ export default function ResourcesView() {
       {resources.length > 0 && (
         <div className="text-text-muted flex items-center justify-between px-4 py-2 text-xs">
           <span className="italic">
-            Tip: Drag the ⣿ handle on any row to reorder resources. Changes are saved
-            automatically.
+            Tip: Drag the ⣿ handle on any row to reorder resources. Changes are saved automatically.
           </span>
         </div>
       )}

@@ -23,6 +23,7 @@ import {
   DataTable,
 } from '../../components/ui';
 import type { ColumnDef } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { useDialog } from '../../contexts/DialogContext';
 import { useDocumentTitle, useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
@@ -428,44 +429,37 @@ export default function DonationsView() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Header Area */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-            Donations & Giving
-          </h1>
-          <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-            Monitor your choir's incoming donations, analyze giving statistics, and manage public
-            donation portal settings and recognition tiers.
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          {activeTab === 'history' && (
-            <Button
-              variant="secondary"
-              className=""
-              onClick={handleExportCSV}
-              disabled={sortedDonations.length === 0}
-              title="Export CSV"
-              icon={'⬇️'}
-            >
-              <span className="hidden md:inline">Export CSV</span>
-            </Button>
-          )}
-          {activeTab === 'levels' && (
-            <Button
-              variant="primary"
-              className="animate-pulse-once"
-              onClick={() => openLevelModal()}
-              title="Add Level"
-              icon={'➕'}
-            >
-              <span className="hidden md:inline">Add Level</span>
-            </Button>
-          )}
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Donations & Giving"
+        description="Monitor your choir's incoming donations, analyze giving statistics, and manage public donation portal settings and recognition tiers."
+        actions={
+          <>
+            {activeTab === 'history' && (
+              <Button
+                variant="secondary"
+                className=""
+                onClick={handleExportCSV}
+                disabled={sortedDonations.length === 0}
+                title="Export CSV"
+                icon={'⬇️'}
+              >
+                <span className="hidden md:inline">Export CSV</span>
+              </Button>
+            )}
+            {activeTab === 'levels' && (
+              <Button
+                variant="primary"
+                className="animate-pulse-once"
+                onClick={() => openLevelModal()}
+                title="Add Level"
+                icon={'➕'}
+              >
+                <span className="hidden md:inline">Add Level</span>
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <TabGroup
         value={activeTab}

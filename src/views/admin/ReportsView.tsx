@@ -5,6 +5,7 @@ import { reportService } from '../../services/reportService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { useEvents } from '../../hooks/useEvents';
 import { Button, Select, DataTable, type ColumnDef } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 
 type ReportTab = 'attendance' | 'repertoire';
 
@@ -269,23 +270,38 @@ export default function ReportsView() {
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      <div className="flex flex-col items-center justify-between md:flex-row">
-        <h1 className="text-display m-0">Reports & Insights</h1>
-        <div className="flex flex-row gap-2">
-          <Button
-            variant={tab === 'attendance' ? 'primary' : 'outline'}
-            onClick={() => setTab('attendance')}
-          >
-            Attendance
-          </Button>
-          <Button
-            variant={tab === 'repertoire' ? 'primary' : 'outline'}
-            onClick={() => setTab('repertoire')}
-          >
-            Repertoire History
-          </Button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Reports & Insights"
+        description="Review attendance, repertoire, and engagement reports."
+        below={
+          <div className="flex w-full border-b border-slate-200 pb-px">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  tab === 'attendance'
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+                onClick={() => setTab('attendance')}
+              >
+                Attendance
+              </button>
+              <button
+                type="button"
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  tab === 'repertoire'
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+                onClick={() => setTab('repertoire')}
+              >
+                Repertoire History
+              </button>
+            </div>
+          </div>
+        }
+      />
 
       {tab === 'attendance' && (
         <div className="flex flex-col gap-8">

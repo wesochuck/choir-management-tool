@@ -14,6 +14,7 @@ import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, FormField, Badge, Select, Input, DataTable } from '../../components/ui';
 import type { ColumnDef } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 
 const STORAGE_KEY_START_DATE = 'patrons_view_filter_start_date';
 
@@ -264,13 +265,10 @@ export default function PatronsView() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Header Area */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Patrons Dashboard</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          View lifetime value and message your donors and ticket buyers
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Patrons Dashboard"
+        description="View lifetime value and message your donors and ticket buyers"
+      />
 
       {/* Stats Analytics Dashboard */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

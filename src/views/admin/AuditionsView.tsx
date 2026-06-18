@@ -10,7 +10,17 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone, zonedInputValueToUtc, utcToZonedInputValue } from '../../lib/timezone';
 import { profileService } from '../../services/profileService';
-import { Button, Select, Input, Badge, Modal, Textarea, DataTable, type ColumnDef } from '../../components/ui';
+import {
+  Button,
+  Select,
+  Input,
+  Badge,
+  Modal,
+  Textarea,
+  DataTable,
+  type ColumnDef,
+} from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 
 export default function AuditionsView() {
   const dialog = useDialog();
@@ -42,8 +52,7 @@ export default function AuditionsView() {
   });
 
   const saveAuditionSettingsMutation = useMutation({
-    mutationFn: (settings: AuditionSettings) =>
-      settingsService.saveAuditionSettings(settings),
+    mutationFn: (settings: AuditionSettings) => settingsService.saveAuditionSettings(settings),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.auditions.settings }),
   });
 
@@ -426,11 +435,7 @@ export default function AuditionsView() {
       cell: (_, row) => (
         <Badge
           tone={
-            row.status === 'New'
-              ? 'rehearsal'
-              : row.status === 'Scheduled'
-                ? 'success'
-                : 'neutral'
+            row.status === 'New' ? 'rehearsal' : row.status === 'Scheduled' ? 'success' : 'neutral'
           }
         >
           {row.status}
@@ -523,18 +528,21 @@ export default function AuditionsView() {
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      {/* Header Area */}
-      <div className="border-border flex flex-wrap items-center justify-end gap-2 border-b pb-4">
-        <Button
-          onClick={() => {
-            setEditingAudition(null);
-            setIsModalOpen(true);
-          }}
-          icon={<span className="text-base font-semibold">+</span>}
-        >
-          Add Audition
-        </Button>
-      </div>
+      <AdminPageHeader
+        title="Auditions"
+        description="Review audition submissions, manage audition settings, and communicate with applicants."
+        actions={
+          <Button
+            onClick={() => {
+              setEditingAudition(null);
+              setIsModalOpen(true);
+            }}
+            icon={<span className="text-base font-semibold">+</span>}
+          >
+            Add Audition
+          </Button>
+        }
+      />
 
       {/* Status Banner */}
       {!isLoading && settingsQuery.data && (

@@ -10,6 +10,8 @@ import type { Event } from '../../services/eventService';
 import { useDialog } from '../../contexts/DialogContext';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { Button, Spinner } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { AdminPageTabs } from '../../components/admin/AdminPageTabs';
 
 import { useEventSettings } from './events/useEventSettings';
 import { useEventFilters } from './events/useEventFilters';
@@ -137,76 +139,55 @@ export default function EventsView(): React.JSX.Element {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Header Area */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Event Management</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Create and manage rehearsals, performances, and call times. Track attendance and edit
-          seating charts.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Event Management"
+        description="Create and manage rehearsals, performances, and call times. Track attendance and edit seating charts."
+        below={
+          <AdminPageTabs
+            ariaLabel="Event sections"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={[
+              { value: 'all', label: 'All Events' },
+              { value: 'performances', label: 'Performances' },
+              { value: 'rehearsals', label: 'Rehearsals' },
+            ]}
+            actions={
+              <>
+                <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-500 select-none">
+                  <input
+                    type="checkbox"
+                    checked={showPastEvents}
+                    onChange={(e) => setShowPastEvents(e.target.checked)}
+                    className="text-primary accent-primary focus:ring-primary/25 size-4 cursor-pointer rounded border-slate-300"
+                  />
+                  <span>Show past events</span>
+                </label>
 
-      {/* Tabs / Actions Navigation Bar */}
-      <div className="no-print flex w-full flex-row flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-px">
-        <div className="flex gap-3 md:gap-6">
-          {(['all', 'performances', 'rehearsals'] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                type="button"
-                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'border-primary text-primary font-bold'
-                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab === 'all'
-                  ? 'All Events'
-                  : tab === 'performances'
-                    ? 'Performances'
-                    : 'Rehearsals'}
-              </button>
-            );
-          })}
-        </div>
+                <Button
+                  onClick={handleBulkAdd}
+                  variant="secondary"
+                  className="px-3 font-semibold md:px-6"
+                  title="Bulk Add Rehearsals"
+                  icon={'⚡'}
+                >
+                  <span className="hidden md:inline">Bulk Add Rehearsals</span>
+                </Button>
 
-        <div className="flex flex-wrap items-center gap-4 pb-1.5">
-          {/* Show past checkbox */}
-          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-500 select-none">
-            <input
-              type="checkbox"
-              checked={showPastEvents}
-              onChange={(e) => setShowPastEvents(e.target.checked)}
-              className="text-primary accent-primary focus:ring-primary/25 size-4 cursor-pointer rounded border-slate-300"
-            />
-            <span>Show past events</span>
-          </label>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleBulkAdd}
-              variant="secondary"
-              className="px-3 font-semibold md:px-6"
-              title="Bulk Add Rehearsals"
-              icon={'⚡'}
-            >
-              <span className="hidden md:inline">Bulk Add Rehearsals</span>
-            </Button>
-            <Button
-              onClick={handleAdd}
-              variant="primary"
-              className="animate-pulse-once px-3 font-semibold md:px-6"
-              title="Single Event"
-              icon={'➕'}
-            >
-              <span className="hidden md:inline">Single Event</span>
-            </Button>
-          </div>
-        </div>
-      </div>
+                <Button
+                  onClick={handleAdd}
+                  variant="primary"
+                  className="animate-pulse-once px-3 font-semibold md:px-6"
+                  title="Single Event"
+                  icon={'➕'}
+                >
+                  <span className="hidden md:inline">Single Event</span>
+                </Button>
+              </>
+            }
+          />
+        }
+      />
 
       <EventTable
         events={filteredEvents}

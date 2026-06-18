@@ -33,6 +33,7 @@ import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { Button, FormField, Input } from '../../components/ui';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { AdminPageTabs } from '../../components/admin/AdminPageTabs';
 
 export default function MusicLibraryView() {
   const queryClient = useQueryClient();
@@ -555,69 +556,52 @@ export default function MusicLibraryView() {
       <AdminPageHeader
         title="Music Library"
         description="Manage choir repertoire, movements, and learning tracks"
-        actions={
-          activeTab === 'catalog' && (
-            <>
-              <Button
-                variant="secondary"
-                className=""
-                onClick={handleExportCSV}
-                title="Export CSV"
-                icon={'⬇️'}
-              >
-                <span className="hidden md:inline">Export CSV</span>
-              </Button>
-              <Button
-                variant="secondary"
-                className=""
-                onClick={() => setIsImportModalOpen(true)}
-                title="Import CSV"
-                icon={'⬆️'}
-              >
-                <span className="hidden md:inline">Import CSV</span>
-              </Button>
-              <Button
-                variant="primary"
-                className=""
-                onClick={() => {
-                  setEditingPiece(null);
-                  setIsModalOpen(true);
-                }}
-                title="Add Piece"
-                icon={'➕'}
-              >
-                <span className="hidden md:inline">Add Piece</span>
-              </Button>
-            </>
-          )
-        }
         below={
-          <div className="flex w-full items-center border-b border-slate-200 pb-px">
-            <div className="flex gap-3 md:gap-6">
-              <button
-                type="button"
-                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  activeTab === 'catalog'
-                    ? 'border-primary text-primary font-bold'
-                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                }`}
-                onClick={() => setActiveTab('catalog')}
-              >
-                Music Catalog
-              </button>
-              <button
-                type="button"
-                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  activeTab === 'config'
-                    ? 'border-primary text-primary font-bold'
-                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                }`}
-                onClick={() => setActiveTab('config')}
-              >
-                Library Settings
-              </button>
-            </div>
-          </div>
+          <AdminPageTabs
+            ariaLabel="Music library sections"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={[
+              { value: 'catalog', label: 'Music Catalog' },
+              { value: 'config', label: 'Library Settings' },
+            ]}
+            actions={
+              activeTab === 'catalog' ? (
+                <>
+                  <Button
+                    variant="secondary"
+                    className=""
+                    onClick={handleExportCSV}
+                    title="Export CSV"
+                    icon={'⬇️'}
+                  >
+                    <span className="hidden md:inline">Export CSV</span>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className=""
+                    onClick={() => setIsImportModalOpen(true)}
+                    title="Import CSV"
+                    icon={'⬆️'}
+                  >
+                    <span className="hidden md:inline">Import CSV</span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className=""
+                    onClick={() => {
+                      setEditingPiece(null);
+                      setIsModalOpen(true);
+                    }}
+                    title="Add Piece"
+                    icon={'➕'}
+                  >
+                    <span className="hidden md:inline">Add Piece</span>
+                  </Button>
+                </>
+              ) : null
+            }
+          />
         }
       />
 
