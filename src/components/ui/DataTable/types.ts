@@ -33,6 +33,7 @@ export interface DataTableProps<T> {
   manualSorting?: boolean;
   onSortingChange?: (sorting: { id: string; desc: boolean }[]) => void;
   manualPagination?: boolean;
+  pagination?: { pageIndex: number; pageSize: number };
   onPaginationChange?: (state: { pageIndex: number; pageSize: number }) => void;
   pageCount?: number;
   pageSize?: number;

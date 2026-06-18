@@ -74,6 +74,7 @@ export function DataTable<T>({
   manualSorting,
   onSortingChange,
   manualPagination,
+  pagination: controlledPagination,
   onPaginationChange,
   pageCount,
   pageSize = 20,
@@ -90,22 +91,23 @@ export function DataTable<T>({
 
   const [internalSorting, setInternalSorting] = useState<SortingState>(defaultSorting ?? []);
   const sorting = controlledSorting ?? internalSorting;
-  const [pagination, setPagination] = useState<PaginationState>({
+  const [internalPagination, setInternalPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize,
   });
+  const pagination = controlledPagination ?? internalPagination;
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length;
 
   useEffect(() => {
-    if (!manualPagination) {
-      setPagination((prev) => {
+    if (!manualPagination && !controlledPagination) {
+      setInternalPagination((prev) => {
         if (prev.pageIndex === 0 && prev.pageSize === pageSize) return prev;
         return { pageIndex: 0, pageSize };
       });
     }
-  }, [data.length, pageSize, manualPagination]);
+  }, [data.length, pageSize, manualPagination, controlledPagination]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -127,7 +129,11 @@ export function DataTable<T>({
     },
     onPaginationChange: (updater) => {
       const next = typeof updater === 'function' ? updater(pagination) : updater;
-      setPagination(next);
+
+      if (!controlledPagination) {
+        setInternalPagination(next);
+      }
+
       onPaginationChange?.(next);
     },
     onRowSelectionChange: (updater) => {

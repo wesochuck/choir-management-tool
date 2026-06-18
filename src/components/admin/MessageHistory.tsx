@@ -6,7 +6,6 @@ import {
 import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
-import { Pagination } from '../common/Pagination';
 import { Button, Select, Input, DataTable, type ColumnDef } from '../ui';
 
 export type SourceFilter = 'all' | 'manual' | 'automated';
@@ -256,14 +255,15 @@ export function MessageHistory({
           icon: '📬',
         }}
         manualPagination
+        pagination={{
+          pageIndex: Math.max(0, currentPage - 1),
+          pageSize: 10,
+        }}
         pageCount={totalPages}
         onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
         onRowClick={(row) => onViewDetails(row)}
-        hidePagination
         getRowId={(message) => message.id}
       />
-
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
   );
 }
