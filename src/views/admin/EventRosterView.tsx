@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
+import { VoicePartBalanceCard } from '../../components/admin/VoicePartBalanceCard';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, Modal, Select, Input, ProgressBar } from '../../components/ui';
@@ -171,120 +172,84 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       }
     >
       <div className="flex flex-col gap-4">
-        {/* Voice Part RSVP Balance Summary Card */}
         {voiceParts.length > 0 && (
-          <AppCard
+          <VoicePartBalanceCard
             title="Voice Part RSVP Balance"
             actions={
-              <div className="flex flex-row items-center gap-2">
-                <Button onClick={handleExportCSV} variant="secondary" size="small">
-                  📥 Export CSV
-                </Button>
-                <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold tracking-wider uppercase">
-                  {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
-                  {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
-                  {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
-                  {rsvpFilter === 'Pending' && `Total: ${pendingCount} No Response`}
-                </span>
+              <Button onClick={handleExportCSV} variant="secondary" size="small">
+                📥 Export CSV
+              </Button>
+            }
+            badges={
+              <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold tracking-wider uppercase">
+                {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
+                {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
+                {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
+                {rsvpFilter === 'Pending' && `Total: ${pendingCount} No Response`}
+              </span>
+            }
+            filters={
+              <div className="flex flex-row flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('All')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'All'
+                      ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  👥 All Active ({mappedSingers.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('Yes')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'Yes'
+                      ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  🟢 Attending ({yesCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('No')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'No'
+                      ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  🔴 Declined ({noCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('Pending')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'Pending'
+                      ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  ⏳ No Response ({pendingCount})
+                </button>
               </div>
             }
-            className="gap-4"
-          >
-            {/* RSVP Status Filters acting on Voice Part Counts */}
-            <div className="flex flex-row flex-wrap gap-2 border-b border-gray-200 pb-2">
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('All')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'All'
-                    ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                👥 All Active ({mappedSingers.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('Yes')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'Yes'
-                    ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                🟢 Attending ({yesCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('No')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'No'
-                    ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                🔴 Declined ({noCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('Pending')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'Pending'
-                    ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                ⏳ No Response ({pendingCount})
-              </button>
-            </div>
-
-            {/* Section Subtotals */}
-            <div className="grid grid-cols-2 gap-4 border-b border-gray-200 pb-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {sections.map((sec) => {
-                const isSelected = selectedVoiceParts.includes(sec.code);
-                return (
-                  <div
-                    key={sec.code}
-                    className={`bg-primary-light hover:bg-primary-light/80 flex cursor-pointer flex-col gap-1 rounded-lg border-2 p-[calc(16px-2px)] text-center transition-colors duration-150 ${
-                      isSelected
-                        ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]'
-                        : 'border-transparent'
-                    }`}
-                    onClick={() => handleVoicePartToggle(sec.code)}
-                  >
-                    <div className="text-primary-deep text-xs font-bold tracking-wider uppercase">
-                      {sec.name}
-                    </div>
-                    <div className="text-primary-deep text-3xl leading-none font-extrabold">
-                      {sectionCounts[sec.code] || 0}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Individual Part Breakdowns */}
-            <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
-              {voiceParts.map((vp) => {
-                const isSelected = selectedVoiceParts.includes(vp.label);
-                const count = partCounts.get(vp.label) || 0;
-                return (
-                  <div
-                    key={vp.label}
-                    className={`hover:bg-primary-light flex cursor-pointer flex-col rounded-lg transition-colors duration-150 ${
-                      isSelected
-                        ? 'border-primary bg-primary-light border-2 p-[7px]'
-                        : 'border border-gray-200 bg-white p-2'
-                    }`}
-                    onClick={() => handleVoicePartToggle(vp.label)}
-                  >
-                    <div className="text-xs font-bold">{vp.label}</div>
-                    <div className="text-sm font-bold">{count}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </AppCard>
+            sections={sections.map((sec) => ({
+              code: sec.code,
+              name: sec.name,
+              count: sectionCounts[sec.code] || 0,
+              selected: selectedVoiceParts.includes(sec.code),
+              onClick: () => handleVoicePartToggle(sec.code),
+            }))}
+            voiceParts={voiceParts.map((vp) => ({
+              label: vp.label,
+              count: partCounts.get(vp.label) || 0,
+              selected: selectedVoiceParts.includes(vp.label),
+              onClick: () => handleVoicePartToggle(vp.label),
+            }))}
+          />
         )}
 
         <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">

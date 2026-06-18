@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
-import type { SectionDef } from '../../services/settingsService';
 import { getSectionFromVoicePart, getSectionsFromVoiceParts } from '../../lib/voicePartUtils';
-import { AppCard } from '../common/AppCard';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import { VoicePartBalanceCard } from './VoicePartBalanceCard';
 
 interface RosterSummaryProps {
   profiles: Profile[];
@@ -54,9 +53,9 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
   const staffTotal = profiles.length - singerTotal;
 
   return (
-    <AppCard
+    <VoicePartBalanceCard
       title="Voice Part Balance"
-      actions={
+      badges={
         <div className="flex gap-2">
           <span className="bg-primary-light text-primary-deep inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
             {singerTotal} Singers
@@ -68,52 +67,19 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
           )}
         </div>
       }
-    >
-      {/* Section Subtotals */}
-      <div
-        className="border-border grid grid-cols-[repeat(var(--grid-cols),1fr)] gap-4 border-b pb-4 max-[640px]:grid-cols-2 max-[400px]:grid-cols-1"
-        // @allow-inline-style - dynamic grid columns based on section list length using CSS variable
-        style={
-          {
-            '--grid-cols': sectionsList.length,
-          } as React.CSSProperties
-        }
-      >
-        {sectionsList.map((sec: SectionDef) => {
-          const isSelected = selectedVoiceParts.includes(sec.code);
-          return (
-            <div
-              key={sec.code}
-              className={`bg-primary-light cursor-pointer flex-col gap-1 rounded-lg border-2 p-3.5 text-center transition-all duration-200 hover:-translate-y-0.5 hover:opacity-90 hover:shadow-sm ${isSelected ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]' : 'border-transparent'}`}
-              onClick={() => onVoicePartToggle?.(sec.code)}
-            >
-              <div className="text-primary-deep text-xs font-bold tracking-wider uppercase">
-                {sec.name}
-              </div>
-              <div className="text-primary-deep text-[2rem] leading-none font-extrabold">
-                {sectionCounts[sec.code] || 0}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Individual Part Breakdowns */}
-      <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
-        {voiceParts.map((vp) => {
-          const isSelected = selectedVoiceParts.includes(vp.label);
-          return (
-            <div
-              key={vp.label}
-              className={`hover:border-primary-deep hover:bg-primary-light cursor-pointer flex-col gap-0.5 rounded text-center transition-all duration-200 hover:-translate-y-px ${isSelected ? 'border-primary bg-primary-light border-2 p-[7px]' : 'border-border bg-bg border p-2'}`}
-              onClick={() => onVoicePartToggle?.(vp.label)}
-            >
-              <div className="text-muted text-xs font-bold">{vp.label}</div>
-              <div className="text-label font-bold">{partCounts[vp.label] || 0}</div>
-            </div>
-          );
-        })}
-      </div>
-    </AppCard>
+      sections={sectionsList.map((sec) => ({
+        code: sec.code,
+        name: sec.name,
+        count: sectionCounts[sec.code] || 0,
+        selected: selectedVoiceParts.includes(sec.code),
+        onClick: () => onVoicePartToggle?.(sec.code),
+      }))}
+      voiceParts={voiceParts.map((vp) => ({
+        label: vp.label,
+        count: partCounts[vp.label] || 0,
+        selected: selectedVoiceParts.includes(vp.label),
+        onClick: () => onVoicePartToggle?.(vp.label),
+      }))}
+    />
   );
 };
