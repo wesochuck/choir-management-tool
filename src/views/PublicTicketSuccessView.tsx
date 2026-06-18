@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import QRCode from 'qrcode';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
@@ -29,6 +31,51 @@ export default function PublicTicketSuccessView() {
     queryFn: () => ticketService.getScanContext(sessionId, purchase!.id),
     enabled: !!purchase?.id,
   });
+
+  const [qrDataUri, setQrDataUri] = useState<string | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function buildQr() {
+      const scanUrl = scanContextQuery.data?.scanUrl;
+
+      if (!scanUrl) {
+        setQrDataUri(null);
+        setQrError(null);
+        return;
+      }
+
+      try {
+        setQrError(null);
+
+        const dataUri = await QRCode.toDataURL(scanUrl, {
+          errorCorrectionLevel: 'H',
+          margin: 2,
+          color: {
+            dark: '#0f172a',
+            light: '#ffffff',
+          },
+        });
+
+        if (!cancelled) {
+          setQrDataUri(dataUri);
+        }
+      } catch {
+        if (!cancelled) {
+          setQrDataUri(null);
+          setQrError('We could not generate your QR code.');
+        }
+      }
+    }
+
+    void buildQr();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [scanContextQuery.data?.scanUrl]);
 
   if (loading) {
     return (
@@ -116,11 +163,25 @@ export default function PublicTicketSuccessView() {
         {scanContextQuery.data && (
           <div className="border-border flex w-full flex-col items-center gap-3 rounded-xl border bg-white p-4 shadow-sm">
             <h3 className="text-text-muted m-0 text-sm font-bold uppercase">Your Ticket QR</h3>
-            <img
-              src={scanContextQuery.data.qrDataUri}
-              alt="Your ticket QR code"
-              className="max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
-            />
+
+            {qrDataUri ? (
+              <img
+                src={qrDataUri}
+                alt="Your ticket QR code"
+                className="max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
+              />
+            ) : (
+              <div className="text-text-muted rounded-lg border border-slate-200 bg-white p-4 text-sm">
+                {qrError ?? 'Generating QR code...'}
+              </div>
+            )}
+
+            {scanContextQuery.data.scanUrl && (
+              <a href={scanContextQuery.data.scanUrl} className="text-primary text-xs underline">
+                Open ticket scan link
+              </a>
+            )}
+
             <p className="text-text-muted m-0 text-center text-xs">
               Screenshot this — you'll need it at the door.
             </p>

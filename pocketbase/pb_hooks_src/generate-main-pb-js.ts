@@ -172,20 +172,15 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'hookText',
       'timezone',
       'hookJson',
-      'qrHelper',
       'hmacTokens',
       'ticketScanValidation',
       'pocketbaseDate',
     ],
   },
-  qrHelper: {
-    files: ['email/qrHelper.ts'],
-    symbols: ['renderQrSvg'],
-  },
   ticketScanValidation: {
     files: ['ticketScan/ticketValidation.ts'],
     symbols: ['handleValidateScan', 'handleGetScanContext'],
-    dependsOn: ['hmacTokens', 'hookJson', 'hookText', 'qrHelper'],
+    dependsOn: ['hmacTokens', 'hookJson', 'hookText'],
   },
 };
 
@@ -697,8 +692,7 @@ events.forEach(event => {
         const ticketToken = generateSignedTicketToken($app, purchase.id);
         const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
         const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrSvgSrc = "data:image/svg+xml," + encodeURIComponent(qrSvg);
+        const qrSvgSrc = "";
 
         try {
             const queueCollection = $app.findCollectionByNameOrId("emailQueue");
@@ -714,6 +708,7 @@ events.forEach(event => {
                     eventId: event.id,
                     type: "Ticket Buyer Reminder",
                     ticketToken: ticketToken,
+                    scanUrl: scanUrl,
                     qrSvgSrc: qrSvgSrc,
                     successUrl: successUrl
                 })

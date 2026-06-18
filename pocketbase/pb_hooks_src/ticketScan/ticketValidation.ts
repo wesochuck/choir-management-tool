@@ -1,5 +1,4 @@
 import { parseJsonField } from '../email/hookJson';
-import { renderQrSvg } from '../email/qrHelper';
 import { parseSignedToken, generateSignedTicketToken } from '../hmacTokens';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from '../email/emailTypes';
 
@@ -183,9 +182,6 @@ export async function handleGetScanContext(e: PocketBaseRequestEvent): Promise<u
   const baseUrl = getBaseUrl($app);
   const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
 
-  const qrSvg = await renderQrSvg(scanUrl);
-  const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
-
   const buyerName = String(purchase.get('buyerName') || '');
   const bundleId = purchase.get('bundle');
   const isBundlePass = !!bundleId;
@@ -213,7 +209,7 @@ export async function handleGetScanContext(e: PocketBaseRequestEvent): Promise<u
 
   return e.json(200, {
     token,
-    qrDataUri,
+    scanUrl,
     buyerName,
     eventTitle,
     eventDate,

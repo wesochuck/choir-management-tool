@@ -520,14 +520,10 @@ test('Generated main.pb.js uses async callbacks when body has await', () => {
 
   // 1. Check cron registrations
   const ticketBuyerCron = extractCronCallback(content, 'ticket_buyer_reminder');
-  assert.ok(
-    ticketBuyerCron.includes('await '),
-    'ticket_buyer_reminder cron body should contain await calls'
-  );
   assert.match(
     content,
-    /cronAdd\("ticket_buyer_reminder",\s*"[^"]*",\s*async\s*\(\)\s*=>\s*\{/,
-    'ticket_buyer_reminder cron registration should use async callback'
+    /cronAdd\("ticket_buyer_reminder",\s*"[^"]*",\s*\(\)\s*=>\s*\{/,
+    'ticket_buyer_reminder cron registration should use plain callback (no await in body)'
   );
   assert.match(
     content,
@@ -774,4 +770,20 @@ test('Static dependency declaration check - all relative imports must be declare
       }
     }
   }
+});
+
+test('Generated main.pb.js does not depend on browser/node QRCode globals', () => {
+  const content = readGeneratedMain();
+
+  assert.equal(
+    content.includes('QRCode.toString'),
+    false,
+    'PocketBase hooks must not call QRCode.toString because QRCode is not available in Goja'
+  );
+
+  assert.equal(
+    /\bQRCode\b/.test(content),
+    false,
+    'PocketBase hooks must not reference a bare QRCode global'
+  );
 });

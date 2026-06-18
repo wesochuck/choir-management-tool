@@ -30,7 +30,8 @@ export interface ValidationResult {
 
 export interface ScanContext {
   token: string;
-  qrDataUri: string;
+  scanUrl: string;
+  qrDataUri?: string;
   buyerName: string;
   eventTitle: string;
   eventDate: string;
@@ -197,9 +198,9 @@ export const ticketService = {
 
   async hasPaidPurchasesForEvent(eventId: string): Promise<boolean> {
     try {
-      await pb.collection('ticketPurchases').getFirstListItem(
-        pb.filter('event = {:eventId} && status = "paid"', { eventId }),
-      );
+      await pb
+        .collection('ticketPurchases')
+        .getFirstListItem(pb.filter('event = {:eventId} && status = "paid"', { eventId }));
       return true;
     } catch {
       return false;

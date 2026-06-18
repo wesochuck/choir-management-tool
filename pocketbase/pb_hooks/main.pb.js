@@ -668,7 +668,7 @@ cronAdd("post_event_report", "0 * * * *", () => {
     });
 });
 
-cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
+cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
@@ -1711,20 +1711,6 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
             console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
-
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
     // --- END CALLBACK-LOCAL UTILITIES ---
 
     const now = new Date();
@@ -1816,8 +1802,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
             const ticketToken = generateSignedTicketToken($app, purchase.id);
             const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
             const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
-            const qrSvg = await renderQrSvg(scanUrl);
-            const qrSvgSrc = "data:image/svg+xml," + encodeURIComponent(qrSvg);
+            const qrSvgSrc = "";
 
             try {
                 const queueCollection = $app.findCollectionByNameOrId("emailQueue");
@@ -1833,6 +1818,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                         eventId: event.id,
                         type: "Ticket Buyer Reminder",
                         ticketToken: ticketToken,
+                        scanUrl: scanUrl,
                         qrSvgSrc: qrSvgSrc,
                         successUrl: successUrl
                     })
@@ -13181,7 +13167,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     return handleGeneratePlayerToken(e);
 });
 
-routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
+routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -13524,20 +13510,6 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
@@ -13769,8 +13741,6 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -13798,7 +13768,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -14443,8 +14413,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -14457,6 +14426,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -14585,8 +14555,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -14599,6 +14568,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -14855,7 +14825,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
     return handleCreateTicketsSession(e);
 });
 
-routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
+routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -15198,20 +15168,6 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
@@ -15443,8 +15399,6 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -15472,7 +15426,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -16117,8 +16071,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -16131,6 +16084,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -16259,8 +16213,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -16273,6 +16226,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -16529,7 +16483,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
     return handleCreateBundleSession(e);
 });
 
-routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
+routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -16872,20 +16826,6 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
@@ -17117,8 +17057,6 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -17146,7 +17084,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -17791,8 +17729,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -17805,6 +17742,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -17933,8 +17871,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -17947,6 +17884,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -18203,7 +18141,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
     return handleCreateDonationSession(e);
 });
 
-routerAdd("POST", "/api/webhook/stripe", async (e) => {
+routerAdd("POST", "/api/webhook/stripe", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -18546,20 +18484,6 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
@@ -18791,8 +18715,6 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -18820,7 +18742,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -19465,8 +19387,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -19479,6 +19400,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -19607,8 +19529,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -19621,6 +19542,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -19877,7 +19799,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
     return handleStripeWebhook(e);
 });
 
-routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
+routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -20220,20 +20142,6 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
@@ -20465,8 +20373,6 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -20494,7 +20400,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -21139,8 +21045,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -21153,6 +21058,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -21281,8 +21187,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -21295,6 +21200,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -21551,7 +21457,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
     return handleAdminRefundTicket(e);
 });
 
-routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
+routerAdd("POST", "/api/admin/refund-bundle", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -21894,20 +21800,6 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
@@ -22139,8 +22031,6 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -22168,7 +22058,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -22813,8 +22703,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -22827,6 +22716,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -22955,8 +22845,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -22969,6 +22858,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -23225,7 +23115,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
     return handleAdminRefundBundle(e);
 });
 
-routerAdd("POST", "/api/admin/refund-donation", async (e) => {
+routerAdd("POST", "/api/admin/refund-donation", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: stripeService.ts ---
     "use strict";
@@ -23568,20 +23458,6 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
@@ -23813,8 +23689,6 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -23842,7 +23716,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -24487,8 +24361,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -24501,6 +24374,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         filters: JSON.stringify({
                             eventId: eventId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -24629,8 +24503,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                     const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
                     const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
                     const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-                    const qrSvg = await renderQrSvg(scanUrl);
-                    const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+                    const qrSvgSrc = '';
                     const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(emailQueueCollection, {
                         recipientId: 'buyer_' + stripeSessionId,
@@ -24643,6 +24516,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
                         filters: JSON.stringify({
                             bundleId: bundleId,
                             ticketToken: ticketToken,
+                            scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
                             successUrl: successUrl,
                             type: 'Automated Confirmation',
@@ -24899,7 +24773,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
     return handleAdminRefundDonation(e);
 });
 
-routerAdd("POST", "/api/tickets/validate", async (e) => {
+routerAdd("POST", "/api/tickets/validate", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
@@ -25189,20 +25063,6 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: ticketScan/ticketValidation.ts ---
     "use strict";
     const REASON_MESSAGES = {
@@ -25364,8 +25224,6 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -25393,7 +25251,7 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,
@@ -25406,7 +25264,7 @@ routerAdd("POST", "/api/tickets/validate", async (e) => {
     return handleValidateScan(e);
 });
 
-routerAdd("GET", "/api/tickets/scan-context", async (e) => {
+routerAdd("GET", "/api/tickets/scan-context", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";
@@ -25696,20 +25554,6 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
         }
     }
 
-    // --- Utility source: email/qrHelper.ts ---
-    "use strict";
-    async function renderQrSvg(url) {
-        return await QRCode.toString(url, {
-            type: 'svg',
-            errorCorrectionLevel: 'H',
-            margin: 2,
-            color: {
-                dark: '#0f172a',
-                light: '#ffffff'
-            }
-        });
-    }
-
     // --- Utility source: ticketScan/ticketValidation.ts ---
     "use strict";
     const REASON_MESSAGES = {
@@ -25871,8 +25715,6 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
         const token = generateSignedTicketToken($app, purchase.id, secret);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrDataUri = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
         const buyerName = String(purchase.get('buyerName') || '');
         const bundleId = purchase.get('bundle');
         const isBundlePass = !!bundleId;
@@ -25900,7 +25742,7 @@ routerAdd("GET", "/api/tickets/scan-context", async (e) => {
         }
         return e.json(200, {
             token,
-            qrDataUri,
+            scanUrl,
             buyerName,
             eventTitle,
             eventDate,

@@ -3,7 +3,6 @@ import { formatInTimezone } from './email/hookText';
 import { createCheckoutSession, refundPaymentIntent } from './stripeService';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from './email/emailTypes';
 import { generateSignedTicketToken } from './hmacTokens';
-import { renderQrSvg } from './email/qrHelper';
 import { coercePocketBaseDate } from './pocketbaseDate';
 
 declare const $app: PocketBaseApp & {
@@ -711,8 +710,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const qrSvgSrc = '';
 
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
@@ -726,6 +724,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
           filters: JSON.stringify({
             eventId: eventId,
             ticketToken: ticketToken,
+            scanUrl: scanUrl,
             qrSvgSrc: qrSvgSrc,
             successUrl: successUrl,
             type: 'Automated Confirmation',
@@ -873,8 +872,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrSvgSrc = `data:image/svg+xml,${encodeURIComponent(qrSvg)}`;
+        const qrSvgSrc = '';
 
         const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
         const mailRecord = new Record(emailQueueCollection, {
@@ -888,6 +886,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
           filters: JSON.stringify({
             bundleId: bundleId,
             ticketToken: ticketToken,
+            scanUrl: scanUrl,
             qrSvgSrc: qrSvgSrc,
             successUrl: successUrl,
             type: 'Automated Confirmation',
