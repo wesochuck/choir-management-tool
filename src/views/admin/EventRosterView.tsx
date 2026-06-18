@@ -253,113 +253,122 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         )}
 
         <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-          <div className="grid gap-3 xl:grid-cols-[minmax(320px,1fr)_220px_auto] xl:items-center">
-            <Input
-              type="text"
-              placeholder="Search active singers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
-            >
-              <span slot="prefix" className="flex items-center text-gray-500">
-                <svg
-                  className="size-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </span>
-              {searchQuery && (
-                <button
-                  slot="suffix"
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
-                  aria-label="Clear search"
-                >
-                  <span aria-hidden="true">❌</span>
-                </button>
-              )}
-            </Input>
-
-            <Select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              size="small"
-              className="w-full"
-              aria-label="Sort singers"
-            >
-              <option value="lastName">Sort: Last Name</option>
-              <option value="voicePart">Sort: Voice Part + Last Name</option>
-            </Select>
-
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
-                <Button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSelectedVoiceParts([]);
-                    setRsvpFilter('All');
-                  }}
-                  variant="secondary"
-                  size="small"
-                  className="flex items-center gap-1"
-                >
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_260px] md:items-center">
+              <Input
+                type="text"
+                placeholder="Search active singers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              >
+                <span slot="prefix" className="flex items-center text-gray-500">
                   <svg
-                    width="14"
-                    height="14"
+                    className="size-4"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.5"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                    <path d="M3 3v5h5"></path>
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
-                  Reset Filters
+                </span>
+                {searchQuery && (
+                  <button
+                    slot="suffix"
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
+                    aria-label="Clear search"
+                  >
+                    <span aria-hidden="true">❌</span>
+                  </button>
+                )}
+              </Input>
+
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
+                size="small"
+                className="w-full"
+                aria-label="Sort singers"
+              >
+                <option value="lastName">Sort: Last Name</option>
+                <option value="voicePart">Sort: Voice Part + Last Name</option>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
+                  <Button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedVoiceParts([]);
+                      setRsvpFilter('All');
+                    }}
+                    variant="secondary"
+                    size="small"
+                    className="flex items-center gap-1"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                      <path d="M3 3v5h5"></path>
+                    </svg>
+                    Reset Filters
+                  </Button>
+                )}
+
+                <span className="text-xs font-bold whitespace-nowrap text-gray-500">
+                  {sortedSingers.length} shown
+                </span>
+
+                <span className="text-xs font-semibold whitespace-nowrap text-gray-400">
+                  Apply to shown:
+                </span>
+              </div>
+
+              <div
+                className="grid gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center lg:justify-end"
+                aria-label="Bulk RSVP actions"
+              >
+                <Button
+                  disabled={isUpdating || sortedSingers.length === 0}
+                  onClick={() => handleBulkUpdateRSVP('Yes')}
+                  variant="primary"
+                  className="w-full lg:w-auto"
+                >
+                  Mark Attending
                 </Button>
-              )}
-
-              <span className="text-xs font-bold whitespace-nowrap text-gray-500">
-                {sortedSingers.length} shown
-              </span>
-
-              <span className="hidden text-xs font-semibold text-gray-400 sm:inline">
-                Apply to shown:
-              </span>
-
-              <Button
-                disabled={isUpdating || sortedSingers.length === 0}
-                onClick={() => handleBulkUpdateRSVP('Yes')}
-                variant="primary"
-                size="small"
-              >
-                Mark Attending
-              </Button>
-              <Button
-                disabled={isUpdating || sortedSingers.length === 0}
-                onClick={() => handleBulkUpdateRSVP('No')}
-                variant="danger"
-                size="small"
-              >
-                Mark Declined
-              </Button>
-              <Button
-                disabled={isUpdating || sortedSingers.length === 0}
-                onClick={() => handleBulkUpdateRSVP('Pending')}
-                variant="secondary"
-                size="small"
-              >
-                Reset RSVPs
-              </Button>
+                <Button
+                  disabled={isUpdating || sortedSingers.length === 0}
+                  onClick={() => handleBulkUpdateRSVP('No')}
+                  variant="danger"
+                  className="w-full lg:w-auto"
+                >
+                  Mark Declined
+                </Button>
+                <Button
+                  disabled={isUpdating || sortedSingers.length === 0}
+                  onClick={() => handleBulkUpdateRSVP('Pending')}
+                  variant="secondary"
+                  className="w-full lg:w-auto"
+                >
+                  Reset RSVPs
+                </Button>
+              </div>
             </div>
           </div>
         </div>
