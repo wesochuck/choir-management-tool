@@ -343,20 +343,22 @@ export default function CommunicationView() {
           title="Communications"
           description="Create messages, manage drafts, review message history, and configure automated communications."
           actions={
-            <Button
-              type="button"
-              variant={tab === 'compose' ? 'primary' : 'secondary'}
-              onClick={() => {
-                setTab('compose');
-                if (wizardStep === 'REVIEW') {
-                  setWizardStep('TARGETS');
-                }
-              }}
-              className="w-full whitespace-nowrap sm:w-auto"
-            >
-              <span aria-hidden="true">+</span>
-              <span>New Message</span>
-            </Button>
+            tab !== 'compose' ? (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => {
+                  setTab('compose');
+                  if (wizardStep === 'REVIEW') {
+                    setWizardStep('TARGETS');
+                  }
+                }}
+                className="w-full whitespace-nowrap sm:w-auto"
+              >
+                <span aria-hidden="true">+</span>
+                <span>New Message</span>
+              </Button>
+            ) : undefined
           }
           below={
             <>

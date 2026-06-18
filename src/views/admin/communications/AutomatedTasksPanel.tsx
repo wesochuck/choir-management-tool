@@ -200,13 +200,13 @@ export function AutomatedTasksPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-text text-lg font-semibold">Upcoming Automated Tasks</h3>
+      <h3 className="text-text text-lg font-semibold">Scheduled Messages</h3>
       <DataTable
         columns={columns}
         data={upcomingTasks}
         isLoading={false}
         emptyState={{
-          title: 'No upcoming automated tasks found.',
+          title: 'No scheduled messages found.',
           icon: (
             <svg
               width="40"

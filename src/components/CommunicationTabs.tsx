@@ -12,8 +12,9 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
   onTabChange,
   draftsCount,
 }) => {
-  const secondaryTabs: { value: CommunicationTab; label: string }[] = [
-    { value: 'automated', label: 'Automated' },
+  const tabs: { value: CommunicationTab; label: string }[] = [
+    { value: 'compose', label: 'New Message' },
+    { value: 'automated', label: 'Scheduled' },
     { value: 'drafts', label: 'Drafts' },
     { value: 'history', label: 'History' },
     { value: 'settings', label: 'Settings' },
@@ -25,7 +26,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
       aria-label="Communications sections"
     >
       <div className="flex min-w-max items-center gap-6">
-        {secondaryTabs.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.value}
             type="button"

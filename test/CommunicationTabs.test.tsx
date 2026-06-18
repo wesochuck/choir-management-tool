@@ -12,19 +12,20 @@ afterEach(() => {
 });
 
 describe('CommunicationTabs', () => {
-  it('renders Automated, Drafts, History, Settings', () => {
-    render(<CommunicationTabs activeTab="automated" onTabChange={mock.fn()} draftsCount={0} />);
+  it('renders New Message, Scheduled, Drafts, History, Settings', () => {
+    render(<CommunicationTabs activeTab="compose" onTabChange={mock.fn()} draftsCount={0} />);
 
-    assert.ok(screen.getByText('Automated'));
+    assert.ok(screen.getByText('New Message'));
+    assert.ok(screen.getByText('Scheduled'));
     assert.ok(screen.getByText('Drafts'));
     assert.ok(screen.getByText('History'));
     assert.ok(screen.getByText('Settings'));
   });
 
-  it('does not render New Message', () => {
-    render(<CommunicationTabs activeTab="automated" onTabChange={mock.fn()} draftsCount={0} />);
+  it('does not render Automated label', () => {
+    render(<CommunicationTabs activeTab="compose" onTabChange={mock.fn()} draftsCount={0} />);
 
-    assert.equal(screen.queryByText('New Message'), null);
+    assert.equal(screen.queryByText('Automated'), null);
   });
 
   it('active tab gets aria-current="page"', () => {
@@ -34,15 +35,15 @@ describe('CommunicationTabs', () => {
     assert.ok(draftsTab);
     assert.equal(draftsTab.getAttribute('aria-current'), 'page');
 
-    const automatedTab = screen.getByText('Automated').closest('button');
-    assert.ok(automatedTab);
-    assert.equal(automatedTab.getAttribute('aria-current'), null);
+    const composeTab = screen.getByText('New Message').closest('button');
+    assert.ok(composeTab);
+    assert.equal(composeTab.getAttribute('aria-current'), null);
   });
 
-  it('clicking a tab calls onTabChange', () => {
+  it('clicking a tab calls onTabChange with the correct value', () => {
     const onTabChange = mock.fn();
 
-    render(<CommunicationTabs activeTab="automated" onTabChange={onTabChange} draftsCount={0} />);
+    render(<CommunicationTabs activeTab="compose" onTabChange={onTabChange} draftsCount={0} />);
 
     act(() => {
       screen.getByText('History').click();
@@ -52,8 +53,34 @@ describe('CommunicationTabs', () => {
     assert.equal(onTabChange.mock.calls[0].arguments[0], 'history');
   });
 
+  it('clicking New Message calls onTabChange("compose")', () => {
+    const onTabChange = mock.fn();
+
+    render(<CommunicationTabs activeTab="automated" onTabChange={onTabChange} draftsCount={0} />);
+
+    act(() => {
+      screen.getByText('New Message').click();
+    });
+
+    assert.equal(onTabChange.mock.callCount(), 1);
+    assert.equal(onTabChange.mock.calls[0].arguments[0], 'compose');
+  });
+
+  it('clicking Scheduled calls onTabChange("automated")', () => {
+    const onTabChange = mock.fn();
+
+    render(<CommunicationTabs activeTab="compose" onTabChange={onTabChange} draftsCount={0} />);
+
+    act(() => {
+      screen.getByText('Scheduled').click();
+    });
+
+    assert.equal(onTabChange.mock.callCount(), 1);
+    assert.equal(onTabChange.mock.calls[0].arguments[0], 'automated');
+  });
+
   it('shows drafts badge when draftsCount > 0', () => {
-    render(<CommunicationTabs activeTab="automated" onTabChange={mock.fn()} draftsCount={5} />);
+    render(<CommunicationTabs activeTab="compose" onTabChange={mock.fn()} draftsCount={5} />);
 
     const badge = screen.getByText('5');
     assert.ok(badge);
@@ -64,7 +91,7 @@ describe('CommunicationTabs', () => {
   });
 
   it('hides drafts badge when draftsCount is 0', () => {
-    render(<CommunicationTabs activeTab="automated" onTabChange={mock.fn()} draftsCount={0} />);
+    render(<CommunicationTabs activeTab="compose" onTabChange={mock.fn()} draftsCount={0} />);
 
     assert.equal(screen.queryByText('0'), null);
   });
