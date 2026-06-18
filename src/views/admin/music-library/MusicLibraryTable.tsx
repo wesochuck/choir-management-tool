@@ -76,6 +76,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'title',
       header: 'Title',
+      accessorFn: (row) => row.title,
       enableSorting: true,
       cell: (_, row) => (
         <div className="whitespace-normal">
@@ -93,6 +94,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'composer',
       header: 'Composer/Arranger',
+      accessorFn: (row) => row.composer || row.arranger || '',
       enableSorting: true,
       cell: (_, row) => (
         <div className="whitespace-normal">
@@ -108,6 +110,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'duration',
       header: 'Duration',
+      accessorFn: (row) => parseDurationToSeconds(row.duration),
       enableSorting: true,
       cell: (_, row) =>
         row.duration ? formatSecondsToDuration(parseDurationToSeconds(row.duration)) : '-',
@@ -118,6 +121,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'performances',
       header: 'Perf',
+      accessorFn: (row) => row.performances?.length ?? 0,
       enableSorting: true,
       align: 'center',
       cell: (_, row) =>
@@ -133,6 +137,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'lastPerformed',
       header: 'Last Performed',
+      accessorFn: (row) => getEffectiveMostRecentPerformanceDate(row, pieces) || '',
       enableSorting: true,
       cell: (_, row) => {
         const lastPerformedDate = getEffectiveMostRecentPerformanceDate(row, pieces);
@@ -145,6 +150,13 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'tracks',
       header: 'Tracks',
+      accessorFn: (row) => {
+        const directTracks = row.audioTrackMapping
+          ? Object.keys(row.audioTrackMapping).filter((key) => row.audioTrackMapping?.[key]).length
+          : 0;
+        const movementTracks = getMovementTrackCount(row, pieces);
+        return directTracks + movementTracks;
+      },
       enableSorting: true,
       cell: (_, row) => {
         const isParent = isParentPiece(row, pieces);
