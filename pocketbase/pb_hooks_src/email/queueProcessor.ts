@@ -231,6 +231,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
 
           htmlBody = renderMarkdown(protectedContent);
@@ -243,6 +244,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
         }
 
@@ -509,6 +511,23 @@ export function processEmailQueue(app: PocketBaseApp): void {
           htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
         } else {
           htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+        }
+
+        // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+        if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+          const ticketButtonHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${escapeHtml(filters.successUrl)}"
+       style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        View Your Tickets
+    </a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+        Open this link on your phone at the door for quick verification.
+    </p>
+</div>`.trim();
+          htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+        } else {
+          htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
         }
 
         // Resolve poll links: {{POLL_LINK:pollId}}

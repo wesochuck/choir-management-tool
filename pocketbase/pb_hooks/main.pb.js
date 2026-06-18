@@ -1385,6 +1385,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -1395,6 +1396,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
                     let subject = record.get('subject') || '';
@@ -1629,6 +1631,23 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                     }
                     else {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -2568,6 +2587,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -2578,6 +2598,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
                     let subject = record.get('subject') || '';
@@ -2812,6 +2833,23 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     }
                     else {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -3701,6 +3739,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -3711,6 +3750,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
                     let subject = record.get('subject') || '';
@@ -3945,6 +3985,23 @@ onRecordAfterCreateSuccess((e) => {
                     }
                     else {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -4843,6 +4900,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -4853,6 +4911,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
                     let subject = record.get('subject') || '';
@@ -5087,6 +5146,23 @@ onRecordAfterUpdateSuccess((e) => {
                     }
                     else {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -5905,6 +5981,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -5915,6 +5992,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
                     let subject = record.get('subject') || '';
@@ -6149,6 +6227,23 @@ onRecordAfterCreateSuccess((e) => {
                     }
                     else {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -7116,6 +7211,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -7126,6 +7222,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
                     let subject = record.get('subject') || '';
@@ -7360,6 +7457,23 @@ onRecordAfterUpdateSuccess((e) => {
                     }
                     else {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -8742,6 +8856,7 @@ function processEmailQueue(app) {
                         .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                         .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                         .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                        .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                         .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                     htmlBody = renderMarkdown(protectedContent);
                     // Restore protected placeholders
@@ -8752,6 +8867,7 @@ function processEmailQueue(app) {
                         .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                         .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                         .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                        .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                         .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                 }
                 let subject = record.get('subject') || '';
@@ -8986,6 +9102,23 @@ function processEmailQueue(app) {
                 }
                 else {
                     htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                }
+                // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                    const ticketButtonHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${escapeHtml(filters.successUrl)}"
+       style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        View Your Tickets
+    </a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+        Open this link on your phone at the door for quick verification.
+    </p>
+</div>`.trim();
+                    htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                }
+                else {
+                    htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                 }
                 // Resolve poll links: {{POLL_LINK:pollId}}
                 if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -11080,6 +11213,7 @@ function processEmailQueue(app) {
                         .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                         .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                         .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                        .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                         .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                     htmlBody = renderMarkdown(protectedContent);
                     // Restore protected placeholders
@@ -11090,6 +11224,7 @@ function processEmailQueue(app) {
                         .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                         .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                         .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                        .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                         .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                 }
                 let subject = record.get('subject') || '';
@@ -11324,6 +11459,23 @@ function processEmailQueue(app) {
                 }
                 else {
                     htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                }
+                // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                    const ticketButtonHtml = `
+<div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+    <a href="${escapeHtml(filters.successUrl)}"
+       style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        View Your Tickets
+    </a>
+    <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+        Open this link on your phone at the door for quick verification.
+    </p>
+</div>`.trim();
+                    htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                }
+                else {
+                    htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                 }
                 // Resolve poll links: {{POLL_LINK:pollId}}
                 if (htmlBody.includes('{{POLL_LINK:') && secret) {
@@ -12480,6 +12632,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
                             .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
                             .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
                             .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
@@ -12490,6 +12643,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
                             .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
                             .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
                             .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
                     let subject = record.get('subject') || '';
@@ -12724,6 +12878,23 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     }
                     else {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
                     if (htmlBody.includes('{{POLL_LINK:') && secret) {

@@ -99,8 +99,8 @@ export const ticketService = {
 
   async pollForPurchaseRecord(
     sessionId: string,
-    retries = 5,
-    delay = 1000
+    retries = 20,
+    delay = 1500
   ): Promise<TicketPurchase | null> {
     // @allow-sequential-await - Sequential polling checks for Stripe fulfillment status.
     for (let i = 0; i < retries; i++) {

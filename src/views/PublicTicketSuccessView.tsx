@@ -154,9 +154,17 @@ export default function PublicTicketSuccessView() {
         ) : (
           <div className="w-full rounded-lg bg-neutral-100 p-4">
             <p className="text-text-muted m-0 text-sm">
-              We're finishing up enqueuing your confirmation email. You can safely navigate away.
-              Your tickets are secured.
+              We could not load the full ticket details yet. Your purchase may still be processing.
+              Please refresh this page in a moment, or contact the box office if this continues.
             </p>
+            <Button
+              onClick={() => purchaseQuery.refetch()}
+              variant="secondary"
+              size="small"
+              className="mt-3"
+            >
+              Check Again
+            </Button>
           </div>
         )}
 
