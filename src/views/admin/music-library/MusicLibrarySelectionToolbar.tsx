@@ -21,12 +21,13 @@ export function MusicLibrarySelectionToolbar({
 
   return (
     <div
-      className="border-primary-light fixed right-4 bottom-4 left-4 z-40 mx-auto max-w-6xl rounded-xl border bg-white/95 px-4 py-3 shadow-xl backdrop-blur transition-all duration-150 ease-out sm:px-6"
+      className="border-primary/35 ring-primary/15 fixed right-4 bottom-4 left-4 z-40 mx-auto max-w-6xl overflow-hidden rounded-2xl border-2 bg-white/98 shadow-[0_12px_35px_rgba(15,23,42,0.22)] ring-1 backdrop-blur"
       role="region"
       aria-label="Selected music title actions"
-      aria-live="polite"
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="bg-primary h-1" />
+
+      <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-center gap-2">
           <span className="bg-primary-light text-primary-deep inline-flex size-7 items-center justify-center rounded-full text-sm font-bold">
             {selectedCount}
@@ -38,7 +39,7 @@ export function MusicLibrarySelectionToolbar({
             <button
               type="button"
               onClick={onClearSelection}
-              className="ml-2 cursor-pointer border-none bg-transparent p-0 text-xs font-medium text-slate-400 underline transition-colors hover:text-slate-600"
+              className="ml-2 cursor-pointer border-none bg-transparent p-0 text-xs font-medium text-slate-500 underline transition-colors hover:text-slate-700"
             >
               Clear
             </button>
