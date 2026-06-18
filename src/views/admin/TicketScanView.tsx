@@ -63,6 +63,7 @@ export default function TicketScanView() {
   /* Camera scanning state */
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scanPaused, setScanPaused] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -70,6 +71,7 @@ export default function TicketScanView() {
   const scanningRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const validatingRef = useRef(false);
+  const lastScannedTokenRef = useRef<string | null>(null);
 
   /* Handle event selection - update URL and localStorage */
   const handleEventChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -83,13 +85,6 @@ export default function TicketScanView() {
       localStorage.removeItem(STORAGE_KEY);
     }
   };
-
-  /* Auto-clear result after 6 seconds */
-  useEffect(() => {
-    if (!scanResult) return;
-    const timer = setTimeout(() => setScanResult(null), 6000);
-    return () => clearTimeout(timer);
-  }, [scanResult]);
 
   /* Add result to history */
   const addToHistory = useCallback((result: ValidationResult, token: string) => {
@@ -134,6 +129,16 @@ export default function TicketScanView() {
   };
 
   /* Camera helpers */
+  const pauseScanning = useCallback(() => {
+    scanningRef.current = false;
+    setScanPaused(true);
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
   const startFrameCapture = useCallback(async () => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -172,10 +177,18 @@ export default function TicketScanView() {
       const code = jsQR(imageData.data, imageData.width, imageData.height);
 
       if (code && code.data && !validatingRef.current) {
-        handleValidateToken(extractToken(code.data));
+        const token = extractToken(code.data);
+
+        if (token === lastScannedTokenRef.current) {
+          return;
+        }
+
+        lastScannedTokenRef.current = token;
+        pauseScanning();
+        void handleValidateToken(token);
       }
     }, 150);
-  }, [handleValidateToken]);
+  }, [handleValidateToken, pauseScanning]);
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
@@ -231,17 +244,32 @@ export default function TicketScanView() {
 
   const stopCamera = useCallback(() => {
     scanningRef.current = false;
+
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
+
+    lastScannedTokenRef.current = null;
+    setScanPaused(false);
     setCameraActive(false);
     setCameraError(null);
   }, []);
+
+  const handleScanNextTicket = useCallback(() => {
+    setScanResult(null);
+    setScanPaused(false);
+    lastScannedTokenRef.current = null;
+
+    if (cameraActive) {
+      startFrameCapture();
+    }
+  }, [cameraActive, startFrameCapture]);
 
   /* Cleanup on unmount */
   useEffect(() => {
@@ -253,6 +281,7 @@ export default function TicketScanView() {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+      lastScannedTokenRef.current = null;
     };
   }, []);
 
@@ -306,6 +335,16 @@ export default function TicketScanView() {
                   />
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
+                {cameraActive && scanPaused && (
+                  <p className="text-success-text text-center text-sm font-semibold">
+                    Scan paused. Review the result, then tap Scan Next Ticket.
+                  </p>
+                )}
+                {cameraActive && !scanPaused && !validating && (
+                  <p className="text-text-muted text-center text-sm">
+                    Point the camera at one ticket QR code.
+                  </p>
+                )}
                 <div className="flex justify-center">
                   <Button variant="outline" size="small" onClick={stopCamera}>
                     Stop Camera
@@ -357,7 +396,21 @@ export default function TicketScanView() {
             </div>
           )}
 
-          {scanResult && <ScanResultCard result={scanResult} />}
+          {scanResult && (
+            <div className="space-y-4">
+              <ScanResultCard result={scanResult} />
+
+              {cameraActive && scanPaused && (
+                <Button
+                  variant="primary"
+                  className="w-full py-3 text-lg font-bold"
+                  onClick={handleScanNextTicket}
+                >
+                  Scan Next Ticket
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* History strip */}
           {history.length > 0 && (

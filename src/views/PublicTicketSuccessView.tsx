@@ -147,8 +147,8 @@ export default function PublicTicketSuccessView() {
               </div>
             ) : null}
             <p className="border-border text-text-muted m-0 border-t pt-1 text-center text-xs">
-              A confirmation email has been sent. Your tickets will be held at Will Call on show
-              day. Please bring a photo ID matching the buyer's name.
+              A confirmation email has been sent with a link back to this page. Your tickets will be
+              held at Will Call on show day. Please bring a photo ID matching the buyer's name.
             </p>
           </div>
         ) : (
@@ -176,14 +176,9 @@ export default function PublicTicketSuccessView() {
               </div>
             )}
 
-            {scanContextQuery.data.scanUrl && (
-              <a href={scanContextQuery.data.scanUrl} className="text-primary text-xs underline">
-                Open ticket scan link
-              </a>
-            )}
-
             <p className="text-text-muted m-0 text-center text-xs">
-              Screenshot this — you'll need it at the door.
+              Print or screenshot this entire page and bring it with you. We also sent a
+              confirmation email with a link back to this page.
             </p>
           </div>
         )}
