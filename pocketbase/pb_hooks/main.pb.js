@@ -1209,7 +1209,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
-            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
         const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -1217,7 +1217,9 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
         // Stale Processing record recovery
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Pending',
                     processingRunId = NULL,
@@ -1225,8 +1227,12 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-            app.db().newQuery(`
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Failed',
                     processingRunId = NULL,
@@ -1234,19 +1240,21 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND attempts >= {:maxAttempts}
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
         }
         catch (recoverErr) {
-            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
         const secret = getHmacSecret(app);
-        let baseUrl = "http://localhost:5173";
-        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-        let choirName = "";
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -1255,33 +1263,33 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         catch (_b) {
             // use default baseUrl and mailingAddress
         }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (appSettingsUrl) {
                 baseUrl = appSettingsUrl;
             }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
         catch (_c) {
             // use default choirName
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const valueStr = tzSetting.get("value");
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
             const tzP = parseJsonField(valueStr);
             if (tzP) {
-                if (typeof tzP === "string") {
+                if (typeof tzP === 'string') {
                     timezone = tzP;
                 }
-                else if (typeof tzP === "object" && tzP.timezone) {
+                else if (typeof tzP === 'object' && tzP.timezone) {
                     timezone = tzP.timezone;
                 }
             }
@@ -1295,7 +1303,9 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
             console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
             // Atomic SQLite-level claiming
             try {
-                app.db().newQuery(`
+                app
+                    .db()
+                    .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
                         processingRunId = {:runId},
@@ -1308,20 +1318,22 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                         ORDER BY created ASC
                         LIMIT {:batchSize}
                     )
-                `).bind({
+                `)
+                    .bind({
                     runId: runId,
                     maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE
-                }).execute();
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
             }
             catch (claimErr) {
-                console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
                 return;
             }
-            const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
             if (!records || records.length === 0) {
                 if (totalClaimed === 0) {
-                    console.log("[Email Queue] No records claimed for run: " + runId);
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
                 }
                 break;
             }
@@ -1330,68 +1342,68 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
             records.forEach((record) => {
                 var _a, _b, _c;
                 try {
-                    const rawContent = record.get("rawContent") || "";
-                    const recipientId = record.get("recipientId");
-                    const recipientEmail = record.get("recipientEmail");
-                    const recipientName = record.get("recipientName") || "Singer";
-                    const filters = parseJsonField(record.get("filters")) || {};
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                     // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
-                        const subject = record.get("subject") || "";
+                        const subject = record.get('subject') || '';
                         // Dispatch as plain text via PocketBase SMTP Client
                         const mailerMessage = new MailerMessage({
                             from: {
-                                address: settings.meta.senderAddress || "no-reply@choir.management",
-                                name: settings.meta.senderName || "Choir Management Tool"
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
                             },
                             to: [{ address: recipientEmail, name: recipientName }],
                             subject: subject,
-                            text: rawContent
+                            text: rawContent,
                         });
                         app.newMailClient().send(mailerMessage);
-                        record.set("status", "Sent");
-                        record.set("sentAt", new Date().toISOString());
-                        record.set("processingRunId", null);
-                        record.set("processingStartedAt", null);
-                        record.set("errorMessage", "");
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
                         console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                         return;
                     }
-                    let htmlBody = "";
-                    if (filters.contentType === "html") {
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
                         htmlBody = rawContent;
                     }
                     else {
                         // Temporarily protect placeholders containing underscores from markdown parsing
                         const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
                         htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
-                    let subject = record.get("subject") || "";
+                    let subject = record.get('subject') || '';
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
                     let event = null;
                     if (filters && filters.eventId) {
                         try {
-                            event = app.findRecordById("events", filters.eventId);
+                            event = app.findRecordById('events', filters.eventId);
                         }
                         catch (_d) {
                             // event not found
@@ -1401,25 +1413,40 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                        const eventTitle = (event.get("title") || event.get("type") || "Event");
-                        const eventType = (event.get("type") || "Performance");
-                        const eventDetails = (event.get("details") || "");
-                        let venueName = "TBD";
-                        let venueAddress = "";
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
                         try {
-                            const venueRecord = app.findRecordById("venues", event.get("venue"));
-                            venueName = (venueRecord.get("name") || "TBD");
-                            venueAddress = (venueRecord.get("address") || "");
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
                         }
                         catch (_e) {
                             // venue not found
                         }
-                        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
                         // Resolve event placeholders in subject too
-                        subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                         let locationHtml = escapeHtml(venueName);
@@ -1438,17 +1465,25 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
     </div>
     `;
                         // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = "";
-                        if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
                             try {
-                                const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                    const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                    const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
                                     // Generate a direct link to the backend ICS download route
-                                    let icsLink = "";
+                                    let icsLink = '';
                                     if (secret) {
                                         const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -1473,9 +1508,9 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                             }
                         }
                         // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = "";
-                        if (htmlBody.includes("{eventCalendarLink}")) {
-                            let icsLink = "";
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
                             let slotDateLong = dateLong;
                             let slotTimeStr = timeStr;
                             if (secret) {
@@ -1486,11 +1521,20 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                                     const token = `${payload}&s=${signature}`;
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
-                                        const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                         if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
                                         }
                                     }
                                     catch (_g) {
@@ -1516,17 +1560,18 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
     </table>
                             `.trim();
                         }
-                        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                             .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                             const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
@@ -1535,9 +1580,12 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
-                        if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
                             const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
@@ -1546,20 +1594,21 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
                         }
                     }
                     else {
                         // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                            .replace(/{playerLink}/g, "");
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                     }
                     // Clear setlist placeholder when no event
                     if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, "");
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
                     }
                     // Resolve ticket QR code placeholder
-                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                         const isBundle = !!filters.bundleId;
                         const caption = isBundle
                             ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -1579,20 +1628,20 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                     }
                     else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = "l=" + pollId + "&p=" + recipientId;
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
                             const signature = $security.hs256(payload, secret);
-                            const token = payload + "&s=" + signature;
-                            const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                            let pollButtonLabel = "Answer our quick question";
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
                             try {
-                                const pollRecord = app.findRecordById("polls", pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                                if (typeof question === "string" && question.trim()) {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
                                     pollButtonLabel = question.trim();
                                 }
                             }
@@ -1618,36 +1667,36 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
                     }
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set("htmlBody", finalHtml);
+                    record.set('htmlBody', finalHtml);
                     // Dispatch natively via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        html: finalHtml
+                        html: finalHtml,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent record: ${record.id}`);
                 }
                 catch (err) {
-                    const rawAttempts = record.get("attempts");
-                    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set("attempts", currentAttempts);
+                    record.set('attempts', currentAttempts);
                     const message = err instanceof Error ? err.message : String(err);
-                    record.set("errorMessage", message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                    record.set("status", nextStatus);
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
                     console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
                 }
                 finally {
@@ -1659,7 +1708,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", async () => {
             }
         }
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
 
@@ -2357,7 +2406,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
-            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
         const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -2365,7 +2414,9 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
         // Stale Processing record recovery
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Pending',
                     processingRunId = NULL,
@@ -2373,8 +2424,12 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-            app.db().newQuery(`
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Failed',
                     processingRunId = NULL,
@@ -2382,19 +2437,21 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND attempts >= {:maxAttempts}
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
         }
         catch (recoverErr) {
-            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
         const secret = getHmacSecret(app);
-        let baseUrl = "http://localhost:5173";
-        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-        let choirName = "";
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -2403,33 +2460,33 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         catch (_b) {
             // use default baseUrl and mailingAddress
         }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (appSettingsUrl) {
                 baseUrl = appSettingsUrl;
             }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
         catch (_c) {
             // use default choirName
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const valueStr = tzSetting.get("value");
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
             const tzP = parseJsonField(valueStr);
             if (tzP) {
-                if (typeof tzP === "string") {
+                if (typeof tzP === 'string') {
                     timezone = tzP;
                 }
-                else if (typeof tzP === "object" && tzP.timezone) {
+                else if (typeof tzP === 'object' && tzP.timezone) {
                     timezone = tzP.timezone;
                 }
             }
@@ -2443,7 +2500,9 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
             // Atomic SQLite-level claiming
             try {
-                app.db().newQuery(`
+                app
+                    .db()
+                    .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
                         processingRunId = {:runId},
@@ -2456,20 +2515,22 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                         ORDER BY created ASC
                         LIMIT {:batchSize}
                     )
-                `).bind({
+                `)
+                    .bind({
                     runId: runId,
                     maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE
-                }).execute();
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
             }
             catch (claimErr) {
-                console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
                 return;
             }
-            const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
             if (!records || records.length === 0) {
                 if (totalClaimed === 0) {
-                    console.log("[Email Queue] No records claimed for run: " + runId);
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
                 }
                 break;
             }
@@ -2478,68 +2539,68 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             records.forEach((record) => {
                 var _a, _b, _c;
                 try {
-                    const rawContent = record.get("rawContent") || "";
-                    const recipientId = record.get("recipientId");
-                    const recipientEmail = record.get("recipientEmail");
-                    const recipientName = record.get("recipientName") || "Singer";
-                    const filters = parseJsonField(record.get("filters")) || {};
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                     // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
-                        const subject = record.get("subject") || "";
+                        const subject = record.get('subject') || '';
                         // Dispatch as plain text via PocketBase SMTP Client
                         const mailerMessage = new MailerMessage({
                             from: {
-                                address: settings.meta.senderAddress || "no-reply@choir.management",
-                                name: settings.meta.senderName || "Choir Management Tool"
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
                             },
                             to: [{ address: recipientEmail, name: recipientName }],
                             subject: subject,
-                            text: rawContent
+                            text: rawContent,
                         });
                         app.newMailClient().send(mailerMessage);
-                        record.set("status", "Sent");
-                        record.set("sentAt", new Date().toISOString());
-                        record.set("processingRunId", null);
-                        record.set("processingStartedAt", null);
-                        record.set("errorMessage", "");
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
                         console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                         return;
                     }
-                    let htmlBody = "";
-                    if (filters.contentType === "html") {
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
                         htmlBody = rawContent;
                     }
                     else {
                         // Temporarily protect placeholders containing underscores from markdown parsing
                         const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
                         htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
-                    let subject = record.get("subject") || "";
+                    let subject = record.get('subject') || '';
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
                     let event = null;
                     if (filters && filters.eventId) {
                         try {
-                            event = app.findRecordById("events", filters.eventId);
+                            event = app.findRecordById('events', filters.eventId);
                         }
                         catch (_d) {
                             // event not found
@@ -2549,25 +2610,40 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                        const eventTitle = (event.get("title") || event.get("type") || "Event");
-                        const eventType = (event.get("type") || "Performance");
-                        const eventDetails = (event.get("details") || "");
-                        let venueName = "TBD";
-                        let venueAddress = "";
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
                         try {
-                            const venueRecord = app.findRecordById("venues", event.get("venue"));
-                            venueName = (venueRecord.get("name") || "TBD");
-                            venueAddress = (venueRecord.get("address") || "");
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
                         }
                         catch (_e) {
                             // venue not found
                         }
-                        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
                         // Resolve event placeholders in subject too
-                        subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                         let locationHtml = escapeHtml(venueName);
@@ -2586,17 +2662,25 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     </div>
     `;
                         // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = "";
-                        if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
                             try {
-                                const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                    const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                    const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
                                     // Generate a direct link to the backend ICS download route
-                                    let icsLink = "";
+                                    let icsLink = '';
                                     if (secret) {
                                         const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -2621,9 +2705,9 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             }
                         }
                         // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = "";
-                        if (htmlBody.includes("{eventCalendarLink}")) {
-                            let icsLink = "";
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
                             let slotDateLong = dateLong;
                             let slotTimeStr = timeStr;
                             if (secret) {
@@ -2634,11 +2718,20 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     const token = `${payload}&s=${signature}`;
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
-                                        const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                         if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
                                         }
                                     }
                                     catch (_g) {
@@ -2664,17 +2757,18 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     </table>
                             `.trim();
                         }
-                        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                             .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                             const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
@@ -2683,9 +2777,12 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
-                        if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
                             const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
@@ -2694,20 +2791,21 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
                         }
                     }
                     else {
                         // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                            .replace(/{playerLink}/g, "");
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                     }
                     // Clear setlist placeholder when no event
                     if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, "");
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
                     }
                     // Resolve ticket QR code placeholder
-                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                         const isBundle = !!filters.bundleId;
                         const caption = isBundle
                             ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -2727,20 +2825,20 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                     }
                     else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = "l=" + pollId + "&p=" + recipientId;
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
                             const signature = $security.hs256(payload, secret);
-                            const token = payload + "&s=" + signature;
-                            const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                            let pollButtonLabel = "Answer our quick question";
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
                             try {
-                                const pollRecord = app.findRecordById("polls", pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                                if (typeof question === "string" && question.trim()) {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
                                     pollButtonLabel = question.trim();
                                 }
                             }
@@ -2766,36 +2864,36 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                     }
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set("htmlBody", finalHtml);
+                    record.set('htmlBody', finalHtml);
                     // Dispatch natively via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        html: finalHtml
+                        html: finalHtml,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent record: ${record.id}`);
                 }
                 catch (err) {
-                    const rawAttempts = record.get("attempts");
-                    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set("attempts", currentAttempts);
+                    record.set('attempts', currentAttempts);
                     const message = err instanceof Error ? err.message : String(err);
-                    record.set("errorMessage", message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                    record.set("status", nextStatus);
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
                     console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
                 }
                 finally {
@@ -2807,7 +2905,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             }
         }
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -3441,7 +3539,7 @@ onRecordAfterCreateSuccess((e) => {
         var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
-            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
         const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -3449,7 +3547,9 @@ onRecordAfterCreateSuccess((e) => {
         const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
         // Stale Processing record recovery
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Pending',
                     processingRunId = NULL,
@@ -3457,8 +3557,12 @@ onRecordAfterCreateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-            app.db().newQuery(`
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Failed',
                     processingRunId = NULL,
@@ -3466,19 +3570,21 @@ onRecordAfterCreateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND attempts >= {:maxAttempts}
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
         }
         catch (recoverErr) {
-            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
         const secret = getHmacSecret(app);
-        let baseUrl = "http://localhost:5173";
-        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-        let choirName = "";
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -3487,33 +3593,33 @@ onRecordAfterCreateSuccess((e) => {
         catch (_b) {
             // use default baseUrl and mailingAddress
         }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (appSettingsUrl) {
                 baseUrl = appSettingsUrl;
             }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
         catch (_c) {
             // use default choirName
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const valueStr = tzSetting.get("value");
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
             const tzP = parseJsonField(valueStr);
             if (tzP) {
-                if (typeof tzP === "string") {
+                if (typeof tzP === 'string') {
                     timezone = tzP;
                 }
-                else if (typeof tzP === "object" && tzP.timezone) {
+                else if (typeof tzP === 'object' && tzP.timezone) {
                     timezone = tzP.timezone;
                 }
             }
@@ -3527,7 +3633,9 @@ onRecordAfterCreateSuccess((e) => {
             console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
             // Atomic SQLite-level claiming
             try {
-                app.db().newQuery(`
+                app
+                    .db()
+                    .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
                         processingRunId = {:runId},
@@ -3540,20 +3648,22 @@ onRecordAfterCreateSuccess((e) => {
                         ORDER BY created ASC
                         LIMIT {:batchSize}
                     )
-                `).bind({
+                `)
+                    .bind({
                     runId: runId,
                     maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE
-                }).execute();
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
             }
             catch (claimErr) {
-                console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
                 return;
             }
-            const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
             if (!records || records.length === 0) {
                 if (totalClaimed === 0) {
-                    console.log("[Email Queue] No records claimed for run: " + runId);
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
                 }
                 break;
             }
@@ -3562,68 +3672,68 @@ onRecordAfterCreateSuccess((e) => {
             records.forEach((record) => {
                 var _a, _b, _c;
                 try {
-                    const rawContent = record.get("rawContent") || "";
-                    const recipientId = record.get("recipientId");
-                    const recipientEmail = record.get("recipientEmail");
-                    const recipientName = record.get("recipientName") || "Singer";
-                    const filters = parseJsonField(record.get("filters")) || {};
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                     // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
-                        const subject = record.get("subject") || "";
+                        const subject = record.get('subject') || '';
                         // Dispatch as plain text via PocketBase SMTP Client
                         const mailerMessage = new MailerMessage({
                             from: {
-                                address: settings.meta.senderAddress || "no-reply@choir.management",
-                                name: settings.meta.senderName || "Choir Management Tool"
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
                             },
                             to: [{ address: recipientEmail, name: recipientName }],
                             subject: subject,
-                            text: rawContent
+                            text: rawContent,
                         });
                         app.newMailClient().send(mailerMessage);
-                        record.set("status", "Sent");
-                        record.set("sentAt", new Date().toISOString());
-                        record.set("processingRunId", null);
-                        record.set("processingStartedAt", null);
-                        record.set("errorMessage", "");
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
                         console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                         return;
                     }
-                    let htmlBody = "";
-                    if (filters.contentType === "html") {
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
                         htmlBody = rawContent;
                     }
                     else {
                         // Temporarily protect placeholders containing underscores from markdown parsing
                         const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
                         htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
-                    let subject = record.get("subject") || "";
+                    let subject = record.get('subject') || '';
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
                     let event = null;
                     if (filters && filters.eventId) {
                         try {
-                            event = app.findRecordById("events", filters.eventId);
+                            event = app.findRecordById('events', filters.eventId);
                         }
                         catch (_d) {
                             // event not found
@@ -3633,25 +3743,40 @@ onRecordAfterCreateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                        const eventTitle = (event.get("title") || event.get("type") || "Event");
-                        const eventType = (event.get("type") || "Performance");
-                        const eventDetails = (event.get("details") || "");
-                        let venueName = "TBD";
-                        let venueAddress = "";
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
                         try {
-                            const venueRecord = app.findRecordById("venues", event.get("venue"));
-                            venueName = (venueRecord.get("name") || "TBD");
-                            venueAddress = (venueRecord.get("address") || "");
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
                         }
                         catch (_e) {
                             // venue not found
                         }
-                        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
                         // Resolve event placeholders in subject too
-                        subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                         let locationHtml = escapeHtml(venueName);
@@ -3670,17 +3795,25 @@ onRecordAfterCreateSuccess((e) => {
     </div>
     `;
                         // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = "";
-                        if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
                             try {
-                                const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                    const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                    const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
                                     // Generate a direct link to the backend ICS download route
-                                    let icsLink = "";
+                                    let icsLink = '';
                                     if (secret) {
                                         const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -3705,9 +3838,9 @@ onRecordAfterCreateSuccess((e) => {
                             }
                         }
                         // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = "";
-                        if (htmlBody.includes("{eventCalendarLink}")) {
-                            let icsLink = "";
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
                             let slotDateLong = dateLong;
                             let slotTimeStr = timeStr;
                             if (secret) {
@@ -3718,11 +3851,20 @@ onRecordAfterCreateSuccess((e) => {
                                     const token = `${payload}&s=${signature}`;
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
-                                        const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                         if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
                                         }
                                     }
                                     catch (_g) {
@@ -3748,17 +3890,18 @@ onRecordAfterCreateSuccess((e) => {
     </table>
                             `.trim();
                         }
-                        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                             .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                             const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
@@ -3767,9 +3910,12 @@ onRecordAfterCreateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
-                        if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
                             const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
@@ -3778,20 +3924,21 @@ onRecordAfterCreateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
                         }
                     }
                     else {
                         // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                            .replace(/{playerLink}/g, "");
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                     }
                     // Clear setlist placeholder when no event
                     if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, "");
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
                     }
                     // Resolve ticket QR code placeholder
-                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                         const isBundle = !!filters.bundleId;
                         const caption = isBundle
                             ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -3811,20 +3958,20 @@ onRecordAfterCreateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                     }
                     else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = "l=" + pollId + "&p=" + recipientId;
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
                             const signature = $security.hs256(payload, secret);
-                            const token = payload + "&s=" + signature;
-                            const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                            let pollButtonLabel = "Answer our quick question";
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
                             try {
-                                const pollRecord = app.findRecordById("polls", pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                                if (typeof question === "string" && question.trim()) {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
                                     pollButtonLabel = question.trim();
                                 }
                             }
@@ -3850,36 +3997,36 @@ onRecordAfterCreateSuccess((e) => {
                     }
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set("htmlBody", finalHtml);
+                    record.set('htmlBody', finalHtml);
                     // Dispatch natively via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        html: finalHtml
+                        html: finalHtml,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent record: ${record.id}`);
                 }
                 catch (err) {
-                    const rawAttempts = record.get("attempts");
-                    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set("attempts", currentAttempts);
+                    record.set('attempts', currentAttempts);
                     const message = err instanceof Error ? err.message : String(err);
-                    record.set("errorMessage", message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                    record.set("status", nextStatus);
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
                     console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
                 }
                 finally {
@@ -3891,7 +4038,7 @@ onRecordAfterCreateSuccess((e) => {
             }
         }
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -4534,7 +4681,7 @@ onRecordAfterUpdateSuccess((e) => {
         var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
-            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
         const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -4542,7 +4689,9 @@ onRecordAfterUpdateSuccess((e) => {
         const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
         // Stale Processing record recovery
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Pending',
                     processingRunId = NULL,
@@ -4550,8 +4699,12 @@ onRecordAfterUpdateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-            app.db().newQuery(`
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Failed',
                     processingRunId = NULL,
@@ -4559,19 +4712,21 @@ onRecordAfterUpdateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND attempts >= {:maxAttempts}
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
         }
         catch (recoverErr) {
-            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
         const secret = getHmacSecret(app);
-        let baseUrl = "http://localhost:5173";
-        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-        let choirName = "";
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -4580,33 +4735,33 @@ onRecordAfterUpdateSuccess((e) => {
         catch (_b) {
             // use default baseUrl and mailingAddress
         }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (appSettingsUrl) {
                 baseUrl = appSettingsUrl;
             }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
         catch (_c) {
             // use default choirName
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const valueStr = tzSetting.get("value");
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
             const tzP = parseJsonField(valueStr);
             if (tzP) {
-                if (typeof tzP === "string") {
+                if (typeof tzP === 'string') {
                     timezone = tzP;
                 }
-                else if (typeof tzP === "object" && tzP.timezone) {
+                else if (typeof tzP === 'object' && tzP.timezone) {
                     timezone = tzP.timezone;
                 }
             }
@@ -4620,7 +4775,9 @@ onRecordAfterUpdateSuccess((e) => {
             console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
             // Atomic SQLite-level claiming
             try {
-                app.db().newQuery(`
+                app
+                    .db()
+                    .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
                         processingRunId = {:runId},
@@ -4633,20 +4790,22 @@ onRecordAfterUpdateSuccess((e) => {
                         ORDER BY created ASC
                         LIMIT {:batchSize}
                     )
-                `).bind({
+                `)
+                    .bind({
                     runId: runId,
                     maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE
-                }).execute();
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
             }
             catch (claimErr) {
-                console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
                 return;
             }
-            const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
             if (!records || records.length === 0) {
                 if (totalClaimed === 0) {
-                    console.log("[Email Queue] No records claimed for run: " + runId);
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
                 }
                 break;
             }
@@ -4655,68 +4814,68 @@ onRecordAfterUpdateSuccess((e) => {
             records.forEach((record) => {
                 var _a, _b, _c;
                 try {
-                    const rawContent = record.get("rawContent") || "";
-                    const recipientId = record.get("recipientId");
-                    const recipientEmail = record.get("recipientEmail");
-                    const recipientName = record.get("recipientName") || "Singer";
-                    const filters = parseJsonField(record.get("filters")) || {};
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                     // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
-                        const subject = record.get("subject") || "";
+                        const subject = record.get('subject') || '';
                         // Dispatch as plain text via PocketBase SMTP Client
                         const mailerMessage = new MailerMessage({
                             from: {
-                                address: settings.meta.senderAddress || "no-reply@choir.management",
-                                name: settings.meta.senderName || "Choir Management Tool"
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
                             },
                             to: [{ address: recipientEmail, name: recipientName }],
                             subject: subject,
-                            text: rawContent
+                            text: rawContent,
                         });
                         app.newMailClient().send(mailerMessage);
-                        record.set("status", "Sent");
-                        record.set("sentAt", new Date().toISOString());
-                        record.set("processingRunId", null);
-                        record.set("processingStartedAt", null);
-                        record.set("errorMessage", "");
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
                         console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                         return;
                     }
-                    let htmlBody = "";
-                    if (filters.contentType === "html") {
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
                         htmlBody = rawContent;
                     }
                     else {
                         // Temporarily protect placeholders containing underscores from markdown parsing
                         const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
                         htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
-                    let subject = record.get("subject") || "";
+                    let subject = record.get('subject') || '';
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
                     let event = null;
                     if (filters && filters.eventId) {
                         try {
-                            event = app.findRecordById("events", filters.eventId);
+                            event = app.findRecordById('events', filters.eventId);
                         }
                         catch (_d) {
                             // event not found
@@ -4726,25 +4885,40 @@ onRecordAfterUpdateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                        const eventTitle = (event.get("title") || event.get("type") || "Event");
-                        const eventType = (event.get("type") || "Performance");
-                        const eventDetails = (event.get("details") || "");
-                        let venueName = "TBD";
-                        let venueAddress = "";
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
                         try {
-                            const venueRecord = app.findRecordById("venues", event.get("venue"));
-                            venueName = (venueRecord.get("name") || "TBD");
-                            venueAddress = (venueRecord.get("address") || "");
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
                         }
                         catch (_e) {
                             // venue not found
                         }
-                        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
                         // Resolve event placeholders in subject too
-                        subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                         let locationHtml = escapeHtml(venueName);
@@ -4763,17 +4937,25 @@ onRecordAfterUpdateSuccess((e) => {
     </div>
     `;
                         // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = "";
-                        if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
                             try {
-                                const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                    const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                    const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
                                     // Generate a direct link to the backend ICS download route
-                                    let icsLink = "";
+                                    let icsLink = '';
                                     if (secret) {
                                         const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -4798,9 +4980,9 @@ onRecordAfterUpdateSuccess((e) => {
                             }
                         }
                         // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = "";
-                        if (htmlBody.includes("{eventCalendarLink}")) {
-                            let icsLink = "";
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
                             let slotDateLong = dateLong;
                             let slotTimeStr = timeStr;
                             if (secret) {
@@ -4811,11 +4993,20 @@ onRecordAfterUpdateSuccess((e) => {
                                     const token = `${payload}&s=${signature}`;
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
-                                        const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                         if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
                                         }
                                     }
                                     catch (_g) {
@@ -4841,17 +5032,18 @@ onRecordAfterUpdateSuccess((e) => {
     </table>
                             `.trim();
                         }
-                        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                             .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                             const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
@@ -4860,9 +5052,12 @@ onRecordAfterUpdateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
-                        if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
                             const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
@@ -4871,20 +5066,21 @@ onRecordAfterUpdateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
                         }
                     }
                     else {
                         // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                            .replace(/{playerLink}/g, "");
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                     }
                     // Clear setlist placeholder when no event
                     if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, "");
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
                     }
                     // Resolve ticket QR code placeholder
-                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                         const isBundle = !!filters.bundleId;
                         const caption = isBundle
                             ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -4904,20 +5100,20 @@ onRecordAfterUpdateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                     }
                     else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = "l=" + pollId + "&p=" + recipientId;
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
                             const signature = $security.hs256(payload, secret);
-                            const token = payload + "&s=" + signature;
-                            const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                            let pollButtonLabel = "Answer our quick question";
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
                             try {
-                                const pollRecord = app.findRecordById("polls", pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                                if (typeof question === "string" && question.trim()) {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
                                     pollButtonLabel = question.trim();
                                 }
                             }
@@ -4943,36 +5139,36 @@ onRecordAfterUpdateSuccess((e) => {
                     }
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set("htmlBody", finalHtml);
+                    record.set('htmlBody', finalHtml);
                     // Dispatch natively via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        html: finalHtml
+                        html: finalHtml,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent record: ${record.id}`);
                 }
                 catch (err) {
-                    const rawAttempts = record.get("attempts");
-                    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set("attempts", currentAttempts);
+                    record.set('attempts', currentAttempts);
                     const message = err instanceof Error ? err.message : String(err);
-                    record.set("errorMessage", message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                    record.set("status", nextStatus);
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
                     console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
                 }
                 finally {
@@ -4984,7 +5180,7 @@ onRecordAfterUpdateSuccess((e) => {
             }
         }
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -5547,7 +5743,7 @@ onRecordAfterCreateSuccess((e) => {
         var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
-            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
         const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -5555,7 +5751,9 @@ onRecordAfterCreateSuccess((e) => {
         const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
         // Stale Processing record recovery
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Pending',
                     processingRunId = NULL,
@@ -5563,8 +5761,12 @@ onRecordAfterCreateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-            app.db().newQuery(`
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Failed',
                     processingRunId = NULL,
@@ -5572,19 +5774,21 @@ onRecordAfterCreateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND attempts >= {:maxAttempts}
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
         }
         catch (recoverErr) {
-            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
         const secret = getHmacSecret(app);
-        let baseUrl = "http://localhost:5173";
-        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-        let choirName = "";
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -5593,33 +5797,33 @@ onRecordAfterCreateSuccess((e) => {
         catch (_b) {
             // use default baseUrl and mailingAddress
         }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (appSettingsUrl) {
                 baseUrl = appSettingsUrl;
             }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
         catch (_c) {
             // use default choirName
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const valueStr = tzSetting.get("value");
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
             const tzP = parseJsonField(valueStr);
             if (tzP) {
-                if (typeof tzP === "string") {
+                if (typeof tzP === 'string') {
                     timezone = tzP;
                 }
-                else if (typeof tzP === "object" && tzP.timezone) {
+                else if (typeof tzP === 'object' && tzP.timezone) {
                     timezone = tzP.timezone;
                 }
             }
@@ -5633,7 +5837,9 @@ onRecordAfterCreateSuccess((e) => {
             console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
             // Atomic SQLite-level claiming
             try {
-                app.db().newQuery(`
+                app
+                    .db()
+                    .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
                         processingRunId = {:runId},
@@ -5646,20 +5852,22 @@ onRecordAfterCreateSuccess((e) => {
                         ORDER BY created ASC
                         LIMIT {:batchSize}
                     )
-                `).bind({
+                `)
+                    .bind({
                     runId: runId,
                     maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE
-                }).execute();
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
             }
             catch (claimErr) {
-                console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
                 return;
             }
-            const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
             if (!records || records.length === 0) {
                 if (totalClaimed === 0) {
-                    console.log("[Email Queue] No records claimed for run: " + runId);
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
                 }
                 break;
             }
@@ -5668,68 +5876,68 @@ onRecordAfterCreateSuccess((e) => {
             records.forEach((record) => {
                 var _a, _b, _c;
                 try {
-                    const rawContent = record.get("rawContent") || "";
-                    const recipientId = record.get("recipientId");
-                    const recipientEmail = record.get("recipientEmail");
-                    const recipientName = record.get("recipientName") || "Singer";
-                    const filters = parseJsonField(record.get("filters")) || {};
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                     // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
-                        const subject = record.get("subject") || "";
+                        const subject = record.get('subject') || '';
                         // Dispatch as plain text via PocketBase SMTP Client
                         const mailerMessage = new MailerMessage({
                             from: {
-                                address: settings.meta.senderAddress || "no-reply@choir.management",
-                                name: settings.meta.senderName || "Choir Management Tool"
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
                             },
                             to: [{ address: recipientEmail, name: recipientName }],
                             subject: subject,
-                            text: rawContent
+                            text: rawContent,
                         });
                         app.newMailClient().send(mailerMessage);
-                        record.set("status", "Sent");
-                        record.set("sentAt", new Date().toISOString());
-                        record.set("processingRunId", null);
-                        record.set("processingStartedAt", null);
-                        record.set("errorMessage", "");
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
                         console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                         return;
                     }
-                    let htmlBody = "";
-                    if (filters.contentType === "html") {
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
                         htmlBody = rawContent;
                     }
                     else {
                         // Temporarily protect placeholders containing underscores from markdown parsing
                         const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
                         htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
-                    let subject = record.get("subject") || "";
+                    let subject = record.get('subject') || '';
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
                     let event = null;
                     if (filters && filters.eventId) {
                         try {
-                            event = app.findRecordById("events", filters.eventId);
+                            event = app.findRecordById('events', filters.eventId);
                         }
                         catch (_d) {
                             // event not found
@@ -5739,25 +5947,40 @@ onRecordAfterCreateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                        const eventTitle = (event.get("title") || event.get("type") || "Event");
-                        const eventType = (event.get("type") || "Performance");
-                        const eventDetails = (event.get("details") || "");
-                        let venueName = "TBD";
-                        let venueAddress = "";
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
                         try {
-                            const venueRecord = app.findRecordById("venues", event.get("venue"));
-                            venueName = (venueRecord.get("name") || "TBD");
-                            venueAddress = (venueRecord.get("address") || "");
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
                         }
                         catch (_e) {
                             // venue not found
                         }
-                        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
                         // Resolve event placeholders in subject too
-                        subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                         let locationHtml = escapeHtml(venueName);
@@ -5776,17 +5999,25 @@ onRecordAfterCreateSuccess((e) => {
     </div>
     `;
                         // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = "";
-                        if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
                             try {
-                                const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                    const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                    const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
                                     // Generate a direct link to the backend ICS download route
-                                    let icsLink = "";
+                                    let icsLink = '';
                                     if (secret) {
                                         const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -5811,9 +6042,9 @@ onRecordAfterCreateSuccess((e) => {
                             }
                         }
                         // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = "";
-                        if (htmlBody.includes("{eventCalendarLink}")) {
-                            let icsLink = "";
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
                             let slotDateLong = dateLong;
                             let slotTimeStr = timeStr;
                             if (secret) {
@@ -5824,11 +6055,20 @@ onRecordAfterCreateSuccess((e) => {
                                     const token = `${payload}&s=${signature}`;
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
-                                        const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                         if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
                                         }
                                     }
                                     catch (_g) {
@@ -5854,17 +6094,18 @@ onRecordAfterCreateSuccess((e) => {
     </table>
                             `.trim();
                         }
-                        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                             .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                             const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
@@ -5873,9 +6114,12 @@ onRecordAfterCreateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
-                        if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
                             const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
@@ -5884,20 +6128,21 @@ onRecordAfterCreateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
                         }
                     }
                     else {
                         // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                            .replace(/{playerLink}/g, "");
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                     }
                     // Clear setlist placeholder when no event
                     if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, "");
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
                     }
                     // Resolve ticket QR code placeholder
-                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                         const isBundle = !!filters.bundleId;
                         const caption = isBundle
                             ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -5917,20 +6162,20 @@ onRecordAfterCreateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                     }
                     else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = "l=" + pollId + "&p=" + recipientId;
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
                             const signature = $security.hs256(payload, secret);
-                            const token = payload + "&s=" + signature;
-                            const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                            let pollButtonLabel = "Answer our quick question";
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
                             try {
-                                const pollRecord = app.findRecordById("polls", pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                                if (typeof question === "string" && question.trim()) {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
                                     pollButtonLabel = question.trim();
                                 }
                             }
@@ -5956,36 +6201,36 @@ onRecordAfterCreateSuccess((e) => {
                     }
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set("htmlBody", finalHtml);
+                    record.set('htmlBody', finalHtml);
                     // Dispatch natively via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        html: finalHtml
+                        html: finalHtml,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent record: ${record.id}`);
                 }
                 catch (err) {
-                    const rawAttempts = record.get("attempts");
-                    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set("attempts", currentAttempts);
+                    record.set('attempts', currentAttempts);
                     const message = err instanceof Error ? err.message : String(err);
-                    record.set("errorMessage", message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                    record.set("status", nextStatus);
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
                     console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
                 }
                 finally {
@@ -5997,7 +6242,7 @@ onRecordAfterCreateSuccess((e) => {
             }
         }
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -6709,7 +6954,7 @@ onRecordAfterUpdateSuccess((e) => {
         var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
-            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
         const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -6717,7 +6962,9 @@ onRecordAfterUpdateSuccess((e) => {
         const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
         // Stale Processing record recovery
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Pending',
                     processingRunId = NULL,
@@ -6725,8 +6972,12 @@ onRecordAfterUpdateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-            app.db().newQuery(`
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Failed',
                     processingRunId = NULL,
@@ -6734,19 +6985,21 @@ onRecordAfterUpdateSuccess((e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND attempts >= {:maxAttempts}
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
         }
         catch (recoverErr) {
-            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
         const secret = getHmacSecret(app);
-        let baseUrl = "http://localhost:5173";
-        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-        let choirName = "";
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -6755,33 +7008,33 @@ onRecordAfterUpdateSuccess((e) => {
         catch (_b) {
             // use default baseUrl and mailingAddress
         }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (appSettingsUrl) {
                 baseUrl = appSettingsUrl;
             }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
         catch (_c) {
             // use default choirName
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const valueStr = tzSetting.get("value");
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
             const tzP = parseJsonField(valueStr);
             if (tzP) {
-                if (typeof tzP === "string") {
+                if (typeof tzP === 'string') {
                     timezone = tzP;
                 }
-                else if (typeof tzP === "object" && tzP.timezone) {
+                else if (typeof tzP === 'object' && tzP.timezone) {
                     timezone = tzP.timezone;
                 }
             }
@@ -6795,7 +7048,9 @@ onRecordAfterUpdateSuccess((e) => {
             console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
             // Atomic SQLite-level claiming
             try {
-                app.db().newQuery(`
+                app
+                    .db()
+                    .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
                         processingRunId = {:runId},
@@ -6808,20 +7063,22 @@ onRecordAfterUpdateSuccess((e) => {
                         ORDER BY created ASC
                         LIMIT {:batchSize}
                     )
-                `).bind({
+                `)
+                    .bind({
                     runId: runId,
                     maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE
-                }).execute();
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
             }
             catch (claimErr) {
-                console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
                 return;
             }
-            const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
             if (!records || records.length === 0) {
                 if (totalClaimed === 0) {
-                    console.log("[Email Queue] No records claimed for run: " + runId);
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
                 }
                 break;
             }
@@ -6830,68 +7087,68 @@ onRecordAfterUpdateSuccess((e) => {
             records.forEach((record) => {
                 var _a, _b, _c;
                 try {
-                    const rawContent = record.get("rawContent") || "";
-                    const recipientId = record.get("recipientId");
-                    const recipientEmail = record.get("recipientEmail");
-                    const recipientName = record.get("recipientName") || "Singer";
-                    const filters = parseJsonField(record.get("filters")) || {};
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                     // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
-                        const subject = record.get("subject") || "";
+                        const subject = record.get('subject') || '';
                         // Dispatch as plain text via PocketBase SMTP Client
                         const mailerMessage = new MailerMessage({
                             from: {
-                                address: settings.meta.senderAddress || "no-reply@choir.management",
-                                name: settings.meta.senderName || "Choir Management Tool"
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
                             },
                             to: [{ address: recipientEmail, name: recipientName }],
                             subject: subject,
-                            text: rawContent
+                            text: rawContent,
                         });
                         app.newMailClient().send(mailerMessage);
-                        record.set("status", "Sent");
-                        record.set("sentAt", new Date().toISOString());
-                        record.set("processingRunId", null);
-                        record.set("processingStartedAt", null);
-                        record.set("errorMessage", "");
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
                         console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                         return;
                     }
-                    let htmlBody = "";
-                    if (filters.contentType === "html") {
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
                         htmlBody = rawContent;
                     }
                     else {
                         // Temporarily protect placeholders containing underscores from markdown parsing
                         const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
                         htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
-                    let subject = record.get("subject") || "";
+                    let subject = record.get('subject') || '';
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
                     let event = null;
                     if (filters && filters.eventId) {
                         try {
-                            event = app.findRecordById("events", filters.eventId);
+                            event = app.findRecordById('events', filters.eventId);
                         }
                         catch (_d) {
                             // event not found
@@ -6901,25 +7158,40 @@ onRecordAfterUpdateSuccess((e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                        const eventTitle = (event.get("title") || event.get("type") || "Event");
-                        const eventType = (event.get("type") || "Performance");
-                        const eventDetails = (event.get("details") || "");
-                        let venueName = "TBD";
-                        let venueAddress = "";
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
                         try {
-                            const venueRecord = app.findRecordById("venues", event.get("venue"));
-                            venueName = (venueRecord.get("name") || "TBD");
-                            venueAddress = (venueRecord.get("address") || "");
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
                         }
                         catch (_e) {
                             // venue not found
                         }
-                        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
                         // Resolve event placeholders in subject too
-                        subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                         let locationHtml = escapeHtml(venueName);
@@ -6938,17 +7210,25 @@ onRecordAfterUpdateSuccess((e) => {
     </div>
     `;
                         // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = "";
-                        if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
                             try {
-                                const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                    const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                    const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
                                     // Generate a direct link to the backend ICS download route
-                                    let icsLink = "";
+                                    let icsLink = '';
                                     if (secret) {
                                         const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -6973,9 +7253,9 @@ onRecordAfterUpdateSuccess((e) => {
                             }
                         }
                         // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = "";
-                        if (htmlBody.includes("{eventCalendarLink}")) {
-                            let icsLink = "";
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
                             let slotDateLong = dateLong;
                             let slotTimeStr = timeStr;
                             if (secret) {
@@ -6986,11 +7266,20 @@ onRecordAfterUpdateSuccess((e) => {
                                     const token = `${payload}&s=${signature}`;
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
-                                        const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                         if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
                                         }
                                     }
                                     catch (_g) {
@@ -7016,17 +7305,18 @@ onRecordAfterUpdateSuccess((e) => {
     </table>
                             `.trim();
                         }
-                        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                             .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                             const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
@@ -7035,9 +7325,12 @@ onRecordAfterUpdateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
-                        if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
                             const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
@@ -7046,20 +7339,21 @@ onRecordAfterUpdateSuccess((e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
                         }
                     }
                     else {
                         // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                            .replace(/{playerLink}/g, "");
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                     }
                     // Clear setlist placeholder when no event
                     if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, "");
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
                     }
                     // Resolve ticket QR code placeholder
-                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                         const isBundle = !!filters.bundleId;
                         const caption = isBundle
                             ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -7079,20 +7373,20 @@ onRecordAfterUpdateSuccess((e) => {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                     }
                     else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = "l=" + pollId + "&p=" + recipientId;
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
                             const signature = $security.hs256(payload, secret);
-                            const token = payload + "&s=" + signature;
-                            const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                            let pollButtonLabel = "Answer our quick question";
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
                             try {
-                                const pollRecord = app.findRecordById("polls", pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                                if (typeof question === "string" && question.trim()) {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
                                     pollButtonLabel = question.trim();
                                 }
                             }
@@ -7118,36 +7412,36 @@ onRecordAfterUpdateSuccess((e) => {
                     }
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set("htmlBody", finalHtml);
+                    record.set('htmlBody', finalHtml);
                     // Dispatch natively via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        html: finalHtml
+                        html: finalHtml,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent record: ${record.id}`);
                 }
                 catch (err) {
-                    const rawAttempts = record.get("attempts");
-                    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set("attempts", currentAttempts);
+                    record.set('attempts', currentAttempts);
                     const message = err instanceof Error ? err.message : String(err);
-                    record.set("errorMessage", message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                    record.set("status", nextStatus);
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
                     console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
                 }
                 finally {
@@ -7159,7 +7453,7 @@ onRecordAfterUpdateSuccess((e) => {
             }
         }
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -7261,7 +7555,7 @@ onRecordAfterUpdateSuccess((e) => {
 // --- CUSTOM ENDPOINTS ---
 
 "use strict";
-routerAdd("POST", "/api/generate-rsvp-tokens", (e) => {
+routerAdd('POST', '/api/generate-rsvp-tokens', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
@@ -7374,31 +7668,31 @@ function parseSignedToken(token, requiredKeys) {
 }
 // --- END CALLBACK-LOCAL UTILITIES ---
     const authRecord = e.auth;
-    if (!authRecord || authRecord.get("role") !== "admin") {
-        return e.json(403, { error: "Forbidden: Admins only" });
+    if (!authRecord || authRecord.get('role') !== 'admin') {
+        return e.json(403, { error: 'Forbidden: Admins only' });
     }
     const data = e.requestInfo().body;
     const eventId = data.eventId;
     const profileIds = data.profileIds;
     if (!eventId || !profileIds || !Array.isArray(profileIds)) {
-        return e.json(400, { error: "Missing eventId or profileIds array" });
+        return e.json(400, { error: 'Missing eventId or profileIds array' });
     }
     let secret;
     try {
         secret = getHmacSecret($app);
         if (!secret)
-            throw new Error("Missing secret");
+            throw new Error('Missing secret');
     }
     catch (_a) {
-        return e.json(500, { error: "HMAC_SECRET not configured" });
+        return e.json(500, { error: 'HMAC_SECRET not configured' });
     }
     const tokens = {};
-    profileIds.forEach(pId => {
+    profileIds.forEach((pId) => {
         tokens[pId] = generateSignedEventRecipientToken($app, eventId, pId, secret);
     });
     return e.json(200, { tokens });
 });
-routerAdd("POST", "/api/rsvp-details", (e) => {
+routerAdd('POST', '/api/rsvp-details', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
@@ -7605,136 +7899,147 @@ function getRsvpWindowInfo(event) {
 // --- END CALLBACK-LOCAL UTILITIES ---
     const data = e.requestInfo().body;
     const token = data.token;
-    if (!token || typeof token !== "string") {
-        return e.json(400, { error: "Missing RSVP token. Please open full RSVP link from your email." });
+    if (!token || typeof token !== 'string') {
+        return e.json(400, {
+            error: 'Missing RSVP token. Please open full RSVP link from your email.',
+        });
     }
-    const parts = parseSignedToken(token, ["e", "p", "s"]);
+    const parts = parseSignedToken(token, ['e', 'p', 's']);
     if (!parts) {
-        return e.json(400, { error: "This RSVP link is invalid. Please request a new RSVP link." });
+        return e.json(400, { error: 'This RSVP link is invalid. Please request a new RSVP link.' });
     }
     let secret;
     try {
         secret = getHmacSecret($app);
         if (!secret)
-            throw new Error("Missing secret");
+            throw new Error('Missing secret');
     }
     catch (_a) {
-        return e.json(500, { error: "HMAC_SECRET not configured" });
+        return e.json(500, { error: 'HMAC_SECRET not configured' });
     }
     const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
     if (!$security.equal(parts.s, expectedSignature)) {
-        console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
-        console.log("[RSVP Debug] Expected: " + expectedSignature + ", Received: " + parts.s);
-        return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
+        console.log('[RSVP Debug] Signature mismatch for event=' + parts.e + ', profile=' + parts.p);
+        console.log('[RSVP Debug] Expected: ' + expectedSignature + ', Received: ' + parts.s);
+        return e.json(401, {
+            error: 'This RSVP link is invalid or expired. Please request a new RSVP link.',
+        });
     }
     try {
         // Fetch all venues once to eliminate N+1 queries in rehearsals loop
         const venueMap = {};
         try {
-            const allVenues = $app.findRecordsByFilter("venues", "1 = 1", "", 200);
+            const allVenues = $app.findRecordsByFilter('venues', '1 = 1', '', 200);
             if (allVenues) {
-                allVenues.forEach(v => {
+                allVenues.forEach((v) => {
                     venueMap[v.id] = v;
                 });
             }
         }
         catch (venueFetchErr) {
-            console.log("[RSVP Error] Failed to fetch venues: " + venueFetchErr);
+            console.log('[RSVP Error] Failed to fetch venues: ' + venueFetchErr);
         }
-        const event = $app.findRecordById("events", parts.e);
+        const event = $app.findRecordById('events', parts.e);
         const rsvpWindow = getRsvpWindowInfo(event);
-        let venueName = "";
-        let venueAddress = "";
+        let venueName = '';
+        let venueAddress = '';
         try {
-            const venueId = event.get("venue");
-            if (venueId && typeof venueId === "string") {
-                const venue = venueMap[venueId] || $app.findRecordById("venues", venueId);
-                venueName = venue.get("name") || "";
-                venueAddress = venue.get("address") || "";
+            const venueId = event.get('venue');
+            if (venueId && typeof venueId === 'string') {
+                const venue = venueMap[venueId] || $app.findRecordById('venues', venueId);
+                venueName = venue.get('name') || '';
+                venueAddress = venue.get('address') || '';
             }
         }
         catch (venueErr) {
-            console.log("[RSVP Details] Failed to resolve event venue: " + venueErr);
+            console.log('[RSVP Details] Failed to resolve event venue: ' + venueErr);
         }
-        const profile = $app.findRecordById("profiles", parts.p);
+        const profile = $app.findRecordById('profiles', parts.p);
         const rehearsals = [];
-        if (event.get("type") === "Performance") {
+        if (event.get('type') === 'Performance') {
             try {
-                const list = $app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 100, 0, { eventId: parts.e });
-                list.forEach(reh => {
-                    let rVenueName = "";
+                const list = $app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 100, 0, { eventId: parts.e });
+                list.forEach((reh) => {
+                    let rVenueName = '';
                     try {
-                        const rVenueId = reh.get("venue");
-                        if (rVenueId && typeof rVenueId === "string") {
-                            const rVenue = venueMap[rVenueId] || $app.findRecordById("venues", rVenueId);
-                            rVenueName = rVenue.get("name") || "";
+                        const rVenueId = reh.get('venue');
+                        if (rVenueId && typeof rVenueId === 'string') {
+                            const rVenue = venueMap[rVenueId] || $app.findRecordById('venues', rVenueId);
+                            rVenueName = rVenue.get('name') || '';
                         }
                     }
                     catch (e) {
-                        console.log("[RSVP Details] Failed to resolve rehearsal venue for rehearsal " + reh.id + ": " + e);
+                        console.log('[RSVP Details] Failed to resolve rehearsal venue for rehearsal ' + reh.id + ': ' + e);
                     }
                     rehearsals.push({
                         id: reh.id,
-                        title: reh.get("title") || "",
-                        type: reh.get("type") || "",
-                        date: reh.get("date") || "",
-                        details: reh.get("details") || "",
+                        title: reh.get('title') || '',
+                        type: reh.get('type') || '',
+                        date: reh.get('date') || '',
+                        details: reh.get('details') || '',
                         expand: {
                             venue: {
-                                name: rVenueName
-                            }
-                        }
+                                name: rVenueName,
+                            },
+                        },
                     });
                 });
             }
             catch (rehErr) {
-                console.log("[RSVP Details] Failed to fetch rehearsals for performance " + parts.e + ": " + rehErr);
+                console.log('[RSVP Details] Failed to fetch rehearsals for performance ' + parts.e + ': ' + rehErr);
             }
         }
-        let currentRsvp = "Pending";
-        let currentRsvpNote = "";
+        let currentRsvp = 'Pending';
+        let currentRsvpNote = '';
         try {
-            const roster = $app.findFirstRecordByFilter("eventRosters", "event = {:e} && profile = {:p}", { e: parts.e, p: parts.p });
-            currentRsvp = roster.get("rsvp") || "Pending";
-            currentRsvpNote = roster.get("rsvpNote") || "";
+            const roster = $app.findFirstRecordByFilter('eventRosters', 'event = {:e} && profile = {:p}', { e: parts.e, p: parts.p });
+            currentRsvp = roster.get('rsvp') || 'Pending';
+            currentRsvpNote = roster.get('rsvpNote') || '';
         }
         catch (rosterErr) {
-            console.log("[RSVP Details] No existing roster found for event " + parts.e + " and profile " + parts.p + ": " + rosterErr);
+            console.log('[RSVP Details] No existing roster found for event ' +
+                parts.e +
+                ' and profile ' +
+                parts.p +
+                ': ' +
+                rosterErr);
         }
         return e.json(200, {
             event: {
                 id: event.id,
-                title: event.get("title") || "",
-                type: event.get("type") || "",
-                date: event.get("date") || "",
-                details: event.get("details") || "",
-                location: event.get("location") || "",
-                isOpenForRSVP: !!event.get("isOpenForRSVP"),
+                title: event.get('title') || '',
+                type: event.get('type') || '',
+                date: event.get('date') || '',
+                details: event.get('details') || '',
+                location: event.get('location') || '',
+                isOpenForRSVP: !!event.get('isOpenForRSVP'),
                 expand: {
                     venue: {
                         name: venueName,
-                        address: venueAddress
-                    }
-                }
+                        address: venueAddress,
+                    },
+                },
             },
             profile: {
                 id: profile.id,
-                name: profile.get("name") || "",
-                voicePart: profile.get("voicePart") || ""
+                name: profile.get('name') || '',
+                voicePart: profile.get('voicePart') || '',
             },
             currentRsvp,
             currentRsvpNote,
             rehearsals,
-            rsvpWindow
+            rsvpWindow,
         });
     }
     catch (err) {
-        console.log("[RSVP Details Error] Failed to fetch details: " + err);
-        return e.json(404, { error: "We could not find this RSVP record. Link may be expired. Please request a new RSVP link." });
+        console.log('[RSVP Details Error] Failed to fetch details: ' + err);
+        return e.json(404, {
+            error: 'We could not find this RSVP record. Link may be expired. Please request a new RSVP link.',
+        });
     }
 });
-routerAdd("POST", "/api/quick-rsvp", (e) => {
+routerAdd('POST', '/api/quick-rsvp', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
@@ -8275,7 +8580,7 @@ function processEmailQueue(app) {
     var _a;
     const settings = app.settings();
     if (!settings.smtp || !settings.smtp.enabled) {
-        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+        console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
         return;
     }
     const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -8283,7 +8588,9 @@ function processEmailQueue(app) {
     const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
     // Stale Processing record recovery
     try {
-        app.db().newQuery(`
+        app
+            .db()
+            .newQuery(`
             UPDATE emailQueue
             SET status = 'Pending',
                 processingRunId = NULL,
@@ -8291,8 +8598,12 @@ function processEmailQueue(app) {
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
               AND (attempts IS NULL OR attempts < {:maxAttempts})
-        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-        app.db().newQuery(`
+        `)
+            .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+            .execute();
+        app
+            .db()
+            .newQuery(`
             UPDATE emailQueue
             SET status = 'Failed',
                 processingRunId = NULL,
@@ -8300,19 +8611,21 @@ function processEmailQueue(app) {
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
               AND attempts >= {:maxAttempts}
-        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+        `)
+            .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+            .execute();
     }
     catch (recoverErr) {
-        console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+        console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
     }
     // Build variables used for layout rendering
     const secret = getHmacSecret(app);
-    let baseUrl = "http://localhost:5173";
-    let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-    let choirName = "";
+    let baseUrl = 'http://localhost:5173';
+    let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+    let choirName = '';
     try {
-        const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-        const comms = parseJsonField(commRecord.get("value"));
+        const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+        const comms = parseJsonField(commRecord.get('value'));
         if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
             baseUrl = comms.frontendUrl;
         if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -8321,33 +8634,33 @@ function processEmailQueue(app) {
     catch (_b) {
         // use default baseUrl and mailingAddress
     }
-    if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+    if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
         const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+        const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
         if (appSettingsUrl) {
             baseUrl = appSettingsUrl;
         }
     }
     baseUrl = normalizeBaseUrl(baseUrl);
     try {
-        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-        const val = parseJsonField(choirRecord.get("value"));
+        const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get('value'));
         if (val)
             choirName = val;
     }
     catch (_c) {
         // use default choirName
     }
-    let timezone = "America/New_York";
+    let timezone = 'America/New_York';
     try {
-        const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-        const valueStr = tzSetting.get("value");
+        const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+        const valueStr = tzSetting.get('value');
         const tzP = parseJsonField(valueStr);
         if (tzP) {
-            if (typeof tzP === "string") {
+            if (typeof tzP === 'string') {
                 timezone = tzP;
             }
-            else if (typeof tzP === "object" && tzP.timezone) {
+            else if (typeof tzP === 'object' && tzP.timezone) {
                 timezone = tzP.timezone;
             }
         }
@@ -8361,7 +8674,9 @@ function processEmailQueue(app) {
         console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
         // Atomic SQLite-level claiming
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Processing',
                     processingRunId = {:runId},
@@ -8374,20 +8689,22 @@ function processEmailQueue(app) {
                     ORDER BY created ASC
                     LIMIT {:batchSize}
                 )
-            `).bind({
+            `)
+                .bind({
                 runId: runId,
                 maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                batchSize: EMAIL_QUEUE_BATCH_SIZE
-            }).execute();
+                batchSize: EMAIL_QUEUE_BATCH_SIZE,
+            })
+                .execute();
         }
         catch (claimErr) {
-            console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+            console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
             return;
         }
-        const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+        const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
         if (!records || records.length === 0) {
             if (totalClaimed === 0) {
-                console.log("[Email Queue] No records claimed for run: " + runId);
+                console.log('[Email Queue] No records claimed for run: ' + runId);
             }
             break;
         }
@@ -8396,68 +8713,68 @@ function processEmailQueue(app) {
         records.forEach((record) => {
             var _a, _b, _c;
             try {
-                const rawContent = record.get("rawContent") || "";
-                const recipientId = record.get("recipientId");
-                const recipientEmail = record.get("recipientEmail");
-                const recipientName = record.get("recipientName") || "Singer";
-                const filters = parseJsonField(record.get("filters")) || {};
+                const rawContent = record.get('rawContent') || '';
+                const recipientId = record.get('recipientId');
+                const recipientEmail = record.get('recipientEmail');
+                const recipientName = record.get('recipientName') || 'Singer';
+                const filters = parseJsonField(record.get('filters')) || {};
                 const isSms = filters.channel === 'sms';
                 // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                 // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                 // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
-                    const subject = record.get("subject") || "";
+                    const subject = record.get('subject') || '';
                     // Dispatch as plain text via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        text: rawContent
+                        text: rawContent,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                     return;
                 }
-                let htmlBody = "";
-                if (filters.contentType === "html") {
+                let htmlBody = '';
+                if (filters.contentType === 'html') {
                     htmlBody = rawContent;
                 }
                 else {
                     // Temporarily protect placeholders containing underscores from markdown parsing
                     const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                        .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                        .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                        .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                        .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                        .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                     htmlBody = renderMarkdown(protectedContent);
                     // Restore protected placeholders
                     htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                        .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                        .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                        .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                        .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                        .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                        .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                 }
-                let subject = record.get("subject") || "";
+                let subject = record.get('subject') || '';
                 subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                 // Fetch dynamic event details if enqueued under filters
                 let event = null;
                 if (filters && filters.eventId) {
                     try {
-                        event = app.findRecordById("events", filters.eventId);
+                        event = app.findRecordById('events', filters.eventId);
                     }
                     catch (_d) {
                         // event not found
@@ -8467,25 +8784,40 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                 htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                 if (event) {
-                    const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                    const eventTitle = (event.get("title") || event.get("type") || "Event");
-                    const eventType = (event.get("type") || "Performance");
-                    const eventDetails = (event.get("details") || "");
-                    let venueName = "TBD";
-                    let venueAddress = "";
+                    const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                    const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                    const eventType = (event.get('type') || 'Performance');
+                    const eventDetails = (event.get('details') || '');
+                    let venueName = 'TBD';
+                    let venueAddress = '';
                     try {
-                        const venueRecord = app.findRecordById("venues", event.get("venue"));
-                        venueName = (venueRecord.get("name") || "TBD");
-                        venueAddress = (venueRecord.get("address") || "");
+                        const venueRecord = app.findRecordById('venues', event.get('venue'));
+                        venueName = (venueRecord.get('name') || 'TBD');
+                        venueAddress = (venueRecord.get('address') || '');
                     }
                     catch (_e) {
                         // venue not found
                     }
-                    const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                    const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                    const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const dateLong = formatInTimezone(eventDate, timezone, {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    });
+                    const timeStr = formatInTimezone(eventDate, timezone, {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
+                    const dateShort = formatInTimezone(eventDate, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     // Resolve event placeholders in subject too
-                    subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                    subject = subject
+                        .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                         .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                         .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                     let locationHtml = escapeHtml(venueName);
@@ -8504,17 +8836,25 @@ function processEmailQueue(app) {
 </div>
 `;
                     // Optionally generate an "Add to Calendar" link for the first rehearsal
-                    let firstRehearsalHtml = "";
-                    if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                    let firstRehearsalHtml = '';
+                    if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                        event.get('type') === 'Performance') {
                         try {
-                            const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                            const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                             if (rehearsals && rehearsals.length > 0) {
                                 const firstReh = rehearsals[0];
-                                const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                const dLong = formatInTimezone(rehDate, timezone, {
+                                    weekday: 'short',
+                                    month: 'long',
+                                    day: 'numeric',
+                                });
+                                const dTime = formatInTimezone(rehDate, timezone, {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                });
                                 // Generate a direct link to the backend ICS download route
-                                let icsLink = "";
+                                let icsLink = '';
                                 if (secret) {
                                     const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -8539,9 +8879,9 @@ function processEmailQueue(app) {
                         }
                     }
                     // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                    let eventCalendarHtml = "";
-                    if (htmlBody.includes("{eventCalendarLink}")) {
-                        let icsLink = "";
+                    let eventCalendarHtml = '';
+                    if (htmlBody.includes('{eventCalendarLink}')) {
+                        let icsLink = '';
                         let slotDateLong = dateLong;
                         let slotTimeStr = timeStr;
                         if (secret) {
@@ -8552,11 +8892,20 @@ function processEmailQueue(app) {
                                 const token = `${payload}&s=${signature}`;
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 try {
-                                    const audition = app.findRecordById("auditions", auditionId);
-                                    const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                    const audition = app.findRecordById('auditions', auditionId);
+                                    const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                     if (auditionSlot) {
-                                        slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                        slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        });
+                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                            timeZoneName: 'short',
+                                        });
                                     }
                                 }
                                 catch (_g) {
@@ -8582,17 +8931,18 @@ function processEmailQueue(app) {
 </table>
                         `.trim();
                     }
-                    htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                    htmlBody = htmlBody
+                        .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                         .replace(/{eventType}/g, () => escapeHtml(eventType))
                         .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                         .replace(/{eventLocation}/g, () => locationHtml)
                         .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                         .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                         .replace(/{eventInfo}/g, () => eventInfoHtml)
-                        .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                        .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                         .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                         .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                    if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                    if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                         const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         const rsvpHtml = `
@@ -8601,9 +8951,12 @@ function processEmailQueue(app) {
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
-                        htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        htmlBody = htmlBody
+                            .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                            .replace(/{rsvpLinks}/g, () => rsvpHtml);
                     }
-                    if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                        secret) {
                         const token = generateSignedPlayerToken(app, event.id, secret);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         const playerHtml = `
@@ -8612,20 +8965,21 @@ function processEmailQueue(app) {
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
 </div>
 `;
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                        htmlBody = htmlBody
+                            .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                            .replace(/{playerLink}/g, () => playerHtml);
                     }
                 }
                 else {
                     // If there's no event context, clear out the player link placeholders
-                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                        .replace(/{playerLink}/g, "");
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                 }
                 // Clear setlist placeholder when no event
                 if (!event) {
-                    htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    htmlBody = htmlBody.replace(/{setlist}/g, '');
                 }
                 // Resolve ticket QR code placeholder
-                if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                     const isBundle = !!filters.bundleId;
                     const caption = isBundle
                         ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -8645,20 +8999,20 @@ function processEmailQueue(app) {
                     htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                 }
                 else {
-                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                 }
                 // Resolve poll links: {{POLL_LINK:pollId}}
-                if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                if (htmlBody.includes('{{POLL_LINK:') && secret) {
                     htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                        const payload = "l=" + pollId + "&p=" + recipientId;
+                        const payload = 'l=' + pollId + '&p=' + recipientId;
                         const signature = $security.hs256(payload, secret);
-                        const token = payload + "&s=" + signature;
-                        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                        let pollButtonLabel = "Answer our quick question";
+                        const token = payload + '&s=' + signature;
+                        const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                        let pollButtonLabel = 'Answer our quick question';
                         try {
-                            const pollRecord = app.findRecordById("polls", pollId);
-                            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                            if (typeof question === "string" && question.trim()) {
+                            const pollRecord = app.findRecordById('polls', pollId);
+                            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                            if (typeof question === 'string' && question.trim()) {
                                 pollButtonLabel = question.trim();
                             }
                         }
@@ -8684,36 +9038,36 @@ function processEmailQueue(app) {
                 }
                 // Final template layout wrap
                 const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                record.set("htmlBody", finalHtml);
+                record.set('htmlBody', finalHtml);
                 // Dispatch natively via PocketBase SMTP Client
                 const mailerMessage = new MailerMessage({
                     from: {
-                        address: settings.meta.senderAddress || "no-reply@choir.management",
-                        name: settings.meta.senderName || "Choir Management Tool"
+                        address: settings.meta.senderAddress || 'no-reply@choir.management',
+                        name: settings.meta.senderName || 'Choir Management Tool',
                     },
                     to: [{ address: recipientEmail, name: recipientName }],
                     subject: subject,
-                    html: finalHtml
+                    html: finalHtml,
                 });
                 app.newMailClient().send(mailerMessage);
-                record.set("status", "Sent");
-                record.set("sentAt", new Date().toISOString());
-                record.set("processingRunId", null);
-                record.set("processingStartedAt", null);
-                record.set("errorMessage", "");
+                record.set('status', 'Sent');
+                record.set('sentAt', new Date().toISOString());
+                record.set('processingRunId', null);
+                record.set('processingStartedAt', null);
+                record.set('errorMessage', '');
                 console.log(`[Email Queue] Sent record: ${record.id}`);
             }
             catch (err) {
-                const rawAttempts = record.get("attempts");
-                const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                const rawAttempts = record.get('attempts');
+                const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                 const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                record.set("attempts", currentAttempts);
+                record.set('attempts', currentAttempts);
                 const message = err instanceof Error ? err.message : String(err);
-                record.set("errorMessage", message);
-                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                record.set("status", nextStatus);
-                record.set("processingRunId", null);
-                record.set("processingStartedAt", null);
+                record.set('errorMessage', message);
+                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                record.set('status', nextStatus);
+                record.set('processingRunId', null);
+                record.set('processingStartedAt', null);
                 console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
             }
             finally {
@@ -8725,7 +9079,7 @@ function processEmailQueue(app) {
         }
     }
     if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-        console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+        console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
     }
 }
 
@@ -8912,124 +9266,134 @@ function getRsvpWindowInfo(event) {
     const data = e.requestInfo().body;
     const token = data.token;
     const rsvp = data.rsvp;
-    const rsvpNote = typeof data.rsvpNote === "string" ? data.rsvpNote.trim() : "";
-    if (!token || !rsvp || typeof token !== "string") {
-        return e.json(400, { error: "Missing RSVP details. Please use full RSVP link from your email." });
+    const rsvpNote = typeof data.rsvpNote === 'string' ? data.rsvpNote.trim() : '';
+    if (!token || !rsvp || typeof token !== 'string') {
+        return e.json(400, {
+            error: 'Missing RSVP details. Please use full RSVP link from your email.',
+        });
     }
     if (rsvpNote.length > 1000) {
         return e.json(400, {
-            error: "Your note cannot exceed 1000 characters.",
-            code: "RSVP_NOTE_TOO_LONG",
+            error: 'Your note cannot exceed 1000 characters.',
+            code: 'RSVP_NOTE_TOO_LONG',
         });
     }
-    const parts = parseSignedToken(token, ["e", "p", "s"]);
+    const parts = parseSignedToken(token, ['e', 'p', 's']);
     if (!parts) {
-        return e.json(400, { error: "This RSVP link is invalid. Please request a new RSVP link." });
+        return e.json(400, { error: 'This RSVP link is invalid. Please request a new RSVP link.' });
     }
     let secret;
     try {
         secret = getHmacSecret($app);
         if (!secret)
-            throw new Error("Missing secret");
+            throw new Error('Missing secret');
     }
     catch (_a) {
-        return e.json(500, { error: "HMAC_SECRET not configured" });
+        return e.json(500, { error: 'HMAC_SECRET not configured' });
     }
     const payload = getEventRecipientPayload(parts.e, parts.p);
     const expectedSignature = $security.hs256(payload, secret);
     if (!$security.equal(parts.s, expectedSignature)) {
-        console.log("[RSVP Debug] Signature mismatch for event=" + parts.e + ", profile=" + parts.p);
-        console.log("[RSVP Debug] Expected: " + expectedSignature + ", Received: " + parts.s);
-        return e.json(401, { error: "This RSVP link is invalid or expired. Please request a new RSVP link." });
+        console.log('[RSVP Debug] Signature mismatch for event=' + parts.e + ', profile=' + parts.p);
+        console.log('[RSVP Debug] Expected: ' + expectedSignature + ', Received: ' + parts.s);
+        return e.json(401, {
+            error: 'This RSVP link is invalid or expired. Please request a new RSVP link.',
+        });
     }
     let event;
     try {
-        event = $app.findRecordById("events", parts.e);
+        event = $app.findRecordById('events', parts.e);
     }
     catch (_b) {
-        return e.json(404, { error: "Event not found. RSVP link may be expired." });
+        return e.json(404, { error: 'Event not found. RSVP link may be expired.' });
     }
     const windowValidation = validateSingerRsvpWindow(event);
     if (!windowValidation.ok) {
         return e.json(windowValidation.status, { error: windowValidation.error });
     }
-    const normalizedRsvp = rsvp === "No" ? "No" : "Yes";
-    if (event.get("type") === "Rehearsal" && normalizedRsvp === "No" && !rsvpNote) {
+    const normalizedRsvp = rsvp === 'No' ? 'No' : 'Yes';
+    if (event.get('type') === 'Rehearsal' && normalizedRsvp === 'No' && !rsvpNote) {
         return e.json(400, {
-            error: "Please include a note explaining why you cannot attend this rehearsal.",
-            code: "RSVP_NOTE_REQUIRED",
+            error: 'Please include a note explaining why you cannot attend this rehearsal.',
+            code: 'RSVP_NOTE_REQUIRED',
         });
     }
     try {
-        const matches = $app.findRecordsByFilter("eventRosters", "event = {:e} && profile = {:p}", "", 2, 0, { e: parts.e, p: parts.p }) || [];
+        const matches = $app.findRecordsByFilter('eventRosters', 'event = {:e} && profile = {:p}', '', 2, 0, {
+            e: parts.e,
+            p: parts.p,
+        }) || [];
         let roster = matches.length > 0 ? matches[0] : null;
         if (!roster) {
-            const collection = $app.findCollectionByNameOrId("eventRosters");
+            const collection = $app.findCollectionByNameOrId('eventRosters');
             roster = new Record(collection);
-            roster.set("event", parts.e);
-            roster.set("profile", parts.p);
-            roster.set("attendance", "Pending");
-            roster.set("folderReturned", false);
+            roster.set('event', parts.e);
+            roster.set('profile', parts.p);
+            roster.set('attendance', 'Pending');
+            roster.set('folderReturned', false);
         }
-        const oldRsvp = roster.get("rsvp") || "Pending";
-        const oldNote = (roster.get("rsvpNote") || "").trim();
-        roster.set("rsvp", normalizedRsvp);
-        if (normalizedRsvp === "No") {
-            roster.set("rsvpNote", rsvpNote);
+        const oldRsvp = roster.get('rsvp') || 'Pending';
+        const oldNote = (roster.get('rsvpNote') || '').trim();
+        roster.set('rsvp', normalizedRsvp);
+        if (normalizedRsvp === 'No') {
+            roster.set('rsvpNote', rsvpNote);
         }
         else {
-            roster.set("rsvpNote", "");
+            roster.set('rsvpNote', '');
         }
         $app.save(roster);
         // Enqueue confirmation email if RSVP changed to Yes
-        if (normalizedRsvp === "Yes" && oldRsvp !== "Yes") {
+        if (normalizedRsvp === 'Yes' && oldRsvp !== 'Yes') {
             try {
-                const profile = $app.findRecordById("profiles", parts.p);
-                let recipientEmail = "";
-                const userId = profile.get("user");
+                const profile = $app.findRecordById('profiles', parts.p);
+                let recipientEmail = '';
+                const userId = profile.get('user');
                 if (userId) {
                     try {
-                        const userRec = $app.findRecordById("users", userId);
-                        recipientEmail = userRec.get("email") || "";
+                        const userRec = $app.findRecordById('users', userId);
+                        recipientEmail = userRec.get('email') || '';
                     }
                     catch (err) {
-                        console.log("[RSVP Confirmation Error] Failed to resolve email for profile " + parts.p + ": " + err);
+                        console.log('[RSVP Confirmation Error] Failed to resolve email for profile ' +
+                            parts.p +
+                            ': ' +
+                            err);
                     }
                 }
-                if (recipientEmail && !profile.get("doNotEmail")) {
-                    const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Confirmation' && isSystemTemplate = true");
-                    const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+                if (recipientEmail && !profile.get('doNotEmail')) {
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'RSVP Confirmation' && isSystemTemplate = true");
+                    const queueCollection = $app.findCollectionByNameOrId('emailQueue');
                     const queueRecord = new Record(queueCollection, {
                         recipientId: profile.id,
                         recipientEmail: recipientEmail,
-                        recipientName: profile.get("name") || "Singer",
-                        subject: template.get("subject") || "",
-                        rawContent: template.get("content") || "",
-                        status: "Pending",
+                        recipientName: profile.get('name') || 'Singer',
+                        subject: template.get('subject') || '',
+                        rawContent: template.get('content') || '',
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: parts.e,
-                            type: "Automated Confirmation"
-                        })
+                            type: 'Automated Confirmation',
+                        }),
                     });
                     $app.save(queueRecord);
                     processEmailQueue($app);
                 }
             }
             catch (emailErr) {
-                console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);
+                console.log('[RSVP Confirmation Error] Failed to enqueue automated email: ' + emailErr);
             }
         }
         // Notify admins if RSVP changed to No or decline reason changed for rehearsals
-        const shouldNotifyAdmins = normalizedRsvp === "No" &&
-            (oldRsvp !== "No" || (oldNote !== rsvpNote && event.get("type") === "Rehearsal"));
+        const shouldNotifyAdmins = normalizedRsvp === 'No' &&
+            (oldRsvp !== 'No' || (oldNote !== rsvpNote && event.get('type') === 'Rehearsal'));
         if (shouldNotifyAdmins) {
             try {
-                const profile = $app.findRecordById("profiles", parts.p);
+                const profile = $app.findRecordById('profiles', parts.p);
                 notifyAdminsOfDecline($app, parts.e, profile, rsvpNote);
             }
             catch (declineErr) {
-                console.log("[RSVP Decline Hook Error] Failed to process quick-rsvp decline notice: " + declineErr);
+                console.log('[RSVP Decline Hook Error] Failed to process quick-rsvp decline notice: ' + declineErr);
             }
         }
     }
@@ -9041,12 +9405,12 @@ function getRsvpWindowInfo(event) {
         catch (_c) {
             errDetails = String(err);
         }
-        console.log("[RSVP Quick Error] Failed to update RSVP: " + String(err) + " | details=" + errDetails);
-        return e.json(500, { error: "Failed to update RSVP." });
+        console.log('[RSVP Quick Error] Failed to update RSVP: ' + String(err) + ' | details=' + errDetails);
+        return e.json(500, { error: 'Failed to update RSVP.' });
     }
     return e.json(200, { success: true });
 });
-routerAdd("POST", "/api/unsubscribe", (e) => {
+routerAdd('POST', '/api/unsubscribe', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
@@ -9160,86 +9524,85 @@ function parseSignedToken(token, requiredKeys) {
 // --- END CALLBACK-LOCAL UTILITIES ---
     const data = e.requestInfo().body;
     const token = data.token;
-    if (!token || typeof token !== "string") {
-        return e.json(400, { error: "Missing token" });
+    if (!token || typeof token !== 'string') {
+        return e.json(400, { error: 'Missing token' });
     }
-    const parts = parseSignedToken(token, ["p", "s"]);
+    const parts = parseSignedToken(token, ['p', 's']);
     if (!parts) {
-        return e.json(400, { error: "Invalid token format" });
+        return e.json(400, { error: 'Invalid token format' });
     }
     let secret;
     try {
         secret = getHmacSecret($app);
         if (!secret)
-            throw new Error("Missing secret");
+            throw new Error('Missing secret');
     }
     catch (_a) {
-        return e.json(500, { error: "HMAC_SECRET not configured" });
+        return e.json(500, { error: 'HMAC_SECRET not configured' });
     }
     const payload = `p=${parts.p}`;
     const expectedSignature = $security.hs256(payload, secret);
     if (!$security.equal(parts.s, expectedSignature)) {
-        return e.json(401, { error: "Invalid signature" });
+        return e.json(401, { error: 'Invalid signature' });
     }
     try {
-        const profile = $app.findRecordById("profiles", parts.p);
-        profile.set("doNotEmail", true);
+        const profile = $app.findRecordById('profiles', parts.p);
+        profile.set('doNotEmail', true);
         $app.save(profile);
     }
     catch (_b) {
-        return e.json(404, { error: "Profile not found" });
+        return e.json(404, { error: 'Profile not found' });
     }
     return e.json(200, { success: true });
 });
-routerAdd("POST", "/api/admin/bulk-update-rsvps", (e) => {
+routerAdd('POST', '/api/admin/bulk-update-rsvps', (e) => {
     
     const authRecord = e.auth;
-    if (!authRecord || authRecord.get("role") !== "admin") {
-        return e.json(403, { error: "Forbidden: Admins only" });
+    if (!authRecord || authRecord.get('role') !== 'admin') {
+        return e.json(403, { error: 'Forbidden: Admins only' });
     }
     const data = e.requestInfo().body;
     const eventId = data.eventId;
     const updates = data.updates;
     if (!eventId || !updates || !Array.isArray(updates)) {
-        return e.json(400, { error: "Missing eventId or updates array" });
+        return e.json(400, { error: 'Missing eventId or updates array' });
     }
     try {
-        const rosterCollection = $app.findCollectionByNameOrId("eventRosters");
-        const existingRosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "", 1000, 0, { eventId: eventId }) || [];
+        const rosterCollection = $app.findCollectionByNameOrId('eventRosters');
+        const existingRosters = $app.findRecordsByFilter('eventRosters', 'event = {:eventId}', '', 1000, 0, {
+            eventId: eventId,
+        }) || [];
         const rosterMap = {};
-        existingRosters.forEach(r => {
-            const profileVal = r.get("profile");
-            if (typeof profileVal === "string") {
+        existingRosters.forEach((r) => {
+            const profileVal = r.get('profile');
+            if (typeof profileVal === 'string') {
                 rosterMap[profileVal] = r;
             }
         });
         const txApp = $app;
         txApp.runInTransaction((tx) => {
-            updates.forEach(u => {
+            updates.forEach((u) => {
                 const existing = rosterMap[u.profileId];
                 if (existing) {
                     if (u.rsvp === 'Pending') {
-                        const attendance = existing.get("attendance") || "Pending";
-                        const folderNumber = (existing.get("folderNumber") || "").trim();
-                        const folderReturned = existing.get("folderReturned");
-                        const seatId = (existing.get("seatId") || "").trim();
-                        const hasOtherData = attendance !== 'Pending' ||
-                            folderNumber !== '' ||
-                            folderReturned ||
-                            seatId !== '';
+                        const attendance = existing.get('attendance') || 'Pending';
+                        const folderNumber = (existing.get('folderNumber') || '').trim();
+                        const folderReturned = existing.get('folderReturned');
+                        const seatId = (existing.get('seatId') || '').trim();
+                        const hasOtherData = attendance !== 'Pending' || folderNumber !== '' || folderReturned || seatId !== '';
                         if (!hasOtherData) {
                             tx.delete(existing);
                         }
-                        else if (existing.get("rsvp") !== 'Pending') {
-                            existing.set("rsvp", "Pending");
-                            existing.set("rsvpNote", "");
+                        else if (existing.get('rsvp') !== 'Pending') {
+                            existing.set('rsvp', 'Pending');
+                            existing.set('rsvpNote', '');
                             tx.save(existing);
                         }
                     }
-                    else if (existing.get("rsvp") !== u.rsvp) {
-                        existing.set("rsvp", u.rsvp);
-                        if (u.rsvp !== "No") {
-                            existing.set("rsvpNote", "");
+                    else if (existing.get('rsvp') !== u.rsvp) {
+                        existing.set('rsvp', u.rsvp);
+                        if (u.rsvp !== 'No') {
+                            existing.set('rsvpNote', '');
                         }
                         tx.save(existing);
                     }
@@ -9247,11 +9610,11 @@ routerAdd("POST", "/api/admin/bulk-update-rsvps", (e) => {
                 else {
                     if (u.rsvp !== 'Pending') {
                         const roster = new Record(rosterCollection);
-                        roster.set("event", eventId);
-                        roster.set("profile", u.profileId);
-                        roster.set("rsvp", u.rsvp);
-                        roster.set("attendance", "Pending");
-                        roster.set("folderReturned", false);
+                        roster.set('event', eventId);
+                        roster.set('profile', u.profileId);
+                        roster.set('rsvp', u.rsvp);
+                        roster.set('attendance', 'Pending');
+                        roster.set('folderReturned', false);
                         tx.save(roster);
                     }
                 }
@@ -9260,49 +9623,51 @@ routerAdd("POST", "/api/admin/bulk-update-rsvps", (e) => {
         return e.json(200, { success: true });
     }
     catch (err) {
-        console.log("[Bulk RSVP Hook Error]: " + String(err));
-        return e.json(500, { error: "Failed to bulk update RSVPs: " + String(err) });
+        console.log('[Bulk RSVP Hook Error]: ' + String(err));
+        return e.json(500, { error: 'Failed to bulk update RSVPs: ' + String(err) });
     }
 });
-routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
+routerAdd('POST', '/api/admin/bulk-upsert-attendance', (e) => {
     
     const authRecord = e.auth;
-    if (!authRecord || authRecord.get("role") !== "admin") {
-        return e.json(403, { error: "Forbidden: Admins only" });
+    if (!authRecord || authRecord.get('role') !== 'admin') {
+        return e.json(403, { error: 'Forbidden: Admins only' });
     }
     const data = e.requestInfo().body;
     const eventId = data.eventId;
     const updates = data.updates;
     if (!eventId) {
-        return e.json(400, { error: "Missing eventId" });
+        return e.json(400, { error: 'Missing eventId' });
     }
     if (!Array.isArray(updates)) {
-        return e.json(400, { error: "updates must be an array" });
+        return e.json(400, { error: 'updates must be an array' });
     }
     const allowedAttendance = {
         Present: true,
         Absent: true,
-        Pending: true
+        Pending: true,
     };
     const shouldPromotePendingRsvpToYes = (attendance, rsvp) => {
-        return attendance === "Present" && (!rsvp || rsvp === "Pending");
+        return attendance === 'Present' && (!rsvp || rsvp === 'Pending');
     };
     for (let i = 0; i < updates.length; i++) {
         const update = updates[i] || {};
         if (!update.profileId) {
-            return e.json(400, { error: "Each update requires profileId" });
+            return e.json(400, { error: 'Each update requires profileId' });
         }
         if (!allowedAttendance[update.attendance]) {
-            return e.json(400, { error: "Invalid attendance value" });
+            return e.json(400, { error: 'Invalid attendance value' });
         }
     }
     try {
-        const rosterCollection = $app.findCollectionByNameOrId("eventRosters");
-        const existingRosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "", 1000, 0, { eventId: eventId }) || [];
+        const rosterCollection = $app.findCollectionByNameOrId('eventRosters');
+        const existingRosters = $app.findRecordsByFilter('eventRosters', 'event = {:eventId}', '', 1000, 0, {
+            eventId: eventId,
+        }) || [];
         const rosterMap = {};
         existingRosters.forEach((roster) => {
-            const profileVal = roster.get("profile");
-            if (typeof profileVal === "string") {
+            const profileVal = roster.get('profile');
+            if (typeof profileVal === 'string') {
                 rosterMap[profileVal] = roster;
             }
         });
@@ -9312,17 +9677,17 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
             updates.forEach((update) => {
                 const existingRoster = rosterMap[update.profileId];
                 if (existingRoster) {
-                    const currentAttendance = existingRoster.get("attendance");
-                    const currentRsvp = existingRoster.get("rsvp");
+                    const currentAttendance = existingRoster.get('attendance');
+                    const currentRsvp = existingRoster.get('rsvp');
                     let changed = false;
                     if (currentAttendance !== update.attendance) {
-                        existingRoster.set("attendance", update.attendance);
+                        existingRoster.set('attendance', update.attendance);
                         changed = true;
                     }
                     // Match the single attendance update behavior: marking a pending singer Present
                     // also makes them attending so RSVP-driven seating views include them.
                     if (shouldPromotePendingRsvpToYes(update.attendance, currentRsvp)) {
-                        existingRoster.set("rsvp", "Yes");
+                        existingRoster.set('rsvp', 'Yes');
                         changed = true;
                     }
                     if (changed) {
@@ -9332,11 +9697,11 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
                 }
                 else {
                     const roster = new Record(rosterCollection);
-                    roster.set("event", eventId);
-                    roster.set("profile", update.profileId);
-                    roster.set("rsvp", update.attendance === "Present" ? "Yes" : "Pending");
-                    roster.set("attendance", update.attendance);
-                    roster.set("folderReturned", false);
+                    roster.set('event', eventId);
+                    roster.set('profile', update.profileId);
+                    roster.set('rsvp', update.attendance === 'Present' ? 'Yes' : 'Pending');
+                    roster.set('attendance', update.attendance);
+                    roster.set('folderReturned', false);
                     tx.save(roster);
                     changedRosters.push(roster);
                 }
@@ -9344,22 +9709,22 @@ routerAdd("POST", "/api/admin/bulk-upsert-attendance", (e) => {
         });
         const payload = changedRosters.map((roster) => ({
             id: roster.id,
-            event: roster.get("event"),
-            profile: roster.get("profile"),
-            attendance: roster.get("attendance"),
-            rsvp: roster.get("rsvp"),
-            folderNumber: roster.get("folderNumber") || "",
-            folderReturned: !!roster.get("folderReturned"),
-            seatId: roster.get("seatId") || ""
+            event: roster.get('event'),
+            profile: roster.get('profile'),
+            attendance: roster.get('attendance'),
+            rsvp: roster.get('rsvp'),
+            folderNumber: roster.get('folderNumber') || '',
+            folderReturned: !!roster.get('folderReturned'),
+            seatId: roster.get('seatId') || '',
         }));
         return e.json(200, { rosters: payload });
     }
     catch (err) {
-        console.log("[Bulk Attendance Hook Error]: " + String(err));
-        return e.json(500, { error: "Failed to bulk upsert attendance: " + String(err) });
+        console.log('[Bulk Attendance Hook Error]: ' + String(err));
+        return e.json(500, { error: 'Failed to bulk upsert attendance: ' + String(err) });
     }
 });
-routerAdd("POST", "/api/singer/resolve-placeholders", (e) => {
+routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
@@ -9769,81 +10134,83 @@ function parseSignedToken(token, requiredKeys) {
     var _a, _b, _c;
     const authRecord = e.auth;
     if (!authRecord) {
-        return e.json(401, { error: "Unauthorized" });
+        return e.json(401, { error: 'Unauthorized' });
     }
     const data = e.requestInfo().body;
-    if (typeof data.content !== "string") {
-        return e.json(400, { error: "Missing or invalid content parameter" });
+    if (typeof data.content !== 'string') {
+        return e.json(400, { error: 'Missing or invalid content parameter' });
     }
     const content = data.content;
-    const eventId = typeof data.eventId === "string" ? data.eventId : undefined;
+    const eventId = typeof data.eventId === 'string' ? data.eventId : undefined;
     let profile;
     try {
-        profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+        profile = $app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+            userId: authRecord.id,
+        });
     }
     catch (_d) {
-        return e.json(404, { error: "Profile not found" });
+        return e.json(404, { error: 'Profile not found' });
     }
     let secret;
     try {
         secret = getHmacSecret($app);
         if (!secret)
-            throw new Error("Missing secret");
+            throw new Error('Missing secret');
     }
     catch (_e) {
-        return e.json(500, { error: "HMAC_SECRET not configured" });
+        return e.json(500, { error: 'HMAC_SECRET not configured' });
     }
-    let baseUrl = "";
+    let baseUrl = '';
     try {
         let commSettings;
         try {
-            commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
+            commSettings = $app.findFirstRecordByFilter('appSettings', "key = 'communications'");
         }
         catch (_f) {
-            commSettings = $app.findFirstRecordByFilter("appSettings", "key = 'communication'");
+            commSettings = $app.findFirstRecordByFilter('appSettings', "key = 'communication'");
         }
         if (commSettings) {
-            const parsed = parseJsonField(commSettings.get("value"));
-            if (parsed && typeof parsed.frontendUrl === "string") {
+            const parsed = parseJsonField(commSettings.get('value'));
+            if (parsed && typeof parsed.frontendUrl === 'string') {
                 baseUrl = parsed.frontendUrl;
             }
         }
     }
     catch (err) {
-        console.log("[Resolve Placeholders Hook Error] Failed to read communication settings: " + err);
+        console.log('[Resolve Placeholders Hook Error] Failed to read communication settings: ' + err);
     }
-    if (!baseUrl || baseUrl === "http://localhost:5173" || baseUrl.indexOf("localhost") !== -1) {
+    if (!baseUrl || baseUrl === 'http://localhost:5173' || baseUrl.indexOf('localhost') !== -1) {
         const requestInfo = e.requestInfo();
-        const host = (_a = requestInfo.headers) === null || _a === void 0 ? void 0 : _a["host"];
-        const proto = ((_b = requestInfo.headers) === null || _b === void 0 ? void 0 : _b["x-forwarded-proto"]) || "https";
-        if (host && host.indexOf("localhost") === -1) {
-            baseUrl = proto + "://" + host;
+        const host = (_a = requestInfo.headers) === null || _a === void 0 ? void 0 : _a['host'];
+        const proto = ((_b = requestInfo.headers) === null || _b === void 0 ? void 0 : _b['x-forwarded-proto']) || 'https';
+        if (host && host.indexOf('localhost') === -1) {
+            baseUrl = proto + '://' + host;
         }
         else {
             const meta = (_c = $app.settings()) === null || _c === void 0 ? void 0 : _c.meta;
-            const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (settingsAppUrl) {
                 baseUrl = settingsAppUrl;
             }
             else if (host) {
-                baseUrl = proto + "://" + host;
+                baseUrl = proto + '://' + host;
             }
             else {
-                baseUrl = "http://localhost:5173";
+                baseUrl = 'http://localhost:5173';
             }
         }
     }
     baseUrl = normalizeBaseUrl(baseUrl);
-    let timezone = "America/New_York";
+    let timezone = 'America/New_York';
     try {
-        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-        const valueStr = tzSetting.get("value");
+        const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+        const valueStr = tzSetting.get('value');
         const tzP = parseJsonField(valueStr);
         if (tzP) {
-            if (typeof tzP === "string") {
+            if (typeof tzP === 'string') {
                 timezone = tzP;
             }
-            else if (typeof tzP === "object" && tzP.timezone) {
+            else if (typeof tzP === 'object' && tzP.timezone) {
                 timezone = tzP.timezone;
             }
         }
@@ -9854,50 +10221,61 @@ function parseSignedToken(token, requiredKeys) {
     let event = null;
     if (eventId) {
         try {
-            event = $app.findRecordById("events", eventId);
+            event = $app.findRecordById('events', eventId);
         }
         catch (err) {
-            console.log("[Resolve Placeholders] Failed to find event: " + err);
+            console.log('[Resolve Placeholders] Failed to find event: ' + err);
         }
     }
     // Temporarily protect placeholders containing underscores from markdown parsing
     const protectedContent = content
-        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+        .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+        .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+        .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+        .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+        .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
     let htmlBody = renderMarkdown(protectedContent);
     // Restore protected placeholders
     htmlBody = htmlBody
-        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+        .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+        .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+        .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+        .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+        .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
     // Resolve {singerName}
-    const recipientName = (profile.get("name") || "Singer");
+    const recipientName = (profile.get('name') || 'Singer');
     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
     if (event) {
-        const eventDate = event.get("date");
-        const eventTitle = (event.get("title") || event.get("type") || "Event");
-        const eventType = (event.get("type") || "Performance");
-        const eventDetails = (event.get("details") || "");
-        let venueName = "TBD";
-        let venueAddress = "";
+        const eventDate = event.get('date');
+        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+        const eventType = (event.get('type') || 'Performance');
+        const eventDetails = (event.get('details') || '');
+        let venueName = 'TBD';
+        let venueAddress = '';
         try {
-            const venueRecord = $app.findRecordById("venues", event.get("venue"));
-            venueName = (venueRecord.get("name") || "TBD");
-            venueAddress = (venueRecord.get("address") || "");
+            const venueRecord = $app.findRecordById('venues', event.get('venue'));
+            venueName = (venueRecord.get('name') || 'TBD');
+            venueAddress = (venueRecord.get('address') || '');
         }
         catch (_h) {
             // venue not found
         }
-        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const dateLong = formatInTimezone(eventDate, timezone, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
         const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        const dateShort = formatInTimezone(eventDate, timezone, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        });
         let locationHtml = escapeHtml(venueName);
         if (venueAddress.trim()) {
             const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
@@ -9913,53 +10291,59 @@ function parseSignedToken(token, requiredKeys) {
     </div>
 </div>
 `;
-        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+        htmlBody = htmlBody
+            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
             .replace(/{eventType}/g, () => escapeHtml(eventType))
             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
             .replace(/{eventLocation}/g, () => locationHtml)
             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
             .replace(/{eventInfo}/g, () => eventInfoHtml)
-            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")));
+            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')));
         // Resolve RSVP links
-        if (htmlBody.indexOf("{{RSVP_LINKS}}") !== -1 || htmlBody.indexOf("{rsvpLinks}") !== -1) {
+        if (htmlBody.indexOf('{{RSVP_LINKS}}') !== -1 || htmlBody.indexOf('{rsvpLinks}') !== -1) {
             const token = generateSignedEventRecipientToken($app, event.id, profile.id, secret);
-            const rsvpLink = baseUrl + "/rsvp?token=" + encodeURIComponent(token);
+            const rsvpLink = baseUrl + '/rsvp?token=' + encodeURIComponent(token);
             const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
     <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">(No login required)</p>
 </div>
 `;
-            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+            htmlBody = htmlBody
+                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                .replace(/{rsvpLinks}/g, () => rsvpHtml);
         }
         // Resolve Player links
-        if (htmlBody.indexOf("{{PLAYER_LINK}}") !== -1 || htmlBody.indexOf("{playerLink}") !== -1) {
+        if (htmlBody.indexOf('{{PLAYER_LINK}}') !== -1 || htmlBody.indexOf('{playerLink}') !== -1) {
             const token = generateSignedPlayerToken($app, event.id, secret);
-            const playerLink = baseUrl + "/player?token=" + encodeURIComponent(token);
+            const playerLink = baseUrl + '/player?token=' + encodeURIComponent(token);
             const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
     <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
 </div>
 `;
-            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+            htmlBody = htmlBody
+                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                .replace(/{playerLink}/g, () => playerHtml);
         }
     }
     else {
         // Clear event placeholders if no event is present
-        htmlBody = htmlBody.replace(/{eventTitle}/g, "")
-            .replace(/{eventType}/g, "")
-            .replace(/{eventDate}/g, "")
-            .replace(/{eventLocation}/g, "")
-            .replace(/{eventDetails}/g, "")
-            .replace(/{{EVENT_INFO}}/g, "")
-            .replace(/{eventInfo}/g, "")
-            .replace(/{{RSVP_LINKS}}/g, "")
-            .replace(/{rsvpLinks}/g, "")
-            .replace(/{{PLAYER_LINK}}/g, "")
-            .replace(/{playerLink}/g, "")
-            .replace(/{setlist}/g, "");
+        htmlBody = htmlBody
+            .replace(/{eventTitle}/g, '')
+            .replace(/{eventType}/g, '')
+            .replace(/{eventDate}/g, '')
+            .replace(/{eventLocation}/g, '')
+            .replace(/{eventDetails}/g, '')
+            .replace(/{{EVENT_INFO}}/g, '')
+            .replace(/{eventInfo}/g, '')
+            .replace(/{{RSVP_LINKS}}/g, '')
+            .replace(/{rsvpLinks}/g, '')
+            .replace(/{{PLAYER_LINK}}/g, '')
+            .replace(/{playerLink}/g, '')
+            .replace(/{setlist}/g, '');
     }
     // Resolve Poll links
     const pollRegex = /{{POLL_LINK:([a-zA-Z0-9]+)}}/g;
@@ -9967,15 +10351,15 @@ function parseSignedToken(token, requiredKeys) {
     while ((match = pollRegex.exec(htmlBody)) !== null) {
         const fullPlaceholder = match[0];
         const pollId = match[1];
-        const payload = "l=" + pollId + "&p=" + profile.id;
+        const payload = 'l=' + pollId + '&p=' + profile.id;
         const signature = $security.hs256(payload, secret);
-        const token = payload + "&s=" + signature;
-        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-        let pollButtonLabel = "Answer our quick question";
+        const token = payload + '&s=' + signature;
+        const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+        let pollButtonLabel = 'Answer our quick question';
         try {
-            const pollRecord = $app.findRecordById("polls", pollId);
-            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-            if (typeof question === "string" && question.trim()) {
+            const pollRecord = $app.findRecordById('polls', pollId);
+            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+            if (typeof question === 'string' && question.trim()) {
                 pollButtonLabel = question.trim();
             }
         }
@@ -9993,7 +10377,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     return e.json(200, { resolvedContent: htmlBody });
 });
-routerAdd("POST", "/api/singer/rsvp", (e) => {
+routerAdd('POST', '/api/singer/rsvp', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
 "use strict";
@@ -10534,7 +10918,7 @@ function processEmailQueue(app) {
     var _a;
     const settings = app.settings();
     if (!settings.smtp || !settings.smtp.enabled) {
-        console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+        console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
         return;
     }
     const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -10542,7 +10926,9 @@ function processEmailQueue(app) {
     const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
     // Stale Processing record recovery
     try {
-        app.db().newQuery(`
+        app
+            .db()
+            .newQuery(`
             UPDATE emailQueue
             SET status = 'Pending',
                 processingRunId = NULL,
@@ -10550,8 +10936,12 @@ function processEmailQueue(app) {
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
               AND (attempts IS NULL OR attempts < {:maxAttempts})
-        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-        app.db().newQuery(`
+        `)
+            .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+            .execute();
+        app
+            .db()
+            .newQuery(`
             UPDATE emailQueue
             SET status = 'Failed',
                 processingRunId = NULL,
@@ -10559,19 +10949,21 @@ function processEmailQueue(app) {
             WHERE status = 'Processing'
               AND processingStartedAt < datetime('now', '-15 minutes')
               AND attempts >= {:maxAttempts}
-        `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+        `)
+            .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+            .execute();
     }
     catch (recoverErr) {
-        console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+        console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
     }
     // Build variables used for layout rendering
     const secret = getHmacSecret(app);
-    let baseUrl = "http://localhost:5173";
-    let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-    let choirName = "";
+    let baseUrl = 'http://localhost:5173';
+    let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+    let choirName = '';
     try {
-        const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-        const comms = parseJsonField(commRecord.get("value"));
+        const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+        const comms = parseJsonField(commRecord.get('value'));
         if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
             baseUrl = comms.frontendUrl;
         if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -10580,33 +10972,33 @@ function processEmailQueue(app) {
     catch (_b) {
         // use default baseUrl and mailingAddress
     }
-    if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+    if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
         const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+        const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
         if (appSettingsUrl) {
             baseUrl = appSettingsUrl;
         }
     }
     baseUrl = normalizeBaseUrl(baseUrl);
     try {
-        const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-        const val = parseJsonField(choirRecord.get("value"));
+        const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+        const val = parseJsonField(choirRecord.get('value'));
         if (val)
             choirName = val;
     }
     catch (_c) {
         // use default choirName
     }
-    let timezone = "America/New_York";
+    let timezone = 'America/New_York';
     try {
-        const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-        const valueStr = tzSetting.get("value");
+        const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+        const valueStr = tzSetting.get('value');
         const tzP = parseJsonField(valueStr);
         if (tzP) {
-            if (typeof tzP === "string") {
+            if (typeof tzP === 'string') {
                 timezone = tzP;
             }
-            else if (typeof tzP === "object" && tzP.timezone) {
+            else if (typeof tzP === 'object' && tzP.timezone) {
                 timezone = tzP.timezone;
             }
         }
@@ -10620,7 +11012,9 @@ function processEmailQueue(app) {
         console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
         // Atomic SQLite-level claiming
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Processing',
                     processingRunId = {:runId},
@@ -10633,20 +11027,22 @@ function processEmailQueue(app) {
                     ORDER BY created ASC
                     LIMIT {:batchSize}
                 )
-            `).bind({
+            `)
+                .bind({
                 runId: runId,
                 maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                batchSize: EMAIL_QUEUE_BATCH_SIZE
-            }).execute();
+                batchSize: EMAIL_QUEUE_BATCH_SIZE,
+            })
+                .execute();
         }
         catch (claimErr) {
-            console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+            console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
             return;
         }
-        const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+        const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
         if (!records || records.length === 0) {
             if (totalClaimed === 0) {
-                console.log("[Email Queue] No records claimed for run: " + runId);
+                console.log('[Email Queue] No records claimed for run: ' + runId);
             }
             break;
         }
@@ -10655,68 +11051,68 @@ function processEmailQueue(app) {
         records.forEach((record) => {
             var _a, _b, _c;
             try {
-                const rawContent = record.get("rawContent") || "";
-                const recipientId = record.get("recipientId");
-                const recipientEmail = record.get("recipientEmail");
-                const recipientName = record.get("recipientName") || "Singer";
-                const filters = parseJsonField(record.get("filters")) || {};
+                const rawContent = record.get('rawContent') || '';
+                const recipientId = record.get('recipientId');
+                const recipientEmail = record.get('recipientEmail');
+                const recipientName = record.get('recipientName') || 'Singer';
+                const filters = parseJsonField(record.get('filters')) || {};
                 const isSms = filters.channel === 'sms';
                 // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                 // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                 // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
-                    const subject = record.get("subject") || "";
+                    const subject = record.get('subject') || '';
                     // Dispatch as plain text via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        text: rawContent
+                        text: rawContent,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                     return;
                 }
-                let htmlBody = "";
-                if (filters.contentType === "html") {
+                let htmlBody = '';
+                if (filters.contentType === 'html') {
                     htmlBody = rawContent;
                 }
                 else {
                     // Temporarily protect placeholders containing underscores from markdown parsing
                     const protectedContent = rawContent
-                        .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                        .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                        .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                        .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                        .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                        .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                        .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                        .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                        .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                        .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                        .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                        .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                        .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                     htmlBody = renderMarkdown(protectedContent);
                     // Restore protected placeholders
                     htmlBody = htmlBody
-                        .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                        .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                        .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                        .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                        .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                        .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                        .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                        .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                        .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                        .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                        .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                        .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                        .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                 }
-                let subject = record.get("subject") || "";
+                let subject = record.get('subject') || '';
                 subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                 // Fetch dynamic event details if enqueued under filters
                 let event = null;
                 if (filters && filters.eventId) {
                     try {
-                        event = app.findRecordById("events", filters.eventId);
+                        event = app.findRecordById('events', filters.eventId);
                     }
                     catch (_d) {
                         // event not found
@@ -10726,25 +11122,40 @@ function processEmailQueue(app) {
                 htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                 htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                 if (event) {
-                    const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                    const eventTitle = (event.get("title") || event.get("type") || "Event");
-                    const eventType = (event.get("type") || "Performance");
-                    const eventDetails = (event.get("details") || "");
-                    let venueName = "TBD";
-                    let venueAddress = "";
+                    const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                    const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                    const eventType = (event.get('type') || 'Performance');
+                    const eventDetails = (event.get('details') || '');
+                    let venueName = 'TBD';
+                    let venueAddress = '';
                     try {
-                        const venueRecord = app.findRecordById("venues", event.get("venue"));
-                        venueName = (venueRecord.get("name") || "TBD");
-                        venueAddress = (venueRecord.get("address") || "");
+                        const venueRecord = app.findRecordById('venues', event.get('venue'));
+                        venueName = (venueRecord.get('name') || 'TBD');
+                        venueAddress = (venueRecord.get('address') || '');
                     }
                     catch (_e) {
                         // venue not found
                     }
-                    const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                    const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                    const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                    const dateLong = formatInTimezone(eventDate, timezone, {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    });
+                    const timeStr = formatInTimezone(eventDate, timezone, {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
+                    const dateShort = formatInTimezone(eventDate, timezone, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                    });
                     // Resolve event placeholders in subject too
-                    subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                    subject = subject
+                        .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                         .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                         .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                     let locationHtml = escapeHtml(venueName);
@@ -10763,17 +11174,25 @@ function processEmailQueue(app) {
 </div>
 `;
                     // Optionally generate an "Add to Calendar" link for the first rehearsal
-                    let firstRehearsalHtml = "";
-                    if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                    let firstRehearsalHtml = '';
+                    if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                        event.get('type') === 'Performance') {
                         try {
-                            const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                            const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                             if (rehearsals && rehearsals.length > 0) {
                                 const firstReh = rehearsals[0];
-                                const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                const dLong = formatInTimezone(rehDate, timezone, {
+                                    weekday: 'short',
+                                    month: 'long',
+                                    day: 'numeric',
+                                });
+                                const dTime = formatInTimezone(rehDate, timezone, {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                });
                                 // Generate a direct link to the backend ICS download route
-                                let icsLink = "";
+                                let icsLink = '';
                                 if (secret) {
                                     const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -10798,9 +11217,9 @@ function processEmailQueue(app) {
                         }
                     }
                     // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                    let eventCalendarHtml = "";
-                    if (htmlBody.includes("{eventCalendarLink}")) {
-                        let icsLink = "";
+                    let eventCalendarHtml = '';
+                    if (htmlBody.includes('{eventCalendarLink}')) {
+                        let icsLink = '';
                         let slotDateLong = dateLong;
                         let slotTimeStr = timeStr;
                         if (secret) {
@@ -10811,11 +11230,20 @@ function processEmailQueue(app) {
                                 const token = `${payload}&s=${signature}`;
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 try {
-                                    const audition = app.findRecordById("auditions", auditionId);
-                                    const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                    const audition = app.findRecordById('auditions', auditionId);
+                                    const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                     if (auditionSlot) {
-                                        slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                        slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                        });
+                                        slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                            hour: 'numeric',
+                                            minute: '2-digit',
+                                            timeZoneName: 'short',
+                                        });
                                     }
                                 }
                                 catch (_g) {
@@ -10841,17 +11269,18 @@ function processEmailQueue(app) {
 </table>
                         `.trim();
                     }
-                    htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                    htmlBody = htmlBody
+                        .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                         .replace(/{eventType}/g, () => escapeHtml(eventType))
                         .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                         .replace(/{eventLocation}/g, () => locationHtml)
                         .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                         .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                         .replace(/{eventInfo}/g, () => eventInfoHtml)
-                        .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                        .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                         .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                         .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                    if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                    if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                         const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         const rsvpHtml = `
@@ -10860,9 +11289,12 @@ function processEmailQueue(app) {
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
 </div>
 `;
-                        htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        htmlBody = htmlBody
+                            .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                            .replace(/{rsvpLinks}/g, () => rsvpHtml);
                     }
-                    if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                    if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                        secret) {
                         const token = generateSignedPlayerToken(app, event.id, secret);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         const playerHtml = `
@@ -10871,20 +11303,21 @@ function processEmailQueue(app) {
     <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
 </div>
 `;
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                        htmlBody = htmlBody
+                            .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                            .replace(/{playerLink}/g, () => playerHtml);
                     }
                 }
                 else {
                     // If there's no event context, clear out the player link placeholders
-                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                        .replace(/{playerLink}/g, "");
+                    htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                 }
                 // Clear setlist placeholder when no event
                 if (!event) {
-                    htmlBody = htmlBody.replace(/{setlist}/g, "");
+                    htmlBody = htmlBody.replace(/{setlist}/g, '');
                 }
                 // Resolve ticket QR code placeholder
-                if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                     const isBundle = !!filters.bundleId;
                     const caption = isBundle
                         ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -10904,20 +11337,20 @@ function processEmailQueue(app) {
                     htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                 }
                 else {
-                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                    htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                 }
                 // Resolve poll links: {{POLL_LINK:pollId}}
-                if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                if (htmlBody.includes('{{POLL_LINK:') && secret) {
                     htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                        const payload = "l=" + pollId + "&p=" + recipientId;
+                        const payload = 'l=' + pollId + '&p=' + recipientId;
                         const signature = $security.hs256(payload, secret);
-                        const token = payload + "&s=" + signature;
-                        const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                        let pollButtonLabel = "Answer our quick question";
+                        const token = payload + '&s=' + signature;
+                        const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                        let pollButtonLabel = 'Answer our quick question';
                         try {
-                            const pollRecord = app.findRecordById("polls", pollId);
-                            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                            if (typeof question === "string" && question.trim()) {
+                            const pollRecord = app.findRecordById('polls', pollId);
+                            const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                            if (typeof question === 'string' && question.trim()) {
                                 pollButtonLabel = question.trim();
                             }
                         }
@@ -10943,36 +11376,36 @@ function processEmailQueue(app) {
                 }
                 // Final template layout wrap
                 const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                record.set("htmlBody", finalHtml);
+                record.set('htmlBody', finalHtml);
                 // Dispatch natively via PocketBase SMTP Client
                 const mailerMessage = new MailerMessage({
                     from: {
-                        address: settings.meta.senderAddress || "no-reply@choir.management",
-                        name: settings.meta.senderName || "Choir Management Tool"
+                        address: settings.meta.senderAddress || 'no-reply@choir.management',
+                        name: settings.meta.senderName || 'Choir Management Tool',
                     },
                     to: [{ address: recipientEmail, name: recipientName }],
                     subject: subject,
-                    html: finalHtml
+                    html: finalHtml,
                 });
                 app.newMailClient().send(mailerMessage);
-                record.set("status", "Sent");
-                record.set("sentAt", new Date().toISOString());
-                record.set("processingRunId", null);
-                record.set("processingStartedAt", null);
-                record.set("errorMessage", "");
+                record.set('status', 'Sent');
+                record.set('sentAt', new Date().toISOString());
+                record.set('processingRunId', null);
+                record.set('processingStartedAt', null);
+                record.set('errorMessage', '');
                 console.log(`[Email Queue] Sent record: ${record.id}`);
             }
             catch (err) {
-                const rawAttempts = record.get("attempts");
-                const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                const rawAttempts = record.get('attempts');
+                const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                 const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                record.set("attempts", currentAttempts);
+                record.set('attempts', currentAttempts);
                 const message = err instanceof Error ? err.message : String(err);
-                record.set("errorMessage", message);
-                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                record.set("status", nextStatus);
-                record.set("processingRunId", null);
-                record.set("processingStartedAt", null);
+                record.set('errorMessage', message);
+                const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                record.set('status', nextStatus);
+                record.set('processingRunId', null);
+                record.set('processingStartedAt', null);
                 console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
             }
             finally {
@@ -10984,7 +11417,7 @@ function processEmailQueue(app) {
         }
     }
     if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-        console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+        console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
     }
 }
 
@@ -11170,169 +11603,177 @@ function getRsvpWindowInfo(event) {
 // --- END CALLBACK-LOCAL UTILITIES ---
     const authRecord = e.auth;
     if (!authRecord) {
-        return e.json(401, { error: "Unauthorized" });
+        return e.json(401, { error: 'Unauthorized' });
     }
     const data = e.requestInfo().body;
-    if (typeof data.eventId !== "string" || typeof data.rsvp !== "string") {
-        return e.json(400, { error: "Missing eventId or rsvp" });
+    if (typeof data.eventId !== 'string' || typeof data.rsvp !== 'string') {
+        return e.json(400, { error: 'Missing eventId or rsvp' });
     }
     const eventId = data.eventId;
     const rsvp = data.rsvp;
-    const rsvpNote = typeof data.rsvpNote === "string" ? data.rsvpNote.trim() : "";
+    const rsvpNote = typeof data.rsvpNote === 'string' ? data.rsvpNote.trim() : '';
     if (rsvpNote.length > 1000) {
         return e.json(400, {
-            error: "Your note cannot exceed 1000 characters.",
-            code: "RSVP_NOTE_TOO_LONG",
+            error: 'Your note cannot exceed 1000 characters.',
+            code: 'RSVP_NOTE_TOO_LONG',
         });
     }
-    if (rsvp !== "Yes" && rsvp !== "No" && rsvp !== "Pending") {
-        return e.json(400, { error: "Invalid rsvp status" });
+    if (rsvp !== 'Yes' && rsvp !== 'No' && rsvp !== 'Pending') {
+        return e.json(400, { error: 'Invalid rsvp status' });
     }
     let profile;
     try {
-        profile = $app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+        profile = $app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+            userId: authRecord.id,
+        });
     }
     catch (_a) {
-        return e.json(404, { error: "Profile not found" });
+        return e.json(404, { error: 'Profile not found' });
     }
     let event;
     try {
-        event = $app.findRecordById("events", eventId);
+        event = $app.findRecordById('events', eventId);
     }
     catch (_b) {
-        return e.json(404, { error: "Event not found" });
+        return e.json(404, { error: 'Event not found' });
     }
     const windowValidation = validateSingerRsvpWindow(event);
     if (!windowValidation.ok) {
         return e.json(windowValidation.status, { error: windowValidation.error });
     }
-    if (event.get("type") === "Rehearsal" && rsvp === "No" && !rsvpNote) {
+    if (event.get('type') === 'Rehearsal' && rsvp === 'No' && !rsvpNote) {
         return e.json(400, {
-            error: "Please include a note explaining why you cannot attend this rehearsal.",
-            code: "RSVP_NOTE_REQUIRED",
+            error: 'Please include a note explaining why you cannot attend this rehearsal.',
+            code: 'RSVP_NOTE_REQUIRED',
         });
     }
     try {
-        const matches = $app.findRecordsByFilter("eventRosters", "event = {:e} && profile = {:p}", "", 2, 0, { e: eventId, p: profile.id }) || [];
+        const matches = $app.findRecordsByFilter('eventRosters', 'event = {:e} && profile = {:p}', '', 2, 0, {
+            e: eventId,
+            p: profile.id,
+        }) || [];
         let roster = matches.length > 0 ? matches[0] : null;
-        if (rsvp === "Pending") {
+        if (rsvp === 'Pending') {
             if (roster) {
-                const hasOtherData = roster.get("attendance") !== "Pending" ||
-                    Boolean((roster.get("folderNumber") || "").trim()) ||
-                    roster.get("folderReturned") ||
-                    Boolean((roster.get("seatId") || "").trim());
+                const hasOtherData = roster.get('attendance') !== 'Pending' ||
+                    Boolean((roster.get('folderNumber') || '').trim()) ||
+                    roster.get('folderReturned') ||
+                    Boolean((roster.get('seatId') || '').trim());
                 if (!hasOtherData) {
                     $app.delete(roster);
                     return e.json(200, {
-                        id: "",
+                        id: '',
                         event: eventId,
                         profile: profile.id,
-                        rsvp: "Pending",
-                        attendance: "Pending",
+                        rsvp: 'Pending',
+                        attendance: 'Pending',
                         folderReturned: false,
                     });
                 }
                 else {
-                    roster.set("rsvp", "Pending");
-                    roster.set("rsvpNote", "");
+                    roster.set('rsvp', 'Pending');
+                    roster.set('rsvpNote', '');
                     $app.save(roster);
                 }
             }
             else {
                 return e.json(200, {
-                    id: "",
+                    id: '',
                     event: eventId,
                     profile: profile.id,
-                    rsvp: "Pending",
-                    attendance: "Pending",
+                    rsvp: 'Pending',
+                    attendance: 'Pending',
                     folderReturned: false,
                 });
             }
         }
         else {
-            const oldRsvp = roster ? (roster.get("rsvp") || "Pending") : "Pending";
-            const oldNote = roster ? ((roster.get("rsvpNote") || "").trim()) : "";
+            const oldRsvp = roster ? roster.get('rsvp') || 'Pending' : 'Pending';
+            const oldNote = roster ? (roster.get('rsvpNote') || '').trim() : '';
             if (!roster) {
-                const collection = $app.findCollectionByNameOrId("eventRosters");
+                const collection = $app.findCollectionByNameOrId('eventRosters');
                 roster = new Record(collection);
-                roster.set("event", eventId);
-                roster.set("profile", profile.id);
-                roster.set("attendance", "Pending");
-                roster.set("folderReturned", false);
+                roster.set('event', eventId);
+                roster.set('profile', profile.id);
+                roster.set('attendance', 'Pending');
+                roster.set('folderReturned', false);
             }
-            roster.set("rsvp", rsvp);
-            if (rsvp === "No") {
-                roster.set("rsvpNote", rsvpNote);
+            roster.set('rsvp', rsvp);
+            if (rsvp === 'No') {
+                roster.set('rsvpNote', rsvpNote);
             }
             else {
-                roster.set("rsvpNote", "");
+                roster.set('rsvpNote', '');
             }
             $app.save(roster);
             // Enqueue confirmation email if RSVP changed to Yes
-            if (rsvp === "Yes" && oldRsvp !== "Yes") {
+            if (rsvp === 'Yes' && oldRsvp !== 'Yes') {
                 try {
-                    let recipientEmail = "";
-                    const userId = profile.get("user");
+                    let recipientEmail = '';
+                    const userId = profile.get('user');
                     if (userId) {
                         try {
-                            const userRec = $app.findRecordById("users", userId);
-                            recipientEmail = userRec.get("email") || "";
+                            const userRec = $app.findRecordById('users', userId);
+                            recipientEmail = userRec.get('email') || '';
                         }
                         catch (err) {
-                            console.log("[RSVP Confirmation Error] Failed to resolve email for profile " + profile.id + ": " + err);
+                            console.log('[RSVP Confirmation Error] Failed to resolve email for profile ' +
+                                profile.id +
+                                ': ' +
+                                err);
                         }
                     }
-                    if (recipientEmail && !profile.get("doNotEmail")) {
-                        const template = $app.findFirstRecordByFilter("messageTemplates", "title = 'RSVP Confirmation' && isSystemTemplate = true");
-                        const queueCollection = $app.findCollectionByNameOrId("emailQueue");
+                    if (recipientEmail && !profile.get('doNotEmail')) {
+                        const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'RSVP Confirmation' && isSystemTemplate = true");
+                        const queueCollection = $app.findCollectionByNameOrId('emailQueue');
                         const queueRecord = new Record(queueCollection, {
                             recipientId: profile.id,
                             recipientEmail: recipientEmail,
-                            recipientName: profile.get("name") || "Singer",
-                            subject: template.get("subject") || "",
-                            rawContent: template.get("content") || "",
-                            status: "Pending",
+                            recipientName: profile.get('name') || 'Singer',
+                            subject: template.get('subject') || '',
+                            rawContent: template.get('content') || '',
+                            status: 'Pending',
                             attempts: 0,
                             filters: JSON.stringify({
                                 eventId: eventId,
-                                type: "Automated Confirmation"
-                            })
+                                type: 'Automated Confirmation',
+                            }),
                         });
                         $app.save(queueRecord);
                         processEmailQueue($app);
                     }
                 }
                 catch (emailErr) {
-                    console.log("[RSVP Confirmation Error] Failed to enqueue automated email: " + emailErr);
+                    console.log('[RSVP Confirmation Error] Failed to enqueue automated email: ' + emailErr);
                 }
             }
             // Notify admins if RSVP changed to No or decline reason changed for rehearsals
-            const shouldNotifyAdmins = rsvp === "No" &&
-                (oldRsvp !== "No" || (oldNote !== rsvpNote && event.get("type") === "Rehearsal"));
+            const shouldNotifyAdmins = rsvp === 'No' &&
+                (oldRsvp !== 'No' || (oldNote !== rsvpNote && event.get('type') === 'Rehearsal'));
             if (shouldNotifyAdmins) {
                 try {
                     notifyAdminsOfDecline($app, eventId, profile, rsvpNote);
                 }
                 catch (declineErr) {
-                    console.log("[RSVP Decline Hook Error] Failed to process singer/rsvp decline notice: " + declineErr);
+                    console.log('[RSVP Decline Hook Error] Failed to process singer/rsvp decline notice: ' + declineErr);
                 }
             }
         }
         return e.json(200, {
             id: roster.id,
-            event: roster.get("event"),
-            profile: roster.get("profile"),
-            rsvp: roster.get("rsvp"),
-            rsvpNote: roster.get("rsvpNote") || "",
-            attendance: roster.get("attendance"),
-            folderReturned: !!roster.get("folderReturned"),
-            seatId: roster.get("seatId") || "",
-            folderNumber: roster.get("folderNumber") || "",
+            event: roster.get('event'),
+            profile: roster.get('profile'),
+            rsvp: roster.get('rsvp'),
+            rsvpNote: roster.get('rsvpNote') || '',
+            attendance: roster.get('attendance'),
+            folderReturned: !!roster.get('folderReturned'),
+            seatId: roster.get('seatId') || '',
+            folderNumber: roster.get('folderNumber') || '',
         });
     }
     catch (err) {
-        console.log("[Singer RSVP Error] Failed to update RSVP: " + err);
-        return e.json(500, { error: "Failed to update RSVP" });
+        console.log('[Singer RSVP Error] Failed to update RSVP: ' + err);
+        return e.json(500, { error: 'Failed to update RSVP' });
     }
 });
 
@@ -11877,7 +12318,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
         var _a;
         const settings = app.settings();
         if (!settings.smtp || !settings.smtp.enabled) {
-            console.log("[Queue Error] SMTP settings are not enabled in PocketBase.");
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
         const EMAIL_QUEUE_BATCH_SIZE = 150;
@@ -11885,7 +12326,9 @@ routerAdd("POST", "/api/queue/process", (e) => {
         const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
         // Stale Processing record recovery
         try {
-            app.db().newQuery(`
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Pending',
                     processingRunId = NULL,
@@ -11893,8 +12336,12 @@ routerAdd("POST", "/api/queue/process", (e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
-            app.db().newQuery(`
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Failed',
                     processingRunId = NULL,
@@ -11902,19 +12349,21 @@ routerAdd("POST", "/api/queue/process", (e) => {
                 WHERE status = 'Processing'
                   AND processingStartedAt < datetime('now', '-15 minutes')
                   AND attempts >= {:maxAttempts}
-            `).bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS }).execute();
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
         }
         catch (recoverErr) {
-            console.log("[Email Queue] Error recovering stale records: " + recoverErr);
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
         const secret = getHmacSecret(app);
-        let baseUrl = "http://localhost:5173";
-        let mailingAddress = "123 Choir St, Harmony City, HC 12345";
-        let choirName = "";
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
@@ -11923,33 +12372,33 @@ routerAdd("POST", "/api/queue/process", (e) => {
         catch (_b) {
             // use default baseUrl and mailingAddress
         }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (appSettingsUrl) {
                 baseUrl = appSettingsUrl;
             }
         }
         baseUrl = normalizeBaseUrl(baseUrl);
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get("value"));
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
             if (val)
                 choirName = val;
         }
         catch (_c) {
             // use default choirName
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const valueStr = tzSetting.get("value");
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
             const tzP = parseJsonField(valueStr);
             if (tzP) {
-                if (typeof tzP === "string") {
+                if (typeof tzP === 'string') {
                     timezone = tzP;
                 }
-                else if (typeof tzP === "object" && tzP.timezone) {
+                else if (typeof tzP === 'object' && tzP.timezone) {
                     timezone = tzP.timezone;
                 }
             }
@@ -11963,7 +12412,9 @@ routerAdd("POST", "/api/queue/process", (e) => {
             console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
             // Atomic SQLite-level claiming
             try {
-                app.db().newQuery(`
+                app
+                    .db()
+                    .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
                         processingRunId = {:runId},
@@ -11976,20 +12427,22 @@ routerAdd("POST", "/api/queue/process", (e) => {
                         ORDER BY created ASC
                         LIMIT {:batchSize}
                     )
-                `).bind({
+                `)
+                    .bind({
                     runId: runId,
                     maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE
-                }).execute();
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
             }
             catch (claimErr) {
-                console.log("[Email Queue] Error claiming records for run " + runId + ": " + claimErr);
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
                 return;
             }
-            const records = app.findRecordsByFilter("emailQueue", "status = 'Processing' && processingRunId = {:runId}", "created", EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
             if (!records || records.length === 0) {
                 if (totalClaimed === 0) {
-                    console.log("[Email Queue] No records claimed for run: " + runId);
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
                 }
                 break;
             }
@@ -11998,68 +12451,68 @@ routerAdd("POST", "/api/queue/process", (e) => {
             records.forEach((record) => {
                 var _a, _b, _c;
                 try {
-                    const rawContent = record.get("rawContent") || "";
-                    const recipientId = record.get("recipientId");
-                    const recipientEmail = record.get("recipientEmail");
-                    const recipientName = record.get("recipientName") || "Singer";
-                    const filters = parseJsonField(record.get("filters")) || {};
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
                     // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
-                        const subject = record.get("subject") || "";
+                        const subject = record.get('subject') || '';
                         // Dispatch as plain text via PocketBase SMTP Client
                         const mailerMessage = new MailerMessage({
                             from: {
-                                address: settings.meta.senderAddress || "no-reply@choir.management",
-                                name: settings.meta.senderName || "Choir Management Tool"
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
                             },
                             to: [{ address: recipientEmail, name: recipientName }],
                             subject: subject,
-                            text: rawContent
+                            text: rawContent,
                         });
                         app.newMailClient().send(mailerMessage);
-                        record.set("status", "Sent");
-                        record.set("sentAt", new Date().toISOString());
-                        record.set("processingRunId", null);
-                        record.set("processingStartedAt", null);
-                        record.set("errorMessage", "");
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
                         console.log(`[Email Queue] Sent SMS record: ${record.id}`);
                         return;
                     }
-                    let htmlBody = "";
-                    if (filters.contentType === "html") {
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
                         htmlBody = rawContent;
                     }
                     else {
                         // Temporarily protect placeholders containing underscores from markdown parsing
                         const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, "%%MAILINGADDRESS%%")
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, "%%UNSUBSCRIBELINK%%")
-                            .replace(/{{EVENT_INFO}}/g, "%%EVENTINFO%%")
-                            .replace(/{{RSVP_LINKS}}/g, "%%RSVPLINKS%%")
-                            .replace(/{{PLAYER_LINK}}/g, "%%PLAYERLINK%%")
-                            .replace(/{{TICKET_QR}}/g, "%%TICKETQR%%")
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => "%%POLLLINK_" + id + "%%");
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
                         htmlBody = renderMarkdown(protectedContent);
                         // Restore protected placeholders
                         htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, "{{MAILING_ADDRESS}}")
-                            .replace(/%%UNSUBSCRIBELINK%%/g, "{{UNSUBSCRIBE_LINK}}")
-                            .replace(/%%EVENTINFO%%/g, "{{EVENT_INFO}}")
-                            .replace(/%%RSVPLINKS%%/g, "{{RSVP_LINKS}}")
-                            .replace(/%%PLAYERLINK%%/g, "{{PLAYER_LINK}}")
-                            .replace(/%%TICKETQR%%/g, "{{TICKET_QR}}")
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => "{{POLL_LINK:" + id + "}}");
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
                     }
-                    let subject = record.get("subject") || "";
+                    let subject = record.get('subject') || '';
                     subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
                     // Fetch dynamic event details if enqueued under filters
                     let event = null;
                     if (filters && filters.eventId) {
                         try {
-                            event = app.findRecordById("events", filters.eventId);
+                            event = app.findRecordById('events', filters.eventId);
                         }
                         catch (_d) {
                             // event not found
@@ -12069,25 +12522,40 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
                     htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
                     if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date("");
-                        const eventTitle = (event.get("title") || event.get("type") || "Event");
-                        const eventType = (event.get("type") || "Performance");
-                        const eventDetails = (event.get("details") || "");
-                        let venueName = "TBD";
-                        let venueAddress = "";
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
                         try {
-                            const venueRecord = app.findRecordById("venues", event.get("venue"));
-                            venueName = (venueRecord.get("name") || "TBD");
-                            venueAddress = (venueRecord.get("address") || "");
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
                         }
                         catch (_e) {
                             // venue not found
                         }
-                        const dateLong = formatInTimezone(eventDate, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                        const timeStr = formatInTimezone(eventDate, timezone, { hour: 'numeric', minute: '2-digit' });
-                        const dateShort = formatInTimezone(eventDate, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
                         // Resolve event placeholders in subject too
-                        subject = subject.replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
                             .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
                             .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
                         let locationHtml = escapeHtml(venueName);
@@ -12106,17 +12574,25 @@ routerAdd("POST", "/api/queue/process", (e) => {
     </div>
     `;
                         // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = "";
-                        if (htmlBody.includes("{firstRehearsalCalendarLink}") && event.get("type") === "Performance") {
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
                             try {
-                                const rehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:eventId}", "date", 1, 0, { eventId: event.id });
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
                                 if (rehearsals && rehearsals.length > 0) {
                                     const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get("date"))) !== null && _b !== void 0 ? _b : new Date("");
-                                    const dLong = formatInTimezone(rehDate, timezone, { weekday: 'short', month: 'long', day: 'numeric' });
-                                    const dTime = formatInTimezone(rehDate, timezone, { hour: 'numeric', minute: '2-digit' });
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
                                     // Generate a direct link to the backend ICS download route
-                                    let icsLink = "";
+                                    let icsLink = '';
                                     if (secret) {
                                         const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
@@ -12141,9 +12617,9 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             }
                         }
                         // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = "";
-                        if (htmlBody.includes("{eventCalendarLink}")) {
-                            let icsLink = "";
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
                             let slotDateLong = dateLong;
                             let slotTimeStr = timeStr;
                             if (secret) {
@@ -12154,11 +12630,20 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     const token = `${payload}&s=${signature}`;
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     try {
-                                        const audition = app.findRecordById("auditions", auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get("scheduledTimeSlot"))) !== null && _c !== void 0 ? _c : new Date("");
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
                                         if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
                                         }
                                     }
                                     catch (_g) {
@@ -12184,17 +12669,18 @@ routerAdd("POST", "/api/queue/process", (e) => {
     </table>
                             `.trim();
                         }
-                        htmlBody = htmlBody.replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
                             .replace(/{eventType}/g, () => escapeHtml(eventType))
                             .replace(/{eventDate}/g, () => escapeHtml(dateShort))
                             .replace(/{eventLocation}/g, () => locationHtml)
                             .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
                             .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
                             .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get("setList")))
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes("{{RSVP_LINKS}}") || htmlBody.includes("{rsvpLinks}")) && secret) {
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
                             const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
@@ -12203,9 +12689,12 @@ routerAdd("POST", "/api/queue/process", (e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{RSVP_LINKS}}/g, () => rsvpHtml).replace(/{rsvpLinks}/g, () => rsvpHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
                         }
-                        if ((htmlBody.includes("{{PLAYER_LINK}}") || htmlBody.includes("{playerLink}")) && secret) {
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
                             const token = generateSignedPlayerToken(app, event.id, secret);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
@@ -12214,20 +12703,21 @@ routerAdd("POST", "/api/queue/process", (e) => {
         <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
     </div>
     `;
-                            htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, () => playerHtml).replace(/{playerLink}/g, () => playerHtml);
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
                         }
                     }
                     else {
                         // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, "")
-                            .replace(/{playerLink}/g, "");
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
                     }
                     // Clear setlist placeholder when no event
                     if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, "");
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
                     }
                     // Resolve ticket QR code placeholder
-                    if (htmlBody.includes("{{TICKET_QR}}") && filters.ticketToken && filters.qrSvgSrc) {
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
                         const isBundle = !!filters.bundleId;
                         const caption = isBundle
                             ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
@@ -12247,20 +12737,20 @@ routerAdd("POST", "/api/queue/process", (e) => {
                         htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
                     }
                     else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, "");
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
                     }
                     // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes("{{POLL_LINK:") && secret) {
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
                         htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = "l=" + pollId + "&p=" + recipientId;
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
                             const signature = $security.hs256(payload, secret);
-                            const token = payload + "&s=" + signature;
-                            const pollLink = baseUrl + "/poll?token=" + encodeURIComponent(token);
-                            let pollButtonLabel = "Answer our quick question";
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
                             try {
-                                const pollRecord = app.findRecordById("polls", pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get("question");
-                                if (typeof question === "string" && question.trim()) {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
                                     pollButtonLabel = question.trim();
                                 }
                             }
@@ -12286,36 +12776,36 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     }
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set("htmlBody", finalHtml);
+                    record.set('htmlBody', finalHtml);
                     // Dispatch natively via PocketBase SMTP Client
                     const mailerMessage = new MailerMessage({
                         from: {
-                            address: settings.meta.senderAddress || "no-reply@choir.management",
-                            name: settings.meta.senderName || "Choir Management Tool"
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
                         },
                         to: [{ address: recipientEmail, name: recipientName }],
                         subject: subject,
-                        html: finalHtml
+                        html: finalHtml,
                     });
                     app.newMailClient().send(mailerMessage);
-                    record.set("status", "Sent");
-                    record.set("sentAt", new Date().toISOString());
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
-                    record.set("errorMessage", "");
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
                     console.log(`[Email Queue] Sent record: ${record.id}`);
                 }
                 catch (err) {
-                    const rawAttempts = record.get("attempts");
-                    const attempts = typeof rawAttempts === "number" ? rawAttempts : 0;
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
                     const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set("attempts", currentAttempts);
+                    record.set('attempts', currentAttempts);
                     const message = err instanceof Error ? err.message : String(err);
-                    record.set("errorMessage", message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? "Failed" : "Pending";
-                    record.set("status", nextStatus);
-                    record.set("processingRunId", null);
-                    record.set("processingStartedAt", null);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
                     console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
                 }
                 finally {
@@ -12327,7 +12817,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             }
         }
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log("[Email Queue] Max batches reached; additional pending records will continue in the next invocation.");
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -13463,8 +13953,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", async (e) => {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate ||
-            checkoutEventDate < new Date()) {
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
@@ -15138,8 +15627,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", async (e) => {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate ||
-            checkoutEventDate < new Date()) {
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
@@ -16813,8 +17301,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", async (e) => {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate ||
-            checkoutEventDate < new Date()) {
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
@@ -18488,8 +18975,7 @@ routerAdd("POST", "/api/webhook/stripe", async (e) => {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate ||
-            checkoutEventDate < new Date()) {
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
@@ -20163,8 +20649,7 @@ routerAdd("POST", "/api/admin/refund-ticket", async (e) => {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate ||
-            checkoutEventDate < new Date()) {
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
@@ -21838,8 +22323,7 @@ routerAdd("POST", "/api/admin/refund-bundle", async (e) => {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate ||
-            checkoutEventDate < new Date()) {
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
@@ -23513,8 +23997,7 @@ routerAdd("POST", "/api/admin/refund-donation", async (e) => {
             return e.json(400, { error: 'Ticketing is not enabled for this event' });
         }
         const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate ||
-            checkoutEventDate < new Date()) {
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
             return e.json(400, { error: 'Ticket sales are closed for this event' });
         }
         // Derive sold count from paid ticketPurchases
@@ -26079,17 +26562,20 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             .replace(/;/g, '\\;');
     }
     function fmtUtc(date) {
-        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        return date
+            .toISOString()
+            .replace(/[-:]/g, '')
+            .replace(/\.\d{3}Z$/, 'Z');
     }
     function getChoirTimezoneLocal(app) {
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const parsed = parseJsonField(tzSetting.get("value"));
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const parsed = parseJsonField(tzSetting.get('value'));
             if (parsed) {
-                if (typeof parsed === "string")
+                if (typeof parsed === 'string')
                     timezone = parsed;
-                else if (typeof parsed === "object" && parsed.timezone)
+                else if (typeof parsed === 'object' && parsed.timezone)
                     timezone = parsed.timezone;
             }
         }
@@ -26100,13 +26586,13 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
-            const parsed = parseJsonField(setting.get("value"));
-            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            const setting = app.findFirstRecordByFilter('appSettings', "key = 'choir_name' || key = 'choirName'");
+            const parsed = parseJsonField(setting.get('value'));
+            const directName = safeTrim(typeof parsed === 'string' ? parsed : '');
             if (directName) {
                 return directName;
             }
-            if (parsed && typeof parsed === "object") {
+            if (parsed && typeof parsed === 'object') {
                 const parsedRecord = parsed;
                 const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
@@ -26118,16 +26604,16 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         catch (_a) {
             // ignore error
         }
-        return "Choir";
+        return 'Choir';
     }
     function safeTrim(str) {
         if (!str)
-            return "";
-        return String(str).replace(/^\s+|\s+$/g, "");
+            return '';
+        return String(str).replace(/^\s+|\s+$/g, '');
     }
     function getLocalDatePart(date, timezone) {
         const offsetInfo = getTimezoneOffsetInfo(date, timezone);
-        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const localDate = new Date(date.getTime() + offsetInfo.offsetMinutes * 60 * 1000);
         const y = localDate.getUTCFullYear();
         const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
         const d = String(localDate.getUTCDate()).padStart(2, '0');
@@ -26138,14 +26624,14 @@ routerAdd("GET", "/api/calendar/download", (e) => {
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
     function parseSafeUtcDate(dateValue, timezone) {
-        const dateStr = String(dateValue || "");
+        const dateStr = String(dateValue || '');
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
-            normalized = normalized.replace(" ", "T");
-            if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
-                normalized += "Z";
+            normalized = normalized.replace(' ', 'T');
+            if (!normalized.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+                normalized += 'Z';
             }
             return new Date(normalized);
         }
@@ -26155,25 +26641,25 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 d.setFullYear(new Date().getFullYear());
             }
             let offsetHours;
-            const tz = String(timezone || "").toLowerCase();
+            const tz = String(timezone || '').toLowerCase();
             const year = d.getUTCFullYear();
             const march1 = new Date(Date.UTC(year, 2, 1));
-            const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+            const dstStartDay = ((7 - march1.getUTCDay()) % 7) + 1 + 7;
             const nov1 = new Date(Date.UTC(year, 10, 1));
-            const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+            const dstEndDay = ((7 - nov1.getUTCDay()) % 7) + 1;
             const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0);
             const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0);
             const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            if (tz.indexOf('chicago') >= 0 || tz.indexOf('central') >= 0) {
                 offsetHours = isDst ? -5 : -6;
             }
-            else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            else if (tz.indexOf('denver') >= 0 || tz.indexOf('mountain') >= 0) {
                 offsetHours = isDst ? -6 : -7;
             }
-            else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
+            else if (tz.indexOf('los_angeles') >= 0 || tz.indexOf('pacific') >= 0) {
                 offsetHours = isDst ? -7 : -8;
             }
-            else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            else if (tz.indexOf('phoenix') >= 0 || tz.indexOf('arizona') >= 0) {
                 offsetHours = -7;
             }
             else {
@@ -26184,18 +26670,18 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         return d;
     }
     function handleCalendarDownload(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["s"]);
+        const parts = parseSignedToken(token, ['s']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Determine payload signature
         let payload;
@@ -26209,67 +26695,72 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token payload" });
+            return e.json(400, { error: 'Invalid token payload' });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             const timezone = getChoirTimezoneLocal(app);
-            let venueName = "";
-            let venueAddress = "";
-            let locationStr = "";
+            let venueName = '';
+            let venueAddress = '';
+            let locationStr = '';
             let start = new Date();
-            let title = "";
-            let details = "";
-            let uid = "";
-            let callTime = "";
+            let title = '';
+            let details = '';
+            let uid = '';
+            let callTime = '';
             let durationMinutes = 120;
             if (parts.e) {
-                const event = app.findRecordById("events", parts.e);
+                const event = app.findRecordById('events', parts.e);
                 try {
-                    const venueId = event.get("venue");
+                    const venueId = event.get('venue');
                     if (venueId) {
-                        const venue = app.findRecordById("venues", venueId);
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        const venue = app.findRecordById('venues', venueId);
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
                 catch (_a) {
                     // Ignore venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                start = parseSafeUtcDate(event.get("date"), timezone);
-                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
-                title = event.get("title") || event.get("type") || "Choir Event";
-                details = event.get("details") || "";
-                callTime = event.get("callTime") || "";
+                locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                start = parseSafeUtcDate(event.get('date'), timezone);
+                durationMinutes =
+                    Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
+                title = event.get('title') || event.get('type') || 'Choir Event';
+                details = event.get('details') || '';
+                callTime = event.get('callTime') || '';
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
-                const audition = app.findRecordById("auditions", parts.a);
-                start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
+                const audition = app.findRecordById('auditions', parts.a);
+                start = parseSafeUtcDate(audition.get('scheduledTimeSlot'), timezone);
                 durationMinutes = 30; // 30 mins for audition
-                title = `Choir Audition: ${audition.get("name")}`;
+                title = `Choir Audition: ${audition.get('name')}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
-                    const eventId = audition.get("performance");
+                    const eventId = audition.get('performance');
                     if (eventId) {
-                        const event = app.findRecordById("events", eventId);
-                        const venueId = event.get("venue");
+                        const event = app.findRecordById('events', eventId);
+                        const venueId = event.get('venue');
                         if (venueId) {
-                            const venue = app.findRecordById("venues", venueId);
-                            venueName = venue.get("name") || "";
-                            venueAddress = venue.get("address") || "";
+                            const venue = app.findRecordById('venues', venueId);
+                            venueName = venue.get('name') || '';
+                            venueAddress = venue.get('address') || '';
                         }
                     }
                 }
                 catch (_b) {
                     // Ignore performance/venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
-                details = "Please arrive 10 minutes early to warm up.";
+                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : '';
+                details = 'Please arrive 10 minutes early to warm up.';
             }
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
@@ -26294,91 +26785,95 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 `X-WR-TIMEZONE:${timezone}`,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
             const fileId = parts.e ? `event-${parts.e}` : `audition-${parts.a}`;
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${fileId}.ics"`);
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${fileId}.ics"`);
             return e.string(200, icsContent);
         }
         catch (_c) {
-            return e.json(404, { error: "Event or Audition not found" });
+            return e.json(404, { error: 'Event or Audition not found' });
         }
     }
     function handleCalendarFeed(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ['p', 'c', 's']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Verify signature over the payload p=<profileId>&c=<calendarSalt>
         const payload = `p=${parts.p}&c=${parts.c}`;
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             // Fetch singer profile
-            const profile = app.findRecordById("profiles", parts.p);
+            const profile = app.findRecordById('profiles', parts.p);
             // Double check calendar salt matches
-            const activeSalt = profile.get("calendarSalt");
+            const activeSalt = profile.get('calendarSalt');
             if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
-                return e.json(401, { error: "Token has been reset or is invalid" });
+                return e.json(401, { error: 'Token has been reset or is invalid' });
             }
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .replace('T', ' ');
+            const events = app.findRecordsByFilter('events', `date >= '${thirtyDaysAgo}' && isArchived != true`, '-date', 500);
             // Fetch all rosters (RSVPs) for this profile
-            const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
+            const rosters = app.findRecordsByFilter('eventRosters', `profile = '${profile.id}'`, '', 1000);
             // Map event ID to roster record
             const rosterMap = {};
-            rosters.forEach(r => {
-                rosterMap[r.get("event")] = r;
+            rosters.forEach((r) => {
+                rosterMap[r.get('event')] = r;
             });
             // Resolve each event
             const eventsToInclude = [];
             const rsvpStatusMap = {}; // Cache resolved RSVPs
             // Loop through all events to calculate their resolved RSVP status
-            events.forEach(event => {
+            events.forEach((event) => {
                 const eventId = event.id;
-                const eventType = event.get("type");
+                const eventType = event.get('type');
                 // Check for direct roster RSVP
                 const roster = rosterMap[eventId];
-                let resolvedRsvp = roster ? roster.get("rsvp") : "Pending";
-                if (eventType === "Rehearsal" && resolvedRsvp === "Pending") {
+                let resolvedRsvp = roster ? roster.get('rsvp') : 'Pending';
+                if (eventType === 'Rehearsal' && resolvedRsvp === 'Pending') {
                     // Rehearsal inherits from parent performance
-                    const parentId = event.get("parentPerformanceId");
+                    const parentId = event.get('parentPerformanceId');
                     if (parentId) {
                         const parentRoster = rosterMap[parentId];
-                        const parentRsvp = parentRoster ? parentRoster.get("rsvp") : "Pending";
-                        if (parentRsvp !== "Pending") {
+                        const parentRsvp = parentRoster ? parentRoster.get('rsvp') : 'Pending';
+                        if (parentRsvp !== 'Pending') {
                             resolvedRsvp = parentRsvp;
                         }
                     }
                 }
                 // Only include if RSVP is Yes (Attending) or Pending
-                if (resolvedRsvp === "Yes" || resolvedRsvp === "Pending") {
+                if (resolvedRsvp === 'Yes' || resolvedRsvp === 'Pending') {
                     eventsToInclude.push(event);
                     rsvpStatusMap[eventId] = resolvedRsvp;
                 }
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                const dateA = coercePocketBaseDate(a.get("date"));
-                const dateB = coercePocketBaseDate(b.get("date"));
+                const dateA = coercePocketBaseDate(a.get('date'));
+                const dateB = coercePocketBaseDate(b.get('date'));
                 if (!dateA && !dateB)
                     return 0;
                 if (!dateA)
@@ -26393,8 +26888,8 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             // Pre-fetch all venues
             const venueMap = {};
             try {
-                const allVenues = app.findRecordsByFilter("venues", "1 = 1", "", 500);
-                allVenues.forEach(v => {
+                const allVenues = app.findRecordsByFilter('venues', '1 = 1', '', 500);
+                allVenues.forEach((v) => {
                     venueMap[v.id] = v;
                 });
             }
@@ -26402,24 +26897,28 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 // ignore venue pre-fetch failure
             }
             eventsToInclude.forEach((event) => {
-                let venueName = "";
-                let venueAddress = "";
-                const venueId = event.get("venue");
+                let venueName = '';
+                let venueAddress = '';
+                const venueId = event.get('venue');
                 if (venueId) {
-                    const venue = venueMap[venueId] || app.findRecordById("venues", venueId);
+                    const venue = venueMap[venueId] || app.findRecordById('venues', venueId);
                     if (venue) {
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
-                const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                const start = parseSafeUtcDate(event.get("date"), timezone);
+                const locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                const start = parseSafeUtcDate(event.get('date'), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const durationMinutes = Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
                 const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-                const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
-                const typeText = event.get("type");
-                const callTime = event.get("callTime");
+                const rsvpText = rsvpStatusMap[event.id] === 'Yes' ? 'Attending' : 'Pending RSVP';
+                const typeText = event.get('type');
+                const callTime = event.get('callTime');
                 // Build premium DESCRIPTION field
                 const descParts = [];
                 descParts.push(`Type: ${typeText}`);
@@ -26427,27 +26926,29 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 if (callTime) {
                     descParts.push(`Call Time: ${callTime}`);
                 }
-                const details = event.get("details");
+                const details = event.get('details');
                 if (details) {
                     descParts.push(`\nDetails:\n${details}`);
                 }
                 // Set List inclusion
-                const setListApproved = event.get("setListApproved");
-                if (setListApproved && rsvpStatusMap[event.id] === "Yes") {
-                    const rawSetList = event.get("setList");
+                const setListApproved = event.get('setListApproved');
+                if (setListApproved && rsvpStatusMap[event.id] === 'Yes') {
+                    const rawSetList = event.get('setList');
                     const parsedSetList = parseJsonField(rawSetList);
                     if (parsedSetList && parsedSetList.length > 0) {
                         descParts.push(`\nSet List:`);
                         parsedSetList.forEach((item, index) => {
                             const songTitle = item.title;
-                            const songComposer = item.composer || "";
-                            const itemStr = songComposer ? `${index + 1}. ${songTitle} (${songComposer})` : `${index + 1}. ${songTitle}`;
+                            const songComposer = item.composer || '';
+                            const itemStr = songComposer
+                                ? `${index + 1}. ${songTitle} (${songComposer})`
+                                : `${index + 1}. ${songTitle}`;
                             descParts.push(itemStr);
                         });
                     }
                 }
-                const description = descParts.join("\n");
-                const title = event.get("title");
+                const description = descParts.join('\n');
+                const title = event.get('title');
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
@@ -26470,38 +26971,42 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 'X-WR-TIMEZONE:' + timezone,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${profile.id}.ics"`);
-            e.response.header().set("Cache-Control", "no-store, must-revalidate");
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${profile.id}.ics"`);
+            e.response.header().set('Cache-Control', 'no-store, must-revalidate');
             return e.string(200, icsContent);
         }
         catch (err) {
-            return e.json(500, { error: "Failed to generate calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to generate calendar feed: ' + String(err) });
         }
     }
     function handleCalendarFeedUrl(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
-            let salt = profile.get("calendarSalt");
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
+            let salt = profile.get('calendarSalt');
             if (!salt) {
                 salt = $security.randomString(16);
-                profile.set("calendarSalt", salt);
+                profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -26509,25 +27014,27 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            console.log("Error in handleCalendarFeedUrl: " + String(err));
-            return e.json(404, { error: "Singer profile not found: " + String(err) });
+            console.log('Error in handleCalendarFeedUrl: ' + String(err));
+            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
             // Generate new salt
             const salt = $security.randomString(16);
-            profile.set("calendarSalt", salt);
+            profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -26535,7 +27042,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            return e.json(500, { error: "Failed to reset calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to reset calendar feed: ' + String(err) });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -26959,17 +27466,20 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             .replace(/;/g, '\\;');
     }
     function fmtUtc(date) {
-        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        return date
+            .toISOString()
+            .replace(/[-:]/g, '')
+            .replace(/\.\d{3}Z$/, 'Z');
     }
     function getChoirTimezoneLocal(app) {
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const parsed = parseJsonField(tzSetting.get("value"));
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const parsed = parseJsonField(tzSetting.get('value'));
             if (parsed) {
-                if (typeof parsed === "string")
+                if (typeof parsed === 'string')
                     timezone = parsed;
-                else if (typeof parsed === "object" && parsed.timezone)
+                else if (typeof parsed === 'object' && parsed.timezone)
                     timezone = parsed.timezone;
             }
         }
@@ -26980,13 +27490,13 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
-            const parsed = parseJsonField(setting.get("value"));
-            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            const setting = app.findFirstRecordByFilter('appSettings', "key = 'choir_name' || key = 'choirName'");
+            const parsed = parseJsonField(setting.get('value'));
+            const directName = safeTrim(typeof parsed === 'string' ? parsed : '');
             if (directName) {
                 return directName;
             }
-            if (parsed && typeof parsed === "object") {
+            if (parsed && typeof parsed === 'object') {
                 const parsedRecord = parsed;
                 const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
@@ -26998,16 +27508,16 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         catch (_a) {
             // ignore error
         }
-        return "Choir";
+        return 'Choir';
     }
     function safeTrim(str) {
         if (!str)
-            return "";
-        return String(str).replace(/^\s+|\s+$/g, "");
+            return '';
+        return String(str).replace(/^\s+|\s+$/g, '');
     }
     function getLocalDatePart(date, timezone) {
         const offsetInfo = getTimezoneOffsetInfo(date, timezone);
-        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const localDate = new Date(date.getTime() + offsetInfo.offsetMinutes * 60 * 1000);
         const y = localDate.getUTCFullYear();
         const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
         const d = String(localDate.getUTCDate()).padStart(2, '0');
@@ -27018,14 +27528,14 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
     function parseSafeUtcDate(dateValue, timezone) {
-        const dateStr = String(dateValue || "");
+        const dateStr = String(dateValue || '');
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
-            normalized = normalized.replace(" ", "T");
-            if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
-                normalized += "Z";
+            normalized = normalized.replace(' ', 'T');
+            if (!normalized.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+                normalized += 'Z';
             }
             return new Date(normalized);
         }
@@ -27035,25 +27545,25 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 d.setFullYear(new Date().getFullYear());
             }
             let offsetHours;
-            const tz = String(timezone || "").toLowerCase();
+            const tz = String(timezone || '').toLowerCase();
             const year = d.getUTCFullYear();
             const march1 = new Date(Date.UTC(year, 2, 1));
-            const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+            const dstStartDay = ((7 - march1.getUTCDay()) % 7) + 1 + 7;
             const nov1 = new Date(Date.UTC(year, 10, 1));
-            const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+            const dstEndDay = ((7 - nov1.getUTCDay()) % 7) + 1;
             const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0);
             const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0);
             const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            if (tz.indexOf('chicago') >= 0 || tz.indexOf('central') >= 0) {
                 offsetHours = isDst ? -5 : -6;
             }
-            else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            else if (tz.indexOf('denver') >= 0 || tz.indexOf('mountain') >= 0) {
                 offsetHours = isDst ? -6 : -7;
             }
-            else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
+            else if (tz.indexOf('los_angeles') >= 0 || tz.indexOf('pacific') >= 0) {
                 offsetHours = isDst ? -7 : -8;
             }
-            else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            else if (tz.indexOf('phoenix') >= 0 || tz.indexOf('arizona') >= 0) {
                 offsetHours = -7;
             }
             else {
@@ -27064,18 +27574,18 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         return d;
     }
     function handleCalendarDownload(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["s"]);
+        const parts = parseSignedToken(token, ['s']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Determine payload signature
         let payload;
@@ -27089,67 +27599,72 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token payload" });
+            return e.json(400, { error: 'Invalid token payload' });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             const timezone = getChoirTimezoneLocal(app);
-            let venueName = "";
-            let venueAddress = "";
-            let locationStr = "";
+            let venueName = '';
+            let venueAddress = '';
+            let locationStr = '';
             let start = new Date();
-            let title = "";
-            let details = "";
-            let uid = "";
-            let callTime = "";
+            let title = '';
+            let details = '';
+            let uid = '';
+            let callTime = '';
             let durationMinutes = 120;
             if (parts.e) {
-                const event = app.findRecordById("events", parts.e);
+                const event = app.findRecordById('events', parts.e);
                 try {
-                    const venueId = event.get("venue");
+                    const venueId = event.get('venue');
                     if (venueId) {
-                        const venue = app.findRecordById("venues", venueId);
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        const venue = app.findRecordById('venues', venueId);
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
                 catch (_a) {
                     // Ignore venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                start = parseSafeUtcDate(event.get("date"), timezone);
-                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
-                title = event.get("title") || event.get("type") || "Choir Event";
-                details = event.get("details") || "";
-                callTime = event.get("callTime") || "";
+                locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                start = parseSafeUtcDate(event.get('date'), timezone);
+                durationMinutes =
+                    Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
+                title = event.get('title') || event.get('type') || 'Choir Event';
+                details = event.get('details') || '';
+                callTime = event.get('callTime') || '';
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
-                const audition = app.findRecordById("auditions", parts.a);
-                start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
+                const audition = app.findRecordById('auditions', parts.a);
+                start = parseSafeUtcDate(audition.get('scheduledTimeSlot'), timezone);
                 durationMinutes = 30; // 30 mins for audition
-                title = `Choir Audition: ${audition.get("name")}`;
+                title = `Choir Audition: ${audition.get('name')}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
-                    const eventId = audition.get("performance");
+                    const eventId = audition.get('performance');
                     if (eventId) {
-                        const event = app.findRecordById("events", eventId);
-                        const venueId = event.get("venue");
+                        const event = app.findRecordById('events', eventId);
+                        const venueId = event.get('venue');
                         if (venueId) {
-                            const venue = app.findRecordById("venues", venueId);
-                            venueName = venue.get("name") || "";
-                            venueAddress = venue.get("address") || "";
+                            const venue = app.findRecordById('venues', venueId);
+                            venueName = venue.get('name') || '';
+                            venueAddress = venue.get('address') || '';
                         }
                     }
                 }
                 catch (_b) {
                     // Ignore performance/venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
-                details = "Please arrive 10 minutes early to warm up.";
+                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : '';
+                details = 'Please arrive 10 minutes early to warm up.';
             }
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
@@ -27174,91 +27689,95 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 `X-WR-TIMEZONE:${timezone}`,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
             const fileId = parts.e ? `event-${parts.e}` : `audition-${parts.a}`;
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${fileId}.ics"`);
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${fileId}.ics"`);
             return e.string(200, icsContent);
         }
         catch (_c) {
-            return e.json(404, { error: "Event or Audition not found" });
+            return e.json(404, { error: 'Event or Audition not found' });
         }
     }
     function handleCalendarFeed(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ['p', 'c', 's']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Verify signature over the payload p=<profileId>&c=<calendarSalt>
         const payload = `p=${parts.p}&c=${parts.c}`;
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             // Fetch singer profile
-            const profile = app.findRecordById("profiles", parts.p);
+            const profile = app.findRecordById('profiles', parts.p);
             // Double check calendar salt matches
-            const activeSalt = profile.get("calendarSalt");
+            const activeSalt = profile.get('calendarSalt');
             if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
-                return e.json(401, { error: "Token has been reset or is invalid" });
+                return e.json(401, { error: 'Token has been reset or is invalid' });
             }
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .replace('T', ' ');
+            const events = app.findRecordsByFilter('events', `date >= '${thirtyDaysAgo}' && isArchived != true`, '-date', 500);
             // Fetch all rosters (RSVPs) for this profile
-            const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
+            const rosters = app.findRecordsByFilter('eventRosters', `profile = '${profile.id}'`, '', 1000);
             // Map event ID to roster record
             const rosterMap = {};
-            rosters.forEach(r => {
-                rosterMap[r.get("event")] = r;
+            rosters.forEach((r) => {
+                rosterMap[r.get('event')] = r;
             });
             // Resolve each event
             const eventsToInclude = [];
             const rsvpStatusMap = {}; // Cache resolved RSVPs
             // Loop through all events to calculate their resolved RSVP status
-            events.forEach(event => {
+            events.forEach((event) => {
                 const eventId = event.id;
-                const eventType = event.get("type");
+                const eventType = event.get('type');
                 // Check for direct roster RSVP
                 const roster = rosterMap[eventId];
-                let resolvedRsvp = roster ? roster.get("rsvp") : "Pending";
-                if (eventType === "Rehearsal" && resolvedRsvp === "Pending") {
+                let resolvedRsvp = roster ? roster.get('rsvp') : 'Pending';
+                if (eventType === 'Rehearsal' && resolvedRsvp === 'Pending') {
                     // Rehearsal inherits from parent performance
-                    const parentId = event.get("parentPerformanceId");
+                    const parentId = event.get('parentPerformanceId');
                     if (parentId) {
                         const parentRoster = rosterMap[parentId];
-                        const parentRsvp = parentRoster ? parentRoster.get("rsvp") : "Pending";
-                        if (parentRsvp !== "Pending") {
+                        const parentRsvp = parentRoster ? parentRoster.get('rsvp') : 'Pending';
+                        if (parentRsvp !== 'Pending') {
                             resolvedRsvp = parentRsvp;
                         }
                     }
                 }
                 // Only include if RSVP is Yes (Attending) or Pending
-                if (resolvedRsvp === "Yes" || resolvedRsvp === "Pending") {
+                if (resolvedRsvp === 'Yes' || resolvedRsvp === 'Pending') {
                     eventsToInclude.push(event);
                     rsvpStatusMap[eventId] = resolvedRsvp;
                 }
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                const dateA = coercePocketBaseDate(a.get("date"));
-                const dateB = coercePocketBaseDate(b.get("date"));
+                const dateA = coercePocketBaseDate(a.get('date'));
+                const dateB = coercePocketBaseDate(b.get('date'));
                 if (!dateA && !dateB)
                     return 0;
                 if (!dateA)
@@ -27273,8 +27792,8 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             // Pre-fetch all venues
             const venueMap = {};
             try {
-                const allVenues = app.findRecordsByFilter("venues", "1 = 1", "", 500);
-                allVenues.forEach(v => {
+                const allVenues = app.findRecordsByFilter('venues', '1 = 1', '', 500);
+                allVenues.forEach((v) => {
                     venueMap[v.id] = v;
                 });
             }
@@ -27282,24 +27801,28 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 // ignore venue pre-fetch failure
             }
             eventsToInclude.forEach((event) => {
-                let venueName = "";
-                let venueAddress = "";
-                const venueId = event.get("venue");
+                let venueName = '';
+                let venueAddress = '';
+                const venueId = event.get('venue');
                 if (venueId) {
-                    const venue = venueMap[venueId] || app.findRecordById("venues", venueId);
+                    const venue = venueMap[venueId] || app.findRecordById('venues', venueId);
                     if (venue) {
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
-                const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                const start = parseSafeUtcDate(event.get("date"), timezone);
+                const locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                const start = parseSafeUtcDate(event.get('date'), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const durationMinutes = Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
                 const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-                const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
-                const typeText = event.get("type");
-                const callTime = event.get("callTime");
+                const rsvpText = rsvpStatusMap[event.id] === 'Yes' ? 'Attending' : 'Pending RSVP';
+                const typeText = event.get('type');
+                const callTime = event.get('callTime');
                 // Build premium DESCRIPTION field
                 const descParts = [];
                 descParts.push(`Type: ${typeText}`);
@@ -27307,27 +27830,29 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 if (callTime) {
                     descParts.push(`Call Time: ${callTime}`);
                 }
-                const details = event.get("details");
+                const details = event.get('details');
                 if (details) {
                     descParts.push(`\nDetails:\n${details}`);
                 }
                 // Set List inclusion
-                const setListApproved = event.get("setListApproved");
-                if (setListApproved && rsvpStatusMap[event.id] === "Yes") {
-                    const rawSetList = event.get("setList");
+                const setListApproved = event.get('setListApproved');
+                if (setListApproved && rsvpStatusMap[event.id] === 'Yes') {
+                    const rawSetList = event.get('setList');
                     const parsedSetList = parseJsonField(rawSetList);
                     if (parsedSetList && parsedSetList.length > 0) {
                         descParts.push(`\nSet List:`);
                         parsedSetList.forEach((item, index) => {
                             const songTitle = item.title;
-                            const songComposer = item.composer || "";
-                            const itemStr = songComposer ? `${index + 1}. ${songTitle} (${songComposer})` : `${index + 1}. ${songTitle}`;
+                            const songComposer = item.composer || '';
+                            const itemStr = songComposer
+                                ? `${index + 1}. ${songTitle} (${songComposer})`
+                                : `${index + 1}. ${songTitle}`;
                             descParts.push(itemStr);
                         });
                     }
                 }
-                const description = descParts.join("\n");
-                const title = event.get("title");
+                const description = descParts.join('\n');
+                const title = event.get('title');
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
@@ -27350,38 +27875,42 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 'X-WR-TIMEZONE:' + timezone,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${profile.id}.ics"`);
-            e.response.header().set("Cache-Control", "no-store, must-revalidate");
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${profile.id}.ics"`);
+            e.response.header().set('Cache-Control', 'no-store, must-revalidate');
             return e.string(200, icsContent);
         }
         catch (err) {
-            return e.json(500, { error: "Failed to generate calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to generate calendar feed: ' + String(err) });
         }
     }
     function handleCalendarFeedUrl(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
-            let salt = profile.get("calendarSalt");
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
+            let salt = profile.get('calendarSalt');
             if (!salt) {
                 salt = $security.randomString(16);
-                profile.set("calendarSalt", salt);
+                profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -27389,25 +27918,27 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            console.log("Error in handleCalendarFeedUrl: " + String(err));
-            return e.json(404, { error: "Singer profile not found: " + String(err) });
+            console.log('Error in handleCalendarFeedUrl: ' + String(err));
+            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
             // Generate new salt
             const salt = $security.randomString(16);
-            profile.set("calendarSalt", salt);
+            profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -27415,7 +27946,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            return e.json(500, { error: "Failed to reset calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to reset calendar feed: ' + String(err) });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -27839,17 +28370,20 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             .replace(/;/g, '\\;');
     }
     function fmtUtc(date) {
-        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        return date
+            .toISOString()
+            .replace(/[-:]/g, '')
+            .replace(/\.\d{3}Z$/, 'Z');
     }
     function getChoirTimezoneLocal(app) {
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const parsed = parseJsonField(tzSetting.get("value"));
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const parsed = parseJsonField(tzSetting.get('value'));
             if (parsed) {
-                if (typeof parsed === "string")
+                if (typeof parsed === 'string')
                     timezone = parsed;
-                else if (typeof parsed === "object" && parsed.timezone)
+                else if (typeof parsed === 'object' && parsed.timezone)
                     timezone = parsed.timezone;
             }
         }
@@ -27860,13 +28394,13 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
-            const parsed = parseJsonField(setting.get("value"));
-            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            const setting = app.findFirstRecordByFilter('appSettings', "key = 'choir_name' || key = 'choirName'");
+            const parsed = parseJsonField(setting.get('value'));
+            const directName = safeTrim(typeof parsed === 'string' ? parsed : '');
             if (directName) {
                 return directName;
             }
-            if (parsed && typeof parsed === "object") {
+            if (parsed && typeof parsed === 'object') {
                 const parsedRecord = parsed;
                 const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
@@ -27878,16 +28412,16 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         catch (_a) {
             // ignore error
         }
-        return "Choir";
+        return 'Choir';
     }
     function safeTrim(str) {
         if (!str)
-            return "";
-        return String(str).replace(/^\s+|\s+$/g, "");
+            return '';
+        return String(str).replace(/^\s+|\s+$/g, '');
     }
     function getLocalDatePart(date, timezone) {
         const offsetInfo = getTimezoneOffsetInfo(date, timezone);
-        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const localDate = new Date(date.getTime() + offsetInfo.offsetMinutes * 60 * 1000);
         const y = localDate.getUTCFullYear();
         const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
         const d = String(localDate.getUTCDate()).padStart(2, '0');
@@ -27898,14 +28432,14 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
     function parseSafeUtcDate(dateValue, timezone) {
-        const dateStr = String(dateValue || "");
+        const dateStr = String(dateValue || '');
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
-            normalized = normalized.replace(" ", "T");
-            if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
-                normalized += "Z";
+            normalized = normalized.replace(' ', 'T');
+            if (!normalized.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+                normalized += 'Z';
             }
             return new Date(normalized);
         }
@@ -27915,25 +28449,25 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 d.setFullYear(new Date().getFullYear());
             }
             let offsetHours;
-            const tz = String(timezone || "").toLowerCase();
+            const tz = String(timezone || '').toLowerCase();
             const year = d.getUTCFullYear();
             const march1 = new Date(Date.UTC(year, 2, 1));
-            const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+            const dstStartDay = ((7 - march1.getUTCDay()) % 7) + 1 + 7;
             const nov1 = new Date(Date.UTC(year, 10, 1));
-            const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+            const dstEndDay = ((7 - nov1.getUTCDay()) % 7) + 1;
             const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0);
             const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0);
             const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            if (tz.indexOf('chicago') >= 0 || tz.indexOf('central') >= 0) {
                 offsetHours = isDst ? -5 : -6;
             }
-            else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            else if (tz.indexOf('denver') >= 0 || tz.indexOf('mountain') >= 0) {
                 offsetHours = isDst ? -6 : -7;
             }
-            else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
+            else if (tz.indexOf('los_angeles') >= 0 || tz.indexOf('pacific') >= 0) {
                 offsetHours = isDst ? -7 : -8;
             }
-            else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            else if (tz.indexOf('phoenix') >= 0 || tz.indexOf('arizona') >= 0) {
                 offsetHours = -7;
             }
             else {
@@ -27944,18 +28478,18 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         return d;
     }
     function handleCalendarDownload(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["s"]);
+        const parts = parseSignedToken(token, ['s']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Determine payload signature
         let payload;
@@ -27969,67 +28503,72 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token payload" });
+            return e.json(400, { error: 'Invalid token payload' });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             const timezone = getChoirTimezoneLocal(app);
-            let venueName = "";
-            let venueAddress = "";
-            let locationStr = "";
+            let venueName = '';
+            let venueAddress = '';
+            let locationStr = '';
             let start = new Date();
-            let title = "";
-            let details = "";
-            let uid = "";
-            let callTime = "";
+            let title = '';
+            let details = '';
+            let uid = '';
+            let callTime = '';
             let durationMinutes = 120;
             if (parts.e) {
-                const event = app.findRecordById("events", parts.e);
+                const event = app.findRecordById('events', parts.e);
                 try {
-                    const venueId = event.get("venue");
+                    const venueId = event.get('venue');
                     if (venueId) {
-                        const venue = app.findRecordById("venues", venueId);
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        const venue = app.findRecordById('venues', venueId);
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
                 catch (_a) {
                     // Ignore venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                start = parseSafeUtcDate(event.get("date"), timezone);
-                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
-                title = event.get("title") || event.get("type") || "Choir Event";
-                details = event.get("details") || "";
-                callTime = event.get("callTime") || "";
+                locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                start = parseSafeUtcDate(event.get('date'), timezone);
+                durationMinutes =
+                    Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
+                title = event.get('title') || event.get('type') || 'Choir Event';
+                details = event.get('details') || '';
+                callTime = event.get('callTime') || '';
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
-                const audition = app.findRecordById("auditions", parts.a);
-                start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
+                const audition = app.findRecordById('auditions', parts.a);
+                start = parseSafeUtcDate(audition.get('scheduledTimeSlot'), timezone);
                 durationMinutes = 30; // 30 mins for audition
-                title = `Choir Audition: ${audition.get("name")}`;
+                title = `Choir Audition: ${audition.get('name')}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
-                    const eventId = audition.get("performance");
+                    const eventId = audition.get('performance');
                     if (eventId) {
-                        const event = app.findRecordById("events", eventId);
-                        const venueId = event.get("venue");
+                        const event = app.findRecordById('events', eventId);
+                        const venueId = event.get('venue');
                         if (venueId) {
-                            const venue = app.findRecordById("venues", venueId);
-                            venueName = venue.get("name") || "";
-                            venueAddress = venue.get("address") || "";
+                            const venue = app.findRecordById('venues', venueId);
+                            venueName = venue.get('name') || '';
+                            venueAddress = venue.get('address') || '';
                         }
                     }
                 }
                 catch (_b) {
                     // Ignore performance/venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
-                details = "Please arrive 10 minutes early to warm up.";
+                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : '';
+                details = 'Please arrive 10 minutes early to warm up.';
             }
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
@@ -28054,91 +28593,95 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 `X-WR-TIMEZONE:${timezone}`,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
             const fileId = parts.e ? `event-${parts.e}` : `audition-${parts.a}`;
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${fileId}.ics"`);
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${fileId}.ics"`);
             return e.string(200, icsContent);
         }
         catch (_c) {
-            return e.json(404, { error: "Event or Audition not found" });
+            return e.json(404, { error: 'Event or Audition not found' });
         }
     }
     function handleCalendarFeed(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ['p', 'c', 's']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Verify signature over the payload p=<profileId>&c=<calendarSalt>
         const payload = `p=${parts.p}&c=${parts.c}`;
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             // Fetch singer profile
-            const profile = app.findRecordById("profiles", parts.p);
+            const profile = app.findRecordById('profiles', parts.p);
             // Double check calendar salt matches
-            const activeSalt = profile.get("calendarSalt");
+            const activeSalt = profile.get('calendarSalt');
             if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
-                return e.json(401, { error: "Token has been reset or is invalid" });
+                return e.json(401, { error: 'Token has been reset or is invalid' });
             }
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .replace('T', ' ');
+            const events = app.findRecordsByFilter('events', `date >= '${thirtyDaysAgo}' && isArchived != true`, '-date', 500);
             // Fetch all rosters (RSVPs) for this profile
-            const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
+            const rosters = app.findRecordsByFilter('eventRosters', `profile = '${profile.id}'`, '', 1000);
             // Map event ID to roster record
             const rosterMap = {};
-            rosters.forEach(r => {
-                rosterMap[r.get("event")] = r;
+            rosters.forEach((r) => {
+                rosterMap[r.get('event')] = r;
             });
             // Resolve each event
             const eventsToInclude = [];
             const rsvpStatusMap = {}; // Cache resolved RSVPs
             // Loop through all events to calculate their resolved RSVP status
-            events.forEach(event => {
+            events.forEach((event) => {
                 const eventId = event.id;
-                const eventType = event.get("type");
+                const eventType = event.get('type');
                 // Check for direct roster RSVP
                 const roster = rosterMap[eventId];
-                let resolvedRsvp = roster ? roster.get("rsvp") : "Pending";
-                if (eventType === "Rehearsal" && resolvedRsvp === "Pending") {
+                let resolvedRsvp = roster ? roster.get('rsvp') : 'Pending';
+                if (eventType === 'Rehearsal' && resolvedRsvp === 'Pending') {
                     // Rehearsal inherits from parent performance
-                    const parentId = event.get("parentPerformanceId");
+                    const parentId = event.get('parentPerformanceId');
                     if (parentId) {
                         const parentRoster = rosterMap[parentId];
-                        const parentRsvp = parentRoster ? parentRoster.get("rsvp") : "Pending";
-                        if (parentRsvp !== "Pending") {
+                        const parentRsvp = parentRoster ? parentRoster.get('rsvp') : 'Pending';
+                        if (parentRsvp !== 'Pending') {
                             resolvedRsvp = parentRsvp;
                         }
                     }
                 }
                 // Only include if RSVP is Yes (Attending) or Pending
-                if (resolvedRsvp === "Yes" || resolvedRsvp === "Pending") {
+                if (resolvedRsvp === 'Yes' || resolvedRsvp === 'Pending') {
                     eventsToInclude.push(event);
                     rsvpStatusMap[eventId] = resolvedRsvp;
                 }
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                const dateA = coercePocketBaseDate(a.get("date"));
-                const dateB = coercePocketBaseDate(b.get("date"));
+                const dateA = coercePocketBaseDate(a.get('date'));
+                const dateB = coercePocketBaseDate(b.get('date'));
                 if (!dateA && !dateB)
                     return 0;
                 if (!dateA)
@@ -28153,8 +28696,8 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             // Pre-fetch all venues
             const venueMap = {};
             try {
-                const allVenues = app.findRecordsByFilter("venues", "1 = 1", "", 500);
-                allVenues.forEach(v => {
+                const allVenues = app.findRecordsByFilter('venues', '1 = 1', '', 500);
+                allVenues.forEach((v) => {
                     venueMap[v.id] = v;
                 });
             }
@@ -28162,24 +28705,28 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 // ignore venue pre-fetch failure
             }
             eventsToInclude.forEach((event) => {
-                let venueName = "";
-                let venueAddress = "";
-                const venueId = event.get("venue");
+                let venueName = '';
+                let venueAddress = '';
+                const venueId = event.get('venue');
                 if (venueId) {
-                    const venue = venueMap[venueId] || app.findRecordById("venues", venueId);
+                    const venue = venueMap[venueId] || app.findRecordById('venues', venueId);
                     if (venue) {
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
-                const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                const start = parseSafeUtcDate(event.get("date"), timezone);
+                const locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                const start = parseSafeUtcDate(event.get('date'), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const durationMinutes = Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
                 const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-                const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
-                const typeText = event.get("type");
-                const callTime = event.get("callTime");
+                const rsvpText = rsvpStatusMap[event.id] === 'Yes' ? 'Attending' : 'Pending RSVP';
+                const typeText = event.get('type');
+                const callTime = event.get('callTime');
                 // Build premium DESCRIPTION field
                 const descParts = [];
                 descParts.push(`Type: ${typeText}`);
@@ -28187,27 +28734,29 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 if (callTime) {
                     descParts.push(`Call Time: ${callTime}`);
                 }
-                const details = event.get("details");
+                const details = event.get('details');
                 if (details) {
                     descParts.push(`\nDetails:\n${details}`);
                 }
                 // Set List inclusion
-                const setListApproved = event.get("setListApproved");
-                if (setListApproved && rsvpStatusMap[event.id] === "Yes") {
-                    const rawSetList = event.get("setList");
+                const setListApproved = event.get('setListApproved');
+                if (setListApproved && rsvpStatusMap[event.id] === 'Yes') {
+                    const rawSetList = event.get('setList');
                     const parsedSetList = parseJsonField(rawSetList);
                     if (parsedSetList && parsedSetList.length > 0) {
                         descParts.push(`\nSet List:`);
                         parsedSetList.forEach((item, index) => {
                             const songTitle = item.title;
-                            const songComposer = item.composer || "";
-                            const itemStr = songComposer ? `${index + 1}. ${songTitle} (${songComposer})` : `${index + 1}. ${songTitle}`;
+                            const songComposer = item.composer || '';
+                            const itemStr = songComposer
+                                ? `${index + 1}. ${songTitle} (${songComposer})`
+                                : `${index + 1}. ${songTitle}`;
                             descParts.push(itemStr);
                         });
                     }
                 }
-                const description = descParts.join("\n");
-                const title = event.get("title");
+                const description = descParts.join('\n');
+                const title = event.get('title');
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
@@ -28230,38 +28779,42 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 'X-WR-TIMEZONE:' + timezone,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${profile.id}.ics"`);
-            e.response.header().set("Cache-Control", "no-store, must-revalidate");
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${profile.id}.ics"`);
+            e.response.header().set('Cache-Control', 'no-store, must-revalidate');
             return e.string(200, icsContent);
         }
         catch (err) {
-            return e.json(500, { error: "Failed to generate calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to generate calendar feed: ' + String(err) });
         }
     }
     function handleCalendarFeedUrl(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
-            let salt = profile.get("calendarSalt");
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
+            let salt = profile.get('calendarSalt');
             if (!salt) {
                 salt = $security.randomString(16);
-                profile.set("calendarSalt", salt);
+                profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -28269,25 +28822,27 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            console.log("Error in handleCalendarFeedUrl: " + String(err));
-            return e.json(404, { error: "Singer profile not found: " + String(err) });
+            console.log('Error in handleCalendarFeedUrl: ' + String(err));
+            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
             // Generate new salt
             const salt = $security.randomString(16);
-            profile.set("calendarSalt", salt);
+            profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -28295,7 +28850,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            return e.json(500, { error: "Failed to reset calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to reset calendar feed: ' + String(err) });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -28719,17 +29274,20 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             .replace(/;/g, '\\;');
     }
     function fmtUtc(date) {
-        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        return date
+            .toISOString()
+            .replace(/[-:]/g, '')
+            .replace(/\.\d{3}Z$/, 'Z');
     }
     function getChoirTimezoneLocal(app) {
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const parsed = parseJsonField(tzSetting.get("value"));
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const parsed = parseJsonField(tzSetting.get('value'));
             if (parsed) {
-                if (typeof parsed === "string")
+                if (typeof parsed === 'string')
                     timezone = parsed;
-                else if (typeof parsed === "object" && parsed.timezone)
+                else if (typeof parsed === 'object' && parsed.timezone)
                     timezone = parsed.timezone;
             }
         }
@@ -28740,13 +29298,13 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     }
     function getChoirNameLocal(app) {
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
-            const parsed = parseJsonField(setting.get("value"));
-            const directName = safeTrim(typeof parsed === "string" ? parsed : "");
+            const setting = app.findFirstRecordByFilter('appSettings', "key = 'choir_name' || key = 'choirName'");
+            const parsed = parseJsonField(setting.get('value'));
+            const directName = safeTrim(typeof parsed === 'string' ? parsed : '');
             if (directName) {
                 return directName;
             }
-            if (parsed && typeof parsed === "object") {
+            if (parsed && typeof parsed === 'object') {
                 const parsedRecord = parsed;
                 const value = parsedRecord.name || parsedRecord.choirName || parsedRecord.value;
                 const nestedName = safeTrim(value);
@@ -28758,16 +29316,16 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         catch (_a) {
             // ignore error
         }
-        return "Choir";
+        return 'Choir';
     }
     function safeTrim(str) {
         if (!str)
-            return "";
-        return String(str).replace(/^\s+|\s+$/g, "");
+            return '';
+        return String(str).replace(/^\s+|\s+$/g, '');
     }
     function getLocalDatePart(date, timezone) {
         const offsetInfo = getTimezoneOffsetInfo(date, timezone);
-        const localDate = new Date(date.getTime() + (offsetInfo.offsetMinutes * 60 * 1000));
+        const localDate = new Date(date.getTime() + offsetInfo.offsetMinutes * 60 * 1000);
         const y = localDate.getUTCFullYear();
         const m = String(localDate.getUTCMonth() + 1).padStart(2, '0');
         const d = String(localDate.getUTCDate()).padStart(2, '0');
@@ -28778,14 +29336,14 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
      * Supports strict ISO-8601 strings and legacy formatted text strings defensively.
      */
     function parseSafeUtcDate(dateValue, timezone) {
-        const dateStr = String(dateValue || "");
+        const dateStr = String(dateValue || '');
         if (!dateStr)
             return new Date();
         let normalized = safeTrim(dateStr);
         if (/^\d{4}-\d{2}-\d{2}/.test(normalized)) {
-            normalized = normalized.replace(" ", "T");
-            if (!normalized.endsWith("Z") && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
-                normalized += "Z";
+            normalized = normalized.replace(' ', 'T');
+            if (!normalized.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(normalized)) {
+                normalized += 'Z';
             }
             return new Date(normalized);
         }
@@ -28795,25 +29353,25 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 d.setFullYear(new Date().getFullYear());
             }
             let offsetHours;
-            const tz = String(timezone || "").toLowerCase();
+            const tz = String(timezone || '').toLowerCase();
             const year = d.getUTCFullYear();
             const march1 = new Date(Date.UTC(year, 2, 1));
-            const dstStartDay = ((7 - march1.getUTCDay()) % 7 + 1) + 7;
+            const dstStartDay = ((7 - march1.getUTCDay()) % 7) + 1 + 7;
             const nov1 = new Date(Date.UTC(year, 10, 1));
-            const dstEndDay = (7 - nov1.getUTCDay()) % 7 + 1;
+            const dstEndDay = ((7 - nov1.getUTCDay()) % 7) + 1;
             const dstStart = Date.UTC(year, 2, dstStartDay, 7, 0, 0, 0);
             const dstEnd = Date.UTC(year, 10, dstEndDay, 6, 0, 0, 0);
             const isDst = d.getTime() >= dstStart && d.getTime() < dstEnd;
-            if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            if (tz.indexOf('chicago') >= 0 || tz.indexOf('central') >= 0) {
                 offsetHours = isDst ? -5 : -6;
             }
-            else if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            else if (tz.indexOf('denver') >= 0 || tz.indexOf('mountain') >= 0) {
                 offsetHours = isDst ? -6 : -7;
             }
-            else if (tz.indexOf("los_angeles") >= 0 || tz.indexOf("pacific") >= 0) {
+            else if (tz.indexOf('los_angeles') >= 0 || tz.indexOf('pacific') >= 0) {
                 offsetHours = isDst ? -7 : -8;
             }
-            else if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            else if (tz.indexOf('phoenix') >= 0 || tz.indexOf('arizona') >= 0) {
                 offsetHours = -7;
             }
             else {
@@ -28824,18 +29382,18 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         return d;
     }
     function handleCalendarDownload(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["s"]);
+        const parts = parseSignedToken(token, ['s']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Determine payload signature
         let payload;
@@ -28849,67 +29407,72 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             payload = getAuditionPayload(parts.a);
         }
         else {
-            return e.json(400, { error: "Invalid token payload" });
+            return e.json(400, { error: 'Invalid token payload' });
         }
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             const timezone = getChoirTimezoneLocal(app);
-            let venueName = "";
-            let venueAddress = "";
-            let locationStr = "";
+            let venueName = '';
+            let venueAddress = '';
+            let locationStr = '';
             let start = new Date();
-            let title = "";
-            let details = "";
-            let uid = "";
-            let callTime = "";
+            let title = '';
+            let details = '';
+            let uid = '';
+            let callTime = '';
             let durationMinutes = 120;
             if (parts.e) {
-                const event = app.findRecordById("events", parts.e);
+                const event = app.findRecordById('events', parts.e);
                 try {
-                    const venueId = event.get("venue");
+                    const venueId = event.get('venue');
                     if (venueId) {
-                        const venue = app.findRecordById("venues", venueId);
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        const venue = app.findRecordById('venues', venueId);
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
                 catch (_a) {
                     // Ignore venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                start = parseSafeUtcDate(event.get("date"), timezone);
-                durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
-                title = event.get("title") || event.get("type") || "Choir Event";
-                details = event.get("details") || "";
-                callTime = event.get("callTime") || "";
+                locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                start = parseSafeUtcDate(event.get('date'), timezone);
+                durationMinutes =
+                    Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
+                title = event.get('title') || event.get('type') || 'Choir Event';
+                details = event.get('details') || '';
+                callTime = event.get('callTime') || '';
                 uid = `event-${event.id}@choir-management.local`;
             }
             else if (parts.a) {
-                const audition = app.findRecordById("auditions", parts.a);
-                start = parseSafeUtcDate(audition.get("scheduledTimeSlot"), timezone);
+                const audition = app.findRecordById('auditions', parts.a);
+                start = parseSafeUtcDate(audition.get('scheduledTimeSlot'), timezone);
                 durationMinutes = 30; // 30 mins for audition
-                title = `Choir Audition: ${audition.get("name")}`;
+                title = `Choir Audition: ${audition.get('name')}`;
                 uid = `audition-${audition.id}@choir-management.local`;
                 try {
-                    const eventId = audition.get("performance");
+                    const eventId = audition.get('performance');
                     if (eventId) {
-                        const event = app.findRecordById("events", eventId);
-                        const venueId = event.get("venue");
+                        const event = app.findRecordById('events', eventId);
+                        const venueId = event.get('venue');
                         if (venueId) {
-                            const venue = app.findRecordById("venues", venueId);
-                            venueName = venue.get("name") || "";
-                            venueAddress = venue.get("address") || "";
+                            const venue = app.findRecordById('venues', venueId);
+                            venueName = venue.get('name') || '';
+                            venueAddress = venue.get('address') || '';
                         }
                     }
                 }
                 catch (_b) {
                     // Ignore performance/venue resolution error
                 }
-                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : "";
-                details = "Please arrive 10 minutes early to warm up.";
+                locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : '';
+                details = 'Please arrive 10 minutes early to warm up.';
             }
             const end = new Date(start.getTime() + (typeof durationMinutes === 'number' ? durationMinutes : 120) * 60 * 1000);
             const dtstamp = new Date();
@@ -28934,91 +29497,95 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 `X-WR-TIMEZONE:${timezone}`,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
             const fileId = parts.e ? `event-${parts.e}` : `audition-${parts.a}`;
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${fileId}.ics"`);
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${fileId}.ics"`);
             return e.string(200, icsContent);
         }
         catch (_c) {
-            return e.json(404, { error: "Event or Audition not found" });
+            return e.json(404, { error: 'Event or Audition not found' });
         }
     }
     function handleCalendarFeed(e) {
-        const token = e.requestInfo().query["token"];
+        const token = e.requestInfo().query['token'];
         const app = $app;
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
-        const parts = parseSignedToken(token, ["p", "c", "s"]);
+        const parts = parseSignedToken(token, ['p', 'c', 's']);
         if (!parts) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret(app);
         if (!secret) {
-            return e.json(500, { error: "Configuration error" });
+            return e.json(500, { error: 'Configuration error' });
         }
         // Verify signature over the payload p=<profileId>&c=<calendarSalt>
         const payload = `p=${parts.p}&c=${parts.c}`;
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
             // Fetch singer profile
-            const profile = app.findRecordById("profiles", parts.p);
+            const profile = app.findRecordById('profiles', parts.p);
             // Double check calendar salt matches
-            const activeSalt = profile.get("calendarSalt");
+            const activeSalt = profile.get('calendarSalt');
             if (!activeSalt || !$security.equal(activeSalt, parts.c)) {
-                return e.json(401, { error: "Token has been reset or is invalid" });
+                return e.json(401, { error: 'Token has been reset or is invalid' });
             }
             const timezone = getChoirTimezoneLocal(app);
             // Fetch all events (Performance/Rehearsal) - past 30 days up to 1 year in the future.
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace("T", " ");
-            const events = app.findRecordsByFilter("events", `date >= '${thirtyDaysAgo}' && isArchived != true`, "-date", 500);
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                .toISOString()
+                .replace('T', ' ');
+            const events = app.findRecordsByFilter('events', `date >= '${thirtyDaysAgo}' && isArchived != true`, '-date', 500);
             // Fetch all rosters (RSVPs) for this profile
-            const rosters = app.findRecordsByFilter("eventRosters", `profile = '${profile.id}'`, "", 1000);
+            const rosters = app.findRecordsByFilter('eventRosters', `profile = '${profile.id}'`, '', 1000);
             // Map event ID to roster record
             const rosterMap = {};
-            rosters.forEach(r => {
-                rosterMap[r.get("event")] = r;
+            rosters.forEach((r) => {
+                rosterMap[r.get('event')] = r;
             });
             // Resolve each event
             const eventsToInclude = [];
             const rsvpStatusMap = {}; // Cache resolved RSVPs
             // Loop through all events to calculate their resolved RSVP status
-            events.forEach(event => {
+            events.forEach((event) => {
                 const eventId = event.id;
-                const eventType = event.get("type");
+                const eventType = event.get('type');
                 // Check for direct roster RSVP
                 const roster = rosterMap[eventId];
-                let resolvedRsvp = roster ? roster.get("rsvp") : "Pending";
-                if (eventType === "Rehearsal" && resolvedRsvp === "Pending") {
+                let resolvedRsvp = roster ? roster.get('rsvp') : 'Pending';
+                if (eventType === 'Rehearsal' && resolvedRsvp === 'Pending') {
                     // Rehearsal inherits from parent performance
-                    const parentId = event.get("parentPerformanceId");
+                    const parentId = event.get('parentPerformanceId');
                     if (parentId) {
                         const parentRoster = rosterMap[parentId];
-                        const parentRsvp = parentRoster ? parentRoster.get("rsvp") : "Pending";
-                        if (parentRsvp !== "Pending") {
+                        const parentRsvp = parentRoster ? parentRoster.get('rsvp') : 'Pending';
+                        if (parentRsvp !== 'Pending') {
                             resolvedRsvp = parentRsvp;
                         }
                     }
                 }
                 // Only include if RSVP is Yes (Attending) or Pending
-                if (resolvedRsvp === "Yes" || resolvedRsvp === "Pending") {
+                if (resolvedRsvp === 'Yes' || resolvedRsvp === 'Pending') {
                     eventsToInclude.push(event);
                     rsvpStatusMap[eventId] = resolvedRsvp;
                 }
             });
             // Sort events chronologically (oldest first)
             eventsToInclude.sort((a, b) => {
-                const dateA = coercePocketBaseDate(a.get("date"));
-                const dateB = coercePocketBaseDate(b.get("date"));
+                const dateA = coercePocketBaseDate(a.get('date'));
+                const dateB = coercePocketBaseDate(b.get('date'));
                 if (!dateA && !dateB)
                     return 0;
                 if (!dateA)
@@ -29033,8 +29600,8 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             // Pre-fetch all venues
             const venueMap = {};
             try {
-                const allVenues = app.findRecordsByFilter("venues", "1 = 1", "", 500);
-                allVenues.forEach(v => {
+                const allVenues = app.findRecordsByFilter('venues', '1 = 1', '', 500);
+                allVenues.forEach((v) => {
                     venueMap[v.id] = v;
                 });
             }
@@ -29042,24 +29609,28 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 // ignore venue pre-fetch failure
             }
             eventsToInclude.forEach((event) => {
-                let venueName = "";
-                let venueAddress = "";
-                const venueId = event.get("venue");
+                let venueName = '';
+                let venueAddress = '';
+                const venueId = event.get('venue');
                 if (venueId) {
-                    const venue = venueMap[venueId] || app.findRecordById("venues", venueId);
+                    const venue = venueMap[venueId] || app.findRecordById('venues', venueId);
                     if (venue) {
-                        venueName = venue.get("name") || "";
-                        venueAddress = venue.get("address") || "";
+                        venueName = venue.get('name') || '';
+                        venueAddress = venue.get('address') || '';
                     }
                 }
-                const locationStr = venueName ? (venueAddress ? `${venueName}, ${venueAddress}` : venueName) : (event.get("location") || "");
-                const start = parseSafeUtcDate(event.get("date"), timezone);
+                const locationStr = venueName
+                    ? venueAddress
+                        ? `${venueName}, ${venueAddress}`
+                        : venueName
+                    : event.get('location') || '';
+                const start = parseSafeUtcDate(event.get('date'), timezone);
                 // Duration: rehearsals default to 2 hours, performances default to 2.5 hours
-                const durationMinutes = Number(event.get("durationMinutes")) || (event.get("type") === "Performance" ? 150 : 120);
+                const durationMinutes = Number(event.get('durationMinutes')) || (event.get('type') === 'Performance' ? 150 : 120);
                 const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
-                const rsvpText = rsvpStatusMap[event.id] === "Yes" ? "Attending" : "Pending RSVP";
-                const typeText = event.get("type");
-                const callTime = event.get("callTime");
+                const rsvpText = rsvpStatusMap[event.id] === 'Yes' ? 'Attending' : 'Pending RSVP';
+                const typeText = event.get('type');
+                const callTime = event.get('callTime');
                 // Build premium DESCRIPTION field
                 const descParts = [];
                 descParts.push(`Type: ${typeText}`);
@@ -29067,27 +29638,29 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 if (callTime) {
                     descParts.push(`Call Time: ${callTime}`);
                 }
-                const details = event.get("details");
+                const details = event.get('details');
                 if (details) {
                     descParts.push(`\nDetails:\n${details}`);
                 }
                 // Set List inclusion
-                const setListApproved = event.get("setListApproved");
-                if (setListApproved && rsvpStatusMap[event.id] === "Yes") {
-                    const rawSetList = event.get("setList");
+                const setListApproved = event.get('setListApproved');
+                if (setListApproved && rsvpStatusMap[event.id] === 'Yes') {
+                    const rawSetList = event.get('setList');
                     const parsedSetList = parseJsonField(rawSetList);
                     if (parsedSetList && parsedSetList.length > 0) {
                         descParts.push(`\nSet List:`);
                         parsedSetList.forEach((item, index) => {
                             const songTitle = item.title;
-                            const songComposer = item.composer || "";
-                            const itemStr = songComposer ? `${index + 1}. ${songTitle} (${songComposer})` : `${index + 1}. ${songTitle}`;
+                            const songComposer = item.composer || '';
+                            const itemStr = songComposer
+                                ? `${index + 1}. ${songTitle} (${songComposer})`
+                                : `${index + 1}. ${songTitle}`;
                             descParts.push(itemStr);
                         });
                     }
                 }
-                const description = descParts.join("\n");
-                const title = event.get("title");
+                const description = descParts.join('\n');
+                const title = event.get('title');
                 const uid = `event-${event.id}@choir-management.local`;
                 if (callTime) {
                     const localDatePart = getLocalDatePart(start, timezone);
@@ -29110,38 +29683,42 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 'X-WR-TIMEZONE:' + timezone,
                 vevents.join('\r\n'),
                 'END:VCALENDAR',
-                ''
+                '',
             ].join('\r\n');
             const filenameBase = calendarName
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-|-$/g, '') || 'choir-schedule';
-            e.response.header().set("Content-Type", "text/calendar; charset=utf-8");
-            e.response.header().set("Content-Disposition", `attachment; filename="${filenameBase}-${profile.id}.ics"`);
-            e.response.header().set("Cache-Control", "no-store, must-revalidate");
+            e.response.header().set('Content-Type', 'text/calendar; charset=utf-8');
+            e.response
+                .header()
+                .set('Content-Disposition', `attachment; filename="${filenameBase}-${profile.id}.ics"`);
+            e.response.header().set('Cache-Control', 'no-store, must-revalidate');
             return e.string(200, icsContent);
         }
         catch (err) {
-            return e.json(500, { error: "Failed to generate calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to generate calendar feed: ' + String(err) });
         }
     }
     function handleCalendarFeedUrl(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
-            let salt = profile.get("calendarSalt");
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
+            let salt = profile.get('calendarSalt');
             if (!salt) {
                 salt = $security.randomString(16);
-                profile.set("calendarSalt", salt);
+                profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -29149,25 +29726,27 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            console.log("Error in handleCalendarFeedUrl: " + String(err));
-            return e.json(404, { error: "Singer profile not found: " + String(err) });
+            console.log('Error in handleCalendarFeedUrl: ' + String(err));
+            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Unauthorized" });
+            return e.json(401, { error: 'Unauthorized' });
         }
         const app = $app;
         try {
-            const profile = app.findFirstRecordByFilter("profiles", "user = {:userId}", { userId: authRecord.id });
+            const profile = app.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+                userId: authRecord.id,
+            });
             // Generate new salt
             const salt = $security.randomString(16);
-            profile.set("calendarSalt", salt);
+            profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
             const secret = getHmacSecret(app);
             if (!secret) {
-                return e.json(500, { error: "Configuration error" });
+                return e.json(500, { error: 'Configuration error' });
             }
             const payload = `p=${profile.id}&c=${salt}`;
             const signature = $security.hs256(payload, secret);
@@ -29175,7 +29754,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             return e.json(200, { token });
         }
         catch (err) {
-            return e.json(500, { error: "Failed to reset calendar feed: " + String(err) });
+            return e.json(500, { error: 'Failed to reset calendar feed: ' + String(err) });
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---

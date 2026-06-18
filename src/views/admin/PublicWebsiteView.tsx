@@ -41,6 +41,7 @@ export default function PublicWebsiteView() {
       queryClient.invalidateQueries({ queryKey: queryKeys.choirSettings.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.landing });
       queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.heroImage });
+      queryClient.invalidateQueries({ queryKey: queryKeys.publicLanding.settings });
     },
   });
 
@@ -78,12 +79,18 @@ export default function PublicWebsiteView() {
       const heroChanges = landingPanelRef.current?.getHeroImageChanges();
 
       const newHeroUrl =
-        heroChanges?.file || heroChanges?.removed ? await settingsService.getHeroImageUrl() : null;
+        heroChanges?.file || heroChanges?.removed
+          ? await settingsService.getHeroImageUrl()
+          : undefined;
 
       landingPanelRef.current?.markSaved(
         landingSettings ?? (await settingsService.getLandingSettings()),
         newHeroUrl
       );
+
+      const savedSettings = landingSettings ?? (await settingsService.getLandingSettings());
+      queryClient.setQueryData(queryKeys.appSettings.landing, savedSettings);
+      queryClient.setQueryData(queryKeys.publicLanding.settings, savedSettings);
 
       dialog.showToast('Public website settings saved successfully.');
     } catch (err: unknown) {

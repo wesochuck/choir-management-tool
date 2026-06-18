@@ -105,11 +105,13 @@ test('Generated main.pb.js integrity', () => {
   assert.ok(content.includes('onRecordAfterCreateSuccess'), 'Should contain create hook');
   assert.ok(content.includes('onRecordAfterUpdateSuccess'), 'Should contain update hook');
   assert.ok(
-    content.includes('routerAdd("POST", "/api/queue/process"'),
+    content.includes("routerAdd('POST', '/api/queue/process'") ||
+      content.includes('routerAdd("POST", "/api/queue/process"'),
     'Should contain queue process route'
   );
   assert.ok(
-    content.includes('routerAdd("POST", "/api/test-smtp"'),
+    content.includes("routerAdd('POST', '/api/test-smtp'") ||
+      content.includes('routerAdd("POST", "/api/test-smtp"'),
     'Should contain test-smtp route'
   );
   assert.ok(content.includes('shouldQueueMessage'), 'Should utilize shouldQueueMessage check');
@@ -143,14 +145,14 @@ test('Generated main.pb.js integrity', () => {
   );
 
   const requiredRoutes = [
-    'routerAdd("POST", "/api/generate-rsvp-tokens"',
-    'routerAdd("POST", "/api/rsvp-details"',
-    'routerAdd("POST", "/api/quick-rsvp"',
-    'routerAdd("POST", "/api/unsubscribe"',
-    'routerAdd("POST", "/api/admin/bulk-update-rsvps"',
-    'routerAdd("POST", "/api/admin/bulk-upsert-attendance"',
-    'routerAdd("POST", "/api/singer/resolve-placeholders"',
-    'routerAdd("POST", "/api/singer/rsvp"',
+    "routerAdd('POST', '/api/generate-rsvp-tokens'",
+    "routerAdd('POST', '/api/rsvp-details'",
+    "routerAdd('POST', '/api/quick-rsvp'",
+    "routerAdd('POST', '/api/unsubscribe'",
+    "routerAdd('POST', '/api/admin/bulk-update-rsvps'",
+    "routerAdd('POST', '/api/admin/bulk-upsert-attendance'",
+    "routerAdd('POST', '/api/singer/resolve-placeholders'",
+    "routerAdd('POST', '/api/singer/rsvp'",
   ];
 
   for (const route of requiredRoutes) {

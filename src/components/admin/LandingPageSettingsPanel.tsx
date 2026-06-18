@@ -16,7 +16,7 @@ import type EasyMDE from 'easymde';
 export interface LandingPageSettingsPanelHandle {
   getSettings: () => LandingPageSettings;
   getHeroImageChanges: () => { file: File | null; removed: boolean };
-  markSaved: (savedSettings: LandingPageSettings, savedHeroImageUrl: string | null) => void;
+  markSaved: (savedSettings: LandingPageSettings, savedHeroImageUrl?: string | null) => void;
   reset: () => void;
 }
 
@@ -108,8 +108,12 @@ export const LandingPageSettingsPanel = forwardRef<
       markSaved: (savedSettings, savedHeroImageUrl) => {
         revokeActiveBlob();
         setInitialSettings({ ...savedSettings });
-        setInitialHeroImageUrl(savedHeroImageUrl);
-        setHeroImageUrl(savedHeroImageUrl);
+
+        if (savedHeroImageUrl !== undefined) {
+          setInitialHeroImageUrl(savedHeroImageUrl);
+          setHeroImageUrl(savedHeroImageUrl);
+        }
+
         setHeroImageFile(null);
         setHeroImageRemoved(false);
         setHeroError(null);
