@@ -2,11 +2,12 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { AppCard } from '../../components/common/AppCard';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import EventRosterView from './EventRosterView';
-import { Select } from '../../components/ui';
+import { Badge, Select } from '../../components/ui';
 
 export default function RsvpDashboardView() {
   const [searchParams] = useSearchParams();
@@ -37,10 +38,15 @@ export default function RsvpDashboardView() {
   );
 
   return (
-    <div className="flex flex-col py-4">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex min-w-[320px] items-center gap-2">
-          <div className="flex flex-1 flex-col gap-1">
+    <div className="flex flex-col gap-6 py-4">
+      <AdminPageHeader
+        title="RSVP Management"
+        description="Select an event, review RSVP balance, and update singer responses."
+      />
+
+      <AppCard className="mb-0">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="flex min-w-0 flex-col gap-1">
             <label className="text-label text-text-muted text-xs font-semibold uppercase">
               Select Event
             </label>
@@ -48,62 +54,65 @@ export default function RsvpDashboardView() {
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
               size="small"
+              className="w-full"
             >
               <option value="">-- Choose an Event --</option>
               {sortedEvents.map((e) => (
                 <option key={e.id} value={e.id}>
                   {formatInTimezone(e.date, timezone, {
-                    year: 'numeric',
-                    month: 'numeric',
+                    month: 'short',
                     day: 'numeric',
+                    year: 'numeric',
                   })}{' '}
-                  - {e.title || e.expand?.venue?.name || ''} ({e.type})
+                  · {e.title || e.expand?.venue?.name || ''} · {e.type}
                 </option>
               ))}
             </Select>
           </div>
         </div>
-      </div>
+      </AppCard>
 
       {selectedEvent && (
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-muted text-xs font-semibold tracking-wider uppercase">
-              Active Event
-            </span>
-            {selectedEvent.title && (
-              <h2 className="text-primary-deep m-0 text-2xl font-extrabold">
-                {selectedEvent.title}
-              </h2>
-            )}
-          </div>
+        <AppCard className="mb-0">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <span className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                Active Event
+              </span>
+              {selectedEvent.title && (
+                <h2 className="text-primary-deep m-0 truncate text-2xl font-extrabold">
+                  {selectedEvent.title}
+                </h2>
+              )}
+            </div>
 
-          <div className="flex flex-wrap items-center gap-6">
-            <span
-              className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${selectedEvent.type === 'Performance' ? 'bg-danger-bg text-danger-text' : 'bg-primary-light text-primary-deep'}`}
-            >
-              {selectedEvent.type}
-            </span>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-label text-primary-deep flex items-center gap-1 text-sm font-semibold"
-            >
-              📍 {selectedEvent.expand?.venue?.name || ''}
-            </a>
-            <span className="text-muted text-sm font-medium">
-              📅{' '}
-              {formatInTimezone(selectedEvent.date, timezone, {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-              })}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge tone={selectedEvent.type === 'Performance' ? 'performance' : 'rehearsal'}>
+                {selectedEvent.type}
+              </Badge>
+              {selectedEvent.expand?.venue?.name && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedEvent.expand?.venue?.address || selectedEvent.expand?.venue?.name || '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-deep flex items-center gap-1 text-sm font-semibold no-underline hover:underline"
+                >
+                  📍 {selectedEvent.expand.venue.name}
+                </a>
+              )}
+              <span className="text-text-muted flex items-center gap-1 text-sm font-medium">
+                📅{' '}
+                {formatInTimezone(selectedEvent.date, timezone, {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </span>
+            </div>
           </div>
-        </div>
+        </AppCard>
       )}
 
       {isLoading ? (

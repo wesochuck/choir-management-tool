@@ -239,11 +239,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             </div>
 
             {/* Section Subtotals */}
-            <div
-              className="grid grid-cols-[repeat(var(--grid-cols),1fr)] gap-4 border-b border-gray-200 pb-4 max-[640px]:grid-cols-2 max-[400px]:grid-cols-1"
-              // @allow-inline-style - dynamic grid columns based on section count using CSS variable
-              style={{ '--grid-cols': sections.length } as React.CSSProperties}
-            >
+            <div className="grid grid-cols-2 gap-4 border-b border-gray-200 pb-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {sections.map((sec) => {
                 const isSelected = selectedVoiceParts.includes(sec.code);
                 return (
@@ -291,14 +287,14 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           </AppCard>
         )}
 
-        <div className="mt-1 flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[280px] flex-[1_1_520px] flex-wrap items-center gap-2">
+        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 xl:grid-cols-[minmax(320px,1fr)_220px_auto] xl:items-center">
             <Input
               type="text"
               placeholder="Search active singers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="min-w-[240px] flex-[1_1_280px]"
+              className="w-full"
             >
               <span slot="prefix" className="flex items-center text-gray-500">
                 <svg
@@ -331,69 +327,75 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
               size="small"
-              className="!w-[210px]"
+              className="w-full"
               aria-label="Sort singers"
             >
-              <option value="lastName">Last Name</option>
-              <option value="voicePart">Voice Part + Last Name</option>
+              <option value="lastName">Sort: Last Name</option>
+              <option value="voicePart">Sort: Voice Part + Last Name</option>
             </Select>
 
-            {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
-              <Button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedVoiceParts([]);
-                  setRsvpFilter('All');
-                }}
-                variant="secondary"
-                className="flex h-11 items-center gap-1"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+              {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
+                <Button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedVoiceParts([]);
+                    setRsvpFilter('All');
+                  }}
+                  variant="secondary"
+                  size="small"
+                  className="flex items-center gap-1"
                 >
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                  <path d="M3 3v5h5"></path>
-                </svg>
-                Reset Filters
-              </Button>
-            )}
-          </div>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    <path d="M3 3v5h5"></path>
+                  </svg>
+                  Reset Filters
+                </Button>
+              )}
 
-          <div
-            className="flex flex-[0_1_auto] flex-wrap items-center justify-end gap-2"
-            aria-label="Bulk RSVP actions"
-          >
-            <span className="text-xs font-bold whitespace-nowrap text-gray-500">
-              {sortedSingers.length} shown
-            </span>
-            <Button
-              disabled={isUpdating || sortedSingers.length === 0}
-              onClick={() => handleBulkUpdateRSVP('Yes')}
-              variant="primary"
-            >
-              Mark Attending
-            </Button>
-            <Button
-              disabled={isUpdating || sortedSingers.length === 0}
-              onClick={() => handleBulkUpdateRSVP('No')}
-              variant="danger"
-            >
-              Mark Declined
-            </Button>
-            <Button
-              disabled={isUpdating || sortedSingers.length === 0}
-              onClick={() => handleBulkUpdateRSVP('Pending')}
-              variant="secondary"
-            >
-              Reset RSVPs
-            </Button>
+              <span className="text-xs font-bold whitespace-nowrap text-gray-500">
+                {sortedSingers.length} shown
+              </span>
+
+              <span className="hidden text-xs font-semibold text-gray-400 sm:inline">
+                Apply to shown:
+              </span>
+
+              <Button
+                disabled={isUpdating || sortedSingers.length === 0}
+                onClick={() => handleBulkUpdateRSVP('Yes')}
+                variant="primary"
+                size="small"
+              >
+                Mark Attending
+              </Button>
+              <Button
+                disabled={isUpdating || sortedSingers.length === 0}
+                onClick={() => handleBulkUpdateRSVP('No')}
+                variant="danger"
+                size="small"
+              >
+                Mark Declined
+              </Button>
+              <Button
+                disabled={isUpdating || sortedSingers.length === 0}
+                onClick={() => handleBulkUpdateRSVP('Pending')}
+                variant="secondary"
+                size="small"
+              >
+                Reset RSVPs
+              </Button>
+            </div>
           </div>
         </div>
 
