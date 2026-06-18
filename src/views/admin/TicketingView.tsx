@@ -54,6 +54,8 @@ export default function TicketingView() {
   const [selectedEventId, setSelectedEventId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'lastName' | 'firstName' | 'saleDate'>('lastName');
+  const [resendPurchase, setResendPurchase] = useState<TicketPurchase | null>(null);
+  const [resendEmail, setResendEmail] = useState('');
 
   const ticketingQuery = useQuery({
     queryKey: queryKeys.ticketing.main(selectedEventId),
@@ -192,6 +194,25 @@ export default function TicketingView() {
     },
   });
 
+  const resendConfirmationMutation = useMutation({
+    mutationFn: ({ purchaseId, recipientEmail }: { purchaseId: string; recipientEmail?: string }) =>
+      ticketService.adminResendTicketConfirmation(purchaseId, recipientEmail),
+    onSuccess: (result) => {
+      dialog.showToast(`Ticket confirmation sent to ${result.recipientEmail}.`);
+      setResendPurchase(null);
+      setResendEmail('');
+      invalidateTicketing();
+    },
+    onError: async (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      await dialog.showMessage({
+        title: 'Resend Failed',
+        message,
+        variant: 'danger',
+      });
+    },
+  });
+
   const handleRefund = async (purchaseId: string) => {
     const confirmed = await dialog.confirm({
       title: 'Refund Ticket',
@@ -202,6 +223,11 @@ export default function TicketingView() {
     if (!confirmed) return;
     dialog.showToast('Processing refund...');
     await refundMutation.mutateAsync(purchaseId);
+  };
+
+  const handleOpenResendConfirmation = (purchase: TicketPurchase) => {
+    setResendPurchase(purchase);
+    setResendEmail(purchase.buyerEmail || '');
   };
 
   const sortPurchases = (list: TicketPurchase[]) => {
@@ -293,6 +319,7 @@ export default function TicketingView() {
     const map = new Map<
       string,
       {
+        purchaseId: string;
         stripeSessionId: string;
         stripePaymentIntentId: string;
         buyerName: string;
@@ -311,6 +338,7 @@ export default function TicketingView() {
         const key = p.stripeSessionId;
         if (!map.has(key)) {
           map.set(key, {
+            purchaseId: p.id,
             stripeSessionId: p.stripeSessionId,
             stripePaymentIntentId: p.stripePaymentIntentId,
             buyerName: p.buyerName,
@@ -499,6 +527,7 @@ export default function TicketingView() {
     : false;
 
   interface BundleOrder {
+    purchaseId: string;
     stripeSessionId: string;
     stripePaymentIntentId: string;
     buyerName: string;
@@ -586,19 +615,28 @@ export default function TicketingView() {
       header: 'Actions',
       cell: (_, p) =>
         p.status === 'paid' ? (
-          <Button
-            variant="danger"
-            size="small"
-            onClick={() => {
-              if (p.bundle) {
-                handleRefundBundle(p.stripePaymentIntentId);
-              } else {
-                handleRefund(p.id);
-              }
-            }}
-          >
-            Refund
-          </Button>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => handleOpenResendConfirmation(p)}
+            >
+              Resend
+            </Button>
+            <Button
+              variant="danger"
+              size="small"
+              onClick={() => {
+                if (p.bundle) {
+                  handleRefundBundle(p.stripePaymentIntentId);
+                } else {
+                  handleRefund(p.id);
+                }
+              }}
+            >
+              Refund
+            </Button>
+          </div>
         ) : null,
       align: 'right',
       cardSection: 1,
@@ -789,13 +827,36 @@ export default function TicketingView() {
       header: 'Actions',
       cell: (_, o) =>
         o.status === 'paid' ? (
-          <Button
-            variant="danger"
-            size="small"
-            onClick={() => handleRefundBundle(o.stripePaymentIntentId)}
-          >
-            Refund Bundle
-          </Button>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() =>
+                handleOpenResendConfirmation({
+                  id: o.purchaseId,
+                  buyerName: o.buyerName,
+                  buyerEmail: o.buyerEmail,
+                  quantity: o.quantity,
+                  amountPaidCents: o.amountPaidCents,
+                  created: o.created,
+                  status: o.status as TicketPurchase['status'],
+                  bundle: o.bundleId,
+                  stripeSessionId: o.stripeSessionId,
+                  stripePaymentIntentId: o.stripePaymentIntentId,
+                } as unknown as TicketPurchase)
+              }
+            >
+              Resend
+            </Button>
+
+            <Button
+              variant="danger"
+              size="small"
+              onClick={() => handleRefundBundle(o.stripePaymentIntentId)}
+            >
+              Refund Bundle
+            </Button>
+          </div>
         ) : null,
       align: 'right',
       cardSection: 1,
@@ -1216,11 +1277,19 @@ export default function TicketingView() {
                       </div>
                     </div>
                     {p.status === 'paid' && (
-                      <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
+                      <div className="mt-1 flex justify-end gap-2 border-t border-slate-50 pt-1.5">
+                        <Button
+                          variant="secondary"
+                          size="small"
+                          className="flex-1"
+                          onClick={() => handleOpenResendConfirmation(p)}
+                        >
+                          Resend
+                        </Button>
                         <Button
                           variant="danger"
                           size="small"
-                          className="w-full"
+                          className="flex-1"
                           onClick={() => {
                             if (p.bundle) {
                               handleRefundBundle(p.stripePaymentIntentId);
@@ -1398,11 +1467,27 @@ export default function TicketingView() {
                   </div>
 
                   {order.status === 'paid' && (
-                    <div className="mt-1 flex justify-end border-t border-slate-50 pt-1.5">
+                    <div className="mt-1 flex justify-end gap-2 border-t border-slate-50 pt-1.5">
+                      <Button
+                        variant="secondary"
+                        size="small"
+                        className="flex-1"
+                        onClick={() =>
+                          handleOpenResendConfirmation({
+                            id: order.purchaseId,
+                            buyerName: order.buyerName,
+                            buyerEmail: order.buyerEmail,
+                            status: order.status as TicketPurchase['status'],
+                            bundle: order.bundleId,
+                          } as TicketPurchase)
+                        }
+                      >
+                        Resend
+                      </Button>
                       <Button
                         variant="danger"
                         size="small"
-                        className="w-full"
+                        className="flex-1"
                         onClick={() => handleRefundBundle(order.stripePaymentIntentId)}
                       >
                         Refund Bundle
@@ -1501,6 +1586,68 @@ export default function TicketingView() {
           </div>
         </div>
       )}
+
+      {/* Resend Confirmation Modal */}
+      <Modal
+        isOpen={!!resendPurchase}
+        onClose={() => {
+          setResendPurchase(null);
+          setResendEmail('');
+        }}
+        title="Resend Ticket Confirmation"
+      >
+        {resendPurchase && (
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              resendConfirmationMutation.mutate({
+                purchaseId: resendPurchase.id,
+                recipientEmail: resendEmail.trim(),
+              });
+            }}
+          >
+            <div className="text-text-muted text-sm">
+              Resend the ticket confirmation for <strong>{resendPurchase.buyerName}</strong>.
+            </div>
+
+            <FormField label="Recipient email">
+              <Input
+                type="email"
+                value={resendEmail}
+                onChange={(event) => setResendEmail(event.target.value)}
+                required
+              />
+            </FormField>
+
+            <p className="text-text-muted text-xs">
+              Change this email if the buyer typed their address incorrectly. This does not update
+              the original purchase record.
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setResendPurchase(null);
+                  setResendEmail('');
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={resendConfirmationMutation.isPending}
+              >
+                {resendConfirmationMutation.isPending ? 'Sending...' : 'Send Confirmation'}
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
 
       {/* CRUD Bundle Modal */}
       <Modal

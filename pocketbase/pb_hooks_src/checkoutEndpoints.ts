@@ -83,6 +83,214 @@ function getOrCreatePatronProfile(email: string, name: string): PocketBaseRecord
   }
 }
 
+function getTimezoneSetting(): string {
+  try {
+    const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+    const valueStr = tzSetting.get('value');
+    const tzP = parseJsonField<{ timezone?: string }>(valueStr);
+    if (tzP?.timezone) return tzP.timezone;
+  } catch {
+    // use default
+  }
+  return 'America/New_York';
+}
+
+function getChoirNameSetting(): string {
+  try {
+    const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+    const val = parseJsonField<string>(choirRecord.get('value'));
+    if (val) return val;
+  } catch {
+    // use default
+  }
+  return 'Choir Management Tool';
+}
+
+function getBaseUrl(): string {
+  const meta = $app.settings()?.meta;
+  const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || '';
+  return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
+}
+
+function enqueueTicketConfirmationEmail(options: {
+  purchase: PocketBaseRecord;
+  event: PocketBaseRecord;
+  recipientEmail?: string;
+  recipientName?: string;
+  stripeSessionId?: string;
+  amountPaidCents?: number;
+  resent?: boolean;
+}): void {
+  const timezone = getTimezoneSetting();
+  const choirName = getChoirNameSetting();
+  const baseUrl = getBaseUrl();
+
+  const eventTitle = String(options.event.get('title') || '');
+  const eventDateStr = formatInTimezone(
+    coercePocketBaseDate(options.event.get('date')) ?? new Date(''),
+    timezone,
+    {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }
+  );
+
+  const template = $app.findFirstRecordByFilter(
+    'messageTemplates',
+    "title = 'Ticket Confirmation' && isSystemTemplate = true"
+  );
+  let content = String(template.get('content') || '');
+  const rawSubject = String(template.get('subject') || '');
+  const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
+
+  content = content
+    .replace(
+      /{buyerName}/g,
+      options.recipientName || String(options.purchase.get('buyerName') || 'Buyer')
+    )
+    .replace(/{eventTitle}/g, eventTitle)
+    .replace(/{eventDate}/g, eventDateStr)
+    .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
+    .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
+    .replace(
+      /{amountPaid}/g,
+      (
+        (options.amountPaidCents ?? Number(options.purchase.get('amountPaidCents') || 0)) / 100
+      ).toFixed(2)
+    )
+    .replace(/{choirName}/g, choirName);
+
+  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+  const stripeSessionId =
+    options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+  const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+  const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+  const qrSvgSrc = '';
+  const finalRecipientEmail =
+    options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+  const finalRecipientName =
+    options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
+
+  const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
+  const mailRecord = new Record(emailQueueCollection, {
+    recipientId: 'buyer_' + stripeSessionId,
+    recipientEmail: finalRecipientEmail,
+    recipientName: finalRecipientName,
+    subject: subject,
+    rawContent: content,
+    status: 'Pending',
+    attempts: 0,
+    filters: JSON.stringify({
+      eventId: options.event.id,
+      ticketToken,
+      scanUrl,
+      qrSvgSrc,
+      successUrl,
+      type: 'Automated Confirmation',
+      resent: !!options.resent,
+    }),
+  });
+  $app.save(mailRecord);
+}
+
+function enqueueBundleTicketConfirmationEmail(options: {
+  purchase: PocketBaseRecord;
+  bundle: PocketBaseRecord;
+  bundleEventIds: string[];
+  recipientEmail?: string;
+  recipientName?: string;
+  stripeSessionId?: string;
+  amountPaidCents?: number;
+  resent?: boolean;
+}): void {
+  const timezone = getTimezoneSetting();
+  const choirName = getChoirNameSetting();
+  const baseUrl = getBaseUrl();
+
+  const eventDetailsParts: string[] = [];
+  options.bundleEventIds.forEach((eventId) => {
+    try {
+      const ev = $app.findRecordById('events', eventId);
+      const evTitle = String(ev.get('title') || '');
+      const evDateStr = formatInTimezone(
+        coercePocketBaseDate(ev.get('date')) ?? new Date(''),
+        timezone,
+        {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }
+      );
+      eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
+    } catch {
+      // Ignore individual event loading errors.
+    }
+  });
+  const eventDetailsStr = eventDetailsParts.join('\n');
+
+  const template = $app.findFirstRecordByFilter(
+    'messageTemplates',
+    "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true"
+  );
+  let content = String(template.get('content') || '');
+  const rawSubject = String(template.get('subject') || '');
+  const bundleTitle = String(options.bundle.get('title') || '');
+  const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
+
+  content = content
+    .replace(
+      /{buyerName}/g,
+      options.recipientName || String(options.purchase.get('buyerName') || 'Buyer')
+    )
+    .replace(/{bundleTitle}/g, bundleTitle)
+    .replace(/{eventDetails}/g, eventDetailsStr)
+    .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
+    .replace(
+      /{amountPaid}/g,
+      (
+        (options.amountPaidCents ?? Number(options.purchase.get('amountPaidCents') || 0)) / 100
+      ).toFixed(2)
+    )
+    .replace(/{choirName}/g, choirName);
+
+  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+  const stripeSessionId =
+    options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+  const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+  const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+  const qrSvgSrc = '';
+  const finalRecipientEmail =
+    options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+  const finalRecipientName =
+    options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
+
+  const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
+  const mailRecord = new Record(emailQueueCollection, {
+    recipientId: 'buyer_' + stripeSessionId,
+    recipientEmail: finalRecipientEmail,
+    recipientName: finalRecipientName,
+    subject: subject,
+    rawContent: content,
+    status: 'Pending',
+    attempts: 0,
+    filters: JSON.stringify({
+      bundleId: options.bundle.id,
+      ticketToken,
+      scanUrl,
+      qrSvgSrc,
+      successUrl,
+      type: 'Automated Bundle Confirmation',
+      resent: !!options.resent,
+    }),
+  });
+  $app.save(mailRecord);
+}
+
 export async function handleCreateTicketsSession(e: PocketBaseRequestEvent): Promise<unknown> {
   const body = e.requestInfo().body;
   const eventId = body.eventId as string;
@@ -652,86 +860,13 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
 
       // Enqueue Ticket Confirmation email
       try {
-        const template = $app.findFirstRecordByFilter(
-          'messageTemplates',
-          "title = 'Ticket Confirmation' && isSystemTemplate = true"
-        );
-        let content = (template.get('content') as string) || '';
-        const rawSubject = (template.get('subject') as string) || '';
-
-        let timezone = 'America/New_York';
-        try {
-          const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
-          const valueStr = tzSetting.get('value');
-          const tzP = parseJsonField<{ timezone?: string }>(valueStr);
-          if (tzP?.timezone) {
-            timezone = tzP.timezone;
-          }
-        } catch {
-          // default
-        }
-
-        let choirName = 'Choir Management Tool';
-        try {
-          const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
-          const val = parseJsonField<string>(choirRecord.get('value'));
-          if (val) choirName = val;
-        } catch {
-          // default
-        }
-
-        const eventTitle = (targetEvent.get('title') as string) || '';
-        const eventDateStr = formatInTimezone(
-          coercePocketBaseDate(targetEvent.get('date')) ?? new Date(''),
-          timezone,
-          {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          }
-        );
-
-        const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
-
-        content = content
-          .replace(/{buyerName}/g, metadata.buyerName || '')
-          .replace(/{eventTitle}/g, eventTitle)
-          .replace(/{eventDate}/g, eventDateStr)
-          .replace(/{doorsOpenTime}/g, String(targetEvent.get('doorsOpenTime') || 'N/A'))
-          .replace(/{quantity}/g, String(quantity))
-          .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
-          .replace(/{choirName}/g, choirName);
-
-        const ticketToken = generateSignedTicketToken($app, record.id);
-        const meta = $app.settings()?.meta;
-        const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || '';
-        const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-
-        const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
-        const mailRecord = new Record(emailQueueCollection, {
-          recipientId: 'buyer_' + stripeSessionId,
-          recipientEmail: metadata.buyerEmail || '',
-          recipientName: metadata.buyerName || 'Buyer',
-          subject: subject,
-          rawContent: content,
-          status: 'Pending',
-          attempts: 0,
-          filters: JSON.stringify({
-            eventId: eventId,
-            ticketToken: ticketToken,
-            scanUrl: scanUrl,
-            qrSvgSrc: qrSvgSrc,
-            successUrl: successUrl,
-            type: 'Automated Confirmation',
-          }),
+        enqueueTicketConfirmationEmail({
+          purchase: record,
+          event: targetEvent,
+          stripeSessionId,
+          amountPaidCents: session.amount_total || 0,
+          resent: false,
         });
-
-        $app.save(mailRecord);
       } catch (mailErr: unknown) {
         console.log(
           'Failed to enqueue confirmation email: ' +
@@ -804,96 +939,14 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
 
       // Enqueue Consolidated Ticket Confirmation email
       try {
-        const template = $app.findFirstRecordByFilter(
-          'messageTemplates',
-          "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true"
-        );
-        let content = (template.get('content') as string) || '';
-        const rawSubject = (template.get('subject') as string) || '';
-
-        let timezone = 'America/New_York';
-        try {
-          const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
-          const valueStr = tzSetting.get('value');
-          const tzP = parseJsonField<{ timezone?: string }>(valueStr);
-          if (tzP?.timezone) {
-            timezone = tzP.timezone;
-          }
-        } catch {
-          // Use default America/New_York timezone
-        }
-
-        let choirName = 'Choir Management Tool';
-        try {
-          const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
-          const val = parseJsonField<string>(choirRecord.get('value'));
-          if (val) choirName = val;
-        } catch {
-          // Use default choir name
-        }
-
-        const eventDetailsParts: string[] = [];
-        bundleEventIds.forEach((eventId) => {
-          try {
-            const ev = $app.findRecordById('events', eventId);
-            const evTitle = (ev.get('title') as string) || '';
-            const evDateStr = formatInTimezone(
-              coercePocketBaseDate(ev.get('date')) ?? new Date(''),
-              timezone,
-              {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-              }
-            );
-            eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
-          } catch {
-            // Ignore individual event loading error
-          }
+        enqueueBundleTicketConfirmationEmail({
+          purchase: record,
+          bundle: targetBundle,
+          bundleEventIds,
+          stripeSessionId,
+          amountPaidCents: session.amount_total || 0,
+          resent: false,
         });
-        const eventDetailsStr = eventDetailsParts.join('\n');
-
-        const bundleTitle = (targetBundle.get('title') as string) || '';
-        const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
-
-        content = content
-          .replace(/{buyerName}/g, metadata.buyerName || '')
-          .replace(/{bundleTitle}/g, bundleTitle)
-          .replace(/{eventDetails}/g, eventDetailsStr)
-          .replace(/{quantity}/g, String(quantity))
-          .replace(/{amountPaid}/g, (Number(session.amount_total || 0) / 100).toFixed(2))
-          .replace(/{choirName}/g, choirName);
-
-        const ticketToken = generateSignedTicketToken($app, record.id);
-        const meta = $app.settings()?.meta;
-        const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || '';
-        const baseUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-
-        const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
-        const mailRecord = new Record(emailQueueCollection, {
-          recipientId: 'buyer_' + stripeSessionId,
-          recipientEmail: metadata.buyerEmail || '',
-          recipientName: metadata.buyerName || 'Buyer',
-          subject: subject,
-          rawContent: content,
-          status: 'Pending',
-          attempts: 0,
-          filters: JSON.stringify({
-            bundleId: bundleId,
-            ticketToken: ticketToken,
-            scanUrl: scanUrl,
-            qrSvgSrc: qrSvgSrc,
-            successUrl: successUrl,
-            type: 'Automated Confirmation',
-          }),
-        });
-
-        $app.save(mailRecord);
       } catch (mailErr: unknown) {
         console.log(
           'Failed to enqueue bundle confirmation email: ' +
@@ -1175,4 +1228,86 @@ export function handleAdminRefundDonation(e: PocketBaseRequestEvent): unknown {
     const message = err instanceof Error ? err.message : String(err);
     return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
   }
+}
+
+export function handleAdminResendTicketConfirmation(e: PocketBaseRequestEvent): unknown {
+  const authRecord = e.auth;
+
+  if (!authRecord || authRecord.get('role') !== 'admin') {
+    return e.json(403, { error: 'Forbidden: Admins only' });
+  }
+
+  const body = e.requestInfo().body;
+  const purchaseId = typeof body.purchaseId === 'string' ? body.purchaseId : '';
+  const recipientEmail = typeof body.recipientEmail === 'string' ? body.recipientEmail.trim() : '';
+
+  if (!purchaseId) {
+    return e.json(400, { error: 'Missing purchaseId' });
+  }
+
+  if (recipientEmail && !recipientEmail.includes('@')) {
+    return e.json(400, { error: 'Invalid recipient email' });
+  }
+
+  let purchase: PocketBaseRecord;
+  try {
+    purchase = $app.findRecordById('ticketPurchases', purchaseId);
+  } catch {
+    return e.json(404, { error: 'Ticket purchase not found' });
+  }
+
+  if (purchase.get('status') !== 'paid') {
+    return e.json(400, { error: 'Only paid ticket purchases can be resent' });
+  }
+
+  const finalRecipientEmail = recipientEmail || String(purchase.get('buyerEmail') || '');
+  if (!finalRecipientEmail) {
+    return e.json(400, { error: 'No recipient email available' });
+  }
+
+  const finalRecipientName = String(purchase.get('buyerName') || 'Buyer');
+
+  try {
+    const bundleId = purchase.get('bundle');
+
+    if (bundleId && typeof bundleId === 'string') {
+      const bundle = $app.findRecordById('ticketBundles', bundleId);
+      const bundleEventsVal = bundle.get('events');
+      const bundleEventIds = Array.isArray(bundleEventsVal) ? (bundleEventsVal as string[]) : [];
+
+      enqueueBundleTicketConfirmationEmail({
+        purchase,
+        bundle,
+        bundleEventIds,
+        recipientEmail: finalRecipientEmail,
+        recipientName: finalRecipientName,
+        resent: true,
+      });
+    } else {
+      const eventId = String(purchase.get('event') || '');
+      if (!eventId) {
+        return e.json(400, { error: 'Ticket purchase is not linked to an event' });
+      }
+
+      const event = $app.findRecordById('events', eventId);
+
+      enqueueTicketConfirmationEmail({
+        purchase,
+        event,
+        recipientEmail: finalRecipientEmail,
+        recipientName: finalRecipientName,
+        resent: true,
+      });
+    }
+  } catch (err: unknown) {
+    return e.json(500, {
+      error: 'Failed to enqueue ticket confirmation email',
+      details: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  return e.json(200, {
+    success: true,
+    recipientEmail: finalRecipientEmail,
+  });
 }

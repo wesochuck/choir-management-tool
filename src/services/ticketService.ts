@@ -196,6 +196,22 @@ export const ticketService = {
     await pb.collection('ticketBundles').delete(bundleId);
   },
 
+  async adminResendTicketConfirmation(
+    purchaseId: string,
+    recipientEmail?: string
+  ): Promise<{ success: boolean; recipientEmail: string }> {
+    return await pb.send<{ success: boolean; recipientEmail: string }>(
+      '/api/admin/resend-ticket-confirmation',
+      {
+        method: 'POST',
+        body: {
+          purchaseId,
+          recipientEmail,
+        },
+      }
+    );
+  },
+
   async hasPaidPurchasesForEvent(eventId: string): Promise<boolean> {
     try {
       await pb

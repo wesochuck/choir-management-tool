@@ -166,6 +166,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'handleAdminRefundBundle',
       'handleCreateDonationSession',
       'handleAdminRefundDonation',
+      'handleAdminResendTicketConfirmation',
     ],
     dependsOn: [
       'stripeService',
@@ -1175,6 +1176,7 @@ ${renderRoute('POST', '/api/admin/refund-ticket', 'return handleAdminRefundTicke
 ${renderRoute('POST', '/api/admin/refund-bundle', 'return handleAdminRefundBundle(e);')}
 
 ${renderRoute('POST', '/api/admin/refund-donation', 'return handleAdminRefundDonation(e);')}
+${renderRoute('POST', '/api/admin/resend-ticket-confirmation', 'return handleAdminResendTicketConfirmation(e);')}
 
 ${renderRoute('POST', '/api/tickets/validate', 'return handleValidateScan(e);')}
 

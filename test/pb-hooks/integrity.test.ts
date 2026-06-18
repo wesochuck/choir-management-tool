@@ -136,8 +136,8 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    28,
-    'Generated main file should contain exactly 28 route registrations'
+    29,
+    'Generated main file should contain exactly 29 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
@@ -164,6 +164,7 @@ test('Generated main.pb.js integrity', () => {
     ['POST', '/api/admin/bulk-upsert-attendance'],
     ['POST', '/api/singer/resolve-placeholders'],
     ['POST', '/api/singer/rsvp'],
+    ['POST', '/api/admin/resend-ticket-confirmation'],
   ] as const;
 
   for (const [method, routePath] of requiredRoutes) {
@@ -188,8 +189,8 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    62,
-    'Thirty-one utility-bearing callbacks should have start/end local utility markers'
+    64,
+    'Generated file should contain exactly 64 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));
