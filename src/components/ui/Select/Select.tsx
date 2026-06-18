@@ -4,6 +4,11 @@ import SlOption from '@shoelace-style/shoelace/dist/react/option/index.js';
 import type SlSelectElement from '@shoelace-style/shoelace/dist/components/select/select.component.js';
 import { layoutOnly, safeSlProps } from '../shared';
 
+// Keep this path in sync with ChevronDownIcon. Native <select> needs a background image,
+// while custom dropdown triggers can render the shared SVG component directly.
+const SELECT_CHEVRON_BACKGROUND_IMAGE =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")";
+
 export type SelectSize = 'default' | 'small' | 'compact';
 
 export interface SelectProps extends Omit<React.ComponentPropsWithoutRef<'select'>, 'size'> {
@@ -106,9 +111,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           className={classNames}
           // @allow-inline-style - SVG background data URI fallback for visuallyHidden native select
           style={{
-            backgroundImage: visuallyHidden
-              ? 'none'
-              : "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E\")",
+            backgroundImage: visuallyHidden ? 'none' : SELECT_CHEVRON_BACKGROUND_IMAGE,
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'right 12px center',
             backgroundSize: '14px 14px',
