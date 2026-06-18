@@ -29,6 +29,9 @@ import { LearningTracksEditor } from './LearningTracksEditor';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { zonedInputValueToUtc } from '../../../lib/timezone';
 import { AutocompleteInput } from '../../../components/admin/AutocompleteInput';
+import { getNextMovementNumber } from '../../../lib/musicLibraryUtils';
+
+export { getNextMovementNumber };
 
 export interface MusicPieceModalProps {
   isOpen: boolean;
@@ -184,7 +187,7 @@ export function MusicPieceModal({
 
   useEffect(() => {
     if (piece) {
-      setNewMovementTitle(`Movement ${movements.length + 1}`);
+      setNewMovementTitle(`Movement ${getNextMovementNumber(movements)}`);
     } else {
       setNewMovementTitle('');
     }
@@ -192,7 +195,7 @@ export function MusicPieceModal({
 
   useEffect(() => {
     if (!piece) {
-      setStagingMovTitle(`Movement ${localMovementsList.length + 1}`);
+      setStagingMovTitle(`Movement ${getNextMovementNumber(localMovementsList)}`);
     }
   }, [localMovementsList, piece]);
 
@@ -394,8 +397,7 @@ export function MusicPieceModal({
 
   const handleAddStagingMovement = (e?: React.SyntheticEvent | React.KeyboardEvent) => {
     e?.preventDefault();
-    const nextIndex = localMovementsList.length + 1;
-    const defaultTitle = `Movement ${nextIndex}`;
+    const defaultTitle = `Movement ${getNextMovementNumber(localMovementsList)}`;
     const titleVal = stagingMovTitle.trim() || defaultTitle;
 
     setLocalMovementsList((prev) => [
@@ -647,8 +649,7 @@ export function MusicPieceModal({
     e?.preventDefault();
     if (!localPiece) return;
 
-    const nextIndex = movements.length + 1;
-    const defaultTitle = `Movement ${nextIndex}`;
+    const defaultTitle = `Movement ${getNextMovementNumber(movements)}`;
     const finalTitle = newMovementTitle.trim() || defaultTitle;
 
     try {
@@ -1116,7 +1117,7 @@ export function MusicPieceModal({
                       <div className="mt-1 flex flex-row items-center gap-2">
                         <Input
                           type="text"
-                          placeholder={`Name (e.g. Movement ${localMovementsList.length + 1})`}
+                          placeholder={`Name (e.g. Movement ${getNextMovementNumber(localMovementsList)})`}
                           value={stagingMovTitle}
                           onChange={(e) => setStagingMovTitle(e.target.value)}
                           onKeyDown={(e) => {
@@ -1608,7 +1609,7 @@ export function MusicPieceModal({
                     <label className="text-label">Movement Name (defaults sequentially)</label>
                     <Input
                       type="text"
-                      placeholder={`e.g. Movement ${movements.length + 1}`}
+                      placeholder={`e.g. Movement ${getNextMovementNumber(movements)}`}
                       value={newMovementTitle}
                       onChange={(e) => setNewMovementTitle(e.target.value)}
                       onKeyDown={(e) => {
