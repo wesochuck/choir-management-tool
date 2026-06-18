@@ -4,7 +4,7 @@ import { rosterService } from '../rosterService';
 import { getVoicePartsAndSections } from '../settingsService';
 import type { CommunicationFilters, CommunicationRecipient } from './types';
 
-export function profileToRecipient(profile: Profile): CommunicationRecipient {
+function profileToRecipient(profile: Profile): CommunicationRecipient {
   return {
     id: profile.id,
     name: profile.name,
