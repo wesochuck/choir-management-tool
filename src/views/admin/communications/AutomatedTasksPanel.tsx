@@ -77,8 +77,9 @@ export function AutomatedTasksPanel({
     {
       id: 'event',
       header: 'Event',
+      cellClassName: 'min-w-0 max-w-[280px]',
       cell: (_, task) => (
-        <span className="max-w-[250px] truncate font-semibold">
+        <span className="block max-w-[280px] truncate font-semibold">
           {task.event.title || task.event.type}
         </span>
       ),
@@ -88,6 +89,7 @@ export function AutomatedTasksPanel({
     {
       id: 'eventDate',
       header: 'Event Date',
+      hideBelow: 'xl',
       cell: (_, task) => (
         <span className="whitespace-nowrap">{new Date(task.event.date).toLocaleString()}</span>
       ),
@@ -112,8 +114,13 @@ export function AutomatedTasksPanel({
       id: 'actions',
       header: 'Actions',
       align: 'right',
+      headerClassName: 'w-[360px] max-w-[360px]',
+      cellClassName: 'whitespace-normal w-[360px] max-w-[360px]',
       cell: (_, task) => (
-        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="flex max-w-[360px] flex-wrap justify-end gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Button
             variant="outline"
             size="small"
@@ -128,7 +135,10 @@ export function AutomatedTasksPanel({
             disabled={isSending || isArchiving === task.id}
             onClick={() => onViewTaskRecipients(task)}
           >
-            {task.type === 'Report' ? 'View Admins' : 'Recipients'}
+            <span className="hidden xl:inline">
+              {task.type === 'Report' ? 'View Admins' : 'Recipients'}
+            </span>
+            <span className="xl:hidden">{task.type === 'Report' ? 'Admins' : 'Recipients'}</span>
           </Button>
           <Button
             variant="primary"
@@ -160,7 +170,10 @@ export function AutomatedTasksPanel({
               }
             }}
           >
-            {task.type === 'Report' ? 'Send Now' : 'Open Compose'}
+            <span className="hidden xl:inline">
+              {task.type === 'Report' ? 'Send Now' : 'Open Compose'}
+            </span>
+            <span className="xl:hidden">{task.type === 'Report' ? 'Send' : 'Compose'}</span>
           </Button>
         </div>
       ),

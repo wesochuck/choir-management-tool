@@ -358,6 +358,62 @@ describe('DataTable', () => {
     );
   });
 
+  it('column hiding: hideBelow=md applies md:table-cell', () => {
+    const hideColumns: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name' },
+      { id: 'email', header: 'Email', accessorKey: 'email', hideBelow: 'md' },
+    ];
+    renderTable({ columns: hideColumns });
+
+    const th = document.querySelectorAll('th')[1]!;
+    assert.ok(th.className.includes('hidden'));
+    assert.ok(th.className.includes('md:table-cell'));
+  });
+
+  it('column hiding: hideBelow=lg applies lg:table-cell', () => {
+    const hideColumns: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name' },
+      { id: 'email', header: 'Email', accessorKey: 'email', hideBelow: 'lg' },
+    ];
+    renderTable({ columns: hideColumns });
+
+    const th = document.querySelectorAll('th')[1]!;
+    assert.ok(th.className.includes('hidden'));
+    assert.ok(th.className.includes('lg:table-cell'));
+  });
+
+  it('column hiding: hideBelow=xl applies xl:table-cell', () => {
+    const hideColumns: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name' },
+      { id: 'email', header: 'Email', accessorKey: 'email', hideBelow: 'xl' },
+    ];
+    renderTable({ columns: hideColumns });
+
+    const th = document.querySelectorAll('th')[1]!;
+    assert.ok(th.className.includes('hidden'));
+    assert.ok(th.className.includes('xl:table-cell'));
+  });
+
+  it('headerClassName is applied to table header', () => {
+    const cols: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name', headerClassName: 'test-head-class' },
+    ];
+    renderTable({ columns: cols });
+
+    const th = document.querySelector('th')!;
+    assert.ok(th.className.includes('test-head-class'));
+  });
+
+  it('cellClassName is applied to table cells', () => {
+    const cols: ColumnDef<TestItem>[] = [
+      { id: 'name', header: 'Name', accessorKey: 'name', cellClassName: 'test-cell-class' },
+    ];
+    renderTable({ columns: cols });
+
+    const cell = document.querySelector('td')!;
+    assert.ok(cell.className.includes('test-cell-class'));
+  });
+
   it('renders correct number of data rows', () => {
     renderTable();
     const rows = document.querySelectorAll('tbody > tr');

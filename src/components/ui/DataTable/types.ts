@@ -8,7 +8,9 @@ export interface ColumnDef<T> {
   cell?: (value: unknown, row: T) => ReactNode;
   align?: 'left' | 'center' | 'right';
   enableSorting?: boolean;
-  hideBelow?: 'sm' | 'md';
+  hideBelow?: 'sm' | 'md' | 'lg' | 'xl';
+  headerClassName?: string;
+  cellClassName?: string;
   cardSection?: 0 | 1;
   cardSide?: 'left' | 'right';
   cardLabel?: string;

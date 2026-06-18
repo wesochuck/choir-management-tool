@@ -17,7 +17,9 @@ import type { ColumnDef as OurColumnDef, DataTableProps } from './types';
 
 interface OurCellMeta {
   align?: 'left' | 'center' | 'right';
-  hideBelow?: 'sm' | 'md';
+  hideBelow?: 'sm' | 'md' | 'lg' | 'xl';
+  headerClassName?: string;
+  cellClassName?: string;
   cardSection?: 0 | 1;
   cardSide?: 'left' | 'right';
   cardLabel?: string;
@@ -33,6 +35,8 @@ function toTanStackColumn<T>(col: OurColumnDef<T>): TanStackColumnDef<T> {
     meta: {
       align: col.align,
       hideBelow: col.hideBelow,
+      headerClassName: col.headerClassName,
+      cellClassName: col.cellClassName,
       cardSection: col.cardSection,
       cardSide: col.cardSide,
       cardLabel: col.cardLabel,
@@ -56,9 +60,11 @@ function alignClass(align?: 'left' | 'center' | 'right'): string {
   return 'text-left';
 }
 
-function hideClass(hideBelow?: 'sm' | 'md'): string {
+function hideClass(hideBelow?: 'sm' | 'md' | 'lg' | 'xl'): string {
   if (hideBelow === 'sm') return 'hidden sm:table-cell';
   if (hideBelow === 'md') return 'hidden md:table-cell';
+  if (hideBelow === 'lg') return 'hidden lg:table-cell';
+  if (hideBelow === 'xl') return 'hidden xl:table-cell';
   return '';
 }
 
@@ -216,7 +222,7 @@ export function DataTable<T>({
                   return (
                     <th
                       key={header.id}
-                      className={`px-4 py-3 text-xs font-semibold tracking-wider whitespace-nowrap text-slate-500 uppercase ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)} ${sortable ? 'cursor-pointer select-none hover:text-slate-700' : ''}`}
+                      className={`px-4 py-3 text-xs font-semibold tracking-wider whitespace-nowrap text-slate-500 uppercase ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)} ${meta?.headerClassName ?? ''} ${sortable ? 'cursor-pointer select-none hover:text-slate-700' : ''}`}
                       onClick={sortable ? header.column.getToggleSortingHandler() : undefined}
                       title={sortable ? 'Click to sort' : undefined}
                       aria-sort={
@@ -280,7 +286,7 @@ export function DataTable<T>({
                     return (
                       <td
                         key={cell.id}
-                        className={`px-4 py-2.5 text-sm whitespace-nowrap ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)}`}
+                        className={`px-4 py-2.5 text-sm whitespace-nowrap ${alignClass(meta?.align)} ${hideClass(meta?.hideBelow)} ${meta?.cellClassName ?? ''}`}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
