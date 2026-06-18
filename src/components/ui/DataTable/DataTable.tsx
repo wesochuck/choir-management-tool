@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -84,6 +84,7 @@ export function DataTable<T>({
   defaultSorting,
   sorting: controlledSorting,
   hidePagination,
+  paginationLabel,
 }: DataTableProps<T>) {
   const tanStackColumns = useMemo(() => columns.map(toTanStackColumn), [columns]);
 
@@ -96,6 +97,15 @@ export function DataTable<T>({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length;
+
+  useEffect(() => {
+    if (!manualPagination) {
+      setPagination((prev) => {
+        if (prev.pageIndex === 0 && prev.pageSize === pageSize) return prev;
+        return { pageIndex: 0, pageSize };
+      });
+    }
+  }, [data.length, pageSize, manualPagination]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -394,7 +404,7 @@ export function DataTable<T>({
             })}
       </div>
 
-      {!hidePagination && <DataTablePagination table={table} />}
+      {!hidePagination && <DataTablePagination table={table} label={paginationLabel} />}
     </div>
   );
 }

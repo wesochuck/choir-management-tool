@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import type { SeasonalDue } from '../../services/duesService';
 import { pb } from '../../lib/pocketbase';
-import { Pagination } from '../common/Pagination';
 import { AppCard } from '../common/AppCard';
 import { getGlobalStatusDisplay } from '../../lib/statusDisplay';
 import { Button, Badge, Modal, DataTable, type ColumnDef } from '../ui';
@@ -15,10 +14,7 @@ interface RosterTableProps {
   currentSeason?: string;
   duesMap?: Record<string, SeasonalDue>;
   onToggleDues?: (profileId: string, paid: boolean) => void;
-  currentPage: number;
   pageSize: number;
-  totalCount: number;
-  onPageChange: (page: number) => void;
 }
 
 const getInitials = (name: string) => {
@@ -38,10 +34,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
   currentSeason,
   duesMap,
   onToggleDues,
-  currentPage,
   pageSize,
-  totalCount,
-  onPageChange,
 }) => {
   const [activePhoto, setActivePhoto] = useState<{
     url: string;
@@ -191,28 +184,11 @@ export const RosterTable: React.FC<RosterTableProps> = ({
             </Button>
           ) : undefined,
         }}
-        manualPagination
-        pageCount={Math.ceil(totalCount / pageSize)}
-        onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
         pageSize={pageSize}
-        hidePagination
+        paginationLabel="singers"
         onRowClick={(p) => onEdit(p)}
         getRowId={(p) => p.id}
       />
-
-      {totalCount > 0 && (
-        <div className="no-print border-border bg-surface mt-1 flex flex-col items-center justify-between rounded-b-xl border-t px-6 py-4 md:flex-row">
-          <span className="text-text-muted text-sm font-medium">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)}–
-            {Math.min(currentPage * pageSize, totalCount)} of {totalCount} singers
-          </span>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={Math.max(1, Math.ceil(totalCount / pageSize))}
-            onPageChange={onPageChange}
-          />
-        </div>
-      )}
 
       <Modal
         isOpen={!!activePhoto}

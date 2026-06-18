@@ -36,6 +36,7 @@ export interface DataTableProps<T> {
   onPaginationChange?: (state: { pageIndex: number; pageSize: number }) => void;
   pageCount?: number;
   pageSize?: number;
+  paginationLabel?: string;
   hidePagination?: boolean;
   getRowId?: (originalRow: T, index: number) => string;
   getRowClassName?: (row: T) => string;

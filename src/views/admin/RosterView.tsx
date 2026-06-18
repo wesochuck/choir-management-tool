@@ -73,7 +73,6 @@ export default function RosterView() {
   };
 
   // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(25);
 
   // Reset to first page when search filters or sorting selections change
@@ -82,10 +81,6 @@ export default function RosterView() {
       resetRosterRateLimitToast();
     }
   }, [isLoading, resetRosterRateLimitToast]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters.name, filters.voiceParts, filters.status, sortBy, pageSize]);
 
   // Handle deep linking for a specific singer profile
   useEffect(() => {
@@ -153,11 +148,6 @@ export default function RosterView() {
   const sortedProfiles = useMemo(() => {
     return sortProfiles(profiles, sortBy, voicePartLabels);
   }, [profiles, sortBy, voicePartLabels]);
-
-  const paginatedProfiles = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return sortedProfiles.slice(startIndex, startIndex + pageSize);
-  }, [sortedProfiles, currentPage, pageSize]);
 
   const handleVoicePartToggle = (part: string) => {
     const active = filters.voiceParts || [];
@@ -461,17 +451,14 @@ export default function RosterView() {
           </div>
 
           <RosterTable
-            profiles={paginatedProfiles}
+            profiles={sortedProfiles}
             onEdit={handleEdit}
             onCreate={handleAdd}
             onPhotoChange={refresh}
             currentSeason={currentSeason}
             duesMap={duesMap}
             onToggleDues={toggleDues}
-            currentPage={currentPage}
             pageSize={pageSize}
-            totalCount={sortedProfiles.length}
-            onPageChange={setCurrentPage}
           />
         </>
       ) : (
