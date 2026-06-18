@@ -135,6 +135,11 @@ export default function TicketScanView() {
 
   /* Camera helpers */
   const startFrameCapture = useCallback(async () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     scanningRef.current = true;
     let jsQR:
       | ((data: Uint8ClampedArray, width: number, height: number) => { data: string } | null)
@@ -154,6 +159,9 @@ export default function TicketScanView() {
 
       const canvas = canvasRef.current;
       const video = videoRef.current;
+
+      if (!video.videoWidth || !video.videoHeight) return;
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
@@ -173,19 +181,53 @@ export default function TicketScanView() {
     setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
       });
+
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
       setCameraActive(true);
-      startFrameCapture();
     } catch {
       setCameraError('Camera access denied or unavailable. Try manual entry instead.');
     }
-  }, [startFrameCapture]);
+  }, []);
+
+  useEffect(() => {
+    if (!cameraActive || !streamRef.current || !videoRef.current) return;
+
+    let cancelled = false;
+    const video = videoRef.current;
+
+    async function attachAndPlay() {
+      try {
+        video.srcObject = streamRef.current;
+        video.muted = true;
+        video.playsInline = true;
+
+        await video.play();
+
+        if (!cancelled) {
+          startFrameCapture();
+        }
+      } catch {
+        if (!cancelled) {
+          setCameraError(
+            'Camera started, but the preview could not play. Try another camera or use manual entry.'
+          );
+        }
+      }
+    }
+
+    void attachAndPlay();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cameraActive, startFrameCapture]);
 
   const stopCamera = useCallback(() => {
     scanningRef.current = false;
@@ -255,7 +297,13 @@ export default function TicketScanView() {
             {cameraActive ? (
               <div className="space-y-3">
                 <div className="border-border overflow-hidden rounded-lg border bg-black">
-                  <video ref={videoRef} autoPlay playsInline muted className="block w-full" />
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="block aspect-video w-full bg-black object-cover"
+                  />
                 </div>
                 <canvas ref={canvasRef} className="hidden" />
                 <div className="flex justify-center">
