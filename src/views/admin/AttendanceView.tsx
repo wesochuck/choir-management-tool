@@ -561,34 +561,30 @@ export default function AttendanceView() {
                           )}
                         </div>
 
-                        {/* Name + part */}
+                        {/* Voice Part Chip */}
+                        <span className="bg-primary-light text-primary-deep border-primary-deep/10 inline-flex min-w-[32px] shrink-0 items-center justify-center rounded-full border px-2 py-0.5 text-xs font-bold">
+                          {singer.voicePart}
+                        </span>
+
+                        {/* Name + details */}
                         <div className="flex flex-col">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditProfile(singer.profileId);
-                            }}
-                            onKeyDown={(e) => {
-                              e.stopPropagation();
-                            }}
-                            className="cursor-pointer border-0 bg-transparent p-0 text-left text-sm font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
-                          >
-                            {singer.name}
-                          </button>
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-400">
-                            <span>{singer.voicePart}</span>
-                            {singer.rsvpNote && (
-                              <span
-                                className="font-semibold text-red-600 italic"
-                                title={singer.rsvpNote}
-                              >
-                                📝 {singer.rsvpNote}
-                              </span>
-                            )}
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditProfile(singer.profileId);
+                              }}
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                              }}
+                              className="cursor-pointer border-0 bg-transparent p-0 text-left text-lg font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
+                            >
+                              {singer.name}
+                            </button>
                             {missCounts[singer.profileId] > 0 && (
                               <span
-                                className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-bold ${
+                                className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
                                   missCounts[singer.profileId] > maxRehearsalMisses
                                     ? 'bg-red-50/80 text-red-700'
                                     : 'bg-amber-50/80 text-amber-700'
@@ -598,6 +594,11 @@ export default function AttendanceView() {
                               </span>
                             )}
                           </div>
+                          {singer.rsvpNote && (
+                            <span className="mt-0.5 text-xs font-semibold text-red-600 italic">
+                              📝 {singer.rsvpNote}
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
