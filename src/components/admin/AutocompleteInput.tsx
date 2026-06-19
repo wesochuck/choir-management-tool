@@ -92,6 +92,17 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     }
   }, [activeIndex]);
 
+  const inputClassName = [
+    'border-border bg-surface text-text placeholder:text-text-muted',
+    'focus:border-primary focus:ring-primary/20',
+    'block min-h-11 w-full rounded-lg border px-3 py-2 text-base shadow-sm outline-none transition-colors',
+    'focus:ring-2',
+    'disabled:cursor-not-allowed disabled:opacity-60',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div ref={containerRef} className="relative w-full">
       <input
@@ -104,7 +115,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         onFocus={() => setShowSuggestions(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={className}
+        className={inputClassName}
         // @allow-inline-style - passes through style prop for composition
         style={style}
         required={required}
