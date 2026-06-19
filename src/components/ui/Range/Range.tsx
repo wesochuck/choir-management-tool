@@ -12,6 +12,7 @@ export interface RangeProps {
   className?: string;
   id?: string;
   style?: CSSProperties;
+  'aria-label'?: string;
 }
 
 export function Range({
@@ -24,6 +25,7 @@ export function Range({
   className,
   id,
   style,
+  'aria-label': ariaLabel,
 }: RangeProps) {
   if (process.env.NODE_ENV === 'test') {
     return (
@@ -37,6 +39,7 @@ export function Range({
         className={className}
         // @allow-inline-style - forwards style prop in test mode
         style={style}
+        aria-label={ariaLabel}
         onChange={(e) => {
           const val = parseFloat(e.target.value);
           onChange?.(val);
@@ -56,6 +59,7 @@ export function Range({
         value,
         className,
         style,
+        'aria-label': ariaLabel,
         onSlInput: onInput
           ? (e: unknown) => onInput((e as CustomEvent).detail.value as number)
           : undefined,

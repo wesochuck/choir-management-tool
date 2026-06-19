@@ -404,3 +404,64 @@ sl-dialog::part(close-button__base):hover {
 .public-site h6 {
   font-family: var(--public-header-font);
 }
+
+/* ----------------------------------------------------
+   Practice Player Range Component Styles
+   ---------------------------------------------------- */
+:root {
+  --player-range-track-inactive: rgb(203 213 225); /* Slate 300 */
+}
+.dark,
+.sl-theme-dark {
+  --player-range-track-inactive: rgb(71 85 105); /* Slate 600 */
+}
+
+/* Practice player progress scrubber */
+.player-progress-range::part(base) {
+  min-height: 44px;
+}
+
+.player-progress-range::part(track) {
+  height: 10px;
+  background: var(--player-range-track-inactive);
+  border-radius: 999px;
+}
+
+.player-progress-range::part(active-track) {
+  height: 10px;
+  background: var(--color-primary);
+  border-radius: 999px;
+}
+
+.player-progress-range::part(thumb) {
+  width: 28px;
+  height: 28px;
+  background: var(--color-primary);
+  border: 3px solid white;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.28);
+}
+
+/* Desktop volume slider */
+.player-volume-range::part(base) {
+  min-height: 32px;
+}
+
+.player-volume-range::part(track) {
+  height: 6px;
+  background: var(--player-range-track-inactive);
+  border-radius: 999px;
+}
+
+.player-volume-range::part(active-track) {
+  height: 6px;
+  background: var(--color-primary);
+  border-radius: 999px;
+}
+
+.player-volume-range::part(thumb) {
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary);
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.22);
+}

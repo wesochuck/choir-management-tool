@@ -42,6 +42,8 @@ export default defineConfig([
             'seating-toolbar',
             'prose',
             'public-site',
+            'player-progress-range',
+            'player-volume-range',
           ],
         },
       ],

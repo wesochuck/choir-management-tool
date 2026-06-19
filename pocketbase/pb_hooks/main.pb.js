@@ -13221,17 +13221,17 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     "use strict";
     function handleGeneratePlayerToken(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden: Admins only" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden: Admins only' });
         }
         const data = e.requestInfo().body;
         const eventId = data.eventId;
         if (!eventId) {
-            return e.json(400, { error: "Missing eventId" });
+            return e.json(400, { error: 'Missing eventId' });
         }
         const secret = getHmacSecret($app);
         if (!secret) {
-            return e.json(500, { error: "HMAC_SECRET not configured" });
+            return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
         const token = generateSignedPlayerToken($app, eventId, secret);
         return e.json(200, { token });
@@ -13239,46 +13239,46 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     function handleSingerPlayerPlaylist(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Authentication required" });
+            return e.json(401, { error: 'Authentication required' });
         }
         const eventId = e.requestInfo().query.eventId;
         if (!eventId) {
-            return e.json(400, { error: "Missing eventId" });
+            return e.json(400, { error: 'Missing eventId' });
         }
         try {
-            const event = $app.findRecordById("events", eventId);
+            const event = $app.findRecordById('events', eventId);
             // Check set list approval
-            const setListApproved = event.get("setListApproved");
+            const setListApproved = event.get('setListApproved');
             if (setListApproved === false) {
-                return e.json(403, { error: "not_published: Practice tracks are not available yet." });
+                return e.json(403, { error: 'not_published: Practice tracks are not available yet.' });
             }
-            const rawSetList = event.get("setList");
+            const rawSetList = event.get('setList');
             let setList = parseJsonField(rawSetList);
             if (!Array.isArray(setList) || setList.length === 0) {
-                return e.json(403, { error: "empty_set_list: No practice tracks have been posted." });
+                return e.json(403, { error: 'empty_set_list: No practice tracks have been posted.' });
             }
             // Fetch pieces for the set list
             let pieces = [];
             try {
-                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
-                pieces = allPieces.map(p => {
-                    const rawMapping = p.get("audioTrackMapping");
+                const allPieces = $app.findRecordsByFilter('musicLibrary', "id != ''", 'created', 1000);
+                pieces = allPieces.map((p) => {
+                    const rawMapping = p.get('audioTrackMapping');
                     let mapping = parseJsonField(rawMapping);
                     if (!mapping || typeof mapping !== 'object') {
                         mapping = {};
                     }
                     return {
                         id: p.id,
-                        parentId: p.get("parentId"),
-                        title: p.get("title"),
-                        composer: p.get("composer"),
-                        arranger: p.get("arranger"),
-                        duration: p.get("duration"),
-                        created: p.get("created"),
-                        updated: p.get("updated"),
+                        parentId: p.get('parentId'),
+                        title: p.get('title'),
+                        composer: p.get('composer'),
+                        arranger: p.get('arranger'),
+                        duration: p.get('duration'),
+                        created: p.get('created'),
+                        updated: p.get('updated'),
                         audioTrackMapping: mapping,
-                        collectionId: "pbc_music_library_001",
-                        collectionName: "musicLibrary"
+                        collectionId: 'pbc_music_library_001',
+                        collectionName: 'musicLibrary',
                     };
                 });
             }
@@ -13288,8 +13288,8 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             // Include voice parts configuration
             let voiceParts = [];
             try {
-                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
-                const rawVal = vpRecord.get("value");
+                const vpRecord = $app.findFirstRecordByFilter('appSettings', "key = 'voiceParts'");
+                const rawVal = vpRecord.get('value');
                 const parsedVal = parseJsonField(rawVal);
                 if (parsedVal && parsedVal.voiceParts) {
                     voiceParts = parsedVal.voiceParts;
@@ -13301,18 +13301,18 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             return e.json(200, {
                 event: {
                     id: event.id,
-                    title: event.get("title"),
-                    date: event.get("date")
+                    title: event.get('title'),
+                    date: event.get('date'),
                 },
                 setList: setList,
                 pieces: pieces,
-                voiceParts: voiceParts
+                voiceParts: voiceParts,
             });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            console.log("Error in /api/singer/player-playlist: " + message);
-            return e.json(404, { error: "Event not found", details: message });
+            console.log('Error in /api/singer/player-playlist: ' + message);
+            return e.json(404, { error: 'Event not found', details: message });
         }
     }
     function handlePlayerPlaylist(e) {
@@ -13322,30 +13322,30 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             token = `${token}&s=${sParam}`;
         }
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
         const parts = {};
-        token.split('&').forEach(part => {
+        token.split('&').forEach((part) => {
             const kv = part.split('=');
             if (kv.length === 2) {
                 parts[kv[0]] = kv[1];
             }
         });
         if (!parts.e || !parts.s) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret($app);
         if (!secret) {
-            return e.json(500, { error: "HMAC_SECRET not configured" });
+            return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
         const payload = getPlayerPayload(parts.e);
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
-            const event = $app.findRecordById("events", parts.e);
-            const rawSetList = event.get("setList");
+            const event = $app.findRecordById('events', parts.e);
+            const rawSetList = event.get('setList');
             let setList = parseJsonField(rawSetList);
             if (!Array.isArray(setList)) {
                 setList = [];
@@ -13353,25 +13353,25 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             // Fetch all pieces from the music library to allow title-based fallback matching on the client side
             let pieces = [];
             try {
-                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
-                pieces = allPieces.map(p => {
-                    const rawMapping = p.get("audioTrackMapping");
+                const allPieces = $app.findRecordsByFilter('musicLibrary', "id != ''", 'created', 1000);
+                pieces = allPieces.map((p) => {
+                    const rawMapping = p.get('audioTrackMapping');
                     let mapping = parseJsonField(rawMapping);
                     if (!mapping || typeof mapping !== 'object') {
                         mapping = {};
                     }
                     return {
                         id: p.id,
-                        parentId: p.get("parentId"),
-                        title: p.get("title"),
-                        composer: p.get("composer"),
-                        arranger: p.get("arranger"),
-                        duration: p.get("duration"),
-                        created: p.get("created"),
-                        updated: p.get("updated"),
+                        parentId: p.get('parentId'),
+                        title: p.get('title'),
+                        composer: p.get('composer'),
+                        arranger: p.get('arranger'),
+                        duration: p.get('duration'),
+                        created: p.get('created'),
+                        updated: p.get('updated'),
                         audioTrackMapping: mapping,
-                        collectionId: "pbc_music_library_001",
-                        collectionName: "musicLibrary"
+                        collectionId: 'pbc_music_library_001',
+                        collectionName: 'musicLibrary',
                     };
                 });
             }
@@ -13381,8 +13381,8 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             // Include voice parts configuration for the selector
             let voiceParts = [];
             try {
-                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
-                const rawVal = vpRecord.get("value");
+                const vpRecord = $app.findFirstRecordByFilter('appSettings', "key = 'voiceParts'");
+                const rawVal = vpRecord.get('value');
                 const parsedVal = parseJsonField(rawVal);
                 if (parsedVal && parsedVal.voiceParts) {
                     voiceParts = parsedVal.voiceParts;
@@ -13394,21 +13394,21 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
             return e.json(200, {
                 event: {
                     id: event.id,
-                    title: event.get("title"),
-                    date: event.get("date")
+                    title: event.get('title'),
+                    date: event.get('date'),
                 },
                 setList: setList,
                 pieces: pieces,
-                voiceParts: voiceParts
+                voiceParts: voiceParts,
             });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
-            console.log("Error in /api/player-playlist: " + message + stack);
+            const stack = err instanceof Error && err.stack ? '\n' + err.stack : '';
+            console.log('Error in /api/player-playlist: ' + message + stack);
             return e.json(404, {
-                error: "Event or related pieces not found",
-                details: message
+                error: 'Event or related pieces not found',
+                details: message,
             });
         }
     }
@@ -28530,17 +28530,17 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     "use strict";
     function handleGeneratePlayerToken(e) {
         const authRecord = e.auth;
-        if (!authRecord || authRecord.get("role") !== "admin") {
-            return e.json(403, { error: "Forbidden: Admins only" });
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden: Admins only' });
         }
         const data = e.requestInfo().body;
         const eventId = data.eventId;
         if (!eventId) {
-            return e.json(400, { error: "Missing eventId" });
+            return e.json(400, { error: 'Missing eventId' });
         }
         const secret = getHmacSecret($app);
         if (!secret) {
-            return e.json(500, { error: "HMAC_SECRET not configured" });
+            return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
         const token = generateSignedPlayerToken($app, eventId, secret);
         return e.json(200, { token });
@@ -28548,46 +28548,46 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     function handleSingerPlayerPlaylist(e) {
         const authRecord = e.auth;
         if (!authRecord) {
-            return e.json(401, { error: "Authentication required" });
+            return e.json(401, { error: 'Authentication required' });
         }
         const eventId = e.requestInfo().query.eventId;
         if (!eventId) {
-            return e.json(400, { error: "Missing eventId" });
+            return e.json(400, { error: 'Missing eventId' });
         }
         try {
-            const event = $app.findRecordById("events", eventId);
+            const event = $app.findRecordById('events', eventId);
             // Check set list approval
-            const setListApproved = event.get("setListApproved");
+            const setListApproved = event.get('setListApproved');
             if (setListApproved === false) {
-                return e.json(403, { error: "not_published: Practice tracks are not available yet." });
+                return e.json(403, { error: 'not_published: Practice tracks are not available yet.' });
             }
-            const rawSetList = event.get("setList");
+            const rawSetList = event.get('setList');
             let setList = parseJsonField(rawSetList);
             if (!Array.isArray(setList) || setList.length === 0) {
-                return e.json(403, { error: "empty_set_list: No practice tracks have been posted." });
+                return e.json(403, { error: 'empty_set_list: No practice tracks have been posted.' });
             }
             // Fetch pieces for the set list
             let pieces = [];
             try {
-                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
-                pieces = allPieces.map(p => {
-                    const rawMapping = p.get("audioTrackMapping");
+                const allPieces = $app.findRecordsByFilter('musicLibrary', "id != ''", 'created', 1000);
+                pieces = allPieces.map((p) => {
+                    const rawMapping = p.get('audioTrackMapping');
                     let mapping = parseJsonField(rawMapping);
                     if (!mapping || typeof mapping !== 'object') {
                         mapping = {};
                     }
                     return {
                         id: p.id,
-                        parentId: p.get("parentId"),
-                        title: p.get("title"),
-                        composer: p.get("composer"),
-                        arranger: p.get("arranger"),
-                        duration: p.get("duration"),
-                        created: p.get("created"),
-                        updated: p.get("updated"),
+                        parentId: p.get('parentId'),
+                        title: p.get('title'),
+                        composer: p.get('composer'),
+                        arranger: p.get('arranger'),
+                        duration: p.get('duration'),
+                        created: p.get('created'),
+                        updated: p.get('updated'),
                         audioTrackMapping: mapping,
-                        collectionId: "pbc_music_library_001",
-                        collectionName: "musicLibrary"
+                        collectionId: 'pbc_music_library_001',
+                        collectionName: 'musicLibrary',
                     };
                 });
             }
@@ -28597,8 +28597,8 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             // Include voice parts configuration
             let voiceParts = [];
             try {
-                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
-                const rawVal = vpRecord.get("value");
+                const vpRecord = $app.findFirstRecordByFilter('appSettings', "key = 'voiceParts'");
+                const rawVal = vpRecord.get('value');
                 const parsedVal = parseJsonField(rawVal);
                 if (parsedVal && parsedVal.voiceParts) {
                     voiceParts = parsedVal.voiceParts;
@@ -28610,18 +28610,18 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             return e.json(200, {
                 event: {
                     id: event.id,
-                    title: event.get("title"),
-                    date: event.get("date")
+                    title: event.get('title'),
+                    date: event.get('date'),
                 },
                 setList: setList,
                 pieces: pieces,
-                voiceParts: voiceParts
+                voiceParts: voiceParts,
             });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            console.log("Error in /api/singer/player-playlist: " + message);
-            return e.json(404, { error: "Event not found", details: message });
+            console.log('Error in /api/singer/player-playlist: ' + message);
+            return e.json(404, { error: 'Event not found', details: message });
         }
     }
     function handlePlayerPlaylist(e) {
@@ -28631,30 +28631,30 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             token = `${token}&s=${sParam}`;
         }
         if (!token) {
-            return e.json(400, { error: "Missing token" });
+            return e.json(400, { error: 'Missing token' });
         }
         const parts = {};
-        token.split('&').forEach(part => {
+        token.split('&').forEach((part) => {
             const kv = part.split('=');
             if (kv.length === 2) {
                 parts[kv[0]] = kv[1];
             }
         });
         if (!parts.e || !parts.s) {
-            return e.json(400, { error: "Invalid token format" });
+            return e.json(400, { error: 'Invalid token format' });
         }
         const secret = getHmacSecret($app);
         if (!secret) {
-            return e.json(500, { error: "HMAC_SECRET not configured" });
+            return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
         const payload = getPlayerPayload(parts.e);
         const expectedSignature = $security.hs256(payload, secret);
         if (!$security.equal(parts.s, expectedSignature)) {
-            return e.json(401, { error: "Invalid signature" });
+            return e.json(401, { error: 'Invalid signature' });
         }
         try {
-            const event = $app.findRecordById("events", parts.e);
-            const rawSetList = event.get("setList");
+            const event = $app.findRecordById('events', parts.e);
+            const rawSetList = event.get('setList');
             let setList = parseJsonField(rawSetList);
             if (!Array.isArray(setList)) {
                 setList = [];
@@ -28662,25 +28662,25 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             // Fetch all pieces from the music library to allow title-based fallback matching on the client side
             let pieces = [];
             try {
-                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
-                pieces = allPieces.map(p => {
-                    const rawMapping = p.get("audioTrackMapping");
+                const allPieces = $app.findRecordsByFilter('musicLibrary', "id != ''", 'created', 1000);
+                pieces = allPieces.map((p) => {
+                    const rawMapping = p.get('audioTrackMapping');
                     let mapping = parseJsonField(rawMapping);
                     if (!mapping || typeof mapping !== 'object') {
                         mapping = {};
                     }
                     return {
                         id: p.id,
-                        parentId: p.get("parentId"),
-                        title: p.get("title"),
-                        composer: p.get("composer"),
-                        arranger: p.get("arranger"),
-                        duration: p.get("duration"),
-                        created: p.get("created"),
-                        updated: p.get("updated"),
+                        parentId: p.get('parentId'),
+                        title: p.get('title'),
+                        composer: p.get('composer'),
+                        arranger: p.get('arranger'),
+                        duration: p.get('duration'),
+                        created: p.get('created'),
+                        updated: p.get('updated'),
                         audioTrackMapping: mapping,
-                        collectionId: "pbc_music_library_001",
-                        collectionName: "musicLibrary"
+                        collectionId: 'pbc_music_library_001',
+                        collectionName: 'musicLibrary',
                     };
                 });
             }
@@ -28690,8 +28690,8 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             // Include voice parts configuration for the selector
             let voiceParts = [];
             try {
-                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
-                const rawVal = vpRecord.get("value");
+                const vpRecord = $app.findFirstRecordByFilter('appSettings', "key = 'voiceParts'");
+                const rawVal = vpRecord.get('value');
                 const parsedVal = parseJsonField(rawVal);
                 if (parsedVal && parsedVal.voiceParts) {
                     voiceParts = parsedVal.voiceParts;
@@ -28703,21 +28703,21 @@ routerAdd("GET", "/api/player-playlist", (e) => {
             return e.json(200, {
                 event: {
                     id: event.id,
-                    title: event.get("title"),
-                    date: event.get("date")
+                    title: event.get('title'),
+                    date: event.get('date'),
                 },
                 setList: setList,
                 pieces: pieces,
-                voiceParts: voiceParts
+                voiceParts: voiceParts,
             });
         }
         catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            const stack = err instanceof Error && err.stack ? "\n" + err.stack : "";
-            console.log("Error in /api/player-playlist: " + message + stack);
+            const stack = err instanceof Error && err.stack ? '\n' + err.stack : '';
+            console.log('Error in /api/player-playlist: ' + message + stack);
             return e.json(404, {
-                error: "Event or related pieces not found",
-                details: message
+                error: 'Event or related pieces not found',
+                details: message,
             });
         }
     }

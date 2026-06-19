@@ -1,7 +1,7 @@
 import React from 'react';
 import type { PlayerMediaFile } from '../../services/playerService';
 import { useAudioPlayback } from '../../hooks/useAudioPlayback';
-import { Input, Select, Range } from '../ui';
+import { Input, Select, Range, Button } from '../ui';
 
 import {
   PlayIcon,
@@ -204,16 +204,7 @@ export const Player: React.FC<PlayerProps> = ({
             step={0.1}
             value={currentTime}
             aria-label="Track position"
-            className="w-full touch-none"
-            // @allow-inline-style - CSS custom properties for Shoelace range track colors
-            style={
-              {
-                '--track-color-active': 'var(--accent-color)',
-                '--track-color-inactive': 'var(--border-color)',
-                '--track-height': '10px',
-                '--thumb-size': '28px',
-              } as React.CSSProperties
-            }
+            className="player-progress-range w-full touch-none"
             onInput={handleSlSeekInput}
             onChange={handleSlSeekChange}
           />
@@ -258,22 +249,26 @@ export const Player: React.FC<PlayerProps> = ({
             </button>
           </div>
 
-          <button
+          <Button
+            variant={loopMode === 'all' || loopMode === 'one' ? 'primary' : 'outline'}
+            size="small"
             onClick={cycleLoopMode}
-            className={`border-border bg-primary-light text-text-muted hover:bg-border hover:text-text inline-flex h-10 items-center justify-center gap-2 rounded-full border px-4 text-xs font-bold tracking-wider uppercase transition-all ${
-              loopMode === 'all' || loopMode === 'one'
-                ? 'border-primary bg-primary-light text-primary'
-                : ''
-            }`}
+            className="min-h-10 rounded-full px-4"
+            aria-label={getRepeatLabel()}
           >
-            {loopMode === 'one' ? <RepeatOneIcon /> : <RepeatIcon />}
+            <span aria-hidden="true" className="inline-flex shrink-0 items-center">
+              {loopMode === 'one' ? <RepeatOneIcon /> : <RepeatIcon />}
+            </span>
             <span>{getRepeatLabel()}</span>
-          </button>
+          </Button>
         </div>
 
-        <div className="border-border mb-2 flex flex-col gap-3 border-t py-4">
+        <div className="border-border mb-3 grid gap-3 border-t pt-4">
           <div className="rounded-lg bg-slate-50 p-3">
-            <label htmlFor="skip-input" className="text-overline text-text-muted mb-1 block">
+            <label
+              htmlFor="skip-input"
+              className="text-text-muted mb-1 block text-xs font-bold tracking-wider uppercase"
+            >
               Start track at
             </label>
             <div className="flex items-center gap-2">
@@ -295,10 +290,10 @@ export const Player: React.FC<PlayerProps> = ({
             </p>
           </div>
 
-          <div className="flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden pointer-coarse:hidden">
+          <div className="flex min-w-[120px] flex-1 items-center gap-4 px-3 max-sm:hidden pointer-coarse:hidden">
             <label
               htmlFor="volume-input"
-              className="text-overline text-text-muted whitespace-nowrap"
+              className="text-text-muted text-xs font-bold tracking-wider whitespace-nowrap uppercase"
             >
               Volume
             </label>
@@ -308,20 +303,17 @@ export const Player: React.FC<PlayerProps> = ({
               max={1}
               step={0.01}
               value={volume}
-              // @allow-inline-style - CSS custom properties for Shoelace range track colors
-              style={
-                {
-                  '--track-color-active': 'var(--accent-color)',
-                  '--track-color-inactive': 'var(--border-color)',
-                  '--track-height': '4px',
-                } as React.CSSProperties
-              }
+              aria-label="Volume"
+              className="player-volume-range w-full"
               onInput={handleSlVolumeInput}
             />
           </div>
 
           <div className="rounded-lg bg-slate-50 p-3">
-            <label htmlFor="delay-select" className="text-overline text-text-muted mb-1 block">
+            <label
+              htmlFor="delay-select"
+              className="text-text-muted mb-1 block text-xs font-bold tracking-wider uppercase"
+            >
               Gap between tracks
             </label>
             <Select
@@ -381,7 +373,7 @@ export const Player: React.FC<PlayerProps> = ({
           <div className="flex flex-col gap-1">
             <span className="text-text text-xs font-bold tracking-wider uppercase">Repeat</span>
             <span className="text-text-muted text-xs leading-relaxed">
-              Choose whether to stop, loop the set list, or repeat one track.
+              Choose whether to stop, repeat the set list, or repeat one track.
             </span>
           </div>
         </div>

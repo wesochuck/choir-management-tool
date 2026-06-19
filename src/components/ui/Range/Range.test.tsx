@@ -18,7 +18,7 @@ test('Range renders a native <input type="range"> in test environment', () => {
   assert.equal(input.step, '1');
 });
 
-test('Range passes through id and className', () => {
+test('Range passes through id, className, and aria-label', () => {
   const { container } = render(
     React.createElement(Range, {
       value: 0,
@@ -27,12 +27,14 @@ test('Range passes through id and className', () => {
       step: 0.1,
       id: 'volume-input',
       className: 'accent-color',
+      'aria-label': 'Volume Slider',
     })
   );
   const input = container.firstElementChild as HTMLInputElement;
   assert.ok(input, 'renders an element');
   assert.equal(input.id, 'volume-input');
   assert.ok(input.classList.contains('accent-color'), 'has the passed className');
+  assert.equal(input.getAttribute('aria-label'), 'Volume Slider', 'has the passed aria-label');
 });
 
 test('Range calls onChange and onInput with a parsed number', () => {
