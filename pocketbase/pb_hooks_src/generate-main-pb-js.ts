@@ -1193,6 +1193,8 @@ ${renderRoute('GET', '/api/singer/calendar-feed-url', 'return handleCalendarFeed
 ${renderRoute('POST', '/api/singer/calendar-feed-url/reset', 'return handleCalendarFeedReset(e);')}
 
 ${renderRoute('GET', '/api/singer/seating-profiles', 'return handleSingerSeatingProfiles(e);')}
+
+${renderRoute('GET', '/api/singer/player-playlist', 'return handleSingerPlayerPlaylist(e);')}
 `.trim();
 
   fs.writeFileSync(OUTPUT_FILE, `${mainPbJs}\n`);

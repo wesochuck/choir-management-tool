@@ -133,11 +133,15 @@ test('Generated main.pb.js integrity', () => {
     'Should include player endpoint route'
   );
   assert.ok(content.includes('"/api/player-playlist"'), 'Should include player playlist route');
+  assert.ok(
+    content.includes('"/api/singer/player-playlist"'),
+    'Should include singer player playlist route'
+  );
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    29,
-    'Generated main file should contain exactly 29 route registrations'
+    30,
+    'Generated main file should contain exactly 30 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),

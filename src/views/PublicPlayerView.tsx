@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  playerService,
-  type PlayerMediaFile,
-} from '../services/playerService';
+import { playerService, type PlayerMediaFile } from '../services/playerService';
 import { Player } from '../components/player/Player';
 import { Playlist } from '../components/player/Playlist';
 import { VoicePartSelector } from '../components/player/VoicePartSelector';
@@ -43,12 +40,14 @@ export default function PublicPlayerView() {
   const hasTokenOrEventId = !!token || !!eventId;
 
   const playlistQuery = useQuery({
-    queryKey: token ? queryKeys.playlist.byToken(token) : queryKeys.playlist.byEventId(eventId),
+    queryKey: token
+      ? queryKeys.playlist.byToken(token)
+      : queryKeys.playlist.bySingerEventId(eventId),
     queryFn: async () => {
       if (token) {
         return playerService.fetchPlaylistByToken(token);
       } else {
-        return playerService.fetchPlaylistByEventId(eventId);
+        return playerService.fetchSingerPlaylistByEventId(eventId);
       }
     },
     enabled: hasTokenOrEventId,
@@ -183,12 +182,33 @@ export default function PublicPlayerView() {
   }
 
   if (playlistQuery.isLoading) return <div className="pt-16 text-center">Loading playlist...</div>;
-  if (error) {
+  if (error || playlistQuery.isError) {
+    const errMsg =
+      error || (playlistQuery.error instanceof Error ? playlistQuery.error.message : '');
+    const isEventMode = !!eventId && !token;
+    const friendlyMessage = isEventMode
+      ? errMsg.includes('not_published') || errMsg.includes('empty_set_list')
+        ? 'Practice tracks are not available yet. Please check back later or contact your director.'
+        : errMsg.includes('not_on_roster')
+          ? 'This practice set is not available for your account.'
+          : 'Failed to load practice tracks. Please return to your dashboard or contact your director.'
+      : 'Failed to load playlist. Please check your link or contact your director.';
+
     return (
       <div className="mx-auto mt-16 max-w-md p-4 text-center">
         <div className="border-danger-text bg-danger-bg text-danger-text rounded-lg border p-4 font-semibold shadow-sm">
-          {error}
+          {friendlyMessage}
         </div>
+        {isEventMode && (
+          <div className="mt-4">
+            <a
+              href="/dashboard"
+              className="text-primary hover:text-primary-deep inline-flex items-center gap-1 text-sm font-semibold hover:underline"
+            >
+              Back to Dashboard
+            </a>
+          </div>
+        )}
       </div>
     );
   }

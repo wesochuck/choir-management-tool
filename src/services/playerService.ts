@@ -1,6 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import type { MusicPiece } from './musicLibraryService';
-import type { Event, SetListItem } from './eventService';
+import type { SetListItem } from './eventService';
 import type { VoicePartDef } from './settingsService';
 import { DEFAULT_VOICE_PARTS } from './settingsService';
 import { getSectionFromVoicePart } from '../lib/voicePartUtils';
@@ -153,132 +153,95 @@ function buildFilesFromPiece(
   return result;
 }
 
+// Shared response parser for token and singer-event endpoints.
+function buildPlaylistFromApiResponse(response: unknown): PlayerPlaylist {
+  const {
+    event,
+    setList: rawSetList,
+    voiceParts: rawVoiceParts,
+    pieces: rawPieces,
+  } = response as {
+    event: { id: string; title: string; date: string };
+    setList: unknown;
+    voiceParts: unknown;
+    pieces: unknown;
+  };
+
+  let setList: SetListItem[] = parseJsonField<SetListItem[]>(rawSetList) || [];
+  if (!Array.isArray(setList)) {
+    setList = [];
+  }
+
+  let voiceParts: VoicePartDef[] = parseJsonField<VoicePartDef[]>(rawVoiceParts) || [];
+  if (!Array.isArray(voiceParts)) {
+    voiceParts = [];
+  }
+
+  const rawPiecesList = parseJsonField<unknown[]>(rawPieces) || [];
+  let pieces: MusicPiece[] = [];
+  if (Array.isArray(rawPiecesList)) {
+    pieces = rawPiecesList.map((item) => {
+      const p = item as Record<string, unknown>;
+      const mapping = parseAudioTrackMapping(p.audioTrackMapping);
+      return {
+        id: String(p.id || ''),
+        parentId: typeof p.parentId === 'string' ? p.parentId : undefined,
+        title: String(p.title || ''),
+        composer: typeof p.composer === 'string' ? p.composer : undefined,
+        arranger: typeof p.arranger === 'string' ? p.arranger : undefined,
+        duration: typeof p.duration === 'string' ? p.duration : undefined,
+        created: typeof p.created === 'string' ? p.created : undefined,
+        updated: typeof p.updated === 'string' ? p.updated : undefined,
+        audioTrackMapping: mapping,
+        collectionId: typeof p.collectionId === 'string' ? p.collectionId : undefined,
+        collectionName: typeof p.collectionName === 'string' ? p.collectionName : undefined,
+      } as MusicPiece;
+    });
+  }
+
+  const piecesMap = pieces.reduce(
+    (acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    },
+    {} as Record<string, MusicPiece>
+  );
+
+  const files: PlayerMediaFile[] = [];
+
+  for (const item of setList) {
+    if (item.type === 'intermission') continue;
+    const piece = resolvePieceForSetListItem(item, piecesMap, pieces);
+    if (!piece) continue;
+
+    const entries = buildFilesFromPiece(
+      item.id,
+      item.title,
+      item.composer,
+      item.duration,
+      piece,
+      pieces
+    );
+    files.push(...entries);
+  }
+
+  return { event, files, voiceParts, allPieces: pieces };
+}
+
 export const playerService = {
   async fetchPlaylistByToken(token: string): Promise<PlayerPlaylist> {
     const response = await pb.send('/api/player-playlist', {
       query: { token },
     });
-
-    const {
-      event,
-      setList: rawSetList,
-      voiceParts: rawVoiceParts,
-      pieces: rawPieces,
-    } = response as {
-      event: { id: string; title: string; date: string };
-      setList: unknown;
-      voiceParts: unknown;
-      pieces: unknown;
-    };
-
-    // Defensively parse/cast setList
-    let setList: SetListItem[] = parseJsonField<SetListItem[]>(rawSetList) || [];
-    if (!Array.isArray(setList)) {
-      setList = [];
-    }
-
-    // Defensively parse/cast voiceParts
-    let voiceParts: VoicePartDef[] = parseJsonField<VoicePartDef[]>(rawVoiceParts) || [];
-    if (!Array.isArray(voiceParts)) {
-      voiceParts = [];
-    }
-
-    // Defensively parse/cast pieces
-    const rawPiecesList = parseJsonField<unknown[]>(rawPieces) || [];
-    let pieces: MusicPiece[] = [];
-    if (Array.isArray(rawPiecesList)) {
-      pieces = rawPiecesList.map((item) => {
-        const p = item as Record<string, unknown>;
-        const mapping = parseAudioTrackMapping(p.audioTrackMapping);
-        return {
-          id: String(p.id || ''),
-          parentId: typeof p.parentId === 'string' ? p.parentId : undefined,
-          title: String(p.title || ''),
-          composer: typeof p.composer === 'string' ? p.composer : undefined,
-          arranger: typeof p.arranger === 'string' ? p.arranger : undefined,
-          duration: typeof p.duration === 'string' ? p.duration : undefined,
-          created: typeof p.created === 'string' ? p.created : undefined,
-          updated: typeof p.updated === 'string' ? p.updated : undefined,
-          audioTrackMapping: mapping,
-          collectionId: typeof p.collectionId === 'string' ? p.collectionId : undefined,
-          collectionName: typeof p.collectionName === 'string' ? p.collectionName : undefined,
-        } as MusicPiece;
-      });
-    }
-
-    const piecesMap = pieces.reduce(
-      (acc, p) => {
-        acc[p.id] = p;
-        return acc;
-      },
-      {} as Record<string, MusicPiece>
-    );
-
-    const files: PlayerMediaFile[] = [];
-
-    for (const item of setList) {
-      if (item.type === 'intermission') continue;
-      const piece = resolvePieceForSetListItem(item, piecesMap, pieces);
-      if (!piece) continue;
-
-      const entries = buildFilesFromPiece(
-        item.id,
-        item.title,
-        item.composer,
-        item.duration,
-        piece,
-        pieces // use pieces from the hook instead of fetching allPieces
-      );
-      files.push(...entries);
-    }
-
-    return { event, files, voiceParts, allPieces: pieces };
+    return buildPlaylistFromApiResponse(response);
   },
 
-  async fetchPlaylistByEventId(eventId: string): Promise<PlayerPlaylist> {
-    const [event, allPieces, vpRecord] = await Promise.all([
-      pb.collection('events').getOne<Event>(eventId),
-      pb.collection('musicLibrary').getFullList<MusicPiece>(),
-      pb
-        .collection('appSettings')
-        .getFirstListItem<{ value: { voiceParts: VoicePartDef[] } }>('key = "voiceParts"')
-        .catch(() => null),
-    ]);
-
-    const setList = event.setList || [];
-    const voiceParts = vpRecord?.value?.voiceParts || [];
-    const piecesMap = allPieces.reduce(
-      (acc, p) => {
-        acc[p.id] = p;
-        return acc;
-      },
-      {} as Record<string, MusicPiece>
-    );
-
-    const files: PlayerMediaFile[] = [];
-
-    for (const item of setList) {
-      if (item.type === 'intermission') continue;
-      const piece = resolvePieceForSetListItem(item, piecesMap, allPieces);
-      if (!piece) continue;
-
-      const entries = buildFilesFromPiece(
-        item.id,
-        item.title,
-        item.composer,
-        item.duration,
-        piece,
-        allPieces
-      );
-      files.push(...entries);
-    }
-
-    return {
-      event: { id: event.id, title: event.title, date: event.date },
-      files,
-      voiceParts,
-      allPieces,
-    };
+  async fetchSingerPlaylistByEventId(eventId: string): Promise<PlayerPlaylist> {
+    const response = await pb.send('/api/singer/player-playlist', {
+      method: 'GET',
+      query: { eventId },
+    });
+    return buildPlaylistFromApiResponse(response);
   },
 
   generateToken(eventId: string): Promise<string> {

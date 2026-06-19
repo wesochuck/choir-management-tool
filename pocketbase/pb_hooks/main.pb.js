@@ -13236,6 +13236,85 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         const token = generateSignedPlayerToken($app, eventId, secret);
         return e.json(200, { token });
     }
+    function handleSingerPlayerPlaylist(e) {
+        const authRecord = e.auth;
+        if (!authRecord) {
+            return e.json(401, { error: "Authentication required" });
+        }
+        const eventId = e.requestInfo().query.eventId;
+        if (!eventId) {
+            return e.json(400, { error: "Missing eventId" });
+        }
+        try {
+            const event = $app.findRecordById("events", eventId);
+            // Check set list approval
+            const setListApproved = event.get("setListApproved");
+            if (setListApproved === false) {
+                return e.json(403, { error: "not_published: Practice tracks are not available yet." });
+            }
+            const rawSetList = event.get("setList");
+            let setList = parseJsonField(rawSetList);
+            if (!Array.isArray(setList) || setList.length === 0) {
+                return e.json(403, { error: "empty_set_list: No practice tracks have been posted." });
+            }
+            // Fetch pieces for the set list
+            let pieces = [];
+            try {
+                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
+                pieces = allPieces.map(p => {
+                    const rawMapping = p.get("audioTrackMapping");
+                    let mapping = parseJsonField(rawMapping);
+                    if (!mapping || typeof mapping !== 'object') {
+                        mapping = {};
+                    }
+                    return {
+                        id: p.id,
+                        parentId: p.get("parentId"),
+                        title: p.get("title"),
+                        composer: p.get("composer"),
+                        arranger: p.get("arranger"),
+                        duration: p.get("duration"),
+                        created: p.get("created"),
+                        updated: p.get("updated"),
+                        audioTrackMapping: mapping,
+                        collectionId: "pbc_music_library_001",
+                        collectionName: "musicLibrary"
+                    };
+                });
+            }
+            catch (_a) {
+                // Fallback to empty
+            }
+            // Include voice parts configuration
+            let voiceParts = [];
+            try {
+                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
+                const rawVal = vpRecord.get("value");
+                const parsedVal = parseJsonField(rawVal);
+                if (parsedVal && parsedVal.voiceParts) {
+                    voiceParts = parsedVal.voiceParts;
+                }
+            }
+            catch (_b) {
+                // Fallback
+            }
+            return e.json(200, {
+                event: {
+                    id: event.id,
+                    title: event.get("title"),
+                    date: event.get("date")
+                },
+                setList: setList,
+                pieces: pieces,
+                voiceParts: voiceParts
+            });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.log("Error in /api/singer/player-playlist: " + message);
+            return e.json(404, { error: "Event not found", details: message });
+        }
+    }
     function handlePlayerPlaylist(e) {
         let token = e.requestInfo().query.token;
         const sParam = e.requestInfo().query.s;
@@ -28466,6 +28545,85 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         const token = generateSignedPlayerToken($app, eventId, secret);
         return e.json(200, { token });
     }
+    function handleSingerPlayerPlaylist(e) {
+        const authRecord = e.auth;
+        if (!authRecord) {
+            return e.json(401, { error: "Authentication required" });
+        }
+        const eventId = e.requestInfo().query.eventId;
+        if (!eventId) {
+            return e.json(400, { error: "Missing eventId" });
+        }
+        try {
+            const event = $app.findRecordById("events", eventId);
+            // Check set list approval
+            const setListApproved = event.get("setListApproved");
+            if (setListApproved === false) {
+                return e.json(403, { error: "not_published: Practice tracks are not available yet." });
+            }
+            const rawSetList = event.get("setList");
+            let setList = parseJsonField(rawSetList);
+            if (!Array.isArray(setList) || setList.length === 0) {
+                return e.json(403, { error: "empty_set_list: No practice tracks have been posted." });
+            }
+            // Fetch pieces for the set list
+            let pieces = [];
+            try {
+                const allPieces = $app.findRecordsByFilter("musicLibrary", "id != ''", "created", 1000);
+                pieces = allPieces.map(p => {
+                    const rawMapping = p.get("audioTrackMapping");
+                    let mapping = parseJsonField(rawMapping);
+                    if (!mapping || typeof mapping !== 'object') {
+                        mapping = {};
+                    }
+                    return {
+                        id: p.id,
+                        parentId: p.get("parentId"),
+                        title: p.get("title"),
+                        composer: p.get("composer"),
+                        arranger: p.get("arranger"),
+                        duration: p.get("duration"),
+                        created: p.get("created"),
+                        updated: p.get("updated"),
+                        audioTrackMapping: mapping,
+                        collectionId: "pbc_music_library_001",
+                        collectionName: "musicLibrary"
+                    };
+                });
+            }
+            catch (_a) {
+                // Fallback to empty
+            }
+            // Include voice parts configuration
+            let voiceParts = [];
+            try {
+                const vpRecord = $app.findFirstRecordByFilter("appSettings", "key = 'voiceParts'");
+                const rawVal = vpRecord.get("value");
+                const parsedVal = parseJsonField(rawVal);
+                if (parsedVal && parsedVal.voiceParts) {
+                    voiceParts = parsedVal.voiceParts;
+                }
+            }
+            catch (_b) {
+                // Fallback
+            }
+            return e.json(200, {
+                event: {
+                    id: event.id,
+                    title: event.get("title"),
+                    date: event.get("date")
+                },
+                setList: setList,
+                pieces: pieces,
+                voiceParts: voiceParts
+            });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.log("Error in /api/singer/player-playlist: " + message);
+            return e.json(404, { error: "Event not found", details: message });
+        }
+    }
     function handlePlayerPlaylist(e) {
         let token = e.requestInfo().query.token;
         const sParam = e.requestInfo().query.s;
@@ -32303,4 +32461,8 @@ routerAdd("GET", "/api/singer/seating-profiles", (e) => {
     // --- END CALLBACK-LOCAL UTILITIES ---
 
     return handleSingerSeatingProfiles(e);
+});
+
+routerAdd("GET", "/api/singer/player-playlist", (e) => {
+    return handleSingerPlayerPlaylist(e);
 });

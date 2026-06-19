@@ -124,6 +124,10 @@ export const queryKeys = {
     all: ['playlist'] as const,
     byToken: (token: string) => [...queryKeys.playlist.all, token] as const,
     byEventId: (eventId: string) => [...queryKeys.playlist.all, 'event', eventId] as const,
+    bySingerEventId: (eventId: string) =>
+      [...queryKeys.playlist.all, 'singer-event', eventId] as const,
+    availability: (eventId: string) =>
+      [...queryKeys.playlist.all, 'availability', eventId] as const,
   },
   donations: {
     all: ['donations'] as const,
