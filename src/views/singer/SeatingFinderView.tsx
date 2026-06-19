@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { useMyEvents } from '../../hooks/useMyEvents';
-import { useSeatingChart } from '../../hooks/useSeatingChart';
 import { useParams } from 'react-router-dom';
 import { PageLayout } from '../../components/common/PageLayout';
 import { AppCard } from '../../components/common/AppCard';
 import { Button } from '../../components/ui';
 import { type Profile } from '../../services/profileService';
 import { seatingService, type SeatingSingerProfile } from '../../services/seatingService';
+import { getVoicePartsAndSections } from '../../services/settingsService';
 import { useDialog } from '../../contexts/DialogContext';
 
 type SingerDisplayProfile = Pick<Profile, 'id' | 'name' | 'voicePart'> | SeatingSingerProfile;
@@ -41,26 +41,46 @@ export default function SeatingFinderView() {
   const isOpenSeating = venue?.isOpenSeating;
   const address = venue?.address;
 
-  const {
-    chart,
-    charts,
-    activeChartId,
-    setActiveChartId,
-    rowCounts,
-    allProfiles,
-    sections,
-    voiceParts,
-    isLoading: chartLoading,
-  } = useSeatingChart(eventId || '', event?.expand?.venue || null);
-
   const dialog = useDialog();
 
-  const isLoading = eventsLoading || chartLoading;
+  const chartsQuery = useQuery({
+    queryKey: queryKeys.seating.data(eventId ?? '', venue?.id ?? ''),
+    queryFn: () => seatingService.getChartsForPerformance(eventId!, venue?.id ?? null),
+    enabled: !!eventId,
+  });
+
+  const vpSettingsQuery = useQuery({
+    queryKey: queryKeys.voiceParts.list(),
+    queryFn: () => getVoicePartsAndSections(),
+  });
+
+  const vpSettings = vpSettingsQuery.data;
+
+  const sections = vpSettings?.sections ?? [];
+  const voiceParts = vpSettings?.voiceParts ?? [];
+
+  const charts = useMemo(() => chartsQuery.data ?? [], [chartsQuery.data]);
+  const [activeChartId, setActiveChartId] = useState<string>('');
+
+  useEffect(() => {
+    if (!activeChartId && charts.length > 0) {
+      setActiveChartId(charts[0].id);
+    }
+  }, [charts, activeChartId]);
+
+  const activeChart = useMemo(
+    () => charts.find((c) => c.id === activeChartId) ?? charts[0] ?? null,
+    [charts, activeChartId]
+  );
+
+  const rowCounts = activeChart?.layoutOverride ?? venue?.rowCounts ?? [];
+
+  const isLoading = eventsLoading || chartsQuery.isLoading || vpSettingsQuery.isLoading;
 
   const seatingProfilesQuery = useQuery({
-    queryKey: queryKeys.seatingProfiles.byEventAndChart(eventId ?? '', chart?.id ?? ''),
-    queryFn: () => seatingService.getSingerSeatingProfiles(eventId!, chart!.id),
-    enabled: !!eventId && !!chart?.id && !isOpenSeating,
+    queryKey: queryKeys.seatingProfiles.byEventAndChart(eventId ?? '', activeChart?.id ?? ''),
+    queryFn: () => seatingService.getSingerSeatingProfiles(eventId!, activeChart!.id),
+    enabled: !!eventId && !!activeChart?.id && !isOpenSeating,
   });
 
   useEffect(() => {
@@ -74,13 +94,12 @@ export default function SeatingFinderView() {
     [seatingProfilesQuery.data]
   );
 
-  // Build a profile lookup map from available profile records plus limited seating display summaries.
+  // Build a profile lookup map from seating profiles assigned to seats.
   const profilesById = useMemo(() => {
     const map = new Map<string, SingerDisplayProfile>();
-    allProfiles.forEach((profile) => map.set(profile.id, profile));
     assignedSingerProfiles.forEach((profile) => map.set(profile.id, profile));
     return map;
-  }, [allProfiles, assignedSingerProfiles]);
+  }, [assignedSingerProfiles]);
 
   if (isLoading) {
     return (
@@ -99,7 +118,7 @@ export default function SeatingFinderView() {
   const myRoster = eventId ? myRosters[eventId] : undefined;
   const singerProfileId = myProfile?.id || myRoster?.profile || null;
 
-  const assignments = chart?.assignments || {};
+  const assignments = activeChart?.assignments || {};
 
   const noAssignmentMessage = !singerProfileId
     ? 'No singer roster/profile link was found for your login. Check with your director to connect your account.'
@@ -252,6 +271,12 @@ export default function SeatingFinderView() {
                   </Button>
                 </div>
               )}
+            </div>
+          ) : charts.length === 0 ? (
+            <div className="text-text-muted p-4 text-center">
+              <p className="text-muted">
+                Seating has not been posted yet. Check back closer to the performance.
+              </p>
             </div>
           ) : row !== null ? (
             <div className="border-border bg-bg flex flex-col rounded-md border p-4 text-center">

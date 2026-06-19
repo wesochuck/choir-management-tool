@@ -145,7 +145,6 @@ export default function DashboardView() {
     ? upcomingEvents.filter((event) => event.id !== nextEvent.id)
     : upcomingEvents;
   const nextRoster = nextEvent ? myRosters[nextEvent.id] : undefined;
-  const hasPerformanceSeatLink = nextEvent?.type === 'Performance';
   const isNextEventParentPerformanceDeclined =
     nextEvent?.type === 'Rehearsal' &&
     nextEvent.parentPerformanceId &&
@@ -218,9 +217,9 @@ export default function DashboardView() {
                     🎵 Practice
                   </Button>
 
-                  {hasPerformanceSeatLink && (
+                  {nextEvent?.type === 'Performance' && (
                     <Button as={Link} to={`/seating/${nextEvent.id}`} variant="secondary">
-                      🪑 Seat
+                      🪑 Seating
                     </Button>
                   )}
                 </div>
