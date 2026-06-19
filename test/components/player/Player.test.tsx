@@ -2,7 +2,7 @@
 import { afterEach, it, describe, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { render, cleanup, screen } from '@testing-library/react';
+import { render, cleanup, screen, fireEvent } from '@testing-library/react';
 import { Player } from '../../../src/components/player/Player';
 import * as useAudioPlaybackModule from '../../../src/hooks/useAudioPlayback';
 
@@ -150,5 +150,79 @@ describe('Player component', () => {
     assert.equal(options[1].text, '2 seconds');
     assert.equal(options[2].text, '5 seconds');
     assert.equal(options[3].text, '10 seconds');
+  });
+
+  it('volume renders as percentage and volume change sends numeric percentage', () => {
+    const handleVolumeChange = mock.fn();
+    mock.method(useAudioPlaybackModule, 'useAudioPlayback', () => ({
+      ...defaultMockState,
+      volume: 0.8,
+      handleVolumeChange,
+    }));
+
+    render(
+      <Player
+        playlist={[mockTrack]}
+        currentIndex={0}
+        onTrackChange={() => {}}
+        isPlaying={false}
+        setIsPlaying={() => {}}
+      />
+    );
+
+    // Assert 80% text is present next to the slider
+    const percentageText = screen.getByText('80%');
+    assert.ok(percentageText, 'displays 80% volume next to the slider');
+
+    // Assert volume range has max="100" and value="80"
+    const volumeRange = screen.getByLabelText('Volume') as HTMLInputElement;
+    assert.equal(volumeRange.max, '100');
+    assert.equal(volumeRange.value, '80');
+
+    // Simulate slider input change to 50
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+    setter?.call(volumeRange, '50');
+    fireEvent.change(volumeRange);
+
+    assert.equal(handleVolumeChange.mock.callCount(), 1);
+    assert.equal(handleVolumeChange.mock.calls[0].arguments[0], 50);
+  });
+
+  it('scrubber onInput and onChange callbacks trigger seek start, change, and end with numbers', () => {
+    const handleSeekStart = mock.fn();
+    const handleSeekChange = mock.fn();
+    const handleSeekEnd = mock.fn();
+
+    mock.method(useAudioPlaybackModule, 'useAudioPlayback', () => ({
+      ...defaultMockState,
+      handleSeekStart,
+      handleSeekChange,
+      handleSeekEnd,
+    }));
+
+    render(
+      <Player
+        playlist={[mockTrack]}
+        currentIndex={0}
+        onTrackChange={() => {}}
+        isPlaying={false}
+        setIsPlaying={() => {}}
+      />
+    );
+
+    const progressRange = screen.getByLabelText('Track position') as HTMLInputElement;
+
+    // Simulate input dragging (seeking) to 120
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+    setter?.call(progressRange, '120');
+
+    // Range component onChange triggers both onChange and onInput in test mode
+    fireEvent.change(progressRange);
+
+    // Seek start should be called first
+    assert.equal(handleSeekStart.mock.callCount(), 1);
+    // Seek end should be called with 120
+    assert.equal(handleSeekEnd.mock.callCount(), 1);
+    assert.equal(handleSeekEnd.mock.calls[0].arguments[0], 120);
   });
 });

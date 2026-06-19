@@ -13,6 +13,8 @@ export interface UseAudioPlaybackParams {
   offlineMode?: boolean;
 }
 
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
 export function useAudioPlayback({
   playlist,
   currentIndex,
@@ -288,23 +290,31 @@ export function useAudioPlayback({
     setIsScrubbing(true);
   }, []);
 
-  const handleSeekChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentTime(parseFloat(e.target.value));
-  }, []);
-
-  const handleSeekEnd = useCallback(
-    (e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
-      const time = parseFloat((e.target as HTMLInputElement).value);
-      if (audioRef.current) {
-        audioRef.current.currentTime = time;
-      }
-      setIsScrubbing(false);
+  const handleSeekChange = useCallback(
+    (time: number) => {
+      const safeTime = Number.isFinite(time) ? clamp(time, 0, duration || 0) : 0;
+      setCurrentTime(safeTime);
     },
-    []
+    [duration]
   );
 
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setVolume(parseFloat(e.target.value));
+  const handleSeekEnd = useCallback(
+    (time: number) => {
+      const safeTime = Number.isFinite(time) ? clamp(time, 0, duration || 0) : 0;
+
+      if (audioRef.current) {
+        audioRef.current.currentTime = safeTime;
+      }
+
+      setCurrentTime(safeTime);
+      setIsScrubbing(false);
+    },
+    [duration]
+  );
+
+  const handleVolumeChange = useCallback((percent: number) => {
+    const safePercent = Number.isFinite(percent) ? clamp(percent, 0, 100) : 100;
+    setVolume(safePercent / 100);
   }, []);
 
   const handleSkipStartChange = useCallback(

@@ -75,34 +75,28 @@ export const Player: React.FC<PlayerProps> = ({
   // Track whether scrubbing has started so handleSeekStart fires only once
   const isScrubbingStartedRef = React.useRef(false);
 
-  const handleSlSeekInput = React.useCallback(
-    (e: unknown) => {
+  const handleRangeSeekInput = React.useCallback(
+    (value: number) => {
       if (!isScrubbingStartedRef.current) {
         handleSeekStart();
         isScrubbingStartedRef.current = true;
       }
-      handleSeekChange({
-        target: { value: String((e as CustomEvent).detail?.value ?? 0) },
-      } as React.ChangeEvent<HTMLInputElement>);
+      handleSeekChange(value);
     },
     [handleSeekStart, handleSeekChange]
   );
 
-  const handleSlSeekChange = React.useCallback(
-    (e: unknown) => {
-      handleSeekEnd({
-        target: { value: String((e as CustomEvent).detail?.value ?? 0) },
-      } as unknown as React.MouseEvent<HTMLInputElement>);
+  const handleRangeSeekChange = React.useCallback(
+    (value: number) => {
+      handleSeekEnd(value);
       isScrubbingStartedRef.current = false;
     },
     [handleSeekEnd]
   );
 
-  const handleSlVolumeInput = React.useCallback(
-    (e: unknown) => {
-      handleVolumeChange({
-        target: { value: String((e as CustomEvent).detail?.value ?? 0) },
-      } as React.ChangeEvent<HTMLInputElement>);
+  const handleRangeVolumeInput = React.useCallback(
+    (value: number) => {
+      handleVolumeChange(value);
     },
     [handleVolumeChange]
   );
@@ -205,8 +199,8 @@ export const Player: React.FC<PlayerProps> = ({
             value={currentTime}
             aria-label="Track position"
             className="player-progress-range w-full touch-none"
-            onInput={handleSlSeekInput}
-            onChange={handleSlSeekChange}
+            onInput={handleRangeSeekInput}
+            onChange={handleRangeSeekChange}
           />
 
           <div className="text-text-muted flex justify-between text-sm tabular-nums">
@@ -300,13 +294,16 @@ export const Player: React.FC<PlayerProps> = ({
             <Range
               id="volume-input"
               min={0}
-              max={1}
-              step={0.01}
-              value={volume}
+              max={100}
+              step={1}
+              value={Math.round(volume * 100)}
               aria-label="Volume"
               className="player-volume-range w-full"
-              onInput={handleSlVolumeInput}
+              onInput={handleRangeVolumeInput}
             />
+            <span className="text-text-muted w-12 text-right text-sm tabular-nums">
+              {Math.round(volume * 100)}%
+            </span>
           </div>
 
           <div className="rounded-lg bg-slate-50 p-3">
