@@ -197,29 +197,34 @@ export const Player: React.FC<PlayerProps> = ({
           </div>
         )}
 
-        <div className="text-text-muted mb-6 flex items-center gap-4 text-sm tabular-nums">
-          <span>{formatTime(currentTime)}</span>
+        <div className="mb-6 flex flex-col gap-2">
           <Range
             min={0}
             max={duration || 0}
             step={0.1}
             value={currentTime}
+            aria-label="Track position"
+            className="w-full touch-none"
             // @allow-inline-style - CSS custom properties for Shoelace range track colors
             style={
               {
                 '--track-color-active': 'var(--accent-color)',
                 '--track-color-inactive': 'var(--border-color)',
-                '--track-height': '6px',
+                '--track-height': '10px',
+                '--thumb-size': '28px',
               } as React.CSSProperties
             }
             onInput={handleSlSeekInput}
             onChange={handleSlSeekChange}
           />
-          <span>{formatTime(duration)}</span>
+
+          <div className="text-text-muted flex justify-between text-sm tabular-nums">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
         </div>
 
-        <div className="mb-6 grid w-full grid-cols-[1fr_auto_1fr] items-center">
-          <div className="min-w-0"></div>
+        <div className="mb-6 flex flex-col items-center gap-3">
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={handlePrev}
@@ -252,34 +257,42 @@ export const Player: React.FC<PlayerProps> = ({
               <SkipNextIcon />
             </button>
           </div>
-          <div className="flex justify-end">
-            <button
-              onClick={cycleLoopMode}
-              className={`flex h-11 items-center gap-1.5 rounded-full px-3.5 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-all max-sm:size-10 max-sm:justify-center max-sm:rounded-full max-sm:p-0 ${loopMode === 'all' || loopMode === 'one' ? 'border-primary bg-primary text-surface hover:border-primary-deep hover:bg-primary-deep' : 'border-border bg-primary-light text-text-muted hover:bg-border hover:text-text border'} max-sm:[&_span]:hidden`}
-            >
-              {loopMode === 'one' ? <RepeatOneIcon /> : <RepeatIcon />}
-              <span>{getRepeatLabel()}</span>
-            </button>
-          </div>
+
+          <button
+            onClick={cycleLoopMode}
+            className={`border-border bg-primary-light text-text-muted hover:bg-border hover:text-text inline-flex h-10 items-center justify-center gap-2 rounded-full border px-4 text-xs font-bold tracking-wider uppercase transition-all ${
+              loopMode === 'all' || loopMode === 'one'
+                ? 'border-primary bg-primary-light text-primary'
+                : ''
+            }`}
+          >
+            {loopMode === 'one' ? <RepeatOneIcon /> : <RepeatIcon />}
+            <span>{getRepeatLabel()}</span>
+          </button>
         </div>
 
-        <div className="border-border mb-2 flex flex-wrap items-center gap-4 border-t py-4 max-sm:flex-wrap max-sm:items-center max-sm:justify-between max-sm:gap-3">
-          {/* START AT SETTING */}
-          <div className="flex items-center gap-1.5">
-            <label htmlFor="skip-input" className="text-overline text-text-muted whitespace-nowrap">
-              Start At:
+        <div className="border-border mb-2 flex flex-col gap-3 border-t py-4">
+          <div className="rounded-lg bg-slate-50 p-3">
+            <label htmlFor="skip-input" className="text-overline text-text-muted mb-1 block">
+              Start track at
             </label>
-            <Input
-              id="skip-input"
-              type="number"
-              min="0"
-              step="0.1"
-              value={skipStart || ''}
-              onChange={handleSkipStartChange}
-              placeholder="0"
-              className="border-border bg-primary-light text-text focus:border-primary w-14 appearance-none rounded-lg border px-2 py-1.5 text-center text-sm font-semibold tabular-nums outline-none [-moz-appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <span className="text-text-muted text-xs font-bold tracking-wider uppercase">s</span>
+            <div className="flex items-center gap-2">
+              <Input
+                id="skip-input"
+                type="number"
+                min="0"
+                step="0.1"
+                value={skipStart || ''}
+                onChange={handleSkipStartChange}
+                placeholder="0"
+                inputMode="decimal"
+                className="w-24 text-center"
+              />
+              <span className="text-text-muted text-sm font-semibold">seconds</span>
+            </div>
+            <p className="text-text-muted mt-1 mb-0 text-xs">
+              Skips the beginning of this track every time you play it.
+            </p>
           </div>
 
           <div className="flex min-w-[120px] flex-1 items-center gap-4 max-sm:hidden pointer-coarse:hidden">
@@ -307,24 +320,20 @@ export const Player: React.FC<PlayerProps> = ({
             />
           </div>
 
-          {/* INTER-TRACK GAP SETTING */}
-          <div className="flex items-center gap-1.5">
-            <label
-              htmlFor="delay-select"
-              className="text-overline text-text-muted whitespace-nowrap"
-            >
-              Gap:
+          <div className="rounded-lg bg-slate-50 p-3">
+            <label htmlFor="delay-select" className="text-overline text-text-muted mb-1 block">
+              Gap between tracks
             </label>
             <Select
               id="delay-select"
               value={delaySetting}
               onChange={(e) => setDelaySetting(Number(e.target.value))}
-              className="w-auto"
+              className="w-full"
             >
               <option value={0}>None</option>
-              <option value={2}>2s</option>
-              <option value={5}>5s</option>
-              <option value={10}>10s</option>
+              <option value={2}>2 seconds</option>
+              <option value={5}>5 seconds</option>
+              <option value={10}>10 seconds</option>
             </Select>
           </div>
         </div>
@@ -354,21 +363,25 @@ export const Player: React.FC<PlayerProps> = ({
           className={`mt-0 grid grid-cols-3 gap-4 overflow-hidden transition-all duration-300 max-sm:grid-cols-1 ${showHints ? 'border-border bg-primary-light mt-3 max-h-[200px] rounded-lg border p-4 opacity-100' : 'max-h-0 opacity-0'}`}
         >
           <div className="flex flex-col gap-1">
-            <span className="text-text text-xs font-bold tracking-wider uppercase">Start At</span>
+            <span className="text-text text-xs font-bold tracking-wider uppercase">
+              Start track at
+            </span>
             <span className="text-text-muted text-xs leading-relaxed">
-              Skips the intro for this specific track; saved for future sessions.
+              Skips the beginning of this track every time you play it.
             </span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-text text-xs font-bold tracking-wider uppercase">Gap</span>
+            <span className="text-text text-xs font-bold tracking-wider uppercase">
+              Gap between tracks
+            </span>
             <span className="text-text-muted text-xs leading-relaxed">
-              Adds a timed silence between consecutive songs.
+              Adds silence before the next track starts.
             </span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-text text-xs font-bold tracking-wider uppercase">Repeat</span>
             <span className="text-text-muted text-xs leading-relaxed">
-              Controls if the playlist stops, loops, or restarts.
+              Choose whether to stop, loop the set list, or repeat one track.
             </span>
           </div>
         </div>
