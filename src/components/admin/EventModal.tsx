@@ -571,7 +571,6 @@ export const EventModal: React.FC<EventModalProps> = ({
                         setActiveTab('details');
                       }
                     }}
-                    size="small"
                   >
                     <option value="Rehearsal">Rehearsal</option>
                     <option value="Performance">Performance</option>
@@ -601,7 +600,6 @@ export const EventModal: React.FC<EventModalProps> = ({
                     onChange={(e) =>
                       setFormData({ ...formData, durationMinutes: Number(e.target.value) })
                     }
-                    size="small"
                   >
                     <option value={30}>30 minutes</option>
                     <option value={45}>45 minutes</option>
@@ -662,7 +660,6 @@ export const EventModal: React.FC<EventModalProps> = ({
                     }
                   }}
                   required
-                  size="small"
                 >
                   <option value="">-- Select Venue --</option>
                   {venues.map((v) => (
@@ -789,7 +786,6 @@ export const EventModal: React.FC<EventModalProps> = ({
                           <Select
                             value={bulkDay}
                             onChange={(e) => setBulkDay(parseInt(e.target.value))}
-                            size="small"
                             className="animate-none"
                           >
                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => (
@@ -814,7 +810,6 @@ export const EventModal: React.FC<EventModalProps> = ({
                           value={bulkVenue}
                           onChange={(e) => setBulkVenue(e.target.value)}
                           required
-                          size="small"
                         >
                           <option value="">-- Select Rehearsal Venue --</option>
                           {venues.map((v) => (
@@ -843,7 +838,6 @@ export const EventModal: React.FC<EventModalProps> = ({
                     onChange={(e) =>
                       setFormData({ ...formData, parentPerformanceId: e.target.value })
                     }
-                    size="small"
                   >
                     <option value="">None</option>
                     {performances

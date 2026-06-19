@@ -355,6 +355,13 @@ sl-textarea {
   width: 100%;
 }
 
+/* Date and time inputs need a bit more horizontal space for native browser indicator icons */
+sl-input[type='datetime-local']::part(input),
+sl-input[type='time']::part(input) {
+  padding-inline-start: 0.5rem;
+  padding-inline-end: 0.5rem;
+}
+
 /* Custom Shoelace overrides for project aesthetics */
 sl-dialog::part(panel) {
   background-color: var(--color-surface);
