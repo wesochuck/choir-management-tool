@@ -74,9 +74,13 @@ export const Player: React.FC<PlayerProps> = ({
 
   // Track whether scrubbing has started so handleSeekStart fires only once
   const isScrubbingStartedRef = React.useRef(false);
+  // Track the last drag position so handleRangeSeekChange always commits the
+  // correct time even if sl-change fires without a matching sl-input value.
+  const lastSeekValueRef = React.useRef<number | null>(null);
 
   const handleRangeSeekInput = React.useCallback(
     (value: number) => {
+      lastSeekValueRef.current = value;
       if (!isScrubbingStartedRef.current) {
         handleSeekStart();
         isScrubbingStartedRef.current = true;
@@ -88,8 +92,12 @@ export const Player: React.FC<PlayerProps> = ({
 
   const handleRangeSeekChange = React.useCallback(
     (value: number) => {
-      handleSeekEnd(value);
+      // Use the last tracked input value if the committed value looks wrong
+      // (sl-change may race or arrive before sl-input on some browsers).
+      const finalValue = lastSeekValueRef.current !== null ? lastSeekValueRef.current : value;
+      handleSeekEnd(finalValue);
       isScrubbingStartedRef.current = false;
+      lastSeekValueRef.current = null;
     },
     [handleSeekEnd]
   );

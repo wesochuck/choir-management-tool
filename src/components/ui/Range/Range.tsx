@@ -60,11 +60,23 @@ export function Range({
         className,
         style,
         'aria-label': ariaLabel,
+        // Shoelace emits sl-input and sl-change with an empty detail object;
+        // the current numeric value lives on the element itself as `target.value`.
         onSlInput: onInput
-          ? (e: unknown) => onInput((e as CustomEvent).detail.value as number)
+          ? (e: unknown) => {
+              const target = (e as Event).target as Record<string, unknown> | null;
+              const val = target?.['value'];
+              const parsed = typeof val === 'number' ? val : parseFloat(String(val));
+              onInput(Number.isNaN(parsed) ? 0 : parsed);
+            }
           : undefined,
         onSlChange: onChange
-          ? (e: unknown) => onChange((e as CustomEvent).detail.value as number)
+          ? (e: unknown) => {
+              const target = (e as Event).target as Record<string, unknown> | null;
+              const val = target?.['value'];
+              const parsed = typeof val === 'number' ? val : parseFloat(String(val));
+              onChange(Number.isNaN(parsed) ? 0 : parsed);
+            }
           : undefined,
       } as Record<string, unknown>)}
     />
