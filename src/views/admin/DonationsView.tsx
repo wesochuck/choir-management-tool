@@ -648,7 +648,7 @@ export default function DonationsView() {
                       <Button
                         variant="outline"
                         onClick={handleClearFilters}
-                        className="flex h-10 items-center justify-center"
+                        className="flex h-10 shrink-0 items-center justify-center"
                         title="Reset filters"
                       >
                         <svg
@@ -682,7 +682,12 @@ export default function DonationsView() {
                     icon: '💝',
                     action:
                       searchQuery || startDate || endDate ? (
-                        <Button variant="secondary" onClick={handleClearFilters} size="small">
+                        <Button
+                          variant="secondary"
+                          onClick={handleClearFilters}
+                          size="small"
+                          className="shrink-0 whitespace-nowrap"
+                        >
                           Reset Filters
                         </Button>
                       ) : undefined,

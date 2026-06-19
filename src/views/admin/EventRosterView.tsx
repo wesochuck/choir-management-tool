@@ -309,7 +309,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                   }}
                   variant="outline"
                   size="small"
-                  className="h-10 px-3 whitespace-nowrap"
+                  className="h-10 shrink-0 px-3 whitespace-nowrap"
                 >
                   Reset Filters
                 </Button>

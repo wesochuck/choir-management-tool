@@ -418,7 +418,7 @@ export default function RosterView() {
                   setFilter('status', '');
                 }}
                 variant="secondary"
-                className="flex items-center gap-1"
+                className="flex shrink-0 items-center gap-1 whitespace-nowrap"
               >
                 <svg
                   width="14"

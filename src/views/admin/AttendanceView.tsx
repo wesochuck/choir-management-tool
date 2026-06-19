@@ -617,7 +617,7 @@ export default function AttendanceView() {
                     <Button
                       onClick={handleResetFilters}
                       variant="secondary"
-                      className="flex h-11 shrink-0 items-center gap-1"
+                      className="flex h-11 shrink-0 items-center gap-1 whitespace-nowrap"
                     >
                       <svg
                         width="14"
@@ -767,12 +767,13 @@ export default function AttendanceView() {
                 <p className="text-text-muted mt-0 mb-6 max-w-sm text-sm font-medium">
                   Try adjusting your search terms, voice parts, or attendance filters.
                 </p>
-                <button
+                <Button
                   onClick={handleResetFilters}
-                  className="bg-primary hover:bg-primary-deep cursor-pointer rounded-md px-6 py-2.5 text-sm font-bold text-white shadow-md transition-all active:scale-95"
+                  variant="primary"
+                  className="shrink-0 whitespace-nowrap"
                 >
                   Reset All Filters
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="flex w-full flex-col gap-6">

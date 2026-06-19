@@ -64,7 +64,7 @@ export function Range({
         // the current numeric value lives on the element itself as `target.value`.
         onSlInput: onInput
           ? (e: unknown) => {
-              const target = (e as Event).target as Record<string, unknown> | null;
+              const target = (e as Event).target as unknown as Record<string, unknown> | null;
               const val = target?.['value'];
               const parsed = typeof val === 'number' ? val : parseFloat(String(val));
               onInput(Number.isNaN(parsed) ? 0 : parsed);
@@ -72,7 +72,7 @@ export function Range({
           : undefined,
         onSlChange: onChange
           ? (e: unknown) => {
-              const target = (e as Event).target as Record<string, unknown> | null;
+              const target = (e as Event).target as unknown as Record<string, unknown> | null;
               const val = target?.['value'];
               const parsed = typeof val === 'number' ? val : parseFloat(String(val));
               onChange(Number.isNaN(parsed) ? 0 : parsed);
