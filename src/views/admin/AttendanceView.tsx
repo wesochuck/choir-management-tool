@@ -309,16 +309,7 @@ export default function AttendanceView() {
       }
     });
 
-    const labels = voiceParts.map((vp) => vp.label);
-
     const compareSingers = (a: AttendanceItem, b: AttendanceItem) => {
-      const idxA = labels.indexOf(a.voicePart);
-      const idxB = labels.indexOf(b.voicePart);
-      const orderA = idxA === -1 ? 999 : idxA;
-      const orderB = idxB === -1 ? 999 : idxB;
-
-      if (orderA !== orderB) return orderA - orderB;
-
       const lastA = getLastName(a.name);
       const lastB = getLastName(b.name);
       const cmp = lastA.localeCompare(lastB);
@@ -334,7 +325,7 @@ export default function AttendanceView() {
       }
     });
     return acc;
-  }, [filteredSingers, expectedSingers, getSingerSection, voiceParts]);
+  }, [filteredSingers, expectedSingers, getSingerSection]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -457,6 +448,7 @@ export default function AttendanceView() {
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-200">
                 <div
                   className="h-full rounded-full bg-teal-500 transition-all duration-300"
+                  // @allow-inline-style - dynamic width for progress bar
                   style={{
                     // @allow-inline-style - dynamic width for progress bar
                     width: `${expectedCount > 0 ? Math.round((presentCount / expectedCount) * 100) : 0}%`,
