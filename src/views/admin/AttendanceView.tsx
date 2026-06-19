@@ -519,16 +519,22 @@ export default function AttendanceView() {
                       </p>
                     </div>
 
-                    {/* Singer rows */}
                     {members.map((singer) => (
                       <div
                         key={singer.id}
-                        className="flex items-center gap-3 border-b border-gray-100 px-4 py-2.5"
-                      >
-                        {/* Tap target */}
-                        <button
-                          type="button"
-                          onClick={() => {
+                        onClick={() => {
+                          const nextStatus: Record<
+                            'Present' | 'Absent' | 'Pending',
+                            'Present' | 'Absent' | 'Pending'
+                          > = {
+                            Pending: 'Present',
+                            Present: 'Absent',
+                            Absent: 'Pending',
+                          };
+                          handleSetAttendance(singer.profileId, nextStatus[singer.attendance]);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
                             const nextStatus: Record<
                               'Present' | 'Absent' | 'Pending',
                               'Present' | 'Absent' | 'Pending'
@@ -538,14 +544,21 @@ export default function AttendanceView() {
                               Absent: 'Pending',
                             };
                             handleSetAttendance(singer.profileId, nextStatus[singer.attendance]);
-                          }}
-                          aria-label={`Toggle attendance for ${singer.name}`}
+                          }
+                        }}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Toggle attendance for ${singer.name}. Current state: ${singer.attendance}`}
+                        className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2.5 transition-colors hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                      >
+                        {/* Tap target status indicator */}
+                        <div
                           className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                             singer.attendance === 'Present'
                               ? 'border-teal-500 bg-teal-500'
                               : singer.attendance === 'Absent'
                                 ? 'border-red-400 bg-red-400'
-                                : 'border-gray-300 bg-white hover:border-gray-400'
+                                : 'border-gray-300 bg-white'
                           }`}
                         >
                           {singer.attendance === 'Present' && (
@@ -554,13 +567,19 @@ export default function AttendanceView() {
                           {singer.attendance === 'Absent' && (
                             <XMarkIcon className="h-3.5 w-3.5 text-white" />
                           )}
-                        </button>
+                        </div>
 
                         {/* Name + part */}
                         <div className="flex flex-col">
                           <button
                             type="button"
-                            onClick={() => handleEditProfile(singer.profileId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditProfile(singer.profileId);
+                            }}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                            }}
                             className="cursor-pointer border-0 bg-transparent p-0 text-left text-sm font-medium text-emerald-700 hover:text-emerald-800 hover:underline"
                           >
                             {singer.name}
