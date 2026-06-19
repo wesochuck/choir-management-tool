@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import type { Event } from '../../services/eventService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
-import { Button, Badge, DataTable, type ColumnDef } from '../ui';
+import {
+  Button,
+  Badge,
+  DataTable,
+  Dropdown,
+  DropdownMenu,
+  DropdownMenuItem,
+  type ColumnDef,
+} from '../ui';
 
 interface EventTableProps {
   events: Event[];
@@ -31,19 +39,6 @@ export const EventTable: React.FC<EventTableProps> = ({
   openAuditionEventId,
 }) => {
   const { timezone } = useChoirSettings();
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!activeDropdownId) return;
-    const handler = () => setActiveDropdownId(null);
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('click', handler);
-    }, 0);
-    return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener('click', handler);
-    };
-  }, [activeDropdownId]);
 
   const columns: ColumnDef<Event>[] = [
     {
@@ -132,7 +127,6 @@ export const EventTable: React.FC<EventTableProps> = ({
       header: '',
       cell: ({ row }) => {
         const isPerformance = row.original.type === 'Performance';
-        const isDropdownOpen = activeDropdownId === row.original.id;
 
         const overflowItems = [
           {
@@ -188,60 +182,37 @@ export const EventTable: React.FC<EventTableProps> = ({
               RSVP Roster
             </Button>
 
-            <div className="relative">
-              <button
-                type="button"
-                className={`flex size-8 cursor-pointer items-center justify-center rounded-full border text-base font-extrabold transition-colors ${
-                  isDropdownOpen
-                    ? 'border-primary-light bg-primary-light text-primary-deep'
-                    : 'border-border text-text-muted hover:bg-primary-light hover:text-primary-deep bg-transparent'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveDropdownId(isDropdownOpen ? null : row.original.id);
-                }}
-              >
-                ⋮
-              </button>
-
-              {isDropdownOpen && (
-                <div
-                  className="border-border bg-surface absolute top-[calc(100%+4px)] right-0 z-[250] min-w-[180px] rounded-lg border p-1 shadow-lg"
-                  role="menu"
+            <Dropdown
+              trigger={
+                <button
+                  type="button"
+                  className="border-border text-text-muted hover:bg-primary-light hover:text-primary-deep flex size-8 cursor-pointer items-center justify-center rounded-full border bg-transparent text-base font-extrabold transition-colors"
                 >
-                  {overflowItems.map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      className="text-text hover:bg-primary-light flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-medium transition-colors"
-                      role="menuitem"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveDropdownId(null);
-                        item.action(row.original);
-                      }}
-                    >
+                  ⋮
+                </button>
+              }
+            >
+              <DropdownMenu>
+                {overflowItems.map((item) => (
+                  <DropdownMenuItem key={item.label} onClick={() => item.action(row.original)}>
+                    <span className="flex items-center gap-2">
                       <span aria-hidden="true">{item.icon}</span>
                       <span>{item.label}</span>
-                    </button>
-                  ))}
-                  <div className="my-1 border-t border-slate-200" />
-                  <button
-                    type="button"
-                    className="text-primary-deep hover:bg-primary-light flex w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-3 py-2 text-left text-[13px] font-semibold transition-colors"
-                    role="menuitem"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveDropdownId(null);
-                      onEdit(row.original);
-                    }}
-                  >
+                    </span>
+                  </DropdownMenuItem>
+                ))}
+                <div className="my-1 border-t border-slate-200" />
+                <DropdownMenuItem
+                  className="text-primary-deep font-semibold"
+                  onClick={() => onEdit(row.original)}
+                >
+                  <span className="flex items-center gap-2">
                     <span aria-hidden="true">✏️</span>
                     <span>Edit Event</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenu>
+            </Dropdown>
           </div>
         );
       },
