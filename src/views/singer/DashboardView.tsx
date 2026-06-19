@@ -141,6 +141,9 @@ export default function DashboardView() {
   const upcomingEvents = events.filter((e) => new Date(e.date) >= new Date());
 
   const nextEvent = upcomingEvents[0] ?? null;
+  const remainingUpcomingEvents = nextEvent
+    ? upcomingEvents.filter((event) => event.id !== nextEvent.id)
+    : upcomingEvents;
   const nextRoster = nextEvent ? myRosters[nextEvent.id] : undefined;
   const hasPerformanceSeatLink = nextEvent?.type === 'Performance';
   const isNextEventParentPerformanceDeclined =
@@ -284,18 +287,39 @@ export default function DashboardView() {
         <div className="grid grid-cols-[1fr_340px] items-start gap-8 max-md:grid-cols-1 max-md:gap-6">
           {/* Main timeline panel: Events */}
           <div className="flex flex-col gap-6">
-            <h2 className="text-text m-0 mb-1 text-2xl font-bold">Upcoming Events</h2>
-            {upcomingEvents.map((e) => (
-              <EventCard
-                key={e.id}
-                event={e}
-                rsvp={myRosters[e.id]?.rsvp}
-                onRSVP={(rsvp) => handleUpdateRSVP(e.id, rsvp)}
-                allEvents={events}
-                myRosters={myRosters}
-                maxRehearsalMisses={maxRehearsalMisses}
-              />
-            ))}
+            {/* Desktop: show all upcoming events */}
+            <div className="max-md:hidden">
+              <h2 className="text-text m-0 mb-1 text-2xl font-bold">Upcoming Events</h2>
+              {upcomingEvents.map((e) => (
+                <EventCard
+                  key={e.id}
+                  event={e}
+                  rsvp={myRosters[e.id]?.rsvp}
+                  onRSVP={(rsvp) => handleUpdateRSVP(e.id, rsvp)}
+                  allEvents={events}
+                  myRosters={myRosters}
+                  maxRehearsalMisses={maxRehearsalMisses}
+                />
+              ))}
+            </div>
+
+            {/* Mobile: show remaining events (nextEvent is shown in Next Up card) */}
+            {remainingUpcomingEvents.length > 0 && (
+              <div className="hidden max-md:flex max-md:flex-col max-md:gap-6">
+                <h2 className="text-text m-0 mb-1 text-2xl font-bold">More Upcoming Events</h2>
+                {remainingUpcomingEvents.map((e) => (
+                  <EventCard
+                    key={e.id}
+                    event={e}
+                    rsvp={myRosters[e.id]?.rsvp}
+                    onRSVP={(rsvp) => handleUpdateRSVP(e.id, rsvp)}
+                    allEvents={events}
+                    myRosters={myRosters}
+                    maxRehearsalMisses={maxRehearsalMisses}
+                  />
+                ))}
+              </div>
+            )}
 
             {upcomingEvents.length === 0 && (
               <div className="border-border bg-surface/80 text-text-muted flex flex-col items-center justify-center rounded-lg border p-6 py-12 shadow-sm backdrop-blur-sm">
