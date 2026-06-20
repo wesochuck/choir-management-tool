@@ -49,7 +49,13 @@ export function sanitizeHtml(htmlStr: string): string {
   // Use DOMPurify if available (client-side or where window is available)
   if (typeof window !== 'undefined' && typeof window.DOMParser !== 'undefined') {
     try {
-      return DOMPurify.sanitize(htmlStr, {
+      // DOMPurify can be a factory function in Node/SSR/testing environment
+      const purify =
+        DOMPurify && typeof DOMPurify.sanitize === 'function'
+          ? DOMPurify
+          : (DOMPurify as unknown as (w: Window) => typeof DOMPurify)(window);
+
+      return purify.sanitize(htmlStr, {
         ALLOWED_TAGS: [
           'p',
           'br',

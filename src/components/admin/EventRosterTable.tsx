@@ -7,7 +7,7 @@ import { Badge, Button, DataTable, Dropdown, DropdownMenu, DropdownMenuItem } fr
 import type { ColumnDef } from '../ui';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
 
-export interface EventRosterSinger {
+interface EventRosterSinger {
   profile: Profile;
   rsvp: 'Yes' | 'No' | 'Pending';
   roster?: EventRoster;
