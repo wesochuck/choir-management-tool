@@ -323,3 +323,244 @@ test('useAttendance - setAttendance calls upsertAttendance with rosterId and rsv
     rosterService.upsertAttendance = originalUpsertAttendance;
   }
 });
+
+// ─── Optimistic first-time check-in tests ────────────────────────────────────
+
+function makeProfile(id: string): Profile {
+  return {
+    id,
+    name: `Singer ${id}`,
+    voicePart: 'S1',
+    globalStatus: 'Active',
+    user: `user_${id}`,
+    phone: '',
+    photo: '',
+    notes: '',
+    collectionId: 'pbc_profiles_001',
+    collectionName: 'profiles',
+    created: '',
+    updated: '',
+  };
+}
+
+function makeEvent(id: string): import('../src/services/eventService.ts').Event {
+  return {
+    id,
+    title: `Event ${id}`,
+    type: 'Performance',
+    date: '2026-12-25T19:00:00Z',
+    parentPerformanceId: '',
+    details: '',
+    collectionId: 'pbc_events_001',
+    collectionName: 'events',
+    created: '',
+    updated: '',
+  };
+}
+
+function makeRoster(overrides: Partial<EventRoster>): EventRoster {
+  return {
+    id: 'roster_default',
+    event: 'event_1',
+    profile: 'profile_1',
+    rsvp: 'Pending',
+    attendance: 'Pending',
+    seatId: '',
+    folderNumber: '',
+    folderReturned: false,
+    rsvpNote: '',
+    collectionId: 'pbc_rosters_001',
+    collectionName: 'eventRosters',
+    created: '',
+    updated: '',
+    ...overrides,
+  };
+}
+
+test('useAttendance - first-time check-in is optimistic: appends row immediately', async () => {
+  const originalGetEvents = eventService.getEvents;
+  const originalGetActiveProfiles = profileService.getActiveProfiles;
+  const originalGetEventRoster = rosterService.getEventRoster;
+  const originalUpsertAttendance = rosterService.upsertAttendance;
+
+  eventService.getEvents = async () => [makeEvent('event_1')];
+  profileService.getActiveProfiles = async () => [makeProfile('profile_1')];
+  // No existing roster row
+  rosterService.getEventRoster = async () => [];
+
+  // Mutation resolves with the real saved record (after the "network" call)
+  let resolveMutation!: (r: EventRoster) => void;
+  const mutationPromise = new Promise<EventRoster>((res) => {
+    resolveMutation = res;
+  });
+  rosterService.upsertAttendance = async () => mutationPromise;
+
+  try {
+    const { result } = renderHook(() => useAttendance('event_1'), { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      if (result.current.isLoading) throw new Error('Still loading');
+    });
+
+    // Before click: item shows Pending with no real rosterId
+    assert.equal(result.current.items.length, 1);
+    assert.equal(result.current.items[0].attendance, 'Pending');
+    assert.equal(result.current.items[0].rosterId, undefined);
+
+    // Trigger check-in (do NOT await — we want to inspect the in-flight state)
+    let setAttendancePromise: Promise<void>;
+    act(() => {
+      setAttendancePromise = result.current.setAttendance('profile_1', 'Present');
+    });
+
+    // The optimistic update should be visible before the mutation resolves.
+    // Check both attendance and RSVP in the same waitFor so both are asserted
+    // after the optimistic render cycle has completed.
+    await waitFor(() => {
+      const item = result.current.items.find((i) => i.profileId === 'profile_1');
+      if (!item || item.attendance !== 'Present')
+        throw new Error('Optimistic attendance not applied');
+      if (item.rsvp !== 'Yes') throw new Error(`Expected RSVP 'Yes', got '${item.rsvp}'`);
+    });
+
+    // Settle the mutation and update the mock to reflect saved state for the refetch
+    const savedRoster = makeRoster({
+      id: 'roster_real',
+      profile: 'profile_1',
+      attendance: 'Present',
+      rsvp: 'Yes',
+    });
+    // After resolve, the invalidateAll refetch will call getEventRoster again.
+    // Update the mock so it returns the saved roster.
+    rosterService.getEventRoster = async () => [savedRoster];
+    act(() => resolveMutation(savedRoster));
+    await act(async () => {
+      await setAttendancePromise!;
+    });
+
+    // After settling, the item should show Present (backed by real id from refetch)
+    await waitFor(() => {
+      if (result.current.items[0].attendance !== 'Present')
+        throw new Error('Post-settle state should be Present');
+    });
+  } finally {
+    eventService.getEvents = originalGetEvents;
+    profileService.getActiveProfiles = originalGetActiveProfiles;
+    rosterService.getEventRoster = originalGetEventRoster;
+    rosterService.upsertAttendance = originalUpsertAttendance;
+  }
+});
+
+test('useAttendance - existing roster row updates optimistically with no duplicate', async () => {
+  const originalGetEvents = eventService.getEvents;
+  const originalGetActiveProfiles = profileService.getActiveProfiles;
+  const originalGetEventRoster = rosterService.getEventRoster;
+  const originalUpsertAttendance = rosterService.upsertAttendance;
+
+  const existingRoster = makeRoster({
+    id: 'roster_existing',
+    profile: 'profile_1',
+    attendance: 'Pending',
+    rsvp: 'Yes',
+  });
+
+  eventService.getEvents = async () => [makeEvent('event_1')];
+  profileService.getActiveProfiles = async () => [makeProfile('profile_1')];
+  rosterService.getEventRoster = async () => [existingRoster];
+
+  let resolveMutation!: (r: EventRoster) => void;
+  const mutationPromise = new Promise<EventRoster>((res) => {
+    resolveMutation = res;
+  });
+  rosterService.upsertAttendance = async () => mutationPromise;
+
+  try {
+    const { result } = renderHook(() => useAttendance('event_1'), { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      if (result.current.isLoading) throw new Error('Still loading');
+    });
+
+    assert.equal(result.current.items[0].rosterId, 'roster_existing');
+    assert.equal(result.current.items[0].attendance, 'Pending');
+
+    let setAttendancePromise: Promise<void>;
+    act(() => {
+      setAttendancePromise = result.current.setAttendance(
+        'profile_1',
+        'Present',
+        'roster_existing'
+      );
+    });
+
+    // Existing row should be updated in place
+    await waitFor(() => {
+      if (result.current.items[0].attendance !== 'Present')
+        throw new Error('Optimistic update not applied');
+    });
+
+    // No duplicate rows created
+    const profile1Items = result.current.items.filter((i) => i.profileId === 'profile_1');
+    assert.equal(profile1Items.length, 1, 'No duplicate row should be created');
+
+    // Settle
+    act(() =>
+      resolveMutation(makeRoster({ id: 'roster_existing', attendance: 'Present', rsvp: 'Yes' }))
+    );
+    await act(async () => {
+      await setAttendancePromise!;
+    });
+  } finally {
+    eventService.getEvents = originalGetEvents;
+    profileService.getActiveProfiles = originalGetActiveProfiles;
+    rosterService.getEventRoster = originalGetEventRoster;
+    rosterService.upsertAttendance = originalUpsertAttendance;
+  }
+});
+
+test('useAttendance - error rollback removes optimistic row and surfaces error', async () => {
+  const originalGetEvents = eventService.getEvents;
+  const originalGetActiveProfiles = profileService.getActiveProfiles;
+  const originalGetEventRoster = rosterService.getEventRoster;
+  const originalUpsertAttendance = rosterService.upsertAttendance;
+
+  eventService.getEvents = async () => [makeEvent('event_1')];
+  profileService.getActiveProfiles = async () => [makeProfile('profile_1')];
+  // No existing roster row
+  rosterService.getEventRoster = async () => [];
+
+  rosterService.upsertAttendance = async () => {
+    throw new Error('Network failure');
+  };
+
+  try {
+    const { result } = renderHook(() => useAttendance('event_1'), { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      if (result.current.isLoading) throw new Error('Still loading');
+    });
+
+    assert.equal(result.current.items[0].attendance, 'Pending');
+
+    await act(async () => {
+      // setAttendance swallows the thrown error via mutateAsync; we catch it here
+      await result.current.setAttendance('profile_1', 'Present').catch(() => {
+        // expected
+      });
+    });
+
+    // After rollback the item should revert to Pending
+    await waitFor(() => {
+      if (result.current.items[0].attendance !== 'Pending')
+        throw new Error('Rollback did not occur');
+    });
+
+    // Error message should be surfaced
+    assert.ok(result.current.error, 'Error state should be set after failed mutation');
+  } finally {
+    eventService.getEvents = originalGetEvents;
+    profileService.getActiveProfiles = originalGetActiveProfiles;
+    rosterService.getEventRoster = originalGetEventRoster;
+    rosterService.upsertAttendance = originalUpsertAttendance;
+  }
+});
