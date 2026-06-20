@@ -20,6 +20,7 @@ import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { Button, Select } from '../../components/ui';
+import { formControlBase, formControlHeight } from '../../components/ui/formControlBase';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 
@@ -298,7 +299,7 @@ export default function RosterView() {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="bg-surface flex h-11 w-full cursor-pointer flex-row items-center justify-between rounded-lg border border-gray-200 px-3 text-left text-base text-gray-800 shadow-none"
+                className={`${formControlBase} ${formControlHeight} flex cursor-pointer flex-row items-center justify-between`}
               >
                 <span
                   className={`max-w-[145px] truncate ${(filters.voiceParts || []).length > 0 ? 'font-semibold' : 'font-normal'}`}
@@ -319,7 +320,7 @@ export default function RosterView() {
               </button>
 
               {isDropdownOpen && (
-                <div className="bg-surface absolute top-full left-0 z-100 mt-1 flex max-h-80 w-[240px] flex-col gap-0.5 overflow-y-auto rounded-lg border border-gray-200 py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.06)]">
+                <div className="bg-surface border-border absolute top-full left-0 z-100 mt-1 flex max-h-80 w-[240px] flex-col gap-0.5 overflow-y-auto rounded-lg border py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.06)]">
                   <div className="text-overline px-2.5 py-0.5 text-gray-500">Sections</div>
                   <div className="flex flex-col gap-0">
                     {configSectionsHook.map((sec) => {

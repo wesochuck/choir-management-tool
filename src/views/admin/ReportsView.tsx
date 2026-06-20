@@ -463,7 +463,8 @@ export default function ReportsView() {
                 size="small"
                 disabled={isRepertoireLoading || repertoireStats.length === 0}
               >
-                📥 Download CSV
+                <span aria-hidden="true">📥</span>
+                <span>Download CSV</span>
               </Button>
               <Button
                 onClick={handlePrint}

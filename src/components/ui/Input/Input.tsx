@@ -2,13 +2,11 @@ import React, { useImperativeHandle, useRef } from 'react';
 import SlInput from '@shoelace-style/shoelace/dist/react/input/index.js';
 import type SlInputElement from '@shoelace-style/shoelace/dist/components/input/input.component.js';
 import { layoutOnly, safeSlProps } from '../shared';
+import { formControlBase, formControlHeight, formControlStyles } from '../formControlBase';
 
 export interface InputProps extends Omit<React.ComponentPropsWithoutRef<'input'>, 'size'> {
   invalid?: boolean;
 }
-
-const baseInputClasses =
-  'h-[44px] px-3 border border-border rounded-md text-sm text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]';
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   (
@@ -60,7 +58,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     // for file inputs (browsers only allow setting .value to '').
     if (type === 'file') {
       const classNames = [
-        baseInputClasses,
+        formControlBase + ' ' + formControlHeight,
         'flex items-center py-0',
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
@@ -89,7 +87,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     if (process.env.NODE_ENV === 'test') {
       const classNames = [
-        baseInputClasses,
+        formControlBase + ' ' + formControlHeight,
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
       ]
@@ -116,12 +114,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         />
       );
     }
-
-    const focusRingStyles: React.CSSProperties = {
-      '--sl-input-focus-ring-color': 'rgba(74,124,89,0.25)',
-      '--sl-input-focus-ring-width': '3px',
-      '--sl-input-border-color-focus': 'var(--color-primary)',
-    } as React.CSSProperties;
 
     const handleInput = (e: unknown) => {
       if (onChange || onInput) {
@@ -170,7 +162,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               : undefined,
             // @allow-inline-style - Shoelace CSS variable overrides for focus ring and border
             style: {
-              ...focusRingStyles,
+              ...formControlStyles,
               ...(invalid ? { '--sl-input-border-color': 'var(--color-danger)' } : {}),
             } as React.CSSProperties,
             ...(rest as Record<string, unknown>),

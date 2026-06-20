@@ -3,6 +3,7 @@ import SlSelect from '@shoelace-style/shoelace/dist/react/select/index.js';
 import SlOption from '@shoelace-style/shoelace/dist/react/option/index.js';
 import type SlSelectElement from '@shoelace-style/shoelace/dist/components/select/select.component.js';
 import { layoutOnly, safeSlProps } from '../shared';
+import { formControlBase, formControlHeight, formControlStyles } from '../formControlBase';
 
 // Keep this path in sync with ChevronDownIcon. Native <select> needs a background image,
 // while custom dropdown triggers can render the shared SVG component directly.
@@ -18,7 +19,7 @@ export interface SelectProps extends Omit<React.ComponentPropsWithoutRef<'select
 }
 
 const sizeClasses: Record<SelectSize, string> = {
-  default: 'h-[44px] pl-3 pr-9 py-2 text-sm',
+  default: formControlHeight + ' pl-3 pr-9 py-2 text-sm',
   small: 'h-10 pl-3 pr-9 py-1.5 text-sm',
   compact: 'h-8 pl-2 pr-7 py-0.5 text-xs',
 };
@@ -91,7 +92,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       const classNames = [
         visuallyHidden
           ? '!absolute !inset-0 !size-full !cursor-pointer !opacity-0 !border-none !bg-transparent !p-0 hover:!bg-transparent focus:!shadow-none'
-          : 'appearance-none border border-border rounded-md text-text bg-surface cursor-pointer outline-none transition-[border-color,box-shadow,background-color] duration-200 w-full disabled:opacity-50 disabled:cursor-not-allowed hover:border-primary hover:bg-primary-light focus:border-primary focus:shadow-[0_0_0_3px_rgba(74,124,89,0.25)]',
+          : formControlBase +
+            ' appearance-none cursor-pointer transition-[border-color,box-shadow,background-color] hover:border-primary hover:bg-primary-light',
         !visuallyHidden && sizeClasses[size],
         !visuallyHidden &&
           invalid &&
@@ -193,10 +195,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLSelectElement>)
             : undefined,
           className: combinedClassName,
-          // @allow-inline-style - dynamic invalid border color override
-          style: invalid
-            ? ({ '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties)
-            : undefined,
+          // @allow-inline-style - dynamic invalid border color override and formControlStyles
+          style: {
+            ...formControlStyles,
+            ...(invalid ? { '--sl-input-border-color': 'var(--color-danger)' } : {}),
+          } as React.CSSProperties,
         } as Record<string, unknown>)}
       >
         {convertedChildren}

@@ -430,7 +430,7 @@ export default function ProfileView() {
                   onChange={(e) =>
                     handlePreferenceChange('rosterSort', e.target.value as 'lastName' | 'voicePart')
                   }
-                  className="h-11 w-full"
+                  className="w-full"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part</option>
@@ -447,7 +447,7 @@ export default function ProfileView() {
                       e.target.value as 'lastName' | 'voicePart' | 'section'
                     )
                   }
-                  className="h-11 w-full"
+                  className="w-full"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>
@@ -462,7 +462,7 @@ export default function ProfileView() {
                   onChange={(e) =>
                     handlePreferenceChange('rsvpSort', e.target.value as 'lastName' | 'voicePart')
                   }
-                  className="h-11 w-full"
+                  className="w-full"
                 >
                   <option value="lastName">Last Name</option>
                   <option value="voicePart">Voice Part + Last Name</option>

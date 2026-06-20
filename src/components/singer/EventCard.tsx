@@ -8,6 +8,7 @@ import { AppCard } from '../common/AppCard';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
 import { formatTime12h } from '../../lib/dateUtils';
+import { Button } from '../ui';
 
 interface EventCardProps {
   event: Event;
@@ -94,9 +95,6 @@ export const EventCard: React.FC<EventCardProps> = ({
     }
   };
 
-  const baseBtnClasses =
-    'inline-flex items-center justify-center rounded-md font-sans font-medium border cursor-pointer gap-2 whitespace-nowrap transition-all disabled:opacity-50 disabled:cursor-not-allowed h-8 px-4 text-xs';
-
   return (
     <AppCard noPadding>
       <div className="flex flex-col gap-4 p-6">
@@ -107,29 +105,37 @@ export const EventCard: React.FC<EventCardProps> = ({
             {event.type}
           </span>
           <div className="flex flex-row flex-wrap justify-end gap-1 max-sm:grid max-sm:w-full max-sm:grid-cols-[repeat(auto-fit,minmax(80px,1fr))] max-sm:gap-1.5">
-            <button
+            <Button
               onClick={() => calendarUtils.generateICS(event)}
-              className={`${baseBtnClasses} border-border text-text-muted hover:bg-primary-light hover:text-primary-deep bg-transparent max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
+              variant="outline"
+              size="small"
+              className="max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs"
             >
-              📅 Add
-            </button>
+              <span aria-hidden="true">📅</span>
+              <span>Add</span>
+            </Button>
             {previewData.visible && previewData.setList && previewData.setList.length > 0 && (
-              <button
+              <Button
                 onClick={handleOpenPlayer}
-                className={`${baseBtnClasses} bg-primary text-surface hover:bg-primary-deep hover:shadow-md max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
+                variant="primary"
+                size="small"
+                className="max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs"
               >
                 <span aria-hidden="true">🎧</span>
                 <span>Practice</span>
-              </button>
+              </Button>
             )}
             {isPerformance && rsvp !== 'No' && (
-              <Link
+              <Button
+                as={Link}
                 to={`/seating/${event.id}`}
-                className={`${baseBtnClasses} bg-primary-light text-primary-deep hover:bg-primary-deep/10 max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs`}
+                variant="secondary"
+                size="small"
+                className="max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs"
               >
                 <span aria-hidden="true">🪑</span>
                 <span>Seating</span>
-              </Link>
+              </Button>
             )}
           </div>
         </div>
@@ -244,20 +250,24 @@ export const EventCard: React.FC<EventCardProps> = ({
         ) : (
           <>
             <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
-              <button
+              <Button
                 onClick={() => handleRSVP('Yes')}
-                className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border font-sans font-medium whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-50 ${rsvp === 'Yes' ? 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md' : 'border-border text-text-muted hover:bg-primary-light hover:text-primary-deep bg-transparent'} max-sm:min-h-[44px]`}
-                disabled={isWindowClosed || submittingStatus !== null}
+                variant={rsvp === 'Yes' ? 'primary' : 'outline'}
+                loading={submittingStatus === 'Yes'}
+                disabled={isWindowClosed || submittingStatus === 'No'}
+                className="flex-1"
               >
-                {submittingStatus === 'Yes' ? 'Processing...' : labels.yes}
-              </button>
-              <button
+                {labels.yes}
+              </Button>
+              <Button
                 onClick={() => handleRSVP('No')}
-                className={`inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border font-sans font-medium whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-50 ${rsvp === 'No' ? 'bg-danger-bg text-danger-text hover:border-red-300 hover:bg-red-200' : 'border-border text-text-muted hover:bg-primary-light hover:text-primary-deep bg-transparent'} max-sm:min-h-[44px]`}
-                disabled={isWindowClosed || submittingStatus !== null}
+                variant={rsvp === 'No' ? 'danger' : 'outline'}
+                loading={submittingStatus === 'No'}
+                disabled={isWindowClosed || submittingStatus === 'Yes'}
+                className="flex-1"
               >
-                {submittingStatus === 'No' ? 'Processing...' : labels.no}
-              </button>
+                {labels.no}
+              </Button>
             </div>
             {isWindowClosed && (
               <div className="text-text-muted mt-1 w-full text-center text-xs">

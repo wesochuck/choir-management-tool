@@ -196,7 +196,6 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               Name <span className="text-danger-text">*</span>
             </label>
             <Input
-              className="h-[44px] transition-colors outline-none"
               value={formData.name}
               onChange={(e) => {
                 setFormData({ ...formData, name: e.target.value });
@@ -222,7 +221,6 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
               Email or Phone <span className="text-danger-text">*</span>
             </label>
             <Input
-              className="h-[44px] transition-colors outline-none"
               value={formData.contact}
               onChange={(e) => {
                 setFormData({ ...formData, contact: e.target.value });

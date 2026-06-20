@@ -47,7 +47,7 @@ test('Select applies default size class', () => {
   const { container } = render(React.createElement(Select, null));
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
-  assert.ok(el.classList.contains('h-[44px]'), 'default size has 44px height');
+  assert.ok(el.classList.contains('h-11'), 'default size has h-11 height');
 });
 
 test('Select applies small size class', () => {

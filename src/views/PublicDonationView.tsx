@@ -218,7 +218,7 @@ export default function PublicDonationView() {
             <label className="text-label">Tribute Information (Optional)</label>
             <div className="flex flex-col gap-4 md:flex-row">
               <Select
-                className="border-border bg-surface focus:border-primary h-11 flex-1 rounded-md border px-3"
+                className="flex-1"
                 value={tributeType}
                 onChange={(e) => setTributeType(e.target.value as 'none' | 'memory' | 'honor')}
               >
@@ -270,7 +270,9 @@ export default function PublicDonationView() {
             className="h-12 w-full font-semibold"
             variant="primary"
           >
-            {createSessionMutation.isPending ? 'Opening Secure Checkout…' : `Donate $${effectiveAmount.toFixed(2)}`}
+            {createSessionMutation.isPending
+              ? 'Opening Secure Checkout…'
+              : `Donate $${effectiveAmount.toFixed(2)}`}
           </Button>
 
           <p className="text-text-muted m-0 text-center text-xs">

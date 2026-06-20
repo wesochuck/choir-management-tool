@@ -2,6 +2,7 @@ import React, { useImperativeHandle, useRef } from 'react';
 import SlTextarea from '@shoelace-style/shoelace/dist/react/textarea/index.js';
 import type SlTextareaElement from '@shoelace-style/shoelace/dist/components/textarea/textarea.component.js';
 import { layoutOnly, safeSlProps } from '../shared';
+import { formControlBase, formControlStylesNoHeight } from '../formControlBase';
 
 export interface TextareaProps extends Omit<React.ComponentPropsWithoutRef<'textarea'>, 'size'> {
   invalid?: boolean;
@@ -52,7 +53,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     if (process.env.NODE_ENV === 'test') {
       const classNames = [
-        'block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary',
+        formControlBase + ' resize-none py-3 placeholder:text-slate-400',
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
       ]
@@ -115,7 +116,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           readonly: readOnly,
           name,
           rows,
-          className: layoutOnly(className),
+          className: 'w-full' + (className ? ' ' + layoutOnly(className) : ''),
           onSlInput: handleInput,
           onSlBlur: onBlur
             ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLTextAreaElement>)
@@ -123,10 +124,11 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           onSlFocus: onFocus
             ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLTextAreaElement>)
             : undefined,
-          // @allow-inline-style - dynamic invalid border color override
-          style: invalid
-            ? ({ '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties)
-            : undefined,
+          // @allow-inline-style - dynamic invalid border color override and formControlStylesNoHeight
+          style: {
+            ...formControlStylesNoHeight,
+            ...(invalid ? { '--sl-input-border-color': 'var(--color-danger)' } : {}),
+          } as React.CSSProperties,
           ...(rest as Record<string, unknown>),
         } as Record<string, unknown>)}
       >
