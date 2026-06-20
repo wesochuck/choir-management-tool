@@ -50,9 +50,9 @@ export default function AttendanceView() {
   const maxRehearsalMisses = rosterSettingsQuery.data?.maxRehearsalMisses ?? 3;
 
   // Query to get rosters for all events to display attendance statistics in the switcher
-  const eventIds = useMemo(() => events.map((e) => e.id), [events]);
+  const eventIds = useMemo(() => events.map((e) => e.id).sort(), [events]);
   const allRostersQuery = useQuery({
-    queryKey: ['eventRosters', 'all', eventIds],
+    queryKey: queryKeys.eventRoster.recordsForEvents(eventIds),
     queryFn: () => rosterService.getEventRostersBatch(eventIds),
     enabled: eventIds.length > 0,
   });

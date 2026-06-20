@@ -9,6 +9,26 @@ import { rosterService, type EventRoster } from '../src/services/rosterService.t
 import { profileService, type Profile } from '../src/services/profileService.ts';
 import { eventService, type Event } from '../src/services/eventService.ts';
 
+if (typeof globalThis.EventSource === 'undefined') {
+  globalThis.EventSource = class MockEventSource extends EventTarget {
+    static readonly CONNECTING = 0;
+    static readonly OPEN = 1;
+    static readonly CLOSED = 2;
+    readonly readyState = 0;
+    readonly url: string;
+    readonly withCredentials = false;
+    onopen: ((event: Event) => void) | null = null;
+    onmessage: ((event: MessageEvent) => void) | null = null;
+    onerror: ((event: Event) => void) | null = null;
+    constructor(url: string) {
+      super();
+      this.url = url;
+      queueMicrotask(() => this.dispatchEvent(new Event('error')));
+    }
+    close() {}
+  };
+}
+
 function createWrapper() {
   const client = new QueryClient({
     defaultOptions: {

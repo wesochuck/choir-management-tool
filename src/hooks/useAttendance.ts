@@ -5,6 +5,8 @@ import { rosterService, type EventRoster } from '../services/rosterService';
 import { profileService } from '../services/profileService';
 import { eventService } from '../services/eventService';
 import type { Retry429Options } from '../lib/networkSafety';
+import { upsertRosterRow } from '../lib/eventRosterCache';
+import { useEventRosterRealtime } from './useEventRosterRealtime';
 
 type BulkAttendanceUpdate = {
   profileId: string;
@@ -41,6 +43,8 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
   useEffect(() => {
     onRateLimitRetryRef.current = options.onRateLimitRetry;
   }, [options.onRateLimitRetry]);
+
+  useEventRosterRealtime(eventId);
 
   // --- Queries ---
 
@@ -288,11 +292,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
 
       queryClient.setQueryData<EventRoster[]>(
         queryKeys.eventRoster.recordsByEventId(eventId),
-        (old) => {
-          if (!old) return old;
-          const withoutProfile = old.filter((r) => r.profile !== savedRoster.profile);
-          return [...withoutProfile, savedRoster];
-        }
+        (old) => upsertRosterRow(old, savedRoster)
       );
     },
   });

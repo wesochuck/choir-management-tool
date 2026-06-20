@@ -74,6 +74,10 @@ export const queryKeys = {
 
     // Composite EventRosterQueryData page data
     dataByEventId: (eventId: string) => [...queryKeys.eventRoster.all, 'data', eventId] as const,
+
+    // All-event roster stats batch
+    recordsForEvents: (eventIds: string[]) =>
+      [...queryKeys.eventRoster.all, 'recordsForEvents', ...eventIds] as const,
   },
   tickets: {
     all: ['tickets'] as const,
