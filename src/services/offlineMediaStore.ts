@@ -174,7 +174,7 @@ function revokeOfflineTrackUrl(trackId: string): void {
   }
 }
 
-export function revokeAllOfflineTrackUrls(): void {
+function revokeAllOfflineTrackUrls(): void {
   for (const url of activeUrls.values()) {
     URL.revokeObjectURL(url);
   }

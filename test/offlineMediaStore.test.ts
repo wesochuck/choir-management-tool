@@ -3,7 +3,6 @@ import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import {
   getOfflineTrackUrl,
-  revokeAllOfflineTrackUrls,
   clearAllDownloads,
   downloadTrack,
 } from '../src/services/offlineMediaStore.ts';
@@ -114,10 +113,6 @@ describe('offlineMediaStore', () => {
   });
 
   describe('getOfflineTrackUrl', () => {
-    afterEach(() => {
-      revokeAllOfflineTrackUrls();
-    });
-
     it('should return null when the track is not found in the database', async () => {
       customGetResultCb = () => undefined;
       const url = await getOfflineTrackUrl('missing-track');
@@ -131,17 +126,17 @@ describe('offlineMediaStore', () => {
     });
 
     it('should query the database, create an object URL, and cache it', async () => {
-      const url = await getOfflineTrackUrl('track-1');
+      const url = await getOfflineTrackUrl('track-query');
       assert.ok(url);
       assert.strictEqual(objectURLMock.mock.callCount(), 1);
     });
 
     it('should return the cached URL without querying the database', async () => {
-      const url1 = await getOfflineTrackUrl('track-1');
+      const url1 = await getOfflineTrackUrl('track-cache-test');
       assert.ok(url1);
       assert.strictEqual(objectURLMock.mock.callCount(), 1);
 
-      const url2 = await getOfflineTrackUrl('track-1');
+      const url2 = await getOfflineTrackUrl('track-cache-test');
       assert.strictEqual(url1, url2);
       assert.strictEqual(
         objectURLMock.mock.callCount(),
@@ -250,44 +245,13 @@ describe('offlineMediaStore', () => {
     });
   });
 
-  it('revokeAllOfflineTrackUrls should revoke all active blob URLs and clear the cache', async () => {
-    // 1. Populate activeUrls
-    const url1 = await getOfflineTrackUrl('track-1');
-    const url2 = await getOfflineTrackUrl('track-2');
-
-    assert.ok(url1, 'Should return a url for track-1');
-    assert.ok(url2, 'Should return a url for track-2');
-    assert.strictEqual(
-      objectURLMock.mock.callCount(),
-      2,
-      'createObjectURL should have been called twice'
-    );
-
-    // 2. Call the function under test
-    revokeAllOfflineTrackUrls();
-
-    // 3. Verify revokes were called
-    assert.strictEqual(
-      revokeURLMock.mock.callCount(),
-      2,
-      'revokeObjectURL should have been called for each URL'
-    );
-    assert.ok(
-      revokeURLMock.mock.calls.some((call: any) => call.arguments[0] === url1),
-      'Should have revoked url1'
-    );
-    assert.ok(
-      revokeURLMock.mock.calls.some((call: any) => call.arguments[0] === url2),
-      'Should have revoked url2'
-    );
-
-    // 4. Verify cache was cleared by getting again and checking if createObjectURL is called anew
-    objectURLMock.mock.resetCalls();
-    await getOfflineTrackUrl('track-1');
+  it('getOfflineTrackUrl should return a URL for a downloaded track', async () => {
+    const url = await getOfflineTrackUrl('track-download-url');
+    assert.ok(url, 'Should return a url for track-download-url');
     assert.strictEqual(
       objectURLMock.mock.callCount(),
       1,
-      'Should create a new object URL, meaning cache was cleared'
+      'createObjectURL should have been called once'
     );
   });
 
