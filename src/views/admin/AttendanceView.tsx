@@ -37,7 +37,7 @@ export default function AttendanceView() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [quickActionsProfile, setQuickActionsProfile] = useState<Profile | null>(null);
   const [showSwitcher, setShowSwitcher] = useState(false);
-  const [filter, setFilter] = useState<'All' | 'Present' | 'Absent' | 'Unmarked'>('All');
+  const [filter, setFilter] = useState<'All' | 'Present' | 'Absent' | 'Unmarked'>('Unmarked');
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
   const hasDefaultedRef = useRef(false);
 
