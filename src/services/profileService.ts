@@ -70,8 +70,7 @@ export const generateRandomPassword = (length = 12): string => {
     return Array.from(array, (num) => chars[num % chars.length]).join('');
   }
 
-  // Fallback to Math.random only if secure Web Crypto API is unavailable (e.g. testing environments)
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  throw new Error('Cryptographically secure random generation is unavailable in this environment.');
 };
 
 let inFlightActiveProfiles: Promise<Profile[]> | null = null;
