@@ -127,19 +127,6 @@ export async function getAutomatedTaskStatuses(
   return statusMap;
 }
 
-/** @deprecated Use getAutomatedTaskStatuses instead */
-export async function getSentTaskStatuses(
-  eventIds: string[],
-  options: SentTaskStatusOptions = {}
-): Promise<Record<string, boolean>> {
-  const statuses = await getAutomatedTaskStatuses(eventIds, options);
-  const result: Record<string, boolean> = {};
-  Object.keys(statuses).forEach((key) => {
-    result[key] = statuses[key] === 'sent';
-  });
-  return result;
-}
-
 export async function wasMessageSent(filter: {
   eventId?: string;
   type?: AutomatedTaskType;

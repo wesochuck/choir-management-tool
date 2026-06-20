@@ -14,7 +14,6 @@ import { messageRepository } from './communication/messageRepository';
 import { resolveRecipients } from './communication/recipientResolver';
 import {
   getAutomatedTaskStatuses,
-  getSentTaskStatuses,
   wasMessageSent,
 } from './communication/sentTaskStatusService';
 import {
@@ -59,7 +58,6 @@ import type {
 export const communicationService = {
   ...messageRepository,
   getAutomatedTaskStatuses,
-  getSentTaskStatuses,
   wasMessageSent,
   resolveRecipients,
   resolveAttendanceReportRecipients,
@@ -108,10 +106,6 @@ export const communicationService = {
     eventIds: string[],
     options?: SentTaskStatusOptions
   ) => Promise<AutomatedTaskStatusMap>;
-  getSentTaskStatuses: (
-    eventIds: string[],
-    options?: SentTaskStatusOptions
-  ) => Promise<Record<string, boolean>>;
   wasMessageSent: (filter: {
     eventId?: string;
     type?: 'Reminder' | 'Report' | 'RSVP Request' | 'Ticket Buyer Reminder';
