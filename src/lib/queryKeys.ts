@@ -37,6 +37,7 @@ export const queryKeys = {
     all: ['profiles'] as const,
     list: () => [...queryKeys.profiles.all, 'list'] as const,
     active: () => [...queryKeys.profiles.all, 'active'] as const,
+    directory: () => [...queryKeys.profiles.all, 'directory'] as const,
   },
   myEvents: {
     all: ['myEvents'] as const,

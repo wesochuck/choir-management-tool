@@ -17,6 +17,13 @@ const dashboardSections = [
         desc: 'Add singers and track status',
       },
       {
+        to: '/directory',
+        icon: '📖',
+        colorClass: 'bg-emerald-500/10 text-emerald-500',
+        label: 'Singer Directory',
+        desc: 'View opted-in singer contact info',
+      },
+      {
         to: '/admin/auditions',
         icon: '🎵',
         colorClass: 'bg-primary/10 text-primary',
@@ -183,6 +190,9 @@ export default function AdminDashboardView() {
             </div>
           </div>
           <div className="flex flex-row items-center gap-4">
+            <Button as={Link} to="/directory" variant="outline">
+              Singer Directory
+            </Button>
             <Button as={Link} to="/profile" variant="outline">
               My Profile
             </Button>

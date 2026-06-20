@@ -185,6 +185,9 @@ export default function DashboardView() {
       title="Singer Dashboard"
       actions={
         <div className="flex flex-row gap-2">
+          <Button as={Link} to="/directory" variant="outline">
+            Singer Directory
+          </Button>
           <Button as={Link} to="/profile" variant="outline">
             My Profile
           </Button>

@@ -440,6 +440,14 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                     >
                       Section Leader
                     </Checkbox>
+                    <Checkbox
+                      checked={formData.showInDirectory !== false}
+                      onChange={(e) =>
+                        setFormData({ ...formData, showInDirectory: e.target.checked })
+                      }
+                    >
+                      Show in Singer Directory
+                    </Checkbox>
                     {formData.role === 'admin' && (
                       <>
                         <Checkbox
@@ -493,6 +501,10 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                     ) : (
                       <div />
                     )}
+                    <p className="text-muted col-span-2 m-0 text-xs">
+                      When enabled, logged-in singers can see this singer’s name, photo, voice part,
+                      email, and phone number.
+                    </p>
                   </div>
 
                   {initialData.statusLastChangedAt && (
@@ -640,6 +652,16 @@ export const SingerModal: React.FC<SingerModalProps> = ({
               >
                 Section Leader
               </Checkbox>
+              <Checkbox
+                checked={formData.showInDirectory !== false}
+                onChange={(e) => setFormData({ ...formData, showInDirectory: e.target.checked })}
+              >
+                Show in Singer Directory
+              </Checkbox>
+              <p className="text-muted col-span-2 m-0 text-xs">
+                When enabled, logged-in singers can see this singer’s name, photo, voice part,
+                email, and phone number.
+              </p>
             </div>
 
             <div className="flex min-w-0 flex-col gap-1">

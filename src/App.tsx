@@ -55,6 +55,7 @@ const RsvpDashboardView = lazyWithReload(() => import('./views/admin/RsvpDashboa
 const SingerDashboardView = lazyWithReload(() => import('./views/singer/DashboardView'));
 const SeatingFinderView = lazyWithReload(() => import('./views/singer/SeatingFinderView'));
 const ProfileView = lazyWithReload(() => import('./views/singer/ProfileView'));
+const DirectoryView = lazyWithReload(() => import('./views/singer/DirectoryView'));
 const PublicAuditionView = lazyWithReload(() => import('./views/PublicAuditionView'));
 const PublicRsvpView = lazyWithReload(() => import('./views/PublicRsvpView'));
 const PublicPollView = lazyWithReload(() => import('./views/PublicPollView'));
@@ -421,6 +422,16 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ProfileView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/directory"
+              element={
+                <ProtectedRoute>
+                  <PageLayout title="Singer Directory" backTo="/dashboard">
+                    <DirectoryView />
+                  </PageLayout>
                 </ProtectedRoute>
               }
             />

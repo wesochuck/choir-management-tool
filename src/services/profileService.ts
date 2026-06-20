@@ -10,6 +10,7 @@ export interface Profile extends RecordModel {
   voicePart: string;
   globalStatus: 'Active' | 'Idle' | 'Inactive';
   notes: string;
+  showInDirectory?: boolean;
   doNotEmail?: boolean;
   receiveAttendanceReports?: boolean;
   receiveRsvpDeclineNotices?: boolean;
@@ -32,6 +33,7 @@ export interface UserAccount extends RecordModel {
 
 export interface ProfileInput extends Partial<Profile> {
   email?: string;
+  showInDirectory?: boolean;
   doNotEmail?: boolean;
   receiveAttendanceReports?: boolean;
   receiveRsvpDeclineNotices?: boolean;
@@ -108,12 +110,22 @@ export const profileService = {
     return promise;
   },
 
+  async getDirectoryProfiles(options: ProfileFetchOptions = {}) {
+    return await retryOn429(
+      () =>
+        pb.collection('profiles').getFullList<Profile>({
+          filter: 'globalStatus != "Inactive" && showInDirectory != false',
+          sort: 'name',
+          expand: 'user',
+        }),
+      { onRetry: options.onRetry }
+    );
+  },
+
   async getMyProfile(userId: string) {
     return await pb
       .collection('profiles')
-      .getFirstListItem<Profile>(
-        pb.filter('user = {:userId}', { userId })
-      );
+      .getFirstListItem<Profile>(pb.filter('user = {:userId}', { userId }));
   },
 
   async createProfile(data: ProfileInput) {
@@ -265,7 +277,10 @@ export const profileService = {
     });
   },
 
-  async updateUserPreferences(userId: string, preferences: Record<string, unknown>): Promise<UserAccount> {
+  async updateUserPreferences(
+    userId: string,
+    preferences: Record<string, unknown>
+  ): Promise<UserAccount> {
     return await pb.collection('users').update<UserAccount>(userId, { preferences });
   },
 
@@ -279,6 +294,7 @@ export const profileService = {
       receiveRsvpDeclineNotices: boolean;
       receiveAdminNotifications: boolean;
       phone?: string;
+      showInDirectory?: boolean;
     }
   ): Promise<void> {
     await pb.collection('users').update(userId, { name: data.name, email: data.email });
@@ -290,6 +306,7 @@ export const profileService = {
       receiveAdminNotifications: data.receiveAdminNotifications,
     };
     if (data.phone !== undefined) profileData.phone = data.phone;
+    if (data.showInDirectory !== undefined) profileData.showInDirectory = data.showInDirectory;
 
     if (profileId) {
       await pb.collection('profiles').update(profileId, profileData);

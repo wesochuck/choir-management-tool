@@ -30,6 +30,7 @@ export default function ProfileView() {
   const [receiveAttendanceReports, setReceiveAttendanceReports] = useState(true);
   const [receiveRsvpDeclineNotices, setReceiveRsvpDeclineNotices] = useState(false);
   const [receiveAdminNotifications, setReceiveAdminNotifications] = useState(true);
+  const [showInDirectory, setShowInDirectory] = useState(true);
 
   const profileQuery = useQuery({
     queryKey: queryKeys.myProfile.all,
@@ -77,10 +78,12 @@ export default function ProfileView() {
       setReceiveRsvpDeclineNotices(Boolean(p.receiveRsvpDeclineNotices));
       setReceiveAdminNotifications(p.receiveAdminNotifications !== false);
       setEmail(currentUser.email || '');
+      setShowInDirectory(p.showInDirectory !== false);
     } else {
       setName(p.name || '');
       setPhone(p.phone || '');
       setEmail(user?.email || '');
+      setShowInDirectory(p.showInDirectory !== false);
     }
   }, [profileQuery.data, user]);
 
@@ -151,13 +154,15 @@ export default function ProfileView() {
           receiveAttendanceReports,
           receiveRsvpDeclineNotices,
           receiveAdminNotifications,
+          showInDirectory,
         });
       } else {
-        await profileService.updateProfile(profileId, { name, phone, email });
+        await profileService.updateProfile(profileId, { name, phone, email, showInDirectory });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myProfile.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.directory });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     },
@@ -279,6 +284,22 @@ export default function ProfileView() {
                 <label className="text-label">Phone</label>
                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
+
+              <label className="my-1 flex cursor-pointer flex-row items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showInDirectory}
+                  onChange={(e) => setShowInDirectory(e.target.checked)}
+                  className="accent-primary size-[18px] shrink-0 cursor-pointer"
+                />
+                <div className="flex flex-col gap-[2px]">
+                  <span className="text-label font-semibold">Show me in the singer directory</span>
+                  <span className="text-muted text-xs">
+                    Other logged-in singers can see your name, photo, voice part, email, and phone
+                    number.
+                  </span>
+                </div>
+              </label>
 
               {/* Voice Part — read-only */}
               <div className="flex flex-col gap-1">
