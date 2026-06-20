@@ -33,12 +33,9 @@ function trimStr(s: string): string {
   return s.replace(/^[\s,;./()]+|[\s,;./()]+$/g, '').trim();
 }
 
-function parseComposerArranger(combined: string): { composer: string; arranger: string } {
-  if (!combined) return { composer: '', arranger: '' };
+type ParsedComposerArranger = { composer: string; arranger: string } | null;
 
-  const trimmed = combined.trim();
-
-  // Pattern 1: Check if there's a parentheses with an arranger inside, like "Traditional (arr. Moses Hogan)"
+function extractArrangerFromParentheses(trimmed: string): ParsedComposerArranger {
   const parenArrMatch = trimmed.match(/\((?:arr|arranged)(?:\.|by)?\s*([^)]+)\)/i);
   if (parenArrMatch) {
     const arranger = trimStr(parenArrMatch[1]);
@@ -47,15 +44,19 @@ function parseComposerArranger(combined: string): { composer: string; arranger: 
       return { composer, arranger };
     }
   }
+  return null;
+}
 
-  // Pattern 2: Check standard parentheses like "(arr.)" or "(arr)" at the end, e.g. "Moses Hogan (arr.)"
+function extractArrangerSuffix(trimmed: string): ParsedComposerArranger {
   const parenArrSuffixMatch = trimmed.match(/\((?:arr|arranged)\.?\)/i);
   if (parenArrSuffixMatch) {
     const composer = trimStr(trimmed.replace(parenArrSuffixMatch[0], ''));
     return { composer, arranger: '' };
   }
+  return null;
+}
 
-  // Pattern 3: Split by common delimiters like "/ arr. ", ", arr. ", " arr. ", "arranged by", "/ arr"
+function extractArrangerFromDelimiters(trimmed: string): ParsedComposerArranger {
   const splitRegex = /(?:\/|,|\b)\s*(?:arr(?:anged)?\b\.?\s*(?:by)?)\s+/i;
   const match = trimmed.match(splitRegex);
   if (match && match.index !== undefined) {
@@ -65,8 +66,10 @@ function parseComposerArranger(combined: string): { composer: string; arranger: 
       return { composer, arranger };
     }
   }
+  return null;
+}
 
-  // Pattern 4: Fallback to simple split by "/" if the word "arr" or "arrange" appears in the second half
+function extractArrangerFromSlashSplit(trimmed: string): ParsedComposerArranger {
   if (trimmed.indexOf('/') !== -1) {
     const parts = trimmed.split('/');
     if (parts.length === 2) {
@@ -81,8 +84,21 @@ function parseComposerArranger(combined: string): { composer: string; arranger: 
       }
     }
   }
+  return null;
+}
 
-  return { composer: trimStr(trimmed), arranger: '' };
+function parseComposerArranger(combined: string): { composer: string; arranger: string } {
+  if (!combined) return { composer: '', arranger: '' };
+
+  const trimmed = combined.trim();
+
+  return (
+    extractArrangerFromParentheses(trimmed) ||
+    extractArrangerSuffix(trimmed) ||
+    extractArrangerFromDelimiters(trimmed) ||
+    extractArrangerFromSlashSplit(trimmed) ||
+    { composer: trimStr(trimmed), arranger: '' }
+  );
 }
 
 function parsePurchaseDate(val: string): string | undefined {
