@@ -8,6 +8,7 @@ import { useProfiles } from '../../hooks/useProfiles';
 import { useDialog } from '../../contexts/DialogContext';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AttendanceSingerActionsSheet } from '../../components/admin/AttendanceSingerActionsSheet';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { settingsService } from '../../services/settingsService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -326,8 +327,12 @@ export default function AttendanceView() {
   }, [filteredSingers, expectedSingers, getSingerSection]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <AppCard title="Attendance Check-in" noPadding>
+    <div className="flex w-full flex-col gap-6 pb-8">
+      <AdminPageHeader
+        title="Attendance Check-in"
+        description="Record attendance and check in members for rehearsals and performances."
+      />
+      <AppCard noPadding>
         {!selectedEventId ? (
           <div className="border-border bg-surface/20 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-24 text-center shadow-xs">
             <span className="text-5xl opacity-40">📅</span>
