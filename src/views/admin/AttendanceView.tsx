@@ -7,6 +7,7 @@ import { useAttendance, type AttendanceItem } from '../../hooks/useAttendance';
 import { useProfiles } from '../../hooks/useProfiles';
 import { useDialog } from '../../contexts/DialogContext';
 import { SingerModal } from '../../components/admin/SingerModal';
+import { AttendanceSingerActionsSheet } from '../../components/admin/AttendanceSingerActionsSheet';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { settingsService } from '../../services/settingsService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
@@ -33,6 +34,7 @@ export default function AttendanceView() {
 
   const [selectedEventId, setSelectedEventId] = useState('');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const [quickActionsProfile, setQuickActionsProfile] = useState<Profile | null>(null);
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [filter, setFilter] = useState<'All' | 'Present' | 'Absent' | 'Unmarked'>('All');
   const [selectedDeclinedProfileId, setSelectedDeclinedProfileId] = useState('');
@@ -235,11 +237,6 @@ export default function AttendanceView() {
         variant: 'danger',
       });
     }
-  };
-
-  const handleEditProfile = (profileId: string) => {
-    const profile = profiles.find((item) => item.id === profileId);
-    if (profile) setEditingProfile(profile);
   };
 
   const handleSaveProfile = async (data: ProfileInput) => {
@@ -484,6 +481,16 @@ export default function AttendanceView() {
               ))}
             </div>
 
+            {/* Instruction banner */}
+            <p className="border-b border-gray-100 bg-gray-50/50 px-4 py-2 text-xs font-medium text-gray-500">
+              <span className="md:hidden">
+                Tap a singer to check them in. Use ⋯ for contact info or profile details.
+              </span>
+              <span className="hidden md:inline">
+                Click a row to check a singer in. Use ⋯ for contact info or profile details.
+              </span>
+            </p>
+
             {/* Roster list */}
             {isLoading ? (
               <div className="border-border bg-surface m-4 rounded-lg border p-12 text-center shadow-xs">
@@ -541,8 +548,16 @@ export default function AttendanceView() {
                         }}
                         tabIndex={0}
                         role="button"
-                        aria-label={`Toggle attendance for ${singer.name}. Current state: ${singer.attendance}`}
-                        className="flex cursor-pointer items-center gap-3 border-b border-gray-100 px-4 py-2.5 transition-colors hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                        aria-label={
+                          singer.attendance === 'Present'
+                            ? `Mark ${singer.name} not checked in`
+                            : `Check in ${singer.name}`
+                        }
+                        className={`flex cursor-pointer items-center gap-3 border-b px-4 py-2.5 transition-colors focus:outline-none ${
+                          singer.attendance === 'Present'
+                            ? 'border-emerald-200 bg-emerald-50/70 hover:bg-emerald-50 focus:bg-emerald-50'
+                            : 'border-gray-100 bg-white hover:bg-gray-50 focus:bg-gray-50'
+                        }`}
                       >
                         {/* Tap target status indicator */}
                         <div
@@ -568,21 +583,11 @@ export default function AttendanceView() {
                         </span>
 
                         {/* Name + details */}
-                        <div className="flex flex-col">
+                        <div className="flex min-w-0 flex-1 flex-col">
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditProfile(singer.profileId);
-                              }}
-                              onKeyDown={(e) => {
-                                e.stopPropagation();
-                              }}
-                              className="cursor-pointer border-0 bg-transparent p-0 text-left text-lg font-semibold text-emerald-700 hover:text-emerald-800 hover:underline"
-                            >
+                            <span className="text-lg font-semibold text-gray-900">
                               {singer.name}
-                            </button>
+                            </span>
                             {missCounts[singer.profileId] > 0 && (
                               <span
                                 className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
@@ -601,6 +606,27 @@ export default function AttendanceView() {
                             </span>
                           )}
                         </div>
+
+                        {/* More button */}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="small"
+                          aria-label={`Contact info and profile actions for ${singer.name}`}
+                          className="flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const profile = profiles.find((p) => p.id === singer.profileId);
+                            if (profile) {
+                              setQuickActionsProfile(profile);
+                            }
+                          }}
+                          onKeyDown={(e: React.KeyboardEvent) => {
+                            e.stopPropagation();
+                          }}
+                        >
+                          ⋯
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -647,6 +673,16 @@ export default function AttendanceView() {
           </div>
         )}
       </AppCard>
+
+      <AttendanceSingerActionsSheet
+        profile={quickActionsProfile}
+        isOpen={Boolean(quickActionsProfile)}
+        onClose={() => setQuickActionsProfile(null)}
+        onViewProfile={(profile) => {
+          setQuickActionsProfile(null);
+          setEditingProfile(profile);
+        }}
+      />
 
       <SingerModal
         isOpen={Boolean(editingProfile)}
