@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
 import { pb } from '../../../lib/pocketbase';
 import {
   communicationService,
@@ -10,115 +12,146 @@ import {
   DEFAULT_COMMUNICATION_CONFIG,
   settingsService,
   type CommunicationSettings,
-  type CommunicationConfig,
 } from '../../../services/settingsService';
 
 export function useCommunicationLibrary() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [history, setHistory] = useState<MessageRecord[]>([]);
-  const [drafts, setDrafts] = useState<MessageRecord[]>([]);
-  const [templates, setTemplates] = useState<TemplateRecord[]>([]);
-  const [commSettings, setCommSettings] =
-    useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
-  const [commConfig, setCommConfig] =
-    useState<CommunicationConfig>(DEFAULT_COMMUNICATION_CONFIG);
-  const [choirName, setChoirName] = useState<string>('Choir Management');
+  const queryClient = useQueryClient();
 
-  const [editingTemplate, setEditingTemplate] =
-    useState<Partial<TemplateRecord> | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<Partial<TemplateRecord> | null>(null);
 
   const [historyPage, setHistoryPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
 
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
-  const refreshHistory = useCallback(async (pageToFetch: number, query = '') => {
-    try {
+  const historyQuery = useQuery({
+    queryKey: queryKeys.communications.historyPaginated(historyPage, historySearchQuery),
+    queryFn: async () => {
       const baseFilter = "(status = 'Sent' || status = 'Archived')";
       let filterString = baseFilter;
-
-      if (query.trim()) {
-        filterString = pb.filter(`(${baseFilter} && (subject ~ {:query} || content ~ {:query} || type ~ {:query}))`, {
-          query: query.trim()
-        });
+      if (historySearchQuery.trim()) {
+        filterString = pb.filter(
+          `(${baseFilter} && (subject ~ {:query} || content ~ {:query} || type ~ {:query}))`,
+          {
+            query: historySearchQuery.trim(),
+          }
+        );
       }
+      return communicationService.getMessagesPaginated(historyPage, 10, filterString);
+    },
+  });
 
-      const result = await communicationService.getMessagesPaginated(
-        pageToFetch,
-        10,
-        filterString
-      );
-      setHistory(result.items);
-      setTotalPages(result.totalPages);
-    } catch (err) {
-      console.error('Failed to refresh message history', err);
-    }
-  }, []);
+  const draftsQuery = useQuery({
+    queryKey: queryKeys.communications.drafts(),
+    queryFn: () => communicationService.getDrafts(),
+  });
 
-  useEffect(() => {
-    void refreshHistory(historyPage, historySearchQuery);
-  }, [historyPage, historySearchQuery, refreshHistory]);
+  const templatesQuery = useQuery({
+    queryKey: queryKeys.communications.templates(),
+    queryFn: () => communicationService.getTemplates(),
+  });
+
+  const commSettingsQuery = useQuery({
+    queryKey: queryKeys.communications.settings(),
+    queryFn: () => settingsService.getCommunicationSettings(),
+  });
+
+  const commConfigQuery = useQuery({
+    queryKey: queryKeys.communications.config(),
+    queryFn: () => settingsService.getCommunicationConfig(),
+  });
+
+  const choirNameQuery = useQuery({
+    queryKey: queryKeys.communications.choirName(),
+    queryFn: () => settingsService.getChoirName(),
+  });
 
   useEffect(() => {
     setHistoryPage(1);
   }, [historySearchQuery]);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const baseFilter = "(status = 'Sent' || status = 'Archived')";
-        const [
-          historyPageResult,
-          loadedDrafts,
-          loadedTemplates,
-          loadedSettings,
-          loadedConfig,
-          loadedChoirName,
-        ] = await Promise.all([
-          communicationService.getMessagesPaginated(1, 10, baseFilter),
-          communicationService.getDrafts(),
-          communicationService.getTemplates(),
-          settingsService.getCommunicationSettings(),
-          settingsService.getCommunicationConfig(),
-          settingsService.getChoirName(),
-        ]);
+  const refreshHistory = useCallback(
+    async (_page?: number) => {
+      void _page;
+      await queryClient.invalidateQueries({ queryKey: queryKeys.communications.history() });
+    },
+    [queryClient]
+  );
 
-        setHistory(historyPageResult.items);
-        setTotalPages(historyPageResult.totalPages);
-        setDrafts(loadedDrafts);
-        setTemplates(loadedTemplates);
-        setCommSettings(loadedSettings);
-        setCommConfig(loadedConfig);
-        if (loadedChoirName) setChoirName(loadedChoirName);
-      } catch (err) {
-        console.error('Failed to load initial communication data', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const isLoading =
+    historyQuery.isLoading ||
+    draftsQuery.isLoading ||
+    templatesQuery.isLoading ||
+    commSettingsQuery.isLoading ||
+    commConfigQuery.isLoading ||
+    choirNameQuery.isLoading;
 
-    void load();
+  const setHistory: React.Dispatch<React.SetStateAction<MessageRecord[]>> = useCallback(
+    (_value) => {
+      void _value;
+    },
+    []
+  );
+
+  const setTotalPages: React.Dispatch<React.SetStateAction<number>> = useCallback((_value) => {
+    void _value;
   }, []);
+
+  const setIsLoading: React.Dispatch<React.SetStateAction<boolean>> = useCallback((_value) => {
+    void _value;
+  }, []);
+
+  const setDrafts: React.Dispatch<React.SetStateAction<MessageRecord[]>> = useCallback(
+    (_value) => {
+      void _value;
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
+    },
+    [queryClient]
+  );
+
+  const setTemplates: React.Dispatch<React.SetStateAction<TemplateRecord[]>> = useCallback(
+    (_value) => {
+      void _value;
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.templates() });
+    },
+    [queryClient]
+  );
+
+  const setCommSettings: React.Dispatch<React.SetStateAction<CommunicationSettings>> = useCallback(
+    (settingsOrUpdater) => {
+      if (typeof settingsOrUpdater === 'function') {
+        const current =
+          queryClient.getQueryData<CommunicationSettings>(queryKeys.communications.settings()) ??
+          DEFAULT_COMMUNICATION_SETTINGS;
+        queryClient.setQueryData(
+          queryKeys.communications.settings(),
+          (settingsOrUpdater as (prev: CommunicationSettings) => CommunicationSettings)(current)
+        );
+      } else {
+        queryClient.setQueryData(queryKeys.communications.settings(), settingsOrUpdater);
+      }
+    },
+    [queryClient]
+  );
 
   return {
     isLoading,
     setIsLoading,
-    history,
+    history: historyQuery.data?.items ?? [],
     setHistory,
-    drafts,
+    drafts: draftsQuery.data ?? [],
     setDrafts,
-    templates,
+    templates: templatesQuery.data ?? [],
     setTemplates,
-    commSettings,
+    commSettings: commSettingsQuery.data ?? DEFAULT_COMMUNICATION_SETTINGS,
     setCommSettings,
-    commConfig,
-    choirName,
+    commConfig: commConfigQuery.data ?? DEFAULT_COMMUNICATION_CONFIG,
+    choirName: choirNameQuery.data ?? 'Choir Management',
     editingTemplate,
     setEditingTemplate,
     historyPage,
     setHistoryPage,
-    totalPages,
+    totalPages: historyQuery.data?.totalPages ?? 1,
     setTotalPages,
     historySearchQuery,
     setHistorySearchQuery,
@@ -127,4 +160,3 @@ export function useCommunicationLibrary() {
     setIsSavingConfig,
   };
 }
-

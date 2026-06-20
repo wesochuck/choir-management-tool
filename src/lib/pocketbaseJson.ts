@@ -9,7 +9,7 @@ export function decodeGoBytes(val: unknown): string {
     if (val.length === 0) return '';
     if (typeof val[0] === 'number') {
       try {
-        return val.map(b => String.fromCharCode(Number(b))).join('');
+        return val.map((b) => String.fromCharCode(Number(b))).join('');
       } catch {
         return '';
       }
@@ -32,7 +32,7 @@ export function parseJsonField<T>(val: unknown): T | null {
 
   // Attempt to decode as string (handles Goja byte arrays or raw strings)
   const str = decodeGoBytes(val);
-  
+
   if (!str) {
     // Pass through standard array relations that fail string conversion
     if (Array.isArray(val)) {

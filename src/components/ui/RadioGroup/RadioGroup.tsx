@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import SlRadioGroup from '@shoelace-style/shoelace/dist/react/radio-group/index.js';
 import SlRadio from '@shoelace-style/shoelace/dist/react/radio/index.js';
+import { safeSlProps } from '../shared';
 
 export interface RadioGroupProps {
   value: string;
@@ -17,17 +18,12 @@ export interface RadioProps {
 
 export function RadioGroup({ value, onChange, children, className }: RadioGroupProps) {
   if (process.env.NODE_ENV === 'test') {
-    return (
-      <div className={className}>
-        {children}
-      </div>
-    );
+    return <div className={className}>{children}</div>;
   }
 
   return (
     <SlRadioGroup
-      value={value}
-      className={className}
+      {...safeSlProps({ value, className } as Record<string, unknown>)}
       onSlChange={(e: unknown) => {
         onChange((e as CustomEvent).detail.value as string);
       }}
@@ -47,5 +43,7 @@ export function Radio({ value, children, className }: RadioProps) {
     );
   }
 
-  return <SlRadio value={value} className={className}>{children}</SlRadio>;
+  return (
+    <SlRadio {...safeSlProps({ value, className } as Record<string, unknown>)}>{children}</SlRadio>
+  );
 }

@@ -15,15 +15,15 @@ export interface SetListFormState {
  */
 export function buildSetListItemFromFormState(state: SetListFormState): SetListItem {
   const { editingId, title, composer, duration, notes, pieceId, type } = state;
-  
+
   return {
     id: editingId || crypto.randomUUID(),
     title: title.trim(),
-    composer: type === 'song' ? (composer.trim() || undefined) : undefined,
+    composer: type === 'song' ? composer.trim() || undefined : undefined,
     duration: duration.trim() || undefined,
     notes: notes.trim() || undefined,
-    pieceId: type === 'song' ? (pieceId || undefined) : undefined,
-    type
+    pieceId: type === 'song' ? pieceId || undefined : undefined,
+    type,
   };
 }
 
@@ -36,7 +36,7 @@ export function applySetListItemSave(
   editingId: string | null
 ): SetListItem[] {
   if (editingId) {
-    return items.map(i => i.id === editingId ? itemData : i);
+    return items.map((i) => (i.id === editingId ? itemData : i));
   } else {
     return [...items, itemData];
   }

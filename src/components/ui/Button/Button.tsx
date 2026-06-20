@@ -2,10 +2,18 @@ import type { ElementType, MouseEventHandler, ReactNode } from 'react';
 import SlButton from '@shoelace-style/shoelace/dist/react/button/index.js';
 import { Spinner } from '../Spinner/Spinner';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost';
 export type ButtonSize = 'default' | 'small' | 'tiny';
 
 export interface ButtonProps {
+  /**
+   * Render Button as another component, such as React Router Link.
+   *
+   * Example:
+   * <Button as={Link} to="/dashboard" variant="outline">
+   *   Dashboard
+   * </Button>
+   */
   as?: ElementType;
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -20,8 +28,10 @@ export interface ButtonProps {
 const variantClasses: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-surface hover:bg-primary-deep hover:shadow-md',
   secondary: 'bg-primary-light text-primary-deep hover:bg-primary-deep/10',
-  outline: 'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
+  outline:
+    'bg-transparent text-text-muted border-border hover:bg-primary-light hover:text-primary-deep',
   danger: 'bg-danger-bg text-danger-text hover:bg-red-200 hover:border-red-300',
+  ghost: 'bg-transparent text-text-muted border-transparent hover:text-primary-deep',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -57,33 +67,50 @@ export function Button({
     return (
       <Component
         className={classNames}
-        disabled={isButton ? (disabled || loading) : undefined}
+        disabled={isButton ? disabled || loading : undefined}
         onClick={loading ? undefined : onClick}
         {...rest}
       >
         {loading && <Spinner size="small" />}
-        {!loading && icon}
+        {!loading && icon && (
+          <span aria-hidden="true" className="inline-flex shrink-0 items-center">
+            {icon}
+          </span>
+        )}
         {children}
       </Component>
     );
   }
 
-  const slVariant = variant === 'secondary' ? 'neutral' : variant === 'danger' ? 'danger' : 'primary';
+  const slVariant =
+    variant === 'secondary' || variant === 'ghost'
+      ? 'neutral'
+      : variant === 'danger'
+        ? 'danger'
+        : 'primary';
   const slSize = size === 'tiny' || size === 'small' ? 'small' : 'medium';
   const isOutline = variant === 'outline';
 
+  const slProps: Record<string, unknown> = {
+    variant: slVariant,
+    size: slSize,
+    outline: isOutline,
+    loading,
+    onClick,
+  };
+  if (disabled !== undefined) slProps.disabled = disabled;
+  if (className !== undefined) slProps.className = className;
+  for (const [key, value] of Object.entries(rest)) {
+    if (value !== undefined) slProps[key] = value;
+  }
+
   return (
-    <SlButton
-      variant={slVariant}
-      size={slSize}
-      outline={isOutline}
-      loading={loading}
-      disabled={disabled}
-      onClick={onClick}
-      className={className}
-      {...rest}
-    >
-      {icon && <span slot="prefix">{icon}</span>}
+    <SlButton {...slProps}>
+      {icon && (
+        <span slot="prefix" aria-hidden="true">
+          {icon}
+        </span>
+      )}
       {children}
     </SlButton>
   );

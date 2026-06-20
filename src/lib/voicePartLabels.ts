@@ -7,14 +7,16 @@ export function getVoicePartFilterLabel(
 ): string {
   if (selectedCodes.length === 0) return 'All Voice Parts';
 
-  return selectedCodes.map(code => {
-    if (code === '__STAFF__') return 'Staff / Admin (No Part)';
+  return selectedCodes
+    .map((code) => {
+      if (code === '__STAFF__') return 'Staff / Admin (No Part)';
 
-    const section = sections.find(sec => sec.code === code);
-    if (section) return section.name;
+      const section = sections.find((sec) => sec.code === code);
+      if (section) return section.name;
 
-    if (voicePartLabels.includes(code)) return code;
+      if (voicePartLabels.includes(code)) return code;
 
-    return code;
-  }).join(', ');
+      return code;
+    })
+    .join(', ');
 }

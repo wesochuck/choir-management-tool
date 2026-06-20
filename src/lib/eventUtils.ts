@@ -37,10 +37,10 @@ export function findNearestEvent<T extends EventLike>(
 
   // Apply filters if provided
   if (type) {
-    filtered = filtered.filter(e => e.type === type);
+    filtered = filtered.filter((e) => e.type === type);
   }
   if (futureOnly) {
-    filtered = filtered.filter(e => new Date(e.date).getTime() >= targetTime);
+    filtered = filtered.filter((e) => new Date(e.date).getTime() >= targetTime);
   }
 
   // Fallback mechanism to ensure a selection if strict filtering yields no results
@@ -75,14 +75,17 @@ export function resolveInitialEventId<T extends EventLike>(
   urlEventId?: string | null,
   options: FindNearestEventOptions = {}
 ): string | null {
-  if (urlEventId && events.some(e => e.id === urlEventId)) {
+  if (urlEventId && events.some((e) => e.id === urlEventId)) {
     return urlEventId;
   }
   const nearest = findNearestEvent(events, options);
   return nearest ? nearest.id : null;
 }
 
-export function getSetListVisibility(event: EventLike | null | undefined, userRole: string): boolean {
+export function getSetListVisibility(
+  event: EventLike | null | undefined,
+  userRole: string
+): boolean {
   if (!event) return false;
   if (userRole === 'admin') return true;
   if (event.isPublic) return true;
@@ -127,7 +130,9 @@ export function getSingerSetListPreview(
 
   // 2. Rehearsal Processing Logic
   if (event.type === 'Rehearsal') {
-    const parent = allEvents.find(e => e.id === event.parentPerformanceId) || event.expand?.parentPerformanceId;
+    const parent =
+      allEvents.find((e) => e.id === event.parentPerformanceId) ||
+      event.expand?.parentPerformanceId;
     const parentRsvp = parent ? myRosters?.[parent.id]?.rsvp : undefined;
 
     // Singer must be attending either the rehearsal itself or the main show context

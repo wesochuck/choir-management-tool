@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
+import { queryKeys } from '../../../lib/queryKeys';
 import {
   communicationService,
   type CommunicationFilters,
@@ -7,6 +9,7 @@ import {
   type MessageRecord,
   type MessageType,
   type AutomatedTaskStatusMap,
+  type SendMessageInput,
 } from '../../../services/communicationService';
 import type { ChoirUser } from '../../../types/auth';
 import type { CommunicationTab } from '../../../types/Communication';
@@ -35,18 +38,21 @@ export function useCommunicationDraft({
   historyPage,
   setHistoryPage,
   refreshHistory,
-  setDrafts,
+  setDrafts: _setDrafts,
   setAutomatedTaskStatus,
   dialog,
   setTab,
   setWizardStep,
 }: UseCommunicationDraftArgs) {
+  void _setDrafts;
+  const queryClient = useQueryClient();
+
   const [searchParams] = useSearchParams();
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
 
   const initialProfileIds = useMemo(() => {
     const ids = searchParams.get('recipientIds');
-    return ids ? ids.split(',').filter(id => !!id) : [];
+    return ids ? ids.split(',').filter((id) => !!id) : [];
   }, [searchParams]);
 
   const [filters, setFilters] = useState<CommunicationFilters>({
@@ -58,35 +64,54 @@ export function useCommunicationDraft({
   });
 
   const [recipients, setRecipients] = useState<CommunicationRecipient[]>(
-    routeState?.initialRecipients || [],
+    routeState?.initialRecipients || []
   );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    new Set(routeState?.initialRecipients?.map((r) => r.id) || []),
+    new Set(routeState?.initialRecipients?.map((r) => r.id) || [])
   );
   const [lockInitialRecipients, setLockInitialRecipients] = useState(
     Boolean(
       (routeState?.initialOpenReview &&
         routeState?.initialRecipients &&
         routeState.initialRecipients.length > 0) ||
-        routeState?.openDraftId ||
-        initialProfileIds.length > 0
-    ),
+      routeState?.openDraftId ||
+      initialProfileIds.length > 0
+    )
   );
 
   const [subject, setSubject] = useState(routeState?.initialSubject || '');
   const [content, setContent] = useState(routeState?.initialContent || '');
   const [messageType, setMessageType] = useState<MessageType>('Email');
   const [pollQuestions, setPollQuestions] = useState<Record<string, string>>(
-    routeState?.initialPollQuestions ?? {},
+    routeState?.initialPollQuestions ?? {}
   );
 
-  const [isSending, setIsSending] = useState(false);
-  const [isSendingTest, setIsSendingTest] = useState(false);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const saveDraftMutation = useMutation({
+    mutationFn: ({ data, id }: { data: SendMessageInput; id?: string }) =>
+      communicationService.saveDraft(data, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.history() });
+    },
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: ({ data, draftId }: { data: SendMessageInput; draftId?: string }) =>
+      communicationService.sendBulkMessage(data, draftId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.history() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
+    },
+  });
+
+  const sendTestMutation = useMutation({
+    mutationFn: (input: SendMessageInput) =>
+      communicationService.sendBulkMessage(input),
+  });
 
   const selectedRecipients = useMemo(
     () => recipients.filter((recipient) => selectedIds.has(recipient.id)),
-    [recipients, selectedIds],
+    [recipients, selectedIds]
   );
 
   const recipientCounts = useMemo(() => {
@@ -101,46 +126,34 @@ export function useCommunicationDraft({
     return checkValidation(content, subject, messageType, filters.eventId);
   }, [content, subject, messageType, filters.eventId]);
 
-  // Recipient resolution logic
+  const resolvedRecipientsQuery = useQuery({
+    queryKey: queryKeys.communications.resolvedRecipients(filters),
+    queryFn: () => communicationService.resolveRecipients(filters),
+    enabled: tab === 'compose' && !(lockInitialRecipients && recipients.length > 0),
+  });
+
   useEffect(() => {
-    if (tab !== 'compose') return;
-    if (lockInitialRecipients && recipients.length > 0) return;
-    let isCurrent = true;
+    if (resolvedRecipientsQuery.error) {
+      dialog.showToast('Failed to resolve recipients');
+    }
+  }, [resolvedRecipientsQuery.error, dialog]);
 
-    communicationService
-      .resolveRecipients(filters)
-      .then((resolved) => {
-        if (!isCurrent) return;
-        setRecipients(resolved);
-        setSelectedIds(new Set(resolved.map((r) => r.id)));
-      })
-      .catch(() => {
-        if (!isCurrent) return;
-        setRecipients([]);
-        setSelectedIds(new Set());
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-    // recipients intentionally excluded from deps — including it creates a
-    // feedback loop on API failure: catch → setRecipients([]) → re-fires effect
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, tab, lockInitialRecipients]);
+  useEffect(() => {
+    if (resolvedRecipientsQuery.data) {
+      setRecipients(resolvedRecipientsQuery.data);
+      setSelectedIds(new Set(resolvedRecipientsQuery.data.map((r) => r.id)));
+    }
+  }, [resolvedRecipientsQuery.data]);
 
   const updateFilter = useCallback(
-    <K extends keyof CommunicationFilters>(
-      key: K,
-      value: CommunicationFilters[K],
-    ) => {
+    <K extends keyof CommunicationFilters>(key: K, value: CommunicationFilters[K]) => {
       if (lockInitialRecipients) setLockInitialRecipients(false);
       setFilters((prev) => ({ ...prev, [key]: value }));
     },
-    [lockInitialRecipients],
+    [lockInitialRecipients]
   );
 
   const handleSaveDraft = async () => {
-    setIsSavingDraft(true);
     try {
       const input = {
         subject,
@@ -149,12 +162,8 @@ export function useCommunicationDraft({
         recipients: selectedRecipients,
         filters: filters as unknown as Record<string, unknown>,
       };
-      const record = await communicationService.saveDraft(
-        input,
-        activeDraftId || undefined,
-      );
+      const record = await saveDraftMutation.mutateAsync({ data: input, id: activeDraftId || undefined });
       setActiveDraftId(record.id);
-      setDrafts(await communicationService.getDrafts());
       dialog.showToast('Your message has been saved as a draft.');
     } catch (err: unknown) {
       console.error(err);
@@ -163,8 +172,6 @@ export function useCommunicationDraft({
         message: 'Failed to save draft.',
         variant: 'danger',
       });
-    } finally {
-      setIsSavingDraft(false);
     }
   };
 
@@ -179,8 +186,8 @@ export function useCommunicationDraft({
       const vpArray: string[] = Array.isArray(mFilters?.voiceParts)
         ? (mFilters.voiceParts as string[])
         : mFilters?.voicePart
-        ? [mFilters.voicePart as string]
-        : [];
+          ? [mFilters.voicePart as string]
+          : [];
 
       setFilters({
         eventId: (mFilters?.eventId as string) || '',
@@ -202,7 +209,7 @@ export function useCommunicationDraft({
       setWizardStep('COMPOSE');
       setTab('compose');
     },
-    [setTab, setWizardStep],
+    [setTab, setWizardStep]
   );
 
   const handleSendTest = async () => {
@@ -218,18 +225,15 @@ export function useCommunicationDraft({
     if (messageType === 'SMS') {
       const switchToEmail = await dialog.confirm({
         title: 'Email Test Only',
-        message:
-          'Test send delivers email only. Switch channel to Email and continue?',
+        message: 'Test send delivers email only. Switch channel to Email and continue?',
         confirmLabel: 'Switch to Email',
       });
       if (!switchToEmail) return;
       setMessageType('Email');
     }
 
-    setIsSendingTest(true);
     try {
-      const adminName =
-        (user as unknown as { name?: string })?.name || user.email || 'Admin';
+      const adminName = (user as unknown as { name?: string })?.name || user.email || 'Admin';
       const testRecipient: CommunicationRecipient = {
         id: user.id,
         name: adminName,
@@ -251,7 +255,7 @@ export function useCommunicationDraft({
         status: 'Sent' as const,
       };
 
-      await communicationService.sendBulkMessage(input);
+      await sendTestMutation.mutateAsync(input);
       dialog.showToast(`A test email has been sent to ${user.email}.`);
     } catch (err: unknown) {
       console.error(err);
@@ -260,8 +264,6 @@ export function useCommunicationDraft({
         message: 'Failed to send test message.',
         variant: 'danger',
       });
-    } finally {
-      setIsSendingTest(false);
     }
   };
 
@@ -281,7 +283,6 @@ export function useCommunicationDraft({
     });
     if (!confirmSend) return;
 
-    setIsSending(true);
     try {
       const input = {
         subject,
@@ -290,16 +291,11 @@ export function useCommunicationDraft({
         recipients: selectedRecipients,
         filters: filters as unknown as Record<string, unknown>,
       };
-      await communicationService.sendBulkMessage(
-        input,
-        activeDraftId || undefined,
-      );
+      await sendMessageMutation.mutateAsync({ data: input, draftId: activeDraftId || undefined });
 
       if (filters.eventId) {
         const key =
-          filters.rsvp === 'Pending'
-            ? `rsvp-${filters.eventId}`
-            : `reminder-${filters.eventId}`;
+          filters.rsvp === 'Pending' ? `rsvp-${filters.eventId}` : `reminder-${filters.eventId}`;
         setAutomatedTaskStatus((prev) => ({ ...prev, [key]: 'sent' }));
       }
 
@@ -308,7 +304,6 @@ export function useCommunicationDraft({
       } else {
         setHistoryPage(1);
       }
-      setDrafts(await communicationService.getDrafts());
       setActiveDraftId(null);
 
       dialog.showToast('Message sent successfully!');
@@ -320,8 +315,6 @@ export function useCommunicationDraft({
         message: 'Failed to send message.',
         variant: 'danger',
       });
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -348,9 +341,9 @@ export function useCommunicationDraft({
     selectedRecipients,
     recipientCounts,
     warnings,
-    isSending,
-    isSendingTest,
-    isSavingDraft,
+    isSending: sendMessageMutation.isPending,
+    isSendingTest: sendTestMutation.isPending,
+    isSavingDraft: saveDraftMutation.isPending,
     handleSaveDraft,
     handleResumeDraft,
     handleSendTest,

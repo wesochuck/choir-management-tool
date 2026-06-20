@@ -16,7 +16,7 @@ test('seating list print mode keeps navigation and editor controls out of the pr
 
   assert.match(
     printRules,
-    /\[data-print-mode="text"\]\s+\[data-seating-text-list\]\s*\{[^}]*display:\s*block\s*!important/,
+    /\[data-print-mode=['"]text['"]\]\s+\[data-seating-text-list\]\s*\{[^}]*display:\s*block\s*!important/,
     'text print mode should show the text list',
   );
 
@@ -32,25 +32,25 @@ test('seating grid print mode prints only the visual grid surface', () => {
 
   assert.match(
     printRules,
-    /\[data-print-mode="visual"\]\s+\[data-seating-text-list\][\s\S]*?\{[^}]*display:\s*none\s*!important/,
+    /\[data-print-mode=['"]visual['"]\]\s+\[data-seating-text-list\][\s\S]*?\{[^}]*display:\s*none\s*!important/,
     'visual print mode should not show the text list',
   );
 
   assert.match(
     printRules,
-    /\[data-print-mode="visual"\]\s+\[data-unassigned-print\][\s\S]*?\{[^}]*display:\s*none\s*!important/,
+    /\[data-print-mode=['"]visual['"]\]\s+\[data-unassigned-print\][\s\S]*?\{[^}]*display:\s*none\s*!important/,
     'visual print mode should not print the unassigned singers print badge or shelf',
   );
 
   assert.match(
     printRules,
-    /body:has\(\[data-print-mode="visual"\]\)\s+\.admin-layout-header[\s\S]*?\{[^}]*display:\s*none\s*!important/,
+    /body:has\(\[data-print-mode=['"]visual['"]\]\)\s+\.admin-layout-header[\s\S]*?\{[^}]*display:\s*none\s*!important/,
     'visual print mode should hide the page header so only the chart prints',
   );
 
   assert.match(
     printRules,
-    /\[data-print-mode="visual"\]\s+\.director-indicator\s*\{[^}]*display:\s*flex\s*!important/,
+    /\[data-print-mode=['"]visual['"]\]\s+\.director-indicator\s*\{[^}]*display:\s*flex\s*!important/,
     'visual print mode should keep the director marker visible',
   );
 
@@ -61,7 +61,7 @@ test('seating grid print mode prints only the visual grid surface', () => {
   );
 
   assert.ok(
-    !/\[data-print-mode="visual"\]\s+\.grid-print\s*\{[^}]*display:\s*none\s*!important/.test(printRules),
+    !/\[data-print-mode=['"]visual['"]\]\s+\.grid-print\s*\{[^}]*display:\s*none\s*!important/.test(printRules),
     'visual print mode must not hide the seating grid',
   );
 });

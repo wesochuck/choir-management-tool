@@ -1,6 +1,6 @@
 import { pb } from '../lib/pocketbase';
 import type { MusicPiece } from './musicLibraryService';
-import type { Event, SetListItem } from './eventService';
+import type { SetListItem } from './eventService';
 import type { VoicePartDef } from './settingsService';
 import { DEFAULT_VOICE_PARTS } from './settingsService';
 import { getSectionFromVoicePart } from '../lib/voicePartUtils';
@@ -44,11 +44,10 @@ function parseAudioTrackMapping(value: unknown): Record<string, string> {
   }
 
   return Object.fromEntries(
-    Object.entries(parsed).filter((entry): entry is [string, string] => (
-      typeof entry[0] === 'string' &&
-      typeof entry[1] === 'string' &&
-      entry[1].trim() !== ''
-    ))
+    Object.entries(parsed).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[0] === 'string' && typeof entry[1] === 'string' && entry[1].trim() !== ''
+    )
   );
 }
 
@@ -75,11 +74,11 @@ function resolvePieceForSetListItem(
   if (!normalizedTitle) return null;
 
   const topLevelMatch = allPieces.find(
-    p => !p.parentId && normalizeSetListTitle(p.title) === normalizedTitle
+    (p) => !p.parentId && normalizeSetListTitle(p.title) === normalizedTitle
   );
   if (topLevelMatch) return topLevelMatch;
 
-  return allPieces.find(p => normalizeSetListTitle(p.title) === normalizedTitle) || null;
+  return allPieces.find((p) => normalizeSetListTitle(p.title) === normalizedTitle) || null;
 }
 
 /** Build PlayerMediaFile entries from a single piece (or its movements if it's a parent). */
@@ -101,31 +100,33 @@ function buildFilesFromPiece(
 
     let parentTitle: string | undefined = undefined;
     if (piece.parentId) {
-      const parentPiece = allPieces.find(p => p.id === piece.parentId);
+      const parentPiece = allPieces.find((p) => p.id === piece.parentId);
       if (parentPiece) {
         parentTitle = parentPiece.title;
       }
     }
 
-    return [{
-      id: `${itemId}_${defaultTrackKey}`,
-      baseId: itemId,
-      name: itemTitle,
-      composer: itemComposer || piece.composer,
-      arranger: piece.arranger,
-      duration: itemDuration || piece.duration,
-      pieceId: piece.id,
-      trackKey: defaultTrackKey,
-      availableTracks: mapping,
-      streamUrl: pb.files.getURL(piece, filename),
-      isFolder: false,
-      parentTitle,
-    }];
+    return [
+      {
+        id: `${itemId}_${defaultTrackKey}`,
+        baseId: itemId,
+        name: itemTitle,
+        composer: itemComposer || piece.composer,
+        arranger: piece.arranger,
+        duration: itemDuration || piece.duration,
+        pieceId: piece.id,
+        trackKey: defaultTrackKey,
+        availableTracks: mapping,
+        streamUrl: pb.files.getURL(piece, filename),
+        isFolder: false,
+        parentTitle,
+      },
+    ];
   }
 
   // No own tracks — look for child movements
   const movements = allPieces
-    .filter(p => p.parentId === piece.id)
+    .filter((p) => p.parentId === piece.id)
     .sort((a, b) => (a.created || '').localeCompare(b.created || ''));
 
   const result: PlayerMediaFile[] = [];
@@ -152,128 +153,107 @@ function buildFilesFromPiece(
   return result;
 }
 
+// Shared response parser for token and singer-event endpoints.
+function buildPlaylistFromApiResponse(response: unknown): PlayerPlaylist {
+  const {
+    event,
+    setList: rawSetList,
+    voiceParts: rawVoiceParts,
+    pieces: rawPieces,
+  } = response as {
+    event: { id: string; title: string; date: string };
+    setList: unknown;
+    voiceParts: unknown;
+    pieces: unknown;
+  };
+
+  let setList: SetListItem[] = parseJsonField<SetListItem[]>(rawSetList) || [];
+  if (!Array.isArray(setList)) {
+    setList = [];
+  }
+
+  let voiceParts: VoicePartDef[] = parseJsonField<VoicePartDef[]>(rawVoiceParts) || [];
+  if (!Array.isArray(voiceParts)) {
+    voiceParts = [];
+  }
+
+  const rawPiecesList = parseJsonField<unknown[]>(rawPieces) || [];
+  let pieces: MusicPiece[] = [];
+  if (Array.isArray(rawPiecesList)) {
+    pieces = rawPiecesList.map((item) => {
+      const p = item as Record<string, unknown>;
+      const mapping = parseAudioTrackMapping(p.audioTrackMapping);
+      return {
+        id: String(p.id || ''),
+        parentId: typeof p.parentId === 'string' ? p.parentId : undefined,
+        title: String(p.title || ''),
+        composer: typeof p.composer === 'string' ? p.composer : undefined,
+        arranger: typeof p.arranger === 'string' ? p.arranger : undefined,
+        duration: typeof p.duration === 'string' ? p.duration : undefined,
+        created: typeof p.created === 'string' ? p.created : undefined,
+        updated: typeof p.updated === 'string' ? p.updated : undefined,
+        audioTrackMapping: mapping,
+        collectionId: typeof p.collectionId === 'string' ? p.collectionId : undefined,
+        collectionName: typeof p.collectionName === 'string' ? p.collectionName : undefined,
+      } as MusicPiece;
+    });
+  }
+
+  const piecesMap = pieces.reduce(
+    (acc, p) => {
+      acc[p.id] = p;
+      return acc;
+    },
+    {} as Record<string, MusicPiece>
+  );
+
+  const files: PlayerMediaFile[] = [];
+
+  for (const item of setList) {
+    if (item.type === 'intermission') continue;
+    const piece = resolvePieceForSetListItem(item, piecesMap, pieces);
+    if (!piece) continue;
+
+    const entries = buildFilesFromPiece(
+      item.id,
+      item.title,
+      item.composer,
+      item.duration,
+      piece,
+      pieces
+    );
+    files.push(...entries);
+  }
+
+  return { event, files, voiceParts, allPieces: pieces };
+}
+
 export const playerService = {
   async fetchPlaylistByToken(token: string): Promise<PlayerPlaylist> {
     const response = await pb.send('/api/player-playlist', {
-      query: { token }
+      query: { token },
     });
-
-    const { event, setList: rawSetList, voiceParts: rawVoiceParts, pieces: rawPieces } = response as {
-      event: { id: string; title: string; date: string };
-      setList: unknown;
-      voiceParts: unknown;
-      pieces: unknown;
-    };
-
-    // Defensively parse/cast setList
-    let setList: SetListItem[] = parseJsonField<SetListItem[]>(rawSetList) || [];
-    if (!Array.isArray(setList)) {
-      setList = [];
-    }
-
-    // Defensively parse/cast voiceParts
-    let voiceParts: VoicePartDef[] = parseJsonField<VoicePartDef[]>(rawVoiceParts) || [];
-    if (!Array.isArray(voiceParts)) {
-      voiceParts = [];
-    }
-
-    // Defensively parse/cast pieces
-    const rawPiecesList = parseJsonField<unknown[]>(rawPieces) || [];
-    let pieces: MusicPiece[] = [];
-    if (Array.isArray(rawPiecesList)) {
-      pieces = rawPiecesList.map(item => {
-        const p = item as Record<string, unknown>;
-        const mapping = parseAudioTrackMapping(p.audioTrackMapping);
-        return {
-          id: String(p.id || ''),
-          parentId: typeof p.parentId === 'string' ? p.parentId : undefined,
-          title: String(p.title || ''),
-          composer: typeof p.composer === 'string' ? p.composer : undefined,
-          arranger: typeof p.arranger === 'string' ? p.arranger : undefined,
-          duration: typeof p.duration === 'string' ? p.duration : undefined,
-          created: typeof p.created === 'string' ? p.created : undefined,
-          updated: typeof p.updated === 'string' ? p.updated : undefined,
-          audioTrackMapping: mapping,
-          collectionId: typeof p.collectionId === 'string' ? p.collectionId : undefined,
-          collectionName: typeof p.collectionName === 'string' ? p.collectionName : undefined,
-        } as MusicPiece;
-      });
-    }
-
-    const piecesMap = pieces.reduce((acc, p) => {
-      acc[p.id] = p;
-      return acc;
-    }, {} as Record<string, MusicPiece>);
-
-    const files: PlayerMediaFile[] = [];
-
-    for (const item of setList) {
-      if (item.type === 'intermission') continue;
-      const piece = resolvePieceForSetListItem(item, piecesMap, pieces);
-      if (!piece) continue;
-
-      const entries = buildFilesFromPiece(
-        item.id,
-        item.title,
-        item.composer,
-        item.duration,
-        piece,
-        pieces // use pieces from the hook instead of fetching allPieces
-      );
-      files.push(...entries);
-    }
-
-    return { event, files, voiceParts, allPieces: pieces };
+    return buildPlaylistFromApiResponse(response);
   },
 
-  async fetchPlaylistByEventId(eventId: string): Promise<PlayerPlaylist> {
-    const [event, allPieces, vpRecord] = await Promise.all([
-      pb.collection('events').getOne<Event>(eventId),
-      pb.collection('musicLibrary').getFullList<MusicPiece>(),
-      pb.collection('appSettings').getFirstListItem<{ value: { voiceParts: VoicePartDef[] } }>('key = "voiceParts"').catch(() => null)
-    ]);
-
-    const setList = event.setList || [];
-    const voiceParts = vpRecord?.value?.voiceParts || [];
-    const piecesMap = allPieces.reduce((acc, p) => {
-      acc[p.id] = p;
-      return acc;
-    }, {} as Record<string, MusicPiece>);
-
-    const files: PlayerMediaFile[] = [];
-
-    for (const item of setList) {
-      if (item.type === 'intermission') continue;
-      const piece = resolvePieceForSetListItem(item, piecesMap, allPieces);
-      if (!piece) continue;
-
-      const entries = buildFilesFromPiece(
-        item.id,
-        item.title,
-        item.composer,
-        item.duration,
-        piece,
-        allPieces
-      );
-      files.push(...entries);
-    }
-
-    return { 
-      event: { id: event.id, title: event.title, date: event.date }, 
-      files, 
-      voiceParts,
-      allPieces
-    };
+  async fetchSingerPlaylistByEventId(eventId: string): Promise<PlayerPlaylist> {
+    const response = await pb.send('/api/singer/player-playlist', {
+      method: 'GET',
+      query: { eventId },
+    });
+    return buildPlaylistFromApiResponse(response);
   },
 
   generateToken(eventId: string): Promise<string> {
-    return pb.send('/api/generate-player-token', {
-      method: 'POST',
-      body: { eventId }
-    }).then(res => res.token);
+    return pb
+      .send('/api/generate-player-token', {
+        method: 'POST',
+        body: { eventId },
+      })
+      .then((res) => res.token);
   },
 
-  /** 
+  /**
    * Re-maps existing PlayerMediaFile entries to a new voice part.
    * Handles fallback to tutti and track ID regeneration.
    */
@@ -283,15 +263,19 @@ export const playerService = {
     allPieces: MusicPiece[],
     voiceParts?: VoicePartDef[]
   ): PlayerMediaFile[] {
-    const piecesMap = allPieces.reduce((acc, p) => {
-      acc[p.id] = p;
-      return acc;
-    }, {} as Record<string, MusicPiece>);
+    const piecesMap = allPieces.reduce(
+      (acc, p) => {
+        acc[p.id] = p;
+        return acc;
+      },
+      {} as Record<string, MusicPiece>
+    );
 
-    const resolvedVoiceParts = voiceParts && voiceParts.length > 0 ? voiceParts : DEFAULT_VOICE_PARTS;
+    const resolvedVoiceParts =
+      voiceParts && voiceParts.length > 0 ? voiceParts : DEFAULT_VOICE_PARTS;
 
     const getSectionOfKey = (k: string): string => {
-      const vp = resolvedVoiceParts.find(v => v.label.toLowerCase() === k.toLowerCase());
+      const vp = resolvedVoiceParts.find((v) => v.label.toLowerCase() === k.toLowerCase());
       if (vp && vp.sectionCode) {
         return vp.sectionCode;
       }
@@ -300,26 +284,26 @@ export const playerService = {
 
     const requestedSection = getSectionOfKey(part);
 
-    return files.map(file => {
+    return files.map((file) => {
       if (!file.availableTracks || !file.pieceId) return file;
 
       let trackKey = '';
 
       // 1. Case-insensitive lookup for requested part
       const matchedKey = Object.keys(file.availableTracks).find(
-        k => k.toLowerCase() === part.toLowerCase()
+        (k) => k.toLowerCase() === part.toLowerCase()
       );
 
       if (matchedKey && file.availableTracks[matchedKey]) {
         trackKey = matchedKey;
       } else if (requestedSection !== 'Other') {
         const activeKeys = Object.keys(file.availableTracks).filter(
-          k => file.availableTracks![k] && file.availableTracks![k].trim() !== ''
+          (k) => file.availableTracks![k] && file.availableTracks![k].trim() !== ''
         );
 
         // 2a. Section code itself
         const sectionMatch = activeKeys.find(
-          k => k.toLowerCase() === requestedSection.toLowerCase()
+          (k) => k.toLowerCase() === requestedSection.toLowerCase()
         );
         if (sectionMatch) {
           trackKey = sectionMatch;
@@ -328,11 +312,11 @@ export const playerService = {
         // 2b. Other voice parts in the same section
         if (!trackKey) {
           const sameSectionLabels = resolvedVoiceParts
-            .filter(vp => vp.sectionCode === requestedSection)
-            .map(vp => vp.label.toLowerCase());
+            .filter((vp) => vp.sectionCode === requestedSection)
+            .map((vp) => vp.label.toLowerCase());
 
           for (const label of sameSectionLabels) {
-            const match = activeKeys.find(k => k.toLowerCase() === label);
+            const match = activeKeys.find((k) => k.toLowerCase() === label);
             if (match) {
               trackKey = match;
               break;
@@ -342,9 +326,7 @@ export const playerService = {
 
         // 2c. Generic fallback for same section
         if (!trackKey) {
-          const genericMatch = activeKeys.find(
-            k => getSectionOfKey(k) === requestedSection
-          );
+          const genericMatch = activeKeys.find((k) => getSectionOfKey(k) === requestedSection);
           if (genericMatch) {
             trackKey = genericMatch;
           }
@@ -353,9 +335,7 @@ export const playerService = {
 
       // 3. Tutti fallback
       if (!trackKey) {
-        const tuttiKey = Object.keys(file.availableTracks).find(
-          k => k.toLowerCase() === 'tutti'
-        );
+        const tuttiKey = Object.keys(file.availableTracks).find((k) => k.toLowerCase() === 'tutti');
         if (tuttiKey && file.availableTracks[tuttiKey]) {
           trackKey = tuttiKey;
         }
@@ -385,12 +365,12 @@ export const playerService = {
         streamUrl: pb.files.getURL(piece, actualFilename),
         isDownloaded: false,
         offlineUrl: undefined,
-        downloadStatus: 'idle' as const
+        downloadStatus: 'idle' as const,
       };
     });
   },
 
   getStreamUrl(piece: MusicPiece, filename: string): string {
     return pb.files.getURL(piece, filename);
-  }
+  },
 };

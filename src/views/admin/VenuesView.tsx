@@ -36,7 +36,16 @@ export default function VenuesView() {
 
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
-    const rowCounts = isOpenSeating ? [] : rowCountsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+    if (!name.trim()) {
+      dialog.showToast('Please enter a venue name.');
+      return;
+    }
+    const rowCounts = isOpenSeating
+      ? []
+      : rowCountsStr
+          .split(',')
+          .map((s) => parseInt(s.trim()))
+          .filter((n) => !isNaN(n));
 
     try {
       if (editingId) {
@@ -77,25 +86,27 @@ export default function VenuesView() {
     await removeVenue(venue.id);
   };
 
-  if (isLoading && venues.length === 0) return (
-    <div className="container pt-8 text-center">
-      <Spinner size="small" /> Loading venues...
-    </div>
-  );
+  if (isLoading && venues.length === 0)
+    return (
+      <div className="container pt-8 text-center">
+        <Spinner size="small" /> Loading venues...
+      </div>
+    );
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-row items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900">
-            Venue Templates
-          </h1>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900">Venue Templates</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Configure stage address information, row capacities and default layouts for seating charts.
+            Configure stage address information, row capacities and default layouts for seating
+            charts.
           </p>
         </div>
         <div className="mt-1 flex-shrink-0">
-          <Button onClick={() => setIsAdding(true)} variant="primary">+ New Venue</Button>
+          <Button onClick={() => setIsAdding(true)} variant="primary">
+            + New Venue
+          </Button>
         </div>
       </div>
 
@@ -106,8 +117,12 @@ export default function VenuesView() {
         maxWidth="500px"
         footer={
           <div className="flex flex-row gap-4">
-            <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button variant="primary" onClick={() => handleSave()}>Save Template</Button>
+            <Button variant="outline" onClick={resetForm}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={() => handleSave()}>
+              Save Template
+            </Button>
           </div>
         }
       >
@@ -135,9 +150,12 @@ export default function VenuesView() {
               id="isOpenSeating"
               checked={isOpenSeating}
               onChange={(e) => setIsOpenSeating(e.target.checked)}
-              className="size-4 cursor-pointer rounded border-border text-primary focus:ring-primary/25"
+              className="border-border text-primary focus:ring-primary/25 size-4 cursor-pointer rounded"
             />
-            <label htmlFor="isOpenSeating" className="cursor-pointer text-sm font-medium text-text select-none">
+            <label
+              htmlFor="isOpenSeating"
+              className="text-text cursor-pointer text-sm font-medium select-none"
+            >
               Open Seating (No assigned seats)
             </label>
           </div>
@@ -160,13 +178,13 @@ export default function VenuesView() {
       </Modal>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-6">
-        {venues.map(v => (
+        {venues.map((v) => (
           <AppCard
             key={v.id}
             onClick={() => handleEdit(v)}
-            className="h-full cursor-pointer transition-all duration-200 hover:border-primary/50 hover:bg-primary-light/5 hover:shadow-md"
+            className="hover:border-primary/50 hover:bg-primary-light/5 h-full cursor-pointer transition-all duration-200 hover:shadow-md"
           >
-            <h3 className="mb-3 border-b border-border pb-2 text-xl font-bold text-text">
+            <h3 className="border-border text-text mb-3 border-b pb-2 text-xl font-bold">
               {v.name}
             </h3>
             <div className="flex flex-1 flex-col gap-1.5">
@@ -194,7 +212,8 @@ export default function VenuesView() {
                     <span className="text-muted">Rows:</span> {v.rowCounts?.length || 0}
                   </div>
                   <div className="text-body">
-                    <span className="text-muted">Total Seats:</span> {v.rowCounts?.reduce((a, b) => a + b, 0) || 0}
+                    <span className="text-muted">Total Seats:</span>{' '}
+                    {v.rowCounts?.reduce((a, b) => a + b, 0) || 0}
                   </div>
                   <div className="text-muted text-xs">
                     Layout: {v.rowCounts?.join(' | ') || 'None'}

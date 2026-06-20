@@ -1,13 +1,5 @@
 import { pb } from '../../lib/pocketbase';
-import type {
-  MessageRecord,
-  SendMessageInput,
-  SendMessageResult,
-} from './types';
-
-export function encodeSmsBody(content: string): string {
-  return encodeURIComponent(content.slice(0, 1500));
-}
+import type { MessageRecord, SendMessageInput, SendMessageResult } from './types';
 
 export async function sendBulkMessage(
   data: SendMessageInput,

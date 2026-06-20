@@ -16,7 +16,7 @@ export function parseDurationToSeconds(durationStr: string | undefined): number 
 
   // Check if it's in format HH:MM:SS or MM:SS
   if (cleaned.includes(':')) {
-    const parts = cleaned.split(':').map(p => Number.parseInt(p, 10));
+    const parts = cleaned.split(':').map((p) => Number.parseInt(p, 10));
 
     if (parts.length === 3) {
       // HH:MM:SS
@@ -62,9 +62,9 @@ export function isValidDurationString(durationStr: string | undefined): boolean 
   if (cleaned.includes(':')) {
     const parts = cleaned.split(':');
     if (parts.length !== 2 && parts.length !== 3) return false;
-    if (!parts.every(part => /^\d+$/.test(part))) return false;
+    if (!parts.every((part) => /^\d+$/.test(part))) return false;
 
-    const numbers = parts.map(part => Number.parseInt(part, 10));
+    const numbers = parts.map((part) => Number.parseInt(part, 10));
     if (parts.length === 2) {
       const [, seconds] = numbers;
       return seconds < 60;
@@ -76,7 +76,8 @@ export function isValidDurationString(durationStr: string | undefined): boolean 
 
   if (/^\d+$/.test(cleaned)) return true;
 
-  const durationUnitsPattern = /^(?=.*\d)\s*(?:(\d+)\s*(?:h|hr|hrs|hours?)\s*)?(?:(\d+)\s*(?:m|min|mins|minutes?)\s*)?(?:(\d+)\s*(?:s|sec|secs|seconds?)\s*)?$/;
+  const durationUnitsPattern =
+    /^(?=.*\d)\s*(?:(\d+)\s*(?:h|hr|hrs|hours?)\s*)?(?:(\d+)\s*(?:m|min|mins|minutes?)\s*)?(?:(\d+)\s*(?:s|sec|secs|seconds?)\s*)?$/;
   const match = cleaned.match(durationUnitsPattern);
   return Boolean(match && (match[1] || match[2] || match[3]));
 }
@@ -88,17 +89,17 @@ export function isValidDurationString(durationStr: string | undefined): boolean 
  */
 export function formatSecondsToDuration(totalSeconds: number): string {
   if (totalSeconds <= 0) return '0:00';
-  
+
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
 
   const sStr = s.toString().padStart(2, '0');
-  
+
   if (h > 0) {
     const mStr = m.toString().padStart(2, '0');
     return `${h}:${mStr}:${sStr}`;
   }
-  
+
   return `${m}:${sStr}`;
 }

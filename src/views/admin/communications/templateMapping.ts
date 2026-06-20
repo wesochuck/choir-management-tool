@@ -7,7 +7,12 @@ export const mapToMessageTemplate = (tpl: TemplateRecord): MessageTemplate => {
 
   if (titleLower.includes('rehearsal')) category = 'rehearsal';
   else if (titleLower.includes('due') || titleLower.includes('payment')) category = 'dues';
-  else if (titleLower.includes('weather') || titleLower.includes('snow') || titleLower.includes('cancel')) category = 'weather';
+  else if (
+    titleLower.includes('weather') ||
+    titleLower.includes('snow') ||
+    titleLower.includes('cancel')
+  )
+    category = 'weather';
   else if (titleLower.includes('attendance')) category = 'attendance';
   else if (titleLower.includes('blank')) category = 'blank';
 

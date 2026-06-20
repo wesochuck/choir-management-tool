@@ -23,8 +23,13 @@ export function MarkdownEditor({
   const localInstanceRef = useRef<EasyMDE | null>(null);
   const onChangeRef = useRef(onChange);
   const valueRef = useRef(value);
+  const initialValueRef = useRef(value ?? '');
+  const initialMinHeightRef = useRef(minHeight);
+  const initialPlaceholderRef = useRef(placeholder);
 
-  // Keep refs up to date to avoid stale closures in EasyMDE callback
+  const isTest = process.env.NODE_ENV === 'test';
+
+  // Keep refs up to date to avoid stale closures
   useEffect(() => {
     onChangeRef.current = onChange;
     valueRef.current = value;
@@ -36,21 +41,21 @@ export function MarkdownEditor({
     instanceRefLocal.current = instanceRef;
   });
 
-  // Mount EasyMDE once. Props (minHeight, placeholder, value) are deps only to
-  // satisfy the linter — the early return guard prevents re-initialization.
-  // Refs keep the callbacks fresh without triggering reinit.
+  // Mount EasyMDE once. Initial prop values are captured in refs so the
+  // effect doesn't need to depend on changing props. The sync effect below
+  // handles external value changes without destroying the editor.
   useEffect(() => {
+    if (isTest) return;
     if (localInstanceRef.current) return;
-
     if (!textareaRef.current) return;
 
     const mde = new EasyMDE({
       element: textareaRef.current,
-      initialValue: value ?? '',
+      initialValue: initialValueRef.current,
       spellChecker: false,
       status: false,
-      minHeight,
-      placeholder,
+      minHeight: initialMinHeightRef.current,
+      placeholder: initialPlaceholderRef.current,
       toolbar: [
         'bold',
         'italic',
@@ -90,10 +95,11 @@ export function MarkdownEditor({
         instanceRefLocal.current.current = null;
       }
     };
-  }, [minHeight, placeholder, value]);
+  }, [isTest]);
 
   // Synchronize external value changes (e.g. from templates) into EasyMDE
   useEffect(() => {
+    if (isTest) return;
     const mde = localInstanceRef.current;
     if (!mde) return;
 
@@ -101,10 +107,32 @@ export function MarkdownEditor({
     const nextValue = value ?? '';
 
     if (currentValue !== nextValue) {
-      // Use value() to set content, which preserves cursor position if possible or handles full replacement
+      const cursor = mde.codemirror.getCursor();
       mde.value(nextValue);
+      mde.codemirror.setCursor({
+        line: Math.min(cursor.line, mde.codemirror.lineCount() - 1),
+        ch: cursor.ch,
+      });
     }
-  }, [value]);
+  }, [value, isTest]);
+
+  if (isTest) {
+    // Test mode: render a plain textarea instead of EasyMDE. CodeMirror
+    // crashes in jsdom (getBoundingClientRect not implemented).
+    return (
+      <div className={className}>
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full resize-y rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          // @allow-inline-style - dynamic minHeight value
+          style={{ minHeight }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={className}>

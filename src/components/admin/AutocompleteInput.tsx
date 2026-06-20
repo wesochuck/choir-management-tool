@@ -92,6 +92,17 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     }
   }, [activeIndex]);
 
+  const inputClassName = [
+    'border-border bg-surface text-text placeholder:text-text-muted',
+    'focus:border-primary focus:ring-primary/20',
+    'block min-h-11 w-full rounded-lg border px-3 py-2 text-base shadow-sm outline-none transition-colors',
+    'focus:ring-2',
+    'disabled:cursor-not-allowed disabled:opacity-60',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div ref={containerRef} className="relative w-full">
       <input
@@ -104,7 +115,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         onFocus={() => setShowSuggestions(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={className}
+        className={inputClassName}
         // @allow-inline-style - passes through style prop for composition
         style={style}
         required={required}
@@ -113,7 +124,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       {showSuggestions && filteredSuggestions.length > 0 && (
         <ul
           ref={listRef}
-          className="absolute inset-x-0 z-50 mt-1 max-h-60 list-none overflow-y-auto rounded-md border border-border bg-surface p-0 py-1 shadow-lg"
+          className="border-border bg-surface absolute inset-x-0 z-50 mt-1 max-h-60 list-none overflow-y-auto rounded-md border p-0 py-1 shadow-lg"
         >
           {filteredSuggestions.map((suggestion, idx) => {
             const isActive = idx === activeIndex;
@@ -122,7 +133,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
                 key={suggestion}
                 onClick={() => selectSuggestion(suggestion)}
                 onMouseEnter={() => setActiveIndex(idx)}
-                className={`cursor-pointer px-3 py-2 text-sm transition-colors ${isActive ? 'bg-primary-light font-semibold text-primary-deep' : 'text-text hover:bg-primary-light hover:text-primary-deep'}`}
+                className={`cursor-pointer px-3 py-2 text-sm transition-colors ${isActive ? 'bg-primary-light text-primary-deep font-semibold' : 'text-text hover:bg-primary-light hover:text-primary-deep'}`}
               >
                 {suggestion}
               </li>

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../../lib/queryKeys';
 import { communicationService } from '../../../services/communicationService';
 import type { Event } from '../../../services/eventService';
 import type { CommunicationSettings } from '../../../services/settingsService';
@@ -17,34 +19,33 @@ export function useAutomatedCommunicationTasks({
 }: UseAutomatedCommunicationTasksArgs) {
   const [automatedTaskStatus, setAutomatedTaskStatus] = useState<AutomatedTaskStatusMap>({});
 
-  const {
-    onRetry: onStatusRateLimitRetry,
-    reset: resetStatusRateLimitToast,
-  } = useRateLimitRetryToast(
-    'Communications status checks are rate-limited; retrying automatically...',
-  );
+  const { onRetry: onStatusRateLimitRetry, reset: resetStatusRateLimitToast } =
+    useRateLimitRetryToast(
+      'Communications status checks are rate-limited; retrying automatically...'
+    );
+
+  const eventIds = useMemo(() => events.map((e) => e.id), [events]);
+
+  const automatedStatusQuery = useQuery({
+    queryKey: [...queryKeys.communications.automatedTasks(), eventIds],
+    queryFn: () =>
+      communicationService.getAutomatedTaskStatuses(eventIds, {
+        onRetry: onStatusRateLimitRetry,
+      }),
+    enabled: events.length > 0,
+  });
 
   useEffect(() => {
-    let isCurrent = true;
-    if (events.length === 0) return;
+    if (events.length > 0) {
+      resetStatusRateLimitToast();
+    }
+  }, [eventIds, events.length, resetStatusRateLimitToast]);
 
-    resetStatusRateLimitToast();
-
-    const checkStatuses = async () => {
-      const cache = await communicationService.getAutomatedTaskStatuses(
-        events.map((event) => event.id),
-        { onRetry: onStatusRateLimitRetry },
-      );
-
-      if (isCurrent) setAutomatedTaskStatus(cache);
-    };
-
-    void checkStatuses();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [events, onStatusRateLimitRetry, resetStatusRateLimitToast]);
+  useEffect(() => {
+    if (automatedStatusQuery.data) {
+      setAutomatedTaskStatus(automatedStatusQuery.data);
+    }
+  }, [automatedStatusQuery.data]);
 
   const { upcomingTasks, pastTasks } = useMemo(() => {
     const upcoming: AutomatedTask[] = [];
@@ -58,11 +59,7 @@ export function useAutomatedCommunicationTasks({
         const resolution = automatedTaskStatus[`rsvp-${event.id}`] || 'pending';
 
         const taskStatus =
-          resolution === 'sent'
-            ? 'Sent'
-            : resolution === 'archived'
-            ? 'Archived'
-            : 'Scheduled';
+          resolution === 'sent' ? 'Sent' : resolution === 'archived' ? 'Archived' : 'Scheduled';
 
         const task: AutomatedTask = {
           id: `rsvp-${event.id}`,
@@ -71,8 +68,8 @@ export function useAutomatedCommunicationTasks({
           scheduledTime: event.created
             ? new Date(event.created)
             : event.date
-            ? new Date(event.date)
-            : new Date(),
+              ? new Date(event.date)
+              : new Date(),
           status: taskStatus,
         };
 
@@ -85,17 +82,13 @@ export function useAutomatedCommunicationTasks({
 
       if (commSettings.reminderEnabled) {
         const scheduledTime = new Date(
-          eventDate.getTime() - commSettings.reminderHoursBefore * 60 * 60 * 1000,
+          eventDate.getTime() - commSettings.reminderHoursBefore * 60 * 60 * 1000
         );
         const resolution = automatedTaskStatus[`reminder-${event.id}`] || 'pending';
         const isResolved = resolution !== 'pending';
 
         const taskStatus =
-          resolution === 'sent'
-            ? 'Sent'
-            : resolution === 'archived'
-            ? 'Archived'
-            : 'Scheduled';
+          resolution === 'sent' ? 'Sent' : resolution === 'archived' ? 'Archived' : 'Scheduled';
 
         const task: AutomatedTask = {
           id: `reminder-${event.id}`,
@@ -111,17 +104,13 @@ export function useAutomatedCommunicationTasks({
 
       if (commSettings.reportEnabled) {
         const scheduledTime = new Date(
-          eventDate.getTime() + commSettings.reportHoursAfter * 60 * 60 * 1000,
+          eventDate.getTime() + commSettings.reportHoursAfter * 60 * 60 * 1000
         );
         const resolution = automatedTaskStatus[`report-${event.id}`] || 'pending';
         const isResolved = resolution !== 'pending';
 
         const taskStatus =
-          resolution === 'sent'
-            ? 'Sent'
-            : resolution === 'archived'
-            ? 'Archived'
-            : 'Scheduled';
+          resolution === 'sent' ? 'Sent' : resolution === 'archived' ? 'Archived' : 'Scheduled';
 
         const task: AutomatedTask = {
           id: `report-${event.id}`,
@@ -141,11 +130,7 @@ export function useAutomatedCommunicationTasks({
         const isResolved = resolution !== 'pending';
 
         const taskStatus =
-          resolution === 'sent'
-            ? 'Sent'
-            : resolution === 'archived'
-            ? 'Archived'
-            : 'Scheduled';
+          resolution === 'sent' ? 'Sent' : resolution === 'archived' ? 'Archived' : 'Scheduled';
 
         const task: AutomatedTask = {
           id: `ticket-reminder-${event.id}`,
@@ -161,12 +146,8 @@ export function useAutomatedCommunicationTasks({
     });
 
     return {
-      upcomingTasks: upcoming.sort(
-        (a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime(),
-      ),
-      pastTasks: past.sort(
-        (a, b) => b.scheduledTime.getTime() - a.scheduledTime.getTime(),
-      ),
+      upcomingTasks: upcoming.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime()),
+      pastTasks: past.sort((a, b) => b.scheduledTime.getTime() - a.scheduledTime.getTime()),
     };
   }, [events, commSettings, automatedTaskStatus]);
 

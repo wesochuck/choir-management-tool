@@ -13,6 +13,8 @@ export interface UseAudioPlaybackParams {
   offlineMode?: boolean;
 }
 
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
 export function useAudioPlayback({
   playlist,
   currentIndex,
@@ -52,13 +54,22 @@ export function useAudioPlayback({
   }, []);
 
   const currentTrack = playlist[currentIndex];
-  const firstAudioIndex = useMemo(() => Math.max(0, playlist.findIndex(t => !t.isFolder)), [playlist]);
+  const firstAudioIndex = useMemo(
+    () =>
+      Math.max(
+        0,
+        playlist.findIndex((t) => !t.isFolder)
+      ),
+    [playlist]
+  );
 
   const isDownloadNeeded = offlineMode && currentTrack && !currentTrack.isDownloaded;
 
   useEffect(() => {
     if (isDownloadNeeded) {
-      setPlayError("This track is not downloaded for offline playback. Reconnect to the internet to play.");
+      setPlayError(
+        'This track is not downloaded for offline playback. Reconnect to the internet to play.'
+      );
       setIsPlaying(false);
     } else {
       setPlayError(null);
@@ -71,7 +82,7 @@ export function useAudioPlayback({
       setPlayError(null);
     }
     setCurrentTime(0);
-    
+
     // Load skip setting for this specific track
     if (currentTrack?.id) {
       const saved = safeLocalStorage.getItem(`track_skip_${currentTrack.id}`);
@@ -93,7 +104,7 @@ export function useAudioPlayback({
       onTrackChange(nextIdx);
       setIsPlaying(true);
     }
-    
+
     return () => {
       if (countdownTimerRef.current) clearTimeout(countdownTimerRef.current);
     };
@@ -104,9 +115,9 @@ export function useAudioPlayback({
     if (audioRef.current) {
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
-        playPromise.catch(err => {
+        playPromise.catch((err) => {
           if (err.name !== 'AbortError') {
-            setPlayError("Could not play this track. It may be unsupported.");
+            setPlayError('Could not play this track. It may be unsupported.');
             setIsPlaying(false);
           }
         });
@@ -132,7 +143,16 @@ export function useAudioPlayback({
       safePlay();
       setIsPlaying(true);
     }
-  }, [isDownloadNeeded, countdown, pendingNextIndex, isPlaying, cancelCountdown, onTrackChange, setIsPlaying, safePlay]);
+  }, [
+    isDownloadNeeded,
+    countdown,
+    pendingNextIndex,
+    isPlaying,
+    cancelCountdown,
+    onTrackChange,
+    setIsPlaying,
+    safePlay,
+  ]);
 
   const handleEnded = useCallback(() => {
     let nextIndexToPlay: number | null = null;
@@ -143,7 +163,7 @@ export function useAudioPlayback({
         audioRef.current.currentTime = 0;
         safePlay();
       }
-      return; 
+      return;
     } else if (currentIndex < playlist.length - 1) {
       nextIndexToPlay = currentIndex + 1;
     } else if (loopMode === 'all') {
@@ -163,7 +183,16 @@ export function useAudioPlayback({
     } else {
       setIsPlaying(false);
     }
-  }, [loopMode, currentIndex, playlist.length, firstAudioIndex, delaySetting, onTrackChange, setIsPlaying, safePlay]);
+  }, [
+    loopMode,
+    currentIndex,
+    playlist.length,
+    firstAudioIndex,
+    delaySetting,
+    onTrackChange,
+    setIsPlaying,
+    safePlay,
+  ]);
 
   const cycleLoopMode = useCallback(() => {
     const modes: LoopMode[] = ['none', 'all', 'one'];
@@ -173,9 +202,12 @@ export function useAudioPlayback({
 
   const getRepeatLabel = useCallback(() => {
     switch (loopMode) {
-      case 'one': return 'Repeat One';
-      case 'all': return 'Repeat All';
-      default: return 'No Repeat';
+      case 'one':
+        return 'Repeat One';
+      case 'all':
+        return 'Repeat All';
+      default:
+        return 'No Repeat';
     }
   }, [loopMode]);
 
@@ -243,7 +275,7 @@ export function useAudioPlayback({
   const handleLoadedMetadata = useCallback(() => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
-      
+
       // Automatically skip the first N seconds if configured
       if (!hasAppliedSkipRef.current && skipStart > 0 && audioRef.current.currentTime < skipStart) {
         audioRef.current.currentTime = Math.min(skipStart, audioRef.current.duration - 1);
@@ -258,30 +290,44 @@ export function useAudioPlayback({
     setIsScrubbing(true);
   }, []);
 
-  const handleSeekChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentTime(parseFloat(e.target.value));
+  const handleSeekChange = useCallback(
+    (time: number) => {
+      const safeTime = Number.isFinite(time) ? clamp(time, 0, duration || 0) : 0;
+      setCurrentTime(safeTime);
+    },
+    [duration]
+  );
+
+  const handleSeekEnd = useCallback(
+    (time: number) => {
+      const safeTime = Number.isFinite(time) ? clamp(time, 0, duration || 0) : 0;
+
+      if (audioRef.current) {
+        audioRef.current.currentTime = safeTime;
+      }
+
+      setCurrentTime(safeTime);
+      setIsScrubbing(false);
+    },
+    [duration]
+  );
+
+  const handleVolumeChange = useCallback((percent: number) => {
+    const safePercent = Number.isFinite(percent) ? clamp(percent, 0, 100) : 100;
+    setVolume(safePercent / 100);
   }, []);
 
-  const handleSeekEnd = useCallback((e: React.MouseEvent<HTMLInputElement> | React.TouchEvent<HTMLInputElement>) => {
-    const time = parseFloat((e.target as HTMLInputElement).value);
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-    }
-    setIsScrubbing(false);
-  }, []);
-
-  const handleVolumeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setVolume(parseFloat(e.target.value));
-  }, []);
-
-  const handleSkipStartChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value) || 0;
-    setSkipStart(val);
-    const trackId = currentTrack?.id;
-    if (trackId) {
-      safeLocalStorage.setItem(`track_skip_${trackId}`, val.toString());
-    }
-  }, [currentTrack?.id]);
+  const handleSkipStartChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = parseFloat(e.target.value) || 0;
+      setSkipStart(val);
+      const trackId = currentTrack?.id;
+      if (trackId) {
+        safeLocalStorage.setItem(`track_skip_${trackId}`, val.toString());
+      }
+    },
+    [currentTrack?.id]
+  );
 
   const toggleHints = useCallback(() => {
     const next = !showHints;
@@ -291,7 +337,7 @@ export function useAudioPlayback({
 
   const handleAudioError = useCallback(() => {
     if (!isDownloadNeeded) {
-      setPlayError("Could not load this track. It may be restricted or unsupported.");
+      setPlayError('Could not load this track. It may be restricted or unsupported.');
       setIsPlaying(false);
     }
   }, [isDownloadNeeded, setIsPlaying]);

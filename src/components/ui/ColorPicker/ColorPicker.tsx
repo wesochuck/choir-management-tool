@@ -1,4 +1,5 @@
 import SlColorPicker from '@shoelace-style/shoelace/dist/react/color-picker/index.js';
+import { safeSlProps } from '../shared';
 
 export interface ColorPickerProps {
   value: string;
@@ -22,10 +23,12 @@ export function ColorPicker({ value, onChange, size, label, className }: ColorPi
 
   return (
     <SlColorPicker
-      value={value}
-      size={size as 'small' | 'medium' | 'large' | undefined}
-      label={label}
-      className={className}
+      {...safeSlProps({
+        value,
+        size: size as 'small' | 'medium' | 'large' | undefined,
+        label,
+        className,
+      } as Record<string, unknown>)}
       onSlChange={(e: unknown) => {
         onChange((e as CustomEvent).detail.value as string);
       }}

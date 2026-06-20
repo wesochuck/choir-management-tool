@@ -24,10 +24,7 @@ export interface RsvpDisplayOptions {
   variant?: 'plain' | 'eventRoster';
 }
 
-export function getRsvpDisplay(
-  status: string,
-  options: RsvpDisplayOptions = {}
-): StatusDisplay {
+export function getRsvpDisplay(status: string, options: RsvpDisplayOptions = {}): StatusDisplay {
   const normalized = normalizeStatus(status);
   const isEventRoster = options.variant === 'eventRoster';
 

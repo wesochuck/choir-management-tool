@@ -5,12 +5,58 @@ import { pb } from '../src/lib/pocketbase.ts';
 import { eventService } from '../src/services/eventService.ts';
 import { settingsService } from '../src/services/settingsService.ts';
 
+test('eventService.getPublicEventById enforces public visibility filter', async (t) => {
+  let usedFilter = '';
+  const mockGetFirstListItem = t.mock.fn(async (_filter: string) => {
+    usedFilter = _filter;
+    return {
+      id: 'evt_1',
+      title: 'Public Concert',
+      date: new Date(Date.now() + 86400000).toISOString(),
+      isTicketingEnabled: true,
+      isArchived: false,
+      collectionId: 'test',
+      collectionName: 'events',
+      created: '',
+      updated: '',
+      expand: { venue: undefined },
+    };
+  });
+
+  const originalCollection = pb.collection;
+  pb.collection = function (name: string) {
+    if (name === 'events') {
+      return {
+        getFirstListItem: mockGetFirstListItem,
+        getFullList: async () => [],
+        getList: async () => ({ items: [], totalPages: 0, totalItems: 0 }),
+        getOne: async () => ({}),
+        update: async () => ({}),
+        create: async () => ({}),
+        delete: async () => true,
+      } as unknown as ReturnType<typeof pb.collection>;
+    }
+    return originalCollection.call(pb, name);
+  };
+
+  await eventService.getPublicEventById('evt_1');
+
+  assert.ok(usedFilter.includes('date >= @now'), 'filter must include date >= @now');
+  assert.ok(usedFilter.includes('isArchived != true'), 'filter must exclude archived');
+  assert.ok(usedFilter.includes('isTicketingEnabled = true'), 'filter must require ticketing');
+  assert.ok(usedFilter.includes('id ='), 'filter must match by id');
+
+  pb.collection = originalCollection;
+});
+
 test('eventService.getEvents deduplicates concurrent in-flight requests', async (t) => {
   const originalCollection = pb.collection;
 
   let callCount = 0;
   let resolveFirst: (value: unknown) => void = () => {};
-  const firstPromise = new Promise((resolve) => { resolveFirst = resolve; });
+  const firstPromise = new Promise((resolve) => {
+    resolveFirst = resolve;
+  });
 
   const mockGetFullList = t.mock.fn(async () => {
     callCount++;
@@ -31,7 +77,7 @@ test('eventService.getEvents deduplicates concurrent in-flight requests', async 
     const call1 = eventService.getEvents();
     const call2 = eventService.getEvents();
 
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
     assert.equal(callCount, 1);
 
     resolveFirst({} as never);
@@ -61,29 +107,35 @@ test('eventService.bulkCreateRehearsals throws on invalid day of week', async ()
     location: 'Main Sanctuary',
     type: 'Performance' as const,
     details: 'Black folders',
-    parentPerformanceId: ''
+    parentPerformanceId: '',
   };
 
-  await assert.rejects(
-    async () => {
-      await eventService.bulkCreateRehearsals(dummyPerformance, { count: 4, dayOfWeek: 7, time: '19:00', venue: '' });
-    },
-    /Invalid day of week selected\./
-  );
+  await assert.rejects(async () => {
+    await eventService.bulkCreateRehearsals(dummyPerformance, {
+      count: 4,
+      dayOfWeek: 7,
+      time: '19:00',
+      venue: '',
+    });
+  }, /Invalid day of week selected\./);
 
-  await assert.rejects(
-    async () => {
-      await eventService.bulkCreateRehearsals(dummyPerformance, { count: 4, dayOfWeek: -1, time: '19:00', venue: '' });
-    },
-    /Invalid day of week selected\./
-  );
+  await assert.rejects(async () => {
+    await eventService.bulkCreateRehearsals(dummyPerformance, {
+      count: 4,
+      dayOfWeek: -1,
+      time: '19:00',
+      venue: '',
+    });
+  }, /Invalid day of week selected\./);
 
-  await assert.rejects(
-    async () => {
-      await eventService.bulkCreateRehearsals(dummyPerformance, { count: 4, dayOfWeek: NaN, time: '19:00', venue: '' });
-    },
-    /Invalid day of week selected\./
-  );
+  await assert.rejects(async () => {
+    await eventService.bulkCreateRehearsals(dummyPerformance, {
+      count: 4,
+      dayOfWeek: NaN,
+      time: '19:00',
+      venue: '',
+    });
+  }, /Invalid day of week selected\./);
 });
 
 test('eventService.bulkCreateRehearsals throws on invalid performance date', async () => {
@@ -98,15 +150,17 @@ test('eventService.bulkCreateRehearsals throws on invalid performance date', asy
     location: 'Main Sanctuary',
     type: 'Performance' as const,
     details: 'Black folders',
-    parentPerformanceId: ''
+    parentPerformanceId: '',
   };
 
-  await assert.rejects(
-    async () => {
-      await eventService.bulkCreateRehearsals(dummyPerformance, { count: 4, dayOfWeek: 3, time: '19:00', venue: '' });
-    },
-    /Invalid performance date\./
-  );
+  await assert.rejects(async () => {
+    await eventService.bulkCreateRehearsals(dummyPerformance, {
+      count: 4,
+      dayOfWeek: 3,
+      time: '19:00',
+      venue: '',
+    });
+  }, /Invalid performance date\./);
 });
 
 test('eventService.bulkCreateRehearsals creates rehearsals with PocketBase batch', async (t) => {
@@ -178,11 +232,11 @@ test('eventService.bulkCreateRehearsals creates rehearsals with PocketBase batch
 test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
   const originalCollection = pb.collection;
   const originalCreateBatch = pb.createBatch;
-  
+
   const mockGetFullList = t.mock.fn(async () => {
     return [
       { id: 'rehearsal_1', title: 'Rehearsal 1', parentPerformanceId: 'perf_123' },
-      { id: 'rehearsal_2', title: 'Rehearsal 2', parentPerformanceId: 'perf_123' }
+      { id: 'rehearsal_2', title: 'Rehearsal 2', parentPerformanceId: 'perf_123' },
     ];
   });
   const mockDelete = t.mock.fn(async (id?: string) => {
@@ -194,12 +248,12 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
     if (name === 'events') {
       return {
         getFullList: mockGetFullList,
-        delete: mockDelete
+        delete: mockDelete,
       } as unknown as ReturnType<typeof pb.collection>;
     }
     if (name === 'ticketPurchases') {
       return {
-        getFullList: async () => []
+        getFullList: async () => [],
       } as unknown as ReturnType<typeof pb.collection>;
     }
     return originalCollection.call(pb, name);
@@ -217,10 +271,10 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
         return {
           delete: (id: string) => {
             mockDelete(id);
-          }
+          },
         } as unknown as ReturnType<ReturnType<typeof pb.createBatch>['collection']>;
       },
-      send: mockBatchSend
+      send: mockBatchSend,
     } as unknown as ReturnType<typeof pb.createBatch>;
   };
 
@@ -229,7 +283,7 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
 
     // Should fetch child rehearsals first
     assert.equal(mockGetFullList.mock.callCount(), 1);
-    
+
     // Should call delete on both rehearsals + the main performance
     assert.equal(mockDelete.mock.callCount(), 3);
     assert.equal(mockDelete.mock.calls[0].arguments[0], 'rehearsal_1');
@@ -243,7 +297,7 @@ test('eventService.deleteEvent cascade deletes child rehearsals', async (t) => {
 
 test('eventService.createEventWithRehearsals rolls back event creation on bulk rehearsals error', async (t) => {
   const originalCollection = pb.collection;
-  
+
   const mockCreate = t.mock.fn(async (data: unknown) => {
     return { id: 'new_perf_123', ...(data as Record<string, unknown>) };
   });
@@ -258,12 +312,12 @@ test('eventService.createEventWithRehearsals rolls back event creation on bulk r
       return {
         create: mockCreate,
         delete: mockDelete,
-        getFullList: async () => []
+        getFullList: async () => [],
       } as unknown as ReturnType<typeof pb.collection>;
     }
     if (name === 'ticketPurchases') {
       return {
-        getFullList: async () => []
+        getFullList: async () => [],
       } as unknown as ReturnType<typeof pb.collection>;
     }
     return originalCollection.call(pb, name);
@@ -271,15 +325,12 @@ test('eventService.createEventWithRehearsals rolls back event creation on bulk r
 
   try {
     // Force bulkCreateRehearsals to throw by providing invalid dayOfWeek
-    await assert.rejects(
-      async () => {
-        await eventService.createEventWithRehearsals(
-          { title: 'Test Performance', type: 'Performance', date: '2026-05-20T23:00:00.000Z' },
-          { count: 4, dayOfWeek: 9, time: '19:00', venue: '' }
-        );
-      },
-      /Invalid day of week selected\./
-    );
+    await assert.rejects(async () => {
+      await eventService.createEventWithRehearsals(
+        { title: 'Test Performance', type: 'Performance', date: '2026-05-20T23:00:00.000Z' },
+        { count: 4, dayOfWeek: 9, time: '19:00', venue: '' }
+      );
+    }, /Invalid day of week selected\./);
 
     // Should create the event first
     assert.equal(mockCreate.mock.callCount(), 1);

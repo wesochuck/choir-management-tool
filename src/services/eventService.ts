@@ -64,16 +64,26 @@ export const eventService = {
     });
 
     inFlightEvents = promise;
-    promise.finally(() => { inFlightEvents = null; });
+    promise.finally(() => {
+      inFlightEvents = null;
+    });
 
     return promise;
+  },
+
+  async getTicketingEnabledEvents() {
+    return await pb.collection('events').getFullList<Event>({
+      filter: 'isTicketingEnabled = true',
+      sort: '-date',
+    });
   },
 
   async getPublicEvents() {
     return await pb.collection('events').getFullList<Event>({
       filter: 'isArchived != true && isTicketingEnabled = true && date >= @now',
       sort: 'date',
-      fields: 'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+      fields:
+        'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
       expand: 'venue',
     });
   },
@@ -85,25 +95,54 @@ export const eventService = {
   },
 
   async getPublicEventById(id: string) {
-    return await pb.collection('events').getOne<Event>(id, {
-      fields: 'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
-      expand: 'venue',
-    });
+    return await pb
+      .collection('events')
+      .getFirstListItem<Event>(
+        pb.filter('id = {:id} && isArchived != true && isTicketingEnabled = true && date >= @now', {
+          id,
+        }),
+        {
+          fields:
+            'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+          expand: 'venue',
+        }
+      );
   },
 
-  async getPastPerformances(): Promise<Event[]> {
-    const result = await pb.collection('events').getList<Event>(1, 5, {
+  async getRecentPerformances(limit: number): Promise<Event[]> {
+    const result = await pb.collection('events').getList<Event>(1, limit, {
       filter: 'type = "Performance" && date < @now && isArchived != true',
       sort: '-date',
-      fields: 'id,collectionId,collectionName,title,date,venue,publicDetails,eventGraphic,expand.venue',
+      fields:
+        'id,collectionId,collectionName,title,date,venue,publicDetails,eventGraphic,expand.venue',
       expand: 'venue',
     });
     return result.items;
   },
 
+  async getPastPerformancesPaginated(
+    page: number,
+    perPage: number
+  ): Promise<{ items: Event[]; totalPages: number; totalItems: number }> {
+    const result = await pb.collection('events').getList<Event>(page, perPage, {
+      filter: 'type = "Performance" && date < @now && isArchived != true',
+      sort: '-date',
+      fields:
+        'id,collectionId,collectionName,title,date,venue,publicDetails,eventGraphic,expand.venue',
+      expand: 'venue',
+    });
+    return {
+      items: result.items,
+      totalPages: result.totalPages,
+      totalItems: result.totalItems,
+    };
+  },
+
   async getRehearsalsForPerformance(performanceId: string) {
     return await pb.collection('events').getFullList<Event>({
-      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', { performanceId }),
+      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', {
+        performanceId,
+      }),
       sort: 'date',
       expand: 'venue',
     });
@@ -111,7 +150,9 @@ export const eventService = {
 
   async getPublicRehearsalsForPerformance(performanceId: string) {
     return await pb.collection('events').getFullList<Event>({
-      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', { performanceId }),
+      filter: pb.filter('parentPerformanceId = {:performanceId} && type = "Rehearsal"', {
+        performanceId,
+      }),
       sort: 'date',
       fields: 'id,collectionId,collectionName,title,date,venue,expand.venue',
       expand: 'venue',
@@ -129,9 +170,9 @@ export const eventService = {
       return await pb.collection('events').create<Event>(data);
     }
     // Ensure date is in a format PocketBase likes (ISO string)
-    const payload = { 
+    const payload = {
       setListApproved: true,
-      ...data 
+      ...data,
     };
     if (payload.parentPerformanceId === '') {
       payload.parentPerformanceId = null as unknown as string;
@@ -214,11 +255,11 @@ export const eventService = {
   async bulkCreateRehearsals(parentPerformance: Event, config: BulkRehearsalConfig) {
     const { count, dayOfWeek, time, venue } = config;
     if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
-      throw new Error("Invalid day of week selected.");
+      throw new Error('Invalid day of week selected.');
     }
 
     if (!parentPerformance.date || isNaN(new Date(parentPerformance.date).getTime())) {
-      throw new Error("Invalid performance date.");
+      throw new Error('Invalid performance date.');
     }
 
     const timezone = await settingsService.getTimezone();
@@ -229,10 +270,10 @@ export const eventService = {
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
-      hour12: false
+      hour12: false,
     });
     const parts = formatter.formatToParts(new Date(parentPerformance.date));
-    const getPart = (type: string) => Number(parts.find(p => p.type === type)?.value || '0');
+    const getPart = (type: string) => Number(parts.find((p) => p.type === type)?.value || '0');
 
     const year = getPart('year');
     const month = getPart('month');
@@ -243,7 +284,7 @@ export const eventService = {
 
     // Roll back to the first rehearsal date (using the local Date object)
     const current = new Date(localPerfDate);
-    
+
     // If performance is on the same day, first rehearsal is 1 week before
     if (current.getDay() === dayOfWeek) {
       current.setDate(current.getDate() - 7);
@@ -262,7 +303,7 @@ export const eventService = {
       const y = current.getFullYear();
       const m = String(current.getMonth() + 1).padStart(2, '0');
       const d = String(current.getDate()).padStart(2, '0');
-      
+
       // Local input value in the target timezone
       const localString = `${y}-${m}-${d}T${time}`;
       // Safely convert this to the correct UTC timestamp accounting for DST at that date
@@ -275,7 +316,7 @@ export const eventService = {
         durationMinutes: 120,
         parentPerformanceId: parentPerformance.id,
         venue: venue || parentPerformance.venue || null,
-        details: `Bulk generated rehearsal leading to ${parentPerformance.title || 'Performance'}`
+        details: `Bulk generated rehearsal leading to ${parentPerformance.title || 'Performance'}`,
       });
 
       // Move back one week
@@ -299,7 +340,10 @@ export const eventService = {
     return created;
   },
 
-  async createEventWithRehearsals(data: Partial<Event> | FormData, bulkConfig?: BulkRehearsalConfig) {
+  async createEventWithRehearsals(
+    data: Partial<Event> | FormData,
+    bulkConfig?: BulkRehearsalConfig
+  ) {
     const createdEvent = await this.createEvent(data);
     if (bulkConfig) {
       try {
@@ -311,5 +355,5 @@ export const eventService = {
       }
     }
     return createdEvent;
-  }
+  },
 };

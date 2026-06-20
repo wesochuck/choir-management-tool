@@ -1,10 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { communicationService } from '../../../../src/services/communicationService.ts';
 import { useCommunicationDraft } from '../../../../src/views/admin/communications/useCommunicationDraft.ts';
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+});
 
 const noop = () => {};
 
@@ -46,7 +51,12 @@ test('recipient resolution does not loop on API failure', async (t) => {
   try {
     renderHook(
       () => useCommunicationDraft(defaultArgs()),
-      { wrapper: ({ children }) => React.createElement(MemoryRouter, null, children) },
+      {
+        wrapper: ({ children }) =>
+          React.createElement(QueryClientProvider, { client: queryClient },
+            React.createElement(MemoryRouter, null, children),
+          ),
+      },
     );
 
     // Allow enough time for the effect to fire, fail, and potentially re-fire
@@ -77,7 +87,10 @@ test('recipient resolution fires again on filter change after failure', async (t
       ({ tab }) => useCommunicationDraft(defaultArgs({ tab })),
       {
         initialProps: { tab: 'history' as const },
-        wrapper: ({ children }) => React.createElement(MemoryRouter, null, children),
+        wrapper: ({ children }) =>
+          React.createElement(QueryClientProvider, { client: queryClient },
+            React.createElement(MemoryRouter, null, children),
+          ),
       },
     );
 

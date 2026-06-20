@@ -58,6 +58,16 @@ describe('duesService', () => {
       });
       assert.deepStrictEqual(result, mockDues);
     });
+
+    it('propagates errors from pb.collection().getFullList', async () => {
+      const error = new Error('API Error');
+      mockCollection.getFullList.mock.mockImplementation(async () => Promise.reject(error));
+
+      await assert.rejects(
+        () => duesService.getDuesForSeason('Fall 2026'),
+        /API Error/
+      );
+    });
   });
 
   describe('updateDues', () => {
@@ -105,6 +115,58 @@ describe('duesService', () => {
         /Server error/
       );
       assert.strictEqual(mockCollection.create.mock.callCount(), 0);
+    });
+
+    it('re-throws error if update fails', async () => {
+      mockCollection.getFirstListItem.mock.mockImplementation(async () => ({ id: 'existing_id' }));
+      const updateError = new Error('Update failed');
+      mockCollection.update.mock.mockImplementation(async () => Promise.reject(updateError));
+
+      await assert.rejects(
+        () => duesService.updateDues('prof1', 'Fall 2026', true),
+        /Update failed/
+      );
+    });
+
+    it('re-throws error if create fails after 404', async () => {
+      const notFoundError = { status: 404 };
+      mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject(notFoundError));
+
+      const createError = new Error('Create failed');
+      mockCollection.create.mock.mockImplementation(async () => Promise.reject(createError));
+
+      await assert.rejects(
+        () => duesService.updateDues('prof1', 'Fall 2026', true),
+        /Create failed/
+      );
+    });
+
+    it('re-throws error if err is null', async () => {
+      mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject(null));
+
+      await assert.rejects(
+        () => duesService.updateDues('prof1', 'Fall 2026', true),
+        (err) => err === null
+      );
+    });
+
+    it('re-throws error if err is a string', async () => {
+      mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject('string error'));
+
+      await assert.rejects(
+        () => duesService.updateDues('prof1', 'Fall 2026', true),
+        (err) => err === 'string error'
+      );
+    });
+
+    it('re-throws error if err is an object without status', async () => {
+      const objError = { message: 'Some object error' };
+      mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject(objError));
+
+      await assert.rejects(
+        () => duesService.updateDues('prof1', 'Fall 2026', true),
+        (err) => err === objError
+      );
     });
   });
 });

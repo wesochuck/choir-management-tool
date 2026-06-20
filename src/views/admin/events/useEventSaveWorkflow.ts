@@ -1,14 +1,9 @@
 import { useCallback } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 import type { useDialog } from '../../../contexts/DialogContext';
-import type {
-  Event,
-  BulkRehearsalConfig,
-} from '../../../services/eventService';
+import type { Event, BulkRehearsalConfig } from '../../../services/eventService';
 import type { Venue } from '../../../services/venueService';
-import {
-  type CommunicationSettings,
-} from '../../../services/settingsService';
+import { type CommunicationSettings } from '../../../services/settingsService';
 import { rosterService } from '../../../services/rosterService';
 import { navigateToCommunicationDraft } from './eventCommunication';
 
@@ -19,12 +14,9 @@ interface UseEventSaveWorkflowArgs {
   setIsModalOpen: (open: boolean) => void;
   addEvent: (
     data: Partial<Event> | FormData,
-    bulkConfig?: BulkRehearsalConfig,
+    bulkConfig?: BulkRehearsalConfig
   ) => Promise<Event | undefined>;
-  editEvent: (
-    id: string,
-    data: Partial<Event> | FormData,
-  ) => Promise<Event | undefined>;
+  editEvent: (id: string, data: Partial<Event> | FormData) => Promise<Event | undefined>;
   venues: Venue[];
   timezone: string;
   communicationSettings: CommunicationSettings;
@@ -46,10 +38,7 @@ export function useEventSaveWorkflow({
   dialog,
 }: UseEventSaveWorkflowArgs) {
   const handleSave = useCallback(
-    async (
-      data: Partial<Event> | FormData,
-      bulkConfig?: BulkRehearsalConfig,
-    ) => {
+    async (data: Partial<Event> | FormData, bulkConfig?: BulkRehearsalConfig) => {
       let resultEvent: Event | undefined;
 
       try {
@@ -83,8 +72,7 @@ export function useEventSaveWorkflow({
         }
 
         const isNewRsvpOpen =
-          savedEvent.isOpenForRSVP &&
-          (!editingEvent || !editingEvent.isOpenForRSVP);
+          savedEvent.isOpenForRSVP && (!editingEvent || !editingEvent.isOpenForRSVP);
 
         if (isNewRsvpOpen) {
           const confirmed = await dialog.confirm({
@@ -122,7 +110,7 @@ export function useEventSaveWorkflow({
       communicationSettings,
       navigate,
       dialog,
-    ],
+    ]
   );
 
   return { handleSave };

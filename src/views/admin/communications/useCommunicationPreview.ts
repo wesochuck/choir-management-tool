@@ -6,10 +6,7 @@ import type {
 } from '../../../services/communicationService';
 import type { Event } from '../../../services/eventService';
 import type { CommunicationSettings } from '../../../services/settingsService';
-import {
-  getRenderedPreview,
-  resolvePreviewContent,
-} from '../../../lib/communicationUtils';
+import { getRenderedPreview, resolvePreviewContent } from '../../../lib/communicationUtils';
 
 interface UseCommunicationPreviewArgs {
   content: string;
@@ -49,7 +46,7 @@ export function useCommunicationPreview({
       selectedEvent,
       sampleRecipient,
       commSettings.mailingAddress,
-      pollQuestions,
+      pollQuestions
     );
   }, [
     content,
@@ -64,22 +61,19 @@ export function useCommunicationPreview({
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.id === eventId) || null,
-    [events, eventId],
+    [events, eventId]
   );
 
-  const previewRecipient = useMemo(
-    () => selectedRecipients[0] || null,
-    [selectedRecipients],
-  );
+  const previewRecipient = useMemo(() => selectedRecipients[0] || null, [selectedRecipients]);
 
   const renderedSubject = useMemo(
     () => resolvePreviewContent(subject, selectedEvent, previewRecipient),
-    [subject, selectedEvent, previewRecipient],
+    [subject, selectedEvent, previewRecipient]
   );
 
   const renderedSmsBody = useMemo(
     () => resolvePreviewContent(content, selectedEvent, previewRecipient),
-    [content, selectedEvent, previewRecipient],
+    [content, selectedEvent, previewRecipient]
   );
 
   return {

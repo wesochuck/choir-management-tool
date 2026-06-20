@@ -1,14 +1,7 @@
 import { pb } from '../../lib/pocketbase';
 import { eventService, type Event } from '../eventService';
-import {
-  settingsService,
-  type CommunicationConfig,
-} from '../settingsService';
-import type {
-  MessageRecord,
-  SendMessageInput,
-  TemplateRecord,
-} from './types';
+import { settingsService, type CommunicationConfig } from '../settingsService';
+import type { MessageRecord, SendMessageInput, TemplateRecord } from './types';
 
 async function getMessages() {
   return await pb.collection('messages').getFullList<MessageRecord>({

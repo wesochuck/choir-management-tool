@@ -15,14 +15,15 @@ export function SectionBucketEditor({
   configVoiceParts,
 }: SectionBucketEditorProps) {
   const isSectionReferenced = (code: string) => {
-    return configVoiceParts.some(vp => vp.sectionCode === code);
+    return configVoiceParts.some((vp) => vp.sectionCode === code);
   };
 
   return (
     <AppCard title="Section Bucket Configurations">
       <div className="flex flex-col gap-4">
         <p className="mb-2 text-xs text-slate-500">
-          Configure the section buckets for your choir (e.g. S, Sopranos) and their visual identity on the seating chart.
+          Configure the section buckets for your choir (e.g. S, Sopranos) and their visual identity
+          on the seating chart.
         </p>
 
         <div className="flex flex-col gap-3">
@@ -36,7 +37,10 @@ export function SectionBucketEditor({
             });
 
             return (
-              <div key={index} className="grid w-full grid-cols-[80px_1fr_180px_85px] items-center gap-4">
+              <div
+                key={index}
+                className="grid w-full grid-cols-[80px_1fr_180px_85px] items-center gap-4"
+              >
                 <Input
                   value={sec.code}
                   onChange={(e) => {
@@ -46,7 +50,6 @@ export function SectionBucketEditor({
                   }}
                   placeholder="Code"
                   disabled={isTied}
-                 
                 />
                 <Input
                   value={sec.name}
@@ -57,7 +60,7 @@ export function SectionBucketEditor({
                   }}
                   placeholder="Name"
                 />
-                
+
                 <div className="relative flex items-center gap-2">
                   <ColorPicker
                     value={hexBg}
@@ -67,7 +70,7 @@ export function SectionBucketEditor({
                         ...newSecs[index],
                         color: val,
                         colorBg: val,
-                        colorText: getContrastColor(val)
+                        colorText: getContrastColor(val),
                       };
                       setConfigSections(newSecs);
                     }}
@@ -84,13 +87,13 @@ export function SectionBucketEditor({
                         val = '#' + val;
                       }
                       val = '#' + val.replace(/[^0-9A-Fa-f]/g, '').substring(0, 6);
-                      
+
                       const newSecs = [...configSections];
-                      newSecs[index] = { 
-                        ...newSecs[index], 
+                      newSecs[index] = {
+                        ...newSecs[index],
                         color: val,
                         colorBg: val,
-                        colorText: getContrastColor(val)
+                        colorText: getContrastColor(val),
                       };
                       setConfigSections(newSecs);
                     }}
@@ -99,14 +102,13 @@ export function SectionBucketEditor({
                   />
 
                   {tooClose && (
-                    <span 
-                      title="Warning: This color lacks adequate visual contrast with another section color." 
+                    <span
+                      title="Warning: This color lacks adequate visual contrast with another section color."
                       className="cursor-help text-sm text-red-600"
                     >
                       ⚠️
                     </span>
                   )}
-
                 </div>
 
                 <Button
@@ -117,7 +119,7 @@ export function SectionBucketEditor({
                     setConfigSections(configSections.filter((_, idx) => idx !== index));
                   }}
                   disabled={isTied}
-                  title={isTied ? "Cannot delete section referenced by a voice part" : undefined}
+                  title={isTied ? 'Cannot delete section referenced by a voice part' : undefined}
                 >
                   Delete
                 </Button>
@@ -130,7 +132,12 @@ export function SectionBucketEditor({
           type="button"
           variant="secondary"
           className="self-start"
-          onClick={() => setConfigSections([...configSections, { code: '', name: '', color: '', colorBg: '', colorText: '' }])}
+          onClick={() =>
+            setConfigSections([
+              ...configSections,
+              { code: '', name: '', color: '', colorBg: '', colorText: '' },
+            ])
+          }
         >
           + Add Section Bucket
         </Button>

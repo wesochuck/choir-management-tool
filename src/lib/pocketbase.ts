@@ -4,9 +4,8 @@ import { shouldRedirectAuthErrorToLogin } from './authRedirect';
 type ViteEnv = Record<string, string | boolean | undefined> & { PROD?: boolean };
 
 const env = (import.meta as ImportMeta & { env?: ViteEnv }).env;
-const defaultPbUrl = env?.PROD && typeof window !== 'undefined'
-  ? window.location.origin
-  : 'http://127.0.0.1:8090';
+const defaultPbUrl =
+  env?.PROD && typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:8090';
 
 export const pb = new PocketBase(String(env?.VITE_PB_URL || defaultPbUrl));
 
@@ -32,26 +31,33 @@ pb.afterSend = async (response, data) => {
       const token = pb.authStore.token;
       if (token) {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.error('[PB AUTH]', 'collectionId:', payload.collectionId, 'role:', pb.authStore.record?.role, 'model:', JSON.stringify(pb.authStore.record, null, 2));
+        console.error(
+          '[PB AUTH]',
+          'collectionId:',
+          payload.collectionId,
+          'role:',
+          pb.authStore.record?.role,
+          'model:',
+          JSON.stringify(pb.authStore.record, null, 2)
+        );
       } else {
         console.error('[PB AUTH] No token in authStore');
       }
-    } catch (e) { console.error('[PB AUTH] decode error', e); }
+    } catch (e) {
+      console.error('[PB AUTH] decode error', e);
+    }
   }
 
-  const isAuthError = (response.status === 401 || response.status === 403) &&
+  const isAuthError =
+    (response.status === 401 || response.status === 403) &&
     data?.message !== 'Batch requests are not allowed.';
-  const isStaleToken400 = response.status === 400 && 
-    data?.message?.includes('loadAuthToken');
+  const isStaleToken400 = response.status === 400 && data?.message?.includes('loadAuthToken');
 
   if (isAuthError || isStaleToken400) {
     console.warn('Stale or invalid session detected, clearing authStore.');
     pb.authStore.clear();
 
-    if (
-      typeof window !== 'undefined' &&
-      shouldRedirectAuthErrorToLogin(window.location.pathname)
-    ) {
+    if (typeof window !== 'undefined' && shouldRedirectAuthErrorToLogin(window.location.pathname)) {
       window.location.href = '/login';
     }
   }
@@ -67,9 +73,9 @@ interface PocketBaseErrorData {
 
 export function formatPocketBaseError(err: unknown): string {
   if (!err) return 'An unknown error occurred';
-  
+
   const error = err as { data?: PocketBaseErrorData; message?: string };
-  
+
   if (error.data && typeof error.data === 'object' && Object.keys(error.data).length > 0) {
     const details = Object.entries(error.data)
       .map(([field, info]) => {
@@ -80,7 +86,7 @@ export function formatPocketBaseError(err: unknown): string {
 
         const code = (info as { code: string }).code;
         const msg = (info as { message: string }).message;
-        
+
         // Convert camelCase to capitalized words (e.g. voicePart -> Voice Part)
         const friendlyField = field
           .replace(/([A-Z])/g, ' $1')
@@ -92,7 +98,7 @@ export function formatPocketBaseError(err: unknown): string {
         if (code === 'validation_required' || code === 'validation_missing_required') {
           return `${friendlyField} is required.`;
         }
-        
+
         // Custom domain validations
         if (field === 'email') {
           if (code === 'validation_not_unique') {
@@ -102,7 +108,7 @@ export function formatPocketBaseError(err: unknown): string {
             return 'Please enter a valid email address.';
           }
         }
-        
+
         if (field === 'password') {
           if (code === 'validation_len_out_of_range') {
             return 'Password must be between 8 and 72 characters.';
@@ -114,9 +120,9 @@ export function formatPocketBaseError(err: unknown): string {
       })
       .filter(Boolean)
       .join('\n');
-      
+
     if (details) return details;
   }
-  
-  return (err instanceof Error) ? err.message : 'An error occurred';
+
+  return err instanceof Error ? err.message : 'An error occurred';
 }

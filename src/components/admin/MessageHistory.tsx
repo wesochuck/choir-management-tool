@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { type MessageRecord, type CommunicationRecipient } from '../../services/communicationService';
+import {
+  type MessageRecord,
+  type CommunicationRecipient,
+} from '../../services/communicationService';
 import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
-import { Pagination } from '../common/Pagination';
-import { Button, Select, Input } from '../ui';
+import { Button, Select, Input, DataTable, type ColumnDef } from '../ui';
 
 export type SourceFilter = 'all' | 'manual' | 'automated';
 
@@ -54,22 +56,186 @@ export function MessageHistory({
     setSearchTerm(historySearchQuery);
   }, [historySearchQuery]);
 
-  const filteredHistory = sourceFilter === 'all'
-    ? history
-    : history.filter((message) => {
-        const mFilters = message.filters as Record<string, unknown>;
-        const mType = mFilters?.type as string | undefined;
-        const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
-        return sourceFilter === 'automated' ? isAutomated : !isAutomated;
-      });
+  const filteredHistory =
+    sourceFilter === 'all'
+      ? history
+      : history.filter((message) => {
+          const mFilters = message.filters as Record<string, unknown>;
+          const mType = mFilters?.type as string | undefined;
+          const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+          return sourceFilter === 'automated' ? isAutomated : !isAutomated;
+        });
+
+  const getMessageMeta = (message: MessageRecord) => {
+    const mFilters = message.filters as Record<string, unknown>;
+    const mType = mFilters?.type as string | undefined;
+    const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+    return { mType, isAutomated };
+  };
+
+  const getResolvedSubject = (message: MessageRecord) => {
+    const mFilters = message.filters as Record<string, unknown>;
+    const eventId = mFilters?.eventId as string | undefined;
+    const linkedEvent = events.find((e) => e.id === eventId) || null;
+    return resolvePreviewContent(
+      message.subject || 'SMS message',
+      linkedEvent,
+      null,
+      commSettings.mailingAddress
+    );
+  };
+
+  const columns: ColumnDef<MessageRecord>[] = [
+    {
+      id: 'date',
+      header: 'Date',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap">{new Date(row.original.created).toLocaleString()}</span>
+      ),
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Date',
+      },
+    },
+    {
+      id: 'type',
+      header: 'Type',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const { mType, isAutomated } = getMessageMeta(row.original);
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+              {row.original.type}
+            </span>
+            {isAutomated && mType && (
+              <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
+                {mType}
+              </span>
+            )}
+          </div>
+        );
+      },
+      meta: {
+        hideBelow: 'sm',
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Type',
+      },
+    },
+    {
+      id: 'subject',
+      header: 'Subject',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="block max-w-[250px] truncate font-semibold">
+          {getResolvedSubject(row.original)}
+        </span>
+      ),
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
+    },
+    {
+      id: 'source',
+      header: 'Source',
+      enableSorting: false,
+      cell: ({ row }) => {
+        const { isAutomated } = getMessageMeta(row.original);
+        return isAutomated ? (
+          <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+            Automated
+          </span>
+        ) : (
+          <span className="inline-flex w-fit items-center rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
+            Manual
+          </span>
+        );
+      },
+      meta: {
+        hideBelow: 'sm',
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Source',
+      },
+    },
+    {
+      id: 'recipients',
+      header: 'Recipients',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <button
+          type="button"
+          className="text-primary hover:text-primary-deep cursor-pointer border-none bg-transparent p-0 text-sm font-semibold underline decoration-dotted underline-offset-2 transition-colors"
+          onClick={() =>
+            onViewRecipients(
+              row.original.recipients,
+              `Recipients — ${getResolvedSubject(row.original)}`
+            )
+          }
+        >
+          {row.original.recipients.length} recipient
+          {row.original.recipients.length !== 1 ? 's' : ''}
+        </button>
+      ),
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'right',
+      },
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      enableSorting: false,
+      cell: ({ row }) =>
+        row.original.status === 'Archived' ? (
+          <span className="inline-flex w-[70px] items-center justify-center rounded bg-slate-400 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
+            Archived
+          </span>
+        ) : (
+          <span className="bg-success-bg text-success-text inline-flex w-[70px] items-center justify-center rounded px-1.5 py-0.5 text-xs font-semibold tracking-wider uppercase">
+            Sent
+          </span>
+        ),
+      meta: {
+        cardSection: 0,
+        cardSide: 'right',
+      },
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="small"
+            onClick={() => onCopyDraft(row.original)}
+          >
+            Copy to Draft
+          </Button>
+        </div>
+      ),
+      meta: {
+        align: 'right',
+        cardSection: 1,
+        cardSide: 'right',
+      },
+    },
+  ];
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="mb-1 flex gap-2">
-        <div className="relative flex-1">
+      <div className="mb-1 flex items-center gap-2">
+        <div className="relative flex-[3]">
           <Input
             type="text"
-            
             placeholder="Search message history (subject, content, type)..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -78,7 +244,7 @@ export function MessageHistory({
           {searchTerm && (
             <button
               type="button"
-              className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer border-0 bg-transparent text-xl leading-none text-text-muted"
+              className="text-text-muted absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer border-0 bg-transparent text-xl leading-none"
               onClick={() => {
                 setSearchTerm('');
                 onHistorySearchChange('');
@@ -93,6 +259,7 @@ export function MessageHistory({
           value={sourceFilter}
           onChange={(e) => onSourceFilterChange(e.target.value as SourceFilter)}
           size="small"
+          className="max-w-[130px]"
         >
           <option value="all">All Sources</option>
           <option value="manual">Manual</option>
@@ -100,122 +267,25 @@ export function MessageHistory({
         </Select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] border-collapse text-left">
-          <thead>
-            <tr className="border-b-2 border-gray-200 text-sm text-gray-500">
-              <th className="p-3 px-4 text-left">Date</th>
-              <th className="p-3 px-4 text-left">Type</th>
-              <th className="p-3 px-4 text-left">Subject</th>
-              <th className="p-3 px-4 text-left">Source</th>
-              <th className="p-3 px-4 text-center">Recipients</th>
-              <th className="p-3 px-4 text-left">Status</th>
-              <th className="p-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredHistory.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
-                  {historySearchQuery
-                    ? `No messages found matching "${historySearchQuery}".`
-                    : 'No messages logged yet.'}
-                </td>
-              </tr>
-            ) : (
-              filteredHistory.map((message) => {
-                const mFilters = message.filters as Record<string, unknown>;
-                const mType = mFilters?.type as string | undefined;
-                const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
-
-                const eventId = mFilters?.eventId as string | undefined;
-                const linkedEvent = events.find(e => e.id === eventId) || null;
-                const resolvedSubject = resolvePreviewContent(
-                  message.subject || 'SMS message',
-                  linkedEvent,
-                  null,
-                  commSettings.mailingAddress
-                );
-
-                return (
-                  <tr key={message.id} className="border-b border-gray-200 text-sm">
-                    <td className="p-3 px-4 whitespace-nowrap">
-                      {new Date(message.created).toLocaleString()}
-                    </td>
-                    <td className="p-3 px-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="inline-flex w-fit items-center rounded bg-primary-light px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-primary-deep uppercase">
-                          {message.type}
-                        </span>
-                        {isAutomated && (
-                          <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase opacity-80">
-                            {mType}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="max-w-[250px] truncate p-3 px-4 font-semibold">
-                      {resolvedSubject}
-                    </td>
-                    <td className="p-3 px-4">
-                      {isAutomated ? (
-                        <span className="inline-flex w-fit items-center rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-danger-text uppercase">
-                          Automated
-                        </span>
-                      ) : (
-                        <span className="inline-flex w-fit items-center rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-gray-600 uppercase">
-                          Manual
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 px-4 text-center">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-auto min-h-0 cursor-pointer"
-                        onClick={() =>
-                          onViewRecipients(
-                            message.recipients,
-                            `Recipients — ${resolvedSubject}`
-                          )
-                        }
-                      >
-                        {message.recipients.length} recipient{message.recipients.length !== 1 ? 's' : ''}
-                      </Button>
-                    </td>
-                    <td className="p-3 px-4">
-                      {message.status === 'Archived' ? (
-                        <span className="inline-flex items-center rounded bg-slate-400 px-2 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
-                          Archived
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded bg-success-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-success-text uppercase">
-                          Sent
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3 px-4 text-right whitespace-nowrap">
-                      <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" size="small" onClick={() => onViewDetails(message)}>
-                          Details
-                        </Button>
-                        <Button type="button" variant="secondary" size="small" onClick={() => onCopyDraft(message)}>
-                          Copy to Draft
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
+      <DataTable
+        columns={columns}
+        data={filteredHistory}
+        isLoading={false}
+        emptyState={{
+          title: historySearchQuery
+            ? `No messages found matching "${historySearchQuery}".`
+            : 'No messages logged yet.',
+          icon: '📬',
+        }}
+        manualPagination
+        pagination={{
+          pageIndex: Math.max(0, currentPage - 1),
+          pageSize: 10,
+        }}
+        pageCount={totalPages}
+        onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
+        onRowClick={(row) => onViewDetails(row)}
+        getRowId={(message) => message.id}
       />
     </div>
   );

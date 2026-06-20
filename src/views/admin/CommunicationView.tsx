@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppCard } from '../../components/common/AppCard';
 import EasyMDE from 'easymde';
 import { useDialog } from '../../contexts/DialogContext';
@@ -7,14 +8,14 @@ import { useEvents } from '../../hooks/useEvents';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useAuth } from '../../contexts/AuthContext';
 import { CommunicationTabs } from '../../components/CommunicationTabs';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import type { CommunicationTab } from '../../types/Communication';
-import type {
-  CommunicationRecipient,
-  MessageRecord,
-} from '../../services/communicationService';
+import type { CommunicationRecipient, MessageRecord } from '../../services/communicationService';
 import { pb } from '../../lib/pocketbase';
+import { Button } from '../../components/ui';
 import { communicationService } from '../../services/communicationService';
-import { settingsService } from '../../services/settingsService';
+import { queryKeys } from '../../lib/queryKeys';
+import { settingsService, type CommunicationSettings } from '../../services/settingsService';
 
 import { useCommunicationLibrary } from './communications/useCommunicationLibrary';
 import { useCommunicationDraft } from './communications/useCommunicationDraft';
@@ -27,11 +28,7 @@ import { DraftsPanel } from './communications/DraftsPanel';
 import { HistoryPanel } from './communications/HistoryPanel';
 import { SettingsPanel } from './communications/SettingsPanel';
 import { CommunicationModals } from './communications/CommunicationModals';
-import type {
-  AutomatedTask,
-  CommunicationRouteState,
-  WizardStep,
-} from './communications/types';
+import type { AutomatedTask, CommunicationRouteState, WizardStep } from './communications/types';
 
 export default function CommunicationView() {
   const dialog = useDialog();
@@ -68,9 +65,21 @@ export default function CommunicationView() {
 
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
-  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
 
   const library = useCommunicationLibrary();
+  const queryClient = useQueryClient();
+
+  const saveConfigMutation = useMutation({
+    mutationFn: (settings: CommunicationSettings) =>
+      settingsService.saveCommunicationSettings(settings),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.communications.settings() });
+    },
+  });
+
+  const testSmtpMutation = useMutation({
+    mutationFn: (email: string) => pb.send('/api/test-smtp', { method: 'POST', body: { email } }),
+  });
 
   const automated = useAutomatedCommunicationTasks({
     events,
@@ -142,7 +151,8 @@ export default function CommunicationView() {
           recipients,
           title: `Admins Receiving Report for ${eventLabel}`,
           emptyMessage: 'No admins are currently opted in to receive attendance reports.',
-          helperText: 'Enable attendance reports on at least one admin profile to receive these messages.',
+          helperText:
+            'Enable attendance reports on at least one admin profile to receive these messages.',
         });
 
         return;
@@ -156,7 +166,8 @@ export default function CommunicationView() {
           recipients,
           title: `Ticket Buyers for ${eventLabel}`,
           emptyMessage: 'No ticket buyers found for this performance.',
-          helperText: 'Only users who have purchased tickets for this specific performance will receive this reminder.',
+          helperText:
+            'Only users who have purchased tickets for this specific performance will receive this reminder.',
         });
 
         return;
@@ -268,13 +279,16 @@ export default function CommunicationView() {
     delete cleanFilters.archivedAt;
     delete cleanFilters.automatedTaskType;
 
-    draft.handleResumeDraft({
-      ...message,
-      subject: message.subject.replace(/^\[Archived\]\s*/, ''),
-      content: message.content,
-      filters: cleanFilters,
-      status: 'Draft',
-    }, { asCopy: true });
+    draft.handleResumeDraft(
+      {
+        ...message,
+        subject: message.subject.replace(/^\[Archived\]\s*/, ''),
+        content: message.content,
+        filters: cleanFilters,
+        status: 'Draft',
+      },
+      { asCopy: true }
+    );
   };
 
   const handleDraftTaskMessage = (subjectText: string, bodyText: string) => {
@@ -312,43 +326,57 @@ export default function CommunicationView() {
 
     // The editor's change handler will trigger setContent/setEditingTemplate automatically via onChange
   };
-if (library.isLoading) {
+  if (library.isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl p-6">
+        <AppCard className="flex items-center justify-center py-12">
+          <p>Loading Communications...</p>
+        </AppCard>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl p-6">
-      <AppCard className="flex items-center justify-center py-12">
-        <p>Loading Communications...</p>
-      </AppCard>
-    </div>
-  );
-}
+      <div className="mb-6">
+        <AdminPageHeader
+          title="Communications"
+          description="Create messages, manage drafts, review message history, and configure automated communications."
+          actions={
+            tab !== 'compose' ? (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => {
+                  setTab('compose');
+                  if (wizardStep === 'REVIEW') {
+                    setWizardStep('TARGETS');
+                  }
+                }}
+                className="w-full whitespace-nowrap sm:w-auto"
+              >
+                <span aria-hidden="true">+</span>
+                <span>New Message</span>
+              </Button>
+            ) : undefined
+          }
+          below={
+            <>
+              {routeState?.returnToPolls && (
+                <Link to="/admin/polls" className="text-muted text-sm underline">
+                  Back to Polls
+                </Link>
+              )}
 
-return (
-  <div className="mx-auto max-w-7xl p-6">
-    <div className="mb-6 flex items-center justify-between">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-display m-0">
-          Communications
-        </h1>
-
-          {routeState?.returnToPolls && (
-            <Link
-              to="/admin/polls"
-              className="text-muted text-sm underline"
-            >
-              Back to Polls
-            </Link>
-          )}
-        </div>
-
-        <CommunicationTabs
-          activeTab={tab}
-          onTabChange={(nextTab) => {
-            setTab(nextTab);
-            if (nextTab === 'compose' && wizardStep === 'REVIEW') {
-              setWizardStep('TARGETS');
-            }
-          }}
-          draftsCount={library.drafts.length}
+              <CommunicationTabs
+                activeTab={tab}
+                onTabChange={(nextTab) => {
+                  setTab(nextTab);
+                }}
+                draftsCount={library.drafts.length}
+              />
+            </>
+          }
         />
       </div>
 
@@ -422,7 +450,7 @@ return (
               })
             ) {
               await communicationService.deleteDraft(draftRecord.id);
-              library.setDrafts(await communicationService.getDrafts());
+              queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
             }
           }}
         />
@@ -450,7 +478,7 @@ return (
           setCommSettings={library.setCommSettings}
           testEmailAddress={testEmailAddress}
           setTestEmailAddress={setTestEmailAddress}
-          isTestingSmtp={isTestingSmtp}
+          isTestingSmtp={testSmtpMutation.isPending}
           onSendConnectionTest={async () => {
             if (!testEmailAddress) {
               await dialog.showMessage({
@@ -461,12 +489,8 @@ return (
               return;
             }
 
-            setIsTestingSmtp(true);
             try {
-              const response = await pb.send('/api/test-smtp', {
-                method: 'POST',
-                body: { email: testEmailAddress },
-              });
+              const response = await testSmtpMutation.mutateAsync(testEmailAddress);
 
               if (response && response.success) {
                 dialog.showToast(`Test email successfully sent to ${testEmailAddress}!`);
@@ -480,15 +504,16 @@ return (
                 message: `Could not send test email: ${errMsg}`,
                 variant: 'danger',
               });
-            } finally {
-              setIsTestingSmtp(false);
             }
           }}
-          isSavingConfig={library.isSavingConfig}
+          isSavingConfig={saveConfigMutation.isPending}
           onSaveSettings={async () => {
-            library.setIsSavingConfig(true);
             try {
-              await settingsService.saveCommunicationSettings(library.commSettings);
+              const currentSettings =
+                queryClient.getQueryData<CommunicationSettings>(
+                  queryKeys.communications.settings()
+                ) ?? library.commSettings;
+              await saveConfigMutation.mutateAsync(currentSettings);
               dialog.showToast('Settings updated successfully.');
             } catch (err: unknown) {
               const message = err instanceof Error ? err.message : String(err);
@@ -497,8 +522,6 @@ return (
                 message: 'Failed to save settings: ' + message,
                 variant: 'danger',
               });
-            } finally {
-              library.setIsSavingConfig(false);
             }
           }}
           templates={library.templates}

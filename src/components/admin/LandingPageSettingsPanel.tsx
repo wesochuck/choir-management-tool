@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { MarkdownEditor } from '../common/MarkdownEditor';
 import { AppCard } from '../common/AppCard';
 import { Button } from '../ui/Button/Button';
-import { Input } from '../ui';
-import { settingsService, type LandingPageSettings, DEFAULT_LANDING_SETTINGS } from '../../services/settingsService';
+import { Input, Select } from '../ui';
+import {
+  settingsService,
+  type LandingPageSettings,
+  DEFAULT_LANDING_SETTINGS,
+} from '../../services/settingsService';
+import { PUBLIC_FONT_OPTIONS, type PublicFontChoice } from '../../lib/publicFonts';
 import type EasyMDE from 'easymde';
 
 export interface LandingPageSettingsPanelHandle {
   getSettings: () => LandingPageSettings;
   getHeroImageChanges: () => { file: File | null; removed: boolean };
-  markSaved: (savedSettings: LandingPageSettings, savedHeroImageUrl: string | null) => void;
+  markSaved: (savedSettings: LandingPageSettings, savedHeroImageUrl?: string | null) => void;
   reset: () => void;
 }
 
@@ -17,11 +24,14 @@ interface LandingPageSettingsPanelProps {
   onDirtyChange: (isDirty: boolean) => void;
 }
 
-export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandle, LandingPageSettingsPanelProps>(function LandingPageSettingsPanel({
-  onDirtyChange,
-}, ref) {
+export const LandingPageSettingsPanel = forwardRef<
+  LandingPageSettingsPanelHandle,
+  LandingPageSettingsPanelProps
+>(function LandingPageSettingsPanel({ onDirtyChange }, ref) {
   const [settings, setSettings] = useState<LandingPageSettings>({ ...DEFAULT_LANDING_SETTINGS });
-  const [initialSettings, setInitialSettings] = useState<LandingPageSettings>({ ...DEFAULT_LANDING_SETTINGS });
+  const [initialSettings, setInitialSettings] = useState<LandingPageSettings>({
+    ...DEFAULT_LANDING_SETTINGS,
+  });
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const [initialHeroImageUrl, setInitialHeroImageUrl] = useState<string | null>(null);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
@@ -40,25 +50,25 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
     }
   };
 
+  const landingQuery = useQuery({
+    queryKey: queryKeys.appSettings.landing,
+    queryFn: () => settingsService.getLandingSettings(),
+  });
+
+  const heroImageQuery = useQuery({
+    queryKey: queryKeys.appSettings.heroImage,
+    queryFn: () => settingsService.getHeroImageUrl(),
+  });
+
   useEffect(() => {
-    async function load() {
-      try {
-        const [s, imgUrl] = await Promise.all([
-          settingsService.getLandingSettings(),
-          settingsService.getHeroImageUrl(),
-        ]);
-        setSettings(s);
-        setInitialSettings(s);
-        setHeroImageUrl(imgUrl);
-        setInitialHeroImageUrl(imgUrl);
-      } catch (err: unknown) {
-        console.error('Failed to load landing page settings', err);
-      } finally {
-        setLoading(false);
-      }
+    if (loading && landingQuery.data && !heroImageQuery.isLoading) {
+      setSettings(landingQuery.data);
+      setInitialSettings(landingQuery.data);
+      setHeroImageUrl(heroImageQuery.data ?? null);
+      setInitialHeroImageUrl(heroImageQuery.data ?? null);
+      setLoading(false);
     }
-    load();
-  }, []);
+  }, [loading, landingQuery.data, heroImageQuery.data, heroImageQuery.isLoading]);
 
   useEffect(() => {
     return () => {
@@ -74,39 +84,60 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
       settings.historyText !== initialSettings.historyText ||
       settings.contactEmail !== initialSettings.contactEmail ||
       settings.showBrandingHeaderFooter !== initialSettings.showBrandingHeaderFooter ||
+      settings.headerFont !== initialSettings.headerFont ||
+      settings.bodyFont !== initialSettings.bodyFont ||
       heroImageFile !== null ||
       heroImageRemoved ||
       heroImageUrl !== initialHeroImageUrl;
     onDirtyChange(dirty);
-  }, [settings, initialSettings, heroImageFile, heroImageRemoved, heroImageUrl, initialHeroImageUrl, onDirtyChange]);
+  }, [
+    settings,
+    initialSettings,
+    heroImageFile,
+    heroImageRemoved,
+    heroImageUrl,
+    initialHeroImageUrl,
+    onDirtyChange,
+  ]);
 
-  useImperativeHandle(ref, () => ({
-    getSettings: () => settings,
-    getHeroImageChanges: () => ({ file: heroImageFile, removed: heroImageRemoved }),
-    markSaved: (savedSettings, savedHeroImageUrl) => {
-      revokeActiveBlob();
-      setInitialSettings({ ...savedSettings });
-      setInitialHeroImageUrl(savedHeroImageUrl);
-      setHeroImageUrl(savedHeroImageUrl);
-      setHeroImageFile(null);
-      setHeroImageRemoved(false);
-      setHeroError(null);
-    },
-    reset: () => {
-      revokeActiveBlob();
-      setSettings({ ...initialSettings });
-      setHeroImageUrl(initialHeroImageUrl);
-      setHeroImageFile(null);
-      setHeroImageRemoved(false);
-      setHeroError(null);
-      aboutRef.current?.value(initialSettings.aboutUsText);
-      historyRef.current?.value(initialSettings.historyText);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    },
-  }), [settings, initialSettings, initialHeroImageUrl, heroImageFile, heroImageRemoved]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      getSettings: () => settings,
+      getHeroImageChanges: () => ({ file: heroImageFile, removed: heroImageRemoved }),
+      markSaved: (savedSettings, savedHeroImageUrl) => {
+        revokeActiveBlob();
+        setInitialSettings({ ...savedSettings });
 
-  const handleChange = <K extends keyof LandingPageSettings>(field: K, value: LandingPageSettings[K]) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
+        if (savedHeroImageUrl !== undefined) {
+          setInitialHeroImageUrl(savedHeroImageUrl);
+          setHeroImageUrl(savedHeroImageUrl);
+        }
+
+        setHeroImageFile(null);
+        setHeroImageRemoved(false);
+        setHeroError(null);
+      },
+      reset: () => {
+        revokeActiveBlob();
+        setSettings({ ...initialSettings });
+        setHeroImageUrl(initialHeroImageUrl);
+        setHeroImageFile(null);
+        setHeroImageRemoved(false);
+        setHeroError(null);
+        aboutRef.current?.value(initialSettings.aboutUsText);
+        historyRef.current?.value(initialSettings.historyText);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      },
+    }),
+    [settings, initialSettings, initialHeroImageUrl, heroImageFile, heroImageRemoved]
+  );
+
+  const handleChange = <K extends keyof LandingPageSettings>(
+    field: K,
+    value: LandingPageSettings[K]
+  ) => {
+    setSettings((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,95 +171,137 @@ export const LandingPageSettingsPanel = forwardRef<LandingPageSettingsPanelHandl
     <AppCard title="Public Landing Page">
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-1">Hero Image</label>
+          <label className="mb-1 block text-sm font-medium">Hero Image</label>
           {heroImageUrl && (
             <div className="mb-2">
               <img src={heroImageUrl} alt="Hero" className="max-h-48 rounded border" />
             </div>
           )}
-          <div className="flex gap-2">
-            <Input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/svg+xml,image/webp"
-              onChange={handleHeroFileChange}
-              className=""
-            />
+          <div className="flex items-center gap-2">
+            <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
+              <span aria-hidden="true">⬆️</span>
+              <span>{heroImageUrl ? 'Replace Hero Image' : 'Upload Hero Image'}</span>
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                className="hidden"
+                onChange={handleHeroFileChange}
+              />
+            </label>
             {heroImageUrl && (
-              <Button variant="secondary" onClick={handleRemoveHero}>
+              <Button variant="danger" size="small" onClick={handleRemoveHero}>
                 Remove
               </Button>
             )}
           </div>
-          {heroError && <p className="text-red-500 text-xs mt-1">{heroError}</p>}
-          <p className="text-xs text-text-muted mt-1">Recommended: 1200x600px. Max 5 MB.</p>
+          {heroError && <p className="mt-1 text-xs text-red-500">{heroError}</p>}
+          <p className="text-text-muted mt-1 text-xs">Recommended: 1200x600px. Max 5 MB.</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Hero Headline</label>
+          <label className="mb-1 block text-sm font-medium">Hero Headline</label>
           <Input
             type="text"
             value={settings.heroHeadline}
-            onChange={e => handleChange('heroHeadline', e.target.value)}
+            onChange={(e) => handleChange('heroHeadline', e.target.value)}
             className="w-full"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Hero Subtitle</label>
+          <label className="mb-1 block text-sm font-medium">Hero Subtitle</label>
           <Input
             type="text"
             value={settings.heroSubtitle}
-            onChange={e => handleChange('heroSubtitle', e.target.value)}
+            onChange={(e) => handleChange('heroSubtitle', e.target.value)}
             className="w-full"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">About Us Text</label>
+          <label className="mb-1 block text-sm font-medium">About Us Text</label>
           <MarkdownEditor
             value={settings.aboutUsText}
-            onChange={v => handleChange('aboutUsText', v)}
+            onChange={(v) => handleChange('aboutUsText', v)}
             instanceRef={aboutRef}
             minHeight="200px"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">History Text</label>
+          <label className="mb-1 block text-sm font-medium">History Text</label>
           <MarkdownEditor
             value={settings.historyText}
-            onChange={v => handleChange('historyText', v)}
+            onChange={(v) => handleChange('historyText', v)}
             instanceRef={historyRef}
             minHeight="200px"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Contact Email</label>
+          <label className="mb-1 block text-sm font-medium">Contact Email</label>
           <Input
             type="email"
             value={settings.contactEmail}
-            onChange={e => handleChange('contactEmail', e.target.value)}
+            onChange={(e) => handleChange('contactEmail', e.target.value)}
             className="w-full"
             placeholder="contact@example.com"
           />
         </div>
 
-        <div className="mt-4 flex flex-row items-center gap-4 rounded-lg border border-border bg-neutral-100 p-4">
+        <div>
+          <label className="mb-1 block text-sm font-medium" htmlFor="headerFont">
+            Header font
+          </label>
+          <Select
+            id="headerFont"
+            value={settings.headerFont ?? 'system'}
+            onChange={(e) => handleChange('headerFont', e.target.value as PublicFontChoice)}
+          >
+            {PUBLIC_FONT_OPTIONS.map((font) => (
+              <option key={font.id} value={font.id}>
+                {font.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium" htmlFor="bodyFont">
+            Body font
+          </label>
+          <Select
+            id="bodyFont"
+            value={settings.bodyFont ?? 'system'}
+            onChange={(e) => handleChange('bodyFont', e.target.value as PublicFontChoice)}
+          >
+            {PUBLIC_FONT_OPTIONS.map((font) => (
+              <option key={font.id} value={font.id}>
+                {font.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="border-border mt-4 flex flex-row items-center gap-4 rounded-lg border bg-neutral-100 p-4">
           <input
             id="showBrandingHeaderFooter"
             type="checkbox"
-            className="size-[18px] cursor-pointer accent-primary"
+            className="accent-primary size-[18px] cursor-pointer"
             checked={!!settings.showBrandingHeaderFooter}
-            onChange={e => handleChange('showBrandingHeaderFooter', e.target.checked)}
+            onChange={(e) => handleChange('showBrandingHeaderFooter', e.target.checked)}
           />
-          <label htmlFor="showBrandingHeaderFooter" className="flex flex-1 cursor-pointer flex-col gap-0.5 select-none">
-            <span className="text-sm leading-tight font-semibold text-text">
+          <label
+            htmlFor="showBrandingHeaderFooter"
+            className="flex flex-1 cursor-pointer flex-col gap-0.5 select-none"
+          >
+            <span className="text-text text-sm leading-tight font-semibold">
               Wrap Ticketing, Donations, and Auditions in Site Layout
             </span>
-            <span className="text-xs leading-tight text-text-muted">
-              When checked, guest transactional pages will be decorated with the global header navigation and footer.
+            <span className="text-text-muted text-xs leading-tight">
+              When checked, guest transactional pages will be decorated with the global header
+              navigation and footer.
             </span>
           </label>
         </div>

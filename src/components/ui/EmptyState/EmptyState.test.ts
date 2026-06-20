@@ -14,7 +14,9 @@ test('EmptyState renders title', () => {
 });
 
 test('EmptyState renders description', () => {
-  const { container } = render(React.createElement(EmptyState, { title: 'Empty', description: 'Nothing to show' }));
+  const { container } = render(
+    React.createElement(EmptyState, { title: 'Empty', description: 'Nothing to show' })
+  );
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   const desc = el.querySelector('p');

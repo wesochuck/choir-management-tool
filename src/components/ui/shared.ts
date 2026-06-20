@@ -15,8 +15,16 @@
  * margin classes already passing through.
  */
 const visualClassPrefixes = [
-  'border', 'rounded', 'bg-',
-  'text-', 'shadow-', 'outline-', 'placeholder:', 'focus:', 'transition-', 'ring-',
+  'border',
+  'rounded',
+  'bg-',
+  'text-',
+  'shadow-',
+  'outline-',
+  'placeholder:',
+  'focus:',
+  'transition-',
+  'ring-',
 ];
 
 export function layoutOnly(className?: string): string | undefined {
@@ -27,4 +35,24 @@ export function layoutOnly(className?: string): string | undefined {
     .filter((c) => !visualClassPrefixes.some((prefix) => c.startsWith(prefix)))
     .join(' ');
   return remaining || undefined;
+}
+
+/**
+ * Strip undefined values from a props object before passing to a Shoelace
+ * Web Component. Shoelace crashes internally (in render()) when receiving
+ * undefined for props it may iterate over (class lists, part suffixes,
+ * option groups, etc.). This also protects against undefined values leaking
+ * through {...rest} spreads.
+ */
+export function safeSlProps<T extends Record<string, unknown>>(props: T): T {
+  const out: Record<string, unknown> = {};
+  let needsFilter = false;
+  for (const [key, value] of Object.entries(props)) {
+    if (value === undefined) {
+      needsFilter = true;
+    } else {
+      out[key] = value;
+    }
+  }
+  return (needsFilter ? out : props) as T;
 }

@@ -7,6 +7,7 @@ export const defaultProfileInput: ProfileInput = {
   voicePart: '',
   globalStatus: 'Active',
   notes: '',
+  showInDirectory: true,
   doNotEmail: false,
   receiveAttendanceReports: true,
   receiveRsvpDeclineNotices: false,
@@ -32,6 +33,7 @@ export function profileToFormData(profile: Profile | null | undefined): ProfileI
     isSectionLeader: Boolean(profile.isSectionLeader),
     statusIsManual: Boolean(profile.statusIsManual),
     role: profile.expand?.user?.role || 'singer',
+    showInDirectory: profile.showInDirectory !== false,
   } as ProfileInput;
 }
 
@@ -50,7 +52,8 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
       formData.receiveAdminNotifications !== true ||
       formData.isSectionLeader ||
       formData.statusIsManual ||
-      formData.role !== 'singer'
+      formData.role !== 'singer' ||
+      formData.showInDirectory !== true
     );
   }
 
@@ -62,12 +65,16 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
     (formData.globalStatus || '') !== (initialData.globalStatus || '') ||
     (formData.notes || '') !== (initialData.notes || '') ||
     Boolean(formData.doNotEmail) !== Boolean(initialData.doNotEmail) ||
-    (formData.receiveAttendanceReports !== false) !== (initialData.receiveAttendanceReports !== false) ||
-    Boolean(formData.receiveRsvpDeclineNotices) !== Boolean(initialData.receiveRsvpDeclineNotices) ||
-    (formData.receiveAdminNotifications !== false) !== (initialData.receiveAdminNotifications !== false) ||
+    (formData.receiveAttendanceReports !== false) !==
+      (initialData.receiveAttendanceReports !== false) ||
+    Boolean(formData.receiveRsvpDeclineNotices) !==
+      Boolean(initialData.receiveRsvpDeclineNotices) ||
+    (formData.receiveAdminNotifications !== false) !==
+      (initialData.receiveAdminNotifications !== false) ||
     Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader) ||
     Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual) ||
     (formData.role || 'singer') !== (initialData.expand?.user?.role || 'singer') ||
-    formData.photo !== initialData.photo
+    formData.photo !== initialData.photo ||
+    (formData.showInDirectory !== false) !== (initialData.showInDirectory !== false)
   );
 }

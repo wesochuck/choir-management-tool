@@ -1,9 +1,6 @@
 import { getLastName } from '../stringUtils';
 import { getSectionFromVoicePart } from '../voicePartUtils';
-import {
-  getRsvpExportGroupLabel,
-  type RsvpStatus,
-} from './rsvpLabels';
+import { getRsvpExportGroupLabel, type RsvpStatus } from './rsvpLabels';
 
 export type RsvpExportSort = 'lastName' | 'section';
 
@@ -49,9 +46,7 @@ export function quoteCsvValue(value: string): string {
   return `"${val}"`;
 }
 
-export function buildEventRosterExportFilename(
-  event: EventRosterExportEvent
-): string {
+export function buildEventRosterExportFilename(event: EventRosterExportEvent): string {
   const sanitizedTitle = (event.title || event.type || 'event')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_');
@@ -64,17 +59,17 @@ export function buildEventRosterCsv(args: BuildEventRosterCsvArgs): string {
 
   const getSectionIndex = (voicePart?: string) => {
     if (!voicePart) return 999;
-    const vpDef = voiceParts.find(vp => vp.label === voicePart);
+    const vpDef = voiceParts.find((vp) => vp.label === voicePart);
     const secCode = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(voicePart);
-    const idx = sections.findIndex(s => s.code === secCode);
+    const idx = sections.findIndex((s) => s.code === secCode);
     return idx === -1 ? 999 : idx;
   };
 
   const getSingerSectionName = (voicePart?: string) => {
     if (!voicePart) return 'Unassigned';
-    const vpDef = voiceParts.find(vp => vp.label === voicePart);
+    const vpDef = voiceParts.find((vp) => vp.label === voicePart);
     const secCode = vpDef ? vpDef.sectionCode : getSectionFromVoicePart(voicePart);
-    const secDef = sections.find(s => s.code === secCode);
+    const secDef = sections.find((s) => s.code === secCode);
     return secDef ? secDef.name : secCode;
   };
 
@@ -104,37 +99,41 @@ export function buildEventRosterCsv(args: BuildEventRosterCsvArgs): string {
 
   let firstGroup = true;
   rsvpGroups.forEach((group) => {
-    const groupSingers = singers.filter(s => s.rsvp === group.status);
+    const groupSingers = singers.filter((s) => s.rsvp === group.status);
     if (groupSingers.length === 0) return;
 
     if (!firstGroup) csvLines.push('');
     firstGroup = false;
     csvLines.push([quoteCsvValue(group.label), '', '', '', ''].join(','));
 
-    sortGroup(groupSingers).forEach(s => {
-      csvLines.push([
-        quoteCsvValue(s.profile.name),
-        quoteCsvValue(getSingerSectionName(s.profile.voicePart)),
-        quoteCsvValue(s.profile.voicePart || 'Not sure'),
-        quoteCsvValue(event.title || event.type || 'Event'),
-        quoteCsvValue(s.rsvp),
-      ].join(','));
+    sortGroup(groupSingers).forEach((s) => {
+      csvLines.push(
+        [
+          quoteCsvValue(s.profile.name),
+          quoteCsvValue(getSingerSectionName(s.profile.voicePart)),
+          quoteCsvValue(s.profile.voicePart || 'Not sure'),
+          quoteCsvValue(event.title || event.type || 'Event'),
+          quoteCsvValue(s.rsvp),
+        ].join(',')
+      );
     });
   });
 
-  const sectionLeaders = singers.filter(s => s.profile.isSectionLeader === true);
+  const sectionLeaders = singers.filter((s) => s.profile.isSectionLeader === true);
   if (sectionLeaders.length > 0) {
     csvLines.push('');
     csvLines.push('Section Leaders');
     csvLines.push(header);
-    sortGroup(sectionLeaders).forEach(s => {
-      csvLines.push([
-        quoteCsvValue(s.profile.name),
-        quoteCsvValue(getSingerSectionName(s.profile.voicePart)),
-        quoteCsvValue(s.profile.voicePart || 'Not sure'),
-        quoteCsvValue(event.title || event.type || 'Event'),
-        quoteCsvValue(s.rsvp),
-      ].join(','));
+    sortGroup(sectionLeaders).forEach((s) => {
+      csvLines.push(
+        [
+          quoteCsvValue(s.profile.name),
+          quoteCsvValue(getSingerSectionName(s.profile.voicePart)),
+          quoteCsvValue(s.profile.voicePart || 'Not sure'),
+          quoteCsvValue(event.title || event.type || 'Event'),
+          quoteCsvValue(s.rsvp),
+        ].join(',')
+      );
     });
   }
 

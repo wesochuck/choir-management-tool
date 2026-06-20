@@ -43,6 +43,7 @@ const SeatingView = lazyWithReload(() => import('./views/admin/SeatingView'));
 const AttendanceView = lazyWithReload(() => import('./views/admin/AttendanceView'));
 const AuditionsView = lazyWithReload(() => import('./views/admin/AuditionsView'));
 const SettingsView = lazyWithReload(() => import('./views/admin/SettingsView'));
+const PublicWebsiteView = lazyWithReload(() => import('./views/admin/PublicWebsiteView'));
 const CommunicationView = lazyWithReload(() => import('./views/admin/CommunicationView'));
 const SetListView = lazyWithReload(() => import('./views/admin/SetListView'));
 const ReportsView = lazyWithReload(() => import('./views/admin/ReportsView'));
@@ -54,6 +55,7 @@ const RsvpDashboardView = lazyWithReload(() => import('./views/admin/RsvpDashboa
 const SingerDashboardView = lazyWithReload(() => import('./views/singer/DashboardView'));
 const SeatingFinderView = lazyWithReload(() => import('./views/singer/SeatingFinderView'));
 const ProfileView = lazyWithReload(() => import('./views/singer/ProfileView'));
+const DirectoryView = lazyWithReload(() => import('./views/singer/DirectoryView'));
 const PublicAuditionView = lazyWithReload(() => import('./views/PublicAuditionView'));
 const PublicRsvpView = lazyWithReload(() => import('./views/PublicRsvpView'));
 const PublicPollView = lazyWithReload(() => import('./views/PublicPollView'));
@@ -67,22 +69,34 @@ const PublicDonationView = lazyWithReload(() => import('./views/PublicDonationVi
 const PublicDonationSuccessView = lazyWithReload(() => import('./views/PublicDonationSuccessView'));
 const PublicLandingView = lazyWithReload(() => import('./views/PublicLandingView'));
 const PublicHistoryView = lazyWithReload(() => import('./views/PublicHistoryView'));
+const PublicPastPerformancesView = lazyWithReload(
+  () => import('./views/PublicPastPerformancesView')
+);
 const AdminTicketingView = lazyWithReload(() => import('./views/admin/TicketingView'));
 const DonationsView = lazyWithReload(() => import('./views/admin/DonationsView'));
 const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
 const TicketScanView = lazyWithReload(() => import('./views/admin/TicketScanView'));
 
-
-
-
 const AppLoader = () => (
-  <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-bg">
-    <div className="size-10 animate-spin rounded-full border-4 border-border border-t-primary" role="status" aria-label="Loading" />
-    <span className="text-sm font-semibold tracking-wide text-muted">Loading Choir Management...</span>
+  <div className="bg-bg flex h-screen w-screen flex-col items-center justify-center gap-4">
+    <div
+      className="border-border border-t-primary size-10 animate-spin rounded-full border-4"
+      role="status"
+      aria-label="Loading"
+    />
+    <span className="text-muted text-sm font-semibold tracking-wide">
+      Loading Choir Management...
+    </span>
   </div>
 );
 
-function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode, adminOnly?: boolean }) {
+function ProtectedRoute({
+  children,
+  adminOnly = false,
+}: {
+  children: React.ReactNode;
+  adminOnly?: boolean;
+}) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) return <AppLoader />;
@@ -105,8 +119,8 @@ function FallbackRoute() {
   return <Navigate to={user ? '/dashboard' : '/'} replace />;
 }
 
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-  constructor(props: {children: React.ReactNode}) {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
@@ -116,15 +130,23 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-bg p-6 text-center">
-          <div className="mx-auto max-w-md rounded-2xl border border-border bg-surface p-8 shadow-lg">
-            <span className="mb-4 inline-block text-4xl" role="img" aria-label="Warning">⚠️</span>
-            <h1 className="mb-2 text-2xl font-bold tracking-tight text-text">Something went wrong.</h1>
-            <p className="mb-6 text-sm leading-relaxed text-muted">
+        <div className="bg-bg flex min-h-screen flex-col items-center justify-center p-6 text-center">
+          <div className="border-border bg-surface mx-auto max-w-md rounded-2xl border p-8 shadow-lg">
+            <span className="mb-4 inline-block text-4xl" role="img" aria-label="Warning">
+              ⚠️
+            </span>
+            <h1 className="text-text mb-2 text-2xl font-bold tracking-tight">
+              Something went wrong.
+            </h1>
+            <p className="text-muted mb-6 text-sm leading-relaxed">
               The app may have been updated while your browser still had an older version cached.
               Refresh the page to load the latest version.
             </p>
-            <Button variant="primary" onClick={() => window.location.reload()} className="w-full justify-center">
+            <Button
+              variant="primary"
+              onClick={() => window.location.reload()}
+              className="w-full justify-center"
+            >
               Refresh Page
             </Button>
           </div>
@@ -142,180 +164,280 @@ export default function App() {
       <ErrorBoundary>
         <Suspense fallback={<AppLoader />}>
           <Routes>
-          <Route path="/login" element={<LoginView />} />
-          <Route path="/reset-password" element={<ResetPasswordView />} />
-          <Route path="/auditions" element={<PublicAuditionView />} />
-          <Route path="/rsvp" element={<PublicRsvpView />} />
-          <Route path="/poll" element={<PublicPollView />} />
-          <Route path="/unsubscribe" element={<PublicUnsubscribeView />} />
-          <Route path="/player" element={<PublicPlayerView />} />
-          <Route path="/tickets" element={<PublicTicketListView />} />
-          <Route path="/tickets/order/success" element={<PublicTicketSuccessView />} />
-          <Route path="/tickets/bundle/:bundleId" element={<PublicBundlePurchaseView />} />
-          <Route path="/tickets/:eventId" element={<PublicTicketPurchaseView />} />
-          <Route path="/donate" element={<PublicDonationView />} />
-          <Route path="/donate/success" element={<PublicDonationSuccessView />} />
-          <Route path="/" element={<PublicLandingView />} />
-          <Route path="/history" element={<PublicHistoryView />} />
-          <Route path="/dashboard" element={<ProtectedRoute><MainDashboard /></ProtectedRoute>} />
+            <Route path="/login" element={<LoginView />} />
+            <Route path="/reset-password" element={<ResetPasswordView />} />
+            <Route path="/auditions" element={<PublicAuditionView />} />
+            <Route path="/rsvp" element={<PublicRsvpView />} />
+            <Route path="/poll" element={<PublicPollView />} />
+            <Route path="/unsubscribe" element={<PublicUnsubscribeView />} />
+            <Route path="/player" element={<PublicPlayerView />} />
+            <Route path="/tickets" element={<PublicTicketListView />} />
+            <Route path="/tickets/order/success" element={<PublicTicketSuccessView />} />
+            <Route path="/tickets/bundle/:bundleId" element={<PublicBundlePurchaseView />} />
+            <Route path="/tickets/:eventId" element={<PublicTicketPurchaseView />} />
+            <Route path="/donate" element={<PublicDonationView />} />
+            <Route path="/donate/success" element={<PublicDonationSuccessView />} />
+            <Route path="/" element={<PublicLandingView />} />
+            <Route path="/history" element={<PublicHistoryView />} />
+            <Route path="/performances" element={<PublicPastPerformancesView />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <MainDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/roster" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Roster Management" backTo="/dashboard">
-                <RosterView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/roster"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Roster Management" backTo="/dashboard">
+                    <RosterView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/events" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Event Management" backTo="/dashboard">
-                <EventsView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/events"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Event Management" backTo="/dashboard">
+                    <EventsView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/events/:eventId/roster" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Event Roster" backTo="/admin/events">
-                <EventRosterView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/events/:eventId/roster"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Event Roster" backTo="/admin/events">
+                    <EventRosterView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/setlists" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Set Lists" backTo="/dashboard">
-                <SetListView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/setlists"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Set Lists" backTo="/dashboard">
+                    <SetListView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/venues" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Venue Templates" backTo="/dashboard">
-                <VenuesView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/venues"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Venue Templates" backTo="/dashboard">
+                    <VenuesView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/seating" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Seating Charts" backTo="/dashboard" maxWidth="1400px">
-                <SeatingView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/seating"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Seating Charts" backTo="/dashboard" maxWidth="1400px">
+                    <SeatingView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/attendance" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Attendance Check-in" backTo="/dashboard">
-                <AttendanceView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/attendance"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Attendance Check-in" backTo="/dashboard">
+                    <AttendanceView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/rsvp" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Event RSVPs" backTo="/dashboard">
-                <RsvpDashboardView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/rsvp"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Event RSVPs" backTo="/dashboard">
+                    <RsvpDashboardView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/polls" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Engagement Polls" backTo="/dashboard">
-                <PollsDashboardView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/polls"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Engagement Polls" backTo="/dashboard">
+                    <PollsDashboardView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/auditions" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Auditions" backTo="/dashboard">
-                <AuditionsView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/auditions"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Auditions" backTo="/dashboard">
+                    <AuditionsView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/reports" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Reports & Insights" backTo="/dashboard">
-                <ReportsView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Reports & Insights" backTo="/dashboard">
+                    <ReportsView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/library" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Music Library" backTo="/dashboard">
-                <MusicLibraryView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/library"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Music Library" backTo="/dashboard">
+                    <MusicLibraryView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/settings" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="System Settings" backTo="/dashboard">
-                <SettingsView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/website"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Public Website" backTo="/dashboard">
+                    <PublicWebsiteView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/communications" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Communications" backTo="/dashboard">
-                <CommunicationView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="System Settings" backTo="/dashboard">
+                    <SettingsView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/resources" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Singer Resources" backTo="/dashboard">
-                <ResourcesView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/communications"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Communications" backTo="/dashboard">
+                    <CommunicationView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/tickets" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Ticketing" backTo="/dashboard">
-                <AdminTicketingView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/resources"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Singer Resources" backTo="/dashboard">
+                    <ResourcesView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/tickets/scan" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Ticket Scanner" backTo="/admin/tickets">
-                <TicketScanView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/tickets"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Ticketing" backTo="/dashboard">
+                    <AdminTicketingView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/donations" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Donations" backTo="/dashboard">
-                <DonationsView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/tickets/scan"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Ticket Scanner" backTo="/admin/tickets">
+                    <TicketScanView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/admin/patrons" element={
-            <ProtectedRoute adminOnly>
-              <PageLayout title="Patrons" backTo="/dashboard">
-                <PatronsView />
-              </PageLayout>
-            </ProtectedRoute>
-          } />
+            <Route
+              path="/admin/donations"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Donations" backTo="/dashboard">
+                    <DonationsView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="/seating/:eventId" element={<ProtectedRoute><SeatingFinderView /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><ProfileView /></ProtectedRoute>} />
-          <Route path="*" element={<FallbackRoute />} />
-        </Routes>
-      </Suspense>
+            <Route
+              path="/admin/patrons"
+              element={
+                <ProtectedRoute adminOnly>
+                  <PageLayout title="Patrons" backTo="/dashboard">
+                    <PatronsView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/seating/:eventId"
+              element={
+                <ProtectedRoute>
+                  <SeatingFinderView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfileView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/directory"
+              element={
+                <ProtectedRoute>
+                  <PageLayout title="Singer Directory" backTo="/dashboard">
+                    <DirectoryView />
+                  </PageLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<FallbackRoute />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
     </BrowserRouter>
   );

@@ -2,391 +2,419 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useClickOutside } from '../../../hooks/useClickOutside';
 import { CHIP_CLASSES, getChipClass } from '../../../lib/chipColorUtils';
 import { Button, Input } from '../../../components/ui';
+import { ChevronDownIcon } from '../../../components/ui/icons';
+
+function DropdownChevron({ open }: { open: boolean }) {
+  return (
+    <span
+      data-testid="dropdown-chevron"
+      className={`text-text-muted ml-2 inline-flex size-5 shrink-0 items-center justify-center transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+      aria-hidden="true"
+    >
+      <ChevronDownIcon className="size-4" />
+    </span>
+  );
+}
 
 interface MultiSelectOption {
-    id: string;
-    label: string;
+  id: string;
+  label: string;
 }
 
 export interface MultiSelectDropdownProps {
-    options: MultiSelectOption[];
-    selectedIds: string[];
-    onChange: (ids: string[]) => void;
-    label?: string;
-    ariaLabel?: string;
-    placeholder?: string;
-    allLabel?: string;
-    disabled?: boolean;
-    allowCreate?: boolean;
-    onCreateOption?: (label: string) => Promise<MultiSelectOption> | MultiSelectOption;
-    /** 'default' = checkbox list, 'chips' = colored pill tags with inline chips on trigger */
-    variant?: 'default' | 'chips';
-    /** Show a search/filter input inside the dropdown (useful when ≥6 options) */
-    searchable?: boolean;
+  options: MultiSelectOption[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+  label?: string;
+  ariaLabel?: string;
+  placeholder?: string;
+  allLabel?: string;
+  disabled?: boolean;
+  allowCreate?: boolean;
+  onCreateOption?: (label: string) => Promise<MultiSelectOption> | MultiSelectOption;
+  /** 'default' = checkbox list, 'chips' = colored pill tags with inline chips on trigger */
+  variant?: 'default' | 'chips';
+  /** Show a search/filter input inside the dropdown (useful when ≥6 options) */
+  searchable?: boolean;
 }
 
 export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
-    options,
-    selectedIds,
-    onChange,
-    label,
-    ariaLabel,
-    placeholder = 'Select...',
-    allLabel = 'All',
-    disabled = false,
-    allowCreate = false,
-    onCreateOption,
-    variant = 'default',
-    searchable = false
+  options,
+  selectedIds,
+  onChange,
+  label,
+  ariaLabel,
+  placeholder = 'Select...',
+  allLabel = 'All',
+  disabled = false,
+  allowCreate = false,
+  onCreateOption,
+  variant = 'default',
+  searchable = false,
 }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [newOptionLabel, setNewOptionLabel] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const containerRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [newOptionLabel, setNewOptionLabel] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-    const isChips = variant === 'chips';
+  const isChips = variant === 'chips';
 
-    // Toggle dropdown open/closed
-    const toggleDropdown = () => {
-        if (disabled) return;
-        setIsOpen(!isOpen);
-    };
+  // Toggle dropdown open/closed
+  const toggleDropdown = () => {
+    if (disabled) return;
+    setIsOpen(!isOpen);
+  };
 
-    // Focus search input when dropdown opens
-    useEffect(() => {
-        if (isOpen && searchable && searchInputRef.current) {
-            setTimeout(() => searchInputRef.current?.focus(), 30);
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen && searchable && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 30);
+    }
+    if (!isOpen) {
+      setSearchQuery('');
+    }
+  }, [isOpen, searchable]);
+
+  useClickOutside(containerRef, () => setIsOpen(false), {
+    enabled: isOpen,
+    escape: true,
+  });
+
+  // Handle selecting/deselecting an option
+  const handleOptionToggle = (optionId: string) => {
+    const nextSelected = selectedIds.includes(optionId)
+      ? selectedIds.filter((id) => id !== optionId)
+      : [...selectedIds, optionId];
+    onChange(nextSelected);
+  };
+
+  // Remove a chip from the trigger bar
+  const handleRemoveChip = (e: React.MouseEvent, optionId: string) => {
+    e.stopPropagation();
+    onChange(selectedIds.filter((id) => id !== optionId));
+  };
+
+  // Clear all selections
+  const handleClearAll = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onChange([]);
+  };
+
+  // Create a new option inline
+  const handleCreateOption = async (e: React.FormEvent | React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const trimmed = newOptionLabel.trim();
+    if (!trimmed || !onCreateOption) return;
+
+    setIsCreating(true);
+    try {
+      const newOpt = await onCreateOption(trimmed);
+      if (newOpt && newOpt.id) {
+        // Select the newly created option
+        if (!selectedIds.includes(newOpt.id)) {
+          onChange([...selectedIds, newOpt.id]);
         }
-        if (!isOpen) {
-            setSearchQuery('');
-        }
-    }, [isOpen, searchable]);
+        setNewOptionLabel('');
+      }
+    } catch (err) {
+      console.error('Failed to create option in dropdown', err);
+    } finally {
+      setIsCreating(false);
+      // Focus back to input
+      inputRef.current?.focus();
+    }
+  };
 
-    useClickOutside(containerRef, () => setIsOpen(false), {
-        enabled: isOpen,
-        escape: true,
+  // Build a stable class map based on sorted option ids
+  const chipClassMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const sorted = [...options].sort((a, b) => a.label.localeCompare(b.label));
+    sorted.forEach((opt, idx) => {
+      map.set(opt.id, getChipClass(idx));
     });
+    return map;
+  }, [options]);
 
-    // Handle selecting/deselecting an option
-    const handleOptionToggle = (optionId: string) => {
-        const nextSelected = selectedIds.includes(optionId)
-            ? selectedIds.filter(id => id !== optionId)
-            : [...selectedIds, optionId];
-        onChange(nextSelected);
-    };
+  // Filtered options by search query
+  const filteredOptions = useMemo(() => {
+    if (!searchQuery.trim()) return options;
+    const q = searchQuery.toLowerCase().trim();
+    return options.filter((o) => o.label.toLowerCase().includes(q));
+  }, [options, searchQuery]);
 
-    // Remove a chip from the trigger bar
-    const handleRemoveChip = (e: React.MouseEvent, optionId: string) => {
-        e.stopPropagation();
-        onChange(selectedIds.filter(id => id !== optionId));
-    };
+  // Get the display text for the trigger button (default variant)
+  const getSummaryText = () => {
+    if (selectedIds.length === 0) {
+      return allLabel;
+    }
 
-    // Clear all selections
-    const handleClearAll = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onChange([]);
-    };
+    const selectedLabels = selectedIds
+      .map((id) => options.find((o) => o.id === id)?.label)
+      .filter(Boolean) as string[];
 
-    // Create a new option inline
-    const handleCreateOption = async (e: React.FormEvent | React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const trimmed = newOptionLabel.trim();
-        if (!trimmed || !onCreateOption) return;
+    if (selectedLabels.length === 0) {
+      return allLabel;
+    }
 
-        setIsCreating(true);
-        try {
-            const newOpt = await onCreateOption(trimmed);
-            if (newOpt && newOpt.id) {
-                // Select the newly created option
-                if (!selectedIds.includes(newOpt.id)) {
-                    onChange([...selectedIds, newOpt.id]);
-                }
-                setNewOptionLabel('');
-            }
-        } catch (err) {
-            console.error('Failed to create option in dropdown', err);
-        } finally {
-            setIsCreating(false);
-            // Focus back to input
-            inputRef.current?.focus();
-        }
-    };
+    if (selectedLabels.length <= 2) {
+      return selectedLabels.join(', ');
+    }
 
-    // Build a stable class map based on sorted option ids
-    const chipClassMap = useMemo(() => {
-        const map = new Map<string, string>();
-        const sorted = [...options].sort((a, b) => a.label.localeCompare(b.label));
-        sorted.forEach((opt, idx) => {
-            map.set(opt.id, getChipClass(idx));
-        });
-        return map;
-    }, [options]);
+    return `${selectedIds.length} ${placeholder.toLowerCase()} selected`;
+  };
 
-    // Filtered options by search query
-    const filteredOptions = useMemo(() => {
-        if (!searchQuery.trim()) return options;
-        const q = searchQuery.toLowerCase().trim();
-        return options.filter(o => o.label.toLowerCase().includes(q));
-    }, [options, searchQuery]);
+  // Resolved selected options for chip display
+  const selectedOptions = useMemo(() => {
+    return selectedIds
+      .map((id) => options.find((o) => o.id === id))
+      .filter((o): o is MultiSelectOption => Boolean(o));
+  }, [selectedIds, options]);
 
-    // Get the display text for the trigger button (default variant)
-    const getSummaryText = () => {
-        if (selectedIds.length === 0) {
-            return allLabel;
-        }
+  return (
+    <div
+      className={`relative inline-flex w-full min-w-[180px] flex-col ${disabled ? 'pointer-events-none opacity-60' : ''}`}
+      ref={containerRef}
+    >
+      {label && (
+        <label className="mb-1.5 text-xs font-semibold tracking-wider text-gray-500 uppercase">
+          {label}
+        </label>
+      )}
 
-        const selectedLabels = selectedIds
-            .map(id => options.find(o => o.id === id)?.label)
-            .filter(Boolean) as string[];
-
-        if (selectedLabels.length === 0) {
-            return allLabel;
-        }
-
-        if (selectedLabels.length <= 2) {
-            return selectedLabels.join(', ');
-        }
-
-        return `${selectedIds.length} ${placeholder.toLowerCase()} selected`;
-    };
-
-    // Resolved selected options for chip display
-    const selectedOptions = useMemo(() => {
-        return selectedIds
-            .map(id => options.find(o => o.id === id))
-            .filter((o): o is MultiSelectOption => Boolean(o));
-    }, [selectedIds, options]);
-
-    return (
-        <div 
-            className={`relative inline-flex w-full min-w-[180px] flex-col ${disabled ? 'pointer-events-none opacity-60' : ''}`}
-            ref={containerRef}
+      {/* TRIGGER: chips variant shows inline tags */}
+      {isChips ? (
+        <button
+          type="button"
+          className={`hover:border-primary focus-visible:border-primary border-border bg-surface flex min-h-[44px] w-full cursor-pointer flex-wrap items-center justify-between gap-1 rounded-lg border px-3.5 py-1.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
+          onClick={toggleDropdown}
+          disabled={disabled}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-label={ariaLabel || label || 'Multi-select dropdown'}
         >
-            {label && <label className="mb-1.5 text-xs font-semibold tracking-wider text-gray-500 uppercase">{label}</label>}
-            
-            {/* TRIGGER: chips variant shows inline tags */}
+          {selectedOptions.length === 0 ? (
+            <span className="mr-2 flex-1 truncate text-sm font-medium text-gray-400">
+              {allLabel}
+            </span>
+          ) : (
+            <span className="flex flex-1 flex-wrap items-center gap-1">
+              {selectedOptions.map((opt) => {
+                const chipClass = chipClassMap.get(opt.id) || CHIP_CLASSES[0];
+                return (
+                  <span
+                    key={opt.id}
+                    className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11.5px] leading-tight font-semibold whitespace-nowrap transition-opacity duration-150 ${chipClass}`}
+                  >
+                    {opt.label}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="ml-0.5 inline-flex size-3.5 cursor-pointer items-center justify-center rounded-full text-sm leading-none opacity-55 transition-opacity duration-150 hover:bg-black/8 hover:opacity-100"
+                      onClick={(e) => handleRemoveChip(e, opt.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ')
+                          handleRemoveChip(e as unknown as React.MouseEvent, opt.id);
+                      }}
+                      aria-label={`Remove ${opt.label}`}
+                    >
+                      ×
+                    </span>
+                  </span>
+                );
+              })}
+            </span>
+          )}
+          <DropdownChevron open={isOpen} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={`hover:border-primary focus-visible:border-primary border-border bg-surface flex h-[44px] w-full cursor-pointer items-center justify-between rounded-lg border px-3.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
+          onClick={toggleDropdown}
+          disabled={disabled}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-label={ariaLabel || label || 'Multi-select dropdown'}
+        >
+          <span
+            className="mr-2 flex-1 truncate text-sm font-medium text-gray-800"
+            title={getSummaryText()}
+          >
+            {getSummaryText()}
+          </span>
+          <DropdownChevron open={isOpen} />
+        </button>
+      )}
+
+      {isOpen && (
+        <div
+          className="animate-fade-in absolute top-[calc(100%+6px)] left-0 z-50 flex max-h-[350px] w-full min-w-[240px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.05)]"
+          role="listbox"
+        >
+          <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3.5 py-2.5">
+            <span className="text-[11px] font-semibold tracking-wider text-gray-500 uppercase">
+              {selectedIds.length} selected
+            </span>
+            {selectedIds.length > 0 && (
+              <button
+                type="button"
+                className="cursor-pointer rounded border-none bg-none px-1.5 py-0.5 text-[11px] font-semibold text-red-500 transition-all duration-150 hover:bg-red-500/8"
+                onClick={handleClearAll}
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+
+          {/* Search/filter input */}
+          {searchable && (
+            <div className="border-b border-gray-200 px-3 py-2">
+              <Input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Filter..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    e.stopPropagation();
+                    if (searchQuery) {
+                      setSearchQuery('');
+                    } else {
+                      setIsOpen(false);
+                    }
+                  }
+                }}
+              >
+                {searchQuery && (
+                  <button
+                    slot="suffix"
+                    type="button"
+                    className="flex items-center px-0.5 text-base leading-none text-gray-400 hover:text-gray-800"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Clear search"
+                  >
+                    ×
+                  </button>
+                )}
+              </Input>
+            </div>
+          )}
+
+          <div className="max-h-[220px] flex-1 overflow-y-auto py-1.5">
             {isChips ? (
-                <button
-                    type="button"
-                    className={`flex min-h-10 w-full cursor-pointer flex-wrap items-center justify-between gap-1 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
-                    onClick={toggleDropdown}
-                    disabled={disabled}
-                    aria-haspopup="listbox"
-                    aria-expanded={isOpen}
-                    aria-label={ariaLabel || label || 'Multi-select dropdown'}
-                >
-                    {selectedOptions.length === 0 ? (
-                        <span className="mr-2 flex-1 truncate text-sm font-medium text-gray-400">
-                            {allLabel}
-                        </span>
-                    ) : (
-                        <span className="flex flex-1 flex-wrap items-center gap-1">
-                            {selectedOptions.map(opt => {
-                                const chipClass = chipClassMap.get(opt.id) || CHIP_CLASSES[0];
-                                return (
-                                    <span
-                                        key={opt.id}
-                                        className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11.5px] leading-tight font-semibold whitespace-nowrap transition-opacity duration-150 ${chipClass}`}
-                                    >
-                                        {opt.label}
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
-                                            className="ml-0.5 inline-flex size-3.5 cursor-pointer items-center justify-center rounded-full text-sm leading-none opacity-55 transition-opacity duration-150 hover:bg-black/8 hover:opacity-100"
-                                            onClick={(e) => handleRemoveChip(e, opt.id)}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleRemoveChip(e as unknown as React.MouseEvent, opt.id); }}
-                                            aria-label={`Remove ${opt.label}`}
-                                        >
-                                            ×
-                                        </span>
-                                    </span>
-                                );
-                            })}
-                        </span>
-                    )}
-                    <span className="flex-shrink-0 text-[10px] text-gray-500 transition-transform duration-200" aria-hidden="true">
-                        {isOpen ? '▴' : '▾'}
-                    </span>
-                </button>
-            ) : (
-                <button
-                    type="button"
-                    className={`flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-3.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:border-primary hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:border-primary focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
-                    onClick={toggleDropdown}
-                    disabled={disabled}
-                    aria-haspopup="listbox"
-                    aria-expanded={isOpen}
-                    aria-label={ariaLabel || label || 'Multi-select dropdown'}
-                >
-                    <span className="mr-2 flex-1 truncate text-sm font-medium text-gray-800" title={getSummaryText()}>
-                        {getSummaryText()}
-                    </span>
-                    <span className="flex-shrink-0 text-[10px] text-gray-500 transition-transform duration-200" aria-hidden="true">
-                        {isOpen ? '▴' : '▾'}
-                    </span>
-                </button>
-            )}
-
-            {isOpen && (
-                <div className="animate-fade-in absolute top-[calc(100%+6px)] left-0 z-50 flex max-h-[350px] w-full min-w-[240px] flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.05)]" role="listbox">
-                    <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-3.5 py-2.5">
-                        <span className="text-[11px] font-semibold tracking-wider text-gray-500 uppercase">
-                            {selectedIds.length} selected
-                        </span>
-                        {selectedIds.length > 0 && (
-                            <button
-                                type="button"
-                                className="cursor-pointer rounded border-none bg-none px-1.5 py-0.5 text-[11px] font-semibold text-red-500 transition-all duration-150 hover:bg-red-500/8"
-                                onClick={handleClearAll}
-                            >
-                                Clear All
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Search/filter input */}
-                    {searchable && (
-                        <div className="border-b border-gray-200 px-3 py-2">
-                            <Input
-                                ref={searchInputRef}
-                                type="text"
-                                placeholder="Filter..."
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Escape') {
-                                        e.stopPropagation();
-                                        if (searchQuery) {
-                                            setSearchQuery('');
-                                        } else {
-                                            setIsOpen(false);
-                                        }
-                                    }
-                                }}
-                            >
-                                {searchQuery && (
-                                    <button
-                                        slot="suffix"
-                                        type="button"
-                                        className="flex items-center px-0.5 text-base leading-none text-gray-400 hover:text-gray-800"
-                                        onClick={() => setSearchQuery('')}
-                                        aria-label="Clear search"
-                                    >
-                                        ×
-                                    </button>
-                                )}
-                            </Input>
-                        </div>
-                    )}
-
-                    <div className="max-h-[220px] flex-1 overflow-y-auto py-1.5">
-                        {isChips ? (
-                            <>
-                                {filteredOptions.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1.5 p-2.5 px-3.5">
-                                        {filteredOptions.map(option => {
-                                            const isChecked = selectedIds.includes(option.id);
-                                            const chipClass = chipClassMap.get(option.id) || CHIP_CLASSES[0];
-                                            return (
-                                                <button
-                                                    key={option.id}
-                                                    type="button"
-                                                    className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] bg-white px-3 py-1 text-xs font-medium text-gray-500 transition-all duration-180 ease-in-out outline-none select-none hover:border-primary hover:bg-gray-50 hover:text-gray-800 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)] focus-visible:shadow-[0_0_0_2px_var(--color-primary-light)] ${isChecked ? `font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)] ${chipClass}` : ''}`}
-                                                    role="option"
-                                                    aria-selected={isChecked}
-                                                    onClick={() => handleOptionToggle(option.id)}
-                                                >
-                                                    {isChecked && <span className="text-[10px] leading-none font-bold" aria-hidden="true">✓</span>}
-                                                    {option.label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="p-4 text-center text-xs text-gray-500">
-                                        {searchQuery ? 'No matches' : 'No options available'}
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                {filteredOptions.map(option => {
-                                    const isChecked = selectedIds.includes(option.id);
-                                    return (
-                                        <label 
-                                            key={option.id} 
-                                            className={`flex cursor-pointer items-center px-3.5 py-1 transition-all duration-150 select-none hover:bg-gray-50 ${isChecked ? 'bg-primary-light hover:bg-primary-light/80' : ''}`}
-                                            role="option"
-                                            aria-selected={isChecked}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={isChecked}
-                                                onChange={() => handleOptionToggle(option.id)}
-                                                className="mr-2.5 size-4 cursor-pointer rounded border border-gray-200 accent-primary"
-                                            />
-                                            <span className={`text-xs font-medium text-gray-800 ${isChecked ? 'font-semibold text-primary' : ''}`}>
-                                                {option.label}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                                {filteredOptions.length === 0 && (
-                                    <div className="p-4 text-center text-xs text-gray-500">
-                                        {searchQuery ? 'No matches' : 'No options available'}
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    {allowCreate && onCreateOption && (
-                        <div className="flex items-center gap-2 border-t border-gray-200 bg-gray-50 px-3.5 py-2.5">
-                            <Input
-                                ref={inputRef}
-                                type="text"
-                                className="flex-1"
-                                placeholder="Add new..."
-                                value={newOptionLabel}
-                                onChange={e => setNewOptionLabel(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleCreateOption(e);
-                                    }
-                                }}
-                                disabled={isCreating}
-                            />
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="small"
-                                className="inline-flex h-8 min-h-8 items-center justify-center rounded px-3 text-xs"
-                                onClick={handleCreateOption}
-                                disabled={isCreating || !newOptionLabel.trim()}
-                            >
-                                {isCreating ? 'Adding...' : 'Add'}
-                            </Button>
-                        </div>
-                    )}
-
-                    <div className="flex justify-end border-t border-gray-200 bg-gray-50 px-3 py-2">
+              <>
+                {filteredOptions.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 p-2.5 px-3.5">
+                    {filteredOptions.map((option) => {
+                      const isChecked = selectedIds.includes(option.id);
+                      const chipClass = chipClassMap.get(option.id) || CHIP_CLASSES[0];
+                      return (
                         <button
-                            type="button"
-                            className="hover:bg-primary-deep cursor-pointer rounded border-none bg-primary px-[18px] py-1.5 text-xs font-semibold text-white transition-colors duration-150 hover:shadow-[0_1px_4px_rgba(0,0,0,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                            onClick={() => setIsOpen(false)}
+                          key={option.id}
+                          type="button"
+                          className={`inline-flex cursor-pointer items-center gap-1 rounded-full border-[1.5px] px-3 py-1 text-xs font-medium transition-all duration-180 ease-in-out outline-none select-none focus-visible:shadow-[0_0_0_2px_var(--color-primary-light)] ${chipClass} ${isChecked ? 'font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.06)]' : 'opacity-75 hover:opacity-100 hover:shadow-[0_1px_4px_rgba(0,0,0,0.06)]'}`}
+                          role="option"
+                          aria-selected={isChecked}
+                          onClick={() => handleOptionToggle(option.id)}
                         >
-                            Done
+                          {isChecked && (
+                            <span className="text-[10px] leading-none font-bold" aria-hidden="true">
+                              ✓
+                            </span>
+                          )}
+                          {option.label}
                         </button>
-                    </div>
-                </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-xs text-gray-500">
+                    {searchQuery ? 'No matches' : 'No options available'}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {filteredOptions.map((option) => {
+                  const isChecked = selectedIds.includes(option.id);
+                  return (
+                    <label
+                      key={option.id}
+                      className={`flex cursor-pointer items-center px-3.5 py-1 transition-all duration-150 select-none hover:bg-gray-50 ${isChecked ? 'bg-primary-light hover:bg-primary-light/80' : ''}`}
+                      role="option"
+                      aria-selected={isChecked}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleOptionToggle(option.id)}
+                        className="accent-primary mr-2.5 size-4 cursor-pointer rounded border border-gray-200"
+                      />
+                      <span
+                        className={`text-xs font-medium text-gray-800 ${isChecked ? 'text-primary font-semibold' : ''}`}
+                      >
+                        {option.label}
+                      </span>
+                    </label>
+                  );
+                })}
+                {filteredOptions.length === 0 && (
+                  <div className="p-4 text-center text-xs text-gray-500">
+                    {searchQuery ? 'No matches' : 'No options available'}
+                  </div>
+                )}
+              </>
             )}
+          </div>
+
+          {allowCreate && onCreateOption && (
+            <div className="flex items-center gap-2 border-t border-gray-200 bg-gray-50 px-3.5 py-2.5">
+              <Input
+                ref={inputRef}
+                type="text"
+                className="flex-1"
+                placeholder="Add new..."
+                value={newOptionLabel}
+                onChange={(e) => setNewOptionLabel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleCreateOption(e);
+                  }
+                }}
+                disabled={isCreating}
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="small"
+                className="inline-flex h-8 min-h-8 items-center justify-center rounded px-3 text-xs"
+                onClick={handleCreateOption}
+                disabled={isCreating || !newOptionLabel.trim()}
+              >
+                {isCreating ? 'Adding...' : 'Add'}
+              </Button>
+            </div>
+          )}
+
+          <div className="flex justify-end border-t border-gray-200 bg-gray-50 px-3 py-2">
+            <button
+              type="button"
+              className="hover:bg-primary-deep bg-primary focus-visible:outline-primary cursor-pointer rounded border-none px-[18px] py-1.5 text-xs font-semibold text-white transition-colors duration-150 hover:shadow-[0_1px_4px_rgba(0,0,0,0.12)] focus-visible:outline-2 focus-visible:outline-offset-2"
+              onClick={() => setIsOpen(false)}
+            >
+              Done
+            </button>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 };

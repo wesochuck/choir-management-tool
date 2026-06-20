@@ -4,9 +4,20 @@ import { queryKeys } from '../../lib/queryKeys';
 import { reportService } from '../../services/reportService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { useEvents } from '../../hooks/useEvents';
-import { Button, Select } from '../../components/ui';
+import { Button, Select, DataTable, type ColumnDef } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 
 type ReportTab = 'attendance' | 'repertoire';
+
+interface SingerReport {
+  profileId: string;
+  name: string;
+  voicePart: string;
+  absences: number;
+  presenceCount: number;
+  totalEvents: number;
+  attendanceRate: number;
+}
 
 interface RepertoireStats {
   piece: MusicPiece;
@@ -45,14 +56,18 @@ export default function ReportsView() {
   const library = useMemo(() => libraryQuery.data ?? [], [libraryQuery.data]);
   const isAttendanceLoading = performancesQuery.isLoading;
   const isRepertoireLoading = libraryQuery.isLoading || performancesQuery.isLoading;
-  const error = performancesQuery.error ? (performancesQuery.error instanceof Error ? performancesQuery.error.message : 'Failed to load') : null;
+  const error = performancesQuery.error
+    ? performancesQuery.error instanceof Error
+      ? performancesQuery.error.message
+      : 'Failed to load'
+    : null;
 
   const repertoireStats = useMemo(() => {
     if (library.length === 0) return [];
 
     const stats: RepertoireStats[] = [];
 
-    library.forEach(piece => {
+    library.forEach((piece) => {
       const dates: Date[] = [];
 
       // 1. Add historical dates from the linked performances
@@ -66,8 +81,8 @@ export default function ReportsView() {
       }
 
       // 2. Add dynamic dates from events where this piece is in the set list
-      allEvents.forEach(event => {
-        if (event.setList && event.setList.some(item => item.pieceId === piece.id)) {
+      allEvents.forEach((event) => {
+        if (event.setList && event.setList.some((item) => item.pieceId === piece.id)) {
           const d = new Date(event.date);
           if (!isNaN(d.getTime())) dates.push(d);
         }
@@ -80,7 +95,7 @@ export default function ReportsView() {
         piece,
         totalPerformances: dates.length,
         lastPerformed: dates.length > 0 ? dates[0] : null,
-        allDates: dates
+        allDates: dates,
       });
     });
 
@@ -95,34 +110,170 @@ export default function ReportsView() {
     });
   }, [library, allEvents]);
 
+  const attendanceColumns: ColumnDef<SingerReport>[] = [
+    {
+      id: 'singer',
+      header: 'Singer',
+      accessorKey: 'name',
+      enableSorting: true,
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
+    },
+    {
+      id: 'part',
+      header: 'Part',
+      accessorKey: 'voicePart',
+      enableSorting: true,
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Part',
+      },
+    },
+    {
+      id: 'absences',
+      header: 'Absences',
+      cell: ({ row }) =>
+        row.original.absences >= 2 ? (
+          <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+            {row.original.absences}
+          </span>
+        ) : (
+          row.original.absences
+        ),
+      meta: {
+        align: 'center',
+        cardSection: 0,
+        cardSide: 'right',
+      },
+    },
+    {
+      id: 'present',
+      header: 'Present',
+      cell: ({ row }) => `${row.original.presenceCount} / ${row.original.totalEvents}`,
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Present',
+      },
+    },
+    {
+      id: 'rate',
+      header: 'Rate',
+      cell: ({ row }) => `${row.original.attendanceRate.toFixed(1)}%`,
+      meta: {
+        align: 'center',
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Rate',
+      },
+    },
+  ];
+
+  const repertoireColumns: ColumnDef<RepertoireStats>[] = [
+    {
+      id: 'title',
+      header: 'Title',
+      cell: ({ row }) => <strong>{row.original.piece.title}</strong>,
+      meta: {
+        cardSection: 0,
+        cardSide: 'left',
+      },
+    },
+    {
+      id: 'composer',
+      header: 'Composer',
+      cell: ({ row }) => row.original.piece.composer || '-',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Composer',
+      },
+    },
+    {
+      id: 'arranger',
+      header: 'Arranger',
+      cell: ({ row }) => row.original.piece.arranger || '-',
+      meta: {
+        cardSection: 1,
+        cardSide: 'left',
+        cardLabel: 'Arranger',
+      },
+    },
+    {
+      id: 'totalPerformances',
+      header: 'Total Performances',
+      cell: ({ row }) => (
+        <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+          {row.original.totalPerformances}
+        </span>
+      ),
+      meta: {
+        align: 'center',
+        cardSection: 0,
+        cardSide: 'right',
+      },
+    },
+    {
+      id: 'lastPerformed',
+      header: 'Last Performed',
+      cell: ({ row }) =>
+        row.original.lastPerformed ? row.original.lastPerformed.toLocaleDateString() : '-',
+      meta: {
+        cardSection: 1,
+        cardSide: 'right',
+        cardLabel: 'Last Performed',
+      },
+    },
+  ];
 
   const handleExportCSV = () => {
     if (tab === 'attendance') {
-        if (!concertSummary) return;
-        const headers = ['Singer', 'Voice Part', 'Absences', 'Presence Count', 'Total Rehearsals', 'Attendance Rate %'];
-        const rows = concertSummary.singerReports.map(r => [
+      if (!concertSummary) return;
+      const headers = [
+        'Singer',
+        'Voice Part',
+        'Absences',
+        'Presence Count',
+        'Total Rehearsals',
+        'Attendance Rate %',
+      ];
+      const rows = concertSummary.singerReports.map((r) => [
         r.name,
         r.voicePart,
         r.absences,
         r.presenceCount,
         r.totalEvents,
-        r.attendanceRate.toFixed(1)
-        ]);
+        r.attendanceRate.toFixed(1),
+      ]);
 
-        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        downloadCSV(csvContent, `attendance_report_${concertSummary.performance.title.replace(/\s+/g, '_')}.csv`);
+      const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+      downloadCSV(
+        csvContent,
+        `attendance_report_${concertSummary.performance.title.replace(/\s+/g, '_')}.csv`
+      );
     } else {
-        const headers = ['Title', 'Composer', 'Arranger', 'Catalog ID', 'Total Performances', 'Last Performed'];
-        const rows = repertoireStats.map(s => [
-            `"${s.piece.title.replace(/"/g, '""')}"`,
-            `"${(s.piece.composer || '').replace(/"/g, '""')}"`,
-            `"${(s.piece.arranger || '').replace(/"/g, '""')}"`,
-            `"${(s.piece.catalogId || '').replace(/"/g, '""')}"`,
-            s.totalPerformances,
-            s.lastPerformed ? s.lastPerformed.toLocaleDateString() : 'Never'
-        ]);
-        const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
-        downloadCSV(csvContent, 'repertoire_history_report.csv');
+      const headers = [
+        'Title',
+        'Composer',
+        'Arranger',
+        'Catalog ID',
+        'Total Performances',
+        'Last Performed',
+      ];
+      const rows = repertoireStats.map((s) => [
+        `"${s.piece.title.replace(/"/g, '""')}"`,
+        `"${(s.piece.composer || '').replace(/"/g, '""')}"`,
+        `"${(s.piece.arranger || '').replace(/"/g, '""')}"`,
+        `"${(s.piece.catalogId || '').replace(/"/g, '""')}"`,
+        s.totalPerformances,
+        s.lastPerformed ? s.lastPerformed.toLocaleDateString() : 'Never',
+      ]);
+      const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+      downloadCSV(csvContent, 'repertoire_history_report.csv');
     }
   };
 
@@ -136,28 +287,49 @@ export default function ReportsView() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
+  };
 
   const handlePrint = () => window.print();
 
   return (
     <div className="flex flex-col gap-8 py-8">
-      <div className="flex flex-col items-center justify-between md:flex-row">
-        <h1 className="text-display m-0">Reports & Insights</h1>
-        <div className="flex flex-row gap-2">
-            <Button variant={tab === 'attendance' ? 'primary' : 'outline'} onClick={() => setTab('attendance')}>
+      <AdminPageHeader
+        title="Reports & Insights"
+        description="Review attendance, repertoire, and engagement reports."
+        below={
+          <div className="flex w-full border-b border-slate-200 pb-px">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  tab === 'attendance'
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+                onClick={() => setTab('attendance')}
+              >
                 Attendance
-            </Button>
-            <Button variant={tab === 'repertoire' ? 'primary' : 'outline'} onClick={() => setTab('repertoire')}>
+              </button>
+              <button
+                type="button"
+                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  tab === 'repertoire'
+                    ? 'border-primary text-primary font-bold'
+                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                }`}
+                onClick={() => setTab('repertoire')}
+              >
                 Repertoire History
-            </Button>
-        </div>
-      </div>
+              </button>
+            </div>
+          </div>
+        }
+      />
 
       {tab === 'attendance' && (
         <div className="flex flex-col gap-8">
           {/* Selection Header */}
-          <div className="no-print rounded-xl border border-border bg-surface p-6 shadow-sm">
+          <div className="no-print border-border bg-surface rounded-xl border p-6 shadow-sm">
             <div className="flex flex-col justify-between md:flex-row">
               <div className="flex flex-col gap-1">
                 <label className="text-label text-muted">Select Concert / Performance</label>
@@ -166,7 +338,7 @@ export default function ReportsView() {
                   onChange={(e) => setSelectedPerformanceId(e.target.value)}
                 >
                   <option value="">-- Choose a performance --</option>
-                  {performances.map(p => (
+                  {performances.map((p) => (
                     <option key={p.id} value={p.id}>
                       {new Date(p.date).toLocaleDateString()} - {p.title}
                     </option>
@@ -177,17 +349,23 @@ export default function ReportsView() {
               {concertSummary && (
                 <div className="flex flex-row gap-2">
                   <Button onClick={handleExportCSV} variant="secondary" size="small">
-                    📥 Download CSV
+                    <span aria-hidden="true">📥</span>
+                    <span>Download CSV</span>
                   </Button>
                   <Button onClick={handlePrint} variant="outline" size="small">
-                    🖨️ Print Report
+                    <span aria-hidden="true">🖨️</span>
+                    <span>Print Report</span>
                   </Button>
                 </div>
               )}
             </div>
           </div>
 
-          {error && <div className="w-full rounded bg-danger-bg p-4 text-xs font-semibold text-danger-text">{error}</div>}
+          {error && (
+            <div className="bg-danger-bg text-danger-text w-full rounded p-4 text-xs font-semibold">
+              {error}
+            </div>
+          )}
 
           {isAttendanceLoading && (
             <div className="p-8 text-center">
@@ -199,141 +377,118 @@ export default function ReportsView() {
             <>
               {/* KPI Cards */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6">
-                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
+                <div className="border-border bg-surface rounded-xl border p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Rehearsals</div>
                   <div className="text-display text-primary">{concertSummary.totalRehearsals}</div>
                 </div>
-                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
+                <div className="border-border bg-surface rounded-xl border p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Avg Attendance</div>
-                  <div className="text-display text-primary">{concertSummary.avgAttendanceRate.toFixed(1)}%</div>
+                  <div className="text-display text-primary">
+                    {concertSummary.avgAttendanceRate.toFixed(1)}%
+                  </div>
                 </div>
-                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
+                <div className="border-border bg-surface rounded-xl border p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">Total Singers</div>
-                  <div className="text-display text-primary">{concertSummary.singerReports.length}</div>
+                  <div className="text-display text-primary">
+                    {concertSummary.singerReports.length}
+                  </div>
                 </div>
-                <div className="rounded-xl border border-border bg-surface p-6 text-center shadow-sm">
+                <div className="border-border bg-surface rounded-xl border p-6 text-center shadow-sm">
                   <div className="text-muted mb-1 text-xs uppercase">2+ Absences</div>
                   <div className="text-display text-danger-text">
-                    {concertSummary.singerReports.filter(r => r.absences >= 2).length}
+                    {concertSummary.singerReports.filter((r) => r.absences >= 2).length}
                   </div>
                 </div>
               </div>
 
               {/* Detailed Table */}
-              <div className="overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-sm">
-                <div className="no-print border-b border-border p-6">
+              <div className="border-border bg-surface overflow-hidden rounded-xl border p-0 shadow-sm">
+                <div className="no-print border-border border-b p-6">
                   <h3>Singer Attendance Detail</h3>
-                  <p className="text-muted">Singers with 2 or more absences are highlighted in red.</p>
+                  <p className="text-muted">
+                    Singers with 2 or more absences are highlighted in red.
+                  </p>
                 </div>
-                
-                <div className="overflow-x-auto">
-                  <table className="table w-full border-collapse">
-                    <thead>
-                      <tr className="bg-primary-light text-left">
-                        <th className="p-4">Singer</th>
-                        <th className="p-4">Part</th>
-                        <th className="p-4 text-center">Absences</th>
-                        <th className="p-4 text-center">Present</th>
-                        <th className="p-4 text-center">Rate</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {concertSummary.singerReports.map(report => (
-                        <tr 
-                          key={report.profileId} 
-                          className={report.absences >= 2 ? 'bg-danger-bg text-danger-text' : ''}
-                        >
-                          <td className="border-b border-border p-4 font-semibold">{report.name}</td>
-                          <td className="border-b border-border p-4">{report.voicePart}</td>
-                          <td className="border-b border-border p-4 text-center">
-                            <span className={report.absences >= 2 ? 'inline-flex items-center rounded bg-danger-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-danger-text uppercase' : ''}>
-                              {report.absences}
-                            </span>
-                          </td>
-                          <td className="border-b border-border p-4 text-center">{report.presenceCount} / {report.totalEvents}</td>
-                          <td className="border-b border-border p-4 text-center">{report.attendanceRate.toFixed(1)}%</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  columns={attendanceColumns}
+                  data={concertSummary.singerReports}
+                  isLoading={false}
+                  emptyState={{
+                    title: 'No attendance records found.',
+                    icon: '📊',
+                  }}
+                  hidePagination={true}
+                  getRowId={(r) => r.profileId}
+                  getRowClassName={(r) => (r.absences >= 2 ? 'bg-danger-bg text-danger-text' : '')}
+                />
               </div>
 
               <div className="hidden print:block">
-                <h2 className="text-center">Attendance Report: {concertSummary.performance.title}</h2>
-                <p className="text-center">Date: {new Date(concertSummary.performance.date).toLocaleDateString()}</p>
+                <h2 className="text-center">
+                  Attendance Report: {concertSummary.performance.title}
+                </h2>
+                <p className="text-center">
+                  Date: {new Date(concertSummary.performance.date).toLocaleDateString()}
+                </p>
               </div>
             </>
           )}
 
           {!selectedPerformanceId && !isAttendanceLoading && (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
+            <div className="border-border bg-surface flex flex-col items-center justify-center gap-2 rounded-xl border p-8 text-center shadow-sm">
               <div className="mb-4 text-5xl">📊</div>
               <h3>No Performance Selected</h3>
-              <p className="text-muted">Choose a performance from the dropdown above to analyze attendance data for its associated rehearsals.</p>
+              <p className="text-muted">
+                Choose a performance from the dropdown above to analyze attendance data for its
+                associated rehearsals.
+              </p>
             </div>
           )}
         </div>
       )}
 
       {tab === 'repertoire' && (
-          <div className="flex flex-col gap-8">
-            <div className="flex flex-col justify-between md:flex-row">
-                <div>
-                    <h3>Repertoire History</h3>
-                    <p className="text-muted">A consolidated view of all library pieces and their performance dates.</p>
-                </div>
-                <div className="flex flex-row gap-2">
-                    <Button onClick={handleExportCSV} variant="secondary" size="small" disabled={isRepertoireLoading || repertoireStats.length === 0}>
-                        📥 Download CSV
-                    </Button>
-                    <Button onClick={handlePrint} variant="outline" size="small" disabled={isRepertoireLoading || repertoireStats.length === 0}>
-                        🖨️ Print Report
-                    </Button>
-                </div>
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col justify-between md:flex-row">
+            <div>
+              <h3>Repertoire History</h3>
+              <p className="text-muted">
+                A consolidated view of all library pieces and their performance dates.
+              </p>
             </div>
-
-            {isRepertoireLoading ? (
-                 <div className="p-8 text-center">
-                    <div className="text-muted">Loading repertoire data...</div>
-                 </div>
-            ) : repertoireStats.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
-                    <p className="text-muted">No pieces in the music library.</p>
-                </div>
-            ) : (
-                <div className="overflow-hidden rounded-xl border border-border bg-surface p-0 shadow-sm">
-                    <div className="overflow-x-auto">
-                        <table className="table w-full border-collapse">
-                            <thead>
-                                <tr className="bg-primary-light text-left">
-                                    <th className="p-4">Title</th>
-                                    <th className="p-4">Composer</th>
-                                    <th className="p-4">Arranger</th>
-                                    <th className="p-4 text-center">Total Performances</th>
-                                    <th className="p-4">Last Performed</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {repertoireStats.map(stat => (
-                                    <tr key={stat.piece.id}>
-                                        <td className="border-b border-border p-4"><strong>{stat.piece.title}</strong></td>
-                                        <td className="border-b border-border p-4">{stat.piece.composer || '-'}</td>
-                                        <td className="border-b border-border p-4">{stat.piece.arranger || '-'}</td>
-                                        <td className="border-b border-border p-4 text-center">
-                                            <span className="inline-flex items-center rounded bg-danger-bg px-2 py-0.5 text-xs font-semibold tracking-wider text-danger-text uppercase">{stat.totalPerformances}</span>
-                                        </td>
-                                        <td className="border-b border-border p-4">
-                                            {stat.lastPerformed ? stat.lastPerformed.toLocaleDateString() : '-'}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
+            <div className="flex flex-row gap-2">
+              <Button
+                onClick={handleExportCSV}
+                variant="secondary"
+                size="small"
+                disabled={isRepertoireLoading || repertoireStats.length === 0}
+              >
+                📥 Download CSV
+              </Button>
+              <Button
+                onClick={handlePrint}
+                variant="outline"
+                size="small"
+                disabled={isRepertoireLoading || repertoireStats.length === 0}
+              >
+                <span aria-hidden="true">🖨️</span>
+                <span>Print Report</span>
+              </Button>
+            </div>
           </div>
+
+          <DataTable
+            columns={repertoireColumns}
+            data={repertoireStats}
+            isLoading={isRepertoireLoading}
+            emptyState={{
+              title: 'No pieces in the music library.',
+              icon: '🎵',
+            }}
+            hidePagination={true}
+            getRowId={(r) => r.piece.id}
+          />
+        </div>
       )}
     </div>
   );

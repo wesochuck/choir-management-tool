@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
 import { useVenues } from '../../hooks/useVenues';
-import { EventList } from '../../components/admin/EventList';
+import { EventTable } from '../../components/admin/EventTable';
 import { EventModal } from '../../components/admin/EventModal';
 import { BulkEventModal } from '../../components/admin/BulkEventModal';
+import { PlayerLinkModal } from '../../components/admin/PlayerLinkModal';
 import type { Event } from '../../services/eventService';
 import { useDialog } from '../../contexts/DialogContext';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { Button, Spinner } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { AdminPageTabs } from '../../components/admin/AdminPageTabs';
 
 import { useEventSettings } from './events/useEventSettings';
 import { useEventFilters } from './events/useEventFilters';
@@ -42,18 +45,10 @@ export default function EventsView(): React.JSX.Element {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [cloningEventId, setCloningEventId] = useState<string | null>(null);
 
-  const {
-    communicationSettings,
-    auditionSettings,
-  } = useEventSettings();
+  const { communicationSettings, auditionSettings } = useEventSettings();
 
-  const {
-    activeTab,
-    setActiveTab,
-    showPastEvents,
-    setShowPastEvents,
-    filteredEvents,
-  } = useEventFilters(events);
+  const { activeTab, setActiveTab, showPastEvents, setShowPastEvents, filteredEvents } =
+    useEventFilters(events);
 
   useEventDeepLinking({
     events,
@@ -65,7 +60,13 @@ export default function EventsView(): React.JSX.Element {
     setIsModalOpen,
   });
 
-  const { handleOpenPlayer } = useEventPlayerLink({ dialog });
+  const {
+    handleOpenPlayer,
+    isOpen: isPlayerLinkOpen,
+    url: playerLinkUrl,
+    eventTitle: playerLinkEventTitle,
+    setIsOpen: setPlayerLinkOpen,
+  } = useEventPlayerLink(dialog);
 
   const { handleSendMessage } = useEventCommunicationDraft({
     navigate,
@@ -116,28 +117,20 @@ export default function EventsView(): React.JSX.Element {
     return (
       <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 p-8">
         <Spinner size="medium" />
-        <div className="text-muted text-sm">
-          Loading scheduled events...
-        </div>
+        <div className="text-muted text-sm">Loading scheduled events...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="mx-auto my-8 flex max-w-[500px] flex-col items-center rounded-xl border-danger-text bg-danger-bg p-8 text-center shadow-sm transition-all duration-200 hover:shadow-md">
-        <span className="text-3xl" role="img" aria-label="Warning">⚠️</span>
-        <div className="text-lg font-semibold text-danger-text">
-          Failed to load events
-        </div>
-        <p className="text-danger-text opacity-80">
-          {error}
-        </p>
-        <Button
-          onClick={() => window.location.reload()}
-          variant="danger"
-          size="small"
-        >
+      <div className="border-danger-text bg-danger-bg mx-auto my-8 flex max-w-[500px] flex-col items-center rounded-xl p-8 text-center shadow-sm transition-all duration-200 hover:shadow-md">
+        <span className="text-3xl" role="img" aria-label="Warning">
+          ⚠️
+        </span>
+        <div className="text-danger-text text-lg font-semibold">Failed to load events</div>
+        <p className="text-danger-text opacity-80">{error}</p>
+        <Button onClick={() => window.location.reload()} variant="danger" size="small">
           Reload Page
         </Button>
       </div>
@@ -146,101 +139,68 @@ export default function EventsView(): React.JSX.Element {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Header Area */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
-          Event Management
-        </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Create and manage rehearsals, performances, and call times. Track attendance and edit seating charts.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Event Management"
+        description="Create and manage rehearsals, performances, and call times. Track attendance and edit seating charts."
+        below={
+          <AdminPageTabs
+            ariaLabel="Event sections"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={[
+              { value: 'all', label: 'All Events' },
+              { value: 'performances', label: 'Performances' },
+              { value: 'rehearsals', label: 'Rehearsals' },
+            ]}
+            actions={
+              <>
+                <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-500 select-none">
+                  <input
+                    type="checkbox"
+                    checked={showPastEvents}
+                    onChange={(e) => setShowPastEvents(e.target.checked)}
+                    className="text-primary accent-primary focus:ring-primary/25 size-4 cursor-pointer rounded border-slate-300"
+                  />
+                  <span>Show past events</span>
+                </label>
 
-      {/* Tabs / Actions Navigation Bar */}
-      <div className="no-print flex w-full flex-row flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-px">
-        <div className="flex gap-3 md:gap-6">
-          {(['all', 'performances', 'rehearsals'] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                type="button"
-                className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                  isActive
-                    ? 'border-primary font-bold text-primary'
-                    : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                }`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab === 'all' ? 'All Events' : tab === 'performances' ? 'Performances' : 'Rehearsals'}
-              </button>
-            );
-          })}
-        </div>
+                <Button
+                  onClick={handleBulkAdd}
+                  variant="secondary"
+                  className="px-3 font-semibold md:px-6"
+                  title="Bulk Add Rehearsals"
+                  icon={'⚡'}
+                >
+                  <span className="hidden md:inline">Bulk Add Rehearsals</span>
+                </Button>
 
-        <div className="flex flex-wrap items-center gap-4 pb-1.5">
-          {/* Show past checkbox */}
-          <label className="flex cursor-pointer flex-row items-center gap-2 text-sm font-semibold text-slate-500 select-none">
-            <input
-              type="checkbox"
-              checked={showPastEvents}
-              onChange={(e) => setShowPastEvents(e.target.checked)}
-              className="size-4 cursor-pointer rounded border-slate-300 text-primary accent-primary focus:ring-primary/25"
-            />
-            <span>Show past events</span>
-          </label>
+                <Button
+                  onClick={handleAdd}
+                  variant="primary"
+                  className="animate-pulse-once px-3 font-semibold md:px-6"
+                  title="Single Event"
+                  icon={'➕'}
+                >
+                  <span className="hidden md:inline">Single Event</span>
+                </Button>
+              </>
+            }
+          />
+        }
+      />
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleBulkAdd}
-              variant="secondary"
-              className="px-3 font-semibold md:px-6"
-              title="Bulk Add Rehearsals"
-              icon={
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-              }
-            >
-              <span className="hidden md:inline">Bulk Add Rehearsals</span>
-            </Button>
-            <Button
-              onClick={handleAdd}
-              variant="primary"
-              className="animate-pulse-once px-3 font-semibold md:px-6"
-              title="Single Event"
-              icon={
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              }
-            >
-              <span className="hidden md:inline">Single Event</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <EventList
+      <EventTable
         events={filteredEvents}
         onEdit={handleEdit}
         onCreate={handleAdd}
         onSendMessage={handleSendMessage}
         onViewRoster={(event: Event) => navigate(`/admin/events/${event.id}/roster`)}
-        onCheckAttendance={(event: Event) =>
-          navigate(`/admin/attendance?eventId=${event.id}`)
-        }
-        onViewSeating={(event: Event) =>
-          navigate(`/admin/seating?eventId=${event.id}`)
-        }
+        onCheckAttendance={(event: Event) => navigate(`/admin/attendance?eventId=${event.id}`)}
+        onViewSeating={(event: Event) => navigate(`/admin/seating?eventId=${event.id}`)}
         onOpenPlayer={handleOpenPlayer}
         onClone={handleClone}
         openAuditionEventId={
-          auditionSettings?.enabled
-            ? auditionSettings.defaultPerformanceId
-            : undefined
+          auditionSettings?.enabled ? auditionSettings.defaultPerformanceId : undefined
         }
       />
 
@@ -261,6 +221,13 @@ export default function EventsView(): React.JSX.Element {
         onSave={bulkAddRehearsals}
         performances={performances}
         venues={venues}
+      />
+
+      <PlayerLinkModal
+        isOpen={isPlayerLinkOpen}
+        onClose={() => setPlayerLinkOpen(false)}
+        url={playerLinkUrl}
+        eventTitle={playerLinkEventTitle}
       />
     </div>
   );

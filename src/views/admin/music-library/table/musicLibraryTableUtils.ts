@@ -11,9 +11,7 @@ export function getChildMovements(piece: MusicPiece, allPieces: MusicPiece[]): M
 export function hasOwnTracks(piece: MusicPiece): boolean {
   return !!(
     piece.audioTrackMapping &&
-    Object.keys(piece.audioTrackMapping).some(
-      (key) => piece.audioTrackMapping?.[key],
-    )
+    Object.keys(piece.audioTrackMapping).some((key) => piece.audioTrackMapping?.[key])
   );
 }
 

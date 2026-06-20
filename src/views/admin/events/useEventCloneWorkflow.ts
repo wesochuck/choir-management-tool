@@ -12,17 +12,20 @@ export function useEventCloneWorkflow({
   setEditingEvent,
   setIsModalOpen,
 }: UseEventCloneWorkflowArgs) {
-  const handleClone = useCallback((event: Event) => {
-    setCloningEventId(event.id);
-    setEditingEvent({
-      ...event,
-      id: '',
-      isOpenForRSVP: false,
-      setList: [],
-      parentPerformanceId: '',
-    });
-    setIsModalOpen(true);
-  }, [setCloningEventId, setEditingEvent, setIsModalOpen]);
+  const handleClone = useCallback(
+    (event: Event) => {
+      setCloningEventId(event.id);
+      setEditingEvent({
+        ...event,
+        id: '',
+        isOpenForRSVP: false,
+        setList: [],
+        parentPerformanceId: '',
+      });
+      setIsModalOpen(true);
+    },
+    [setCloningEventId, setEditingEvent, setIsModalOpen]
+  );
 
   return { handleClone };
 }

@@ -1,9 +1,8 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useAuth } from '../../contexts/AuthContext';
-import { pb } from '../../lib/pocketbase';
-
+import { Button } from '../ui';
 interface PageLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -13,36 +12,40 @@ interface PageLayoutProps {
   maxWidth?: string;
 }
 
-export const PageLayout: React.FC<PageLayoutProps> = ({ 
-  children, title, actions, maxWidth = '1200px' 
+export const PageLayout: React.FC<PageLayoutProps> = ({
+  children,
+  title,
+  actions,
+  maxWidth = '1200px',
 }) => {
   useDocumentTitle(title);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    pb.authStore.clear();
-    navigate('/login');
-  };
+  const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-bg">
-      <header className="no-print sticky top-0 z-40 border-b border-border bg-surface shadow-sm">
-        <div 
-          className="mx-auto flex items-center justify-between gap-6 px-6 py-3" 
+    <div className="bg-bg min-h-screen">
+      <header className="no-print border-border bg-surface sticky top-0 z-40 border-b shadow-sm">
+        <div
+          className="mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6"
           // @allow-inline-style - dynamic maxWidth from props
           style={{ maxWidth }}
         >
-          <div className="flex items-center gap-6">
-            <Link to="/dashboard" className="inline-flex h-[38px] items-center justify-center rounded-md border border-border bg-transparent px-4 text-sm font-semibold whitespace-nowrap text-text-muted no-underline transition-all duration-200 hover:bg-primary-light hover:text-primary-deep" title="Dashboard">🏠 Home</Link>
+          <div className="flex min-w-0 items-center gap-2">
+            <Button as={Link} to="/dashboard" variant="outline" size="default" title="Dashboard">
+              <span aria-hidden="true">🏠</span>
+              <span>Home</span>
+            </Button>
           </div>
           {(actions || user?.role === 'admin') && (
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {actions}
               {user?.role === 'admin' && (
                 <>
-                  <Link to="/profile" className="inline-flex items-center justify-center rounded-md border border-border bg-transparent px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-primary-light hover:text-primary-deep">My Profile</Link>
-                  <button onClick={handleLogout} className="inline-flex cursor-pointer items-center justify-center rounded-md border border-border bg-transparent px-3 py-1.5 text-sm font-medium text-text-muted hover:bg-primary-light hover:text-primary-deep">Logout</button>
+                  <Button as={Link} to="/profile" variant="ghost" size="default">
+                    My Profile
+                  </Button>
+                  <Button type="button" variant="outline" size="default" onClick={logout}>
+                    Logout
+                  </Button>
                 </>
               )}
             </div>
@@ -50,8 +53,8 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
         </div>
       </header>
 
-      <main 
-        className="mx-auto w-full px-6 py-8" 
+      <main
+        className="mx-auto w-full px-6 py-8"
         // @allow-inline-style - dynamic maxWidth from props
         style={{ maxWidth }}
       >

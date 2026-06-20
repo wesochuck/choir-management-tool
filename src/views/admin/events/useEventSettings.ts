@@ -1,33 +1,20 @@
-import { useEffect, useState } from 'react';
-import {
-  DEFAULT_COMMUNICATION_SETTINGS,
-  settingsService,
-  type AuditionSettings,
-  type CommunicationSettings,
-} from '../../../services/settingsService';
+import { useQuery } from '@tanstack/react-query';
+import { DEFAULT_COMMUNICATION_SETTINGS, settingsService } from '../../../services/settingsService';
+import { queryKeys } from '../../../lib/queryKeys';
 
 export function useEventSettings() {
-  const [communicationSettings, setCommunicationSettings] =
-    useState<CommunicationSettings>(DEFAULT_COMMUNICATION_SETTINGS);
-  const [auditionSettings, setAuditionSettings] =
-    useState<AuditionSettings | null>(null);
+  const { data: communicationSettings = DEFAULT_COMMUNICATION_SETTINGS } = useQuery({
+    queryKey: queryKeys.communications.settings(),
+    queryFn: () => settingsService.getCommunicationSettings(),
+  });
 
-  useEffect(() => {
-    Promise.all([
-      settingsService.getCommunicationSettings(),
-      settingsService.getAuditionSettings(),
-    ])
-      .then(([comm, aud]) => {
-        setCommunicationSettings(comm);
-        setAuditionSettings(aud);
-      })
-      .catch(() => undefined);
-  }, []);
+  const { data: auditionSettings = null } = useQuery({
+    queryKey: queryKeys.auditions.settings,
+    queryFn: () => settingsService.getAuditionSettings(),
+  });
 
   return {
     communicationSettings,
-    setCommunicationSettings,
     auditionSettings,
-    setAuditionSettings,
   };
 }

@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
 import { useDialog } from '../../contexts/DialogContext';
 import {
@@ -11,12 +13,16 @@ import { eventService } from '../../services/eventService';
 import {
   settingsService,
   getVoicePartsAndSections,
-  type SectionDef,
   type MusicGenreDef,
   type MusicLibrarySettings,
 } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
-import { exportMusicToCSV, findDuplicates, appendPieceToSetList } from '../../lib/musicPieceUtils';
+import {
+  exportMusicToCSV,
+  findDuplicates,
+  appendPieceToSetList,
+  appendPiecesToSetList,
+} from '../../lib/musicPieceUtils';
 import {
   buildVisibleMusicLibraryRows,
   type MusicLibrarySortField,
@@ -26,18 +32,76 @@ import {
 import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistory';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
+import { AddToSetListModal } from './music-library/AddToSetListModal';
+import { MusicLibrarySelectionToolbar } from './music-library/MusicLibrarySelectionToolbar';
 import { MusicLibraryFilters } from './music-library/MusicLibraryFilters';
 import { MusicLibraryTable } from './music-library/MusicLibraryTable';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { Button, FormField, Input } from '../../components/ui';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { AdminPageTabs } from '../../components/admin/AdminPageTabs';
 
 export default function MusicLibraryView() {
+  const queryClient = useQueryClient();
   const dialog = useDialog();
 
-  const [pieces, setPieces] = useState<MusicPiece[]>([]);
-  const [sections, setSections] = useState<SectionDef[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const invalidateMusicLibrary = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: queryKeys.musicLibrary.all }),
+    [queryClient]
+  );
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) => musicLibraryService.bulkDelete(ids),
+    onSuccess: () => {
+      invalidateMusicLibrary();
+      setSelectedIds(new Set());
+    },
+  });
+
+  const configSaveMutation = useMutation({
+    mutationFn: (settings: MusicLibrarySettings) =>
+      settingsService.saveMusicLibrarySettings(settings),
+    onSuccess: invalidateMusicLibrary,
+  });
+
+  const genreCreateMutation = useMutation({
+    mutationFn: (settings: MusicLibrarySettings) =>
+      settingsService.saveMusicLibrarySettings(settings),
+    onSuccess: invalidateMusicLibrary,
+  });
+
+  const pieceSaveMutation = useMutation({
+    mutationFn: async (input: {
+      existingId?: string;
+      data: Partial<MusicPieceInput>;
+      tuttiFile?: File | null;
+      movements?: { title: string; duration?: string }[];
+    }) => {
+      if (input.existingId) {
+        const updateData = { ...input.data };
+        delete updateData.tuttiFile;
+        delete updateData.movements;
+        return musicLibraryService.updatePiece(input.existingId, updateData);
+      }
+      const { tuttiFile, movements, ...rest } = input.data;
+      if (tuttiFile || (movements && movements.length > 0)) {
+        return musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest as MusicPieceInput, {
+          tuttiFile: tuttiFile ?? undefined,
+          movements: movements ?? [],
+        });
+      }
+      return musicLibraryService.createPiece(rest);
+    },
+    onSuccess: invalidateMusicLibrary,
+  });
+
+  const pieceDeleteMutation = useMutation({
+    mutationFn: ({ id, unlinkChildren }: { id: string; unlinkChildren: boolean }) =>
+      musicLibraryService.deletePiece(id, { unlinkChildren }),
+    onSuccess: invalidateMusicLibrary,
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sectionFilters, setSectionFilters] = useState<string[]>([]);
   const [genreFilters, setGenreFilters] = useState<string[]>([]);
@@ -52,7 +116,53 @@ export default function MusicLibraryView() {
     catalogLookupUrlTemplate: '',
     genres: [],
   });
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const libraryQuery = useQuery({
+    queryKey: queryKeys.musicLibrary.list(),
+    queryFn: () => musicLibraryService.getLibrary(),
+    staleTime: 60_000,
+  });
+  const pieces = useMemo(() => libraryQuery.data ?? [], [libraryQuery.data]);
+
+  const settingsLibQuery = useQuery({
+    queryKey: queryKeys.appSettings.musicLibrary,
+    queryFn: () => settingsService.getMusicLibrarySettings(),
+    staleTime: 60_000,
+  });
+
+  const voicePartsQuery = useQuery({
+    queryKey: queryKeys.voiceParts.list(),
+    queryFn: () => getVoicePartsAndSections(),
+    staleTime: 60_000,
+  });
+  const sections = useMemo(() => voicePartsQuery.data?.sections ?? [], [voicePartsQuery.data]);
+
+  const isLoading =
+    libraryQuery.isLoading || settingsLibQuery.isLoading || voicePartsQuery.isLoading;
+
+  useEffect(() => {
+    if (!settingsLibQuery.data) return;
+    const settings = settingsLibQuery.data;
+    const sortedGenres = [...(settings.genres || [])].sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+    setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
+    setConfiguredGenres(sortedGenres);
+
+    const settingsState = {
+      catalogLookupUrlTemplate: settings.catalogLookupUrlTemplate || '',
+      genres: sortedGenres,
+    };
+    setMusicLibrarySettings(JSON.parse(JSON.stringify(settingsState)));
+    setInitialSettings(JSON.parse(JSON.stringify(settingsState)));
+  }, [settingsLibQuery.data]);
+
+  const invalidateLibrary = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.musicLibrary.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.musicLibrary }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.voiceParts.all }),
+    ]);
+  };
 
   const isConfigDirty = useMemo(() => {
     if (!initialSettings) return false;
@@ -89,6 +199,7 @@ export default function MusicLibraryView() {
 
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isAddToSetListOpen, setIsAddToSetListOpen] = useState(false);
 
   const [sortField, setSortField] = useState<MusicLibrarySortField>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -112,7 +223,6 @@ export default function MusicLibraryView() {
     sortDirection,
     ignoreArticles,
   ]);
-  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleExportCSV = () => {
     const csvContent = exportMusicToCSV(pieces, { genres: configuredGenres });
@@ -127,57 +237,18 @@ export default function MusicLibraryView() {
     document.body.removeChild(link);
   };
 
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [data, settings, sectionsData] = await Promise.all([
-        musicLibraryService.getLibrary(),
-        settingsService.getMusicLibrarySettings(),
-        getVoicePartsAndSections(),
-      ]);
-      const sortedGenres = [...(settings.genres || [])].sort((a, b) =>
-        a.label.localeCompare(b.label)
-      );
-      setPieces(data);
-      setCatalogLookupTemplate(settings.catalogLookupUrlTemplate || '');
-      setSections(sectionsData.sections);
-      setConfiguredGenres(sortedGenres);
-
-      const settingsState = {
-        catalogLookupUrlTemplate: settings.catalogLookupUrlTemplate || '',
-        genres: sortedGenres,
-      };
-      setMusicLibrarySettings(JSON.parse(JSON.stringify(settingsState)));
-      setInitialSettings(JSON.parse(JSON.stringify(settingsState)));
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'isAbort' in err && err.isAbort) return;
-      dialog.showMessage({
-        title: 'Error',
-        message: 'Could not load music library.',
-        variant: 'danger',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [dialog]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const handleConfigSave = async () => {
-    setIsSavingConfig(true);
+    const sortedSettings = {
+      ...musicLibrarySettings,
+      genres: [...musicLibrarySettings.genres].sort((a, b) => a.label.localeCompare(b.label)),
+    };
+
+    const deletedGenres = (initialSettings?.genres || []).filter(
+      (ig) => !sortedSettings.genres.some((g) => g.id === ig.id)
+    );
+
     try {
-      const sortedSettings = {
-        ...musicLibrarySettings,
-        genres: [...musicLibrarySettings.genres].sort((a, b) => a.label.localeCompare(b.label)),
-      };
-
-      const deletedGenres = (initialSettings?.genres || []).filter(
-        (ig) => !sortedSettings.genres.some((g) => g.id === ig.id)
-      );
-
-      await settingsService.saveMusicLibrarySettings(sortedSettings);
+      await configSaveMutation.mutateAsync(sortedSettings);
       setInitialSettings(JSON.parse(JSON.stringify(sortedSettings)));
       setCatalogLookupTemplate(sortedSettings.catalogLookupUrlTemplate || '');
       setConfiguredGenres(sortedSettings.genres || []);
@@ -204,7 +275,7 @@ export default function MusicLibraryView() {
                   },
                 }))
               );
-              await loadData();
+              await invalidateMusicLibrary();
               dialog.showToast('Successfully cleaned up deleted genres from all music pieces.');
             } catch (err: unknown) {
               console.error('Failed to clean up deleted genres from pieces:', err);
@@ -224,8 +295,6 @@ export default function MusicLibraryView() {
         message: 'Failed to save Music Library settings.',
         variant: 'danger',
       });
-    } finally {
-      setIsSavingConfig(false);
     }
   };
 
@@ -242,23 +311,12 @@ export default function MusicLibraryView() {
     }
   ) => {
     try {
-      let savedPiece: MusicPiece;
-      if (editingPiece) {
-        const updateData = { ...data };
-        delete updateData.tuttiFile;
-        delete updateData.movements;
-        savedPiece = await musicLibraryService.updatePiece(editingPiece.id, updateData);
-      } else {
-        const { tuttiFile, movements, ...rest } = data;
-        if (tuttiFile || (movements && movements.length > 0)) {
-          savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, {
-            tuttiFile,
-            movements,
-          });
-        } else {
-          savedPiece = await musicLibraryService.createPiece(rest);
-        }
-      }
+      const savedPiece = await pieceSaveMutation.mutateAsync({
+        existingId: editingPiece?.id,
+        data: data as Partial<MusicPieceInput>,
+        tuttiFile: data.tuttiFile,
+        movements: data.movements,
+      });
 
       const oldPerformances = editingPiece?.performances || [];
       const newPerformances = data.performances || [];
@@ -296,7 +354,6 @@ export default function MusicLibraryView() {
       }
 
       setIsModalOpen(false);
-      await loadData();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -313,16 +370,12 @@ export default function MusicLibraryView() {
     }
   ) => {
     try {
-      const { tuttiFile, movements, ...rest } = data;
-      let savedPiece: MusicPiece;
-      if (tuttiFile || (movements && movements.length > 0)) {
-        savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(rest, {
-          tuttiFile,
-          movements,
-        });
-      } else {
-        savedPiece = await musicLibraryService.createPiece(rest);
-      }
+      const savedPiece = await pieceSaveMutation.mutateAsync({
+        existingId: undefined,
+        data: data as Partial<MusicPieceInput>,
+        tuttiFile: data.tuttiFile,
+        movements: data.movements,
+      });
 
       const newPerformances = data.performances || [];
       if (newPerformances.length > 0) {
@@ -357,7 +410,6 @@ export default function MusicLibraryView() {
 
       setEditingPiece(null);
       dialog.showToast(`"${savedPiece.title}" saved. Ready to add another piece.`);
-      await loadData();
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -378,9 +430,7 @@ export default function MusicLibraryView() {
     if (!confirmed) return;
 
     try {
-      const children = await pb.collection('musicLibrary').getFullList<MusicPiece>({
-        filter: pb.filter('parentId = {:id}', { id }),
-      });
+      const children = await musicLibraryService.getMovements(id);
 
       let unlinkChildren = false;
       if (children.length > 0) {
@@ -393,8 +443,7 @@ export default function MusicLibraryView() {
         });
       }
 
-      await musicLibraryService.deletePiece(id, { unlinkChildren });
-      await loadData();
+      await pieceDeleteMutation.mutateAsync({ id, unlinkChildren });
     } catch {
       dialog.showMessage({
         title: 'Error',
@@ -434,7 +483,7 @@ export default function MusicLibraryView() {
       genres: updatedGenres,
     };
 
-    await settingsService.saveMusicLibrarySettings(updatedSettings);
+    await genreCreateMutation.mutateAsync(updatedSettings);
 
     setMusicLibrarySettings(JSON.parse(JSON.stringify(updatedSettings)));
     setInitialSettings(JSON.parse(JSON.stringify(updatedSettings)));
@@ -481,12 +530,70 @@ export default function MusicLibraryView() {
     return filteredPieces.slice(startIndex, startIndex + pageSize);
   }, [filteredPieces, currentPage, pageSize]);
 
-  const toggleSelection = (id: string) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setSelectedIds(newSet);
-  };
+  const selectedPieces = useMemo(() => {
+    return pieces.filter((piece) => selectedIds.has(piece.id) && !piece.parentId);
+  }, [pieces, selectedIds]);
+
+  const performancesQuery = useQuery({
+    queryKey: queryKeys.events.list(),
+    queryFn: async () => {
+      const events = await eventService.getEvents();
+      const now = Date.now();
+      return events
+        .filter((event) => event.type === 'Performance')
+        .sort((a, b) => {
+          const aTime = new Date(a.date).getTime();
+          const bTime = new Date(b.date).getTime();
+          const aIsUpcoming = aTime >= now;
+          const bIsUpcoming = bTime >= now;
+          if (aIsUpcoming !== bIsUpcoming) return aIsUpcoming ? -1 : 1;
+          return aTime - bTime;
+        });
+    },
+    staleTime: 60_000,
+  });
+
+  const addSelectedToSetListMutation = useMutation({
+    mutationFn: async (eventId: string) => {
+      const event = await eventService.getEventById(eventId);
+      const pieceData = selectedPieces.map((p) => ({
+        id: p.id,
+        title: p.title,
+        composer: p.composer,
+        duration: p.duration,
+        notes: p.notes,
+      }));
+      const result = appendPiecesToSetList(event.setList, pieceData);
+      if (result.addedCount > 0) {
+        await eventService.updateEvent(eventId, { setList: result.setList });
+      }
+      return { event, addedCount: result.addedCount, skippedCount: result.skippedCount };
+    },
+    onSuccess: ({ event, addedCount, skippedCount }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.events.all });
+      if (addedCount > 0 && skippedCount > 0) {
+        dialog.showToast(
+          `Added ${addedCount} title${addedCount === 1 ? '' : 's'} to "${event.title}". ${skippedCount} already ${skippedCount === 1 ? 'was' : 'were'} on the set list.`
+        );
+      } else if (addedCount > 0) {
+        dialog.showToast(
+          `Added ${addedCount} title${addedCount === 1 ? '' : 's'} to "${event.title}".`
+        );
+      } else {
+        dialog.showToast('All selected titles were already on that set list.');
+      }
+      setSelectedIds(new Set());
+      setIsAddToSetListOpen(false);
+    },
+    onError: async (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      await dialog.showMessage({
+        title: 'Could Not Update Set List',
+        message,
+        variant: 'danger',
+      });
+    },
+  });
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
@@ -498,209 +605,131 @@ export default function MusicLibraryView() {
     });
 
     if (confirm) {
-      setIsBulkDeleting(true);
       try {
-        await musicLibraryService.bulkDelete(Array.from(selectedIds));
-        setSelectedIds(new Set());
-        await loadData();
+        await bulkDeleteMutation.mutateAsync(Array.from(selectedIds));
       } catch {
         dialog.showMessage({
           title: 'Error',
           message: 'Failed to delete some pieces.',
           variant: 'danger',
         });
-      } finally {
-        setIsBulkDeleting(false);
       }
     }
   };
 
   return (
     <div className="flex w-full flex-col gap-6">
-      {/* Header Area */}
-      <div className="no-print flex flex-col gap-2">
-        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Music Library</h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Manage choir repertoire, movements, and learning tracks
-        </p>
-      </div>
-
-      {/* Tabs / Actions Navigation Bar */}
-      <div className="no-print flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
-        <div className="flex gap-3 md:gap-6">
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'catalog'
-                ? 'border-primary font-bold text-primary'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('catalog')}
-          >
-            Music Catalog
-          </button>
-          <button
-            type="button"
-            className={`flex min-h-[44px] cursor-pointer items-center justify-center border-b-2 px-1 py-2.5 text-sm font-semibold transition-all duration-200 ${
-              activeTab === 'config'
-                ? 'border-primary font-bold text-primary'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            onClick={() => setActiveTab('config')}
-          >
-            Library Settings
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2 pb-1.5">
-          {activeTab === 'catalog' && (
-            <>
-              <Button
-                variant="secondary"
-                className=""
-                onClick={handleExportCSV}
-                title="Export CSV"
-                icon={
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+      <AdminPageHeader
+        title="Music Library"
+        description="Manage choir repertoire, movements, and learning tracks"
+        below={
+          <AdminPageTabs
+            ariaLabel="Music library sections"
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={[
+              { value: 'catalog', label: 'Music Catalog' },
+              { value: 'config', label: 'Library Settings' },
+            ]}
+            actions={
+              activeTab === 'catalog' ? (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={handleExportCSV}
+                    title="Export CSV"
+                    icon={'⬇️'}
                   >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                }
-              >
-                <span className="hidden md:inline">Export CSV</span>
-              </Button>
-              <Button
-                variant="secondary"
-                className=""
-                onClick={() => setIsImportModalOpen(true)}
-                title="Import CSV"
-                icon={
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    <span className="hidden md:inline">Export CSV</span>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsImportModalOpen(true)}
+                    title="Import CSV"
+                    icon={'⬆️'}
                   >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                }
-              >
-                <span className="hidden md:inline">Import CSV</span>
-              </Button>
-              <Button
-                variant="primary"
-                className=""
-                onClick={() => {
-                  setEditingPiece(null);
-                  setIsModalOpen(true);
-                }}
-                title="Add Piece"
-                icon={
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    <span className="hidden md:inline">Import CSV</span>
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      setEditingPiece(null);
+                      setIsModalOpen(true);
+                    }}
+                    title="Add Piece"
+                    icon={'➕'}
                   >
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                }
-              >
-                <span className="hidden md:inline">Add Piece</span>
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
+                    <span className="hidden md:inline">Add Piece</span>
+                  </Button>
+                </>
+              ) : null
+            }
+          />
+        }
+      />
 
       {activeTab === 'catalog' ? (
-        <AppCard noPadding>
-          <MusicLibraryFilters
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            sectionFilters={sectionFilters}
-            onSectionFiltersChange={setSectionFilters}
-            genreFilters={genreFilters}
-            onGenreFiltersChange={setGenreFilters}
-            genreFilterMode={genreFilterMode}
-            onGenreFilterModeChange={setGenreFilterMode}
-            genres={configuredGenres}
-            sections={sections}
-            showDuplicatesOnly={showDuplicatesOnly}
-            onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
-            duplicateCount={duplicateIds.size}
-            selectedCount={selectedIds.size}
-            isBulkDeleting={isBulkDeleting}
-            onBulkDelete={handleBulkDelete}
-            pageSize={pageSize}
-            onPageSizeChange={setPageSize}
-            recencyFilter={recencyFilter}
-            onRecencyFilterChange={setRecencyFilter}
-            ignoreArticles={ignoreArticles}
-            onIgnoreArticlesChange={setIgnoreArticles}
-          />
+        <div className={selectedIds.size > 0 ? 'pb-36 sm:pb-28' : undefined}>
+          <AppCard noPadding>
+            <MusicLibraryFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              sectionFilters={sectionFilters}
+              onSectionFiltersChange={setSectionFilters}
+              genreFilters={genreFilters}
+              onGenreFiltersChange={setGenreFilters}
+              genreFilterMode={genreFilterMode}
+              onGenreFilterModeChange={setGenreFilterMode}
+              genres={configuredGenres}
+              sections={sections}
+              showDuplicatesOnly={showDuplicatesOnly}
+              onShowDuplicatesOnlyChange={setShowDuplicatesOnly}
+              duplicateCount={duplicateIds.size}
+              pageSize={pageSize}
+              onPageSizeChange={setPageSize}
+              recencyFilter={recencyFilter}
+              onRecencyFilterChange={setRecencyFilter}
+              ignoreArticles={ignoreArticles}
+              onIgnoreArticlesChange={setIgnoreArticles}
+            />
 
-          <MusicLibraryTable
-            pieces={pieces}
-            filteredPieces={paginatedPieces}
-            genres={configuredGenres}
-            isLoading={isLoading}
-            duplicateIds={duplicateIds}
-            selectedIds={selectedIds}
-            onToggleSelection={toggleSelection}
-            onSelectAll={(checked) => {
-              const newSet = new Set(selectedIds);
-              if (checked) {
-                filteredPieces.forEach((p) => newSet.add(p.id));
-              } else {
-                filteredPieces.forEach((p) => newSet.delete(p.id));
-              }
-              setSelectedIds(newSet);
-            }}
-            onEditPiece={(piece, tab) => {
-              setEditingPiece(piece);
-              setModalInitialTab(tab || 'details');
-              setIsModalOpen(true);
-            }}
-            onPlayTrack={handlePlayDefaultTrack}
-            catalogLookupTemplate={catalogLookupTemplate}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            totalParentCount={filteredPieces.length}
-            onPageChange={setCurrentPage}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSortChange={(field) => {
-              if (sortField === field) {
-                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-              } else {
+            <MusicLibrarySelectionToolbar
+              selectedCount={selectedIds.size}
+              isBulkDeleting={bulkDeleteMutation.isPending}
+              isAddingToSetList={addSelectedToSetListMutation.isPending}
+              onAddToSetList={() => setIsAddToSetListOpen(true)}
+              onDeleteSelected={handleBulkDelete}
+              onClearSelection={() => setSelectedIds(new Set())}
+            />
+
+            <MusicLibraryTable
+              pieces={pieces}
+              filteredPieces={paginatedPieces}
+              genres={configuredGenres}
+              isLoading={isLoading}
+              duplicateIds={duplicateIds}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              onEditPiece={(piece, tab) => {
+                setEditingPiece(piece);
+                setModalInitialTab(tab || 'details');
+                setIsModalOpen(true);
+              }}
+              onPlayTrack={handlePlayDefaultTrack}
+              catalogLookupTemplate={catalogLookupTemplate}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalParentCount={filteredPieces.length}
+              onPageChange={setCurrentPage}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSortChange={(field, direction) => {
                 setSortField(field);
-                setSortDirection('asc');
-              }
-            }}
-          />
-        </AppCard>
+                setSortDirection(direction);
+              }}
+            />
+          </AppCard>
+        </div>
       ) : (
         <div className="flex flex-col gap-6">
           <AppCard title="Music Library Settings">
@@ -717,7 +746,7 @@ export default function MusicLibraryView() {
                   }
                   placeholder="https://example.com/catalog/{catalogId}"
                 />
-                <p className="mt-1 text-xs text-text-muted">
+                <p className="text-text-muted mt-1 text-xs">
                   Configure an external lookup URL format for Catalog IDs. Use{' '}
                   <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[11px]">
                     {'{catalogId}'}
@@ -734,7 +763,7 @@ export default function MusicLibraryView() {
 
           <AppCard title="Music Library Genres">
             <div className="flex flex-col gap-4">
-              <p className="text-sm text-text-muted">
+              <p className="text-text-muted text-sm">
                 Configure standard genre tags used for library organization and advanced layout
                 filtering.
               </p>
@@ -840,7 +869,7 @@ export default function MusicLibraryView() {
 
           <FloatingSaveBar
             isDirty={isConfigDirty}
-            isSaving={isSavingConfig}
+            isSaving={configSaveMutation.isPending}
             onSave={handleConfigSave}
             onDiscard={handleConfigDiscard}
           />
@@ -855,17 +884,29 @@ export default function MusicLibraryView() {
         onSaveAndAddAnother={handleSaveAndAddAnother}
         onDelete={editingPiece ? () => handleDeletePiece(editingPiece.id) : undefined}
         catalogLookupTemplate={catalogLookupTemplate}
-        onRefresh={loadData}
+        onRefresh={invalidateLibrary}
         allPieces={pieces}
         allGenres={configuredGenres}
         onCreateGenre={handleCreateGenre}
         initialTab={modalInitialTab}
+        isSaving={pieceSaveMutation.isPending}
+      />
+
+      <AddToSetListModal
+        isOpen={isAddToSetListOpen}
+        selectedPieces={selectedPieces}
+        performances={performancesQuery.data ?? []}
+        isSaving={addSelectedToSetListMutation.isPending}
+        onClose={() => setIsAddToSetListOpen(false)}
+        onConfirm={(eventId) => {
+          addSelectedToSetListMutation.mutateAsync(eventId);
+        }}
       />
 
       <MusicImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        onSuccess={loadData}
+        onSuccess={invalidateLibrary}
       />
 
       <FloatingAudioPlayer

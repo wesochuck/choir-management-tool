@@ -10,7 +10,7 @@ afterEach(() => {
 
 test('CopyButton renders a <button type="button"> in test environment', () => {
   const { container } = render(
-    React.createElement(CopyButton, { value: 'https://example.com' }, 'Copy Link'),
+    React.createElement(CopyButton, { value: 'https://example.com' }, 'Copy Link')
   );
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
@@ -21,7 +21,7 @@ test('CopyButton renders a <button type="button"> in test environment', () => {
 
 test('CopyButton is disabled when disabled prop is true', () => {
   const { container } = render(
-    React.createElement(CopyButton, { value: 'x', disabled: true }, 'Copy'),
+    React.createElement(CopyButton, { value: 'x', disabled: true }, 'Copy')
   );
   const el = container.firstElementChild as HTMLButtonElement;
   assert.ok(el, 'renders an element');
@@ -31,7 +31,9 @@ test('CopyButton is disabled when disabled prop is true', () => {
 test('CopyButton writes its value to the clipboard on click', () => {
   let captured: string | undefined;
   const fakeClipboard = {
-    writeText: async (text: string) => { captured = text; },
+    writeText: async (text: string) => {
+      captured = text;
+    },
   };
   Object.defineProperty(navigator, 'clipboard', {
     value: fakeClipboard,
@@ -40,7 +42,7 @@ test('CopyButton writes its value to the clipboard on click', () => {
   });
 
   const { container } = render(
-    React.createElement(CopyButton, { value: 'https://choir.test/x' }, 'Copy'),
+    React.createElement(CopyButton, { value: 'https://choir.test/x' }, 'Copy')
   );
   const el = container.firstElementChild as HTMLButtonElement;
   assert.ok(el, 'renders an element');

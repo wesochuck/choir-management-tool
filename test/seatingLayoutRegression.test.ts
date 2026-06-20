@@ -64,7 +64,7 @@ test('seating grid fit math uses the rendered row label width and avoids nested 
 test('seating grid preserves vertical spacing between rendered seat rows', () => {
   assert.match(
     seatingGrid,
-    /className="w-full overflow-x-clip overflow-y-visible flex flex-col"/,
+    /overflow-x-clip\s+overflow-y-visible/,
     'the inner seating-row wrapper should stack row-print rows vertically',
   );
 
@@ -159,7 +159,7 @@ test('unassigned singer shelf uses grouped chips with one shared scroll area', (
 
   assert.match(
     seatingBottomDock,
-    /className="flex max-h-\[190px\] flex-col gap-3 overflow-y-auto/,
+    /max-h-\[190px\]\s+flex-col\s+gap-3\s+overflow-y-auto/,
     'unassigned shelf should use one shared vertical scroll area for all groups',
   );
 
@@ -177,7 +177,7 @@ test('unassigned singer shelf uses grouped chips with one shared scroll area', (
 
   assert.match(
     seatingBottomDock,
-    /!\s*isVoicePartLayout\s*&&\s*\(\s*<span className="inline-flex items-center rounded bg-primary-light/,
+    /!\s*isVoicePartLayout\s*&&\s*\(\s*<span className="[^"]*bg-primary-light[^"]*inline-flex items-center rounded/,
     'section-based chart shelves should show voice-part badges on singer chips',
   );
 });

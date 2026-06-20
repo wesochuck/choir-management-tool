@@ -7,15 +7,15 @@ interface VoicePartSelectorProps {
   onSelect: (part: string) => void;
 }
 
-export const VoicePartSelector: React.FC<VoicePartSelectorProps> = ({ 
-  voiceParts, 
-  selectedPart, 
-  onSelect 
+export const VoicePartSelector: React.FC<VoicePartSelectorProps> = ({
+  voiceParts,
+  selectedPart,
+  onSelect,
 }) => {
   // Always include Tutti as the first option
   const options = [
     { label: 'Tutti', value: 'tutti' },
-    ...voiceParts.map(vp => ({ label: vp.label, value: vp.label.toLowerCase() }))
+    ...voiceParts.map((vp) => ({ label: vp.label, value: vp.label.toLowerCase() })),
   ];
 
   return (

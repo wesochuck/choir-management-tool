@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultProfileInput, isProfileFormDirty, profileToFormData } from '../src/lib/profileForm.ts';
+import {
+  defaultProfileInput,
+  isProfileFormDirty,
+  profileToFormData,
+} from '../src/lib/profileForm.ts';
 import type { Profile, ProfileInput } from '../src/services/profileService.ts';
 
 const makeProfile = (overrides: Partial<Profile> = {}): Profile => {
@@ -70,15 +74,39 @@ test('changing section leader status is dirty', () => {
 });
 
 test('profileToFormData hydrates email from expand.user.email', () => {
-  const profile = makeProfile({ expand: { user: { ...makeProfile().expand!.user!, email: 'hydrate@example.com' } } });
+  const profile = makeProfile({
+    expand: { user: { ...makeProfile().expand!.user!, email: 'hydrate@example.com' } },
+  });
   const formData = profileToFormData(profile);
   assert.equal(formData.email, 'hydrate@example.com');
 });
 
 test('missing booleans default to false', () => {
-  const profile = makeProfile({ doNotEmail: undefined, isSectionLeader: undefined, statusIsManual: undefined });
+  const profile = makeProfile({
+    doNotEmail: undefined,
+    isSectionLeader: undefined,
+    statusIsManual: undefined,
+  });
   const formData = profileToFormData(profile);
   assert.equal(formData.doNotEmail, false);
   assert.equal(formData.isSectionLeader, false);
   assert.equal(formData.statusIsManual, false);
+});
+
+test('showInDirectory defaults to true in profileToFormData when missing or undefined', () => {
+  const profile = makeProfile({ showInDirectory: undefined });
+  const formData = profileToFormData(profile);
+  assert.equal(formData.showInDirectory, true);
+});
+
+test('showInDirectory preserves false in profileToFormData when explicitly false', () => {
+  const profile = makeProfile({ showInDirectory: false });
+  const formData = profileToFormData(profile);
+  assert.equal(formData.showInDirectory, false);
+});
+
+test('changing showInDirectory makes existing profile form dirty', () => {
+  const profile = makeProfile({ showInDirectory: true });
+  const formData = { ...profileToFormData(profile), showInDirectory: false };
+  assert.equal(isProfileFormDirty(formData, profile), true);
 });

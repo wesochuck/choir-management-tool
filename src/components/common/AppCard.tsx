@@ -10,8 +10,14 @@ interface AppCardProps {
   onClick?: React.MouseEventHandler<HTMLDivElement>;
 }
 
-export const AppCard: React.FC<AppCardProps> = ({ 
-  children, className = '', style, title, actions, noPadding = false, onClick 
+export const AppCard: React.FC<AppCardProps> = ({
+  children,
+  className = '',
+  style,
+  title,
+  actions,
+  noPadding = false,
+  onClick,
 }) => {
   // Use Tailwind utility classes instead of the legacy global .card class to play nicely with utility overrides (p-0, gap-0, etc.)
   const cardClass = [
@@ -24,15 +30,15 @@ export const AppCard: React.FC<AppCardProps> = ({
     .join(' ');
 
   return (
-    <div 
-      className={cardClass} 
+    <div
+      className={cardClass}
       // @allow-inline-style - passes through style prop for composition
       style={style}
       onClick={onClick}
     >
       {(title || actions) && (
         <div className="flex items-center justify-between">
-          {title && <h3 className="text-xl font-semibold text-text">{title}</h3>}
+          {title && <h3 className="text-text text-xl font-semibold">{title}</h3>}
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
       )}

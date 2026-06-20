@@ -15,17 +15,20 @@ export function pieceHasGenre(piece: Partial<MusicPiece>, genreId: string): bool
  */
 export function filterPiecesByGenre(pieces: MusicPiece[], selectedGenreId: string): MusicPiece[] {
   if (!selectedGenreId) return pieces;
-  return pieces.filter(p => pieceHasGenre(p, selectedGenreId));
+  return pieces.filter((p) => pieceHasGenre(p, selectedGenreId));
 }
 
 /**
  * Maps stored genre IDs to human-readable labels.
  */
-export function getGenreLabelsForPiece(piece: Partial<MusicPiece>, genres: MusicGenreDef[]): string[] {
+export function getGenreLabelsForPiece(
+  piece: Partial<MusicPiece>,
+  genres: MusicGenreDef[]
+): string[] {
   if (!piece.genres || !Array.isArray(piece.genres)) return [];
-  
-  return piece.genres.map(id => {
-    const found = genres.find(g => g.id === id);
+
+  return piece.genres.map((id) => {
+    const found = genres.find((g) => g.id === id);
     return found ? found.label : `Unknown (${id})`;
   });
 }
@@ -47,12 +50,12 @@ export function createGenreId(label: string, existingGenres: MusicGenreDef[]): s
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
-  
+
   if (!baseId) return 'genre'; // fallback
 
   let finalId = baseId;
   let counter = 2;
-  const currentIds = existingGenres.map(g => g.id);
+  const currentIds = existingGenres.map((g) => g.id);
 
   while (currentIds.includes(finalId)) {
     finalId = `${baseId}-${counter}`;

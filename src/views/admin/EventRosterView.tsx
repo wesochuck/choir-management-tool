@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { EventRosterTable } from '../../components/admin/EventRosterTable';
+import { VoicePartBalanceCard } from '../../components/admin/VoicePartBalanceCard';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, Modal, Select, Input, ProgressBar } from '../../components/ui';
@@ -10,8 +13,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
 import { useRsvpBulkActions } from './event-roster/useRsvpBulkActions';
 import { useEventRosterExport } from './event-roster/useEventRosterExport';
-
-
 
 interface EventRosterViewProps {
   eventIdProp?: string;
@@ -25,6 +26,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   const navigate = useNavigate();
   const dialog = useDialog();
+  const queryClient = useQueryClient();
 
   const { user, updatePreferences } = useAuth();
 
@@ -56,12 +58,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   } = useEventRosterData({ eventId, isInline });
 
   // RSVP bulk actions hook
-  const {
-    isUpdating,
-    bulkProgress,
-    handleUpdateRSVP,
-    handleBulkUpdateRSVP,
-  } = useRsvpBulkActions({
+  const { isUpdating, bulkProgress, handleUpdateRSVP, handleBulkUpdateRSVP } = useRsvpBulkActions({
     eventId,
     sortedSingers,
     refreshRosters,
@@ -82,6 +79,18 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     dialog,
   });
 
+  // Mutations
+  const profileSaveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ProfileInput }) =>
+      profileService.updateProfile(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
+  });
+
+  const profileDeleteMutation = useMutation({
+    mutationFn: (id: string) => profileService.deleteProfile(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
+  });
+
   // Singer modal states
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
   const [selectedSingerProfile, setSelectedSingerProfile] = useState<Profile | null>(null);
@@ -91,10 +100,8 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   }
 
   const handleVoicePartToggle = (part: string) => {
-    setSelectedVoiceParts(prev => 
-      prev.includes(part)
-        ? prev.filter(p => p !== part)
-        : [...prev, part]
+    setSelectedVoiceParts((prev) =>
+      prev.includes(part) ? prev.filter((p) => p !== part) : [...prev, part]
     );
   };
 
@@ -110,7 +117,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const handleSingerModalSave = async (formData: ProfileInput) => {
     if (!selectedSingerProfile) return;
     try {
-      await profileService.updateProfile(selectedSingerProfile.id, formData);
+      await profileSaveMutation.mutateAsync({ id: selectedSingerProfile.id, data: formData });
       await refreshProfiles();
       await refreshRosters();
     } catch (err) {
@@ -120,7 +127,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   const handleSingerModalDelete = async (profile: Profile) => {
     try {
-      await profileService.deleteProfile(profile.id);
+      await profileDeleteMutation.mutateAsync(profile.id);
       await refreshProfiles();
       await refreshRosters();
     } catch (err) {
@@ -130,14 +137,17 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
 
   return (
     <AppCard
-      title={isInline ? '' : `RSVP Management: ${event ? (event.title || event.expand?.venue?.name || '') : ''}`}
+      title={
+        isInline
+          ? ''
+          : `RSVP Management: ${event ? event.title || event.expand?.venue?.name || '' : ''}`
+      }
       actions={
         <div className="flex flex-row items-center gap-2">
           {!isInline && event && (
-            <Button 
+            <Button
               variant="secondary"
               size="small"
-              className=""
               onClick={() => {
                 const query = new URLSearchParams({
                   eventId: event.id,
@@ -150,19 +160,11 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             </Button>
           )}
           {!isInline ? (
-            <Button 
-              variant="outline"
-              size="small"
-              onClick={() => navigate('/admin/events')}
-            >
+            <Button variant="outline" size="small" onClick={() => navigate('/admin/events')}>
               Close
             </Button>
           ) : onClose ? (
-            <Button 
-              variant="outline"
-              size="small"
-              onClick={onClose}
-            >
+            <Button variant="outline" size="small" onClick={onClose}>
               Close
             </Button>
           ) : null}
@@ -170,217 +172,196 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
       }
     >
       <div className="flex flex-col gap-4">
-        {/* Voice Part RSVP Balance Summary Card */}
         {voiceParts.length > 0 && (
-          <AppCard 
+          <VoicePartBalanceCard
             title="Voice Part RSVP Balance"
             actions={
-              <div className="flex flex-row items-center gap-2">
-                <Button
-                  onClick={handleExportCSV}
-                  variant="secondary"
-                  size="small"
-                  className=""
+              <Button onClick={handleExportCSV} variant="secondary" size="small">
+                📥 Export CSV
+              </Button>
+            }
+            badges={
+              <span className="bg-primary-light text-primary-deep inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold tracking-wider uppercase">
+                {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
+                {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
+                {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
+                {rsvpFilter === 'Pending' && `Total: ${pendingCount} No Response`}
+              </span>
+            }
+            filters={
+              <div className="flex flex-row flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('All')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'All'
+                      ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
                 >
-                  📥 Export CSV
-                </Button>
-                <span className="inline-flex items-center rounded-full bg-primary-light px-4 py-1.5 text-sm font-semibold tracking-wider text-primary-deep uppercase">
-                  {rsvpFilter === 'All' && `Total: ${mappedSingers.length} Active`}
-                  {rsvpFilter === 'Yes' && `Total: ${yesCount} Attending`}
-                  {rsvpFilter === 'No' && `Total: ${noCount} Declined`}
-                  {rsvpFilter === 'Pending' && `Total: ${pendingCount} No Response`}
-                </span>
+                  👥 All Active ({mappedSingers.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('Yes')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'Yes'
+                      ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  🟢 Attending ({yesCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('No')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'No'
+                      ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  🔴 Declined ({noCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRsvpFilter('Pending')}
+                  className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
+                    rsvpFilter === 'Pending'
+                      ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-300'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                  }`}
+                >
+                  ⏳ No Response ({pendingCount})
+                </button>
               </div>
             }
-            className="gap-4"
-          >
-            {/* RSVP Status Filters acting on Voice Part Counts */}
-            <div className="flex flex-row flex-wrap gap-2 border-b border-gray-200 pb-2">
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('All')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'All'
-                    ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                👥 All Active ({mappedSingers.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('Yes')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'Yes'
-                    ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                🟢 Attending ({yesCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('No')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'No'
-                    ? 'bg-red-100 text-red-700 ring-1 ring-red-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                🔴 Declined ({noCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => setRsvpFilter('Pending')}
-                className={`rounded-lg px-4 py-2 text-sm font-bold transition-colors duration-150 ${
-                  rsvpFilter === 'Pending'
-                    ? 'bg-slate-100 text-slate-700 ring-1 ring-slate-300'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
-                }`}
-              >
-                ⏳ No Response ({pendingCount})
-              </button>
-            </div>
-
-            {/* Section Subtotals */}
-            <div
-              className="grid grid-cols-[repeat(var(--grid-cols),1fr)] gap-4 border-b border-gray-200 pb-4 max-[640px]:grid-cols-2 max-[400px]:grid-cols-1"
-              // @allow-inline-style - dynamic grid columns based on section count using CSS variable
-              style={{ '--grid-cols': sections.length } as React.CSSProperties}
-            >
-              {sections.map(sec => {
-                const isSelected = selectedVoiceParts.includes(sec.code);
-                return (
-                  <div
-                    key={sec.code}
-                    className={`flex cursor-pointer flex-col gap-1 rounded-lg border-2 bg-primary-light p-[calc(16px-2px)] text-center transition-colors duration-150 hover:bg-primary-light/80 ${
-                      isSelected
-                        ? 'border-primary shadow-[0_0_0_1px_var(--color-primary)]'
-                        : 'border-transparent'
-                    }`}
-                    onClick={() => handleVoicePartToggle(sec.code)}
-                  >
-                    <div className="text-xs font-bold tracking-wider text-primary-deep uppercase">
-                      {sec.name}
-                    </div>
-                    <div className="text-3xl leading-none font-extrabold text-primary-deep">{sectionCounts[sec.code] || 0}</div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Individual Part Breakdowns */}
-            <div className="mt-0 grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
-              {voiceParts.map(vp => {
-                const isSelected = selectedVoiceParts.includes(vp.label);
-                const count = partCounts.get(vp.label) || 0;
-                return (
-                  <div
-                    key={vp.label}
-                    className={`flex cursor-pointer flex-col rounded-lg transition-colors duration-150 hover:bg-primary-light ${
-                      isSelected
-                        ? 'border-2 border-primary bg-primary-light p-[7px]'
-                        : 'border border-gray-200 bg-white p-2'
-                    }`}
-                    onClick={() => handleVoicePartToggle(vp.label)}
-                  >
-                    <div className="text-xs font-bold">{vp.label}</div>
-                    <div className="text-sm font-bold">{count}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </AppCard>
+            sections={sections.map((sec) => ({
+              code: sec.code,
+              name: sec.name,
+              count: sectionCounts[sec.code] || 0,
+              selected: selectedVoiceParts.includes(sec.code),
+              onClick: () => handleVoicePartToggle(sec.code),
+            }))}
+            voiceParts={voiceParts.map((vp) => ({
+              label: vp.label,
+              count: partCounts.get(vp.label) || 0,
+              selected: selectedVoiceParts.includes(vp.label),
+              onClick: () => handleVoicePartToggle(vp.label),
+            }))}
+          />
         )}
 
-        <div className="mt-1 flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-[280px] flex-[1_1_520px] flex-wrap items-center gap-2">
-            <Input
-              type="text"
-              placeholder="Search active singers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="min-w-[240px] flex-[1_1_280px]"
-            >
-              <span slot="prefix" className="flex items-center text-gray-500">
-                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </span>
-              {searchQuery && (
-                <button
-                  slot="suffix"
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
-                  aria-label="Clear search"
-                >
-                  <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              )}
-            </Input>
-
-            <Select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-              size="small" className="!w-[210px]"
-              aria-label="Sort singers"
-            >
-              <option value="lastName">Last Name</option>
-              <option value="voicePart">Voice Part + Last Name</option>
-            </Select>
-
-            {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
-              <Button
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedVoiceParts([]);
-                  setRsvpFilter('All');
-                }}
-                variant="secondary"
-                className="flex h-11 items-center gap-1"
+        <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px_auto] lg:items-center">
+              <Input
+                type="text"
+                placeholder="Search active singers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                  <path d="M3 3v5h5"></path>
-                </svg>
-                Reset Filters
-              </Button>
-            )}
-          </div>
+                <span slot="prefix" className="flex items-center text-gray-500">
+                  <svg
+                    className="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                </span>
+                {searchQuery && (
+                  <button
+                    slot="suffix"
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="flex items-center rounded-full p-0.5 text-gray-500 hover:text-gray-800"
+                    aria-label="Clear search"
+                  >
+                    <span aria-hidden="true">❌</span>
+                  </button>
+                )}
+              </Input>
 
-          <div className="flex flex-[0_1_auto] flex-wrap items-center justify-end gap-2" aria-label="Bulk RSVP actions">
-            <span className="text-xs font-bold whitespace-nowrap text-gray-500">{sortedSingers.length} shown</span>
-            <Button
-              disabled={isUpdating || sortedSingers.length === 0}
-              onClick={() => handleBulkUpdateRSVP('Yes')}
-              variant="primary"
-            >
-              Mark Attending
-            </Button>
-            <Button
-              disabled={isUpdating || sortedSingers.length === 0}
-              onClick={() => handleBulkUpdateRSVP('No')}
-              variant="danger"
-            >
-              Mark Declined
-            </Button>
-            <Button
-              disabled={isUpdating || sortedSingers.length === 0}
-              onClick={() => handleBulkUpdateRSVP('Pending')}
-              variant="secondary"
-            >
-              Reset RSVPs
-            </Button>
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
+                size="small"
+                className="w-full"
+                aria-label="Sort singers"
+              >
+                <option value="lastName">Sort: Last Name</option>
+                <option value="voicePart">Sort: Voice Part + Last Name</option>
+              </Select>
+
+              {(searchQuery || selectedVoiceParts.length > 0 || rsvpFilter !== 'All') && (
+                <Button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedVoiceParts([]);
+                    setRsvpFilter('All');
+                  }}
+                  variant="outline"
+                  size="small"
+                  className="h-10 shrink-0 px-3 whitespace-nowrap"
+                >
+                  Reset Filters
+                </Button>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold whitespace-nowrap text-gray-500">
+                  {sortedSingers.length} shown
+                </span>
+
+                <span className="text-xs font-semibold whitespace-nowrap text-gray-400">
+                  Apply to shown:
+                </span>
+              </div>
+
+              <div
+                className="grid gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center lg:justify-end"
+                aria-label="Bulk RSVP actions"
+              >
+                <Button
+                  disabled={isUpdating || sortedSingers.length === 0}
+                  onClick={() => handleBulkUpdateRSVP('Yes')}
+                  variant="primary"
+                  className="w-full lg:w-auto"
+                >
+                  Mark Attending
+                </Button>
+                <Button
+                  disabled={isUpdating || sortedSingers.length === 0}
+                  onClick={() => handleBulkUpdateRSVP('No')}
+                  variant="danger"
+                  className="w-full lg:w-auto"
+                >
+                  Mark Declined
+                </Button>
+                <Button
+                  disabled={isUpdating || sortedSingers.length === 0}
+                  onClick={() => handleBulkUpdateRSVP('Pending')}
+                  variant="secondary"
+                  className="w-full lg:w-auto"
+                >
+                  Reset RSVPs
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Unified Event Roster Table */}
-        <EventRosterTable 
+        <EventRosterTable
           singers={sortedSingers}
           isUpdating={isUpdating}
           onCreate={() => navigate('/admin/roster')}
@@ -392,7 +373,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         />
       </div>
 
-      <SingerModal 
+      <SingerModal
         isOpen={isSingerModalOpen}
         onClose={() => setIsSingerModalOpen(false)}
         onSave={handleSingerModalSave}
@@ -407,14 +388,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
         maxWidth="400px"
       >
         <div className="flex flex-col items-center gap-4 py-3">
-          <div className="size-10 animate-spin rounded-full border-3 border-gray-200 border-t-primary" />
-          <div className="text-lg font-bold text-gray-800">
-            Processing changes...
-          </div>
+          <div className="border-t-primary size-10 animate-spin rounded-full border-3 border-gray-200" />
+          <div className="text-lg font-bold text-gray-800">Processing changes...</div>
           <div className="text-sm font-semibold text-gray-500">
             {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
           </div>
-          <ProgressBar value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0} className="mt-1 h-2 w-full [&::part(base)]:rounded" />
+          <ProgressBar
+            value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0}
+            className="mt-1 h-2 w-full [&::part(base)]:rounded"
+          />
         </div>
       </Modal>
     </AppCard>

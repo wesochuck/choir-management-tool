@@ -21,9 +21,7 @@ function renderModal(
   children: React.ReactNode = React.createElement('p', null, 'content')
 ) {
   return render(
-    React.createElement(DialogProvider, null,
-      React.createElement(Modal, { ...props, children })
-    )
+    React.createElement(DialogProvider, null, React.createElement(Modal, { ...props, children }))
   );
 }
 
@@ -37,7 +35,8 @@ test('Modal does not render when isOpen is false', () => {
 });
 
 test('Modal renders when isOpen is true', () => {
-  renderModal({ isOpen: true, onClose: () => {}, title: 'Test Title' },
+  renderModal(
+    { isOpen: true, onClose: () => {}, title: 'Test Title' },
     React.createElement('p', null, 'body content')
   );
   const dialog = getDialog();
@@ -54,7 +53,8 @@ test('Modal renders footer', () => {
 });
 
 test('Modal renders as drawer when asDrawer is true', () => {
-  renderModal({ isOpen: true, onClose: () => {}, title: 'Drawer Title', asDrawer: true },
+  renderModal(
+    { isOpen: true, onClose: () => {}, title: 'Drawer Title', asDrawer: true },
     React.createElement('p', null, 'drawer content')
   );
   const drawer = document.body.querySelector('[data-drawer="true"]');
@@ -73,7 +73,9 @@ test('Modal renders as drawer when asDrawer is true', () => {
 
 test('Modal calls onClose on Escape key', () => {
   let called = false;
-  const onClose = () => { called = true; };
+  const onClose = () => {
+    called = true;
+  };
   renderModal({ isOpen: true, onClose });
   fireEvent.keyDown(document, { key: 'Escape' });
   assert.equal(called, true);
@@ -89,40 +91,49 @@ test('Modal has aria-modal and role dialog', () => {
 
 test('Modal with isDirty does not close on Escape immediately but prompts confirmation', async () => {
   let onCloseCalled = false;
-  const onClose = () => { onCloseCalled = true; };
-  
+  const onClose = () => {
+    onCloseCalled = true;
+  };
+
   renderModal({ isOpen: true, onClose, isDirty: true });
-  
+
   // Trigger Escape
   fireEvent.keyDown(document, { key: 'Escape' });
   await Promise.resolve();
   assert.equal(onCloseCalled, false); // should not close yet
-  
+
   const body = within(document.body);
   const discardBtn = body.getByText('Discard Changes');
   assert.ok(discardBtn);
-  
+
   // Click Cancel ("Keep Editing")
   const cancelBtn = body.getByText('Keep Editing');
   fireEvent.click(cancelBtn);
   await Promise.resolve();
   assert.equal(onCloseCalled, false); // should still be open
-  
+
   // Trigger Escape again
   fireEvent.keyDown(document, { key: 'Escape' });
   await Promise.resolve();
-  
+
   // Click "Discard Changes"
   fireEvent.click(body.getByText('Discard Changes'));
-  
+
   // Wait for the async close function to run
-  await new Promise(r => setTimeout(r, 15));
+  await new Promise((r) => setTimeout(r, 15));
   assert.equal(onCloseCalled, true); // should now be closed
 });
 
 test('Ctrl+Enter submits a form with a submit button', () => {
   let submitted = false;
-  const form = React.createElement('form', { onSubmit: (e: React.FormEvent) => { e.preventDefault(); submitted = true; } },
+  const form = React.createElement(
+    'form',
+    {
+      onSubmit: (e: React.FormEvent) => {
+        e.preventDefault();
+        submitted = true;
+      },
+    },
     React.createElement('button', { type: 'submit' }, 'Submit')
   );
   renderModal({ isOpen: true, onClose: () => {} }, form);
@@ -132,7 +143,14 @@ test('Ctrl+Enter submits a form with a submit button', () => {
 
 test('Cmd+Enter submits a form with a submit button', () => {
   let submitted = false;
-  const form = React.createElement('form', { onSubmit: (e: React.FormEvent) => { e.preventDefault(); submitted = true; } },
+  const form = React.createElement(
+    'form',
+    {
+      onSubmit: (e: React.FormEvent) => {
+        e.preventDefault();
+        submitted = true;
+      },
+    },
     React.createElement('button', { type: 'submit' }, 'Submit')
   );
   renderModal({ isOpen: true, onClose: () => {} }, form);
@@ -142,7 +160,14 @@ test('Cmd+Enter submits a form with a submit button', () => {
 
 test('Ctrl+Enter falls back to form submit when no submit button exists', () => {
   let submitted = false;
-  const form = React.createElement('form', { onSubmit: (e: React.FormEvent) => { e.preventDefault(); submitted = true; } },
+  const form = React.createElement(
+    'form',
+    {
+      onSubmit: (e: React.FormEvent) => {
+        e.preventDefault();
+        submitted = true;
+      },
+    },
     React.createElement('input', { type: 'text' })
   );
   renderModal({ isOpen: true, onClose: () => {} }, form);
@@ -152,14 +177,26 @@ test('Ctrl+Enter falls back to form submit when no submit button exists', () => 
 
 test('Ctrl+Enter does nothing when there is no form', () => {
   let onCloseCalled = false;
-  renderModal({ isOpen: true, onClose: () => { onCloseCalled = true; } });
+  renderModal({
+    isOpen: true,
+    onClose: () => {
+      onCloseCalled = true;
+    },
+  });
   fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true });
   assert.equal(onCloseCalled, false);
 });
 
 test('Plain Enter without Ctrl/Cmd does not trigger submission', () => {
   let submitted = false;
-  const form = React.createElement('form', { onSubmit: (e: React.FormEvent) => { e.preventDefault(); submitted = true; } },
+  const form = React.createElement(
+    'form',
+    {
+      onSubmit: (e: React.FormEvent) => {
+        e.preventDefault();
+        submitted = true;
+      },
+    },
     React.createElement('button', { type: 'submit' }, 'Submit')
   );
   renderModal({ isOpen: true, onClose: () => {} }, form);
@@ -169,7 +206,14 @@ test('Plain Enter without Ctrl/Cmd does not trigger submission', () => {
 
 test('Ctrl+Enter does not submit when modal is closed', () => {
   let submitted = false;
-  const form = React.createElement('form', { onSubmit: (e: React.FormEvent) => { e.preventDefault(); submitted = true; } },
+  const form = React.createElement(
+    'form',
+    {
+      onSubmit: (e: React.FormEvent) => {
+        e.preventDefault();
+        submitted = true;
+      },
+    },
     React.createElement('button', { type: 'submit' }, 'Submit')
   );
   renderModal({ isOpen: false, onClose: () => {} }, form);
@@ -179,30 +223,32 @@ test('Ctrl+Enter does not submit when modal is closed', () => {
 
 test('Modal with isDirty does not close on outside click immediately but prompts confirmation', async () => {
   let onCloseCalled = false;
-  const onClose = () => { onCloseCalled = true; };
-  
+  const onClose = () => {
+    onCloseCalled = true;
+  };
+
   renderModal({ isOpen: true, onClose, isDirty: true });
-  
+
   // Overlay click is triggered on overlay element.
   const overlay = document.body.querySelector('.fixed.inset-0');
   assert.ok(overlay);
-  
+
   // Click overlay
   fireEvent.mouseDown(overlay!);
   await Promise.resolve();
   assert.equal(onCloseCalled, false);
-  
+
   const body = within(document.body);
   const cancelBtn = body.getByText('Keep Editing');
   fireEvent.click(cancelBtn);
   await Promise.resolve();
-  
+
   // Click overlay again
   fireEvent.mouseDown(overlay!);
   await Promise.resolve();
-  
+
   // Click Discard
   fireEvent.click(body.getByText('Discard Changes'));
-  await new Promise(r => setTimeout(r, 15));
+  await new Promise((r) => setTimeout(r, 15));
   assert.equal(onCloseCalled, true);
 });

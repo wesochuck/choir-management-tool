@@ -21,7 +21,8 @@ export function SeasonManagementSettings({
           placeholder="e.g. Fall 2026"
         />
         <p className="text-xs text-slate-500">
-          Set the active season for tracking dues in the roster view. Leave blank to disable dues tracking.
+          Set the active season for tracking dues in the roster view. Leave blank to disable dues
+          tracking.
         </p>
       </div>
     </AppCard>

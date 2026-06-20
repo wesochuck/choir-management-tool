@@ -13,8 +13,12 @@ export function PublicBrandingWrapper({ children, showLogo = true }: PublicBrand
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen w-screen flex-col items-center justify-center bg-bg">
-        <div className="size-10 animate-spin rounded-full border-4 border-border border-t-primary" role="status" aria-label="Loading" />
+      <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-center">
+        <div
+          className="border-border border-t-primary size-10 animate-spin rounded-full border-4"
+          role="status"
+          aria-label="Loading"
+        />
       </div>
     );
   }
@@ -22,7 +26,7 @@ export function PublicBrandingWrapper({ children, showLogo = true }: PublicBrand
   if (useBranding) {
     return (
       <PublicLayout>
-        <div className="max-w-3xl mx-auto px-6 py-12 flex flex-col items-center justify-start">
+        <div className="mx-auto flex max-w-3xl flex-col items-center justify-start px-6 py-12">
           {children}
         </div>
       </PublicLayout>
@@ -30,7 +34,7 @@ export function PublicBrandingWrapper({ children, showLogo = true }: PublicBrand
   }
 
   return (
-    <div className="flex min-h-screen w-screen flex-col items-center justify-start p-4 bg-bg">
+    <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-start p-4">
       {showLogo && <PublicLogo />}
       {children}
     </div>

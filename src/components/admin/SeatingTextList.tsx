@@ -7,14 +7,11 @@ interface SeatingTextListProps {
   showVoiceParts?: boolean;
 }
 
-export function SeatingTextList({ 
-  rows, 
-  showVoiceParts = true 
-}: SeatingTextListProps) {
+export function SeatingTextList({ rows, showVoiceParts = true }: SeatingTextListProps) {
   const allAssigned = useMemo(() => {
     const list: Profile[] = [];
-    rows.forEach(row => {
-      row.forEach(p => {
+    rows.forEach((row) => {
+      row.forEach((p) => {
         if (p) list.push(p);
       });
     });
@@ -38,20 +35,26 @@ export function SeatingTextList({
         const label = `Row ${originalIndex + 1}${isFront ? ' (Front)' : isBack ? ' (Back)' : ''}`;
 
         const assignedSingers = row.filter((p): p is Profile => !!p);
-        const namesString = assignedSingers.length > 0 
-          ? assignedSingers.map(p => {
-              const rawDisplayName = uniqueDisplayNames[p.id] || getLastName(p.name);
-              const displayName = rawDisplayName.replace(', ', ' ');
-              return showVoiceParts ? `${displayName} (${p.voicePart})` : displayName;
-            }).join(', ')
-          : 'No singers assigned';
+        const namesString =
+          assignedSingers.length > 0
+            ? assignedSingers
+                .map((p) => {
+                  const rawDisplayName = uniqueDisplayNames[p.id] || getLastName(p.name);
+                  const displayName = rawDisplayName.replace(', ', ' ');
+                  return showVoiceParts ? `${displayName} (${p.voicePart})` : displayName;
+                })
+                .join(', ')
+            : 'No singers assigned';
 
         return (
           <div key={originalIndex} className="flex flex-col gap-1">
-            <h3 className="text-label m-0 border-b-2 border-primary pb-1 text-primary-deep" title={`${assignedSingers.length} of ${row.length} seats occupied`}>
+            <h3
+              className="text-label border-primary text-primary-deep m-0 border-b-2 pb-1"
+              title={`${assignedSingers.length} of ${row.length} seats occupied`}
+            >
               {label} {assignedSingers.length}/{row.length}
             </h3>
-            <div className="rounded-sm border border-border bg-bg p-2 text-sm leading-relaxed">
+            <div className="border-border bg-bg rounded-sm border p-2 text-sm leading-relaxed">
               {namesString}
             </div>
           </div>

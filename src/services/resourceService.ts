@@ -11,7 +11,7 @@ export interface SingerResource extends RecordModel {
 type PocketBaseRecordBody = Record<string, unknown> | FormData;
 
 const toRecordBody = (data: Partial<SingerResource> | FormData): PocketBaseRecordBody => {
-  return data instanceof FormData ? data : data as Record<string, unknown>;
+  return data instanceof FormData ? data : (data as Record<string, unknown>);
 };
 
 export const resourceService = {
@@ -35,5 +35,5 @@ export const resourceService = {
 
   getResourceFileUrl(record: SingerResource, filename: string) {
     return pb.files.getURL(record, filename);
-  }
+  },
 };

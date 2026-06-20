@@ -31,7 +31,6 @@ export const Pagination: React.FC<PaginationProps> = ({
     return computePaginationRange(currentPage, totalPages, siblingCount);
   }, [currentPage, totalPages, siblingCount]);
 
-
   // If there is only 1 page, don't display pagination at all or show simple page info
   if (totalPages <= 1) {
     return null;
@@ -44,9 +43,9 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <nav 
-      className="m-4 mx-auto flex flex-row flex-wrap items-center justify-center gap-1 select-none" 
-      role="navigation" 
+    <nav
+      className="m-4 mx-auto flex flex-row flex-wrap items-center justify-center gap-1 select-none"
+      role="navigation"
       aria-label="Pagination Navigation"
     >
       {/* First Page Button */}
@@ -75,9 +74,9 @@ export const Pagination: React.FC<PaginationProps> = ({
       {paginationRange.map((pageNumber, idx) => {
         if (pageNumber === DOTS) {
           return (
-            <span 
-              key={`dots-${idx}`} 
-              className="inline-flex h-[38px] min-w-[32px] cursor-default items-center justify-center px-3 text-base font-semibold text-text-muted"
+            <span
+              key={`dots-${idx}`}
+              className="text-text-muted inline-flex h-[38px] min-w-[32px] cursor-default items-center justify-center px-3 text-base font-semibold"
               aria-hidden="true"
             >
               &#8230;

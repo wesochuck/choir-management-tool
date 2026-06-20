@@ -18,15 +18,18 @@ export function useEventCommunicationDraft({
   timezone,
   communicationSettings,
 }: UseEventCommunicationDraftArgs) {
-  const handleSendMessage = useCallback((event: Event) => {
-    navigateToCommunicationDraft({
-      navigate,
-      event,
-      venues,
-      timezone,
-      communicationSettings,
-    });
-  }, [navigate, venues, timezone, communicationSettings]);
+  const handleSendMessage = useCallback(
+    (event: Event) => {
+      navigateToCommunicationDraft({
+        navigate,
+        event,
+        venues,
+        timezone,
+        communicationSettings,
+      });
+    },
+    [navigate, venues, timezone, communicationSettings]
+  );
 
   return { handleSendMessage };
 }

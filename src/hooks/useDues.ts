@@ -8,7 +8,7 @@ export function useDues() {
   const queryClient = useQueryClient();
 
   const seasonQuery = useQuery({
-    queryKey: ['settings', 'roster'] as const,
+    queryKey: queryKeys.settings.roster,
     queryFn: () => settingsService.getRosterSettings(),
     staleTime: 5 * 60_000,
   });
@@ -35,10 +35,12 @@ export function useDues() {
       duesService.updateDues(profileId, currentSeason, paid),
     onMutate: async ({ profileId, paid }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.dues.bySeason(currentSeason) });
-      const previous = queryClient.getQueryData<SeasonalDue[]>(queryKeys.dues.bySeason(currentSeason));
+      const previous = queryClient.getQueryData<SeasonalDue[]>(
+        queryKeys.dues.bySeason(currentSeason)
+      );
       queryClient.setQueryData<SeasonalDue[]>(queryKeys.dues.bySeason(currentSeason), (old) => {
         if (!old) return old;
-        return old.map(d => d.profile === profileId ? { ...d, paid } : d);
+        return old.map((d) => (d.profile === profileId ? { ...d, paid } : d));
       });
       return { previous };
     },

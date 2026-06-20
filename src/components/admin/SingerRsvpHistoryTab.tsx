@@ -8,7 +8,11 @@ interface SingerRsvpHistoryTabProps {
   isActive: boolean;
 }
 
-export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ singerId, isOpen, isActive }) => {
+export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({
+  singerId,
+  isOpen,
+  isActive,
+}) => {
   const {
     loadingRsvps,
     savingRsvpId,
@@ -20,17 +24,13 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
   } = useSingerRsvpHistory({ isOpen, singerId, isActive });
 
   if (loadingRsvps) {
-    return (
-      <div className="text-muted p-4 text-sm">
-        Loading RSVP history...
-      </div>
-    );
+    return <div className="text-muted p-4 text-sm">Loading RSVP history...</div>;
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h4 className="m-0 mb-2 text-xs tracking-wider text-text-muted uppercase">
+        <h4 className="text-text-muted m-0 mb-2 text-xs tracking-wider uppercase">
           Upcoming Performances ({upcomingPerformances.length})
         </h4>
         <div className="flex flex-col gap-2">
@@ -56,7 +56,7 @@ export const SingerRsvpHistoryTab: React.FC<SingerRsvpHistoryTabProps> = ({ sing
       </div>
 
       <div>
-        <h4 className="m-0 mb-2 text-xs tracking-wider text-text-muted uppercase">
+        <h4 className="text-text-muted m-0 mb-2 text-xs tracking-wider uppercase">
           Past Performances ({pastPerformances.length})
         </h4>
         <div className="flex flex-col gap-2">

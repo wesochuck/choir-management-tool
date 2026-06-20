@@ -4,7 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { eventService, type Event } from '../services/eventService';
 import { rosterService, type EventRoster } from '../services/rosterService';
 import { profileService, type Profile } from '../services/profileService';
-import { getVoicePartsAndSections, settingsService, type VoicePartDef, type SectionDef } from '../services/settingsService';
+import {
+  getVoicePartsAndSections,
+  settingsService,
+  type VoicePartDef,
+  type SectionDef,
+} from '../services/settingsService';
 import { useDialog } from '../contexts/DialogContext';
 import { useAuth } from '../contexts/AuthContext';
 import { pb } from '../lib/pocketbase';
@@ -68,16 +73,21 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
       if (linkedPerfId) {
         const cycleRehearsals = await eventService.getRehearsalsForPerformance(linkedPerfId);
         const nowMs = Date.now();
-        pastRehearsals = cycleRehearsals.filter(reh => new Date(reh.date).getTime() < nowMs);
+        pastRehearsals = cycleRehearsals.filter((reh) => new Date(reh.date).getTime() < nowMs);
 
         if (pastRehearsals.length > 0) {
           const filterParts = pastRehearsals.map((_, idx) => `event = {:id${idx}}`).join(' || ');
-          const filterParams = pastRehearsals.reduce((acc, reh, idx) => {
-            acc[`id${idx}`] = reh.id;
-            return acc;
-          }, {} as Record<string, string>);
+          const filterParams = pastRehearsals.reduce(
+            (acc, reh, idx) => {
+              acc[`id${idx}`] = reh.id;
+              return acc;
+            },
+            {} as Record<string, string>
+          );
           pastRosters = await retryOn429(() =>
-            pb.collection('eventRosters').getFullList<EventRoster>({ filter: pb.filter(filterParts, filterParams) })
+            pb
+              .collection('eventRosters')
+              .getFullList<EventRoster>({ filter: pb.filter(filterParts, filterParams) })
           );
         }
       }
@@ -96,6 +106,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
     },
     enabled: !!eventId,
     retry: false,
+    staleTime: 15_000,
   });
 
   useEffect(() => {
@@ -144,15 +155,21 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
     (val: 'lastName' | 'voicePart') => {
       updatePreferences({ rsvpSort: val });
     },
-    [updatePreferences],
+    [updatePreferences]
   );
 
-  const mappedSingers = useMemo(() => mapSingersToRosters(activeProfiles, eventRoster), [activeProfiles, eventRoster]);
+  const mappedSingers = useMemo(
+    () => mapSingersToRosters(activeProfiles, eventRoster),
+    [activeProfiles, eventRoster]
+  );
 
-  const { yesCount, noCount, pendingCount } = useMemo(() => calculateRsvpCounts(mappedSingers), [mappedSingers]);
+  const { yesCount, noCount, pendingCount } = useMemo(
+    () => calculateRsvpCounts(mappedSingers),
+    [mappedSingers]
+  );
 
   const activeCountSingers = useMemo(() => {
-    return mappedSingers.filter(s => {
+    return mappedSingers.filter((s) => {
       if (rsvpFilter === 'All') return true;
       return s.rsvp === rsvpFilter;
     });
@@ -160,29 +177,33 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
 
   const sectionCounts = useMemo(
     () => calculateSectionCounts(activeCountSingers, sections, voiceParts),
-    [activeCountSingers, sections, voiceParts],
+    [activeCountSingers, sections, voiceParts]
   );
 
-  const partCounts = useMemo(() => calculatePartCounts(activeCountSingers, voiceParts), [activeCountSingers, voiceParts]);
+  const partCounts = useMemo(
+    () => calculatePartCounts(activeCountSingers, voiceParts),
+    [activeCountSingers, voiceParts]
+  );
 
   const filteredSingers = useMemo(
-    () => filterMappedSingers(mappedSingers, rsvpFilter, selectedVoiceParts, voiceParts, searchQuery),
-    [mappedSingers, rsvpFilter, selectedVoiceParts, voiceParts, searchQuery],
+    () =>
+      filterMappedSingers(mappedSingers, rsvpFilter, selectedVoiceParts, voiceParts, searchQuery),
+    [mappedSingers, rsvpFilter, selectedVoiceParts, voiceParts, searchQuery]
   );
 
   const sortedSingers = useMemo(
     () => sortMappedSingers(filteredSingers, sortBy, voiceParts),
-    [filteredSingers, sortBy, voiceParts],
+    [filteredSingers, sortBy, voiceParts]
   );
 
   const missCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     if (pastRehearsals.length === 0) return counts;
 
-    activeProfiles.forEach(profile => {
+    activeProfiles.forEach((profile) => {
       let missCount = 0;
-      pastRehearsals.forEach(reh => {
-        const r = pastRosters.find(x => x.profile === profile.id && x.event === reh.id);
+      pastRehearsals.forEach((reh) => {
+        const r = pastRosters.find((x) => x.profile === profile.id && x.event === reh.id);
         const wasDeclined = r?.rsvp === 'No';
         const wasAbsent = r?.attendance === 'Absent';
         const notMarkedPresent = r?.attendance !== 'Present';
@@ -205,12 +226,15 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
   const setEventRoster = useCallback(
     (rosters: EventRoster[]) => {
       if (!eventId) return;
-      queryClient.setQueryData(queryKeys.eventRoster.byEventId(eventId), (old: EventRosterQueryData | undefined) => {
-        if (!old) return old;
-        return { ...old, eventRoster: rosters };
-      });
+      queryClient.setQueryData(
+        queryKeys.eventRoster.byEventId(eventId),
+        (old: EventRosterQueryData | undefined) => {
+          if (!old) return old;
+          return { ...old, eventRoster: rosters };
+        }
+      );
     },
-    [queryClient, eventId],
+    [queryClient, eventId]
   );
 
   return {

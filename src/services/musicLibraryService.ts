@@ -1,13 +1,12 @@
 import { pb } from '../lib/pocketbase';
 import type { MusicPiece, MusicPieceInput } from '../types/musicLibrary';
 
-
 export type { MusicPiece, MusicPieceInput } from '../types/musicLibrary';
 
 type PocketBaseRecordBody = Record<string, unknown> | FormData;
 
 const toRecordBody = (data: Partial<MusicPieceInput> | FormData): PocketBaseRecordBody => {
-  return data instanceof FormData ? data : data as Record<string, unknown>;
+  return data instanceof FormData ? data : (data as Record<string, unknown>);
 };
 
 const BATCH_CHUNK_SIZE = 50;
@@ -17,6 +16,13 @@ export const musicLibraryService = {
     return await pb.collection('musicLibrary').getFullList<MusicPiece>({
       sort: 'title',
       expand: 'performances',
+    });
+  },
+
+  async getMovements(parentId: string): Promise<MusicPiece[]> {
+    return await pb.collection('musicLibrary').getFullList<MusicPiece>({
+      filter: pb.filter('parentId = {:parentId}', { parentId }),
+      sort: 'created',
     });
   },
 
@@ -48,7 +54,7 @@ export const musicLibraryService = {
   async deletePiece(id: string, options?: { unlinkChildren?: boolean }) {
     if (options?.unlinkChildren) {
       const children = await pb.collection('musicLibrary').getFullList<MusicPiece>({
-        filter: pb.filter('parentId = {:id}', { id })
+        filter: pb.filter('parentId = {:id}', { id }),
       });
       if (children.length > 0) {
         const batch = pb.createBatch();
@@ -67,7 +73,7 @@ export const musicLibraryService = {
     // For bulk imports, we chunk operations to manage connection locking on SQLite.
     // Using PocketBase Batch API ensures each chunk is created within a single atomic transaction.
     const results: MusicPiece[] = [];
-    
+
     // @allow-sequential-await - Chunked loop is intentional to limit batch request rate.
     for (let i = 0; i < pieces.length; i += BATCH_CHUNK_SIZE) {
       const chunk = pieces.slice(i, i + BATCH_CHUNK_SIZE);
@@ -76,9 +82,9 @@ export const musicLibraryService = {
         batch.collection('musicLibrary').create(piece);
       }
       const batchResults = await batch.send();
-      results.push(...batchResults.map(res => res.body as MusicPiece));
+      results.push(...batchResults.map((res) => res.body as MusicPiece));
     }
-    
+
     return results;
   },
 
@@ -92,5 +98,5 @@ export const musicLibraryService = {
       }
       await batch.send();
     }
-  }
+  },
 };

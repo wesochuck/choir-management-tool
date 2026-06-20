@@ -30,7 +30,7 @@ export function StatusAutomationSettings({
             type="checkbox"
             checked={configAutomationEnabled}
             onChange={(e) => setConfigAutomationEnabled(e.target.checked)}
-            className="size-4 accent-primary"
+            className="accent-primary size-4"
           />
           <span className="text-label">Enable Automated Status Changes</span>
         </label>
@@ -47,7 +47,9 @@ export function StatusAutomationSettings({
                 min={1}
                 max={10}
                 value={configAutomationMissThreshold}
-                onChange={(e) => setConfigAutomationMissThreshold(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) =>
+                  setConfigAutomationMissThreshold(Math.max(1, parseInt(e.target.value) || 1))
+                }
                 className="w-24"
               />
               <p className="text-xs text-slate-500">
@@ -60,12 +62,13 @@ export function StatusAutomationSettings({
                 type="checkbox"
                 checked={configAutomationRecoveryEnabled}
                 onChange={(e) => setConfigAutomationRecoveryEnabled(e.target.checked)}
-                className="size-4 accent-primary"
+                className="accent-primary size-4"
               />
               <span className="text-label">Enable Automated Status Recovery</span>
             </label>
             <p className="pl-6 text-xs text-slate-500">
-              Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future Performance.
+              Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future
+              Performance.
             </p>
           </div>
         )}
@@ -79,11 +82,14 @@ export function StatusAutomationSettings({
             min={0}
             max={20}
             value={configMaxRehearsalMisses}
-            onChange={(e) => setConfigMaxRehearsalMisses(Math.max(0, parseInt(e.target.value) || 0))}
+            onChange={(e) =>
+              setConfigMaxRehearsalMisses(Math.max(0, parseInt(e.target.value) || 0))
+            }
             className="w-24"
           />
           <p className="text-xs text-slate-500">
-            The maximum number of rehearsal misses (declined RSVPs or marked absences) allowed for a concert cycle before warnings are shown to singers and admins.
+            The maximum number of rehearsal misses (declined RSVPs or marked absences) allowed for a
+            concert cycle before warnings are shown to singers and admins.
           </p>
         </div>
       </div>

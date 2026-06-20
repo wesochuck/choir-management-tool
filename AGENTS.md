@@ -13,6 +13,7 @@ Mandatory instructions for AI coding agents working in this repository.
 - Do not modify hosted or production data unless credentials, environment configuration, and explicit user authorization are present.
 - Do not log secrets, `HMAC_SECRET`, or full signed tokens.
 - Avoid unbounded network fan-out.
+- **Prefer Shoelace (`@shoelace-style/shoelace`) and Web Awesome (`@web-awesome/web-awesome`) wrappers under `src/components/ui/` over custom HTML/fallback solutions.** These components are already integrated, tested, and consistent with the app's design system. Building custom fallbacks (plain `<button>`, raw file inputs, hand-rolled clipboard buttons, etc.) duplicates effort and introduces visual/behavioral inconsistencies. If a Shoelace/Web Awesome component exists as a wrapper, use it. If no wrapper exists, create one following the existing patterns (`safeSlProps`, test mode duality, variant mapping) rather than dropping to raw HTML.
 
 ## 2. Commands and Verification
 
@@ -33,6 +34,7 @@ Run checks that match the change:
   rtk npm run check:pb-hooks
   ```
 - Single Vitest file: `rtk npx vitest run path/to/file.test.ts`
+- ESLint: `rtk node_modules/.bin/eslint --fix --no-warn-ignored --max-warnings 0` (do not use `rtk npx eslint` — `rtk` misidentifies it as a Python tool)
 
 Every non-trivial change must include a final verification summary covering checks run, skipped checks, risks, and any follow-up needed.
 
@@ -85,7 +87,9 @@ Use Tailwind utility classes for layout, spacing, colors, sizing, typography, an
 Inline styles are allowed only for truly dynamic values such as drag position, animation values, or canvas calculations. Mark each exception with a JSX comment:
 
 ```tsx
-{/* @allow-inline-style - explanation */}
+{
+  /* @allow-inline-style - explanation */
+}
 ```
 
 Use `{/* */}` syntax, not `//`. A `//` comment inside JSX renders as visible text in the DOM (see `PhotoUploader.tsx:717` for a real fix). The `{/* */}` JSX comment is stripped at build time and never reaches the browser.
@@ -113,6 +117,25 @@ For new route modules or lazy-loaded views, use `lazyWithReload(...)` from `src/
 This codebase uses Shoelace (`@shoelace-style/shoelace`) — Lit-based Web Components — wrapped by React adapters under `src/components/ui/`.
 
 **Do not import raw Shoelace components directly.** Always use the wrapper from `src/components/ui/`:
+
+**Every Shoelace wrapper MUST use `safeSlProps` from `src/components/ui/shared.ts`** to strip `undefined` values from the props object before spreading it onto a Shoelace component. Shoelace crashes internally in its render lifecycle when receiving `undefined` for props it may iterate over (class lists, part suffixes, option children). The pattern:
+
+```tsx
+import { safeSlProps } from '../shared';
+
+// Always wrap Sl* component props:
+<SlComponent
+  ref={slRef}
+  {...safeSlProps({
+    prop1: value, // stripped if undefined
+    className: className, // stripped if undefined
+    // ...rest spread goes inside safeSlProps, not outside
+    ...(consumerRest as Record<string, unknown>),
+  } as Record<string, unknown>)}
+/>;
+```
+
+Never spread `{...rest}` directly onto a Shoelace component — rest values may be `undefined`.
 
 ```tsx
 // correct
@@ -161,6 +184,36 @@ When creating new Shoelace-wrapped components, follow this same test-vs-producti
 
 - **Shoelace `SlButton` props pass through React first, then Lit's lifecycle.** React sets the attribute/property, then Lit's `updated()` runs. Timing issues can cause double renders. Use the wrapper's `className` / `variant` / `size` props rather than raw Shoelace attributes.
 
+### Data Display
+
+- Use `DataTable` from `src/components/ui/DataTable` for all tabular data displays.
+  The component uses `@tanstack/react-table` internally for sort, selection,
+  pagination, and column visibility state. Our wrapper provides the UI and
+  mobile card layout.
+- `cardSection: 0 | 1` + `cardSide: 'left' | 'right'` control automatic mobile
+  card layout. These are optional — columns without them are hidden on mobile.
+  - Section 0: `justify-between` row (name + badge pattern)
+  - Section 1: left-stack / right-stack with separator
+- Selection, sort, and pagination are opt-in features.
+- `renderMobileCard` is the escape hatch for complex mobile rows (e.g., RosterTable).
+  When provided, `cardSection`/`cardSide` on columns are ignored and the custom
+  renderer takes over.
+- `renderRow` is the ultimate escape hatch — replaces the entire row (desktop +
+  mobile). Use sparingly.
+- `getRowClassName` provides per-row Tailwind classes (e.g., striping, dimming).
+- Sorting uses `enableSorting` on the column definition. For client-side sort,
+  TanStack handles it automatically. For server-side sort, pass `manualSorting`
+  and `onSortingChange`. Use `defaultSorting` to set initial sort state.
+- Pagination is inline (prev / page buttons / next). Use `hidePagination` to
+  suppress it (e.g., small datasets). The `Pagination` component in
+  `src/components/common/Pagination.tsx` is still used by legacy views.
+- Use `getRowId` prop when row IDs should match data identities (e.g., `profile.id`)
+  instead of row index, especially when using `enableSelection` with external state.
+- `onSelectionChange` receives a `Set<string>`, not an array.
+- `useReactTable()` triggers a benign `react-hooks/incompatible-library` lint
+  warning from React Compiler. This is a known TanStack Table limitation and
+  does not indicate a bug.
+
 ### TanStack Query
 
 This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state. Migration progress and the basic `useQuery` / `useMutation` pattern live in `docs/tanstack-query-migration.md`. The points below are non-obvious gotchas observed during hook migrations.
@@ -186,7 +239,7 @@ This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state.
   ```ts
   const refresh = useCallback(
     () => queryClient.invalidateQueries({ queryKey: queryKeys.foo.list() }),
-    [queryClient],
+    [queryClient]
   );
   ```
 
@@ -203,15 +256,62 @@ This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state.
     if (didAutoCreateRef.current === guardKey) return;
     didAutoCreateRef.current = guardKey;
 
-    thingMutation.mutateAsync(payload)
+    thingMutation
+      .mutateAsync(payload)
       .then(() => refresh())
-      .catch(() => { didAutoCreateRef.current = null; });
+      .catch(() => {
+        didAutoCreateRef.current = null;
+      });
   }, [shouldCreate, a, b, refresh, thingMutation]);
   ```
 
 - **Do not add `onError: (err) => setError(err.message)` to a mutation that is also driven by a debounced or context-aware pipeline.** The unconditional `onError` fires even for stale-context responses and overwrites the careful error handling inside the pipeline. Keep error handling at the call site (try/catch around `mutateAsync`) for user-triggered actions, and inside the pipeline for debounced flows.
 
 - **Hook tests need `// @vitest-environment jsdom` and a `QueryClientProvider` wrapper.** Use `retry: false` on both `queries` and `mutations`. The canonical pattern is `test/useVenuesQuery.test.tsx`; the in-place pattern is `src/hooks/useEventRosterData.test.ts`.
+
+### Decorative icons and emoji in buttons/links
+
+When a button or link includes a decorative emoji/icon plus visible label text, render the icon separately and hide it from assistive technology.
+
+Preferred pattern:
+
+```tsx
+<Button>
+  <span aria-hidden="true">🏠</span>
+  <span>Home</span>
+</Button>
+```
+
+For button-like links:
+
+```tsx
+<Button as={Link} to="/dashboard">
+  <span aria-hidden="true">🏠</span>
+  <span>Home</span>
+</Button>
+```
+
+Emoji must be placed directly between JSX tags — do not wrap in quote characters:
+
+```tsx
+// correct
+<span aria-hidden="true">⬆️</span>
+
+// incorrect
+<span aria-hidden="true">'⬆️'</span>
+```
+
+Avoid collapsing decorative icons into a single text node:
+
+```tsx
+// avoid
+<Button>🏠 Home</Button>
+
+// also avoid
+'⬆️' Choose File
+```
+
+When the shared `Button` `icon` prop is used, the component automatically wraps the icon with `aria-hidden="true"`. For icon-only buttons, provide an `aria-label`.
 
 ## 4. PocketBase Rules
 

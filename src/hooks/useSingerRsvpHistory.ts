@@ -31,6 +31,7 @@ export function useSingerRsvpHistory({ isOpen, singerId, isActive }: UseSingerRs
       };
     },
     enabled: !!isOpen && !!singerId && isActive,
+    staleTime: 5 * 60_000,
   });
 
   const rsvpMutation = useMutation({
@@ -38,14 +39,14 @@ export function useSingerRsvpHistory({ isOpen, singerId, isActive }: UseSingerRs
       rosterService.updateRSVP(eventId, singerId!, newRsvp),
     onMutate: ({ eventId }) => {
       setSavingRsvpId(eventId);
-      setRsvpSaveErrors(prev => {
+      setRsvpSaveErrors((prev) => {
         const next = { ...prev };
         delete next[eventId];
         return next;
       });
     },
     onError: (_err, { eventId }) => {
-      setRsvpSaveErrors(prev => ({ ...prev, [eventId]: 'Failed to save' }));
+      setRsvpSaveErrors((prev) => ({ ...prev, [eventId]: 'Failed to save' }));
     },
     onSettled: () => {
       setSavingRsvpId(null);

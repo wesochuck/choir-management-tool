@@ -12,7 +12,14 @@ import {
   filterProfilesByRsvpYes,
 } from '../lib/seatingSync';
 import { rosterService } from '../services/rosterService';
-import { settingsService, getVoicePartsAndSections, DEFAULT_SEATING_SETTINGS, DEFAULT_SECTIONS, DEFAULT_VOICE_PARTS, type SeatingFormationDef } from '../services/settingsService';
+import {
+  settingsService,
+  getVoicePartsAndSections,
+  DEFAULT_SEATING_SETTINGS,
+  DEFAULT_SECTIONS,
+  DEFAULT_VOICE_PARTS,
+  type SeatingFormationDef,
+} from '../services/settingsService';
 
 interface SyncOptions {
   performanceId?: string;
@@ -30,13 +37,11 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
 
   // ── UI state ──
   const [activeChartId, setActiveChartId] = useState<string>('');
-  const [optimisticAssignments, setOptimisticAssignments] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
 
   // ── Auto-save / dirty tracking refs ──
   const chartRef = useRef<SeatingChart | null>(null);
-  const optimisticAssignmentsRef = useRef<Record<string, string>>({});
   const dirtyPayloadRef = useRef<Partial<SeatingChart> | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isDirtyRef = useRef(false);
@@ -65,7 +70,10 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         getVoicePartsAndSections(),
       ]);
 
-      const loadedCharts = await seatingService.getChartsForPerformance(performanceId, venueId || null);
+      const loadedCharts = await seatingService.getChartsForPerformance(
+        performanceId,
+        venueId || null
+      );
 
       return {
         profiles,
@@ -76,6 +84,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
       };
     },
     enabled: !!performanceId,
+    staleTime: 30_000,
   });
 
   // ── Derived data ──
@@ -95,7 +104,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   // Active chart selection
   useEffect(() => {
     if (charts.length === 0) return;
-    const activeChart = charts.find(c => c.id === activeChartId) ?? charts[0] ?? null;
+    const activeChart = charts.find((c) => c.id === activeChartId) ?? charts[0] ?? null;
     if (activeChart && activeChart.id !== activeChartId) {
       setActiveChartId(activeChart.id);
     }
@@ -103,15 +112,15 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   }, [charts]);
 
   // Active profiles derived from roster filter
-  const activeProfiles = useMemo(() =>
-    filterProfilesByRsvpYes(allProfiles, dataQuery.data?.roster ?? []),
-    [allProfiles, dataQuery.data?.roster],
+  const activeProfiles = useMemo(
+    () => filterProfilesByRsvpYes(allProfiles, dataQuery.data?.roster ?? []),
+    [allProfiles, dataQuery.data?.roster]
   );
 
   // ── Chart state (server data + optimistic local state) ──
-  const activeChart = useMemo(() =>
-    charts.find(c => c.id === activeChartId) ?? charts[0] ?? null,
-    [charts, activeChartId],
+  const activeChart = useMemo(
+    () => charts.find((c) => c.id === activeChartId) ?? charts[0] ?? null,
+    [charts, activeChartId]
   );
 
   useEffect(() => {
@@ -123,16 +132,12 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   useEffect(() => {
     if (!activeChart) {
       chartRef.current = null;
-      optimisticAssignmentsRef.current = {};
-      setOptimisticAssignments({});
       setChart(null);
       return;
     }
 
     if (!isDirtyRef.current || !dirtyPayloadRef.current) {
       chartRef.current = activeChart;
-      optimisticAssignmentsRef.current = activeChart.assignments ?? {};
-      setOptimisticAssignments(activeChart.assignments ?? {});
       setChart(activeChart);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- watch only id + assignments so unrelated activeChart fields do not re-sync local state
@@ -164,8 +169,9 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
   });
 
   const refresh = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: queryKeys.seating.data(performanceId, venueId) }),
-    [queryClient, performanceId, venueId],
+    () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.seating.data(performanceId, venueId) }),
+    [queryClient, performanceId, venueId]
   );
 
   // Auto-create default chart when none exist. Guarded by a ref so the effect cannot fire twice
@@ -178,32 +184,42 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     if (didAutoCreateRef.current === guardKey) return;
     didAutoCreateRef.current = guardKey;
 
-    saveChartMutation.mutateAsync({
-      performance: performanceId,
-      venue: venueId,
-      name: 'Main Seating Chart',
-      formationId: dataQuery.data?.settings?.defaultFormationId,
-      assignments: {},
-      layoutOverride: null,
-    })
+    saveChartMutation
+      .mutateAsync({
+        performance: performanceId,
+        venue: venueId,
+        name: 'Main Seating Chart',
+        formationId: dataQuery.data?.settings?.defaultFormationId,
+        assignments: {},
+        layoutOverride: null,
+      })
       .then(() => refresh())
       .catch(() => {
         didAutoCreateRef.current = null;
       });
-  }, [dataQuery.data?.charts, dataQuery.data?.settings?.defaultFormationId, performanceId, venueId, refresh, saveChartMutation]);
+  }, [
+    dataQuery.data?.charts,
+    dataQuery.data?.settings?.defaultFormationId,
+    performanceId,
+    venueId,
+    refresh,
+    saveChartMutation,
+  ]);
 
   // ── Session context ──
   const [contextState, setContextState] = useState({ key: contextKey, sessionId: 0 });
 
-  const currentSessionId = contextState.key === contextKey
-    ? contextState.sessionId
-    : contextState.sessionId + 1;
+  const currentSessionId =
+    contextState.key === contextKey ? contextState.sessionId : contextState.sessionId + 1;
 
-  const currentContext = useMemo<SeatingSyncContext>(() => ({
-    performanceId,
-    venueId,
-    sessionId: currentSessionId,
-  }), [currentSessionId, performanceId, venueId]);
+  const currentContext = useMemo<SeatingSyncContext>(
+    () => ({
+      performanceId,
+      venueId,
+      sessionId: currentSessionId,
+    }),
+    [currentSessionId, performanceId, venueId]
+  );
 
   useLayoutEffect(() => {
     currentContextRef.current = currentContext;
@@ -221,82 +237,82 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     }
   }, []);
 
-  const syncWithServer = useCallback(async (options: SyncOptions = {}) => {
-    const targetPerformanceId = options.performanceId ?? performanceId;
-    const targetVenueId = options.venueId ?? venueId;
-    const payload = options.payload ?? dirtyPayloadRef.current;
+  const syncWithServer = useCallback(
+    async (options: SyncOptions = {}) => {
+      const targetPerformanceId = options.performanceId ?? performanceId;
+      const targetVenueId = options.venueId ?? venueId;
+      const payload = options.payload ?? dirtyPayloadRef.current;
 
-    if (!targetVenueId || !targetPerformanceId || !payload) return;
+      if (!targetVenueId || !targetPerformanceId || !payload) return;
 
-    const requestContext: SeatingSyncContext = {
-      performanceId: targetPerformanceId,
-      venueId: targetVenueId,
-      sessionId: options.sessionId ?? currentContext.sessionId,
-    };
-    const requestId = options.requestId ?? lastEditIdRef.current;
-    const baseChart = options.baseChart ?? chartRef.current;
-    const requestSequence = ++syncSequenceRef.current;
-    const shouldTrackInCurrentUi = () => (
-      options.updateCurrentState !== false &&
-      shouldApplySeatingResponse(requestContext, currentContextRef.current)
-    );
-    const trackInCurrentUi = shouldTrackInCurrentUi();
+      const requestContext: SeatingSyncContext = {
+        performanceId: targetPerformanceId,
+        venueId: targetVenueId,
+        sessionId: options.sessionId ?? currentContext.sessionId,
+      };
+      const requestId = options.requestId ?? lastEditIdRef.current;
+      const baseChart = options.baseChart ?? chartRef.current;
+      const requestSequence = ++syncSequenceRef.current;
+      const shouldTrackInCurrentUi = () =>
+        options.updateCurrentState !== false &&
+        shouldApplySeatingResponse(requestContext, currentContextRef.current);
+      const trackInCurrentUi = shouldTrackInCurrentUi();
 
-    if (trackInCurrentUi) {
-      clearSaveTimer();
-      setError(null);
-    }
+      if (trackInCurrentUi) {
+        clearSaveTimer();
+        setError(null);
+      }
 
-    try {
-      const updated = await saveChartMutation.mutateAsync({
-        ...(baseChart || {}),
-        ...payload,
-        performance: targetPerformanceId,
-        venue: targetVenueId,
-      });
+      try {
+        const updated = await saveChartMutation.mutateAsync({
+          ...(baseChart || {}),
+          ...payload,
+          performance: targetPerformanceId,
+          venue: targetVenueId,
+        });
 
-      if (!shouldTrackInCurrentUi() || syncSequenceRef.current !== requestSequence) return;
+        if (!shouldTrackInCurrentUi() || syncSequenceRef.current !== requestSequence) return;
 
-      if (requestId > lastAppliedIdRef.current) {
-        lastAppliedIdRef.current = requestId;
+        if (requestId > lastAppliedIdRef.current) {
+          lastAppliedIdRef.current = requestId;
 
-        if (lastEditIdRef.current === requestId) {
-          chartRef.current = updated;
-          optimisticAssignmentsRef.current = updated.assignments ?? {};
-          dirtyPayloadRef.current = null;
-          isDirtyRef.current = false;
-          setIsDirty(false);
+          if (lastEditIdRef.current === requestId) {
+            chartRef.current = updated;
+            dirtyPayloadRef.current = null;
+            isDirtyRef.current = false;
+            setIsDirty(false);
 
-          setChart(updated);
-          setOptimisticAssignments(updated.assignments ?? {});
-          setError(null);
-        } else {
-          const merged = mergeSeatingResponseWithDirtyState(
-            updated,
-            dirtyPayloadRef.current ?? {},
-            optimisticAssignmentsRef.current,
-            performanceId,
-            venueId,
-          );
+            setChart(updated);
+            setError(null);
+          } else {
+            const merged = mergeSeatingResponseWithDirtyState(
+              updated,
+              dirtyPayloadRef.current ?? {},
+              chartRef.current?.assignments ?? {},
+              performanceId,
+              venueId
+            );
 
-          chartRef.current = merged;
-          setChart(merged);
-          setError(null);
+            chartRef.current = merged;
+            setChart(merged);
+            setError(null);
+          }
+        }
+      } catch (err: unknown) {
+        if (shouldTrackInCurrentUi() && requestId === lastEditIdRef.current) {
+          setError(err instanceof Error ? err.message : 'Failed to save seating chart');
+        }
+      } finally {
+        if (shouldTrackInCurrentUi() && isDirtyRef.current && lastEditIdRef.current !== requestId) {
+          saveTimeoutRef.current = setTimeout(() => {
+            saveTimeoutRef.current = null;
+            void syncWithServerRef.current();
+          }, 0);
         }
       }
-    } catch (err: unknown) {
-      if (shouldTrackInCurrentUi() && requestId === lastEditIdRef.current) {
-        setError(err instanceof Error ? err.message : 'Failed to save seating chart');
-      }
-    } finally {
-      if (shouldTrackInCurrentUi() && isDirtyRef.current && lastEditIdRef.current !== requestId) {
-        saveTimeoutRef.current = setTimeout(() => {
-          saveTimeoutRef.current = null;
-          void syncWithServerRef.current();
-        }, 0);
-      }
-    }
-  }, [clearSaveTimer, currentContext.sessionId, performanceId, saveChartMutation, venueId]);
+    },
+    [clearSaveTimer, currentContext.sessionId, performanceId, saveChartMutation, venueId]
+  );
 
   useEffect(() => {
     syncWithServerRef.current = syncWithServer;
@@ -320,91 +336,101 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- currentContext only changes alongside contextKey, so capturing it here is safe
   }, [contextKey]);
 
-  const scheduleSync = useCallback((delay = 1000) => {
-    clearSaveTimer();
-    saveTimeoutRef.current = setTimeout(() => {
-      saveTimeoutRef.current = null;
-      void syncWithServerRef.current();
-    }, delay);
-  }, [clearSaveTimer]);
+  const scheduleSync = useCallback(
+    (delay = 1000) => {
+      clearSaveTimer();
+      saveTimeoutRef.current = setTimeout(() => {
+        saveTimeoutRef.current = null;
+        void syncWithServerRef.current();
+      }, delay);
+    },
+    [clearSaveTimer]
+  );
 
   useEffect(() => {
     return () => clearSaveTimer();
   }, [clearSaveTimer]);
 
-  const queueChartSave = useCallback((updates: Partial<SeatingChart>) => {
-    if (!venue || !performanceId) return undefined;
+  const queueChartSave = useCallback(
+    (updates: Partial<SeatingChart>) => {
+      if (!venue || !performanceId) return undefined;
 
-    lastEditIdRef.current += 1;
-    isDirtyRef.current = true;
-    setIsDirty(true);
+      lastEditIdRef.current += 1;
+      isDirtyRef.current = true;
+      setIsDirty(true);
 
-    const baseChart = chartRef.current;
-    const nextChart = {
-      ...(baseChart ?? {}),
-      performance: performanceId,
-      venue: venueId,
-      ...updates,
-    } as SeatingChart;
+      const baseChart = chartRef.current;
+      const nextChart = {
+        ...(baseChart ?? {}),
+        performance: performanceId,
+        venue: venueId,
+        ...updates,
+      } as SeatingChart;
 
-    chartRef.current = nextChart;
+      chartRef.current = nextChart;
 
-    if (updates.assignments) {
-      optimisticAssignmentsRef.current = updates.assignments;
-      setOptimisticAssignments(updates.assignments);
-    }
+      dirtyPayloadRef.current = {
+        ...(dirtyPayloadRef.current ?? {}),
+        ...updates,
+        performance: performanceId,
+        venue: venueId,
+      };
 
-    dirtyPayloadRef.current = {
-      ...(dirtyPayloadRef.current ?? {}),
-      ...updates,
-      performance: performanceId,
-      venue: venueId,
-    };
+      setChart(nextChart);
+      setError(null);
+      scheduleSync();
 
-    setChart(nextChart);
-    setError(null);
-    scheduleSync();
-
-    return nextChart;
-  }, [performanceId, scheduleSync, venue, venueId]);
+      return nextChart;
+    },
+    [performanceId, scheduleSync, venue, venueId]
+  );
 
   // ── Actions ──
-  const assignSinger = useCallback(async (seatKey: string, profileId: string, fromSeatKey?: string) => {
-    if (!venue || !performanceId) return;
+  const assignSinger = useCallback(
+    async (seatKey: string, profileId: string, fromSeatKey?: string) => {
+      if (!venue || !performanceId) return;
 
-    const newAssignments: Record<string, string> = { ...optimisticAssignmentsRef.current };
+      const newAssignments: Record<string, string> = { ...(chartRef.current?.assignments ?? {}) };
 
-    if (profileId) {
-      if (fromSeatKey && newAssignments[seatKey] && newAssignments[seatKey] !== profileId) {
-        const occupantId = newAssignments[seatKey];
-        newAssignments[fromSeatKey] = occupantId;
+      if (profileId) {
+        if (fromSeatKey && newAssignments[seatKey] && newAssignments[seatKey] !== profileId) {
+          const occupantId = newAssignments[seatKey];
+          newAssignments[fromSeatKey] = occupantId;
+        } else {
+          Object.keys(newAssignments).forEach((key) => {
+            if (newAssignments[key] === profileId) {
+              delete newAssignments[key];
+            }
+          });
+        }
+        newAssignments[seatKey] = profileId;
       } else {
-        Object.keys(newAssignments).forEach(key => {
-          if (newAssignments[key] === profileId) {
-            delete newAssignments[key];
-          }
-        });
+        delete newAssignments[seatKey];
       }
-      newAssignments[seatKey] = profileId;
-    } else {
-      delete newAssignments[seatKey];
-    }
 
-    queueChartSave({ assignments: newAssignments });
-  }, [performanceId, queueChartSave, venue]);
+      queueChartSave({ assignments: newAssignments });
+    },
+    [performanceId, queueChartSave, venue]
+  );
 
-  const updateChart = useCallback(async (updates: Partial<SeatingChart>) => {
-    if (!venue || !performanceId) return;
-    return queueChartSave(updates);
-  }, [performanceId, queueChartSave, venue]);
+  const updateChart = useCallback(
+    async (updates: Partial<SeatingChart>) => {
+      if (!venue || !performanceId) return;
+      return queueChartSave(updates);
+    },
+    [performanceId, queueChartSave, venue]
+  );
 
-  const copyFromPerformance = useCallback(async (sourceChart: SeatingChart) => {
-    return updateChart({
-      assignments: sourceChart.assignments,
-      layoutOverride: sourceChart.layoutOverride,
-      formationId: sourceChart.formationId,
-    });
-  }, [updateChart]);
+  const copyFromPerformance = useCallback(
+    async (sourceChart: SeatingChart) => {
+      return updateChart({
+        assignments: sourceChart.assignments,
+        layoutOverride: sourceChart.layoutOverride,
+        formationId: sourceChart.formationId,
+      });
+    },
+    [updateChart]
+  );
 
   const forceSave = useCallback(async () => {
     if (errorRef.current && !isDirtyRef.current) {
@@ -415,51 +441,68 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     await syncWithServer();
   }, [refresh, syncWithServer]);
 
-  const createChart = useCallback(async (name: string) => {
-    if (!venue || !performanceId) return;
-    const maxSortOrder = (charts ?? []).reduce((max, c) => Math.max(max, c.sortOrder ?? 0), 0);
-    try {
-      const newChart = await saveChartMutation.mutateAsync({
-        performance: performanceId,
-        venue: venueId,
-        name,
-        formationId: seatingSettings.defaultFormationId,
-        assignments: {},
-        layoutOverride: null,
-        sortOrder: maxSortOrder + 1,
-      });
-      await refresh();
-      setActiveChartId(newChart.id);
-      return newChart;
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create seating chart');
-      throw err;
-    }
-  }, [charts, performanceId, refresh, saveChartMutation, seatingSettings.defaultFormationId, venue, venueId]);
+  const createChart = useCallback(
+    async (name: string) => {
+      if (!venue || !performanceId) return;
+      const maxSortOrder = (charts ?? []).reduce((max, c) => Math.max(max, c.sortOrder ?? 0), 0);
+      try {
+        const newChart = await saveChartMutation.mutateAsync({
+          performance: performanceId,
+          venue: venueId,
+          name,
+          formationId: seatingSettings.defaultFormationId,
+          assignments: {},
+          layoutOverride: null,
+          sortOrder: maxSortOrder + 1,
+        });
+        await refresh();
+        setActiveChartId(newChart.id);
+        return newChart;
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to create seating chart');
+        throw err;
+      }
+    },
+    [
+      charts,
+      performanceId,
+      refresh,
+      saveChartMutation,
+      seatingSettings.defaultFormationId,
+      venue,
+      venueId,
+    ]
+  );
 
-  const renameChart = useCallback(async (id: string, name: string) => {
-    try {
-      await saveChartMutation.mutateAsync({ id, name } as Partial<SeatingChart>);
-      await refresh();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to rename seating chart');
-      throw err;
-    }
-  }, [refresh, saveChartMutation]);
+  const renameChart = useCallback(
+    async (id: string, name: string) => {
+      try {
+        await saveChartMutation.mutateAsync({ id, name } as Partial<SeatingChart>);
+        await refresh();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to rename seating chart');
+        throw err;
+      }
+    },
+    [refresh, saveChartMutation]
+  );
 
-  const deleteChart = useCallback(async (id: string) => {
-    await deleteChartMutation.mutateAsync(id);
-  }, [deleteChartMutation]);
+  const deleteChart = useCallback(
+    async (id: string) => {
+      await deleteChartMutation.mutateAsync(id);
+    },
+    [deleteChartMutation]
+  );
 
-  const reorderCharts = useCallback(async (orderedIds: string[]) => {
-    await reorderChartsMutation.mutateAsync(orderedIds);
-  }, [reorderChartsMutation]);
+  const reorderCharts = useCallback(
+    async (orderedIds: string[]) => {
+      await reorderChartsMutation.mutateAsync(orderedIds);
+    },
+    [reorderChartsMutation]
+  );
 
   // ── Computed values ──
-  const rowCounts = useMemo(() =>
-    chart?.layoutOverride ?? venue?.rowCounts ?? [],
-    [chart, venue],
-  );
+  const rowCounts = useMemo(() => chart?.layoutOverride ?? venue?.rowCounts ?? [], [chart, venue]);
 
   const currentFormation = useMemo((): SeatingFormationDef => {
     const fId = chart?.formationId ?? seatingSettings.defaultFormationId;
@@ -473,16 +516,17 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     const hasOrder = order.length > 0;
 
     if (currentFormation?.isVoicePartLayout) {
-      const parts = voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0
-        ? voicePartSettings.voiceParts
-        : DEFAULT_VOICE_PARTS;
-      parts.forEach(vp => {
+      const parts =
+        voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0
+          ? voicePartSettings.voiceParts
+          : DEFAULT_VOICE_PARTS;
+      parts.forEach((vp) => {
         if (!hasOrder || order.includes(vp.label)) {
           counts[vp.label] = 0;
         }
       });
 
-      activeProfiles.forEach(p => {
+      activeProfiles.forEach((p) => {
         if (!hasOrder || order.includes(p.voicePart)) {
           if (counts[p.voicePart] !== undefined) {
             counts[p.voicePart]++;
@@ -492,20 +536,22 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         }
       });
     } else {
-      const sections = voicePartSettings?.sections && voicePartSettings.sections.length > 0
-        ? voicePartSettings.sections
-        : DEFAULT_SECTIONS;
-      const vParts = voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0
-        ? voicePartSettings.voiceParts
-        : DEFAULT_VOICE_PARTS;
-      sections.forEach(s => {
+      const sections =
+        voicePartSettings?.sections && voicePartSettings.sections.length > 0
+          ? voicePartSettings.sections
+          : DEFAULT_SECTIONS;
+      const vParts =
+        voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0
+          ? voicePartSettings.voiceParts
+          : DEFAULT_VOICE_PARTS;
+      sections.forEach((s) => {
         if (!hasOrder || order.includes(s.code)) {
           counts[s.code] = 0;
         }
       });
 
-      activeProfiles.forEach(p => {
-        const voicePart = vParts.find(vp => vp.label === p.voicePart);
+      activeProfiles.forEach((p) => {
+        const voicePart = vParts.find((vp) => vp.label === p.voicePart);
         const sectionCode = voicePart?.sectionCode ?? (p.voicePart && p.voicePart[0]);
         if (!hasOrder || order.includes(sectionCode)) {
           if (counts[sectionCode] !== undefined) {
@@ -519,23 +565,27 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     return counts;
   }, [activeProfiles, voicePartSettings, currentFormation]);
 
-  const formationType = useMemo((): 'Column' | 'Row' =>
-    currentFormation.strategy === 'horizontal_row' ? 'Row' : 'Column',
-    [currentFormation],
+  const formationType = useMemo(
+    (): 'Column' | 'Row' => (currentFormation.strategy === 'horizontal_row' ? 'Row' : 'Column'),
+    [currentFormation]
   );
 
-  const sectionOrder = useMemo((): string[] =>
-    currentFormation.sectionOrder,
-    [currentFormation],
-  );
+  const sectionOrder = useMemo((): string[] => currentFormation.sectionOrder, [currentFormation]);
 
-  const suggestions = useMemo(() =>
-    seatingService.calculateAutoPaint(rowCounts, sectionCounts, sectionOrder, currentFormation.strategy),
-    [rowCounts, sectionCounts, sectionOrder, currentFormation.strategy],
+  const suggestions = useMemo(
+    () =>
+      seatingService.calculateAutoPaint(
+        rowCounts,
+        sectionCounts,
+        sectionOrder,
+        currentFormation.strategy
+      ),
+    [rowCounts, sectionCounts, sectionOrder, currentFormation.strategy]
   );
 
   // ── Derived status ──
-  const isSaving = saveChartMutation.isPending || deleteChartMutation.isPending || reorderChartsMutation.isPending;
+  const isSaving =
+    saveChartMutation.isPending || deleteChartMutation.isPending || reorderChartsMutation.isPending;
 
   return {
     chart,
@@ -546,7 +596,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     renameChart,
     deleteChart,
     reorderCharts,
-    optimisticAssignments,
+    optimisticAssignments: chart?.assignments ?? {},
     activeProfiles,
     allProfiles,
     sectionCounts,
@@ -555,8 +605,14 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     formationType,
     sectionOrder,
     currentFormation,
-    sections: (voicePartSettings?.sections && voicePartSettings.sections.length > 0) ? voicePartSettings.sections : DEFAULT_SECTIONS,
-    voiceParts: (voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0) ? voicePartSettings.voiceParts : DEFAULT_VOICE_PARTS,
+    sections:
+      voicePartSettings?.sections && voicePartSettings.sections.length > 0
+        ? voicePartSettings.sections
+        : DEFAULT_SECTIONS,
+    voiceParts:
+      voicePartSettings?.voiceParts && voicePartSettings.voiceParts.length > 0
+        ? voicePartSettings.voiceParts
+        : DEFAULT_VOICE_PARTS,
     seatingSettings,
     isLoading,
     isSaving,

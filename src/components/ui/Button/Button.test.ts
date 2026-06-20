@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen, within } from '@testing-library/react';
 import { Button } from './Button';
 
 test('Button renders with default variant (primary)', () => {
@@ -68,7 +68,9 @@ test('Button renders icon slot', () => {
 
 test('Button calls onClick', () => {
   let clicked = false;
-  const handleClick = () => { clicked = true; };
+  const handleClick = () => {
+    clicked = true;
+  };
   const { container } = render(React.createElement(Button, { onClick: handleClick }, 'Click'));
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
@@ -78,8 +80,12 @@ test('Button calls onClick', () => {
 
 test('Button does NOT call onClick when loading', () => {
   let clicked = false;
-  const handleClick = () => { clicked = true; };
-  const { container } = render(React.createElement(Button, { onClick: handleClick, loading: true }, 'Click'));
+  const handleClick = () => {
+    clicked = true;
+  };
+  const { container } = render(
+    React.createElement(Button, { onClick: handleClick, loading: true }, 'Click')
+  );
   const el = container.firstElementChild;
   assert.ok(el, 'renders an element');
   fireEvent.click(el);
@@ -96,8 +102,17 @@ test('Button renders as anchor when as="a"', () => {
 });
 
 test('Button passes className when using as prop', () => {
-  const { container } = render(React.createElement(Button, { as: 'a', className: 'custom-link' }, 'Link'));
+  const { container } = render(
+    React.createElement(Button, { as: 'a', className: 'custom-link' }, 'Link')
+  );
   const el = container.firstElementChild;
   assert.ok(el, 'renders');
   assert.ok(el.classList.contains('custom-link'), 'has custom className');
+});
+
+test('Button renders icon as decorative when text label is present', () => {
+  render(React.createElement(Button, { icon: '➕' }, 'Add Piece'));
+  const button = screen.getByRole('button', { name: 'Add Piece' });
+  const icon = within(button).getByText('➕');
+  assert.ok(icon.hasAttribute('aria-hidden'), 'icon has aria-hidden');
 });

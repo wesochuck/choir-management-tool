@@ -11,6 +11,7 @@ export const useVenues = () => {
   const venuesQuery = useQuery({
     queryKey: queryKeys.venues.list(),
     queryFn: () => venueService.getVenues(),
+    staleTime: 5 * 60_000,
   });
 
   const invalidateVenues = async () => {
@@ -26,7 +27,8 @@ export const useVenues = () => {
   });
 
   const editVenueMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Venue> }) => venueService.updateVenue(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Venue> }) =>
+      venueService.updateVenue(id, data),
     onSuccess: invalidateVenues,
   });
 

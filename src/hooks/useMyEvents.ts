@@ -3,20 +3,23 @@ import { queryKeys } from '../lib/queryKeys';
 import { eventService, type Event } from '../services/eventService';
 import { rosterService, type EventRoster } from '../services/rosterService';
 import { profileService, type Profile } from '../services/profileService';
+import { useAuth } from '../contexts/AuthContext';
 
 export const useMyEvents = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const eventsQuery = useQuery({
     queryKey: queryKeys.myEvents.list(),
     queryFn: async () => {
       const [allEvents, rosters, profile] = await Promise.all([
         eventService.getEvents(),
-        rosterService.getMyRosters(),
-        profileService.getMyProfile().catch(() => null),
+        rosterService.getMyRosters(user?.id ?? ''),
+        profileService.getMyProfile(user?.id ?? '').catch(() => null),
       ]);
       return { allEvents, rosters, profile };
     },
+    staleTime: 10_000,
   });
 
   const myProfile = eventsQuery.data?.profile ?? null;
@@ -30,19 +33,28 @@ export const useMyEvents = () => {
   }
 
   const updateRSVPMutation = useMutation({
-    mutationFn: ({ eventId, rsvp, rsvpNote }: { eventId: string; rsvp: 'Yes' | 'No'; rsvpNote?: string }) =>
-      rosterService.updateMyRSVP(eventId, rsvp, rsvpNote),
+    mutationFn: ({
+      eventId,
+      rsvp,
+      rsvpNote,
+    }: {
+      eventId: string;
+      rsvp: 'Yes' | 'No';
+      rsvpNote?: string;
+    }) => rosterService.updateMyRSVP(eventId, rsvp, rsvpNote),
     onMutate: async ({ eventId, rsvp }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.myEvents.all });
       const previous = queryClient.getQueryData(queryKeys.myEvents.list());
       queryClient.setQueryData(queryKeys.myEvents.list(), (old) => {
         if (!old || typeof old !== 'object' || !('rosters' in old)) return old;
-        const typed = old as { allEvents: Event[]; rosters: EventRoster[]; profile: Profile | null };
+        const typed = old as {
+          allEvents: Event[];
+          rosters: EventRoster[];
+          profile: Profile | null;
+        };
         return {
           ...typed,
-          rosters: typed.rosters.map(r =>
-            r.event === eventId ? { ...r, rsvp } : r
-          ),
+          rosters: typed.rosters.map((r) => (r.event === eventId ? { ...r, rsvp } : r)),
         };
       });
       return { previous };
@@ -72,9 +84,13 @@ export const useMyEvents = () => {
     myProfile,
     isLoading: eventsQuery.isLoading,
     error: eventsQuery.error
-      ? (eventsQuery.error instanceof Error ? eventsQuery.error.message : 'Failed to fetch dashboard data')
+      ? eventsQuery.error instanceof Error
+        ? eventsQuery.error.message
+        : 'Failed to fetch dashboard data'
       : null,
     updateRSVP,
-    refresh: async () => { await eventsQuery.refetch(); },
+    refresh: async () => {
+      await eventsQuery.refetch();
+    },
   };
 };

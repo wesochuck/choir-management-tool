@@ -13,10 +13,10 @@ export function resolvePieceMetadata(
   if (!parent) return piece;
   return {
     ...piece,
-    composer: piece.composer?.trim() ? piece.composer : (parent.composer || ''),
-    voicing: piece.voicing?.trim() ? piece.voicing : (parent.voicing || ''),
+    composer: piece.composer?.trim() ? piece.composer : parent.composer || '',
+    voicing: piece.voicing?.trim() ? piece.voicing : parent.voicing || '',
     copies: piece.copies !== undefined && piece.copies !== null ? piece.copies : parent.copies,
-    catalogId: piece.catalogId?.trim() ? piece.catalogId : (parent.catalogId || ''),
+    catalogId: piece.catalogId?.trim() ? piece.catalogId : parent.catalogId || '',
   };
 }
 

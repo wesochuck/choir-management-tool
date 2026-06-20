@@ -57,10 +57,10 @@ export interface HasName {
 export const getUniqueDisplayNames = <T extends HasName>(items: T[]): Record<string, string> => {
   const map: Record<string, string> = {};
   if (!items.length) return map;
-  
+
   // Group items by last name (case-insensitive comparison)
   const byLastName: Record<string, T[]> = {};
-  items.forEach(item => {
+  items.forEach((item) => {
     const lastName = getLastName(item.name).toLowerCase();
     if (!byLastName[lastName]) {
       byLastName[lastName] = [];
@@ -69,7 +69,7 @@ export const getUniqueDisplayNames = <T extends HasName>(items: T[]): Record<str
   });
 
   // Process each group
-  Object.values(byLastName).forEach(group => {
+  Object.values(byLastName).forEach((group) => {
     if (group.length === 1) {
       const item = group[0];
       map[item.id] = getLastName(item.name);
@@ -77,17 +77,17 @@ export const getUniqueDisplayNames = <T extends HasName>(items: T[]): Record<str
     }
 
     // Determine the minimum prefix length of the first name to distinguish all items in the group
-    const itemsWithFirst = group.map(item => ({
+    const itemsWithFirst = group.map((item) => ({
       item,
       firstName: getFirstName(item.name),
-      lastName: getLastName(item.name)
+      lastName: getLastName(item.name),
     }));
 
     let prefixLen = 1;
-    const maxFirstNameLen = Math.max(...itemsWithFirst.map(x => x.firstName.length), 0);
+    const maxFirstNameLen = Math.max(...itemsWithFirst.map((x) => x.firstName.length), 0);
 
     while (prefixLen <= maxFirstNameLen) {
-      const prefixes = itemsWithFirst.map(x => x.firstName.substring(0, prefixLen).toLowerCase());
+      const prefixes = itemsWithFirst.map((x) => x.firstName.substring(0, prefixLen).toLowerCase());
       const uniquePrefixes = new Set(prefixes);
       if (uniquePrefixes.size === group.length) {
         break;
@@ -95,7 +95,7 @@ export const getUniqueDisplayNames = <T extends HasName>(items: T[]): Record<str
       prefixLen++;
     }
 
-    itemsWithFirst.forEach(x => {
+    itemsWithFirst.forEach((x) => {
       const prefix = x.firstName.substring(0, prefixLen);
       map[x.item.id] = prefix ? `${x.lastName}, ${prefix}` : x.lastName;
     });

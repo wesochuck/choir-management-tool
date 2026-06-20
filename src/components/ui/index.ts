@@ -25,4 +25,6 @@ export { RadioGroup, Radio } from './RadioGroup/RadioGroup';
 export { ColorPicker } from './ColorPicker/ColorPicker';
 export { TabGroup, Tab, TabPanel } from './TabGroup/TabGroup';
 export { Range } from './Range/Range';
-
+export { DataTable } from './DataTable/DataTable';
+export type { ColumnDef } from './DataTable/types';
+export { Dropdown, DropdownMenu, DropdownMenuItem } from './Dropdown/Dropdown';

@@ -6,6 +6,7 @@ import SlDrawer from '@shoelace-style/shoelace/dist/react/drawer/index.js';
 import type SlDrawerElement from '@shoelace-style/shoelace/dist/components/drawer/drawer.component.js';
 import { DialogContext } from '../../../contexts/DialogContext';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
+import { safeSlProps } from '../shared';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -18,8 +19,15 @@ export interface ModalProps {
   asDrawer?: boolean;
 }
 
-export function Modal({ 
-  isOpen, onClose, title, children, footer, maxWidth = '500px', isDirty = false, asDrawer = false 
+export function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  maxWidth = '500px',
+  isDirty = false,
+  asDrawer = false,
 }: ModalProps) {
   const dialog = useContext(DialogContext);
   const dialogRef = useRef<SlDialogElement | null>(null);
@@ -68,7 +76,7 @@ export function Modal({
   const handleRequestClose = async (e: Event) => {
     if (isDirty) {
       e.preventDefault();
-      
+
       const confirmDiscard = dialog
         ? await dialog.confirm({
             title: 'Unsaved Changes',
@@ -105,7 +113,9 @@ export function Modal({
         });
         if (!confirmDiscard) return;
       } else {
-        const confirmDiscard = window.confirm('You have unsaved changes. Do you want to discard them?');
+        const confirmDiscard = window.confirm(
+          'You have unsaved changes. Do you want to discard them?'
+        );
         if (!confirmDiscard) return;
       }
     }
@@ -164,22 +174,29 @@ export function Modal({
         <div className="no-print fixed inset-0 z-[1000]" role="presentation">
           <div
             ref={testModalRef}
-            className="fixed right-0 top-0 h-full w-full max-w-md animate-modal-slide-up bg-surface shadow-lg"
+            className="animate-modal-slide-up bg-surface fixed top-0 right-0 h-full w-full max-w-md shadow-lg"
             role="dialog"
             aria-modal="true"
             aria-label={typeof title === 'string' ? title : undefined}
             data-drawer="true"
           >
             {title && (
-              <div className="flex items-center justify-between border-b border-border p-4">
-                <h2 className="m-0 text-2xl font-semibold text-text">{title}</h2>
-                <button className="inline-flex size-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-xl text-text-muted hover:bg-primary-light hover:text-primary-deep" onClick={() => handleCloseAttemptRef.current()} aria-label="Close" type="button">
+              <div className="border-border flex items-center justify-between border-b p-4">
+                <h2 className="text-text m-0 text-2xl font-semibold">{title}</h2>
+                <button
+                  className="text-text-muted hover:bg-primary-light hover:text-primary-deep inline-flex size-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-xl"
+                  onClick={() => handleCloseAttemptRef.current()}
+                  aria-label="Close"
+                  type="button"
+                >
                   ✕
                 </button>
               </div>
             )}
-            <div className="p-4 flex-1 min-h-0 overflow-y-auto">{children}</div>
-            {footer && <div className="flex justify-end gap-2 border-t border-border p-4">{footer}</div>}
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
+            {footer && (
+              <div className="border-border flex justify-end gap-2 border-t p-4">{footer}</div>
+            )}
           </div>
         </div>,
         document.body
@@ -191,21 +208,39 @@ export function Modal({
     };
 
     return createPortal(
-      <div className="no-print fixed inset-0 z-[1000] flex animate-modal-fade-in items-center justify-center bg-black/40 p-4" role="presentation" onMouseDown={handleOverlayClick}>
-        <div ref={testModalRef} className="flex w-full max-h-[calc(100vh-2rem)] max-h-[calc(100dvh-2rem)] animate-modal-slide-up flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-6 shadow-md" role="dialog" aria-modal="true"
+      <div
+        className="no-print animate-modal-fade-in fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 p-4"
+        role="presentation"
+        onMouseDown={handleOverlayClick}
+      >
+        <div
+          ref={testModalRef}
+          className="animate-modal-slide-up border-border bg-surface flex max-h-[calc(100dvh-2rem)] w-full flex-col gap-4 rounded-lg border p-4 shadow-md sm:p-6"
+          role="dialog"
+          aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
           // @allow-inline-style - dynamic maxWidth from props
-          style={{ maxWidth }}>
+          style={{ maxWidth }}
+        >
           {title && (
             <div className="flex items-center justify-between">
-              <h2 className="m-0 text-2xl font-semibold text-text" id={titleId}>{title}</h2>
-              <button className="inline-flex size-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-xl text-text-muted hover:bg-primary-light hover:text-primary-deep" onClick={() => handleCloseAttemptRef.current()} aria-label="Close" type="button">
+              <h2 className="text-text m-0 text-2xl font-semibold" id={titleId}>
+                {title}
+              </h2>
+              <button
+                className="text-text-muted hover:bg-primary-light hover:text-primary-deep inline-flex size-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-xl"
+                onClick={() => handleCloseAttemptRef.current()}
+                aria-label="Close"
+                type="button"
+              >
                 ✕
               </button>
             </div>
           )}
-          <div className="flex-1 min-h-0 overflow-y-auto px-1">{children}</div>
-          {footer && <div className="flex justify-end gap-2 border-t border-border pt-2">{footer}</div>}
+          <div className="min-h-0 flex-1 overflow-y-auto px-1">{children}</div>
+          {footer && (
+            <div className="border-border flex justify-end gap-2 border-t pt-2">{footer}</div>
+          )}
         </div>
       </div>,
       document.body
@@ -216,22 +251,18 @@ export function Modal({
     return (
       <SlDrawer
         ref={drawerRef}
-        open={isOpen}
+        {...safeSlProps({
+          open: isOpen,
+          label: typeof title === 'string' ? title : undefined,
+          placement: 'end' as const,
+          // @allow-inline-style - dynamic max-width for drawer --size custom property (Shoelace uses --size for drawer width with placement="end"/"start")
+          style: { '--size': maxWidth } as React.CSSProperties,
+        } as Record<string, unknown>)}
         onSlRequestClose={handleRequestClose}
-        label={typeof title === 'string' ? title : undefined}
-        placement="end"
-        // @allow-inline-style - dynamic max-width for drawer --size custom property (Shoelace uses --size for drawer width with placement="end"/"start")
-        style={{ '--size': maxWidth } as React.CSSProperties}
       >
-        {title && typeof title !== 'string' && (
-          <div slot="label">
-            {title}
-          </div>
-        )}
-        
-        <div className="flex-1 min-h-0 px-1">
-          {children}
-        </div>
+        {title && typeof title !== 'string' && <div slot="label">{title}</div>}
+
+        <div className="min-h-0 flex-1 px-1">{children}</div>
 
         {footer && (
           <div slot="footer" className="flex justify-end gap-2 pt-2">
@@ -245,21 +276,17 @@ export function Modal({
   return (
     <SlDialog
       ref={dialogRef}
-      open={isOpen}
+      {...safeSlProps({
+        open: isOpen,
+        // @allow-inline-style - dynamic max-width for modal panel width custom property override
+        style: { '--width': maxWidth } as React.CSSProperties,
+        label: typeof title === 'string' ? title : undefined,
+      } as Record<string, unknown>)}
       onSlRequestClose={handleRequestClose}
-      // @allow-inline-style - dynamic max-width for modal panel width custom property override
-      style={{ '--width': maxWidth } as React.CSSProperties}
-      label={typeof title === 'string' ? title : undefined}
     >
-      {title && typeof title !== 'string' && (
-        <div slot="label">
-          {title}
-        </div>
-      )}
-      
-      <div className="flex-1 min-h-0 px-1">
-        {children}
-      </div>
+      {title && typeof title !== 'string' && <div slot="label">{title}</div>}
+
+      <div className="min-h-0 flex-1 px-1">{children}</div>
 
       {footer && (
         <div slot="footer" className="flex justify-end gap-2 pt-2">

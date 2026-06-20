@@ -22,7 +22,7 @@ export interface MappedSinger {
 }
 
 export function parseCSV(text: string): CSVData {
-  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+  const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '');
   if (lines.length === 0) {
     return { headers: [], rows: [] };
   }
@@ -48,7 +48,7 @@ export function parseCSV(text: string): CSVData {
   };
 
   const headers = parseLine(lines[0]);
-  const rows = lines.slice(1).map(line => parseLine(line));
+  const rows = lines.slice(1).map((line) => parseLine(line));
 
   return { headers, rows };
 }
@@ -72,8 +72,9 @@ export function suggestFieldMapping(headers: string[]): FieldMapping {
   headers.forEach((header, index) => {
     const clean = header.trim().toLowerCase();
     if (!clean) return;
-    
-    const matches = (keywords: string[]) => keywords.some(k => clean.includes(k) || k.includes(clean));
+
+    const matches = (keywords: string[]) =>
+      keywords.some((k) => clean.includes(k) || k.includes(clean));
 
     if (mapping.name === -1 && matches(nameKeywords)) {
       mapping.name = index;
@@ -93,7 +94,11 @@ export function suggestFieldMapping(headers: string[]): FieldMapping {
   return mapping;
 }
 
-export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping, validVoiceParts?: string[]): MappedSinger[] {
+export function validateAndMapSingers(
+  csvData: CSVData,
+  mapping: FieldMapping,
+  validVoiceParts?: string[]
+): MappedSinger[] {
   const result: MappedSinger[] = [];
 
   csvData.rows.forEach((row, rowIndex) => {
@@ -130,10 +135,10 @@ export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping, v
     let voicePart: MappedSinger['data']['voicePart'] = '';
     if (rawVoicePart) {
       const cleanVP = rawVoicePart.toLowerCase().replace(/\s+/g, '');
-      
+
       // If valid parts are provided, try an exact match first
       if (validVoiceParts && validVoiceParts.length > 0) {
-        const match = validVoiceParts.find(p => p.toLowerCase() === cleanVP);
+        const match = validVoiceParts.find((p) => p.toLowerCase() === cleanVP);
         if (match) {
           voicePart = match;
         }
@@ -162,7 +167,9 @@ export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping, v
 
       // If we STILL don't have a match, and we have valid parts, just use the raw value if it exists in parts (case insensitive)
       if (!voicePart && validVoiceParts && validVoiceParts.length > 0) {
-        const match = validVoiceParts.find(p => p.toLowerCase().includes(cleanVP) || cleanVP.includes(p.toLowerCase()));
+        const match = validVoiceParts.find(
+          (p) => p.toLowerCase().includes(cleanVP) || cleanVP.includes(p.toLowerCase())
+        );
         if (match) {
           voicePart = match;
         }
@@ -208,4 +215,3 @@ export function validateAndMapSingers(csvData: CSVData, mapping: FieldMapping, v
 
   return result;
 }
-

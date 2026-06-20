@@ -1,32 +1,63 @@
 import React, { useImperativeHandle, useRef } from 'react';
 import SlTextarea from '@shoelace-style/shoelace/dist/react/textarea/index.js';
 import type SlTextareaElement from '@shoelace-style/shoelace/dist/components/textarea/textarea.component.js';
-import { layoutOnly } from '../shared';
+import { layoutOnly, safeSlProps } from '../shared';
 
 export interface TextareaProps extends Omit<React.ComponentPropsWithoutRef<'textarea'>, 'size'> {
   invalid?: boolean;
 }
 
 export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ invalid, className, onChange, onInput, onBlur, onFocus, value, defaultValue, placeholder, disabled, required, readOnly, name, autoFocus, rows, children, ...rest }, ref) => {
+  (
+    {
+      invalid,
+      className,
+      onChange,
+      onInput,
+      onBlur,
+      onFocus,
+      value,
+      defaultValue,
+      placeholder,
+      disabled,
+      required,
+      readOnly,
+      name,
+      autoFocus,
+      rows,
+      children,
+      ...rest
+    },
+    ref
+  ) => {
     const slRef = useRef<SlTextareaElement | null>(null);
 
-    useImperativeHandle(ref, () => ({
-      focus: () => slRef.current?.focus(),
-      blur: () => slRef.current?.blur(),
-      select: () => slRef.current?.select(),
-      get value() { return slRef.current?.value || ''; },
-      set value(val) { if (slRef.current) slRef.current.value = val; },
-      setCustomValidity: (message: string) => slRef.current?.setCustomValidity(message),
-      reportValidity: () => slRef.current?.reportValidity?.() ?? false,
-    } as unknown as HTMLTextAreaElement));
+    useImperativeHandle(
+      ref,
+      () =>
+        ({
+          focus: () => slRef.current?.focus(),
+          blur: () => slRef.current?.blur(),
+          select: () => slRef.current?.select(),
+          get value() {
+            return slRef.current?.value || '';
+          },
+          set value(val) {
+            if (slRef.current) slRef.current.value = val;
+          },
+          setCustomValidity: (message: string) => slRef.current?.setCustomValidity(message),
+          reportValidity: () => slRef.current?.reportValidity?.() ?? false,
+        }) as unknown as HTMLTextAreaElement
+    );
 
     if (process.env.NODE_ENV === 'test') {
       const classNames = [
         'block w-full resize-none rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm transition-colors outline-none placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary',
         invalid && 'border-danger-text focus:shadow-[0_0_0_3px_rgba(153,27,27,0.25)]',
         className,
-      ].filter(Boolean).join(' ');
+      ]
+        .filter(Boolean)
+        .join(' ');
       return (
         <textarea
           ref={ref}
@@ -75,21 +106,29 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <SlTextarea
         ref={slRef}
-        value={value !== undefined ? String(value) : undefined}
-        defaultValue={defaultValue !== undefined ? String(defaultValue) : undefined}
-        placeholder={placeholder}
-        disabled={disabled}
-        required={required}
-        readonly={readOnly}
-        name={name}
-        rows={rows}
-        className={layoutOnly(className)}
-        onSlInput={handleInput}
-        onSlBlur={onBlur ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLTextAreaElement>) : undefined}
-        onSlFocus={onFocus ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLTextAreaElement>) : undefined}
-        // @allow-inline-style - dynamic invalid border color override
-        style={invalid ? { '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties : undefined}
-        {...(rest as Record<string, unknown>)}
+        {...safeSlProps({
+          value: value !== undefined ? String(value) : undefined,
+          defaultValue: defaultValue !== undefined ? String(defaultValue) : undefined,
+          placeholder,
+          disabled,
+          required,
+          readonly: readOnly,
+          name,
+          rows,
+          className: layoutOnly(className),
+          onSlInput: handleInput,
+          onSlBlur: onBlur
+            ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLTextAreaElement>)
+            : undefined,
+          onSlFocus: onFocus
+            ? (ev: unknown) => onFocus(ev as React.FocusEvent<HTMLTextAreaElement>)
+            : undefined,
+          // @allow-inline-style - dynamic invalid border color override
+          style: invalid
+            ? ({ '--sl-input-border-color': 'var(--color-danger)' } as React.CSSProperties)
+            : undefined,
+          ...(rest as Record<string, unknown>),
+        } as Record<string, unknown>)}
       >
         {children}
       </SlTextarea>

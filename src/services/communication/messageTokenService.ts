@@ -97,6 +97,9 @@ export async function resolvePollPlaceholders(
     return { previewContent, logs };
   } catch (err) {
     console.error('Failed to generate poll tokens', err);
-    return { previewContent: content.replace(pollRegex, '(Error generating poll links)'), logs: [] };
+    return {
+      previewContent: content.replace(pollRegex, '(Error generating poll links)'),
+      logs: [],
+    };
   }
 }

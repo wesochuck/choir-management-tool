@@ -7,352 +7,433 @@ const SRC_DIR = path.join(process.cwd(), 'pocketbase/pb_hooks_src');
 const OUTPUT_FILE = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
 
 export type UtilityBundleName =
-    | 'hookJson'
-    | 'hookText'
-    | 'hookPlaceholders'
-    | 'emailRendering'
-    | 'emailStyles'
-    | 'mailjetRenderer'
-    | 'attendanceReport'
-    | 'messageHookRules'
-    | 'queueProcessor'
-    | 'calendarEndpoint'
-    | 'singerSeatingEndpoint'
-    | 'hmacTokens'
-    | 'timezone'
-    | 'rsvpValidation'
-    | 'adminNotifications'
-    | 'attendanceFinalizer'
-    | 'playerEndpoints'
-    | 'stripeService'
-    | 'checkoutEndpoints'
-    | 'qrHelper'
-    | 'ticketScanValidation';
+  | 'hookJson'
+  | 'hookText'
+  | 'hookPlaceholders'
+  | 'emailRendering'
+  | 'emailStyles'
+  | 'mailjetRenderer'
+  | 'attendanceReport'
+  | 'messageHookRules'
+  | 'queueProcessor'
+  | 'calendarEndpoint'
+  | 'singerSeatingEndpoint'
+  | 'hmacTokens'
+  | 'timezone'
+  | 'rsvpValidation'
+  | 'adminNotifications'
+  | 'attendanceFinalizer'
+  | 'playerEndpoints'
+  | 'stripeService'
+  | 'checkoutEndpoints'
+  | 'qrHelper'
+  | 'ticketScanValidation';
 
 export type UtilityBundle = {
-    files: string[];
-    symbols: string[];
-    dependsOn?: UtilityBundleName[];
+  files: string[];
+  symbols: string[];
+  dependsOn?: UtilityBundleName[];
 };
 
 type CallbackOptions = {
-    forceBundles?: UtilityBundleName[];
-    excludeBundles?: UtilityBundleName[];
+  forceBundles?: UtilityBundleName[];
+  excludeBundles?: UtilityBundleName[];
 };
 
 export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
-    hookJson: {
-        files: ['email/hookJson.ts'],
-        symbols: ['decodeGoBytes', 'parseJsonField'],
-    },
-    hookText: {
-        files: ['email/hookText.ts'],
-        symbols: [
-            'escapeHtml',
-            'sanitizeHtmlTemplateData',
-            'sanitizeEmailSubject',
-            'normalizeBaseUrl',
-            'getTimezoneOffsetInfo',
-            'formatInTimezone',
-        ],
-    },
-    hookPlaceholders: {
-        files: ['email/hookPlaceholders.ts'],
-        symbols: ['renderSetlistHtml'],
-        dependsOn: ['hookJson', 'hookText'],
-    },
-    emailRendering: {
-        files: ['email/emailRendering.ts'],
-        symbols: ['renderMarkdown'],
-    },
-    emailStyles: {
-        files: ['email/emailStyles.ts'],
-        symbols: ['EMAIL_CSS'],
-    },
-    mailjetRenderer: {
-        files: ['email/mailjetRenderer.ts'],
-        symbols: ['compileMailjetHtml'],
-        dependsOn: ['emailStyles'],
-    },
-    attendanceReport: {
-        files: ['email/attendanceReport.ts'],
-        symbols: ['renderAttendanceReportBody'],
-        dependsOn: ['hookText'],
-    },
-    messageHookRules: {
-        files: ['email/messageHookRules.ts'],
-        symbols: ['shouldQueueMessage', 'enqueueBulkMessage'],
-        dependsOn: ['hookJson'],
-    },
-    queueProcessor: {
-        files: ['email/queueProcessor.ts'],
-        symbols: ['processEmailQueue'],
-        dependsOn: ['hookJson', 'hookText', 'hookPlaceholders', 'emailRendering', 'mailjetRenderer', 'hmacTokens'],
-    },
-    calendarEndpoint: {
-        files: ['calendarEndpoint.ts'],
-        symbols: ['handleCalendarDownload', 'handleCalendarFeed', 'handleCalendarFeedUrl', 'handleCalendarFeedReset'],
-        dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens'],
-    },
-    singerSeatingEndpoint: {
-        files: ['singerSeatingEndpoint.ts'],
-        symbols: ['handleSingerSeatingProfiles'],
-        dependsOn: ['hookJson'],
-    },
-    hmacTokens: {
-        files: ['hmacTokens.ts'],
-        symbols: ['getHmacSecret', 'getPlayerPayload', 'getEventRecipientPayload', 'generateSignedPlayerToken', 'generateSignedEventRecipientToken', 'generateSignedTicketToken', 'parseSignedToken'],
-        dependsOn: ['hookJson'],
-    },
-    timezone: {
-        files: ['timezone.ts'],
-        symbols: ['zonedInputValueToUtcLocal'],
-        dependsOn: ['hookText'],
-    },
-    playerEndpoints: {
-        files: ['playerEndpoints.ts'],
-        symbols: ['handleGeneratePlayerToken', 'handlePlayerPlaylist'],
-        dependsOn: ['hmacTokens', 'hookJson'],
-    },
-    adminNotifications: {
-        files: ['adminNotifications.ts'],
-        symbols: ['notifyAdminsOfDecline'],
-        dependsOn: ['queueProcessor', 'hookText'],
-    },
-    attendanceFinalizer: {
-        files: ['attendanceFinalizer.ts'],
-        symbols: ['finalizeUnmarkedAttendanceForEvent'],
-    },
-    rsvpValidation: {
-        files: ['rsvpValidation.ts'],
-        symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
-    },
-    stripeService: {
-        files: ['stripeService.ts'],
-        symbols: ['createCheckoutSession', 'retrieveCheckoutSession', 'refundPaymentIntent'],
-    },
-    checkoutEndpoints: {
-        files: ['checkoutEndpoints.ts'],
-        symbols: [
-            'handleCreateTicketsSession',
-            'handleStripeWebhook',
-            'handleAdminRefundTicket',
-            'handleCreateBundleSession',
-            'handleAdminRefundBundle',
-            'handleCreateDonationSession',
-            'handleAdminRefundDonation'
-        ],
-        dependsOn: ['stripeService', 'hookText', 'timezone', 'hookJson', 'qrHelper', 'hmacTokens', 'ticketScanValidation'],
-    },
-    qrHelper: {
-        files: ['email/qrHelper.ts'],
-        symbols: ['renderQrSvg'],
-    },
-    ticketScanValidation: {
-        files: ['ticketScan/ticketValidation.ts'],
-        symbols: ['handleValidateScan', 'handleGetScanContext'],
-        dependsOn: ['hmacTokens', 'hookJson', 'hookText', 'qrHelper'],
-    },
+  hookJson: {
+    files: ['email/hookJson.ts'],
+    symbols: ['decodeGoBytes', 'parseJsonField'],
+  },
+  hookText: {
+    files: ['email/hookText.ts'],
+    symbols: [
+      'escapeHtml',
+      'sanitizeHtmlTemplateData',
+      'sanitizeEmailSubject',
+      'normalizeBaseUrl',
+      'getTimezoneOffsetInfo',
+      'formatInTimezone',
+    ],
+  },
+  hookPlaceholders: {
+    files: ['email/hookPlaceholders.ts'],
+    symbols: ['renderSetlistHtml'],
+    dependsOn: ['hookJson', 'hookText'],
+  },
+  emailRendering: {
+    files: ['email/emailRendering.ts'],
+    symbols: ['renderMarkdown'],
+  },
+  emailStyles: {
+    files: ['email/emailStyles.ts'],
+    symbols: ['EMAIL_CSS'],
+  },
+  mailjetRenderer: {
+    files: ['email/mailjetRenderer.ts'],
+    symbols: ['compileMailjetHtml'],
+    dependsOn: ['emailStyles'],
+  },
+  attendanceReport: {
+    files: ['email/attendanceReport.ts'],
+    symbols: ['renderAttendanceReportBody'],
+    dependsOn: ['hookText'],
+  },
+  messageHookRules: {
+    files: ['email/messageHookRules.ts'],
+    symbols: ['shouldQueueMessage', 'enqueueBulkMessage'],
+    dependsOn: ['hookJson'],
+  },
+  queueProcessor: {
+    files: ['email/queueProcessor.ts'],
+    symbols: ['processEmailQueue'],
+    dependsOn: [
+      'hookJson',
+      'hookText',
+      'hookPlaceholders',
+      'emailRendering',
+      'mailjetRenderer',
+      'hmacTokens',
+      'pocketbaseDate',
+    ],
+  },
+  calendarEndpoint: {
+    files: ['calendarEndpoint.ts'],
+    symbols: [
+      'handleCalendarDownload',
+      'handleCalendarFeed',
+      'handleCalendarFeedUrl',
+      'handleCalendarFeedReset',
+    ],
+    dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens', 'pocketbaseDate'],
+  },
+  singerSeatingEndpoint: {
+    files: ['singerSeatingEndpoint.ts'],
+    symbols: ['handleSingerSeatingProfiles'],
+    dependsOn: ['hookJson'],
+  },
+  hmacTokens: {
+    files: ['hmacTokens.ts'],
+    symbols: [
+      'getHmacSecret',
+      'getPlayerPayload',
+      'getEventRecipientPayload',
+      'generateSignedPlayerToken',
+      'generateSignedEventRecipientToken',
+      'generateSignedTicketToken',
+      'parseSignedToken',
+    ],
+    dependsOn: ['hookJson'],
+  },
+  timezone: {
+    files: ['timezone.ts'],
+    symbols: ['zonedInputValueToUtcLocal'],
+    dependsOn: ['hookText'],
+  },
+  playerEndpoints: {
+    files: ['playerEndpoints.ts'],
+    symbols: ['handleGeneratePlayerToken', 'handlePlayerPlaylist'],
+    dependsOn: ['hmacTokens', 'hookJson'],
+  },
+  adminNotifications: {
+    files: ['adminNotifications.ts'],
+    symbols: ['notifyAdminsOfDecline'],
+    dependsOn: ['queueProcessor', 'hookText'],
+  },
+  attendanceFinalizer: {
+    files: ['attendanceFinalizer.ts'],
+    symbols: ['finalizeUnmarkedAttendanceForEvent'],
+  },
+  rsvpValidation: {
+    files: ['rsvpValidation.ts'],
+    symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
+  },
+  pocketbaseDate: {
+    files: ['pocketbaseDate.ts'],
+    symbols: ['coercePocketBaseDate', 'isPocketBaseDateAtOrAfter', 'isPocketBaseDateBefore'],
+  },
+  stripeService: {
+    files: ['stripeService.ts'],
+    symbols: ['createCheckoutSession', 'retrieveCheckoutSession', 'refundPaymentIntent'],
+  },
+  checkoutEndpoints: {
+    files: ['checkoutEndpoints.ts'],
+    symbols: [
+      'handleCreateTicketsSession',
+      'handleStripeWebhook',
+      'handleAdminRefundTicket',
+      'handleCreateBundleSession',
+      'handleAdminRefundBundle',
+      'handleCreateDonationSession',
+      'handleAdminRefundDonation',
+      'handleAdminResendTicketConfirmation',
+    ],
+    dependsOn: [
+      'stripeService',
+      'hookText',
+      'timezone',
+      'hookJson',
+      'hmacTokens',
+      'ticketScanValidation',
+      'pocketbaseDate',
+    ],
+  },
+  ticketScanValidation: {
+    files: ['ticketScan/ticketValidation.ts'],
+    symbols: ['handleValidateScan', 'handleGetScanContext'],
+    dependsOn: ['hmacTokens', 'hookJson', 'hookText'],
+  },
 };
 
 const transpileCache = new Map<string, string>();
 
-function applyTextEdits(source: string, edits: { start: number; end: number; text: string }[]): string {
-    return [...edits]
-        .sort((a, b) => b.start - a.start)
-        .reduce((next, edit) => `${next.slice(0, edit.start)}${edit.text}${next.slice(edit.end)}`, source);
+function applyTextEdits(
+  source: string,
+  edits: { start: number; end: number; text: string }[]
+): string {
+  return [...edits]
+    .sort((a, b) => b.start - a.start)
+    .reduce(
+      (next, edit) => `${next.slice(0, edit.start)}${edit.text}${next.slice(edit.end)}`,
+      source
+    );
 }
 
 function stripModuleSyntaxSafely(source: string, fileName: string): string {
-    const sourceFile = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-    const edits: { start: number; end: number; text: string }[] = [];
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+  const edits: { start: number; end: number; text: string }[] = [];
 
-    for (const statement of sourceFile.statements) {
-        if (ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)) {
-            edits.push({ start: statement.getFullStart(), end: statement.getEnd(), text: '' });
-            continue;
-        }
-
-        const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined;
-        if (!modifiers) continue;
-
-        for (const modifier of modifiers) {
-            if (modifier.kind === ts.SyntaxKind.ExportKeyword || modifier.kind === ts.SyntaxKind.DefaultKeyword) {
-                const start = modifier.getFullStart();
-                const end = modifier.getEnd();
-                edits.push({ start, end, text: '' });
-            }
-        }
+  for (const statement of sourceFile.statements) {
+    if (ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement)) {
+      edits.push({ start: statement.getFullStart(), end: statement.getEnd(), text: '' });
+      continue;
     }
 
-    return applyTextEdits(source, edits);
+    const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined;
+    if (!modifiers) continue;
+
+    for (const modifier of modifiers) {
+      if (
+        modifier.kind === ts.SyntaxKind.ExportKeyword ||
+        modifier.kind === ts.SyntaxKind.DefaultKeyword
+      ) {
+        const start = modifier.getFullStart();
+        const end = modifier.getEnd();
+        edits.push({ start, end, text: '' });
+      }
+    }
+  }
+
+  return applyTextEdits(source, edits);
 }
 
 function formatDiagnostics(diagnostics: readonly ts.Diagnostic[]): string {
-    return diagnostics.map((diagnostic) => {
-        const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-        if (!diagnostic.file || diagnostic.start === undefined) return message;
-        const position = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
-        return `${diagnostic.file.fileName}:${position.line + 1}:${position.character + 1} - ${message}`;
-    }).join('\n');
+  return diagnostics
+    .map((diagnostic) => {
+      const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+      if (!diagnostic.file || diagnostic.start === undefined) return message;
+      const position = diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start);
+      return `${diagnostic.file.fileName}:${position.line + 1}:${position.character + 1} - ${message}`;
+    })
+    .join('\n');
 }
 
 export function transpileHookSource(source: string, fileName: string): string {
-    const scriptSource = stripModuleSyntaxSafely(source, fileName);
-    const result = ts.transpileModule(scriptSource, {
-        fileName,
-        compilerOptions: {
-            target: ts.ScriptTarget.ES2017,
-            module: ts.ModuleKind.None,
-            removeComments: false,
-            importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
-            ignoreDeprecations: '6.0',
-        },
-        reportDiagnostics: true,
-    });
+  const scriptSource = stripModuleSyntaxSafely(source, fileName);
+  const result = ts.transpileModule(scriptSource, {
+    fileName,
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2017,
+      module: ts.ModuleKind.None,
+      removeComments: false,
+      importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
+      ignoreDeprecations: '6.0',
+    },
+    reportDiagnostics: true,
+  });
 
-    const diagnostics = (result.diagnostics ?? []).filter((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error);
-    if (diagnostics.length > 0) {
-        throw new Error(formatDiagnostics(diagnostics));
-    }
+  const diagnostics = (result.diagnostics ?? []).filter(
+    (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error
+  );
+  if (diagnostics.length > 0) {
+    throw new Error(formatDiagnostics(diagnostics));
+  }
 
-    return result.outputText.trim();
+  return result.outputText.trim();
 }
 
 function getTranspiledFile(fileName: string): string {
-    const cached = transpileCache.get(fileName);
-    if (cached !== undefined) return cached;
+  const cached = transpileCache.get(fileName);
+  if (cached !== undefined) return cached;
 
-    const source = fs.readFileSync(path.join(SRC_DIR, fileName), 'utf8');
-    const js = transpileHookSource(source, fileName);
-    transpileCache.set(fileName, js);
-    return js;
+  const source = fs.readFileSync(path.join(SRC_DIR, fileName), 'utf8');
+  const js = transpileHookSource(source, fileName);
+  transpileCache.set(fileName, js);
+  return js;
 }
 
 function escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function resolveBundleDependencies(bundleNames: UtilityBundleName[]): UtilityBundleName[] {
-    const resolved = new Set<UtilityBundleName>();
+  const resolved = new Set<UtilityBundleName>();
 
-    function visit(name: UtilityBundleName): void {
-        if (resolved.has(name)) return;
-        const bundle = UTILITY_BUNDLES[name];
-        for (const dependency of bundle.dependsOn ?? []) {
-            visit(dependency);
-        }
-        resolved.add(name);
+  function visit(name: UtilityBundleName): void {
+    if (resolved.has(name)) return;
+    const bundle = UTILITY_BUNDLES[name];
+    for (const dependency of bundle.dependsOn ?? []) {
+      visit(dependency);
     }
+    resolved.add(name);
+  }
 
-    for (const name of bundleNames) {
-        visit(name);
-    }
+  for (const name of bundleNames) {
+    visit(name);
+  }
 
-    return [...resolved];
+  return [...resolved];
 }
 
-export function detectBundles(callbackText: string, options: CallbackOptions = {}): UtilityBundleName[] {
-    const required = new Set<UtilityBundleName>(options.forceBundles ?? []);
-    const excluded = new Set<UtilityBundleName>(options.excludeBundles ?? []);
+export function detectBundles(
+  callbackText: string,
+  options: CallbackOptions = {}
+): UtilityBundleName[] {
+  const required = new Set<UtilityBundleName>(options.forceBundles ?? []);
+  const excluded = new Set<UtilityBundleName>(options.excludeBundles ?? []);
 
-    for (const [bundleName, bundle] of Object.entries(UTILITY_BUNDLES) as [UtilityBundleName, UtilityBundle][]) {
-        if (excluded.has(bundleName)) continue;
-        for (const symbol of bundle.symbols) {
-            const pattern = new RegExp(`\\b${escapeRegExp(symbol)}\\b`);
-            if (pattern.test(callbackText)) {
-                required.add(bundleName);
-                break;
-            }
-        }
+  for (const [bundleName, bundle] of Object.entries(UTILITY_BUNDLES) as [
+    UtilityBundleName,
+    UtilityBundle,
+  ][]) {
+    if (excluded.has(bundleName)) continue;
+    for (const symbol of bundle.symbols) {
+      const pattern = new RegExp(`\\b${escapeRegExp(symbol)}\\b`);
+      if (pattern.test(callbackText)) {
+        required.add(bundleName);
+        break;
+      }
     }
+  }
 
-    return resolveBundleDependencies([...required]).filter((name) => !excluded.has(name));
+  return resolveBundleDependencies([...required]).filter((name) => !excluded.has(name));
 }
 
 function renderUtilityPrelude(callbackText: string, options: CallbackOptions = {}): string {
-    const bundles = detectBundles(callbackText, options);
-    if (bundles.length === 0) return '';
+  const bundles = detectBundles(callbackText, options);
+  if (bundles.length === 0) return '';
 
-    const files = new Set<string>();
-    for (const bundleName of bundles) {
-        for (const file of UTILITY_BUNDLES[bundleName].files) {
-            files.add(file);
-        }
+  const files = new Set<string>();
+  for (const bundleName of bundles) {
+    for (const file of UTILITY_BUNDLES[bundleName].files) {
+      files.add(file);
     }
+  }
 
-    const utilityJs = [...files].map((file) => `// --- Utility source: ${file} ---\n${getTranspiledFile(file)}`).join('\n\n');
-    return `// --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---\n${utilityJs}\n// --- END CALLBACK-LOCAL UTILITIES ---`;
+  const utilityJs = [...files]
+    .map((file) => `// --- Utility source: ${file} ---\n${getTranspiledFile(file)}`)
+    .join('\n\n');
+  return `// --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---\n${utilityJs}\n// --- END CALLBACK-LOCAL UTILITIES ---`;
 }
 
 function withUtilities(callbackText: string, options: CallbackOptions = {}): string {
-    const prelude = renderUtilityPrelude(callbackText, options);
-    return prelude ? `${prelude}\n\n${callbackText.trim()}` : callbackText.trim();
+  const prelude = renderUtilityPrelude(callbackText, options);
+  return prelude ? `${prelude}\n\n${callbackText.trim()}` : callbackText.trim();
 }
 
-function renderCron(name: string, schedule: string, body: string, options: CallbackOptions = {}): string {
-    return `cronAdd(${JSON.stringify(name)}, ${JSON.stringify(schedule)}, () => {\n${indent(withUtilities(body, options), 4)}\n});`;
+function renderCron(
+  name: string,
+  schedule: string,
+  body: string,
+  options: CallbackOptions = {}
+): string {
+  const fullBody = withUtilities(body, options);
+  const isAsync = fullBody.includes('await ');
+  const asyncPrefix = isAsync ? 'async ' : '';
+  return `cronAdd(${JSON.stringify(name)}, ${JSON.stringify(schedule)}, ${asyncPrefix}() => {\n${indent(fullBody, 4)}\n});`;
 }
 
-function renderRecordHook(hookName: string, collection: string, body: string, options: CallbackOptions = {}): string {
-    return `${hookName}((e) => {\n${indent(withUtilities(body, options), 4)}\n}, ${JSON.stringify(collection)});`;
+function renderRecordHook(
+  hookName: string,
+  collection: string,
+  body: string,
+  options: CallbackOptions = {}
+): string {
+  return `${hookName}((e) => {\n${indent(withUtilities(body, options), 4)}\n}, ${JSON.stringify(collection)});`;
 }
 
-function renderRoute(method: string, routePath: string, body: string, options: CallbackOptions = {}): string {
-    return `routerAdd(${JSON.stringify(method)}, ${JSON.stringify(routePath)}, (e) => {\n${indent(withUtilities(body, options), 4)}\n});`;
+function renderRoute(
+  method: string,
+  routePath: string,
+  body: string,
+  options: CallbackOptions = {}
+): string {
+  const fullBody = withUtilities(body, options);
+  const isAsync = fullBody.includes('await ');
+  const asyncPrefix = isAsync ? 'async ' : '';
+  return `routerAdd(${JSON.stringify(method)}, ${JSON.stringify(routePath)}, ${asyncPrefix}(e) => {\n${indent(fullBody, 4)}\n});`;
 }
 
 function indent(text: string, spaces: number): string {
-    const padding = ' '.repeat(spaces);
-    return text.split('\n').map((line) => line ? `${padding}${line}` : '').join('\n');
+  const padding = ' '.repeat(spaces);
+  return text
+    .split('\n')
+    .map((line) => (line ? `${padding}${line}` : ''))
+    .join('\n');
 }
 
 function replaceSharedUtilityPlaceholders(js: string): string {
-    const placeholder = '// __SHARED_UTILS__';
-    let output = '';
-    let cursor = 0;
+  const placeholder = '// __SHARED_UTILS__';
+  let output = '';
+  let cursor = 0;
 
-    while (true) {
-        const index = js.indexOf(placeholder, cursor);
-        if (index === -1) break;
-        output += js.slice(cursor, index);
-        const body = extractEnclosingArrowBody(js, index);
-        output += renderUtilityPrelude(body);
-        cursor = index + placeholder.length;
-    }
+  while (true) {
+    const index = js.indexOf(placeholder, cursor);
+    if (index === -1) break;
+    output += js.slice(cursor, index);
+    const body = extractEnclosingArrowBody(js, index);
+    output += renderUtilityPrelude(body);
+    cursor = index + placeholder.length;
+  }
 
-    output += js.slice(cursor);
-    return output;
+  output += js.slice(cursor);
+  return output;
 }
 
 function extractEnclosingArrowBody(source: string, position: number): string {
-    let openBrace = -1;
-    for (let i = position; i >= 0; i--) {
-        if (source[i] === '{') {
-            openBrace = i;
-            break;
-        }
+  let openBrace = -1;
+  for (let i = position; i >= 0; i--) {
+    if (source[i] === '{') {
+      openBrace = i;
+      break;
     }
-    if (openBrace === -1) return source;
+  }
+  if (openBrace === -1) return source;
 
-    let depth = 0;
-    for (let i = openBrace; i < source.length; i++) {
-        const ch = source[i];
-        if (ch === '{') depth += 1;
-        if (ch === '}') depth -= 1;
-        if (depth === 0) return source.slice(openBrace + 1, i);
-    }
+  let depth = 0;
+  for (let i = openBrace; i < source.length; i++) {
+    const ch = source[i];
+    if (ch === '{') depth += 1;
+    if (ch === '}') depth -= 1;
+    if (depth === 0) return source.slice(openBrace + 1, i);
+  }
 
-    return source.slice(openBrace + 1);
+  return source.slice(openBrace + 1);
 }
 
 function buildRsvpRoutes(): string {
-    const rsvpJs = getTranspiledFile('rsvpEndpoints.ts');
-    return replaceSharedUtilityPlaceholders(rsvpJs);
+  const rsvpJs = getTranspiledFile('rsvpEndpoints.ts');
+  return replaceSharedUtilityPlaceholders(rsvpJs);
 }
 
 export function generate(): void {
-    const postEventReportBody = `
+  const postEventReportBody = `
 const hoursAfter = 12;
 const now = new Date();
 const end = new Date(now.getTime() - (hoursAfter * 60 * 60 * 1000));
@@ -399,8 +480,10 @@ events.forEach(event => {
     const total = rosters.length;
     const present = rosters.filter(r => r.get("attendance") === "Present").length;
     const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
-    const eventDateObj = new Date(event.get("date"));
-    const eventDateStr = (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear();
+    const eventDateObj = coercePocketBaseDate(event.get("date"));
+    const eventDateStr = eventDateObj
+      ? (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear()
+      : "";
     const eventTitle = String(event.get("title") || "");
     const subject = sanitizeEmailSubject(
         commSettings.reportSubjectTemplate
@@ -483,8 +566,7 @@ events.forEach(event => {
                                 missCount: missCount
                             });
                         }
-                    }
-                });
+                    });
 
                 if (exceededSingers.length > 0) {
                     exceededLimitListHtml = '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' + 
@@ -521,7 +603,7 @@ events.forEach(event => {
     }
 });`;
 
-    const ticketBuyerReminderBody = `
+  const ticketBuyerReminderBody = `
 const now = new Date();
 const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
 
@@ -570,7 +652,7 @@ if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhos
     const url = meta?.appUrl || meta?.appURL || "";
     if (url) baseUrl = url;
 }
-baseUrl = baseUrl.trim().replace(/\/+$/g, "");
+baseUrl = baseUrl.trim().replace(/[\/]+$/g, "");
 
 events.forEach(event => {
     const purchases = $app.findRecordsByFilter(
@@ -585,11 +667,14 @@ events.forEach(event => {
     if (!purchases || purchases.length === 0) return;
 
     const eventTitle = event.get("title") || "";
-    const eventDateRaw = event.get("date");
-    const eventDateStr = formatInTimezone(eventDateRaw, timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const eventDateStr = formatInTimezone(
+      coercePocketBaseDate(event.get("date")) ?? new Date(""),
+      timezone,
+      { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+    );
     const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
 
-    purchases.forEach(purchase => {
+    purchases.forEach(async purchase => {
         const buyerName = purchase.get("buyerName") || "Music Lover";
         const quantity = purchase.get("quantity") || 0;
         
@@ -608,8 +693,7 @@ events.forEach(event => {
         const ticketToken = generateSignedTicketToken($app, purchase.id);
         const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
         const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
-        const qrSvg = await renderQrSvg(scanUrl);
-        const qrSvgSrc = "data:image/svg+xml," + encodeURIComponent(qrSvg);
+        const qrSvgSrc = "";
 
         try {
             const queueCollection = $app.findCollectionByNameOrId("emailQueue");
@@ -625,6 +709,7 @@ events.forEach(event => {
                     eventId: event.id,
                     type: "Ticket Buyer Reminder",
                     ticketToken: ticketToken,
+                    scanUrl: scanUrl,
                     qrSvgSrc: qrSvgSrc,
                     successUrl: successUrl
                 })
@@ -656,11 +741,11 @@ events.forEach(event => {
 
 processEmailQueue($app);`;
 
-    const processQueueBody = `
+  const processQueueBody = `
 console.log("[Cron Engine] Evaluating pending outbound message matrices...");
 processEmailQueue($app);`;
 
-    const createHookBody = `
+  const createHookBody = `
 try {
     const record = e?.record;
     if (!record) { console.log("[DEBUG] onRecordAfterCreateSuccess: no record"); return; }
@@ -675,7 +760,7 @@ try {
     console.log("[Hook Error] onRecordAfterCreateSuccess: " + hookErr);
 }`;
 
-    const updateHookBody = `
+  const updateHookBody = `
 try {
     const record = e?.record;
     if (!record) { console.log("[DEBUG] onRecordAfterUpdateSuccess: no record"); return; }
@@ -692,7 +777,7 @@ try {
     console.log("[Hook Error] onRecordAfterUpdateSuccess: " + hookErr);
 }`;
 
-    const auditionCreateHookBody = `
+  const auditionCreateHookBody = `
 try {
     const audition = e?.record;
     if (!audition) return;
@@ -858,7 +943,7 @@ try {
     console.log("[Audition Confirmation/Notification Error] Failed to process hooks: " + err);
 }`;
 
-    const auditionUpdateHookBody = `
+  const auditionUpdateHookBody = `
 try {
     const audition = e?.record;
     if (!audition) return;
@@ -952,7 +1037,7 @@ try {
     console.log("[Audition Scheduled Error] Failed to enqueue email: " + err);
 }`;
 
-    const queueProcessBody = `
+  const queueProcessBody = `
 const queryToken = e.requestInfo().query["token"] || "";
 let tokenValid = false;
 
@@ -979,7 +1064,7 @@ if (!tokenValid && !isAdmin) {
 processEmailQueue($app);
 return e.json(200, { success: true });`;
 
-    const queueSettingsBody = `
+  const queueSettingsBody = `
 const authRecord = e.auth;
 if (!authRecord || authRecord.get("role") !== "admin") {
     return e.json(403, { error: "Forbidden" });
@@ -996,7 +1081,7 @@ try {
 
 return e.json(200, { secret: token });`;
 
-    const queueSettingsGenerateBody = `
+  const queueSettingsGenerateBody = `
 const authRecord = e.auth;
 if (!authRecord || authRecord.get("role") !== "admin") {
     return e.json(403, { error: "Forbidden" });
@@ -1020,7 +1105,7 @@ try {
 $app.save(record);
 return e.json(200, { secret: newSecret });`;
 
-    const testSmtpBody = `
+  const testSmtpBody = `
 const authRecord = e.auth;
 if (!authRecord || authRecord.get("role") !== "admin") return e.json(403, { error: "Forbidden" });
 const { email } = e.requestInfo().body;
@@ -1033,7 +1118,7 @@ try {
     return e.json(200, { success: true });
 } catch (err) { return e.json(500, { error: "SMTP failed" }); }`;
 
-    const mainPbJs = `
+  const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
 // Source: pocketbase/pb_hooks_src/
 
@@ -1091,6 +1176,7 @@ ${renderRoute('POST', '/api/admin/refund-ticket', 'return handleAdminRefundTicke
 ${renderRoute('POST', '/api/admin/refund-bundle', 'return handleAdminRefundBundle(e);')}
 
 ${renderRoute('POST', '/api/admin/refund-donation', 'return handleAdminRefundDonation(e);')}
+${renderRoute('POST', '/api/admin/resend-ticket-confirmation', 'return handleAdminResendTicketConfirmation(e);')}
 
 ${renderRoute('POST', '/api/tickets/validate', 'return handleValidateScan(e);')}
 
@@ -1107,20 +1193,25 @@ ${renderRoute('GET', '/api/singer/calendar-feed-url', 'return handleCalendarFeed
 ${renderRoute('POST', '/api/singer/calendar-feed-url/reset', 'return handleCalendarFeedReset(e);')}
 
 ${renderRoute('GET', '/api/singer/seating-profiles', 'return handleSingerSeatingProfiles(e);')}
+
+${renderRoute('GET', '/api/singer/player-playlist', 'return handleSingerPlayerPlaylist(e);')}
 `.trim();
 
-    fs.writeFileSync(OUTPUT_FILE, `${mainPbJs}\n`);
-    console.log('Successfully generated pocketbase/pb_hooks/main.pb.js');
+  fs.writeFileSync(OUTPUT_FILE, `${mainPbJs}\n`);
+  console.log('Successfully generated pocketbase/pb_hooks/main.pb.js');
 }
 
 function isMainModule(): boolean {
-    try {
-        return process.argv[1] === fileURLToPath(import.meta.url) || process.argv[1]?.endsWith('generate-main-pb-js.ts');
-    } catch {
-        return false;
-    }
+  try {
+    return (
+      process.argv[1] === fileURLToPath(import.meta.url) ||
+      process.argv[1]?.endsWith('generate-main-pb-js.ts')
+    );
+  } catch {
+    return false;
+  }
 }
 
 if (isMainModule()) {
-    generate();
+  generate();
 }

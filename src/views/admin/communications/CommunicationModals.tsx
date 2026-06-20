@@ -38,9 +38,7 @@ interface CommunicationModalsProps {
   events: Event[];
   commSettings: CommunicationSettings;
   editingTemplate?: Partial<TemplateRecord> | null;
-  setEditingTemplate?: React.Dispatch<
-    React.SetStateAction<Partial<TemplateRecord> | null>
-  >;
+  setEditingTemplate?: React.Dispatch<React.SetStateAction<Partial<TemplateRecord> | null>>;
 }
 
 export function CommunicationModals({
@@ -104,7 +102,7 @@ export function CommunicationModals({
             )}
             <div className="flex flex-col gap-1">
               <label className="text-label text-muted">Content</label>
-              <div className="max-h-60 overflow-y-auto rounded-lg border border-border bg-bg p-4">
+              <div className="border-border bg-bg max-h-60 overflow-y-auto rounded-lg border p-4">
                 {selectedMessage.content}
               </div>
             </div>
@@ -129,21 +127,19 @@ export function CommunicationModals({
       >
         <div className="flex flex-wrap gap-2">
           {recipientPreviewList.recipients.length === 0 ? (
-            <div className="w-full py-10 text-center text-text-muted">
+            <div className="text-text-muted w-full py-10 text-center">
               <p className="text-muted m-0">
                 {recipientPreviewList.emptyMessage || 'No recipients found.'}
               </p>
               {recipientPreviewList.helperText && (
-                <p className="text-muted text-xs">
-                  {recipientPreviewList.helperText}
-                </p>
+                <p className="text-muted text-xs">{recipientPreviewList.helperText}</p>
               )}
             </div>
           ) : (
             recipientPreviewList.recipients.map((r) => (
               <div
                 key={r.id}
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-bg px-3 py-1.5"
+                className="border-border bg-bg inline-flex items-center gap-2 rounded-lg border px-3 py-1.5"
               >
                 <strong>{r.name}</strong>
                 <span className="text-muted text-xs">{r.voicePart}</span>
@@ -175,7 +171,7 @@ export function CommunicationModals({
               setContent((prev) => prev + tag);
             }
           }
-          
+
           setPollQuestions((prev) => ({ ...prev, [pollId]: pollQuestion }));
           setIsPollModalOpen(false);
         }}
