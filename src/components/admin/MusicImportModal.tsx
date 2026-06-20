@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Modal, Button, Select, ProgressBar } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
-import { musicLibraryService, type MusicPieceInput } from '../../services/musicLibraryService';
+import { musicLibraryService } from '../../services/musicLibraryService';
 import { parseCSV, type CSVData } from '../../lib/rosterImportUtils';
 import {
   suggestMusicFieldMapping,
@@ -136,43 +136,46 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     setSuccessCount(0);
     setErrorsList([]);
 
-    // Run import sequentially to show live progress and handle partial success robustly
+    // Use chunked bulk imports to improve performance while still allowing partial failure tracking per chunk.
     let successes = 0;
     const errors: typeof errorsList = [];
+    const BATCH_CHUNK_SIZE = 50;
 
-    // @allow-sequential-await - Import runs sequentially to show live progress and handle partial success robustly.
-    for (let i = 0; i < mappedPieces.length; i++) {
-      const piece = mappedPieces[i];
-      if (!piece.isValid) continue;
-
-      setImportingIndex(i + 1);
+    // @allow-sequential-await - Chunked loop is intentional to limit batch request rate and update UI.
+    for (let i = 0; i < validPieces.length; i += BATCH_CHUNK_SIZE) {
+      const chunkPieces = validPieces.slice(i, i + BATCH_CHUNK_SIZE);
+      const payloads = chunkPieces.map((piece) => ({
+        title: piece.data.title,
+        composer: piece.data.composer || undefined,
+        arranger: piece.data.arranger || undefined,
+        purchaseDate: piece.data.purchaseDate || undefined,
+        copies: piece.data.copies || undefined,
+        catalogId: piece.data.catalogId || undefined,
+        duration: piece.data.duration || undefined,
+        notes: piece.data.notes || undefined,
+      }));
 
       try {
-        const payload: Partial<MusicPieceInput> = {
-          title: piece.data.title,
-          composer: piece.data.composer || undefined,
-          arranger: piece.data.arranger || undefined,
-          purchaseDate: piece.data.purchaseDate || undefined,
-          copies: piece.data.copies || undefined,
-          catalogId: piece.data.catalogId || undefined,
-          duration: piece.data.duration || undefined,
-          notes: piece.data.notes || undefined,
-        };
-
-        await musicLibraryService.createPiece(payload);
-        successes++;
+        await musicLibraryService.bulkCreate(payloads);
+        successes += payloads.length;
         setSuccessCount(successes);
       } catch (err: unknown) {
-        console.error(`Import failed for row ${piece.rowNumber}:`, err);
+        console.error(`Bulk import failed for chunk starting at index ${i}:`, err);
+        // If a batch fails, we record the error for the first piece in the chunk to notify the user.
+        // The entire chunk fails because PocketBase batches are transactional.
+        const firstFailedPiece = chunkPieces[0];
         errors.push({
-          row: piece.rowNumber,
-          title: piece.data.title || 'Unknown Title',
-          error: err instanceof Error ? err.message : 'Unknown database error',
+          row: firstFailedPiece.rowNumber,
+          title: `Batch starting with "${firstFailedPiece.data.title || 'Unknown'}"`,
+          error: err instanceof Error ? err.message : 'Unknown database error during bulk creation',
         });
         setErrorsList([...errors]);
       }
 
-      setImportProgress(Math.round(((i + 1) / mappedPieces.length) * 100));
+      setImportingIndex(Math.min(i + BATCH_CHUNK_SIZE, validPieces.length));
+      setImportProgress(
+        Math.round((Math.min(i + BATCH_CHUNK_SIZE, validPieces.length) / validPieces.length) * 100)
+      );
     }
 
     setStep('COMPLETE');

@@ -27,6 +27,8 @@ export function escapeHtml(value: unknown): string {
  *
  * Keep this behavior aligned with pocketbase/pb_hooks_src/email/hookText.ts.
  */
+import DOMPurify from 'dompurify';
+
 export function sanitizeEmailSubject(value: unknown): string {
   if (value == null) return '';
 
@@ -44,134 +46,42 @@ export function sanitizeEmailSubject(value: unknown): string {
 export function sanitizeHtml(htmlStr: string): string {
   if (!htmlStr) return '';
 
-  // Use DOMParser if available (client-side or test jsdom environment)
+  // Use DOMPurify if available (client-side or where window is available)
   if (typeof window !== 'undefined' && typeof window.DOMParser !== 'undefined') {
     try {
-      const parser = new window.DOMParser();
-      const doc = parser.parseFromString(htmlStr, 'text/html');
-
-      const allowedTags = new Set([
-        'p',
-        'br',
-        'strong',
-        'em',
-        'u',
-        'h1',
-        'h2',
-        'h3',
-        'h4',
-        'h5',
-        'h6',
-        'ul',
-        'ol',
-        'li',
-        'a',
-        'blockquote',
-        'div',
-        'span',
-      ]);
-
-      const allowedAttrs = new Set(['class', 'style', 'href', 'target', 'rel', 'id']);
-
-      const discardContentTags = new Set([
-        'script',
-        'style',
-        'iframe',
-        'object',
-        'embed',
-        'noscript',
-        'template',
-      ]);
-
-      const cleanNode = (node: Node): Node | null => {
-        // Text nodes are safe
-        if (node.nodeType === 3) {
-          // Node.TEXT_NODE
-          return doc.createTextNode(node.nodeValue || '');
-        }
-
-        // Element nodes need scanning
-        if (node.nodeType === 1) {
-          // Node.ELEMENT_NODE
-          const el = node as Element;
-          const tagName = el.tagName.toLowerCase();
-
-          if (discardContentTags.has(tagName)) {
-            return null;
-          }
-
-          if (!allowedTags.has(tagName)) {
-            // Strip tag, but recursively clean and keep children
-            const fragment = doc.createDocumentFragment();
-            for (let i = 0; i < el.childNodes.length; i++) {
-              const cleaned = cleanNode(el.childNodes[i]);
-              if (cleaned) {
-                fragment.appendChild(cleaned);
-              }
-            }
-            return fragment;
-          }
-
-          // Create cleaned element
-          const cleanEl = doc.createElement(tagName);
-
-          // Copy and clean attributes
-          for (let i = 0; i < el.attributes.length; i++) {
-            const attr = el.attributes[i];
-            const attrName = attr.name.toLowerCase();
-
-            // Block event handlers (on*)
-            if (attrName.startsWith('on')) {
-              continue;
-            }
-
-            // Block javascript: and data: protocol URIs in links/sources
-            if (attrName === 'href' || attrName === 'src') {
-              // Strip control characters and spaces to prevent bypasses like `java\tscript:`
-              // eslint-disable-next-line no-control-regex
-              const val = attr.value.replace(/[\x00-\x20]/g, '');
-              if (/^(javascript|data|vbscript):/i.test(val)) {
-                continue;
-              }
-            }
-
-            if (allowedAttrs.has(attrName)) {
-              cleanEl.setAttribute(attrName, attr.value);
-            }
-          }
-
-          // Recursively clean children
-          for (let i = 0; i < el.childNodes.length; i++) {
-            const cleaned = cleanNode(el.childNodes[i]);
-            if (cleaned) {
-              cleanEl.appendChild(cleaned);
-            }
-          }
-
-          return cleanEl;
-        }
-
-        return null;
-      };
-
-      const cleanBody = doc.body;
-      const cleanFragment = doc.createDocumentFragment();
-      for (let i = 0; i < cleanBody.childNodes.length; i++) {
-        const cleaned = cleanNode(cleanBody.childNodes[i]);
-        if (cleaned) {
-          cleanFragment.appendChild(cleaned);
-        }
-      }
-
-      const tempDiv = doc.createElement('div');
-      tempDiv.appendChild(cleanFragment);
-      return tempDiv.innerHTML;
+      return DOMPurify.sanitize(htmlStr, {
+        ALLOWED_TAGS: [
+          'p',
+          'br',
+          'strong',
+          'em',
+          'u',
+          'h1',
+          'h2',
+          'h3',
+          'h4',
+          'h5',
+          'h6',
+          'ul',
+          'ol',
+          'li',
+          'a',
+          'blockquote',
+          'div',
+          'span',
+        ],
+        ALLOWED_ATTR: ['class', 'style', 'href', 'target', 'rel', 'id'],
+        // Block all URI schemes that could be malicious
+        ALLOW_DATA_ATTR: false,
+      }) as string;
     } catch (e) {
       console.error('HTML Sanitization failed, falling back to escaped text', e);
       return escapeHtml(htmlStr);
     }
   }
 
-  // Fallback: if DOMParser is not available, we must escape everything for safety
+  // Fallback: if DOMParser is not available (e.g. backend/SSR), we must escape everything for safety
+  // DOMPurify needs a DOM. We can use jsdom if we want, but since this project is largely
+  // frontend or relies on escapeHtml fallback, we stick to the existing behavior.
   return escapeHtml(htmlStr);
 }
