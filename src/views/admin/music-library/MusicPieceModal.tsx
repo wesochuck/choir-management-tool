@@ -1383,9 +1383,8 @@ export function MusicPieceModal({
                   )}
                 </div>
 
-                <div className="flex flex-row flex-wrap gap-3">
+                <div className="flex flex-row flex-wrap items-center gap-3">
                   <Select
-                    size="small"
                     className="min-w-0 flex-[1_1_200px]"
                     value=""
                     onChange={(e) => {
@@ -1406,13 +1405,14 @@ export function MusicPieceModal({
                       );
                     })}
                   </Select>
-                  <button
+                  <Button
                     type="button"
-                    className="bg-primary-light text-primary-deep flex h-10 flex-[1_1_auto] cursor-pointer items-center justify-center rounded-md px-4 text-sm font-bold shadow-xs transition-colors hover:bg-emerald-100 active:scale-95"
+                    variant="secondary"
+                    className="flex-[1_1_auto]"
                     onClick={() => setShowQuickAdd(!showQuickAdd)}
                   >
                     {showQuickAdd ? 'Cancel Quick Add' : 'Quick Add Performance'}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -1443,11 +1443,7 @@ export function MusicPieceModal({
                       </div>
                       <div className="flex flex-col gap-1.5">
                         <label className="text-label">Venue</label>
-                        <Select
-                          value={quickVenue}
-                          onChange={(e) => setQuickVenue(e.target.value)}
-                          size="compact"
-                        >
+                        <Select value={quickVenue} onChange={(e) => setQuickVenue(e.target.value)}>
                           <option value="">-- Select Venue --</option>
                           {venues.map((v) => (
                             <option key={v.id} value={v.id}>
@@ -1458,14 +1454,15 @@ export function MusicPieceModal({
                       </div>
                     </div>
 
-                    <button
+                    <Button
                       type="button"
-                      className="bg-primary enabled:hover:bg-primary-deep mt-1 flex h-9 cursor-pointer items-center justify-center self-end rounded-md px-4 text-xs font-bold text-white shadow-md transition-all enabled:active:scale-95 disabled:opacity-50"
+                      variant="primary"
+                      className="self-end"
                       onClick={handleQuickAddPerformance}
-                      disabled={quickAddPerformanceMutation.isPending}
+                      loading={quickAddPerformanceMutation.isPending}
                     >
-                      {quickAddPerformanceMutation.isPending ? 'Creating...' : 'Create & Link'}
-                    </button>
+                      Create & Link
+                    </Button>
                   </div>
                 </div>
               )}
