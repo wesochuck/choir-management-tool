@@ -1,18 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { communicationService, type SendMessageInput } from '../src/services/communicationService.ts';
-import { renderMarkdown } from '../src/lib/communicationUtils.ts';
-
+import {
+  communicationService,
+  type SendMessageInput,
+} from '../src/services/communicationService.ts';
+import { renderMarkdown, resolvePreviewContent } from '../src/lib/communicationUtils.ts';
 
 test('communicationService.sendBulkMessage does not generate client-side mailtoUrl', async () => {
   // Mock saveMessage and settings lookup to avoid actual PocketBase calls
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalSend = pb.send;
   const originalCollection = pb.collection;
-  
+
   pb.send = (async <T>(path: string): Promise<T> => {
     if (path.includes('appSettings')) {
-        return { value: { frontendUrl: 'http://localhost:5173', mailingAddress: '123 Test St' } } as unknown as T;
+      return {
+        value: { frontendUrl: 'http://localhost:5173', mailingAddress: '123 Test St' },
+      } as unknown as T;
     }
     return {} as T;
   }) as typeof pb.send;
@@ -47,14 +51,16 @@ test('communicationService.sendBulkMessage does not generate client-side mailtoU
       subject: 'Test Subject',
       content: 'Hello World',
       type: 'Email',
-      recipients: [{
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '',
-        voicePart: 'Bass',
-        globalStatus: 'Active',
-      }],
+      recipients: [
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          phone: '',
+          voicePart: 'Bass',
+          globalStatus: 'Active',
+        },
+      ],
       filters: {
         eventId: '',
         rsvp: 'All',
@@ -75,17 +81,17 @@ test('communicationService.sendBulkMessage does not generate client-side mailtoU
 test('communicationService.resolveRsvpPlaceholders URL-encodes tokens in generated links', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalSend = pb.send;
-  
+
   pb.send = (async <T>(path: string): Promise<T> => {
     if (path === '/api/generate-rsvp-tokens') {
       return {
         tokens: {
-          '1': 'e=event1&p=recipient1&s=signature1'
-        }
+          '1': 'e=event1&p=recipient1&s=signature1',
+        },
       } as unknown as T;
     }
     if (path.includes('appSettings')) {
-        return { value: { frontendUrl: 'http://localhost:5173' } } as unknown as T;
+      return { value: { frontendUrl: 'http://localhost:5173' } } as unknown as T;
     }
     return {} as T;
   }) as typeof pb.send;
@@ -94,22 +100,24 @@ test('communicationService.resolveRsvpPlaceholders URL-encodes tokens in generat
   const originalWindow = (globalThis as Record<string, unknown>).window;
   (globalThis as Record<string, unknown>).window = {
     location: {
-      origin: 'http://localhost:5173'
-    }
+      origin: 'http://localhost:5173',
+    },
   };
 
   try {
     const result = await communicationService.resolveRsvpPlaceholders(
       'RSVP here: {{RSVP_LINKS}}',
       'event1',
-      [{
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '',
-        voicePart: 'Bass',
-        globalStatus: 'Active',
-      }]
+      [
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          phone: '',
+          voicePart: 'Bass',
+          globalStatus: 'Active',
+        },
+      ]
     );
 
     const expectedToken = encodeURIComponent('e=event1&p=recipient1&s=signature1');
@@ -178,9 +186,7 @@ test('communicationService.getMessagesPaginated calls pocketbase with expected l
       perPage,
       totalItems: 12,
       totalPages: 3,
-      items: [
-        { id: 'm1', subject: 'Paged Subject' }
-      ]
+      items: [{ id: 'm1', subject: 'Paged Subject' }],
     };
   };
 
@@ -202,6 +208,49 @@ test('communicationService.getMessagesPaginated calls pocketbase with expected l
   }
 });
 
+test('frontend resolvePreviewContent - escapes dynamic fields for HTML', () => {
+  const unsafeEvent = {
+    title: '<script>alert("title")</script>',
+    type: '<script>alert("type")</script>',
+    date: '2026-05-19T00:00:00Z',
+    details: '<script>alert("details")</script>',
+    callTime: '',
+    expand: {
+      venue: {
+        name: '<script>alert("venue")</script>',
+        address: '',
+      },
+    },
+  } as unknown as import('../src/services/eventService.ts').Event;
+  const unsafeRecipient = {
+    name: '<script>alert("name")</script>',
+  } as unknown as import('../src/services/communicationService.ts').CommunicationRecipient;
+
+  const template =
+    'Name: {singerName}, Title: {eventTitle}, Type: {eventType}, Location: {eventLocation}, Details: {eventDetails}';
+
+  // HTML mode should escape
+  const htmlResult = resolvePreviewContent(template, unsafeEvent, unsafeRecipient, '', {}, true);
+
+  assert.ok(!htmlResult.includes('<script>'), 'HTML output should not contain <script> tags');
+  assert.ok(
+    htmlResult.includes('&lt;script&gt;alert(&quot;title&quot;)&lt;/script&gt;'),
+    'Title should be escaped'
+  );
+  assert.ok(
+    htmlResult.includes('&lt;script&gt;alert(&quot;name&quot;)&lt;/script&gt;'),
+    'Name should be escaped'
+  );
+
+  // Plain text mode should NOT escape (used for SMS/Subject)
+  const plainResult = resolvePreviewContent(template, unsafeEvent, unsafeRecipient, '', {}, false);
+
+  assert.ok(
+    plainResult.includes('<script>alert("title")</script>'),
+    'Plain text output should not be escaped'
+  );
+});
+
 test('communicationService.wasMessageSent uses parameterized filters and returns correct boolean', async () => {
   const { pb } = await import('../src/lib/pocketbase.ts');
   const originalCollection = pb.collection;
@@ -210,7 +259,10 @@ test('communicationService.wasMessageSent uses parameterized filters and returns
   const mockGetFullList = async <T>(options?: { filter?: string }): Promise<T[]> => {
     const filterStr = options?.filter || '';
     seenFilters.push(filterStr);
-    if (filterStr.includes('event123') && (filterStr.includes('Attendance Report') || filterStr.includes('Automated Report'))) {
+    if (
+      filterStr.includes('event123') &&
+      (filterStr.includes('Attendance Report') || filterStr.includes('Automated Report'))
+    ) {
       return [{ id: 'm123', filters: { eventId: 'event123' } } as T];
     }
     return [];
@@ -227,14 +279,21 @@ test('communicationService.wasMessageSent uses parameterized filters and returns
     // 1. Test existing report sent check
     const sent = await communicationService.wasMessageSent({ eventId: 'event123', type: 'Report' });
     assert.equal(sent, true);
-    assert.ok(seenFilters.some((filterStr) => filterStr.includes('Attendance Report') || filterStr.includes('Automated Report')));
+    assert.ok(
+      seenFilters.some(
+        (filterStr) =>
+          filterStr.includes('Attendance Report') || filterStr.includes('Automated Report')
+      )
+    );
     assert.ok(seenFilters.some((filterStr) => filterStr.includes('event123')));
 
     // 2. Test unsent reminder check
-    const unsent = await communicationService.wasMessageSent({ eventId: 'event456', type: 'Reminder' });
+    const unsent = await communicationService.wasMessageSent({
+      eventId: 'event456',
+      type: 'Reminder',
+    });
     assert.equal(unsent, false);
   } finally {
     pb.collection = originalCollection;
   }
 });
-

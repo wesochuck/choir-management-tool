@@ -135,26 +135,25 @@ export function resolvePreviewContent(
   const name = isHtml ? escapeHtml(rawName) : rawName;
   result = result.replace(/{singerName}/g, name);
 
-  // Event Placeholders
   const rawTitle = event?.title || event?.type || 'Sample Performance';
-  const title = isHtml ? escapeHtml(rawTitle) : rawTitle;
-
   const rawType = event?.type || 'Performance';
+  const rawDate = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
+  const rawVenueName = event?.expand?.venue?.name || 'Main Concert Hall';
+
+  const title = isHtml ? escapeHtml(rawTitle) : rawTitle;
   const type = isHtml ? escapeHtml(rawType) : rawType;
-
-  const date = event ? new Date(event.date).toLocaleString() : new Date().toLocaleString();
-
-  const venueName = event?.expand?.venue?.name || 'Main Concert Hall';
+  const date = isHtml ? escapeHtml(rawDate) : rawDate;
+  const venueName = isHtml ? escapeHtml(rawVenueName) : rawVenueName;
   const venueAddress = event?.expand?.venue?.address || '';
 
-  let location = isHtml ? escapeHtml(venueName) : venueName;
+  let location = venueName;
   if (isHtml && venueAddress.trim()) {
-    location = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+    location = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${venueName}</a>`;
   }
 
-  const callTime = event?.callTime ? formatTime12h(event.callTime) : '';
-
+  const rawCallTime = event?.callTime ? formatTime12h(event.callTime) : '';
   const rawDetails = event?.details || 'Join us for an amazing evening of music and harmony!';
+  const callTime = isHtml ? escapeHtml(rawCallTime) : rawCallTime;
   const details = isHtml ? escapeHtml(rawDetails) : rawDetails;
 
   result = result.replace(/{eventTitle}/g, title);
