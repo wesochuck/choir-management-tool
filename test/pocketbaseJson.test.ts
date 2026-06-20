@@ -25,6 +25,10 @@ describe('PocketBase JSON Parsing Helpers', () => {
     it('handles empty array', () => {
       assert.strictEqual(decodeGoBytes([]), '');
     });
+
+    it('returns empty string when conversion throws', () => {
+      assert.strictEqual(decodeGoBytes([1, Symbol()]), '');
+    });
   });
 
   describe('parseJsonField', () => {
@@ -66,6 +70,11 @@ describe('PocketBase JSON Parsing Helpers', () => {
     it('returns null for malformed byte array that decodes to invalid JSON', () => {
       const malformedBytes = [123, 45, 67]; // "{ - C"
       assert.strictEqual(parseJsonField(malformedBytes), null);
+    });
+
+    it('returns null for non-string, non-object, non-array inputs', () => {
+      assert.strictEqual(parseJsonField(123), null);
+      assert.strictEqual(parseJsonField(true), null);
     });
   });
 });
