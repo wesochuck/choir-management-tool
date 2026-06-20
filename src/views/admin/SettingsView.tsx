@@ -192,7 +192,7 @@ export default function SettingsView() {
         </AppCard>
 
         <AppCard title="Organization Logo">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
             <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-sm">
               {logoUrl ? (
                 <img
@@ -217,7 +217,7 @@ export default function SettingsView() {
               )}
             </div>
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
                   <span aria-hidden="true">⬆️</span>
                   <span>{logoUrl ? 'Replace Logo' : 'Upload Logo'}</span>

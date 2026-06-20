@@ -58,12 +58,12 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
               <button
                 type="button"
                 onClick={() => onSingerClick(p)}
-                className="m-0 cursor-pointer border-0 bg-transparent p-0 text-left font-medium text-emerald-700 transition-colors duration-150 hover:text-emerald-800 hover:underline"
+                className="m-0 cursor-pointer border-0 bg-transparent p-0 text-left text-lg font-semibold text-emerald-700 transition-colors duration-150 hover:text-emerald-800 hover:underline"
               >
                 {p.name}
               </button>
             ) : (
-              <span className="font-medium text-slate-800">{p.name}</span>
+              <span className="text-lg font-semibold text-slate-800">{p.name}</span>
             )}
           </div>
         );

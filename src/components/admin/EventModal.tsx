@@ -1044,7 +1044,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                         )}
                       </div>
 
-                      <div className="flex flex-col gap-1">
+                      <div className="flex min-w-0 flex-col gap-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <label className="bg-primary-light text-primary-deep hover:bg-primary-deep/10 inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md px-4 font-sans text-xs font-semibold transition-colors active:translate-y-px">
                             <span aria-hidden="true">⬆️</span>
@@ -1081,12 +1081,18 @@ export const EventModal: React.FC<EventModalProps> = ({
                           JPG, PNG, or WebP. Max 5MB.
                         </span>
                         {initialData?.eventGraphic && !isGraphicRemoved && !eventGraphicFile && (
-                          <span className="text-text-muted text-xs">
-                            Current file: {initialData.eventGraphic}
+                          <span
+                            className="text-text-muted block truncate text-xs font-medium"
+                            title={initialData.eventGraphic}
+                          >
+                            Current file: {initialData.eventGraphic.replace(/^[a-zA-Z0-9]+_/, '')}
                           </span>
                         )}
                         {eventGraphicFile && (
-                          <span className="text-primary text-xs font-medium">
+                          <span
+                            className="text-primary block truncate text-xs font-medium"
+                            title={eventGraphicFile.name}
+                          >
                             New file: {eventGraphicFile.name}
                           </span>
                         )}

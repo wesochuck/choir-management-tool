@@ -97,7 +97,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
                 )}
               </div>
               <div className="flex flex-col items-start">
-                <span className="font-semibold text-slate-900">{p.name}</span>
+                <span className="text-lg font-semibold text-slate-900">{p.name}</span>
                 {p.expand?.user?.role === 'admin' && (
                   <span className="text-overline mt-1 inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-emerald-800">
                     Admin
