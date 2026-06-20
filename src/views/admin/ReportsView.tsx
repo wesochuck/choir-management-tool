@@ -330,8 +330,8 @@ export default function ReportsView() {
         <div className="flex flex-col gap-8">
           {/* Selection Header */}
           <div className="no-print border-border bg-surface rounded-xl border p-6 shadow-sm">
-            <div className="flex flex-col justify-between md:flex-row">
-              <div className="flex flex-col gap-1">
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <div className="flex w-full flex-col gap-1 md:w-80">
                 <label className="text-label text-muted">Select Concert / Performance</label>
                 <Select
                   value={selectedPerformanceId}
