@@ -3,21 +3,18 @@ import { rosterService } from '../../../services/rosterService';
 import type { useDialog } from '../../../contexts/DialogContext';
 import { getRsvpStatusLabel, type RsvpStatus } from '../../../lib/eventRoster/rsvpLabels';
 
-interface UseRsvpBulkActionsArgs<TSinger extends { rsvp: RsvpStatus; profile: { id: string } }> {
+interface UseRsvpBulkActionsArgs {
   eventId?: string;
-  sortedSingers: TSinger[];
   refreshRosters: () => Promise<void>;
   dialog: ReturnType<typeof useDialog>;
 }
 
-export function useRsvpBulkActions<TSinger extends { rsvp: RsvpStatus; profile: { id: string } }>({
-  eventId,
-  sortedSingers,
-  refreshRosters,
-  dialog,
-}: UseRsvpBulkActionsArgs<TSinger>) {
+export type BulkRsvpAction = 'Yes' | 'No' | 'Pending';
+
+export function useRsvpBulkActions({ eventId, refreshRosters, dialog }: UseRsvpBulkActionsArgs) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
+  const [bulkActionInProgress, setBulkActionInProgress] = useState<BulkRsvpAction | null>(null);
 
   const handleUpdateRSVP = async (profileId: string, nextRsvp: RsvpStatus) => {
     if (!eventId) return;
@@ -37,36 +34,50 @@ export function useRsvpBulkActions<TSinger extends { rsvp: RsvpStatus; profile: 
     }
   };
 
-  const handleBulkUpdateRSVP = async (nextRsvp: RsvpStatus) => {
-    if (!eventId || sortedSingers.length === 0) return;
-
-    const eligibleSingers = sortedSingers.filter((singer) => singer.rsvp !== nextRsvp);
-
-    if (eligibleSingers.length === 0) {
-      dialog.showToast('Everyone shown already has that RSVP status.');
-      return;
-    }
+  /**
+   * Apply a bulk RSVP action to an explicit list of profile IDs.
+   * Returns true on success (so the caller can clear selection), false otherwise.
+   */
+  const handleBulkUpdateRSVP = async (
+    nextRsvp: BulkRsvpAction,
+    profileIds: string[]
+  ): Promise<boolean> => {
+    if (!eventId || profileIds.length === 0) return false;
 
     const statusLabel = getRsvpStatusLabel(nextRsvp);
 
-    const confirmed = await dialog.confirm({
-      title: `Bulk Mark ${statusLabel}`,
-      message: `Update ${eligibleSingers.length} displayed singer${
-        eligibleSingers.length === 1 ? '' : 's'
-      } to ${statusLabel}? This only affects the singers currently shown after your filters and search.`,
-      confirmLabel: `Mark ${statusLabel}`,
-      cancelLabel: 'Cancel',
-      variant: nextRsvp === 'No' ? 'warning' : 'info',
-    });
-
-    if (!confirmed) return;
+    if (nextRsvp === 'Pending') {
+      const confirmed = await dialog.confirm({
+        title: 'Reset RSVPs?',
+        message:
+          profileIds.length === 1
+            ? `Reset RSVP response for this singer?`
+            : `Reset RSVP responses for ${profileIds.length} selected singers? This will remove their current RSVP status for this event.`,
+        confirmLabel: profileIds.length === 1 ? 'Reset RSVP' : 'Reset RSVPs',
+        cancelLabel: 'Cancel',
+        variant: 'warning',
+      });
+      if (!confirmed) return false;
+    } else {
+      const confirmed = await dialog.confirm({
+        title: `Mark ${statusLabel}`,
+        message: `Update ${profileIds.length} selected singer${
+          profileIds.length === 1 ? '' : 's'
+        } to ${statusLabel}?`,
+        confirmLabel: `Mark ${statusLabel}`,
+        cancelLabel: 'Cancel',
+        variant: nextRsvp === 'No' ? 'warning' : 'info',
+      });
+      if (!confirmed) return false;
+    }
 
     setIsUpdating(true);
+    setBulkActionInProgress(nextRsvp);
     try {
       await rosterService.bulkUpdateRSVP(
         eventId,
-        eligibleSingers.map((singer) => ({
-          profileId: singer.profile.id,
+        profileIds.map((profileId) => ({
+          profileId,
           rsvp: nextRsvp,
         })),
         (current, total) => {
@@ -76,24 +87,29 @@ export function useRsvpBulkActions<TSinger extends { rsvp: RsvpStatus; profile: 
 
       await refreshRosters();
 
-      dialog.showToast(
-        `Updated ${eligibleSingers.length} RSVP${eligibleSingers.length === 1 ? '' : 's'}.`
-      );
+      dialog.showToast(`Updated ${profileIds.length} RSVP${profileIds.length === 1 ? '' : 's'}.`);
+      return true;
     } catch (err: unknown) {
       await dialog.showMessage({
-        title: 'Could Not Bulk Update RSVPs',
-        message: err instanceof Error ? err.message : 'Failed to update RSVP statuses',
+        title: 'Could Not Update RSVPs',
+        message:
+          err instanceof Error
+            ? err.message
+            : 'Some RSVP updates could not be saved. Please try again.',
         variant: 'danger',
       });
+      return false;
     } finally {
       setIsUpdating(false);
       setBulkProgress(null);
+      setBulkActionInProgress(null);
     }
   };
 
   return {
     isUpdating,
     bulkProgress,
+    bulkActionInProgress,
     handleUpdateRSVP,
     handleBulkUpdateRSVP,
   };

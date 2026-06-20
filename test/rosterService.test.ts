@@ -10,7 +10,11 @@ type CollectionMock = ReturnType<typeof pb.collection>;
 
 test('updateAttendance returns the saved roster when PocketBase reports a post-commit 400', async (t) => {
   const originalCollection = pb.collection;
-  const error = new ClientResponseError({ status: 400, message: 'Failed to update record.', data: {} });
+  const error = new ClientResponseError({
+    status: 400,
+    message: 'Failed to update record.',
+    data: {},
+  });
   const update = t.mock.fn(async () => {
     throw error;
   });
@@ -46,7 +50,10 @@ test('updateAttendance returns the saved roster when PocketBase reports a post-c
 
 test('bulkUpsertAttendance calls custom backend bulk attendance endpoint and returns rosters', async () => {
   const originalSend = pb.send;
-  const sendCalls: Array<{ path: string; options: { method?: string; body?: unknown } | undefined }> = [];
+  const sendCalls: Array<{
+    path: string;
+    options: { method?: string; body?: unknown } | undefined;
+  }> = [];
 
   pb.send = (async <T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> => {
     sendCalls.push({ path, options });
@@ -71,15 +78,15 @@ test('bulkUpsertAttendance calls custom backend bulk attendance endpoint and ret
           seatId: '',
           folderNumber: '',
           folderReturned: false,
-        }
-      ]
+        },
+      ],
     } as unknown as T;
   }) as typeof pb.send;
 
   try {
     const updates = [
       { profileId: 'profile_1', attendance: 'Present' as const },
-      { profileId: 'profile_2', attendance: 'Absent' as const }
+      { profileId: 'profile_2', attendance: 'Absent' as const },
     ];
     const results = await rosterService.bulkUpsertAttendance('event_1', updates);
 
@@ -93,7 +100,7 @@ test('bulkUpsertAttendance calls custom backend bulk attendance endpoint and ret
     assert.equal(sendCalls[0].options?.method, 'POST');
     assert.deepEqual(sendCalls[0].options?.body, {
       eventId: 'event_1',
-      updates
+      updates,
     });
   } finally {
     pb.send = originalSend;
@@ -102,7 +109,10 @@ test('bulkUpsertAttendance calls custom backend bulk attendance endpoint and ret
 
 test('bulkUpdateRSVP calls custom backend bulk update endpoint with expected payload', async () => {
   const originalSend = pb.send;
-  const sendCalls: Array<{ path: string; options: { method?: string; body?: unknown } | undefined }> = [];
+  const sendCalls: Array<{
+    path: string;
+    options: { method?: string; body?: unknown } | undefined;
+  }> = [];
 
   pb.send = (async <T>(path: string, options?: { method?: string; body?: unknown }): Promise<T> => {
     sendCalls.push({ path, options });
@@ -117,7 +127,7 @@ test('bulkUpdateRSVP calls custom backend bulk update endpoint with expected pay
   try {
     const updates = [
       { profileId: 'profile_1', rsvp: 'Yes' as const },
-      { profileId: 'profile_2', rsvp: 'No' as const }
+      { profileId: 'profile_2', rsvp: 'No' as const },
     ];
 
     const results = await rosterService.bulkUpdateRSVP('event_1', updates, onProgress);
@@ -128,12 +138,12 @@ test('bulkUpdateRSVP calls custom backend bulk update endpoint with expected pay
     assert.equal(sendCalls[0].options?.method, 'POST');
     assert.deepEqual(sendCalls[0].options?.body, {
       eventId: 'event_1',
-      updates
+      updates,
     });
 
     assert.deepEqual(progressCalls, [
       { current: 0, total: 2 },
-      { current: 2, total: 2 }
+      { current: 2, total: 2 },
     ]);
   } finally {
     pb.send = originalSend;
@@ -158,19 +168,22 @@ test('bulkUpdateRSVP handles empty updates array without calling backend API', a
   }
 });
 
-test('event roster bulk actions operate on the currently shown singers', () => {
-  const source = readFileSync(resolve(process.cwd(), 'src/views/admin/event-roster/useRsvpBulkActions.ts'), 'utf8');
-
-  assert.match(
-    source,
-    /const eligibleSingers = sortedSingers\.filter/,
-    'bulk RSVP actions should use the filtered and sorted singers currently shown in the table',
+test('event roster bulk actions accept explicit profile IDs for selection-based updates', () => {
+  const source = readFileSync(
+    resolve(process.cwd(), 'src/views/admin/event-roster/useRsvpBulkActions.ts'),
+    'utf8'
   );
 
   assert.match(
     source,
-    /This only affects the singers currently shown after your filters and search\./,
-    'bulk confirmation copy should make the scope clear before updating many people',
+    /profileIds: string\[\]/,
+    'bulk RSVP actions should accept an explicit list of profile IDs from the caller'
+  );
+
+  assert.match(
+    source,
+    /Reset RSVP responses for/,
+    'bulk reset confirmation copy should describe what will happen to selected singers'
   );
 });
 
@@ -178,7 +191,12 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
   const originalCollection = pb.collection;
   const getFullList = t.mock.fn(async () => {
     return [
-      { id: 'roster_1', profile: 'profile_1', event: 'event_1', expand: { event: { id: 'event_1', title: 'Concert' } } }
+      {
+        id: 'roster_1',
+        profile: 'profile_1',
+        event: 'event_1',
+        expand: { event: { id: 'event_1', title: 'Concert' } },
+      },
     ];
   });
 
@@ -196,7 +214,9 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
     assert.equal(result[0].id, 'roster_1');
     assert.equal(getFullList.mock.callCount(), 1);
 
-    const firstCall = getFullList.mock.calls[0] as unknown as { arguments: [{ filter: string; expand?: string }] } | undefined;
+    const firstCall = getFullList.mock.calls[0] as unknown as
+      | { arguments: [{ filter: string; expand?: string }] }
+      | undefined;
     const callArgs = firstCall?.arguments?.[0];
     assert.ok(callArgs?.filter.includes('profile_1'));
     assert.equal(callArgs?.expand, 'event,event.venue');
@@ -207,18 +227,20 @@ test('getSingerRosters retrieves rosters filtered by profile and with expected e
 
 test('updateMyRSVP deletes record if set to Pending and no other important data exists', async (t) => {
   const originalSend = pb.send;
-  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
-    assert.equal(path, '/api/singer/rsvp');
-    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Pending', rsvpNote: '' });
-    return {
-      id: '',
-      event: 'event_1',
-      profile: 'profile_1',
-      rsvp: 'Pending',
-      attendance: 'Pending',
-      folderReturned: false,
-    };
-  });
+  const sendMock = t.mock.fn(
+    async (path: string, options?: { method?: string; body?: unknown }) => {
+      assert.equal(path, '/api/singer/rsvp');
+      assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Pending', rsvpNote: '' });
+      return {
+        id: '',
+        event: 'event_1',
+        profile: 'profile_1',
+        rsvp: 'Pending',
+        attendance: 'Pending',
+        folderReturned: false,
+      };
+    }
+  );
 
   pb.send = sendMock as unknown as typeof pb.send;
 
@@ -233,18 +255,20 @@ test('updateMyRSVP deletes record if set to Pending and no other important data 
 
 test('updateMyRSVP updates record (does not delete) if set to Pending but other important data exists', async (t) => {
   const originalSend = pb.send;
-  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
-    assert.equal(path, '/api/singer/rsvp');
-    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Pending', rsvpNote: '' });
-    return {
-      id: 'roster_1',
-      event: 'event_1',
-      profile: 'profile_1',
-      rsvp: 'Pending',
-      attendance: 'Present',
-      folderReturned: false,
-    };
-  });
+  const sendMock = t.mock.fn(
+    async (path: string, options?: { method?: string; body?: unknown }) => {
+      assert.equal(path, '/api/singer/rsvp');
+      assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Pending', rsvpNote: '' });
+      return {
+        id: 'roster_1',
+        event: 'event_1',
+        profile: 'profile_1',
+        rsvp: 'Pending',
+        attendance: 'Present',
+        folderReturned: false,
+      };
+    }
+  );
 
   pb.send = sendMock as unknown as typeof pb.send;
 
@@ -259,18 +283,20 @@ test('updateMyRSVP updates record (does not delete) if set to Pending but other 
 
 test('updateMyRSVP updates record normally if set to Yes or No', async (t) => {
   const originalSend = pb.send;
-  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
-    assert.equal(path, '/api/singer/rsvp');
-    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Yes', rsvpNote: '' });
-    return {
-      id: 'roster_1',
-      event: 'event_1',
-      profile: 'profile_1',
-      rsvp: 'Yes',
-      attendance: 'Pending',
-      folderReturned: false,
-    };
-  });
+  const sendMock = t.mock.fn(
+    async (path: string, options?: { method?: string; body?: unknown }) => {
+      assert.equal(path, '/api/singer/rsvp');
+      assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Yes', rsvpNote: '' });
+      return {
+        id: 'roster_1',
+        event: 'event_1',
+        profile: 'profile_1',
+        rsvp: 'Yes',
+        attendance: 'Pending',
+        folderReturned: false,
+      };
+    }
+  );
 
   pb.send = sendMock as unknown as typeof pb.send;
 
@@ -285,19 +311,21 @@ test('updateMyRSVP updates record normally if set to Yes or No', async (t) => {
 
 test('updateMyRSVP clears rsvpNote when RSVP is changed to Yes or Pending', async (t) => {
   const originalSend = pb.send;
-  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
-    assert.equal(path, '/api/singer/rsvp');
-    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Yes', rsvpNote: '' });
-    return {
-      id: 'roster_1',
-      event: 'event_1',
-      profile: 'profile_1',
-      rsvp: 'Yes',
-      rsvpNote: '',
-      attendance: 'Pending',
-      folderReturned: false,
-    };
-  });
+  const sendMock = t.mock.fn(
+    async (path: string, options?: { method?: string; body?: unknown }) => {
+      assert.equal(path, '/api/singer/rsvp');
+      assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'Yes', rsvpNote: '' });
+      return {
+        id: 'roster_1',
+        event: 'event_1',
+        profile: 'profile_1',
+        rsvp: 'Yes',
+        rsvpNote: '',
+        attendance: 'Pending',
+        folderReturned: false,
+      };
+    }
+  );
 
   pb.send = sendMock as unknown as typeof pb.send;
 
@@ -313,19 +341,21 @@ test('updateMyRSVP clears rsvpNote when RSVP is changed to Yes or Pending', asyn
 
 test('updateMyRSVP saves rsvpNote when RSVP is No', async (t) => {
   const originalSend = pb.send;
-  const sendMock = t.mock.fn(async (path: string, options?: { method?: string; body?: unknown }) => {
-    assert.equal(path, '/api/singer/rsvp');
-    assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'No', rsvpNote: 'Sickness' });
-    return {
-      id: 'roster_1',
-      event: 'event_1',
-      profile: 'profile_1',
-      rsvp: 'No',
-      rsvpNote: 'Sickness',
-      attendance: 'Pending',
-      folderReturned: false,
-    };
-  });
+  const sendMock = t.mock.fn(
+    async (path: string, options?: { method?: string; body?: unknown }) => {
+      assert.equal(path, '/api/singer/rsvp');
+      assert.deepEqual(options?.body, { eventId: 'event_1', rsvp: 'No', rsvpNote: 'Sickness' });
+      return {
+        id: 'roster_1',
+        event: 'event_1',
+        profile: 'profile_1',
+        rsvp: 'No',
+        rsvpNote: 'Sickness',
+        attendance: 'Pending',
+        folderReturned: false,
+      };
+    }
+  );
 
   pb.send = sendMock as unknown as typeof pb.send;
 

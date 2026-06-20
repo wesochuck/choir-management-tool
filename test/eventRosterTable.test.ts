@@ -43,6 +43,8 @@ test('EventRosterTable renders event roster RSVP badge labels for each status', 
         singers,
         isUpdating: false,
         onUpdateRSVP: async () => undefined,
+        selectedSingerIds: new Set<string>(),
+        onSelectionChange: () => {},
       })
     )
   );

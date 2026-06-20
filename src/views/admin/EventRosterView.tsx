@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
@@ -11,7 +11,7 @@ import { Button, Modal, Select, Input, ProgressBar } from '../../components/ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
-import { useRsvpBulkActions } from './event-roster/useRsvpBulkActions';
+import { useRsvpBulkActions, type BulkRsvpAction } from './event-roster/useRsvpBulkActions';
 import { useEventRosterExport } from './event-roster/useEventRosterExport';
 
 interface EventRosterViewProps {
@@ -57,13 +57,59 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     maxRehearsalMisses,
   } = useEventRosterData({ eventId, isInline });
 
+  // Selection state
+  const [selectedSingerIds, setSelectedSingerIds] = useState<Set<string>>(() => new Set());
+
+  // Prune selection when shown singers change (search/filter)
+  const shownSingerIds = useMemo(() => sortedSingers.map((s) => s.profile.id), [sortedSingers]);
+
+  useEffect(() => {
+    setSelectedSingerIds((prev) => {
+      const shown = new Set(shownSingerIds);
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (shown.has(id)) next.add(id);
+      });
+      // Only update if different to avoid re-renders
+      if (next.size === prev.size) {
+        let same = true;
+        next.forEach((id) => {
+          if (!prev.has(id)) same = false;
+        });
+        if (same) return prev;
+      }
+      return next;
+    });
+  }, [shownSingerIds]);
+
+  const selectedCount = selectedSingerIds.size;
+
+  const clearSelection = useCallback(() => {
+    setSelectedSingerIds(new Set());
+  }, []);
+
+  const handleSelectionChange = useCallback((ids: Set<string>) => {
+    setSelectedSingerIds(ids);
+  }, []);
+
   // RSVP bulk actions hook
-  const { isUpdating, bulkProgress, handleUpdateRSVP, handleBulkUpdateRSVP } = useRsvpBulkActions({
-    eventId,
-    sortedSingers,
-    refreshRosters,
-    dialog,
-  });
+  const { isUpdating, bulkProgress, bulkActionInProgress, handleUpdateRSVP, handleBulkUpdateRSVP } =
+    useRsvpBulkActions({
+      eventId,
+      refreshRosters,
+      dialog,
+    });
+
+  const handleBulkAction = useCallback(
+    async (action: BulkRsvpAction) => {
+      const ids = Array.from(selectedSingerIds);
+      const success = await handleBulkUpdateRSVP(action, ids);
+      if (success) {
+        clearSelection();
+      }
+    },
+    [selectedSingerIds, handleBulkUpdateRSVP, clearSelection]
+  );
 
   // Event roster export hook
   const { handleExportCSV } = useEventRosterExport({
@@ -133,6 +179,11 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
     } catch (err) {
       console.error('Failed to delete singer profile', err);
     }
+  };
+
+  const getBulkButtonLabel = (action: BulkRsvpAction, defaultLabel: string) => {
+    if (bulkActionInProgress === action) return 'Updating...';
+    return defaultLabel;
   };
 
   return (
@@ -316,46 +367,15 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               )}
             </div>
 
-            <div className="flex flex-col gap-2 border-t border-slate-100 pt-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold whitespace-nowrap text-gray-500">
-                  {sortedSingers.length} shown
+            <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
+              <span className="text-xs font-bold whitespace-nowrap text-gray-500">
+                {sortedSingers.length} shown
+              </span>
+              {selectedCount > 0 && (
+                <span className="text-xs font-semibold whitespace-nowrap text-emerald-600">
+                  · {selectedCount} selected
                 </span>
-
-                <span className="text-xs font-semibold whitespace-nowrap text-gray-400">
-                  Apply to shown:
-                </span>
-              </div>
-
-              <div
-                className="grid gap-2 sm:grid-cols-3 lg:flex lg:flex-wrap lg:items-center lg:justify-end"
-                aria-label="Bulk RSVP actions"
-              >
-                <Button
-                  disabled={isUpdating || sortedSingers.length === 0}
-                  onClick={() => handleBulkUpdateRSVP('Yes')}
-                  variant="primary"
-                  className="w-full lg:w-auto"
-                >
-                  Mark Attending
-                </Button>
-                <Button
-                  disabled={isUpdating || sortedSingers.length === 0}
-                  onClick={() => handleBulkUpdateRSVP('No')}
-                  variant="danger"
-                  className="w-full lg:w-auto"
-                >
-                  Mark Declined
-                </Button>
-                <Button
-                  disabled={isUpdating || sortedSingers.length === 0}
-                  onClick={() => handleBulkUpdateRSVP('Pending')}
-                  variant="secondary"
-                  className="w-full lg:w-auto"
-                >
-                  Reset RSVPs
-                </Button>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -370,8 +390,68 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           onSingerClick={handleSingerClick}
           missCounts={missCounts}
           maxRehearsalMisses={maxRehearsalMisses}
+          selectedSingerIds={selectedSingerIds}
+          onSelectionChange={handleSelectionChange}
         />
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedCount > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white p-3 shadow-2xl sm:bottom-4 sm:border-0 sm:bg-transparent sm:px-4 sm:shadow-none">
+          <div className="mx-auto flex max-w-5xl flex-col gap-3 rounded-t-2xl bg-white sm:flex-row sm:items-center sm:justify-between sm:rounded-2xl sm:border sm:border-slate-200 sm:p-3 sm:shadow-xl">
+            <div className="text-sm font-semibold text-slate-700">{selectedCount} selected</div>
+
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+              <Button
+                type="button"
+                variant="primary"
+                size="small"
+                className="w-full justify-center sm:w-auto"
+                disabled={isUpdating}
+                onClick={() => handleBulkAction('Yes')}
+                aria-label="Mark selected singers attending"
+              >
+                {getBulkButtonLabel('Yes', 'Mark Attending')}
+              </Button>
+
+              <Button
+                type="button"
+                variant="danger"
+                size="small"
+                className="w-full justify-center sm:w-auto"
+                disabled={isUpdating}
+                onClick={() => handleBulkAction('No')}
+                aria-label="Mark selected singers declined"
+              >
+                {getBulkButtonLabel('No', 'Mark Declined')}
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="small"
+                className="col-span-2 w-full justify-center sm:col-span-1 sm:w-auto"
+                disabled={isUpdating}
+                onClick={() => handleBulkAction('Pending')}
+                aria-label="Reset RSVPs for selected singers"
+              >
+                {getBulkButtonLabel('Pending', 'Reset RSVPs')}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="small"
+                className="col-span-2 w-full justify-center sm:col-span-1 sm:w-auto"
+                disabled={isUpdating}
+                onClick={clearSelection}
+              >
+                Clear
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SingerModal
         isOpen={isSingerModalOpen}

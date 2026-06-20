@@ -3,15 +3,18 @@ import type { Profile } from '../../services/profileService';
 import type { EventRoster } from '../../services/rosterService';
 import { pb } from '../../lib/pocketbase';
 import { PhotoUploader } from '../common/PhotoUploader';
-import { Badge, Button, DataTable, type ColumnDef } from '../ui';
+import { Badge, Button, DataTable, Dropdown, DropdownMenu, DropdownMenuItem } from '../ui';
+import type { ColumnDef } from '../ui';
 import { getRsvpDisplay } from '../../lib/statusDisplay';
 
+export interface EventRosterSinger {
+  profile: Profile;
+  rsvp: 'Yes' | 'No' | 'Pending';
+  roster?: EventRoster;
+}
+
 interface EventRosterTableProps {
-  singers: Array<{
-    profile: Profile;
-    rsvp: 'Yes' | 'No' | 'Pending';
-    roster?: EventRoster;
-  }>;
+  singers: EventRosterSinger[];
   isUpdating: boolean;
   onCreate?: () => void;
   onUpdateRSVP: (profileId: string, nextRsvp: 'Yes' | 'No' | 'Pending') => Promise<void>;
@@ -19,6 +22,8 @@ interface EventRosterTableProps {
   onSingerClick?: (profile: Profile) => void;
   missCounts?: Record<string, number>;
   maxRehearsalMisses?: number;
+  selectedSingerIds: Set<string>;
+  onSelectionChange: (ids: Set<string>) => void;
 }
 
 export const EventRosterTable: React.FC<EventRosterTableProps> = ({
@@ -30,6 +35,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
   onSingerClick,
   missCounts,
   maxRehearsalMisses,
+  selectedSingerIds,
+  onSelectionChange,
 }) => {
   const columns: ColumnDef<(typeof singers)[number]>[] = [
     {
@@ -132,46 +139,98 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            disabled={isUpdating}
-            onClick={() => onUpdateRSVP(row.original.profile.id, 'Yes')}
-            className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              row.original.rsvp === 'Yes'
-                ? 'bg-emerald-700 text-white'
-                : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
-            } disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            Attending
-          </button>
-          <button
-            type="button"
-            disabled={isUpdating}
-            onClick={() => onUpdateRSVP(row.original.profile.id, 'No')}
-            className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              row.original.rsvp === 'No'
-                ? 'bg-red-600 text-white'
-                : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
-            } disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            Declined
-          </button>
-          <button
-            type="button"
-            disabled={isUpdating}
-            onClick={() => onUpdateRSVP(row.original.profile.id, 'Pending')}
-            className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
-              row.original.rsvp === 'Pending'
-                ? 'bg-slate-500 text-white'
-                : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
-            } disabled:cursor-not-allowed disabled:opacity-50`}
-          >
-            Reset
-          </button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const profileId = row.original.profile.id;
+        const rsvp = row.original.rsvp;
+        const profileName = row.original.profile.name;
+
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            {/* Desktop actions */}
+            <div className="hidden items-center justify-end gap-1.5 sm:flex">
+              <button
+                type="button"
+                disabled={isUpdating}
+                onClick={() => onUpdateRSVP(profileId, 'Yes')}
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
+                  rsvp === 'Yes'
+                    ? 'bg-emerald-700 text-white'
+                    : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                Attending
+              </button>
+              <button
+                type="button"
+                disabled={isUpdating}
+                onClick={() => onUpdateRSVP(profileId, 'No')}
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
+                  rsvp === 'No'
+                    ? 'bg-red-600 text-white'
+                    : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                Declined
+              </button>
+              <button
+                type="button"
+                disabled={isUpdating}
+                onClick={() => onUpdateRSVP(profileId, 'Pending')}
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
+                  rsvp === 'Pending'
+                    ? 'bg-slate-500 text-white'
+                    : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                Reset
+              </button>
+            </div>
+
+            {/* Mobile actions: Attending visible + overflow menu */}
+            <div className="flex items-center gap-1.5 sm:hidden">
+              <button
+                type="button"
+                disabled={isUpdating}
+                onClick={() => onUpdateRSVP(profileId, 'Yes')}
+                className={`inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm transition ${
+                  rsvp === 'Yes'
+                    ? 'bg-emerald-700 text-white'
+                    : 'border border-slate-300 text-slate-500 hover:bg-slate-50'
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                Attending
+              </button>
+              <Dropdown
+                trigger={
+                  <button
+                    type="button"
+                    disabled={isUpdating}
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-bold text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={`More RSVP actions for ${profileName}`}
+                  >
+                    ⋯
+                  </button>
+                }
+              >
+                <DropdownMenu>
+                  <DropdownMenuItem
+                    disabled={isUpdating}
+                    onClick={() => onUpdateRSVP(profileId, 'No')}
+                  >
+                    Mark Declined
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={isUpdating}
+                    onClick={() => onUpdateRSVP(profileId, 'Pending')}
+                  >
+                    Reset RSVP
+                  </DropdownMenuItem>
+                </DropdownMenu>
+              </Dropdown>
+            </div>
+          </div>
+        );
+      },
       meta: {
         align: 'right',
         cardSection: 1,
@@ -198,6 +257,9 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
       paginationLabel="singers"
       onRowClick={onSingerClick ? (row) => onSingerClick(row.profile) : undefined}
       getRowId={(s) => s.profile.id}
+      enableSelection
+      onSelectionChange={onSelectionChange}
+      getRowClassName={(row) => (selectedSingerIds.has(row.profile.id) ? 'bg-emerald-50/60' : '')}
     />
   );
 };
