@@ -488,12 +488,8 @@ export default function AttendanceView() {
 
             {/* Instruction banner */}
             <p className="border-b border-gray-100 bg-gray-50/50 px-4 py-2 text-xs font-medium text-gray-500">
-              <span className="md:hidden">
-                Tap a singer to check them in. Use ⋯ for contact info or profile details.
-              </span>
-              <span className="hidden md:inline">
-                Click a row to check a singer in. Use ⋯ for contact info or profile details.
-              </span>
+              <span className="md:hidden">Tap to check in. Use ⋯ for details.</span>
+              <span className="hidden md:inline">Click row to check in. Use ⋯ for details.</span>
             </p>
 
             {/* Roster list */}
