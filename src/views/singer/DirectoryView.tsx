@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { profileService, getProfileEmail } from '../../services/profileService';
 import { pb } from '../../lib/pocketbase';
-import { Input, Select, Spinner } from '../../components/ui';
+import { Input, Select, Spinner, FilterBar } from '../../components/ui';
 import { AppCard } from '../../components/common/AppCard';
 import { sortProfiles } from '../../lib/singerSort';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
@@ -64,7 +64,7 @@ export default function DirectoryView() {
 
   return (
     <div className="flex w-full flex-col gap-6 pb-8">
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <FilterBar>
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -84,7 +84,7 @@ export default function DirectoryView() {
             </option>
           ))}
         </Select>
-      </div>
+      </FilterBar>
 
       {filteredProfiles.length === 0 ? (
         <AppCard>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useClickOutside } from '../../hooks/useClickOutside';
+import { formControlBase, formControlHeight } from '../ui/formControlBase';
 
 interface AutocompleteInputProps {
   value: string;
@@ -93,11 +94,8 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   }, [activeIndex]);
 
   const inputClassName = [
-    'border-border bg-surface text-text placeholder:text-text-muted',
-    'focus:border-primary focus:ring-primary/20',
-    'block min-h-11 w-full rounded-lg border px-3 py-2 text-base shadow-sm outline-none transition-colors',
-    'focus:ring-2',
-    'disabled:cursor-not-allowed disabled:opacity-60',
+    formControlBase + ' ' + formControlHeight,
+    'placeholder:text-text-muted',
     className,
   ]
     .filter(Boolean)

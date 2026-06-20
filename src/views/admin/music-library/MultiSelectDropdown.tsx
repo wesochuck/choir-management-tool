@@ -3,6 +3,7 @@ import { useClickOutside } from '../../../hooks/useClickOutside';
 import { CHIP_CLASSES, getChipClass } from '../../../lib/chipColorUtils';
 import { Button, Input } from '../../../components/ui';
 import { ChevronDownIcon } from '../../../components/ui/icons';
+import { formControlBase, formControlHeight } from '../../../components/ui/formControlBase';
 
 function DropdownChevron({ open }: { open: boolean }) {
   return (
@@ -190,7 +191,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       {isChips ? (
         <button
           type="button"
-          className={`hover:border-primary focus-visible:border-primary border-border bg-surface flex min-h-[44px] w-full cursor-pointer flex-wrap items-center justify-between gap-1 rounded-lg border px-3.5 py-1.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
+          className={`${formControlBase} ${formControlHeight} hover:border-primary flex cursor-pointer flex-wrap items-center justify-between gap-1 py-1.5 text-left transition-[border-color,box-shadow] duration-200 ease-in-out hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
           onClick={toggleDropdown}
           disabled={disabled}
           aria-haspopup="listbox"
@@ -234,7 +235,7 @@ export const MultiSelectDropdown: React.FC<MultiSelectDropdownProps> = ({
       ) : (
         <button
           type="button"
-          className={`hover:border-primary focus-visible:border-primary border-border bg-surface flex h-[44px] w-full cursor-pointer items-center justify-between rounded-lg border px-3.5 text-left shadow-sm transition-all duration-200 ease-in-out outline-none hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
+          className={`${formControlBase} ${formControlHeight} hover:border-primary flex cursor-pointer items-center justify-between text-left transition-[border-color,box-shadow] duration-200 ease-in-out hover:bg-gray-50 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] focus-visible:shadow-[0_0_0_3px_var(--color-primary-light)] ${isOpen ? 'border-primary shadow-[0_0_0_3px_var(--color-primary-light)]' : ''}`}
           onClick={toggleDropdown}
           disabled={disabled}
           aria-haspopup="listbox"
