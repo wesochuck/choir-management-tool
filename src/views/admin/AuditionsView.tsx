@@ -532,6 +532,139 @@ export default function AuditionsView() {
     });
   }, [filteredAuditions, sortField, sortDirection]);
 
+  const renderMobileCard = (audition: Audition) => {
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Clickable Card Body */}
+        <div
+          className="flex cursor-pointer flex-col gap-3"
+          onClick={() => {
+            setEditingAudition(audition);
+            setIsModalOpen(true);
+          }}
+        >
+          {/* Row 0: Name, Voice Part, Status */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-slate-900">{audition.name}</span>
+              {audition.voicePart && <Badge tone="rehearsal">{audition.voicePart}</Badge>}
+            </div>
+            <Badge
+              tone={
+                audition.status === 'New'
+                  ? 'rehearsal'
+                  : audition.status === 'Scheduled'
+                    ? 'success'
+                    : 'neutral'
+              }
+            >
+              {audition.status}
+            </Badge>
+          </div>
+
+          {/* Row 1: Contact, Performance, Time */}
+          <div className="flex flex-col gap-1.5 text-xs text-slate-600">
+            <div>
+              {audition.contact.includes('@') ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEmailClick(audition.contact, audition.name, audition.voicePart || '');
+                  }}
+                  className="text-primary cursor-pointer border-none bg-transparent p-0 text-left font-medium hover:underline"
+                >
+                  ✉️ {audition.contact}
+                </button>
+              ) : (
+                <a
+                  href={`tel:${audition.contact}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="font-medium text-slate-600 hover:underline"
+                >
+                  📞 {audition.contact}
+                </a>
+              )}
+            </div>
+
+            <div className="flex items-start gap-1">
+              <span className="font-semibold text-slate-400">Performance:</span>
+              {audition.expand?.performance ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/admin/events?eventId=${audition.performance}&openModal=true`);
+                  }}
+                  className="text-primary cursor-pointer border-none bg-transparent p-0 text-left font-semibold hover:underline"
+                >
+                  {audition.expand.performance.title}
+                </button>
+              ) : (
+                <span className="text-slate-400">None</span>
+              )}
+            </div>
+
+            <div className="flex items-start gap-1">
+              <span className="font-semibold text-slate-400">Time:</span>
+              {audition.status === 'Scheduled' && audition.scheduledTimeSlot ? (
+                <span className="font-medium text-slate-900">
+                  {formatInTimezone(audition.scheduledTimeSlot, timezone, {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                </span>
+              ) : (
+                <span className="font-medium text-slate-500">
+                  {audition.requestedSlots && audition.requestedSlots.length > 0
+                    ? `${audition.requestedSlots.length} slot${audition.requestedSlots.length > 1 ? 's' : ''} requested`
+                    : 'No times requested'}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: Actions - Full-width flex-wrap */}
+        <div className="mt-1 flex flex-row flex-wrap gap-2 border-t border-slate-100 pt-2">
+          {audition.contact.includes('@') && (
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() =>
+                handleEmailClick(audition.contact, audition.name, audition.voicePart || '')
+              }
+            >
+              ✉️ Email
+            </Button>
+          )}
+          {audition.status === 'New' && (
+            <Button variant="secondary" size="small" onClick={() => openScheduleModal(audition)}>
+              Schedule
+            </Button>
+          )}
+          {audition.status === 'Scheduled' && (
+            <Button variant="secondary" size="small" onClick={() => convertToSinger(audition)}>
+              Convert to Singer
+            </Button>
+          )}
+          {audition.status !== 'Closed' && (
+            <Button variant="outline" size="small" onClick={() => updateStatus(audition, 'Closed')}>
+              Close
+            </Button>
+          )}
+          <Button variant="danger" size="small" onClick={() => removeAudition(audition)}>
+            Delete
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) return <div className="p-8">Loading auditions...</div>;
   if (auditionsQuery.error)
     return (
@@ -998,6 +1131,7 @@ export default function AuditionsView() {
           setEditingAudition(row);
           setIsModalOpen(true);
         }}
+        renderMobileCard={renderMobileCard}
         getRowId={(r) => r.id}
         getRowClassName={() => 'hover:bg-primary-light/45'}
       />

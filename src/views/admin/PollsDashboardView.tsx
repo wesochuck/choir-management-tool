@@ -265,6 +265,61 @@ export default function PollsDashboardView() {
     );
   }
 
+  const renderMobileCard = (poll: PollRecord) => {
+    const event = poll.eventId ? events.find((e) => e.id === poll.eventId) : null;
+    const isArchived =
+      (event ? new Date(event.date) < new Date() : false) ||
+      (poll.archiveAt ? new Date(poll.archiveAt.replace(' ', 'T')) < new Date() : false);
+    const archiveLabel = poll.archiveAt
+      ? formatInTimezone(poll.archiveAt, timezone, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : null;
+    const stat = pollStats[poll.id];
+
+    return (
+      <div className="flex cursor-pointer flex-col gap-3" onClick={() => setViewingPoll(poll)}>
+        {/* Row 0: Question & Status */}
+        <div className="flex items-start justify-between gap-4">
+          <span className="text-sm leading-tight font-bold text-slate-900">{poll.question}</span>
+          <Badge tone={isArchived ? 'neutral' : 'success'}>
+            {isArchived ? 'Archived' : 'Active'}
+          </Badge>
+        </div>
+
+        {/* Row 1: Expiration info */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-slate-400">
+          {archiveLabel && (
+            <span className="flex items-center gap-1">
+              <span>⏱️</span> {isArchived ? 'Archived' : 'Expires'} {archiveLabel}
+            </span>
+          )}
+          {event && (
+            <span className="flex items-center gap-1">
+              <span>🎭</span> {event.title}
+            </span>
+          )}
+        </div>
+
+        {/* Row 2: Stats side-by-side */}
+        <div className="mt-1 flex flex-row gap-3 border-t border-slate-100 pt-2">
+          <div className="border-primary/20 bg-primary/5 flex flex-1 flex-row items-center justify-between rounded-lg border px-3 py-1.5 shadow-xs">
+            <span className="text-overline text-primary text-[11px] font-bold">Yes</span>
+            <span className="text-primary text-sm leading-none font-black">{stat?.yes ?? 0}</span>
+          </div>
+          <div className="border-danger-text/20 bg-danger-bg flex flex-1 flex-row items-center justify-between rounded-lg border px-3 py-1.5 shadow-xs">
+            <span className="text-overline text-danger-text text-[11px] font-bold">No</span>
+            <span className="text-danger-text text-sm leading-none font-black">
+              {stat?.no ?? 0}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex w-full flex-col gap-6">
       <AdminPageHeader
@@ -447,6 +502,7 @@ export default function PollsDashboardView() {
           }}
           pageSize={10}
           onRowClick={(poll) => setViewingPoll(poll)}
+          renderMobileCard={renderMobileCard}
           getRowId={(p) => p.id}
         />
       </div>
