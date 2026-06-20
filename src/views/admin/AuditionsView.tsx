@@ -1154,11 +1154,19 @@ export default function AuditionsView() {
         title="Schedule Audition"
         maxWidth="500px"
         footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setSchedulingAudition(null)}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setSchedulingAudition(null)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={() => confirmSchedule()}>
+            <Button
+              variant="primary"
+              onClick={() => confirmSchedule()}
+              className="w-full sm:w-auto"
+            >
               Confirm & Send Email
             </Button>
           </div>

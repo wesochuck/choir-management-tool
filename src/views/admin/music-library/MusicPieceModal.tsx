@@ -875,10 +875,11 @@ export function MusicPieceModal({
       maxWidth="640px"
       footer={
         onDelete ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <div className="flex justify-between gap-2 sm:mr-auto">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:w-auto sm:flex-row">
               <Button
                 variant="danger"
+                className="w-full sm:w-auto"
                 onClick={() => {
                   onClose();
                   onDelete();
@@ -886,7 +887,7 @@ export function MusicPieceModal({
               >
                 Delete
               </Button>
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
                 Cancel
               </Button>
             </div>
@@ -901,18 +902,19 @@ export function MusicPieceModal({
             </Button>
           </div>
         ) : !piece && onSaveAndAddAnother ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <div className="flex justify-between gap-2 sm:mr-auto">
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:w-auto sm:flex-row">
               <Button
                 variant="secondary"
                 disabled={isSaving}
                 loading={isSaving}
+                className="w-full sm:w-auto"
                 onClick={handleSaveAndAddAnother}
               >
                 Save & Add Another
+              </Button>
+              <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
+                Cancel
               </Button>
             </div>
             <Button
@@ -926,14 +928,15 @@ export function MusicPieceModal({
             </Button>
           </div>
         ) : (
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               variant="primary"
               disabled={isSaving}
               loading={isSaving}
+              className="w-full sm:w-auto"
               onClick={() => handleSubmit()}
             >
               Save Piece

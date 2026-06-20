@@ -470,12 +470,12 @@ export const EventModal: React.FC<EventModalProps> = ({
       title={initialData && initialData.id ? 'Edit Event' : 'Schedule Event'}
       footer={
         initialData && initialData.id && onDelete ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <div className="flex justify-between gap-2 sm:mr-auto">
-              <Button variant="danger" onClick={handleDelete}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:w-auto sm:flex-row">
+              <Button variant="danger" onClick={handleDelete} className="w-full sm:w-auto">
                 Delete
               </Button>
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
                 Cancel
               </Button>
             </div>
@@ -490,14 +490,15 @@ export const EventModal: React.FC<EventModalProps> = ({
             </Button>
           </div>
         ) : (
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleClose}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={handleClose} className="w-full sm:w-auto">
               Cancel
             </Button>
             <Button
               variant="primary"
               loading={isSubmitting}
               disabled={isSubmitting}
+              className="w-full sm:w-auto"
               onClick={() => handleSubmit()}
             >
               Save Event

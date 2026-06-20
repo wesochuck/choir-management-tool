@@ -251,20 +251,24 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     switch (step) {
       case 'UPLOAD':
         return (
-          <div className="flex w-full justify-end gap-2">
-            <Button onClick={handleModalClose} variant="outline">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button onClick={handleModalClose} variant="outline" className="w-full sm:w-auto">
               Cancel
             </Button>
           </div>
         );
       case 'MAP':
         return (
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <div className="flex justify-between gap-2 sm:mr-auto">
-              <Button onClick={handleReset} variant="outline">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:w-auto sm:flex-row">
+              <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto">
                 Restart
               </Button>
-              <Button onClick={() => setStep('UPLOAD')} variant="outline">
+              <Button
+                onClick={() => setStep('UPLOAD')}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
                 Back
               </Button>
             </div>
@@ -275,11 +279,11 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         );
       case 'PREVIEW':
         return (
-          <div className="flex w-full justify-end gap-2">
-            <Button onClick={() => setStep('MAP')} variant="outline">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button onClick={() => setStep('MAP')} variant="outline" className="w-full sm:w-auto">
               Back
             </Button>
-            <Button onClick={handleStartImport} variant="primary">
+            <Button onClick={handleStartImport} variant="primary" className="w-full sm:w-auto">
               Confirm & Import
             </Button>
           </div>
@@ -288,8 +292,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         return null; // Don't allow closing/modifying during live import
       case 'COMPLETE':
         return (
-          <div className="flex w-full justify-end gap-2">
-            <Button onClick={handleModalClose} variant="primary">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button onClick={handleModalClose} variant="primary" className="w-full sm:w-auto">
               Done
             </Button>
           </div>

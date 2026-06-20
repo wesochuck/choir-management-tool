@@ -37,9 +37,7 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
   const [activeTab, setActiveTab] = useState<'info' | 'slots'>('info');
   const [formData, setFormData] = useState<AuditionInput>({ ...defaultAuditionInput });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<
-    Record<string, string>
-  >({});
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const { labels: voicePartLabels } = useVoiceParts();
 
   useEffect(() => {
@@ -106,14 +104,20 @@ export const AuditionModal: React.FC<AuditionModalProps> = ({
       title={audition ? `Edit ${audition.name}` : 'Add Audition Manually'}
       maxWidth="640px"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleClose}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             variant="primary"
             disabled={isSubmitting}
             loading={isSubmitting}
+            className="w-full sm:w-auto"
             onClick={() => handleSubmit()}
           >
             {audition ? 'Save Audition' : 'Add Audition'}

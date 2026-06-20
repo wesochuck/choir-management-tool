@@ -225,18 +225,24 @@ export const SingerModal: React.FC<SingerModalProps> = ({
         <>
           {activeTab === 'profile' ? (
             initialData && onDelete ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <div className="flex justify-between gap-2 sm:mr-auto">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:w-auto sm:flex-row">
                   <Button
                     type="button"
                     onClick={handleDelete}
                     disabled={isDeleting || isSubmitting}
                     variant="danger"
                     loading={isDeleting}
+                    className="w-full sm:w-auto"
                   >
                     Delete Singer
                   </Button>
-                  <Button type="button" onClick={handleClose} variant="outline">
+                  <Button
+                    type="button"
+                    onClick={handleClose}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -251,14 +257,20 @@ export const SingerModal: React.FC<SingerModalProps> = ({
                 </Button>
               </div>
             ) : (
-              <div className="flex justify-end gap-2">
-                <Button type="button" onClick={handleClose} variant="outline">
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  onClick={handleClose}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
                   Cancel
                 </Button>
                 <Button
                   disabled={isSubmitting}
                   variant="primary"
                   loading={isSubmitting}
+                  className="w-full sm:w-auto"
                   onClick={() => handleSubmit()}
                 >
                   Save Changes
@@ -266,7 +278,12 @@ export const SingerModal: React.FC<SingerModalProps> = ({
               </div>
             )
           ) : (
-            <Button type="button" onClick={handleClose} variant="primary">
+            <Button
+              type="button"
+              onClick={handleClose}
+              variant="primary"
+              className="w-full sm:w-auto"
+            >
               Close
             </Button>
           )}

@@ -71,13 +71,14 @@ export function AddToSetListModal({
               </ul>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={handleClose}>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={handleClose} className="w-full sm:w-auto">
                 Cancel
               </Button>
               <Button
                 variant="primary"
                 disabled={!selectedEventId || isSaving}
+                className="w-full sm:w-auto"
                 onClick={handleConfirm}
               >
                 {isSaving ? 'Adding…' : 'Add to Set List'}

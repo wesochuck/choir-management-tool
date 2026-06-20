@@ -187,14 +187,20 @@ export const BulkEventModal: React.FC<BulkEventModalProps> = ({
       onClose={handleClose}
       title="Bulk Add Rehearsals"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button type="button" onClick={handleClose} variant="outline">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            onClick={handleClose}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
           <Button
             disabled={isSubmitting}
             variant="primary"
             loading={isSubmitting}
+            className="w-full sm:w-auto"
             onClick={() => handleSubmit()}
           >
             Generate Rehearsals

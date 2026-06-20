@@ -116,11 +116,11 @@ export default function VenuesView() {
         title={editingId ? 'Edit Venue' : 'Create New Venue'}
         maxWidth="500px"
         footer={
-          <div className="flex flex-row gap-4">
-            <Button variant="outline" onClick={resetForm}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={resetForm} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button variant="primary" onClick={() => handleSave()}>
+            <Button variant="primary" onClick={() => handleSave()} className="w-full sm:w-auto">
               Save Template
             </Button>
           </div>

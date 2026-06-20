@@ -1574,7 +1574,7 @@ export default function TicketingView() {
               the original purchase record.
             </p>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="secondary"
@@ -1582,6 +1582,7 @@ export default function TicketingView() {
                   setResendPurchase(null);
                   setResendEmail('');
                 }}
+                className="w-full sm:w-auto"
               >
                 Cancel
               </Button>
@@ -1590,6 +1591,7 @@ export default function TicketingView() {
                 type="submit"
                 variant="primary"
                 disabled={resendConfirmationMutation.isPending}
+                className="w-full sm:w-auto"
               >
                 {resendConfirmationMutation.isPending ? 'Sending...' : 'Send Confirmation'}
               </Button>
@@ -1605,11 +1607,20 @@ export default function TicketingView() {
         title={editingBundle ? 'Edit Season Bundle' : 'Create Season Bundle'}
         maxWidth="600px"
         footer={
-          <div className="flex flex-row gap-4">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button variant="primary" disabled={saving} onClick={() => handleSaveBundle()}>
+            <Button
+              variant="primary"
+              disabled={saving}
+              onClick={() => handleSaveBundle()}
+              className="w-full sm:w-auto"
+            >
               {saving ? 'Saving...' : 'Save Bundle'}
             </Button>
           </div>

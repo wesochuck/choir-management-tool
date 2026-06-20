@@ -108,11 +108,16 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
       title="Edit Set List Item"
       maxWidth="500px"
       footer={
-        <div className="flex justify-end gap-2">
-          <Button type="button" onClick={handleClose} variant="outline">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            onClick={handleClose}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
-          <Button variant="primary" onClick={() => handleSubmit()}>
+          <Button variant="primary" className="w-full sm:w-auto" onClick={() => handleSubmit()}>
             Update Item
           </Button>
         </div>
@@ -154,9 +159,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
               setValidationError(false);
             }}
           />
-          {validationError && (
-            <p className="text-danger-text m-0 text-xs">Title is required.</p>
-          )}
+          {validationError && <p className="text-danger-text m-0 text-xs">Title is required.</p>}
         </div>
 
         {type === 'song' && (

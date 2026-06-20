@@ -387,11 +387,22 @@ export default function ResourcesView() {
         title={editingId ? 'Edit Resource' : 'Create New Resource'}
         maxWidth="500px"
         footer={
-          <div className="flex flex-row gap-4">
-            <Button type="button" onClick={resetForm} disabled={isSaving} variant="outline">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              onClick={resetForm}
+              disabled={isSaving}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button disabled={isSaving} variant="primary" onClick={() => handleSave()}>
+            <Button
+              disabled={isSaving}
+              variant="primary"
+              onClick={() => handleSave()}
+              className="w-full sm:w-auto"
+            >
               {isSaving ? 'Saving...' : 'Save Resource'}
             </Button>
           </div>

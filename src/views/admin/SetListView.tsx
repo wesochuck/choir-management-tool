@@ -833,14 +833,19 @@ export default function SetListView() {
           title="Printable Set List"
           maxWidth="600px"
           footer={
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <div className="flex justify-between gap-2 sm:mr-auto sm:items-center">
-                <Button variant="outline" onClick={() => setIsPrintModalOpen(false)}>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:w-auto sm:flex-row sm:items-center">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsPrintModalOpen(false)}
+                  className="w-full sm:w-auto"
+                >
                   Close
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleCopy}
+                  className="w-full sm:w-auto"
                   icon={
                     copied ? <span aria-hidden="true">✓</span> : <span aria-hidden="true">📋</span>
                   }

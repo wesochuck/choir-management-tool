@@ -102,9 +102,13 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
         maxWidth="440px"
         footer={
           activeDialog && (
-            <div className="flex w-full justify-end gap-2">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               {(activeDialog.type === 'confirm' || activeDialog.type === 'prompt') && (
-                <Button variant="outline" onClick={() => closeDialog(null)}>
+                <Button
+                  variant="outline"
+                  onClick={() => closeDialog(null)}
+                  className="w-full sm:w-auto"
+                >
                   {activeDialog.options.cancelLabel || 'Cancel'}
                 </Button>
               )}
@@ -118,6 +122,7 @@ export const DialogProvider = ({ children }: { children: React.ReactNode }) => {
                   !promptValue.trim()
                 }
                 onClick={() => closeDialog(true)}
+                className="w-full sm:w-auto"
               >
                 {activeDialog.options.confirmLabel ||
                   (activeDialog.type === 'confirm' || activeDialog.type === 'prompt'
