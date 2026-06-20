@@ -60,7 +60,7 @@ test('useEventRosterRealtime - patches cache on create/update', async () => {
     (
       _pattern: string,
       callback: (event: { action: string; record: EventRoster }) => void,
-      _options: { filter: string }
+      _options?: { filter?: string }
     ) => {
       subscribeCallback = callback;
       return Promise.resolve(() => {});
@@ -128,7 +128,7 @@ test('useEventRosterRealtime - deletes row from cache', async () => {
     (
       _pattern: string,
       callback: (event: { action: string; record: EventRoster }) => void,
-      _options: { filter: string }
+      _options?: { filter?: string }
     ) => {
       subscribeCallback = callback;
       return Promise.resolve(() => {});
@@ -182,7 +182,7 @@ test('useEventRosterRealtime - ignores different event', async () => {
     (
       _pattern: string,
       callback: (event: { action: string; record: EventRoster }) => void,
-      _options: { filter: string }
+      _options?: { filter?: string }
     ) => {
       subscribeCallback = callback;
       return Promise.resolve(() => {});
@@ -262,7 +262,7 @@ test('useEventRosterRealtime - calls unsubscribe on unmount', async () => {
     (
       _pattern: string,
       _callback: (event: { action: string; record: EventRoster }) => void,
-      _options: { filter: string }
+      _options?: { filter?: string }
     ) => {
       return Promise.resolve(() => {
         unsubscribeCalled = true;

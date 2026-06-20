@@ -16,32 +16,31 @@ export function useEventRosterRealtime(eventId: string | undefined) {
     let unsubscribe: (() => void) | undefined;
 
     pb.collection('eventRosters')
-      .subscribe(
-        '*',
-        (event: RecordSubscription<EventRoster>) => {
-          if (cancelled) return;
+      .subscribe('*', (event: RecordSubscription<EventRoster>) => {
+        if (cancelled) return;
 
-          const roster = event.record;
+        const roster = event.record;
 
-          if (!roster || roster.event !== eventId) {
-            return;
-          }
-
-          queryClient.setQueryData<EventRoster[]>(
-            queryKeys.eventRoster.recordsByEventId(eventId),
-            (old) => {
-              if (event.action === 'delete') {
-                return removeRosterRow(old, roster);
-              }
-
-              return upsertRosterRow(old, roster);
-            }
-          );
-        },
-        {
-          filter: pb.filter('event = {:eventId}', { eventId }),
+        if (!roster || roster.event !== eventId) {
+          return;
         }
-      )
+
+        queryClient.setQueryData<EventRoster[]>(
+          queryKeys.eventRoster.recordsByEventId(eventId),
+          (old) => {
+            if (event.action === 'delete') {
+              return removeRosterRow(old, roster);
+            }
+
+            return upsertRosterRow(old, roster);
+          }
+        );
+
+        // Invalidate switcher stats in the background
+        queryClient.invalidateQueries({
+          queryKey: [...queryKeys.eventRoster.all, 'recordsForEvents'],
+        });
+      })
       .then((unsubscribeFn) => {
         if (cancelled) {
           unsubscribeFn();

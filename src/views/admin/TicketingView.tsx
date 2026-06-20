@@ -30,6 +30,8 @@ import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { AdminPageTabs } from '../../components/admin/AdminPageTabs';
 import { settingsService } from '../../services/settingsService';
 
+import { useTicketPurchasesRealtime } from '../../hooks/useTicketPurchasesRealtime';
+
 interface TicketingData {
   allEvents: Event[];
   purchases: TicketPurchase[];
@@ -45,6 +47,7 @@ const FALLBACK_TZ = 'America/New_York';
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
+  useTicketPurchasesRealtime();
   const queryClient = useQueryClient();
   const dialog = useDialog();
   const [now] = useState(() => Date.now());
@@ -859,7 +862,7 @@ export default function TicketingView() {
           <AdminPageTabs
             ariaLabel="Ticketing sections"
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={(tab) => setActiveTab(tab as 'willcall' | 'bundles' | 'orders' | 'share')}
             tabs={[
               { value: 'willcall', label: 'Concert Will Call' },
               { value: 'bundles', label: 'Season Bundles' },
