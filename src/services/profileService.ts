@@ -60,7 +60,7 @@ const splitProfileInput = (data: ProfileInput) => {
 
 /**
  * Generates a cryptographically secure random password of a given length.
- * Uses Web Crypto API when available, falling back to Math.random only in legacy/unsupported environments.
+ * Uses Web Crypto API when available, throwing an error if unavailable to prevent insecure fallbacks.
  */
 export const generateRandomPassword = (length = 12): string => {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
@@ -71,9 +71,8 @@ export const generateRandomPassword = (length = 12): string => {
     cryptoObj.getRandomValues(array);
     return Array.from(array, (num) => chars[num % chars.length]).join('');
   }
-
-  // Fallback to Math.random only if secure Web Crypto API is unavailable (e.g. testing environments)
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  
+  throw new Error('Secure random number generation is not supported in this environment');
 };
 
 let inFlightActiveProfiles: Promise<Profile[]> | null = null;
