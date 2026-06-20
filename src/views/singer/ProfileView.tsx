@@ -162,7 +162,7 @@ export default function ProfileView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.myProfile.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.directory });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.directory() });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     },
