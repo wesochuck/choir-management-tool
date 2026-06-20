@@ -223,32 +223,19 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
 
         const pastRehearsalsRosters = await rosterService.getEventRostersBatch(pastRehearsalIds);
 
-        const pastRehearsalsRostersByEvent = new Map<string, Map<string, EventRoster>>();
+        const presencesByProfileId = new Map<string, number>();
+
         for (const r of pastRehearsalsRosters) {
-          let eventMap = pastRehearsalsRostersByEvent.get(r.event);
-          if (!eventMap) {
-            eventMap = new Map();
-            pastRehearsalsRostersByEvent.set(r.event, eventMap);
+          if (r.rsvp !== 'No' && r.attendance === 'Present') {
+            presencesByProfileId.set(r.profile, (presencesByProfileId.get(r.profile) || 0) + 1);
           }
-          eventMap.set(r.profile, r);
         }
 
         const performingProfiles = activeProfiles.filter((p) => performingProfileIds.has(p.id));
 
         for (const profile of performingProfiles) {
-          let missCount = 0;
-          for (const reh of pastRehearsals) {
-            const rehRostersMap = pastRehearsalsRostersByEvent.get(reh.id);
-            const r = rehRostersMap?.get(profile.id);
-
-            const wasDeclined = r?.rsvp === 'No';
-            const wasAbsent = r?.attendance === 'Absent';
-            const notMarkedPresent = r?.attendance !== 'Present';
-
-            if (wasDeclined || wasAbsent || notMarkedPresent) {
-              missCount++;
-            }
-          }
+          const presentCount = presencesByProfileId.get(profile.id) || 0;
+          const missCount = pastRehearsals.length - presentCount;
 
           if (missCount > maxRehearsalMisses) {
             exceededSingers.push({ name: profile.name, missCount });
