@@ -76,15 +76,18 @@ async function createRosterWithVerification(
     );
   } catch (err: unknown) {
     if (isPostCommitPocketBaseError(err)) {
-      const saved = await retryOn429(
+      const list = await retryOn429(
         () =>
-          pb
-            .collection('eventRosters')
-            .getFirstListItem<EventRoster>(
-              pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
-            ),
+          pb.collection('eventRosters').getFullList<EventRoster>({
+            filter: pb.filter('event = {:eventId} && profile = {:profileId}', {
+              eventId,
+              profileId,
+            }),
+            perPage: 1,
+          }),
         options
       ).catch(() => null);
+      const saved = list?.[0];
       if (
         saved &&
         saved.attendance === data.attendance &&
@@ -143,16 +146,16 @@ export const rosterService = {
     rsvpNote = '',
     options: RosterRequestOptions = {}
   ) {
-    try {
-      const existing = await retryOn429(
-        () =>
-          pb
-            .collection('eventRosters')
-            .getFirstListItem<EventRoster>(
-              pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
-            ),
-        options
-      );
+    const list = await retryOn429(
+      () =>
+        pb.collection('eventRosters').getFullList<EventRoster>({
+          filter: pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId }),
+          perPage: 1,
+        }),
+      options
+    );
+    const existing = list[0];
+    if (existing) {
       if (rsvp === 'Pending') {
         const attendance = existing.attendance || 'Pending';
         const folderNumber = (existing.folderNumber || '').trim();
@@ -191,32 +194,29 @@ export const rosterService = {
           options
         );
       }
-    } catch (err: unknown) {
-      if (err instanceof ClientResponseError && err.status === 404) {
-        if (rsvp === 'Pending') {
-          return {
-            id: '',
+    } else {
+      if (rsvp === 'Pending') {
+        return {
+          id: '',
+          event: eventId,
+          profile: profileId,
+          rsvp: 'Pending',
+          attendance: 'Pending',
+          folderReturned: false,
+        } as EventRoster;
+      }
+      return await retryOn429(
+        () =>
+          pb.collection('eventRosters').create<EventRoster>({
             event: eventId,
             profile: profileId,
-            rsvp: 'Pending',
+            rsvp,
+            rsvpNote: rsvp === 'No' ? rsvpNote : '',
             attendance: 'Pending',
             folderReturned: false,
-          } as EventRoster;
-        }
-        return await retryOn429(
-          () =>
-            pb.collection('eventRosters').create<EventRoster>({
-              event: eventId,
-              profile: profileId,
-              rsvp,
-              rsvpNote: rsvp === 'No' ? rsvpNote : '',
-              attendance: 'Pending',
-              folderReturned: false,
-            }),
-          options
-        );
-      }
-      throw err;
+          }),
+        options
+      );
     }
   },
 
@@ -309,22 +309,19 @@ export const rosterService = {
       return await updateRosterWithVerification(rosterId, updateData, retryOpts);
     }
 
-    try {
-      const existing = await retryOn429(
-        () =>
-          pb
-            .collection('eventRosters')
-            .getFirstListItem<EventRoster>(
-              pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
-            ),
-        retryOpts
-      );
+    const list = await retryOn429(
+      () =>
+        pb.collection('eventRosters').getFullList<EventRoster>({
+          filter: pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId }),
+          perPage: 1,
+        }),
+      retryOpts
+    );
+    const existing = list[0];
+    if (existing) {
       return await updateRosterWithVerification(existing.id, updateData, retryOpts);
-    } catch (err: unknown) {
-      if (err instanceof ClientResponseError && err.status === 404) {
-        return await createRosterWithVerification(eventId, profileId, updateData, retryOpts);
-      }
-      throw err;
+    } else {
+      return await createRosterWithVerification(eventId, profileId, updateData, retryOpts);
     }
   },
 
@@ -365,36 +362,33 @@ export const rosterService = {
     data: { folderNumber?: string; folderReturned?: boolean },
     options: RosterRequestOptions = {}
   ) {
-    try {
-      const existing = await retryOn429(
-        () =>
-          pb
-            .collection('eventRosters')
-            .getFirstListItem<EventRoster>(
-              pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
-            ),
-        options
-      );
+    const list = await retryOn429(
+      () =>
+        pb.collection('eventRosters').getFullList<EventRoster>({
+          filter: pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId }),
+          perPage: 1,
+        }),
+      options
+    );
+    const existing = list[0];
+    if (existing) {
       return await retryOn429(
         () => pb.collection('eventRosters').update<EventRoster>(existing.id, data),
         options
       );
-    } catch (err: unknown) {
-      if (err instanceof ClientResponseError && err.status === 404) {
-        return await retryOn429(
-          () =>
-            pb.collection('eventRosters').create<EventRoster>({
-              event: eventId,
-              profile: profileId,
-              rsvp: 'Pending',
-              attendance: 'Pending',
-              folderNumber: data.folderNumber || '',
-              folderReturned: data.folderReturned || false,
-            }),
-          options
-        );
-      }
-      throw err;
+    } else {
+      return await retryOn429(
+        () =>
+          pb.collection('eventRosters').create<EventRoster>({
+            event: eventId,
+            profile: profileId,
+            rsvp: 'Pending',
+            attendance: 'Pending',
+            folderNumber: data.folderNumber || '',
+            folderReturned: data.folderReturned || false,
+          }),
+        options
+      );
     }
   },
 
