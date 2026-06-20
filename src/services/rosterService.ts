@@ -28,14 +28,14 @@ const isPostCommitPocketBaseError = (err: unknown) => {
   return err instanceof ClientResponseError && err.status === 400;
 };
 
-async function updateAttendanceWithVerification(
+async function updateRosterWithVerification(
   rosterId: string,
-  attendance: AttendanceStatus,
+  data: { attendance?: AttendanceStatus; rsvp?: RsvpStatus },
   options: RosterRequestOptions = {}
 ) {
   try {
     return await retryOn429(
-      () => pb.collection('eventRosters').update<EventRoster>(rosterId, { attendance }),
+      () => pb.collection('eventRosters').update<EventRoster>(rosterId, data),
       options
     );
   } catch (err: unknown) {
@@ -44,7 +44,11 @@ async function updateAttendanceWithVerification(
         () => pb.collection('eventRosters').getOne<EventRoster>(rosterId),
         options
       ).catch(() => null);
-      if (saved?.attendance === attendance) {
+      if (
+        saved &&
+        (data.attendance === undefined || saved.attendance === data.attendance) &&
+        (data.rsvp === undefined || saved.rsvp === data.rsvp)
+      ) {
         return saved;
       }
     }
@@ -52,10 +56,10 @@ async function updateAttendanceWithVerification(
   }
 }
 
-async function createAttendanceWithVerification(
+async function createRosterWithVerification(
   eventId: string,
   profileId: string,
-  attendance: AttendanceStatus,
+  data: { attendance: AttendanceStatus; rsvp?: RsvpStatus },
   options: RosterRequestOptions = {}
 ) {
   try {
@@ -64,8 +68,8 @@ async function createAttendanceWithVerification(
         pb.collection('eventRosters').create<EventRoster>({
           event: eventId,
           profile: profileId,
-          rsvp: 'Pending',
-          attendance,
+          rsvp: data.rsvp || 'Pending',
+          attendance: data.attendance,
           folderReturned: false,
         }),
       options
@@ -81,7 +85,11 @@ async function createAttendanceWithVerification(
             ),
         options
       ).catch(() => null);
-      if (saved?.attendance === attendance) {
+      if (
+        saved &&
+        saved.attendance === data.attendance &&
+        (data.rsvp === undefined || saved.rsvp === data.rsvp)
+      ) {
         return saved;
       }
     }
@@ -282,15 +290,25 @@ export const rosterService = {
     attendance: AttendanceStatus,
     options: RosterRequestOptions = {}
   ) {
-    return await updateAttendanceWithVerification(rosterId, attendance, options);
+    return await updateRosterWithVerification(rosterId, { attendance }, options);
   },
 
   async upsertAttendance(
     eventId: string,
     profileId: string,
     attendance: AttendanceStatus,
-    options: RosterRequestOptions = {}
+    options: RosterRequestOptions & { rosterId?: string; rsvp?: RsvpStatus } = {}
   ) {
+    const { rosterId, rsvp, ...retryOpts } = options;
+    const updateData: { attendance: AttendanceStatus; rsvp?: RsvpStatus } = { attendance };
+    if (rsvp) {
+      updateData.rsvp = rsvp;
+    }
+
+    if (rosterId) {
+      return await updateRosterWithVerification(rosterId, updateData, retryOpts);
+    }
+
     try {
       const existing = await retryOn429(
         () =>
@@ -299,12 +317,12 @@ export const rosterService = {
             .getFirstListItem<EventRoster>(
               pb.filter('event = {:eventId} && profile = {:profileId}', { eventId, profileId })
             ),
-        options
+        retryOpts
       );
-      return await updateAttendanceWithVerification(existing.id, attendance, options);
+      return await updateRosterWithVerification(existing.id, updateData, retryOpts);
     } catch (err: unknown) {
       if (err instanceof ClientResponseError && err.status === 404) {
-        return await createAttendanceWithVerification(eventId, profileId, attendance, options);
+        return await createRosterWithVerification(eventId, profileId, updateData, retryOpts);
       }
       throw err;
     }
@@ -392,12 +410,8 @@ export const rosterService = {
 
   async getRostersForEvents(eventIds: string[], options: RosterRequestOptions = {}) {
     if (eventIds.length === 0) return [];
-    const filterStr = eventIds
-      .map((_, i) => `event = {:eventId${i}}`)
-      .join(' || ');
-    const params = Object.fromEntries(
-      eventIds.map((id, i) => [`eventId${i}`, id])
-    );
+    const filterStr = eventIds.map((_, i) => `event = {:eventId${i}}`).join(' || ');
+    const params = Object.fromEntries(eventIds.map((id, i) => [`eventId${i}`, id]));
     return await retryOn429(
       () =>
         pb.collection('eventRosters').getFullList<EventRoster>({

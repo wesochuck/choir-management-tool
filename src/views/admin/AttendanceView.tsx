@@ -223,10 +223,11 @@ export default function AttendanceView() {
   const handleSetAttendance = async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
     try {
       const originalItem = items.find((i) => i.profileId === profileId);
-      if (originalItem && originalItem.rsvp === 'Pending' && next === 'Present') {
-        await setRSVP(profileId, 'Yes');
-      }
-      await setAttendance(profileId, next);
+      const rosterId = originalItem?.rosterId;
+      const rsvpUpdate =
+        originalItem && originalItem.rsvp === 'Pending' && next === 'Present' ? 'Yes' : undefined;
+
+      await setAttendance(profileId, next, rosterId, rsvpUpdate);
     } catch (err: unknown) {
       await dialog.showMessage({
         title: 'Could Not Update Attendance',

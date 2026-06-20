@@ -203,23 +203,30 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
     mutationFn: ({
       profileId,
       next,
+      rosterId,
+      rsvp,
     }: {
       profileId: string;
       next: 'Present' | 'Absent' | 'Pending';
+      rosterId?: string;
+      rsvp?: 'Yes' | 'No' | 'Pending';
     }) =>
       rosterService.upsertAttendance(eventId, profileId, next, {
+        rosterId,
+        rsvp,
         onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
       }),
-    onMutate: async ({ profileId, next }): Promise<MutationContext> => {
+    onMutate: async ({ profileId, next, rsvp }): Promise<MutationContext> => {
       await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
       const previousRosters = queryClient.getQueryData<EventRoster[]>(
         queryKeys.eventRoster.byEventId(eventId)
       );
       const existingRoster = previousRosters?.find((r) => r.profile === profileId);
       const targetRsvp =
-        existingRoster?.rsvp === 'Pending' && next === 'Present'
+        rsvp ||
+        (existingRoster?.rsvp === 'Pending' && next === 'Present'
           ? 'Yes'
-          : (existingRoster?.rsvp ?? 'Pending');
+          : (existingRoster?.rsvp ?? 'Pending'));
       queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
         if (!old) return old;
         return old.map((r) =>
@@ -327,8 +334,13 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
   );
 
   const setAttendance = useCallback(
-    async (profileId: string, next: 'Present' | 'Absent' | 'Pending') => {
-      await attendanceMutation.mutateAsync({ profileId, next });
+    async (
+      profileId: string,
+      next: 'Present' | 'Absent' | 'Pending',
+      rosterId?: string,
+      rsvp?: 'Yes' | 'No' | 'Pending'
+    ) => {
+      await attendanceMutation.mutateAsync({ profileId, next, rosterId, rsvp });
     },
     [attendanceMutation]
   );
