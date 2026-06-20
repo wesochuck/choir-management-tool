@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDashboardCounts } from '../../hooks/useDashboardCounts';
@@ -170,6 +171,19 @@ export default function AdminDashboardView() {
 
   const { activeSingers, upcomingEvents, pendingAuditions, errorMessage } = useDashboardCounts();
 
+  const [selectedCategory, setSelectedCategory] = useState<
+    'All' | 'People' | 'Events' | 'Music' | 'Admin'
+  >('All');
+
+  const filteredSections = useMemo(() => {
+    if (selectedCategory === 'All') return dashboardSections;
+    if (selectedCategory === 'People') return [dashboardSections[0]];
+    if (selectedCategory === 'Events') return [dashboardSections[1]];
+    if (selectedCategory === 'Music') return [dashboardSections[2]];
+    if (selectedCategory === 'Admin') return [dashboardSections[3]];
+    return dashboardSections;
+  }, [selectedCategory]);
+
   const getGreeting = () => {
     const hr = new Date().getHours();
     if (hr < 12) return 'Good morning';
@@ -183,20 +197,30 @@ export default function AdminDashboardView() {
   return (
     <div className="bg-bg flex min-h-screen flex-col">
       <header className="bg-surface sticky top-0 z-10 border-b border-gray-200">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-row items-center justify-between gap-6 px-6 py-2">
-          <div className="flex flex-row items-center gap-6">
-            <div className="flex flex-col">
-              <h2 className="m-0 text-xl font-bold text-gray-800">Choir Admin</h2>
-            </div>
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col items-stretch justify-between gap-3 px-6 py-3 sm:flex-row sm:items-center sm:gap-6 sm:py-2">
+          <div className="flex flex-row items-center justify-between">
+            <h2 className="m-0 text-xl font-bold text-gray-800">Choir Admin</h2>
           </div>
-          <div className="flex flex-row items-center gap-4">
-            <Button as={Link} to="/directory" variant="outline">
+          <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-4">
+            <Button
+              as={Link}
+              to="/directory"
+              variant="outline"
+              size="small"
+              className="flex-1 sm:flex-none"
+            >
               Singer Directory
             </Button>
-            <Button as={Link} to="/profile" variant="outline">
+            <Button
+              as={Link}
+              to="/profile"
+              variant="outline"
+              size="small"
+              className="flex-1 sm:flex-none"
+            >
               My Profile
             </Button>
-            <Button onClick={logout} variant="outline">
+            <Button onClick={logout} variant="outline" size="small" className="flex-1 sm:flex-none">
               Logout
             </Button>
           </div>
@@ -314,8 +338,26 @@ export default function AdminDashboardView() {
           </div>
         </section>
 
+        {/* Mobile Category Selector */}
+        <div className="flex gap-2 overflow-x-auto pb-4 md:hidden">
+          {(['All', 'People', 'Events', 'Music', 'Admin'] as const).map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              className={`h-8 rounded-full border px-4 text-xs font-semibold whitespace-nowrap transition-colors ${
+                selectedCategory === cat
+                  ? 'border-gray-950 bg-gray-950 text-white'
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-gray-400'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
         {/* Categorized Link Sections */}
-        {dashboardSections.map((section) => (
+        {filteredSections.map((section) => (
           <section key={section.title}>
             <div className="mt-8 mb-4 flex items-center gap-2">
               <div className={`size-2.5 flex-shrink-0 rounded-full ${section.dotClassName}`} />
@@ -324,7 +366,8 @@ export default function AdminDashboardView() {
               </h2>
             </div>
 
-            <div className="mb-8 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+            {/* Desktop Grid Layout */}
+            <div className="mb-8 hidden grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 md:grid">
               {section.links.map((link) => (
                 <Link
                   key={link.to}
@@ -341,6 +384,32 @@ export default function AdminDashboardView() {
                     {link.desc}
                   </p>
                   <span className="group-hover:text-primary mt-auto self-end text-xl leading-none text-gray-500 transition-all duration-200 group-hover:translate-x-1">
+                    →
+                  </span>
+                </Link>
+              ))}
+            </div>
+
+            {/* Mobile Compact List Layout */}
+            <div className="mb-8 flex flex-col gap-2 md:hidden">
+              {section.links.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="bg-surface flex items-center gap-3 rounded-xl border border-gray-100 p-3 no-underline shadow-xs hover:bg-gray-50"
+                >
+                  <div
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-lg text-lg ${link.colorClass}`}
+                  >
+                    <span aria-hidden="true">{link.icon}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="m-0 text-sm leading-tight font-semibold text-gray-800">
+                      {link.label}
+                    </h3>
+                    <p className="m-0 mt-0.5 truncate text-[11px] text-gray-400">{link.desc}</p>
+                  </div>
+                  <span className="pr-1 text-gray-300" aria-hidden="true">
                     →
                   </span>
                 </Link>
