@@ -54,7 +54,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
   const queryClient = useQueryClient();
 
   const eventRosterQuery = useQuery({
-    queryKey: queryKeys.eventRoster.byEventId(eventId ?? ''),
+    queryKey: queryKeys.eventRoster.dataByEventId(eventId ?? ''),
     queryFn: async (): Promise<EventRosterQueryData> => {
       if (!eventId) throw new Error('No event ID');
 
@@ -217,7 +217,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
 
   const invalidate = useCallback(async () => {
     if (!eventId) return;
-    await queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.dataByEventId(eventId) });
   }, [queryClient, eventId]);
 
   const refreshProfiles = invalidate;
@@ -227,7 +227,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
     (rosters: EventRoster[]) => {
       if (!eventId) return;
       queryClient.setQueryData(
-        queryKeys.eventRoster.byEventId(eventId),
+        queryKeys.eventRoster.dataByEventId(eventId),
         (old: EventRosterQueryData | undefined) => {
           if (!old) return old;
           return { ...old, eventRoster: rosters };

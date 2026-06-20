@@ -60,7 +60,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
   });
 
   const eventRosterQuery = useQuery({
-    queryKey: queryKeys.eventRoster.byEventId(eventId),
+    queryKey: queryKeys.eventRoster.recordsByEventId(eventId),
     queryFn: () =>
       rosterService.getEventRoster(eventId, {
         onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
@@ -84,7 +84,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
   }, [parentEventId]);
 
   const parentRosterQuery = useQuery({
-    queryKey: queryKeys.eventRoster.byEventId(parentEventId ?? '__none__'),
+    queryKey: queryKeys.eventRoster.recordsByEventId(parentEventId ?? '__none__'),
     queryFn: () =>
       rosterService.getEventRoster(parentEventId!, {
         onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
@@ -160,11 +160,11 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
 
   const invalidateAll = useCallback(async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.eventRoster.recordsByEventId(eventId) }),
       ...(parentEventIdRef.current
         ? [
             queryClient.invalidateQueries({
-              queryKey: queryKeys.eventRoster.byEventId(parentEventIdRef.current),
+              queryKey: queryKeys.eventRoster.recordsByEventId(parentEventIdRef.current),
             }),
           ]
         : []),
@@ -179,19 +179,27 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
         onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
       }),
     onMutate: async ({ profileId, rsvp }): Promise<MutationContext> => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
-      const previousRosters = queryClient.getQueryData<EventRoster[]>(
-        queryKeys.eventRoster.byEventId(eventId)
-      );
-      queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
-        if (!old) return old;
-        return old.map((r) => (r.profile === profileId ? { ...r, rsvp } : r));
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.eventRoster.recordsByEventId(eventId),
       });
+      const previousRosters = queryClient.getQueryData<EventRoster[]>(
+        queryKeys.eventRoster.recordsByEventId(eventId)
+      );
+      queryClient.setQueryData<EventRoster[]>(
+        queryKeys.eventRoster.recordsByEventId(eventId),
+        (old) => {
+          if (!old) return old;
+          return old.map((r) => (r.profile === profileId ? { ...r, rsvp } : r));
+        }
+      );
       return { previousRosters };
     },
     onError: (err, _vars, context?: MutationContext) => {
       if (context?.previousRosters) {
-        queryClient.setQueryData(queryKeys.eventRoster.byEventId(eventId), context.previousRosters);
+        queryClient.setQueryData(
+          queryKeys.eventRoster.recordsByEventId(eventId),
+          context.previousRosters
+        );
       }
       setLocalError(err instanceof Error ? err.message : 'Failed to update RSVP');
     },
@@ -217,10 +225,12 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
         onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
       }),
     onMutate: async ({ profileId, next, rsvp }): Promise<MutationContext> => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.eventRoster.recordsByEventId(eventId),
+      });
 
       const previousRosters = queryClient.getQueryData<EventRoster[]>(
-        queryKeys.eventRoster.byEventId(eventId)
+        queryKeys.eventRoster.recordsByEventId(eventId)
       );
 
       const existingRoster = previousRosters?.find((r) => r.profile === profileId);
@@ -229,54 +239,62 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
       const targetRsvp =
         rsvp || (effectiveRsvp === 'Pending' && next === 'Present' ? 'Yes' : effectiveRsvp);
 
-      queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
-        const rows = old ?? [];
-        const existing = rows.find((r) => r.profile === profileId);
+      queryClient.setQueryData<EventRoster[]>(
+        queryKeys.eventRoster.recordsByEventId(eventId),
+        (old) => {
+          const rows = old ?? [];
+          const existing = rows.find((r) => r.profile === profileId);
 
-        if (existing) {
-          return rows.map((r) =>
-            r.profile === profileId ? { ...r, attendance: next, rsvp: targetRsvp } : r
-          );
+          if (existing) {
+            return rows.map((r) =>
+              r.profile === profileId ? { ...r, attendance: next, rsvp: targetRsvp } : r
+            );
+          }
+
+          return [
+            ...rows,
+            {
+              id: `optimistic_${eventId}_${profileId}`,
+              event: eventId,
+              profile: profileId,
+              attendance: next,
+              rsvp: targetRsvp,
+              rsvpNote: '',
+              seatId: '',
+              folderNumber: '',
+              folderReturned: false,
+              collectionId: '',
+              collectionName: 'eventRosters',
+              created: '',
+              updated: '',
+            } as EventRoster,
+          ];
         }
-
-        return [
-          ...rows,
-          {
-            id: `optimistic_${eventId}_${profileId}`,
-            event: eventId,
-            profile: profileId,
-            attendance: next,
-            rsvp: targetRsvp,
-            rsvpNote: '',
-            seatId: '',
-            folderNumber: '',
-            folderReturned: false,
-            collectionId: '',
-            collectionName: 'eventRosters',
-            created: '',
-            updated: '',
-          } as EventRoster,
-        ];
-      });
+      );
 
       return { previousRosters };
     },
     onError: (err, _vars, context?: MutationContext) => {
       if (context) {
-        queryClient.setQueryData(queryKeys.eventRoster.byEventId(eventId), context.previousRosters);
+        queryClient.setQueryData(
+          queryKeys.eventRoster.recordsByEventId(eventId),
+          context.previousRosters
+        );
       }
       setLocalError(err instanceof Error ? err.message : 'Failed to update attendance');
     },
     onSuccess: (savedRoster) => {
       setLocalError(null);
 
-      queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
-        if (!old) return old;
-        const withoutProfile = old.filter((r) => r.profile !== savedRoster.profile);
-        return [...withoutProfile, savedRoster];
-      });
+      queryClient.setQueryData<EventRoster[]>(
+        queryKeys.eventRoster.recordsByEventId(eventId),
+        (old) => {
+          if (!old) return old;
+          const withoutProfile = old.filter((r) => r.profile !== savedRoster.profile);
+          return [...withoutProfile, savedRoster];
+        }
+      );
     },
-    onSettled: () => invalidateAll(),
   });
 
   const folderMutation = useMutation({
@@ -298,27 +316,35 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
         }
       ),
     onMutate: async ({ profileId, folderNumber, folderReturned }): Promise<MutationContext> => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
-      const previousRosters = queryClient.getQueryData<EventRoster[]>(
-        queryKeys.eventRoster.byEventId(eventId)
-      );
-      queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
-        if (!old) return old;
-        return old.map((r) =>
-          r.profile === profileId
-            ? {
-                ...r,
-                folderNumber: folderNumber !== undefined ? folderNumber : r.folderNumber,
-                folderReturned: folderReturned !== undefined ? folderReturned : r.folderReturned,
-              }
-            : r
-        );
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.eventRoster.recordsByEventId(eventId),
       });
+      const previousRosters = queryClient.getQueryData<EventRoster[]>(
+        queryKeys.eventRoster.recordsByEventId(eventId)
+      );
+      queryClient.setQueryData<EventRoster[]>(
+        queryKeys.eventRoster.recordsByEventId(eventId),
+        (old) => {
+          if (!old) return old;
+          return old.map((r) =>
+            r.profile === profileId
+              ? {
+                  ...r,
+                  folderNumber: folderNumber !== undefined ? folderNumber : r.folderNumber,
+                  folderReturned: folderReturned !== undefined ? folderReturned : r.folderReturned,
+                }
+              : r
+          );
+        }
+      );
       return { previousRosters };
     },
     onError: (err, _vars, context?: MutationContext) => {
       if (context?.previousRosters) {
-        queryClient.setQueryData(queryKeys.eventRoster.byEventId(eventId), context.previousRosters);
+        queryClient.setQueryData(
+          queryKeys.eventRoster.recordsByEventId(eventId),
+          context.previousRosters
+        );
       }
       setLocalError(err instanceof Error ? err.message : 'Failed to update folder');
     },
@@ -334,23 +360,31 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
       });
     },
     onMutate: async ({ updates }): Promise<MutationContext> => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.eventRoster.byEventId(eventId) });
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.eventRoster.recordsByEventId(eventId),
+      });
       const previousRosters = queryClient.getQueryData<EventRoster[]>(
-        queryKeys.eventRoster.byEventId(eventId)
+        queryKeys.eventRoster.recordsByEventId(eventId)
       );
       const updateMap = new Map(updates.map((u) => [u.profileId, u.attendance]));
-      queryClient.setQueryData<EventRoster[]>(queryKeys.eventRoster.byEventId(eventId), (old) => {
-        if (!old) return old;
-        return old.map((r) => {
-          const next = updateMap.get(r.profile);
-          return next !== undefined ? { ...r, attendance: next } : r;
-        });
-      });
+      queryClient.setQueryData<EventRoster[]>(
+        queryKeys.eventRoster.recordsByEventId(eventId),
+        (old) => {
+          if (!old) return old;
+          return old.map((r) => {
+            const next = updateMap.get(r.profile);
+            return next !== undefined ? { ...r, attendance: next } : r;
+          });
+        }
+      );
       return { previousRosters };
     },
     onError: (err, _vars, context?: MutationContext) => {
       if (context?.previousRosters) {
-        queryClient.setQueryData(queryKeys.eventRoster.byEventId(eventId), context.previousRosters);
+        queryClient.setQueryData(
+          queryKeys.eventRoster.recordsByEventId(eventId),
+          context.previousRosters
+        );
       }
       setLocalError(err instanceof Error ? err.message : 'Failed to update bulk attendance');
     },
