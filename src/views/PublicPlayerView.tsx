@@ -15,6 +15,7 @@ import {
 } from '../services/offlineMediaStore';
 import { safeLocalStorage } from '../lib/storage';
 import { queryKeys } from '../lib/queryKeys';
+import { downloadRawFile, downloadRawFiles } from '../lib/downloadFiles';
 
 export default function PublicPlayerView() {
   const [searchParams] = useSearchParams();
@@ -34,8 +35,8 @@ export default function PublicPlayerView() {
     return safeLocalStorage.getItem('player-voice-part') || 'tutti';
   });
 
-  const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
-  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [offlineSaveProgress, setOfflineSaveProgress] = useState<Record<string, number>>({});
+  const [isSavingAllOffline, setIsSavingAllOffline] = useState(false);
 
   const hasTokenOrEventId = !!token || !!eventId;
 
@@ -104,52 +105,52 @@ export default function PublicPlayerView() {
     setPlaylist(hydrated);
   };
 
-  const handleDownload = async (track: PlayerMediaFile) => {
+  const handleSaveTrackOffline = async (track: PlayerMediaFile) => {
     try {
-      setDownloadProgress((prev) => ({ ...prev, [track.id]: 0 }));
+      setOfflineSaveProgress((prev) => ({ ...prev, [track.id]: 0 }));
       setPlaylist((prev) =>
         prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f))
       );
 
       await downloadTrack(track, (prog) => {
-        setDownloadProgress((prev) => ({ ...prev, [track.id]: prog }));
+        setOfflineSaveProgress((prev) => ({ ...prev, [track.id]: prog }));
       });
 
       const hydrated = await hydrateOfflineStatus(playlist);
       setPlaylist(hydrated);
     } catch (err) {
-      console.error('Download failed', err);
+      console.error('Offline save failed', err);
       setPlaylist((prev) =>
         prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'error' } : f))
       );
     }
   };
 
-  const handleRemoveDownload = async (track: PlayerMediaFile) => {
+  const handleRemoveOffline = async (track: PlayerMediaFile) => {
     await removeOfflineTrack(track.id);
     setPlaylist(await hydrateOfflineStatus(playlist));
   };
 
-  const handleDownloadAll = async () => {
-    if (isDownloadingAll) return;
-    const toDownload = playlist.filter((f) => !f.isFolder && !f.isDownloaded);
-    if (toDownload.length === 0) return;
-    setIsDownloadingAll(true);
+  const handleSaveAllOffline = async () => {
+    if (isSavingAllOffline) return;
+    const toSave = playlist.filter((f) => !f.isFolder && !f.isDownloaded);
+    if (toSave.length === 0) return;
+    setIsSavingAllOffline(true);
 
     const errorIds = new Set<string>();
 
     // @allow-sequential-await - downloads must be sequential to avoid overwhelming the server
-    for (const track of toDownload) {
+    for (const track of toSave) {
       try {
-        setDownloadProgress((prev) => ({ ...prev, [track.id]: 0 }));
+        setOfflineSaveProgress((prev) => ({ ...prev, [track.id]: 0 }));
         setPlaylist((prev) =>
           prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'downloading' } : f))
         );
         await downloadTrack(track, (prog) => {
-          setDownloadProgress((prev) => ({ ...prev, [track.id]: prog }));
+          setOfflineSaveProgress((prev) => ({ ...prev, [track.id]: prog }));
         });
       } catch (err) {
-        console.error('Download failed for', track.name, err);
+        console.error('Offline save failed for', track.name, err);
         errorIds.add(track.id);
         setPlaylist((prev) =>
           prev.map((f) => (f.id === track.id ? { ...f, downloadStatus: 'error' } : f))
@@ -162,13 +163,24 @@ export default function PublicPlayerView() {
       errorIds.has(f.id) ? { ...f, downloadStatus: 'error' as const } : f
     );
     setPlaylist(finalPlaylist);
-    setIsDownloadingAll(false);
+    setIsSavingAllOffline(false);
   };
 
   const handleClearAll = async () => {
     await clearAllDownloads();
     const hydrated = await hydrateOfflineStatus(playlist);
     setPlaylist(hydrated);
+  };
+
+  const handleDownloadTrackFile = (track: PlayerMediaFile) => {
+    downloadRawFile(track);
+  };
+
+  const handleDownloadAllFiles = async () => {
+    const tracksToDownload = playlist.filter((file) => !file.isFolder && file.streamUrl);
+    if (tracksToDownload.length === 0) return;
+
+    await downloadRawFiles(tracksToDownload);
   };
 
   if (!hasTokenOrEventId) {
@@ -255,17 +267,20 @@ export default function PublicPlayerView() {
           setCurrentIndex(idx);
           setIsPlaying(true);
         }}
-        onDownloadTrack={handleDownload}
-        onRemoveDownload={handleRemoveDownload}
-        downloadProgressById={downloadProgress}
+        onSaveTrackOffline={handleSaveTrackOffline}
+        onRemoveOffline={handleRemoveOffline}
+        onDownloadTrackFile={handleDownloadTrackFile}
+        downloadProgress={offlineSaveProgress}
         selectedVoicePart={selectedVoicePart}
-        onDownloadAll={handleDownloadAll}
+        onSaveAllOffline={handleSaveAllOffline}
+        onDownloadAllFiles={handleDownloadAllFiles}
         onClearAll={handleClearAll}
-        isDownloadingAll={isDownloadingAll}
+        isSavingAllOffline={isSavingAllOffline}
       />
 
-      <div className="text-muted mt-8 text-center text-xs">
-        You can download tracks for offline practice. They will be saved in your browser.
+      <div className="text-text-muted mt-8 text-center text-xs">
+        Save Offline keeps tracks available in this browser for practice without internet. Download
+        Files saves the audio files to your device.
       </div>
     </div>
   );
