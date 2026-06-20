@@ -274,15 +274,28 @@ export const playerService = {
     const resolvedVoiceParts =
       voiceParts && voiceParts.length > 0 ? voiceParts : DEFAULT_VOICE_PARTS;
 
+    const voicePartMap = new Map<string, string>();
+    for (const vp of resolvedVoiceParts) {
+      if (vp.sectionCode) {
+        voicePartMap.set(vp.label.toLowerCase(), vp.sectionCode);
+      }
+    }
+
     const getSectionOfKey = (k: string): string => {
-      const vp = resolvedVoiceParts.find((v) => v.label.toLowerCase() === k.toLowerCase());
-      if (vp && vp.sectionCode) {
-        return vp.sectionCode;
+      const lowerK = k.toLowerCase();
+      if (voicePartMap.has(lowerK)) {
+        return voicePartMap.get(lowerK)!;
       }
       return getSectionFromVoicePart(k);
     };
 
     const requestedSection = getSectionOfKey(part);
+
+    const sameSectionLabels = requestedSection !== 'Other'
+      ? resolvedVoiceParts
+          .filter((vp) => vp.sectionCode === requestedSection)
+          .map((vp) => vp.label.toLowerCase())
+      : [];
 
     return files.map((file) => {
       if (!file.availableTracks || !file.pieceId) return file;
@@ -311,10 +324,6 @@ export const playerService = {
 
         // 2b. Other voice parts in the same section
         if (!trackKey) {
-          const sameSectionLabels = resolvedVoiceParts
-            .filter((vp) => vp.sectionCode === requestedSection)
-            .map((vp) => vp.label.toLowerCase());
-
           for (const label of sameSectionLabels) {
             const match = activeKeys.find((k) => k.toLowerCase() === label);
             if (match) {
