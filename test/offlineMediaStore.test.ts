@@ -1,16 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, mock, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { getOfflineTrackUrl, revokeAllOfflineTrackUrls, clearAllDownloads } from '../src/services/offlineMediaStore.ts';
+import {
+  getOfflineTrackUrl,
+  revokeAllOfflineTrackUrls,
+  clearAllDownloads,
+  downloadTrack,
+} from '../src/services/offlineMediaStore.ts';
 
 describe('offlineMediaStore', () => {
   let objectURLMock: any;
   let revokeURLMock: any;
   let getRequestMock: any;
+  let putRequestMock: any;
+  let originalFetch: any;
   let customGetResultCb: ((trackId: string) => any) | null = null;
   let customGetError: Error | null = null;
 
   beforeEach(() => {
+    originalFetch = global.fetch;
+
     mock.restoreAll();
     customGetResultCb = null;
     customGetError = null;
@@ -29,7 +38,13 @@ describe('offlineMediaStore', () => {
     getRequestMock = {
       onsuccess: null,
       onerror: null,
-      result: undefined
+      result: undefined,
+    };
+
+    putRequestMock = {
+      onsuccess: null,
+      onerror: null,
+      result: undefined,
     };
 
     const objectStoreMock = {
@@ -54,23 +69,29 @@ describe('offlineMediaStore', () => {
           }
         }, 0);
         return getRequestMock;
-      })
+      }),
+      put: mock.fn(() => {
+        setTimeout(() => {
+          if (putRequestMock.onsuccess) putRequestMock.onsuccess();
+        }, 0);
+        return putRequestMock;
+      }),
     };
 
     const transactionMock = {
-      objectStore: mock.fn(() => objectStoreMock)
+      objectStore: mock.fn(() => objectStoreMock),
     };
 
     const dbMock = {
       transaction: mock.fn(() => transactionMock),
-      objectStoreNames: { contains: () => true }
+      objectStoreNames: { contains: () => true },
     };
 
     const openRequestMock = {
       onsuccess: null,
       onerror: null,
       onupgradeneeded: null,
-      result: dbMock
+      result: dbMock,
     };
 
     global.indexedDB = {
@@ -79,12 +100,17 @@ describe('offlineMediaStore', () => {
           if (openRequestMock.onsuccess) (openRequestMock as any).onsuccess();
         }, 0);
         return openRequestMock;
-      })
+      }),
     } as any;
   });
 
   afterEach(() => {
     mock.restoreAll();
+    if (originalFetch) {
+      global.fetch = originalFetch;
+    } else {
+      delete (global as any).fetch;
+    }
   });
 
   describe('getOfflineTrackUrl', () => {
@@ -117,7 +143,110 @@ describe('offlineMediaStore', () => {
 
       const url2 = await getOfflineTrackUrl('track-1');
       assert.strictEqual(url1, url2);
-      assert.strictEqual(objectURLMock.mock.callCount(), 1, 'Should not call createObjectURL again');
+      assert.strictEqual(
+        objectURLMock.mock.callCount(),
+        1,
+        'Should not call createObjectURL again'
+      );
+    });
+  });
+
+  describe('downloadTrack', () => {
+    it('should throw an error if track has no streamUrl', async () => {
+      const track = { id: 'test', name: 'Test', streamUrl: '' } as any;
+      await assert.rejects(() => downloadTrack(track), /Track has no streamUrl/);
+    });
+
+    it('should throw an error if fetch fails', async () => {
+      const track = { id: 'test', name: 'Test', streamUrl: 'http://test.url' } as any;
+      global.fetch = mock.fn(() =>
+        Promise.resolve({
+          ok: false,
+          statusText: 'Not Found',
+        } as Response)
+      );
+
+      await assert.rejects(() => downloadTrack(track), /Failed to fetch audio stream: Not Found/);
+    });
+
+    it('should download track using response.blob() when no reader is available and call onProgress', async () => {
+      const track = { id: 'test', name: 'Test', streamUrl: 'http://test.url' } as any;
+      const progressMock = mock.fn();
+
+      const dummyBlob = new Blob(['dummy'], { type: 'audio/mpeg' });
+      global.fetch = mock.fn(() =>
+        Promise.resolve({
+          ok: true,
+          headers: new Headers({
+            'content-length': '5',
+            'content-type': 'audio/mpeg',
+          }),
+          body: null, // no reader
+          blob: () => Promise.resolve(dummyBlob),
+        } as any)
+      );
+
+      await downloadTrack(track, progressMock);
+
+      assert.strictEqual(progressMock.mock.callCount(), 1, 'onProgress should be called once');
+      assert.deepStrictEqual(
+        progressMock.mock.calls[0].arguments,
+        [100],
+        'onProgress should be called with 100'
+      );
+    });
+
+    it('should download track using reader when available and trigger onProgress', async () => {
+      const track = { id: 'test', name: 'Test', streamUrl: 'http://test.url' } as any;
+      const progressMock = mock.fn();
+
+      const chunks = [new Uint8Array([1, 2]), new Uint8Array([3, 4, 5])];
+
+      let chunkIndex = 0;
+      const readerMock = {
+        read: mock.fn(() => {
+          if (chunkIndex < chunks.length) {
+            return Promise.resolve({ done: false, value: chunks[chunkIndex++] });
+          }
+          return Promise.resolve({ done: true, value: undefined });
+        }),
+      };
+
+      global.fetch = mock.fn(() =>
+        Promise.resolve({
+          ok: true,
+          headers: new Headers({
+            'content-length': '5',
+            'content-type': 'audio/mpeg',
+          }),
+          body: {
+            getReader: () => readerMock,
+          },
+        } as any)
+      );
+
+      await downloadTrack(track, progressMock);
+
+      assert.strictEqual(
+        readerMock.read.mock.callCount(),
+        3,
+        'reader.read should be called 3 times (2 chunks + 1 done)'
+      );
+      assert.strictEqual(
+        progressMock.mock.callCount(),
+        2,
+        'onProgress should be called for each chunk'
+      );
+      assert.deepStrictEqual(
+        progressMock.mock.calls[0].arguments,
+        [40],
+        'onProgress should report 40% after first chunk'
+      );
+      assert.deepStrictEqual(
+        progressMock.mock.calls[1].arguments,
+        [100],
+        'onProgress should report 100% after second chunk'
+      );
     });
   });
 
@@ -128,20 +257,38 @@ describe('offlineMediaStore', () => {
 
     assert.ok(url1, 'Should return a url for track-1');
     assert.ok(url2, 'Should return a url for track-2');
-    assert.strictEqual(objectURLMock.mock.callCount(), 2, 'createObjectURL should have been called twice');
+    assert.strictEqual(
+      objectURLMock.mock.callCount(),
+      2,
+      'createObjectURL should have been called twice'
+    );
 
     // 2. Call the function under test
     revokeAllOfflineTrackUrls();
 
     // 3. Verify revokes were called
-    assert.strictEqual(revokeURLMock.mock.callCount(), 2, 'revokeObjectURL should have been called for each URL');
-    assert.ok(revokeURLMock.mock.calls.some((call: any) => call.arguments[0] === url1), 'Should have revoked url1');
-    assert.ok(revokeURLMock.mock.calls.some((call: any) => call.arguments[0] === url2), 'Should have revoked url2');
+    assert.strictEqual(
+      revokeURLMock.mock.callCount(),
+      2,
+      'revokeObjectURL should have been called for each URL'
+    );
+    assert.ok(
+      revokeURLMock.mock.calls.some((call: any) => call.arguments[0] === url1),
+      'Should have revoked url1'
+    );
+    assert.ok(
+      revokeURLMock.mock.calls.some((call: any) => call.arguments[0] === url2),
+      'Should have revoked url2'
+    );
 
     // 4. Verify cache was cleared by getting again and checking if createObjectURL is called anew
     objectURLMock.mock.resetCalls();
     await getOfflineTrackUrl('track-1');
-    assert.strictEqual(objectURLMock.mock.callCount(), 1, 'Should create a new object URL, meaning cache was cleared');
+    assert.strictEqual(
+      objectURLMock.mock.callCount(),
+      1,
+      'Should create a new object URL, meaning cache was cleared'
+    );
   });
 
   it('clearAllDownloads should clear both object stores and revoke URLs', async () => {
@@ -164,10 +311,13 @@ describe('offlineMediaStore', () => {
         if (storeName === 'tracks') return tracksStoreMock;
         if (storeName === 'playlists') return playlistsStoreMock;
         return null;
-      })
+      }),
     };
 
-    const dbMock = { transaction: mock.fn(() => transactionMock), objectStoreNames: { contains: () => true } };
+    const dbMock = {
+      transaction: mock.fn(() => transactionMock),
+      objectStoreNames: { contains: () => true },
+    };
     global.indexedDB.open = mock.fn(() => {
       const req = { onsuccess: null as any, result: dbMock };
       setTimeout(() => {
@@ -175,7 +325,6 @@ describe('offlineMediaStore', () => {
       }, 0);
       return req as any;
     });
-
 
     const clearPromise = clearAllDownloads();
 
@@ -197,7 +346,11 @@ describe('offlineMediaStore', () => {
   });
 
   it('clearAllDownloads should reject if clear fails', async () => {
-    const clearReqTracks = { onsuccess: null as any, onerror: null as any, error: new Error('Clear failed') };
+    const clearReqTracks = {
+      onsuccess: null as any,
+      onerror: null as any,
+      error: new Error('Clear failed'),
+    };
     const clearReqPlaylists = { onsuccess: null as any, onerror: null as any };
 
     const tracksStoreMock = { clear: mock.fn(() => clearReqTracks) };
@@ -208,10 +361,13 @@ describe('offlineMediaStore', () => {
         if (storeName === 'tracks') return tracksStoreMock;
         if (storeName === 'playlists') return playlistsStoreMock;
         return null;
-      })
+      }),
     };
 
-    const dbMock = { transaction: mock.fn(() => transactionMock), objectStoreNames: { contains: () => true } };
+    const dbMock = {
+      transaction: mock.fn(() => transactionMock),
+      objectStoreNames: { contains: () => true },
+    };
     global.indexedDB.open = mock.fn(() => {
       const req = { onsuccess: null as any, result: dbMock };
       setTimeout(() => {
