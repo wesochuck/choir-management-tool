@@ -42,7 +42,7 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { formatInTimezone } from '../../lib/timezone';
-import { Button, CopyButton, Select, Spinner, Divider } from '../../components/ui';
+import { Button, Select, Spinner, Divider } from '../../components/ui';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
@@ -114,6 +114,7 @@ export default function SetListView() {
 
   // Print Modal state
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const plainText = useMemo(() => {
     if (!selectedEvent) return '';
@@ -129,6 +130,17 @@ export default function SetListView() {
   const handlePrintList = () => {
     window.print();
   };
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(plainText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      dialog.showToast('Set list copied to clipboard.');
+    } catch (err) {
+      console.error('Failed to copy set list:', err);
+    }
+  }, [plainText, dialog]);
 
   // Audio player state
   const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
@@ -826,12 +838,15 @@ export default function SetListView() {
                 <Button variant="outline" onClick={() => setIsPrintModalOpen(false)}>
                   Close
                 </Button>
-                <div className="flex flex-1 items-center gap-1 sm:flex-none">
-                  <CopyButton value={plainText} />
-                  <span className="text-text-muted hidden text-xs md:inline">
-                    📋 Copy Plain Text
-                  </span>
-                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleCopy}
+                  icon={
+                    copied ? <span aria-hidden="true">✓</span> : <span aria-hidden="true">📋</span>
+                  }
+                >
+                  {copied ? 'Copied!' : 'Copy Plain Text'}
+                </Button>
               </div>
               <Button variant="primary" className="w-full sm:w-auto" onClick={handlePrintList}>
                 <span aria-hidden="true">🖨️</span>
