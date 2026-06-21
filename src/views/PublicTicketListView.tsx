@@ -87,9 +87,10 @@ export default function PublicTicketListView() {
                   Season Passes
                 </h2>
                 {bundles.map((bundle) => (
-                  <div
+                  <Link
                     key={bundle.id}
-                    className="border-primary bg-primary-light flex flex-col items-center justify-between gap-4 rounded-xl border-2 p-4 shadow-sm transition-all duration-200 hover:shadow-md md:flex-row"
+                    to={`/tickets/bundle/${bundle.id}`}
+                    className="border-primary bg-primary-light hover:border-primary-deep flex flex-col items-center justify-between gap-4 rounded-xl border-2 p-4 text-inherit no-underline shadow-sm transition-all duration-200 hover:shadow-md md:flex-row"
                   >
                     <div className="flex flex-1 flex-col gap-1">
                       <span className="bg-success-bg text-success-text inline-flex items-center self-start rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
@@ -110,16 +111,11 @@ export default function PublicTicketListView() {
                       <span className="text-primary-deep text-xl font-bold">
                         ${(bundle.priceCents / 100).toFixed(2)}
                       </span>
-                      <Button
-                        as={Link}
-                        to={`/tickets/bundle/${bundle.id}`}
-                        variant="primary"
-                        className="text-center whitespace-nowrap no-underline"
-                      >
+                      <Button as="div" variant="primary" className="text-center whitespace-nowrap">
                         Buy Season Pass
                       </Button>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -128,9 +124,10 @@ export default function PublicTicketListView() {
               <div className="flex flex-col gap-4">
                 <h2 className="border-border m-0 border-b-2 pb-1">Concert Tickets</h2>
                 {events.map((event) => (
-                  <div
+                  <Link
                     key={event.id}
-                    className="border-border bg-surface flex flex-col items-center justify-between gap-4 rounded-xl border p-4 shadow-sm transition-all duration-200 hover:shadow-md md:flex-row"
+                    to={`/tickets/${event.id}`}
+                    className="border-border bg-surface hover:border-primary-deep flex flex-col items-center justify-between gap-4 rounded-xl border p-4 text-inherit no-underline shadow-sm transition-all duration-200 hover:shadow-md md:flex-row"
                   >
                     <div className="flex flex-1 flex-col gap-1">
                       {event.eventGraphic && (
@@ -152,15 +149,10 @@ export default function PublicTicketListView() {
                         })}
                       </span>
                     </div>
-                    <Button
-                      as={Link}
-                      to={`/tickets/${event.id}`}
-                      variant="primary"
-                      className="text-center whitespace-nowrap no-underline"
-                    >
+                    <Button as="div" variant="primary" className="text-center whitespace-nowrap">
                       Buy Tickets
                     </Button>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
