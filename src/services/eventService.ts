@@ -83,7 +83,7 @@ export const eventService = {
       filter: 'isArchived != true && isTicketingEnabled = true && date >= @now',
       sort: 'date',
       fields:
-        'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+        'id,collectionId,collectionName,title,date,type,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
       expand: 'venue',
     });
   },
@@ -95,18 +95,16 @@ export const eventService = {
   },
 
   async getPublicEventById(id: string) {
-    return await pb
-      .collection('events')
-      .getFirstListItem<Event>(
-        pb.filter('id = {:id} && isArchived != true && isTicketingEnabled = true && date >= @now', {
-          id,
-        }),
-        {
-          fields:
-            'id,collectionId,collectionName,title,date,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
-          expand: 'venue',
-        }
-      );
+    return await pb.collection('events').getFirstListItem<Event>(
+      pb.filter('id = {:id} && isArchived != true && isTicketingEnabled = true && date >= @now', {
+        id,
+      }),
+      {
+        fields:
+          'id,collectionId,collectionName,title,date,type,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+        expand: 'venue',
+      }
+    );
   },
 
   async getRecentPerformances(limit: number): Promise<Event[]> {

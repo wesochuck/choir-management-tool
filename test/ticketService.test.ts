@@ -18,8 +18,9 @@ test('ticketService.createCheckoutSession calls pb.send correctly', async (t) =>
     );
     assert.deepEqual(res, { url: 'mock-url', sessionId: 'mock-session' });
     assert.equal(mockSend.mock.callCount(), 1);
-    assert.equal(mockSend.mock.calls[0].arguments[0], '/api/checkout/create-tickets-session');
-    assert.deepEqual(mockSend.mock.calls[0].arguments[1], {
+    const args = mockSend.mock.calls[0].arguments as unknown[];
+    assert.equal(args[0], '/api/checkout/create-tickets-session');
+    assert.deepEqual(args[1], {
       method: 'POST',
       body: {
         eventId: 'evt_1',
@@ -52,8 +53,9 @@ test('ticketService.createBundleCheckoutSession calls pb.send correctly', async 
     );
     assert.deepEqual(res, { url: 'mock-url-bundle', sessionId: 'mock-session-bundle' });
     assert.equal(mockSend.mock.callCount(), 1);
-    assert.equal(mockSend.mock.calls[0].arguments[0], '/api/checkout/create-bundle-session');
-    assert.deepEqual(mockSend.mock.calls[0].arguments[1], {
+    const args = mockSend.mock.calls[0].arguments as unknown[];
+    assert.equal(args[0], '/api/checkout/create-bundle-session');
+    assert.deepEqual(args[1], {
       method: 'POST',
       body: {
         bundleId: 'bundle_1',
@@ -89,9 +91,11 @@ test('ticketService.pollForPurchaseRecord finds record on first try', async (t) 
     assert.deepEqual(res, mockRecord);
     assert.equal(mockGetFullList.mock.callCount(), 1);
     assert.equal(mockFilter.mock.callCount(), 1);
-    assert.equal(mockFilter.mock.calls[0].arguments[0], 'stripeSessionId = {:sessionId}');
-    assert.deepEqual(mockFilter.mock.calls[0].arguments[1], { sessionId: 'session_1' });
-    assert.deepEqual(mockGetFullList.mock.calls[0].arguments[0], {
+    const filterArgs = mockFilter.mock.calls[0].arguments as unknown[];
+    assert.equal(filterArgs[0], 'stripeSessionId = {:sessionId}');
+    assert.deepEqual(filterArgs[1], { sessionId: 'session_1' });
+    const getFullListArgs = mockGetFullList.mock.calls[0].arguments as unknown[];
+    assert.deepEqual(getFullListArgs[0], {
       filter: 'stripeSessionId = "session_1"',
       perPage: 1,
       expand: 'event.venue,bundle',
@@ -149,9 +153,11 @@ test('ticketService.getPurchasesForEvent returns list', async (t) => {
     assert.deepEqual(res, mockRecords);
     assert.equal(mockGetFullList.mock.callCount(), 1);
     assert.equal(mockFilter.mock.callCount(), 1);
-    assert.equal(mockFilter.mock.calls[0].arguments[0], 'event = {:eventId}');
-    assert.deepEqual(mockFilter.mock.calls[0].arguments[1], { eventId: 'evt_1' });
-    assert.deepEqual(mockGetFullList.mock.calls[0].arguments[0], {
+    const filterArgs = mockFilter.mock.calls[0].arguments as unknown[];
+    assert.equal(filterArgs[0], 'event = {:eventId}');
+    assert.deepEqual(filterArgs[1], { eventId: 'evt_1' });
+    const getFullListArgs = mockGetFullList.mock.calls[0].arguments as unknown[];
+    assert.deepEqual(getFullListArgs[0], {
       filter: 'event = "evt_1"',
       sort: 'buyerName',
       expand: 'event,bundle',
@@ -183,9 +189,11 @@ test('ticketService.getPurchasesForProfile returns list', async (t) => {
     assert.deepEqual(res, mockRecords);
     assert.equal(mockGetFullList.mock.callCount(), 1);
     assert.equal(mockFilter.mock.callCount(), 1);
-    assert.equal(mockFilter.mock.calls[0].arguments[0], 'profile = {:profileId}');
-    assert.deepEqual(mockFilter.mock.calls[0].arguments[1], { profileId: 'prof_1' });
-    assert.deepEqual(mockGetFullList.mock.calls[0].arguments[0], {
+    const filterArgs = mockFilter.mock.calls[0].arguments as unknown[];
+    assert.equal(filterArgs[0], 'profile = {:profileId}');
+    assert.deepEqual(filterArgs[1], { profileId: 'prof_1' });
+    const getFullListArgs = mockGetFullList.mock.calls[0].arguments as unknown[];
+    assert.deepEqual(getFullListArgs[0], {
       filter: 'profile = "prof_1"',
       sort: '-created',
       expand: 'event,bundle',
@@ -213,7 +221,8 @@ test('ticketService.getAllPurchases returns list', async (t) => {
     const res = await ticketService.getAllPurchases();
     assert.deepEqual(res, mockRecords);
     assert.equal(mockGetFullList.mock.callCount(), 1);
-    assert.deepEqual(mockGetFullList.mock.calls[0].arguments[0], {
+    const getFullListArgs = mockGetFullList.mock.calls[0].arguments as unknown[];
+    assert.deepEqual(getFullListArgs[0], {
       sort: '-created',
       expand: 'event,bundle',
     });
@@ -231,8 +240,9 @@ test('ticketService.adminRefundTicket calls pb.send', async (t) => {
     const res = await ticketService.adminRefundTicket('pur_1');
     assert.deepEqual(res, { success: true });
     assert.equal(mockSend.mock.callCount(), 1);
-    assert.equal(mockSend.mock.calls[0].arguments[0], '/api/admin/refund-ticket');
-    assert.deepEqual(mockSend.mock.calls[0].arguments[1], {
+    const args = mockSend.mock.calls[0].arguments as unknown[];
+    assert.equal(args[0], '/api/admin/refund-ticket');
+    assert.deepEqual(args[1], {
       method: 'POST',
       body: { purchaseId: 'pur_1' },
     });
@@ -250,8 +260,9 @@ test('ticketService.adminRefundBundle calls pb.send', async (t) => {
     const res = await ticketService.adminRefundBundle('pi_123');
     assert.deepEqual(res, { success: true });
     assert.equal(mockSend.mock.callCount(), 1);
-    assert.equal(mockSend.mock.calls[0].arguments[0], '/api/admin/refund-bundle');
-    assert.deepEqual(mockSend.mock.calls[0].arguments[1], {
+    const args = mockSend.mock.calls[0].arguments as unknown[];
+    assert.equal(args[0], '/api/admin/refund-bundle');
+    assert.deepEqual(args[1], {
       method: 'POST',
       body: { paymentIntentId: 'pi_123' },
     });
@@ -278,8 +289,9 @@ test('ticketService.validateScan calls pb.send correctly', async (t) => {
     assert.equal(res.valid, true);
     assert.equal(res.buyerName, 'Jane Doe');
     assert.equal(mockSend.mock.callCount(), 1);
-    assert.equal(mockSend.mock.calls[0].arguments[0], '/api/tickets/validate');
-    assert.deepEqual(mockSend.mock.calls[0].arguments[1], {
+    const args = mockSend.mock.calls[0].arguments as unknown[];
+    assert.equal(args[0], '/api/tickets/validate');
+    assert.deepEqual(args[1], {
       method: 'POST',
       body: { token: 'token_abc', eventId: 'evt_1' },
     });
@@ -304,11 +316,9 @@ test('ticketService.getScanContext calls pb.send correctly', async (t) => {
     const res = await ticketService.getScanContext('sess_1', 'pur_1');
     assert.equal(res.token, 't=pur_1&s=sig');
     assert.equal(mockSend.mock.callCount(), 1);
-    assert.equal(
-      mockSend.mock.calls[0].arguments[0],
-      '/api/tickets/scan-context?session_id=sess_1&purchase_id=pur_1'
-    );
-    assert.deepEqual(mockSend.mock.calls[0].arguments[1], { method: 'GET' });
+    const args = mockSend.mock.calls[0].arguments as unknown[];
+    assert.equal(args[0], '/api/tickets/scan-context?session_id=sess_1&purchase_id=pur_1');
+    assert.deepEqual(args[1], { method: 'GET' });
   } finally {
     pb.send = originalSend;
   }

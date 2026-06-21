@@ -87,6 +87,40 @@ export default function TicketScanView() {
   });
   const eventsErrorMsg = eventsError?.message ?? null;
 
+  const didInitRef = useRef(false);
+
+  useEffect(() => {
+    if (eventsLoading) return;
+    if (didInitRef.current) return;
+
+    didInitRef.current = true;
+
+    const urlEventId = searchParams.get('eventId');
+    const storedEventId = localStorage.getItem(STORAGE_KEY);
+
+    const isUrlValid = urlEventId && events.some((e) => e.id === urlEventId);
+    const isStoredValid = storedEventId && events.some((e) => e.id === storedEventId);
+
+    if (isUrlValid) {
+      setSelectedEventId(urlEventId);
+    } else if (isStoredValid) {
+      setSelectedEventId(storedEventId);
+      setSearchParams({ eventId: storedEventId }, { replace: true });
+    } else {
+      const performanceEvents = events.filter((e) => e.type === 'Performance');
+      if (performanceEvents.length > 0) {
+        const defaultEvent = performanceEvents[0];
+        setSelectedEventId(defaultEvent.id);
+        setSearchParams({ eventId: defaultEvent.id }, { replace: true });
+        localStorage.setItem(STORAGE_KEY, defaultEvent.id);
+      } else {
+        setSelectedEventId('');
+        setSearchParams({}, { replace: true });
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+  }, [events, eventsLoading, searchParams, setSearchParams]);
+
   const [manualToken, setManualToken] = useState('');
   const [validating, setValidating] = useState(false);
   const [scanResult, setScanResult] = useState<ValidationResult | null>(null);
@@ -349,8 +383,14 @@ export default function TicketScanView() {
       </header>
 
       {!selectedEventId && (
-        <div className="flex flex-1 items-center justify-center p-8">
-          <p className="text-muted text-sm">Select an event to start scanning tickets.</p>
+        <div className="flex flex-1 items-center justify-center p-8 text-center">
+          {!eventsLoading &&
+          !eventsError &&
+          events.filter((e) => e.type === 'Performance').length === 0 ? (
+            <p className="text-danger-text text-sm font-semibold">No upcoming concerts to scan.</p>
+          ) : (
+            <p className="text-muted text-sm">Select an event to start scanning tickets.</p>
+          )}
         </div>
       )}
 
