@@ -1,4 +1,5 @@
 import type { MusicPiece } from '../../types/musicLibrary';
+import type { PiecePerformanceEntry } from '../../hooks/usePiecePerformanceMap';
 import {
   getEffectiveMostRecentPerformanceDate,
   type PerformanceRecencyFilter,
@@ -61,7 +62,8 @@ export function getTrackSortCount(piece: MusicPiece, allPieces: MusicPiece[]): n
  */
 export function buildVisibleMusicLibraryRows(
   pieces: MusicPiece[],
-  options: BuildVisibleMusicLibraryRowsOptions
+  options: BuildVisibleMusicLibraryRowsOptions,
+  perfMap: Map<string, PiecePerformanceEntry> = new Map()
 ): MusicPiece[] {
   const {
     searchTerm = '',
@@ -141,7 +143,7 @@ export function buildVisibleMusicLibraryRows(
   if (recencyFilter && recencyFilter !== 'all') {
     const referenceDate = now || new Date();
     result = result.filter((p) => {
-      const mostRecent = getEffectiveMostRecentPerformanceDate(p, pieces);
+      const mostRecent = getEffectiveMostRecentPerformanceDate(p, perfMap, pieces);
 
       if (recencyFilter === 'never') {
         return mostRecent === null;
@@ -212,8 +214,8 @@ export function buildVisibleMusicLibraryRows(
         return sortDirection === 'asc' ? comp : -comp;
       }
       case 'lastPerformed': {
-        const dateA = getEffectiveMostRecentPerformanceDate(a, pieces);
-        const dateB = getEffectiveMostRecentPerformanceDate(b, pieces);
+        const dateA = getEffectiveMostRecentPerformanceDate(a, perfMap, pieces);
+        const dateB = getEffectiveMostRecentPerformanceDate(b, perfMap, pieces);
         if (!dateA && !dateB) return 0;
         if (!dateA) return 1;
         if (!dateB) return -1;
@@ -221,8 +223,8 @@ export function buildVisibleMusicLibraryRows(
         return sortDirection === 'asc' ? comp : -comp;
       }
       case 'performances': {
-        const countA = Array.isArray(a.performances) ? a.performances.length : 0;
-        const countB = Array.isArray(b.performances) ? b.performances.length : 0;
+        const countA = perfMap.get(a.id)?.count ?? 0;
+        const countB = perfMap.get(b.id)?.count ?? 0;
         const comp = countA - countB;
         return sortDirection === 'asc' ? comp : -comp;
       }

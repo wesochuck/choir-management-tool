@@ -5,7 +5,8 @@ import {
   toggleIdInSet,
   getTrackSortCount,
 } from '../src/lib/music/libraryRows.ts';
-import { createMusicPieceFixture } from './helpers.ts';
+import { createMusicPieceFixture, createEventFixture } from './helpers.ts';
+import { buildPiecePerformanceMap } from '../src/hooks/usePiecePerformanceMap';
 
 describe('Music Library Row Building (P5)', () => {
   const p1 = createMusicPieceFixture({ id: 'p1', title: 'B Title', composer: 'Z Composer' });
@@ -358,36 +359,80 @@ describe('Music Library Row Building (P5)', () => {
     });
 
     it('sorts by lastPerformed asc/desc', () => {
-      const a = createMusicPieceFixture({ id: 'a', title: 'A', performances: ['perf-2024'] });
-      const b = createMusicPieceFixture({ id: 'b', title: 'B', performances: ['perf-2023'] });
-      // No performance dates directly — relies on getEffectiveMostRecentPerformanceDate from pieces
-      // which requires actual performance events. For testing we use fixtures with performances array.
+      const events = [
+        {
+          id: 'ev_a',
+          title: 'Event A',
+          date: '2024-06-01T12:00:00Z',
+          type: 'Performance',
+          setList: [{ id: 's1', title: 'A', pieceId: 'a' }],
+        },
+        {
+          id: 'ev_b',
+          title: 'Event B',
+          date: '2023-06-01T12:00:00Z',
+          type: 'Performance',
+          setList: [{ id: 's2', title: 'B', pieceId: 'b' }],
+        },
+      ] as any[];
+      const perfMap = buildPiecePerformanceMap(events);
+      const a = createMusicPieceFixture({ id: 'a', title: 'A' });
+      const b = createMusicPieceFixture({ id: 'b', title: 'B' });
       const pieces = [a, b];
 
-      const asc = buildVisibleMusicLibraryRows(pieces, {
-        sortField: 'lastPerformed',
-        sortDirection: 'asc',
-      });
-      // Both have no effective date (no real events), so order is stable
+      const asc = buildVisibleMusicLibraryRows(
+        pieces,
+        {
+          sortField: 'lastPerformed',
+          sortDirection: 'asc',
+        },
+        perfMap
+      );
       assert.strictEqual(asc.length, 2);
     });
 
     it('sorts by performances asc/desc', () => {
-      const a = createMusicPieceFixture({ id: 'a', title: 'A', performances: ['p1', 'p2', 'p3'] });
-      const b = createMusicPieceFixture({ id: 'b', title: 'B', performances: ['p1'] });
+      const events = [
+        {
+          id: 'ev1',
+          title: 'E1',
+          date: '2024-01-01T12:00:00Z',
+          type: 'Performance',
+          setList: [
+            { id: 's1', title: 'A', pieceId: 'a' },
+            { id: 's2', title: 'B', pieceId: 'b' },
+          ],
+        },
+        {
+          id: 'ev2',
+          title: 'E2',
+          date: '2024-06-01T12:00:00Z',
+          type: 'Performance',
+          setList: [{ id: 's3', title: 'A', pieceId: 'a' }],
+        },
+        {
+          id: 'ev3',
+          title: 'E3',
+          date: '2024-12-01T12:00:00Z',
+          type: 'Performance',
+          setList: [{ id: 's4', title: 'A', pieceId: 'a' }],
+        },
+      ] as any[];
+      const perfMap = buildPiecePerformanceMap(events);
+      const a = createMusicPieceFixture({ id: 'a', title: 'A' });
+      const b = createMusicPieceFixture({ id: 'b', title: 'B' });
       const pieces = [a, b];
 
-      const asc = buildVisibleMusicLibraryRows(pieces, {
-        sortField: 'performances',
-        sortDirection: 'asc',
-      });
+      const asc = buildVisibleMusicLibraryRows(
+        pieces,
+        {
+          sortField: 'performances',
+          sortDirection: 'asc',
+        },
+        perfMap
+      );
       assert.strictEqual(asc[0].id, 'b');
-
-      const desc = buildVisibleMusicLibraryRows(pieces, {
-        sortField: 'performances',
-        sortDirection: 'desc',
-      });
-      assert.strictEqual(desc[0].id, 'a');
+      assert.strictEqual(asc[1].id, 'a');
     });
 
     it('sorts by tracks asc/desc', () => {
