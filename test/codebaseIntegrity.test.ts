@@ -34,8 +34,8 @@ test('codebase integrity: no deprecated pb.files.getUrl calls allowed', () => {
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found deprecated 'pb.files.getUrl' usage in files:\n` +
-      violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nAlways use standard 'pb.files.getURL' (uppercase 'URL') to prevent breaking file asset generation.`
+        violations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nAlways use standard 'pb.files.getURL' (uppercase 'URL') to prevent breaking file asset generation.`
     );
   }
   assert.ok(true, 'No deprecated getUrl calls found');
@@ -56,8 +56,9 @@ test('codebase integrity: enforce pb.filter parameterization rules', () => {
         // Enforce that filter string does not use template literal string interpolation or string concatenations
         const lineTrimmed = line.trim();
         const hasTemplateInterpolation = lineTrimmed.includes('`') && lineTrimmed.includes('${');
-        const hasStringConcatenation = lineTrimmed.includes('+') && !lineTrimmed.includes("'") && !lineTrimmed.includes('"');
-        
+        const hasStringConcatenation =
+          lineTrimmed.includes('+') && !lineTrimmed.includes("'") && !lineTrimmed.includes('"');
+
         if (hasTemplateInterpolation || hasStringConcatenation) {
           const relPath = path.relative(srcDir, file);
           violations.push(`src/${relPath}:${idx + 1} -> "${lineTrimmed}"`);
@@ -69,8 +70,8 @@ test('codebase integrity: enforce pb.filter parameterization rules', () => {
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found raw dynamic string concatenation or template interpolation in PocketBase filters:\n` +
-      violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nAlways use 'pb.filter(...)' to parameterized and construct query filters safely. Never interpolate variables directly.`
+        violations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nAlways use 'pb.filter(...)' to parameterized and construct query filters safely. Never interpolate variables directly.`
     );
   }
   assert.ok(true, 'All PocketBase query filters are safe and parameterized');
@@ -78,7 +79,11 @@ test('codebase integrity: enforce pb.filter parameterization rules', () => {
 
 test('defensive parsing: reconstruct token split by unencoded ampersands', () => {
   // Reusable token reconstruction logic matching frontend behavior
-  const reconstructToken = (token: string, sParam: string | null, pParam: string | null): string => {
+  const reconstructToken = (
+    token: string,
+    sParam: string | null,
+    pParam: string | null
+  ): string => {
     let result = token;
     if (result) {
       if (pParam && sParam && !result.includes('p=')) {
@@ -96,7 +101,11 @@ test('defensive parsing: reconstruct token split by unencoded ampersands', () =>
   // token: 'e=event123'
   // s: 'sig456'
   const reconstructedPlayerToken = reconstructToken('e=event123', 'sig456', null);
-  assert.strictEqual(reconstructedPlayerToken, 'e=event123&s=sig456', 'Should reconstruct split player token');
+  assert.strictEqual(
+    reconstructedPlayerToken,
+    'e=event123&s=sig456',
+    'Should reconstruct split player token'
+  );
 
   // 2. RSVP split token:
   // URL: /rsvp?token=e=event123&p=prof789&s=sig456
@@ -105,7 +114,11 @@ test('defensive parsing: reconstruct token split by unencoded ampersands', () =>
   // p: 'prof789'
   // s: 'sig456'
   const reconstructedRsvpToken = reconstructToken('e=event123', 'sig456', 'prof789');
-  assert.strictEqual(reconstructedRsvpToken, 'e=event123&p=prof789&s=sig456', 'Should reconstruct split RSVP token');
+  assert.strictEqual(
+    reconstructedRsvpToken,
+    'e=event123&p=prof789&s=sig456',
+    'Should reconstruct split RSVP token'
+  );
 
   // 3. Fully encoded standard token (reconstructed should NOT duplicate params)
   // URL: /player?token=e%3Devent123%26s%3Dsig456
@@ -114,23 +127,35 @@ test('defensive parsing: reconstruct token split by unencoded ampersands', () =>
   // s: null (since it was inside the encoded parameter)
   const encodedToken = 'e=event123&s=sig456';
   const reconstructedEncoded = reconstructToken(encodedToken, null, null);
-  assert.strictEqual(reconstructedEncoded, 'e=event123&s=sig456', 'Should leave already complete token intact');
+  assert.strictEqual(
+    reconstructedEncoded,
+    'e=event123&s=sig456',
+    'Should leave already complete token intact'
+  );
 });
 
 test('data parsing: decodeGoBytes and parseJsonField resolves Goja-style byte arrays', () => {
   // 1. Standard parsed object input
   const objInput = { foo: 'bar' };
-  assert.deepStrictEqual(parseJsonField<typeof objInput>(objInput), objInput, 'Should return object intact');
+  assert.deepStrictEqual(
+    parseJsonField<typeof objInput>(objInput),
+    objInput,
+    'Should return object intact'
+  );
 
   // 2. Stringified JSON string input
   const stringInput = JSON.stringify({ key: 'val' });
-  assert.deepStrictEqual(parseJsonField<Record<string, string>>(stringInput), { key: 'val' }, 'Should parse JSON string');
+  assert.deepStrictEqual(
+    parseJsonField<Record<string, string>>(stringInput),
+    { key: 'val' },
+    'Should parse JSON string'
+  );
 
   // 3. Goja numerical byte array input
   const sourceObj = { id: 'm1', tracks: ['t1', 't2'] };
   const sourceStr = JSON.stringify(sourceObj);
-  const bytesInput = Array.from(sourceStr).map(c => c.charCodeAt(0));
-  
+  const bytesInput = Array.from(sourceStr).map((c) => c.charCodeAt(0));
+
   // Verify bytesInput is indeed a list of ASCII char numbers
   assert.ok(Array.isArray(bytesInput));
   assert.strictEqual(typeof bytesInput[0], 'number');
@@ -139,7 +164,11 @@ test('data parsing: decodeGoBytes and parseJsonField resolves Goja-style byte ar
   assert.strictEqual(decodedString, sourceStr, 'Should reconstruct matching string from bytes');
 
   const parsedObject = parseJsonField<typeof sourceObj>(bytesInput);
-  assert.deepStrictEqual(parsedObject, sourceObj, 'Should decode and parse Goja bytes successfully');
+  assert.deepStrictEqual(
+    parsedObject,
+    sourceObj,
+    'Should decode and parse Goja bytes successfully'
+  );
 
   // 4. Invalid input handling
   assert.strictEqual(parseJsonField(null), null);
@@ -157,20 +186,29 @@ test('codebase integrity: DialogContext must declare showToast API', () => {
 test('codebase integrity: Music Library UI policies', () => {
   const modalFile = resolveProjectPath('src/views/admin/music-library/MusicPieceModal.tsx');
   const tableFile = resolveProjectPath('src/views/admin/music-library/MusicLibraryTable.tsx');
-  
+
   const modalContent = fs.readFileSync(modalFile, 'utf8');
   const tableContent = fs.readFileSync(tableFile, 'utf8');
 
   // Policy: MusicPieceModal must listen to Enter onNewMovement inputs
-  const hasAddMovementHandler = /const\s+handleAddMovement\s*=\s*async\s*\(\s*e\??\s*:\s*/.test(modalContent);
-  const hasEnterKeyCheck = modalContent.includes('newMovementTitle') && modalContent.includes('onKeyDown') && modalContent.includes('handleAddMovement(');
-  
+  const hasAddMovementHandler = /const\s+handleAddMovement\s*=\s*async\s*\(\s*e\??\s*:\s*/.test(
+    modalContent
+  );
+  const hasEnterKeyCheck =
+    modalContent.includes('newMovementTitle') &&
+    modalContent.includes('onKeyDown') &&
+    modalContent.includes('handleAddMovement(');
+
   assert.ok(hasAddMovementHandler, 'MusicPieceModal must define handleAddMovement handler');
   assert.ok(hasEnterKeyCheck, 'MusicPieceModal must trigger handleAddMovement on Enter key');
 
   // Policy: MusicLibraryTable must render headphone indicators for tracks
-  const hasHeadphoneLogic = tableContent.includes('totalMovementTracksCount') && tableContent.includes('onPlayTrack');
-  assert.ok(hasHeadphoneLogic, 'MusicLibraryTable must compute movement track counts and render Play button');
+  const hasHeadphoneLogic =
+    tableContent.includes('totalMovementTracksCount') && tableContent.includes('onPlayTrack');
+  assert.ok(
+    hasHeadphoneLogic,
+    'MusicLibraryTable must compute movement track counts and render Play button'
+  );
 });
 
 test('codebase integrity: player integration consistency', () => {
@@ -183,19 +221,31 @@ test('codebase integrity: player integration consistency', () => {
   const playerContent = fs.readFileSync(playerFile, 'utf8');
 
   // Verify PlayerMediaFile interface has parentTitle (required for movement identification)
-  assert.ok(serviceContent.includes('parentTitle?: string;'), 'PlayerMediaFile must declare parentTitle');
+  assert.ok(
+    serviceContent.includes('parentTitle?: string;'),
+    'PlayerMediaFile must declare parentTitle'
+  );
 
   // Verify UI components render parentTitle
-  assert.ok(playlistContent.includes('parentTitle'), 'Playlist must support rendering parent piece titles');
-  assert.ok(playerContent.includes('parentTitle'), 'Player must support rendering parent piece titles');
+  assert.ok(
+    playlistContent.includes('parentTitle'),
+    'Playlist must support rendering parent piece titles'
+  );
+  assert.ok(
+    playerContent.includes('parentTitle'),
+    'Player must support rendering parent piece titles'
+  );
 });
 
 test('codebase integrity: no JSX IIFE anti-patterns in CommunicationView', () => {
   const historyPanelFile = resolveProjectPath('src/views/admin/communications/HistoryPanel.tsx');
   const content = fs.readFileSync(historyPanelFile, 'utf8');
-  
+
   // Verify MessageHistory component is used
-  assert.ok(content.includes('<MessageHistory'), 'HistoryPanel should use the MessageHistory component');
+  assert.ok(
+    content.includes('<MessageHistory'),
+    'HistoryPanel should use the MessageHistory component'
+  );
 });
 
 test('codebase integrity: PublicRsvpView does not use native alert dialogs', () => {
@@ -239,15 +289,23 @@ test('textSafety: sanitizeHtml removes unsafe elements and attributes', () => {
   // 3. Malicious javascript url injection
   const urlInput = '<a href="javascript:alert(1)">Click me</a>';
   const urlOutput = sanitizeHtml(urlInput);
-  assert.strictEqual(urlOutput, '<a>Click me</a>', 'Should completely strip unsafe href attributes');
+  assert.strictEqual(
+    urlOutput,
+    '<a>Click me</a>',
+    'Should completely strip unsafe href attributes'
+  );
 
   // 4. Bypassed malicious javascript url injection (control characters)
   const bypassUrlInput = '<a href="java&#x09;script:alert(1)">Click me</a>';
   const bypassUrlOutput = sanitizeHtml(bypassUrlInput);
-  assert.ok(!bypassUrlOutput.includes('href="java'), 'Should strip javascript: protocols even with control characters');
+  assert.ok(
+    !bypassUrlOutput.includes('href="java'),
+    'Should strip javascript: protocols even with control characters'
+  );
 
   // 5. Allowed tags and attributes
-  const allowedInput = '<p style="color: red;">Line <br> <strong>bold</strong> <em>italic</em> <a href="https://example.com" target="_blank">link</a></p>';
+  const allowedInput =
+    '<p style="color: red;">Line <br> <strong>bold</strong> <em>italic</em> <a href="https://example.com" target="_blank">link</a></p>';
   const allowedOutput = sanitizeHtml(allowedInput);
   assert.strictEqual(allowedOutput, allowedInput, 'Should preserve safe tags and attributes');
 });
@@ -272,9 +330,16 @@ test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
         const nextLine = idx < lines.length - 1 ? lines[idx + 1] : '';
         const nextNextLine = idx < lines.length - 2 ? lines[idx + 2] : '';
 
-        const isBypassed = prevLine.includes('@allow-dangerouslySetInnerHTML') || currentLine.includes('@allow-dangerouslySetInnerHTML');
-        const isSanitized = currentLine.includes('sanitizeHtml(') || nextLine.includes('sanitizeHtml(') || nextNextLine.includes('sanitizeHtml(') ||
-          currentLine.includes('DOMPurify.sanitize(') || nextLine.includes('DOMPurify.sanitize(') || nextNextLine.includes('DOMPurify.sanitize(');
+        const isBypassed =
+          prevLine.includes('@allow-dangerouslySetInnerHTML') ||
+          currentLine.includes('@allow-dangerouslySetInnerHTML');
+        const isSanitized =
+          currentLine.includes('sanitizeHtml(') ||
+          nextLine.includes('sanitizeHtml(') ||
+          nextNextLine.includes('sanitizeHtml(') ||
+          currentLine.includes('DOMPurify.sanitize(') ||
+          nextLine.includes('DOMPurify.sanitize(') ||
+          nextNextLine.includes('DOMPurify.sanitize(');
 
         if (!isBypassed && !isSanitized) {
           const relPath = path.relative(srcDir, file);
@@ -287,9 +352,9 @@ test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found dangerouslySetInnerHTML usage without sanitizeHtml/DOMPurify.sanitize or safety comment annotation:\n` +
-      violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nTo resolve, wrap the input in 'sanitizeHtml(...)' or 'DOMPurify.sanitize(...)' OR add a preceding comment:\n` +
-      `// @allow-dangerouslySetInnerHTML - [explanation of safety, use with caution]`
+        violations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nTo resolve, wrap the input in 'sanitizeHtml(...)' or 'DOMPurify.sanitize(...)' OR add a preceding comment:\n` +
+        `// @allow-dangerouslySetInnerHTML - [explanation of safety, use with caution]`
     );
   }
   assert.ok(true, 'All dangerouslySetInnerHTML usages are sanitized or annotated');
@@ -297,7 +362,10 @@ test('codebase integrity: enforce dangerouslySetInnerHTML safety rule', () => {
 
 test('codebase integrity: profiles do not have direct email fields', () => {
   // Backend files (hooks, endpoints, utilities)
-  const backendFiles = getFilesRecursively(resolveProjectPath('pocketbase/pb_hooks_src'), ['.ts', '.js']);
+  const backendFiles = getFilesRecursively(resolveProjectPath('pocketbase/pb_hooks_src'), [
+    '.ts',
+    '.js',
+  ]);
   const backendViolations: string[] = [];
 
   for (const file of backendFiles) {
@@ -306,8 +374,18 @@ test('codebase integrity: profiles do not have direct email fields', () => {
     const lines = content.split('\n');
     lines.forEach((line, idx) => {
       // Look for profile.get("email") or profile.email where it is assumed to be a field on the profile itself
-      if (line.includes('.get("email")') && (line.includes('profile') || line.includes('recipient') && !line.includes('adminRecord') && !line.includes('userRec') && !line.includes('adminUser') && !line.includes('user'))) {
-        backendViolations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`);
+      if (
+        line.includes('.get("email")') &&
+        (line.includes('profile') ||
+          (line.includes('recipient') &&
+            !line.includes('adminRecord') &&
+            !line.includes('userRec') &&
+            !line.includes('adminUser') &&
+            !line.includes('user')))
+      ) {
+        backendViolations.push(
+          `${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`
+        );
       }
     });
   }
@@ -315,8 +393,8 @@ test('codebase integrity: profiles do not have direct email fields', () => {
   if (backendViolations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found direct profile email field access in backend hooks:\n` +
-      backendViolations.map(v => `  - ${v}`).join('\n') +
-      `\n\nThe 'profiles' collection does not have a native 'email' field. Retrieve it from the related 'users' record instead.`
+        backendViolations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nThe 'profiles' collection does not have a native 'email' field. Retrieve it from the related 'users' record instead.`
     );
   }
 
@@ -324,14 +402,15 @@ test('codebase integrity: profiles do not have direct email fields', () => {
   const frontendFiles = getSrcFiles(['.ts', '.tsx']);
   const frontendViolations: string[] = [];
 
-
   for (const file of frontendFiles) {
     if (file.endsWith('profileService.ts')) continue; // Exclude definition of getProfileEmail / splitProfileInput
     const content = fs.readFileSync(file, 'utf8');
     const lines = content.split('\n');
     lines.forEach((line, idx) => {
       if (line.includes('profile.email') && !line.includes('profileService')) {
-        frontendViolations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`);
+        frontendViolations.push(
+          `${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`
+        );
       }
     });
   }
@@ -339,8 +418,8 @@ test('codebase integrity: profiles do not have direct email fields', () => {
   if (frontendViolations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found direct profile.email access in frontend:\n` +
-      frontendViolations.map(v => `  - ${v}`).join('\n') +
-      `\n\nUse 'getProfileEmail(profile)' from profileService to resolve the linked user email.`
+        frontendViolations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nUse 'getProfileEmail(profile)' from profileService to resolve the linked user email.`
     );
   }
 
@@ -365,7 +444,11 @@ test('codebase integrity: rosterService PocketBase calls must be wrapped in retr
       if (ts.isPropertyAccessExpression(expression)) {
         const obj = expression.expression;
         const prop = expression.name;
-        if (ts.isIdentifier(obj) && obj.text === 'pb' && (prop.text === 'send' || prop.text === 'collection')) {
+        if (
+          ts.isIdentifier(obj) &&
+          obj.text === 'pb' &&
+          (prop.text === 'send' || prop.text === 'collection')
+        ) {
           isPbCall = true;
           methodName = `pb.${prop.text}`;
         }
@@ -387,8 +470,12 @@ test('codebase integrity: rosterService PocketBase calls must be wrapped in retr
         }
 
         if (!isWrapped) {
-          const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-          violations.push(`Line ${line + 1}, col ${character + 1}: ${methodName} call is not wrapped in retryOn429`);
+          const { line, character } = sourceFile.getLineAndCharacterOfPosition(
+            node.getStart(sourceFile)
+          );
+          violations.push(
+            `Line ${line + 1}, col ${character + 1}: ${methodName} call is not wrapped in retryOn429`
+          );
         }
       }
     }
@@ -401,8 +488,8 @@ test('codebase integrity: rosterService PocketBase calls must be wrapped in retr
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found unprotected PocketBase calls in rosterService.ts:\n` +
-      violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nAll pb.send and pb.collection calls in rosterService.ts must be wrapped in 'retryOn429(...)' to prevent rate-limit failures.`
+        violations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nAll pb.send and pb.collection calls in rosterService.ts must be wrapped in 'retryOn429(...)' to prevent rate-limit failures.`
     );
   }
   assert.ok(true, 'All rosterService.ts PocketBase calls are protected with retryOn429');
@@ -411,22 +498,67 @@ test('codebase integrity: rosterService PocketBase calls must be wrapped in retr
 test('codebase integrity: useAttendance hook must not call PocketBase directly', () => {
   const hookFile = resolveProjectPath('src/hooks/useAttendance.ts');
   const content = fs.readFileSync(hookFile, 'utf8');
-  assert.ok(!content.includes('pb.collection'), 'useAttendance.ts must not call pb.collection directly to ensure it routes through rate-limit protected services');
-  assert.ok(!content.includes('pb.send'), 'useAttendance.ts must not call pb.send directly to ensure it routes through rate-limit protected services');
+  assert.ok(
+    !content.includes('pb.collection'),
+    'useAttendance.ts must not call pb.collection directly to ensure it routes through rate-limit protected services'
+  );
+  assert.ok(
+    !content.includes('pb.send'),
+    'useAttendance.ts must not call pb.send directly to ensure it routes through rate-limit protected services'
+  );
 });
 
-test('codebase integrity: TicketingView uses polling fallback for will call updates', () => {
+test('codebase integrity: useAttendance uses polling instead of realtime subscriptions', () => {
+  const hookFile = resolveProjectPath('src/hooks/useAttendance.ts');
+  const content = fs.readFileSync(hookFile, 'utf8');
+
+  assert.equal(
+    content.includes('useEventRosterRealtime'),
+    false,
+    'useAttendance must not mount PocketBase realtime; roster updates should arrive through polling'
+  );
+  assert.ok(
+    content.includes('refetchInterval: rosterRefreshIntervalMs'),
+    'useAttendance must keep a polling refresh interval for roster updates'
+  );
+});
+
+test('codebase integrity: TicketingView uses purchase polling instead of realtime subscriptions', () => {
   const viewFile = resolveProjectPath('src/views/admin/TicketingView.tsx');
   const content = fs.readFileSync(viewFile, 'utf8');
 
+  assert.equal(
+    content.includes('useTicketPurchasesRealtime'),
+    false,
+    'TicketingView must not mount PocketBase realtime; will call updates should arrive through polling'
+  );
+
+  const intervalMatches = content.match(/refetchInterval: TICKETING_REFRESH_INTERVAL_MS/g) ?? [];
+  assert.equal(
+    intervalMatches.length,
+    2,
+    'TicketingView should poll the selected event purchases and all purchases, but not metadata queries'
+  );
+
   assert.ok(
-    content.includes('refetchInterval: TICKETING_REFRESH_INTERVAL_MS'),
-    'TicketingView ticketing query must keep a polling fallback so Will Call updates are not dependent on realtime delivery'
+    content.includes('queryKey: queryKeys.ticketing.purchasesByEvent(selectedEventId)'),
+    'TicketingView selected-event purchases query must have its own cache key'
+  );
+  assert.ok(
+    content.includes('queryKey: queryKeys.ticketing.allPurchases()'),
+    'TicketingView all-purchases query must have its own cache key'
+  );
+  assert.ok(
+    content.includes('queryKey: queryKeys.ticketing.events()'),
+    'TicketingView metadata queries should remain separate from fast purchase polling'
   );
 });
 
 test('codebase integrity: ensure appSettings lookups for choir name reference choir_name', () => {
-  const backendFiles = getFilesRecursively(resolveProjectPath('pocketbase/pb_hooks_src'), ['.ts', '.js']);
+  const backendFiles = getFilesRecursively(resolveProjectPath('pocketbase/pb_hooks_src'), [
+    '.ts',
+    '.js',
+  ]);
   const frontendFiles = getSrcFiles(['.ts', '.tsx']);
   const allFiles = [...backendFiles, ...frontendFiles];
 
@@ -437,7 +569,13 @@ test('codebase integrity: ensure appSettings lookups for choir name reference ch
     const content = fs.readFileSync(file, 'utf8');
     const lines = content.split('\n');
     lines.forEach((line, idx) => {
-      if (line.includes('choirName') && (line.includes('findFirstRecordByFilter') || line.includes('getFirstListItem') || line.includes('findRecordsByFilter')) && !line.includes('choir_name')) {
+      if (
+        line.includes('choirName') &&
+        (line.includes('findFirstRecordByFilter') ||
+          line.includes('getFirstListItem') ||
+          line.includes('findRecordsByFilter')) &&
+        !line.includes('choir_name')
+      ) {
         violations.push(`${path.relative(process.cwd(), file)}:${idx + 1} -> "${line.trim()}"`);
       }
     });
@@ -446,8 +584,8 @@ test('codebase integrity: ensure appSettings lookups for choir name reference ch
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found query for 'choirName' without checking 'choir_name' in settings:\n` +
-      violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nThe appSettings key in the database is 'choir_name'. Ensure all lookups check 'choir_name' instead of or in addition to 'choirName'.`
+        violations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nThe appSettings key in the database is 'choir_name'. Ensure all lookups check 'choir_name' instead of or in addition to 'choirName'.`
     );
   }
   assert.ok(true, 'All choir name appSettings queries are safe');
@@ -473,7 +611,8 @@ test('codebase integrity: enforce no inline styles rule', () => {
         // Look for preceding line or current line containing @allow-inline-style
         const prevLine = idx > 0 ? lines[idx - 1] : '';
         const currentLine = lines[idx];
-        const isBypassed = prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style');
+        const isBypassed =
+          prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style');
 
         if (!isBypassed) {
           violations.push(`${key}:${idx + 1} -> "${line.trim()}"`);
@@ -485,9 +624,9 @@ test('codebase integrity: enforce no inline styles rule', () => {
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found inline style={{ ... }} usage in non-whitelisted file:\n` +
-      violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nTo resolve, either move styling to an external CSS stylesheet, OR if the style is dynamic, add a preceding comment:\n` +
-      `// @allow-inline-style - [explanation of dynamic styling requirement]`
+        violations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nTo resolve, either move styling to an external CSS stylesheet, OR if the style is dynamic, add a preceding comment:\n` +
+        `// @allow-inline-style - [explanation of dynamic styling requirement]`
     );
   }
   assert.ok(true, 'No unauthorized inline styles found');
@@ -512,7 +651,8 @@ test('codebase integrity: no inline <style> tags without annotation', () => {
       if (line.includes('<style>') || line.includes('<style ')) {
         const prevLine = idx > 0 ? lines[idx - 1] : '';
         const currentLine = lines[idx];
-        const isBypassed = prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style');
+        const isBypassed =
+          prevLine.includes('@allow-inline-style') || currentLine.includes('@allow-inline-style');
 
         if (!isBypassed) {
           violations.push(`${key}:${idx + 1} -> "${line.trim()}"`);
@@ -524,11 +664,11 @@ test('codebase integrity: no inline <style> tags without annotation', () => {
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found raw <style> tag in component file:\n` +
-      violations.map(v => `  - ${v}`).join('\n') +
-      `\n\nDo not embed raw CSS in <style> tags inside components. ` +
-      `Use Tailwind utility classes in className props instead.\n` +
-      `If the styling is truly dynamic and cannot be expressed with Tailwind, add a preceding comment:\n` +
-      `// @allow-inline-style - [explanation of dynamic styling requirement]`
+        violations.map((v) => `  - ${v}`).join('\n') +
+        `\n\nDo not embed raw CSS in <style> tags inside components. ` +
+        `Use Tailwind utility classes in className props instead.\n` +
+        `If the styling is truly dynamic and cannot be expressed with Tailwind, add a preceding comment:\n` +
+        `// @allow-inline-style - [explanation of dynamic styling requirement]`
     );
   }
   assert.ok(true, 'No unauthorized <style> tags found');
@@ -539,18 +679,16 @@ test('codebase integrity: no custom CSS files outside index.css', () => {
   const files = getFilesRecursively(srcDir, ['.css', '.scss', '.less', '.module.css']);
   const allowed = [path.resolve(srcDir, 'index.css')];
 
-  const violations = files
-    .filter(f => !allowed.includes(f))
-    .map(f => path.relative(srcDir, f));
+  const violations = files.filter((f) => !allowed.includes(f)).map((f) => path.relative(srcDir, f));
 
   if (violations.length > 0) {
     assert.fail(
       `CRITICAL ERROR: Found custom CSS files that bypass Tailwind:\n` +
-      violations.map(v => `  - src/${v}`).join('\n') +
-      `\n\nDo not create standalone CSS files for styling components. ` +
-      `Use Tailwind utility classes in className props or define custom theme values in src/index.css.\n` +
-      `The only allowed CSS file is src/index.css (Tailwind v4 entry point with @theme configuration).\n` +
-      `For component-specific styles, use Tailwind's built-in utilities or add @utility directives to src/index.css.`
+        violations.map((v) => `  - src/${v}`).join('\n') +
+        `\n\nDo not create standalone CSS files for styling components. ` +
+        `Use Tailwind utility classes in className props or define custom theme values in src/index.css.\n` +
+        `The only allowed CSS file is src/index.css (Tailwind v4 entry point with @theme configuration).\n` +
+        `For component-specific styles, use Tailwind's built-in utilities or add @utility directives to src/index.css.`
     );
   }
   assert.ok(true, 'No unauthorized CSS files found');

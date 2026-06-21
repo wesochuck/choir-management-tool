@@ -6,7 +6,6 @@ import { profileService } from '../services/profileService';
 import { eventService } from '../services/eventService';
 import type { Retry429Options } from '../lib/networkSafety';
 import { upsertRosterRow } from '../lib/eventRosterCache';
-import { useEventRosterRealtime } from './useEventRosterRealtime';
 
 type BulkAttendanceUpdate = {
   profileId: string;
@@ -45,8 +44,6 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
   useEffect(() => {
     onRateLimitRetryRef.current = options.onRateLimitRetry;
   }, [options.onRateLimitRetry]);
-
-  useEventRosterRealtime(eventId);
 
   // --- Queries ---
 

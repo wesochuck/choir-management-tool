@@ -63,6 +63,14 @@ export const queryKeys = {
     all: ['ticketing'] as const,
     main: (selectedEventId: string) =>
       [...queryKeys.ticketing.all, 'main', selectedEventId] as const,
+    events: () => [...queryKeys.ticketing.all, 'events'] as const,
+    missingEvents: (eventIds: string[]) =>
+      [...queryKeys.ticketing.all, 'events', 'missing', ...eventIds] as const,
+    purchasesByEvent: (eventId: string) =>
+      [...queryKeys.ticketing.all, 'purchases', 'event', eventId] as const,
+    allPurchases: () => [...queryKeys.ticketing.all, 'purchases', 'all'] as const,
+    bundles: () => [...queryKeys.ticketing.all, 'bundles'] as const,
+    timezone: () => [...queryKeys.ticketing.all, 'timezone'] as const,
     logoUrl: ['ticketing', 'logoUrl'] as const,
   },
   eventRoster: {

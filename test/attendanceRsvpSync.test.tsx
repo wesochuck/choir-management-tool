@@ -14,6 +14,9 @@ if (typeof globalThis.EventSource === 'undefined') {
     static readonly CONNECTING = 0;
     static readonly OPEN = 1;
     static readonly CLOSED = 2;
+    readonly CONNECTING = 0;
+    readonly OPEN = 1;
+    readonly CLOSED = 2;
     readonly readyState = 0;
     readonly url: string;
     readonly withCredentials = false;
@@ -26,7 +29,7 @@ if (typeof globalThis.EventSource === 'undefined') {
       queueMicrotask(() => this.dispatchEvent(new Event('error')));
     }
     close() {}
-  };
+  } as unknown as typeof EventSource;
 }
 
 function createWrapper() {
@@ -605,10 +608,9 @@ test('useAttendance - polling fallback refreshes roster when realtime event is m
   };
 
   try {
-    const { result } = renderHook(
-      () => useAttendance('event_1', { rosterRefreshIntervalMs: 25 }),
-      { wrapper: createWrapper() }
-    );
+    const { result } = renderHook(() => useAttendance('event_1', { rosterRefreshIntervalMs: 25 }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       if (result.current.isLoading) throw new Error('Still loading');

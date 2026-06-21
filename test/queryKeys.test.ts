@@ -47,6 +47,23 @@ describe('queryKeys', () => {
   it('uses stable tuple keys for ticketing', () => {
     assert.deepEqual(queryKeys.ticketing.all, ['ticketing']);
     assert.deepEqual(queryKeys.ticketing.main('evt1'), ['ticketing', 'main', 'evt1']);
+    assert.deepEqual(queryKeys.ticketing.events(), ['ticketing', 'events']);
+    assert.deepEqual(queryKeys.ticketing.missingEvents(['evt2', 'evt3']), [
+      'ticketing',
+      'events',
+      'missing',
+      'evt2',
+      'evt3',
+    ]);
+    assert.deepEqual(queryKeys.ticketing.purchasesByEvent('evt1'), [
+      'ticketing',
+      'purchases',
+      'event',
+      'evt1',
+    ]);
+    assert.deepEqual(queryKeys.ticketing.allPurchases(), ['ticketing', 'purchases', 'all']);
+    assert.deepEqual(queryKeys.ticketing.bundles(), ['ticketing', 'bundles']);
+    assert.deepEqual(queryKeys.ticketing.timezone(), ['ticketing', 'timezone']);
     assert.deepEqual(queryKeys.ticketing.logoUrl, ['ticketing', 'logoUrl']);
   });
 });

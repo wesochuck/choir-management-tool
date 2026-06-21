@@ -8,6 +8,24 @@ import { renderHook, waitFor, cleanup } from '@testing-library/react';
 import { DialogContext, type DialogContextValue } from '../contexts/DialogContext';
 import { useEventRosterData } from './useEventRosterData';
 import { eventService } from '../services/eventService';
+import { profileService } from '../services/profileService';
+import { rosterService } from '../services/rosterService';
+import * as settingsService from '../services/settingsService';
+
+function mockRosterQueryDependencies() {
+  mock.method(profileService, 'getActiveProfiles', async () => []);
+  mock.method(rosterService, 'getEventRoster', async () => []);
+  mock.method(settingsService, 'getVoicePartsAndSections', async () => ({
+    voiceParts: [],
+    sections: [],
+  }));
+  mock.method(settingsService.settingsService, 'getRosterSettings', async () => ({
+    defaultStatus: 'Active',
+    defaultSort: 'lastName' as const,
+    defaultRsvpSort: 'lastName' as const,
+    maxRehearsalMisses: 3,
+  }));
+}
 
 function createHarness() {
   const showMessage = mock.fn(async () => {});
@@ -44,6 +62,7 @@ afterEach(() => {
 
 test('useEventRosterData shows the error dialog once when the query fails', async () => {
   const { wrapper, showMessage } = createHarness();
+  mockRosterQueryDependencies();
   mock.method(eventService, 'getEventById', async () => {
     throw new Error('Event not found');
   });
@@ -67,6 +86,7 @@ test('useEventRosterData shows the error dialog once when the query fails', asyn
 
 test('useEventRosterData does not re-fire the error dialog on re-render with the same error', async () => {
   const { wrapper, showMessage } = createHarness();
+  mockRosterQueryDependencies();
   mock.method(eventService, 'getEventById', async () => {
     throw new Error('Event not found');
   });
@@ -91,6 +111,7 @@ test('useEventRosterData does not re-fire the error dialog on re-render with the
 
 test('useEventRosterData re-fires the error dialog when a new error replaces the previous one', async () => {
   const { wrapper, showMessage } = createHarness();
+  mockRosterQueryDependencies();
   const getEventById = mock.method(eventService, 'getEventById', async () => {
     throw new Error('First failure');
   });

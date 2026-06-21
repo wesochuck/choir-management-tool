@@ -14,6 +14,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import { fetchChoirTimezone, formatInTimezone } from '../../lib/timezone';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
+import { chunkArray, mapWithConcurrency } from '../../lib/networkSafety';
 import {
   Modal,
   Button,
@@ -30,25 +31,37 @@ import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { AdminPageTabs } from '../../components/admin/AdminPageTabs';
 import { settingsService } from '../../services/settingsService';
 
-import { useTicketPurchasesRealtime } from '../../hooks/useTicketPurchasesRealtime';
-
-interface TicketingData {
-  allEvents: Event[];
-  purchases: TicketPurchase[];
-  allPurchases: TicketPurchase[];
-  bundles: TicketBundle[];
-  tz: string;
-}
-
 const EMPTY_EVENTS: Event[] = [];
 const EMPTY_PURCHASES: TicketPurchase[] = [];
 const EMPTY_BUNDLES: TicketBundle[] = [];
 const FALLBACK_TZ = 'America/New_York';
 const TICKETING_REFRESH_INTERVAL_MS = 3000;
 
+const fetchMissingTicketingEvents = async (missingEventIds: string[]): Promise<Event[]> => {
+  const chunks = chunkArray(missingEventIds, 50);
+  const missingEventsResults = await mapWithConcurrency(
+    chunks,
+    (chunk) => {
+      const filterStr = chunk.map((_, idx) => `id = {:id_${idx}}`).join(' || ');
+      const placeholders = chunk.reduce(
+        (acc, id, idx) => {
+          acc[`id_${idx}`] = id;
+          return acc;
+        },
+        {} as Record<string, string>
+      );
+      return pb.collection('events').getFullList<Event>({
+        filter: pb.filter(filterStr, placeholders),
+      });
+    },
+    { concurrency: 2 }
+  );
+
+  return missingEventsResults.flat();
+};
+
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
-  useTicketPurchasesRealtime();
   const queryClient = useQueryClient();
   const dialog = useDialog();
   const [now] = useState(() => Date.now());
@@ -63,62 +76,70 @@ export default function TicketingView() {
   const [resendPurchase, setResendPurchase] = useState<TicketPurchase | null>(null);
   const [resendEmail, setResendEmail] = useState('');
 
-  const ticketingQuery = useQuery({
-    queryKey: queryKeys.ticketing.main(selectedEventId),
-    queryFn: async (): Promise<TicketingData> => {
-      const [eventsEnabled, purchasesRes, allPurchasesRes, bundlesRes, tz] = await Promise.all([
-        eventService.getTicketingEnabledEvents(),
-        selectedEventId ? ticketService.getPurchasesForEvent(selectedEventId) : Promise.resolve([]),
-        ticketService.getAllPurchases(),
-        ticketService.getAllBundles(),
-        fetchChoirTimezone().catch(() => 'America/New_York'),
-      ]);
-
-      const enabledIds = new Set(eventsEnabled.map((e) => e.id));
-      const eventIdsWithPurchases = Array.from(new Set(allPurchasesRes.map((p) => p.event)));
-      const missingEventIds = eventIdsWithPurchases.filter((id) => !enabledIds.has(id));
-      let allEvents = [...eventsEnabled];
-      if (missingEventIds.length > 0) {
-        const chunks: string[][] = [];
-        for (let i = 0; i < missingEventIds.length; i += 50) {
-          chunks.push(missingEventIds.slice(i, i + 50));
-        }
-        const missingEventsPromises = chunks.map((chunk) => {
-          const filterStr = chunk.map((_, idx) => `id = {:id_${idx}}`).join(' || ');
-          const placeholders = chunk.reduce(
-            (acc, id, idx) => {
-              acc[`id_${idx}`] = id;
-              return acc;
-            },
-            {} as Record<string, string>
-          );
-          return pb.collection('events').getFullList<Event>({
-            filter: pb.filter(filterStr, placeholders),
-          });
-        });
-        const missingEventsResults = await Promise.all(missingEventsPromises);
-        const missingEvents = missingEventsResults.flat();
-        allEvents = [...allEvents, ...missingEvents];
-      }
-      allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      return {
-        allEvents,
-        purchases: purchasesRes,
-        allPurchases: allPurchasesRes,
-        bundles: bundlesRes,
-        tz,
-      };
-    },
+  const eventsEnabledQuery = useQuery({
+    queryKey: queryKeys.ticketing.events(),
+    queryFn: () => eventService.getTicketingEnabledEvents(),
     staleTime: 30_000,
+  });
+
+  const purchasesQuery = useQuery({
+    queryKey: queryKeys.ticketing.purchasesByEvent(selectedEventId),
+    queryFn: () => ticketService.getPurchasesForEvent(selectedEventId),
+    enabled: !!selectedEventId,
     refetchInterval: TICKETING_REFRESH_INTERVAL_MS,
   });
 
-  const events = ticketingQuery.data?.allEvents ?? EMPTY_EVENTS;
-  const purchases = ticketingQuery.data?.purchases ?? EMPTY_PURCHASES;
-  const allPurchases = ticketingQuery.data?.allPurchases ?? EMPTY_PURCHASES;
-  const bundles = ticketingQuery.data?.bundles ?? EMPTY_BUNDLES;
-  const timezone = ticketingQuery.data?.tz ?? FALLBACK_TZ;
-  const loading = ticketingQuery.isLoading;
+  const allPurchasesQuery = useQuery({
+    queryKey: queryKeys.ticketing.allPurchases(),
+    queryFn: () => ticketService.getAllPurchases(),
+    refetchInterval: TICKETING_REFRESH_INTERVAL_MS,
+  });
+
+  const bundlesQuery = useQuery({
+    queryKey: queryKeys.ticketing.bundles(),
+    queryFn: () => ticketService.getAllBundles(),
+    staleTime: 30_000,
+  });
+
+  const timezoneQuery = useQuery({
+    queryKey: queryKeys.ticketing.timezone(),
+    queryFn: () => fetchChoirTimezone().catch(() => FALLBACK_TZ),
+    staleTime: 30_000,
+  });
+
+  const missingEventIds = useMemo(() => {
+    const eventsEnabled = eventsEnabledQuery.data ?? EMPTY_EVENTS;
+    const allPurchasesData = allPurchasesQuery.data ?? EMPTY_PURCHASES;
+    const enabledIds = new Set(eventsEnabled.map((event) => event.id));
+    const eventIdsWithPurchases = Array.from(
+      new Set(allPurchasesData.map((purchase) => purchase.event))
+    );
+    return eventIdsWithPurchases.filter((eventId) => !enabledIds.has(eventId));
+  }, [eventsEnabledQuery.data, allPurchasesQuery.data]);
+
+  const missingEventsQuery = useQuery({
+    queryKey: queryKeys.ticketing.missingEvents(missingEventIds),
+    queryFn: () => fetchMissingTicketingEvents(missingEventIds),
+    enabled: missingEventIds.length > 0,
+    staleTime: 30_000,
+  });
+
+  const events = useMemo(() => {
+    const allEvents = [...(eventsEnabledQuery.data ?? EMPTY_EVENTS)];
+    allEvents.push(...(missingEventsQuery.data ?? EMPTY_EVENTS));
+    return allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [eventsEnabledQuery.data, missingEventsQuery.data]);
+  const purchases = purchasesQuery.data ?? EMPTY_PURCHASES;
+  const allPurchases = allPurchasesQuery.data ?? EMPTY_PURCHASES;
+  const bundles = bundlesQuery.data ?? EMPTY_BUNDLES;
+  const timezone = timezoneQuery.data ?? FALLBACK_TZ;
+  const loading =
+    eventsEnabledQuery.isLoading ||
+    allPurchasesQuery.isLoading ||
+    bundlesQuery.isLoading ||
+    timezoneQuery.isLoading ||
+    missingEventsQuery.isLoading ||
+    (selectedEventId ? purchasesQuery.isLoading : false);
 
   const logoQuery = useQuery({
     queryKey: queryKeys.ticketing.logoUrl,
