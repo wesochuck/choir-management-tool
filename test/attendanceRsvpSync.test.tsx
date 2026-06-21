@@ -584,3 +584,49 @@ test('useAttendance - error rollback removes optimistic row and surfaces error',
     rosterService.upsertAttendance = originalUpsertAttendance;
   }
 });
+
+test('useAttendance - polling fallback refreshes roster when realtime event is missed', async () => {
+  const originalGetEvents = eventService.getEvents;
+  const originalGetActiveProfiles = profileService.getActiveProfiles;
+  const originalGetEventRoster = rosterService.getEventRoster;
+
+  let allowServerUpdate = false;
+  const savedRoster = makeRoster({
+    id: 'roster_real',
+    profile: 'profile_1',
+    attendance: 'Present',
+    rsvp: 'Yes',
+  });
+
+  eventService.getEvents = async () => [makeEvent('event_1')];
+  profileService.getActiveProfiles = async () => [makeProfile('profile_1')];
+  rosterService.getEventRoster = async () => {
+    return allowServerUpdate ? [savedRoster] : [];
+  };
+
+  try {
+    const { result } = renderHook(
+      () => useAttendance('event_1', { rosterRefreshIntervalMs: 25 }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      if (result.current.isLoading) throw new Error('Still loading');
+    });
+
+    assert.equal(result.current.items[0].attendance, 'Pending');
+
+    allowServerUpdate = true;
+
+    await waitFor(() => {
+      const item = result.current.items.find((i) => i.profileId === 'profile_1');
+      if (!item || item.attendance !== 'Present') {
+        throw new Error('Polling fallback did not refresh attendance');
+      }
+    });
+  } finally {
+    eventService.getEvents = originalGetEvents;
+    profileService.getActiveProfiles = originalGetActiveProfiles;
+    rosterService.getEventRoster = originalGetEventRoster;
+  }
+});

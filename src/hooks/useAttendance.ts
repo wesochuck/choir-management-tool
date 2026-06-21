@@ -29,6 +29,7 @@ export interface AttendanceItem {
 
 export interface UseAttendanceOptions {
   onRateLimitRetry?: Retry429Options['onRetry'];
+  rosterRefreshIntervalMs?: number | false;
 }
 
 interface MutationContext {
@@ -38,6 +39,7 @@ interface MutationContext {
 export const useAttendance = (eventId: string, options: UseAttendanceOptions = {}) => {
   const queryClient = useQueryClient();
   const onRateLimitRetryRef = useRef(options.onRateLimitRetry);
+  const rosterRefreshIntervalMs = options.rosterRefreshIntervalMs ?? 3000;
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export const useAttendance = (eventId: string, options: UseAttendanceOptions = {
         onRetry: (attempt, delayMs, err) => onRateLimitRetryRef.current?.(attempt, delayMs, err),
       }),
     enabled: !!eventId,
+    refetchInterval: rosterRefreshIntervalMs,
   });
 
   const currentEvent = useMemo(() => {

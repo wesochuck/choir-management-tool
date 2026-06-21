@@ -415,6 +415,16 @@ test('codebase integrity: useAttendance hook must not call PocketBase directly',
   assert.ok(!content.includes('pb.send'), 'useAttendance.ts must not call pb.send directly to ensure it routes through rate-limit protected services');
 });
 
+test('codebase integrity: TicketingView uses polling fallback for will call updates', () => {
+  const viewFile = resolveProjectPath('src/views/admin/TicketingView.tsx');
+  const content = fs.readFileSync(viewFile, 'utf8');
+
+  assert.ok(
+    content.includes('refetchInterval: TICKETING_REFRESH_INTERVAL_MS'),
+    'TicketingView ticketing query must keep a polling fallback so Will Call updates are not dependent on realtime delivery'
+  );
+});
+
 test('codebase integrity: ensure appSettings lookups for choir name reference choir_name', () => {
   const backendFiles = getFilesRecursively(resolveProjectPath('pocketbase/pb_hooks_src'), ['.ts', '.js']);
   const frontendFiles = getSrcFiles(['.ts', '.tsx']);

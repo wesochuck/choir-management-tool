@@ -44,6 +44,7 @@ const EMPTY_EVENTS: Event[] = [];
 const EMPTY_PURCHASES: TicketPurchase[] = [];
 const EMPTY_BUNDLES: TicketBundle[] = [];
 const FALLBACK_TZ = 'America/New_York';
+const TICKETING_REFRESH_INTERVAL_MS = 3000;
 
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
@@ -109,6 +110,7 @@ export default function TicketingView() {
       };
     },
     staleTime: 30_000,
+    refetchInterval: TICKETING_REFRESH_INTERVAL_MS,
   });
 
   const events = ticketingQuery.data?.allEvents ?? EMPTY_EVENTS;
