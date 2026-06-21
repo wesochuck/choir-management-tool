@@ -3,11 +3,8 @@
 migrate(
   (app) => {
     const collection = app.findCollectionByNameOrId('musicLibrary');
-    const field = collection.fields.find((f) => f.name === 'performances');
-    if (field) {
-      collection.fields.remove(field);
-      app.save(collection);
-    }
+    collection.fields.removeByName('performances');
+    app.save(collection);
   },
   (app) => {
     // Revert: add the field back
