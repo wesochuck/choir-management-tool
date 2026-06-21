@@ -11,6 +11,7 @@ import {
 } from '../../../lib/musicPieceUtils';
 import { getEffectiveMostRecentPerformanceDate } from '../../../lib/music/performanceHistory';
 import { getMovementTrackCount, isParentPiece } from './table/musicLibraryTableUtils';
+import type { PiecePerformanceEntry } from '../../../hooks/usePiecePerformanceMap';
 import { Button, DataTable, type ColumnDef } from '../../../components/ui';
 
 export interface MusicLibraryTableProps {
@@ -34,6 +35,7 @@ export interface MusicLibraryTableProps {
   sortField: MusicLibrarySortField;
   sortDirection: SortDirection;
   onSortChange: (field: MusicLibrarySortField, direction: SortDirection) => void;
+  perfMap?: Map<string, PiecePerformanceEntry>;
 }
 
 export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
@@ -54,6 +56,7 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
   sortField,
   sortDirection,
   onSortChange,
+  perfMap = new Map(),
 }) => {
   const totalPages = Math.max(1, Math.ceil(totalParentCount / pageSize));
 
@@ -114,14 +117,12 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'performances',
       header: 'Perf',
-      accessorFn: (row) => row.performances?.length ?? 0,
+      accessorFn: (row) => perfMap.get(row.id)?.count ?? 0,
       enableSorting: true,
-      cell: ({ row }) =>
-        row.original.performances && row.original.performances.length > 0 ? (
-          <span className="font-semibold">{row.original.performances.length}</span>
-        ) : (
-          '-'
-        ),
+      cell: ({ row }) => {
+        const count = perfMap.get(row.original.id)?.count ?? 0;
+        return count > 0 ? <span className="font-semibold">{count}</span> : '-';
+      },
       meta: {
         align: 'center',
         cardSection: 1,
