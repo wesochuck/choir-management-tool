@@ -15,16 +15,19 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 function PublicLandingView() {
   useDocumentTitle('');
-  const landingQuery = useQuery({
+  const landingSettingsQuery = useQuery({
     queryKey: queryKeys.publicLanding.settings,
-    queryFn: async () => {
-      const [s, imgUrl, tz] = await Promise.all([
-        settingsService.getLandingSettings(),
-        settingsService.getHeroImageUrl(),
-        settingsService.getTimezone(),
-      ]);
-      return { settings: s, heroImageUrl: imgUrl, timezone: tz };
-    },
+    queryFn: () => settingsService.getLandingSettings(),
+  });
+
+  const heroImageQuery = useQuery({
+    queryKey: queryKeys.appSettings.heroImage,
+    queryFn: () => settingsService.getHeroImageUrl(),
+  });
+
+  const timezoneQuery = useQuery({
+    queryKey: queryKeys.publicLanding.timezone,
+    queryFn: () => settingsService.getTimezone(),
   });
 
   const performancesQuery = useQuery({
@@ -38,8 +41,11 @@ function PublicLandingView() {
   });
 
   const isLoading =
-    landingQuery.isLoading || performancesQuery.isLoading || ticketedQuery.isLoading;
-  const landingData = landingQuery.data;
+    landingSettingsQuery.isLoading ||
+    heroImageQuery.isLoading ||
+    timezoneQuery.isLoading ||
+    performancesQuery.isLoading ||
+    ticketedQuery.isLoading;
   const performanceList = performancesQuery.data ?? [];
   const ticketedEvents = ticketedQuery.data ?? [];
   const highlightedTicketedEvent = ticketedEvents[0] ?? null;
@@ -52,7 +58,12 @@ function PublicLandingView() {
     );
   }
 
-  if (landingQuery.isError || !landingData) {
+  if (
+    landingSettingsQuery.isError ||
+    heroImageQuery.isError ||
+    timezoneQuery.isError ||
+    !landingSettingsQuery.data
+  ) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-text-muted">{'Unable to load page content. Please try again later.'}</p>
@@ -60,7 +71,9 @@ function PublicLandingView() {
     );
   }
 
-  const { settings, heroImageUrl, timezone } = landingData;
+  const settings = landingSettingsQuery.data;
+  const heroImageUrl = heroImageQuery.data ?? null;
+  const timezone = timezoneQuery.data ?? 'America/New_York';
 
   return (
     <PublicLayout>

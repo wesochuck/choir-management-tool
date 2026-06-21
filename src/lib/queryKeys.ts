@@ -169,6 +169,7 @@ export const queryKeys = {
   publicLanding: {
     all: ['publicLanding'] as const,
     settings: ['publicLanding', 'settings'] as const,
+    timezone: ['publicLanding', 'timezone'] as const,
   },
   publicRsvp: {
     all: ['publicRsvp'] as const,
