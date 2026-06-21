@@ -4,6 +4,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { reportService } from '../../services/reportService';
 import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
 import { useEvents } from '../../hooks/useEvents';
+import { usePiecePerformanceMap } from '../../hooks/usePiecePerformanceMap';
 import { Button, Select, DataTable, type ColumnDef } from '../../components/ui';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 
@@ -54,6 +55,7 @@ export default function ReportsView() {
   const performances = performancesQuery.data ?? [];
   const concertSummary = concertSummaryQuery.data ?? null;
   const library = useMemo(() => libraryQuery.data ?? [], [libraryQuery.data]);
+  const perfMap = usePiecePerformanceMap(allEvents);
   const isAttendanceLoading = performancesQuery.isLoading;
   const isRepertoireLoading = libraryQuery.isLoading || performancesQuery.isLoading;
   const error = performancesQuery.error
@@ -66,40 +68,18 @@ export default function ReportsView() {
     if (library.length === 0) return [];
 
     const stats: RepertoireStats[] = [];
-
     library.forEach((piece) => {
-      const dates: Date[] = [];
-
-      // 1. Add historical dates from the linked performances
-      if (piece.expand?.performances) {
-        piece.expand.performances.forEach((perf) => {
-          if (perf.date) {
-            const d = new Date(perf.date);
-            if (!isNaN(d.getTime())) dates.push(d);
-          }
-        });
-      }
-
-      // 2. Add dynamic dates from events where this piece is in the set list
-      allEvents.forEach((event) => {
-        if (event.setList && event.setList.some((item) => item.pieceId === piece.id)) {
-          const d = new Date(event.date);
-          if (!isNaN(d.getTime())) dates.push(d);
-        }
-      });
-
-      // Sort dates descending
-      dates.sort((a, b) => b.getTime() - a.getTime());
+      const entry = perfMap.get(piece.id);
+      const dates = entry?.dates ?? [];
 
       stats.push({
         piece,
-        totalPerformances: dates.length,
+        totalPerformances: entry?.count ?? 0,
         lastPerformed: dates.length > 0 ? dates[0] : null,
         allDates: dates,
       });
     });
 
-    // Sort by most recently performed, then by title
     return stats.sort((a, b) => {
       if (a.lastPerformed && b.lastPerformed) {
         return b.lastPerformed.getTime() - a.lastPerformed.getTime();
@@ -108,7 +88,7 @@ export default function ReportsView() {
       if (b.lastPerformed) return 1;
       return a.piece.title.localeCompare(b.piece.title);
     });
-  }, [library, allEvents]);
+  }, [library, perfMap]);
 
   const attendanceColumns: ColumnDef<SingerReport>[] = [
     {
