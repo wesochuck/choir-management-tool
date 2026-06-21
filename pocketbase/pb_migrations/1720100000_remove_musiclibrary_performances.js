@@ -2,16 +2,16 @@
 
 migrate(
   (app) => {
-    const collection = app.dao().findCollectionByNameOrId('musicLibrary');
+    const collection = app.findCollectionByNameOrId('musicLibrary');
     const field = collection.fields.find((f) => f.name === 'performances');
     if (field) {
       collection.fields.remove(field);
-      app.dao().saveCollection(collection);
+      app.save(collection);
     }
   },
   (app) => {
     // Revert: add the field back
-    const collection = app.dao().findCollectionByNameOrId('musicLibrary');
+    const collection = app.findCollectionByNameOrId('musicLibrary');
     collection.fields.add(
       new RelationField({
         name: 'performances',
@@ -22,6 +22,6 @@ migrate(
         cascadeDelete: false,
       })
     );
-    app.dao().saveCollection(collection);
+    app.save(collection);
   }
 );
