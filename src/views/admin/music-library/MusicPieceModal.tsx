@@ -17,6 +17,7 @@ import {
   type MusicGenreDef,
 } from '../../../services/settingsService';
 import { useEvents } from '../../../hooks/useEvents';
+import type { SetListItem } from '../../../services/eventService';
 import { MultiSelectDropdown } from './MultiSelectDropdown';
 
 import {
@@ -150,7 +151,7 @@ export function MusicPieceModal({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
   });
 
-  const { performances: eventsPerformances } = useEvents();
+  const { events: modalEvents } = useEvents();
 
   const venuesQuery = useQuery({
     queryKey: queryKeys.venues.list(),
@@ -165,10 +166,10 @@ export function MusicPieceModal({
   });
 
   useEffect(() => {
-    if (isOpen && eventsPerformances.length > 0) {
-      setAllPerformances(eventsPerformances);
+    if (isOpen && modalEvents.length > 0) {
+      setAllPerformances(modalEvents);
     }
-  }, [isOpen, eventsPerformances]);
+  }, [isOpen, modalEvents]);
 
   useEffect(() => {
     if (venuesQuery.data) {
@@ -241,7 +242,11 @@ export function MusicPieceModal({
 
       setSectionBuckets(piece.sectionBuckets || []);
       setSelectedGenres(piece.genres || []);
-      setSelectedPerformanceIds(piece.performances || []);
+      setSelectedPerformanceIds(
+        modalEvents
+          .filter((evt) => evt.setList?.some((item) => item.pieceId === piece.id))
+          .map((evt) => evt.id)
+      );
       setNotes(piece.notes || '');
       setIsMultiMovement(false);
       loadMovements();
@@ -282,7 +287,7 @@ export function MusicPieceModal({
     setExpandedMovementId(null);
     setSuggestedDuration(null);
     setManuallyAddedParts({});
-  }, [piece, isOpen, loadMovements, initialTitle, initialTab]);
+  }, [piece, isOpen, loadMovements, initialTitle, initialTab, modalEvents]);
 
   const isDirty = useMemo(() => {
     if (piece) {
@@ -310,11 +315,6 @@ export function MusicPieceModal({
       const currentGenres = [...selectedGenres].sort();
       const genresChanged = JSON.stringify(initialGenres) !== JSON.stringify(currentGenres);
 
-      const initialPerformances = [...(piece.performances || [])].sort();
-      const currentPerformances = [...selectedPerformanceIds].sort();
-      const performancesChanged =
-        JSON.stringify(initialPerformances) !== JSON.stringify(currentPerformances);
-
       return (
         titleChanged ||
         composerChanged ||
@@ -325,7 +325,6 @@ export function MusicPieceModal({
         notesChanged ||
         sectionsChanged ||
         genresChanged ||
-        performancesChanged ||
         purchaseDateChanged
       );
     } else {
@@ -338,7 +337,6 @@ export function MusicPieceModal({
       const hasNotes = Boolean(notes.trim());
       const hasSections = sectionBuckets.length > 0;
       const hasGenres = selectedGenres.length > 0;
-      const hasPerformances = selectedPerformanceIds.length > 0;
       const hasTutti = tuttiFile !== null;
       const hasStagedMovements = localMovementsList.length > 0;
       const hasPurchaseDate = Boolean(purchaseDateInput.trim());
@@ -353,7 +351,6 @@ export function MusicPieceModal({
         hasNotes ||
         hasSections ||
         hasGenres ||
-        hasPerformances ||
         hasTutti ||
         hasStagedMovements ||
         hasPurchaseDate
@@ -370,7 +367,6 @@ export function MusicPieceModal({
     notes,
     sectionBuckets,
     selectedGenres,
-    selectedPerformanceIds,
     initialTitle,
     tuttiFile,
     localMovementsList,
@@ -661,7 +657,6 @@ export function MusicPieceModal({
         copies: copies ? parseInt(copies, 10) : undefined,
         catalogId: catalogId || undefined,
         sectionBuckets: sectionBuckets,
-        performances: [],
       });
 
       setNewMovementTitle('');
@@ -724,7 +719,6 @@ export function MusicPieceModal({
       catalogId,
       sectionBuckets,
       genres: selectedGenres,
-      performances: selectedPerformanceIds,
       notes,
       tuttiFile: !piece ? tuttiFile : undefined,
       movements:
@@ -849,10 +843,30 @@ export function MusicPieceModal({
     }
   };
 
-  const togglePerformance = (perfId: string) => {
-    setSelectedPerformanceIds((prev) =>
-      prev.includes(perfId) ? prev.filter((id) => id !== perfId) : [...prev, perfId]
-    );
+  const togglePerformance = async (perfId: string) => {
+    const event = modalEvents.find((e) => e.id === perfId);
+    if (!event) return;
+
+    const isLinked = selectedPerformanceIds.includes(perfId);
+    try {
+      if (isLinked) {
+        const updatedSetList = (event.setList || []).filter((item) => item.pieceId !== piece?.id);
+        await eventService.updateEvent(perfId, { setList: updatedSetList });
+        setSelectedPerformanceIds((prev) => prev.filter((id) => id !== perfId));
+      } else if (piece) {
+        const newItem: SetListItem = {
+          id: window.crypto.randomUUID(),
+          title: piece.title,
+          pieceId: piece.id,
+          composer: piece.composer,
+        };
+        const updatedSetList = [...(event.setList || []), newItem];
+        await eventService.updateEvent(perfId, { setList: updatedSetList });
+        setSelectedPerformanceIds((prev) => [...prev, perfId]);
+      }
+    } catch (error) {
+      console.error('Failed to toggle performance set list link:', error);
+    }
   };
 
   const selectedPerformances = useMemo(() => {
