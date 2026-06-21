@@ -75,7 +75,7 @@ export default function ReportsView() {
       stats.push({
         piece,
         totalPerformances: entry?.count ?? 0,
-        lastPerformed: dates.length > 0 ? dates[0] : null,
+        lastPerformed: entry?.mostRecentDate ? new Date(entry.mostRecentDate) : null,
         allDates: dates,
       });
     });

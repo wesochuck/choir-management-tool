@@ -151,6 +151,12 @@ export function MusicPieceModal({
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
   });
 
+  const updateEventMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Event> }) =>
+      eventService.updateEvent(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
+  });
+
   const { events: modalEvents } = useEvents();
 
   const venuesQuery = useQuery({
@@ -851,7 +857,7 @@ export function MusicPieceModal({
     try {
       if (isLinked) {
         const updatedSetList = (event.setList || []).filter((item) => item.pieceId !== piece?.id);
-        await eventService.updateEvent(perfId, { setList: updatedSetList });
+        await updateEventMutation.mutateAsync({ id: perfId, data: { setList: updatedSetList } });
         setSelectedPerformanceIds((prev) => prev.filter((id) => id !== perfId));
       } else if (piece) {
         const newItem: SetListItem = {
@@ -861,7 +867,7 @@ export function MusicPieceModal({
           composer: piece.composer,
         };
         const updatedSetList = [...(event.setList || []), newItem];
-        await eventService.updateEvent(perfId, { setList: updatedSetList });
+        await updateEventMutation.mutateAsync({ id: perfId, data: { setList: updatedSetList } });
         setSelectedPerformanceIds((prev) => [...prev, perfId]);
       }
     } catch (error) {
