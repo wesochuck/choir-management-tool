@@ -133,10 +133,14 @@ export const MusicLibraryTable: React.FC<MusicLibraryTableProps> = ({
     {
       id: 'lastPerformed',
       header: 'Last Performed',
-      accessorFn: (row) => getEffectiveMostRecentPerformanceDate(row, pieces) || '',
+      accessorFn: (row) => getEffectiveMostRecentPerformanceDate(row, perfMap, pieces) || '',
       enableSorting: true,
       cell: ({ row }) => {
-        const lastPerformedDate = getEffectiveMostRecentPerformanceDate(row.original, pieces);
+        const lastPerformedDate = getEffectiveMostRecentPerformanceDate(
+          row.original,
+          perfMap,
+          pieces
+        );
         return lastPerformedDate || '-';
       },
       meta: {
