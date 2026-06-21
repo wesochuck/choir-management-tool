@@ -43,7 +43,6 @@ export const musicLibraryWorkflows = {
             copies: parent.copies !== undefined ? parent.copies : undefined,
             catalogId: parent.catalogId || undefined,
             genres: parent.genres || [],
-            performances: [],
           })
         )
       );
