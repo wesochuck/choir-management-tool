@@ -1,4 +1,5 @@
 import type { MusicPiece } from '../../types/musicLibrary';
+import type { PiecePerformanceEntry } from '../../hooks/usePiecePerformanceMap';
 import type { Event } from '../../services/eventService';
 
 export type PerformanceRecencyFilter =
@@ -10,93 +11,46 @@ export type PerformanceRecencyFilter =
   | 'not-within-5-years'
   | 'never';
 
-export type MusicPieceWithPerformanceHistory = MusicPiece & {
-  expand?: {
-    performances?: Event[];
-  };
-};
-
 /**
  * Gets the most recent performance date as YYYY-MM-DD or null.
+ * Reads from the precomputed performance map instead of expand.performances.
  */
 export function getMostRecentPerformanceDate(
-  piece: MusicPieceWithPerformanceHistory
+  piece: MusicPiece,
+  perfMap: Map<string, PiecePerformanceEntry>
 ): string | null {
-  if (
-    !piece ||
-    !piece.expand ||
-    !piece.expand.performances ||
-    !Array.isArray(piece.expand.performances)
-  ) {
-    return null;
-  }
-
-  let newestDate: Date | null = null;
-  let newestStr: string | null = null;
-
-  for (const perf of piece.expand.performances) {
-    if (!perf.date) continue;
-    const parsed = new Date(perf.date);
-    // Ignore invalid dates
-    if (isNaN(parsed.getTime())) continue;
-
-    if (!newestDate || parsed > newestDate) {
-      newestDate = parsed;
-      // Get the YYYY-MM-DD part cleanly
-      try {
-        newestStr = parsed.toISOString().split('T')[0];
-      } catch {
-        // Fallback in case of parsing edge cases
-        const y = parsed.getFullYear();
-        const m = String(parsed.getMonth() + 1).padStart(2, '0');
-        const d = String(parsed.getDate()).padStart(2, '0');
-        newestStr = `${y}-${m}-${d}`;
-      }
-    }
-  }
-
-  return newestStr;
+  const entry = perfMap.get(piece.id);
+  return entry?.mostRecentDate ?? null;
 }
-
-/**
- * Formats the most recent performance date or returns '-' if null.
- */
 
 /**
  * Resolves the effective most recent performance date, inheriting from parent if needed.
  */
 export function getEffectiveMostRecentPerformanceDate(
-  piece: MusicPieceWithPerformanceHistory,
-  allPieces: MusicPieceWithPerformanceHistory[] = []
+  piece: MusicPiece,
+  perfMap: Map<string, PiecePerformanceEntry>,
+  allPieces: MusicPiece[] = []
 ): string | null {
-  const ownDate = getMostRecentPerformanceDate(piece);
+  const ownDate = getMostRecentPerformanceDate(piece, perfMap);
   if (ownDate) return ownDate;
 
   if (!piece.parentId) return null;
 
-  const expandedParent = piece.expand?.parentId as MusicPieceWithPerformanceHistory | undefined;
-
-  const parent = allPieces.find((candidate) => candidate.id === piece.parentId) || expandedParent;
-
-  return parent ? getMostRecentPerformanceDate(parent) : null;
+  const parent = allPieces.find((candidate) => candidate.id === piece.parentId);
+  return parent ? getMostRecentPerformanceDate(parent, perfMap) : null;
 }
 
 /**
  * Formats the performance history of a music piece.
- * @param piece The music piece object.
- * @returns An array of formatted performance string titles with dates.
+ * Reads from set list scanning instead of expand.performances.
  */
-export function formatPerformanceHistory(piece: MusicPieceWithPerformanceHistory): string[] {
-  if (
-    !piece ||
-    !piece.expand ||
-    !piece.expand.performances ||
-    !Array.isArray(piece.expand.performances)
-  ) {
-    return [];
+export function formatPerformanceHistory(piece: MusicPiece, events: Event[]): string[] {
+  const results: string[] = [];
+  for (const event of events) {
+    if (!event.setList || !Array.isArray(event.setList)) continue;
+    if (!event.setList.some((item) => item.pieceId === piece.id)) continue;
+    const dateStr = event.date ? new Date(event.date).toISOString().split('T')[0] : '';
+    results.push(`${event.title}${dateStr ? ` (${dateStr})` : ''}`);
   }
-  return piece.expand.performances.map((perf) => {
-    const dateStr = perf.date ? new Date(perf.date).toISOString().split('T')[0] : '';
-    return `${perf.title}${dateStr ? ` (${dateStr})` : ''}`;
-  });
+  return results;
 }

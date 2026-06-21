@@ -13,7 +13,11 @@ import {
   removeSeatFromRow,
   removeRowAndShiftAssignments,
 } from '../src/lib/seatingSync.ts';
-import { findPieceDetails, formatPerformanceHistory, parseMusicLibraryCSV } from '../src/lib/musicPieceUtils.ts';
+import {
+  findPieceDetails,
+  formatPerformanceHistory,
+  parseMusicLibraryCSV,
+} from '../src/lib/musicPieceUtils.ts';
 import type { Event } from '../src/services/eventService.ts';
 import type { MusicPiece } from '../src/services/musicLibraryService.ts';
 
@@ -26,8 +30,8 @@ test('calendarUtils.createICS emits a valid two-hour event', () => {
     expand: {
       venue: {
         name: 'Main Sanctuary',
-        address: '123 Main St'
-      }
+        address: '123 Main St',
+      },
     },
     details: 'Black folders',
   };
@@ -43,11 +47,7 @@ test('calendarUtils.createICS emits a valid two-hour event', () => {
 });
 
 test('seating auto-paint fills vertical sections in the configured order', () => {
-  const suggestions = calculateAutoPaint(
-    [8, 8],
-    { S: 2, A: 2, T: 2, B: 2 },
-    ['S', 'A', 'T', 'B'],
-  );
+  const suggestions = calculateAutoPaint([8, 8], { S: 2, A: 2, T: 2, B: 2 }, ['S', 'A', 'T', 'B']);
 
   assert.equal(suggestions['0-0'], undefined);
   assert.equal(suggestions['0-2'], 'S');
@@ -60,15 +60,11 @@ test('seating auto-paint fills vertical sections in the configured order', () =>
 });
 
 test('seating auto-paint supports custom section order', () => {
-  const suggestions = calculateAutoPaint(
-    [4],
-    { S: 1, A: 1, T: 1, B: 1 },
-    ['S', 'B', 'T', 'A'],
-  );
+  const suggestions = calculateAutoPaint([4], { S: 1, A: 1, T: 1, B: 1 }, ['S', 'B', 'T', 'A']);
 
   assert.deepEqual(
     ['0-0', '0-1', '0-2', '0-3'].map((seat) => suggestions[seat]),
-    ['S', 'B', 'T', 'A'],
+    ['S', 'B', 'T', 'A']
   );
 });
 
@@ -78,10 +74,10 @@ const contrastRatio = (foreground: string, background: string) => {
     return [0, 2, 4].map((offset) => parseInt(normalized.slice(offset, offset + 2), 16) / 255);
   };
   const luminance = (hex: string) => {
-    const values = parse(hex).map((value) => (
+    const values = parse(hex).map((value) =>
       value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
-    ));
-    return (0.2126 * values[0]) + (0.7152 * values[1]) + (0.0722 * values[2]);
+    );
+    return 0.2126 * values[0] + 0.7152 * values[1] + 0.0722 * values[2];
   };
   const [lighter, darker] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
   return (lighter + 0.05) / (darker + 0.05);
@@ -96,12 +92,18 @@ test('core color pairs meet WCAG AA contrast for normal text', () => {
 });
 
 test('button system keeps accessible minimum touch target height', () => {
-  const btnSource = readFileSync(resolve(process.cwd(), 'src/components/ui/Button/Button.tsx'), 'utf8');
+  const btnSource = readFileSync(
+    resolve(process.cwd(), 'src/components/ui/Button/Button.tsx'),
+    'utf8'
+  );
   assert.match(btnSource, /'h-11 px-6 text-sm'/);
 });
 
 test('singer card name allows full name text with flexible width', () => {
-  const comp = readFileSync(resolve(process.cwd(), 'src/components/admin/SeatingBottomDock.tsx'), 'utf8');
+  const comp = readFileSync(
+    resolve(process.cwd(), 'src/components/admin/SeatingBottomDock.tsx'),
+    'utf8'
+  );
   assert.match(comp, /flex-1/, 'should have flex-1 for flexible width');
   assert.match(comp, /min-w-0/, 'should have min-w-0 for flexible width');
 });
@@ -114,7 +116,7 @@ test('communication templates replace event placeholders', () => {
       eventLocation: 'Main Hall',
       eventDate: 'May 23, 7:00 PM',
       eventDetails: 'Black folders',
-    },
+    }
   );
 
   assert.equal(rendered, 'Reminder: Spring Concert at Main Hall on May 23, 7:00 PM. Black folders');
@@ -149,7 +151,7 @@ test('seating sync merge preserves optimistic edits over late load data', () => 
     },
     { '0-1': 'local_singer', '0-2': 'another_local_singer' },
     'perf_a',
-    'venue_1',
+    'venue_1'
   );
 
   assert.equal(merged.formationId, 'strategy_b');
@@ -168,12 +170,12 @@ test('groupSingersBySection excludes assigned singers and segments unassigned in
     { id: '5', name: 'Bob Johnson', voicePart: 'Bass' },
     { id: '6', name: 'Soloist Steve', voicePart: 'Soloist' },
   ];
-  
+
   // Exclude '1' (Alice) and '5' (Bob) as they are already assigned
   const assigned = new Set(['1', '5']);
-  
+
   const grouped = groupSingersBySection(profiles, assigned);
-  
+
   assert.deepEqual(grouped.S, [{ id: '2', name: 'Amanda Jones', voicePart: 'Soprano 2' }]);
   assert.deepEqual(grouped.A, [{ id: '3', name: 'Betty Miller', voicePart: 'Alto 1' }]);
   assert.deepEqual(grouped.T, [{ id: '4', name: 'Thomas Wright', voicePart: 'Tenor 2' }]);
@@ -184,7 +186,7 @@ test('groupSingersBySection excludes assigned singers and segments unassigned in
 test('findPieceDetails matches and returns the piece by id', () => {
   const library = [
     { id: 'piece_1', title: 'Messiah', composer: 'Handel' },
-    { id: 'piece_2', title: 'Requiem', composer: 'Mozart' }
+    { id: 'piece_2', title: 'Requiem', composer: 'Mozart' },
   ] as MusicPiece[];
 
   const result = findPieceDetails('piece_2', library);
@@ -193,9 +195,7 @@ test('findPieceDetails matches and returns the piece by id', () => {
 });
 
 test('findPieceDetails returns null if piece id is not in library', () => {
-  const library = [
-    { id: 'piece_1', title: 'Messiah', composer: 'Handel' }
-  ] as MusicPiece[];
+  const library = [{ id: 'piece_1', title: 'Messiah', composer: 'Handel' }] as MusicPiece[];
 
   const result = findPieceDetails('piece_unknown', library);
   assert.equal(result, null);
@@ -206,35 +206,37 @@ test('findPieceDetails handles empty library or undefined parameters', () => {
   assert.equal(findPieceDetails('', []), null);
 });
 
-test('formatPerformanceHistory returns formatted performance strings when expand.performances exists', () => {
+test('formatPerformanceHistory returns formatted performance strings when events contain the pieceId', () => {
   const piece = {
     id: 'piece_1',
     title: 'Messiah',
     composer: 'Handel',
-    expand: {
-      performances: [
-        { id: 'evt_1', title: 'Spring Concert', date: '2026-05-20T23:00:00.000Z', type: 'Performance' },
-        { id: 'evt_2', title: 'Winter Gala', date: '2025-12-15T19:00:00.000Z', type: 'Performance' }
-      ]
-    }
-  } as MusicPiece & { expand: { performances: Event[] } };
+  } as MusicPiece;
 
-  const result = formatPerformanceHistory(piece);
-  assert.deepEqual(result, [
-    'Spring Concert (2026-05-20)',
-    'Winter Gala (2025-12-15)'
-  ]);
+  const events = [
+    {
+      id: 'evt_1',
+      title: 'Spring Concert',
+      date: '2026-05-20T23:00:00.000Z',
+      type: 'Performance',
+      setList: [{ id: 's1', title: 'Messiah', pieceId: 'piece_1' }],
+    } as Event,
+    {
+      id: 'evt_2',
+      title: 'Winter Gala',
+      date: '2025-12-15T19:00:00.000Z',
+      type: 'Performance',
+      setList: [{ id: 's2', title: 'Messiah', pieceId: 'piece_1' }],
+    } as Event,
+  ];
+
+  const result = formatPerformanceHistory(piece, events);
+  assert.deepEqual(result, ['Spring Concert (2026-05-20)', 'Winter Gala (2025-12-15)']);
 });
 
-test('formatPerformanceHistory returns empty array when expand or performances is missing', () => {
-  const pieceBody = { id: 'piece_2', title: 'Requiem' } as MusicPiece;
-  assert.deepEqual(formatPerformanceHistory(pieceBody), []);
-
-  const pieceEmptyExpand = { id: 'piece_2', title: 'Requiem', expand: {} } as MusicPiece;
-  assert.deepEqual(formatPerformanceHistory(pieceEmptyExpand), []);
-
-  const pieceEmptyPerformances = { id: 'piece_2', title: 'Requiem', expand: { performances: [] } } as unknown as MusicPiece;
-  assert.deepEqual(formatPerformanceHistory(pieceEmptyPerformances), []);
+test('formatPerformanceHistory returns empty array when no events match', () => {
+  const piece = { id: 'piece_2', title: 'Requiem' } as MusicPiece;
+  assert.deepEqual(formatPerformanceHistory(piece, []), []);
 });
 
 test('parseMusicLibraryCSV parses CSV with standard fields and optional duration', () => {
@@ -274,7 +276,7 @@ Ave Verum,Mozart,30,,,`;
 
 test('findPieceDetails preserves and returns duration if present', () => {
   const library = [
-    { id: 'piece_1', title: 'Messiah', composer: 'Handel', duration: '3:30' }
+    { id: 'piece_1', title: 'Messiah', composer: 'Handel', duration: '3:30' },
   ] as MusicPiece[];
 
   const result = findPieceDetails('piece_1', library);
@@ -319,5 +321,3 @@ test('removeRowAndShiftAssignments removes the row and shifts all rows below it 
     '1-0': 'singerD', // shifted from row 2 to row 1
   });
 });
-
-
