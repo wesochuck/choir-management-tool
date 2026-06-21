@@ -80,14 +80,7 @@ export default function ReportsView() {
       });
     });
 
-    return stats.sort((a, b) => {
-      if (a.lastPerformed && b.lastPerformed) {
-        return b.lastPerformed.getTime() - a.lastPerformed.getTime();
-      }
-      if (a.lastPerformed) return -1;
-      if (b.lastPerformed) return 1;
-      return a.piece.title.localeCompare(b.piece.title);
-    });
+    return stats;
   }, [library, perfMap]);
 
   const attendanceColumns: ColumnDef<SingerReport>[] = [
@@ -157,7 +150,9 @@ export default function ReportsView() {
     {
       id: 'title',
       header: 'Title',
+      accessorFn: (r) => r.piece.title,
       cell: ({ row }) => <strong>{row.original.piece.title}</strong>,
+      enableSorting: true,
       meta: {
         cardSection: 0,
         cardSide: 'left',
@@ -166,7 +161,9 @@ export default function ReportsView() {
     {
       id: 'composer',
       header: 'Composer',
+      accessorFn: (r) => r.piece.composer ?? '',
       cell: ({ row }) => row.original.piece.composer || '-',
+      enableSorting: true,
       meta: {
         cardSection: 1,
         cardSide: 'left',
@@ -176,7 +173,9 @@ export default function ReportsView() {
     {
       id: 'arranger',
       header: 'Arranger',
+      accessorFn: (r) => r.piece.arranger ?? '',
       cell: ({ row }) => row.original.piece.arranger || '-',
+      enableSorting: true,
       meta: {
         cardSection: 1,
         cardSide: 'left',
@@ -186,11 +185,13 @@ export default function ReportsView() {
     {
       id: 'totalPerformances',
       header: 'Total Performances',
+      accessorFn: (r) => r.totalPerformances,
       cell: ({ row }) => (
         <span className="bg-danger-bg text-danger-text inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
           {row.original.totalPerformances}
         </span>
       ),
+      enableSorting: true,
       meta: {
         align: 'center',
         cardSection: 0,
@@ -200,8 +201,10 @@ export default function ReportsView() {
     {
       id: 'lastPerformed',
       header: 'Last Performed',
+      accessorFn: (r) => (r.lastPerformed ? r.lastPerformed.getTime() : -Infinity),
       cell: ({ row }) =>
         row.original.lastPerformed ? row.original.lastPerformed.toLocaleDateString() : '-',
+      enableSorting: true,
       meta: {
         cardSection: 1,
         cardSide: 'right',
@@ -468,6 +471,10 @@ export default function ReportsView() {
             }}
             hidePagination={true}
             getRowId={(r) => r.piece.id}
+            defaultSorting={[
+              { id: 'lastPerformed', desc: true },
+              { id: 'title', desc: false },
+            ]}
           />
         </div>
       )}

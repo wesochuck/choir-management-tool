@@ -195,7 +195,9 @@ export function Modal({
             )}
             <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
             {footer && (
-              <div className="border-border flex justify-end gap-2 border-t p-4">{footer}</div>
+              <div className="border-border flex flex-col gap-2 border-t p-4 sm:flex-row sm:justify-end">
+                {footer}
+              </div>
             )}
           </div>
         </div>,
@@ -239,7 +241,9 @@ export function Modal({
           )}
           <div className="min-h-0 flex-1 overflow-y-auto px-1">{children}</div>
           {footer && (
-            <div className="border-border flex justify-end gap-2 border-t pt-2">{footer}</div>
+            <div className="border-border flex flex-col gap-2 border-t pt-2 sm:flex-row sm:justify-end">
+              {footer}
+            </div>
           )}
         </div>
       </div>,
@@ -265,7 +269,7 @@ export function Modal({
         <div className="min-h-0 flex-1 px-1">{children}</div>
 
         {footer && (
-          <div slot="footer" className="flex justify-end gap-2 pt-2">
+          <div slot="footer" className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
             {footer}
           </div>
         )}
@@ -289,7 +293,7 @@ export function Modal({
       <div className="min-h-0 flex-1 px-1">{children}</div>
 
       {footer && (
-        <div slot="footer" className="flex justify-end gap-2 pt-2">
+        <div slot="footer" className="flex flex-col gap-2 pt-2 sm:flex-row sm:justify-end">
           {footer}
         </div>
       )}
