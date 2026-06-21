@@ -34,7 +34,6 @@ import {
   calculateSetListDurationTotals,
   getDefaultPlayableTrackKey,
   createSetListItemFromMusicPiece,
-  getPerformanceIdForSetListLibraryLink,
   buildSetListPlainText,
 } from '../../lib/setList/setListItems';
 import { pb } from '../../lib/pocketbase';
@@ -222,17 +221,7 @@ export default function SetListView() {
         savedPiece = await musicLibraryService.updatePiece(libraryEditingPiece.id, updateData);
       } else {
         const { tuttiFile, movements, ...rest } = data;
-        const performanceIdToLink = getPerformanceIdForSetListLibraryLink(selectedEvent);
-
-        const pieceData = {
-          ...rest,
-          performances:
-            rest.performances && rest.performances.length > 0
-              ? rest.performances
-              : performanceIdToLink
-                ? [performanceIdToLink]
-                : [],
-        };
+        const pieceData = { ...rest };
 
         if (tuttiFile || (movements && movements.length > 0)) {
           savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(pieceData, {
@@ -420,23 +409,6 @@ export default function SetListView() {
     const nextItems = [...items, item];
     const success = await updateItems(nextItems);
     if (!success) return;
-
-    const performanceIdToLink = getPerformanceIdForSetListLibraryLink(selectedEvent);
-    if (item.pieceId && performanceIdToLink) {
-      try {
-        const piece = library.find((p) => p.id === item.pieceId);
-        if (piece) {
-          const currentPerfs = piece.performances || [];
-          if (!currentPerfs.includes(performanceIdToLink)) {
-            const updatedPerfs = [...currentPerfs, performanceIdToLink];
-            await musicLibraryService.updatePiece(piece.id, { performances: updatedPerfs });
-            await queryClient.invalidateQueries({ queryKey: queryKeys.musicLibrary.all });
-          }
-        }
-      } catch (err) {
-        console.error('Failed to auto-link performance on inline add:', err);
-      }
-    }
   };
 
   const handleCopyFrom = async (sourceEventId: string) => {
