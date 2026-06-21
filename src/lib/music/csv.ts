@@ -58,7 +58,6 @@ export function parseMusicLibraryCSV(csvText: string): Partial<MusicPieceInput>[
       catalogId: catalogIdx !== -1 && cells[catalogIdx] !== undefined ? cells[catalogIdx] : '',
       duration: durationIdx !== -1 && cells[durationIdx] ? cells[durationIdx] : undefined,
       notes: notesIdx !== -1 && cells[notesIdx] !== undefined ? cells[notesIdx] : '',
-      performances: [],
     });
   }
 

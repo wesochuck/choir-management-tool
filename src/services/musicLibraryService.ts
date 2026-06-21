@@ -15,7 +15,6 @@ export const musicLibraryService = {
   async getLibrary() {
     return await pb.collection('musicLibrary').getFullList<MusicPiece>({
       sort: 'title',
-      expand: 'performances',
     });
   },
 
