@@ -17,12 +17,7 @@ import {
   type MusicLibrarySettings,
 } from '../../services/settingsService';
 import { pb } from '../../lib/pocketbase';
-import {
-  exportMusicToCSV,
-  findDuplicates,
-  appendPieceToSetList,
-  appendPiecesToSetList,
-} from '../../lib/musicPieceUtils';
+import { exportMusicToCSV, findDuplicates, appendPiecesToSetList } from '../../lib/musicPieceUtils';
 import {
   buildVisibleMusicLibraryRows,
   type MusicLibrarySortField,
@@ -30,6 +25,8 @@ import {
   type FilterMode,
 } from '../../lib/music/libraryRows';
 import type { PerformanceRecencyFilter } from '../../lib/music/performanceHistory';
+import { usePiecePerformanceMap } from '../../hooks/usePiecePerformanceMap';
+import { useEvents } from '../../hooks/useEvents';
 import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { MusicPieceModal } from './music-library/MusicPieceModal';
 import { AddToSetListModal } from './music-library/AddToSetListModal';
@@ -122,6 +119,9 @@ export default function MusicLibraryView() {
     staleTime: 60_000,
   });
   const pieces = useMemo(() => libraryQuery.data ?? [], [libraryQuery.data]);
+
+  const { events: allEvents } = useEvents();
+  const perfMap = usePiecePerformanceMap(allEvents);
 
   const settingsLibQuery = useQuery({
     queryKey: queryKeys.appSettings.musicLibrary,
@@ -311,47 +311,12 @@ export default function MusicLibraryView() {
     }
   ) => {
     try {
-      const savedPiece = await pieceSaveMutation.mutateAsync({
+      await pieceSaveMutation.mutateAsync({
         existingId: editingPiece?.id,
         data: data as Partial<MusicPieceInput>,
         tuttiFile: data.tuttiFile,
         movements: data.movements,
       });
-
-      const oldPerformances = editingPiece?.performances || [];
-      const newPerformances = data.performances || [];
-      const newlyLinkedIds = newPerformances.filter((id: string) => !oldPerformances.includes(id));
-
-      if (newlyLinkedIds.length > 0) {
-        const failedTitles: string[] = [];
-        await Promise.all(
-          newlyLinkedIds.map(async (perfId: string) => {
-            let eventTitle = perfId;
-            try {
-              const event = await eventService.getEventById(perfId);
-              eventTitle = event.title || perfId;
-              const { updated, setList: updatedSetList } = appendPieceToSetList(
-                event.setList,
-                savedPiece
-              );
-              if (updated) {
-                await eventService.updateEvent(perfId, { setList: updatedSetList });
-              }
-            } catch (err) {
-              console.error(`Failed to update set list for performance ${perfId}:`, err);
-              failedTitles.push(eventTitle);
-            }
-          })
-        );
-
-        if (failedTitles.length > 0) {
-          dialog.showMessage({
-            title: 'Set List Update Failed',
-            message: `The music piece was saved successfully, but it could not be automatically appended to the set list for: ${failedTitles.join(', ')}.`,
-            variant: 'warning',
-          });
-        }
-      }
 
       setIsModalOpen(false);
     } catch {
@@ -376,37 +341,6 @@ export default function MusicLibraryView() {
         tuttiFile: data.tuttiFile,
         movements: data.movements,
       });
-
-      const newPerformances = data.performances || [];
-      if (newPerformances.length > 0) {
-        const failedTitles: string[] = [];
-        await Promise.all(
-          newPerformances.map(async (perfId: string) => {
-            let eventTitle = perfId;
-            try {
-              const event = await eventService.getEventById(perfId);
-              eventTitle = event.title || perfId;
-              const { updated, setList: updatedSetList } = appendPieceToSetList(
-                event.setList,
-                savedPiece
-              );
-              if (updated) {
-                await eventService.updateEvent(perfId, { setList: updatedSetList });
-              }
-            } catch (err) {
-              console.error(`Failed to update set list for performance ${perfId}:`, err);
-              failedTitles.push(eventTitle);
-            }
-          })
-        );
-        if (failedTitles.length > 0) {
-          dialog.showMessage({
-            title: 'Set List Update Failed',
-            message: `The piece was saved, but could not be appended to set lists for: ${failedTitles.join(', ')}.`,
-            variant: 'warning',
-          });
-        }
-      }
 
       setEditingPiece(null);
       dialog.showToast(`"${savedPiece.title}" saved. Ready to add another piece.`);
@@ -498,19 +432,23 @@ export default function MusicLibraryView() {
   }, [pieces]);
 
   const filteredPieces = useMemo(() => {
-    return buildVisibleMusicLibraryRows(pieces, {
-      searchTerm,
-      showDuplicatesOnly,
-      showMovements: false,
-      duplicateIds,
-      sectionFilters,
-      genreFilters,
-      genreFilterMode,
-      recencyFilter,
-      sortField,
-      sortDirection,
-      ignoreArticles,
-    });
+    return buildVisibleMusicLibraryRows(
+      pieces,
+      {
+        searchTerm,
+        showDuplicatesOnly,
+        showMovements: false,
+        duplicateIds,
+        sectionFilters,
+        genreFilters,
+        genreFilterMode,
+        recencyFilter,
+        sortField,
+        sortDirection,
+        ignoreArticles,
+      },
+      perfMap
+    );
   }, [
     pieces,
     searchTerm,
@@ -523,6 +461,7 @@ export default function MusicLibraryView() {
     sortField,
     sortDirection,
     ignoreArticles,
+    perfMap,
   ]);
 
   const paginatedPieces = useMemo(() => {
