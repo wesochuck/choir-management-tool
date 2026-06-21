@@ -72,6 +72,7 @@ export const queryKeys = {
     bundles: () => [...queryKeys.ticketing.all, 'bundles'] as const,
     timezone: () => [...queryKeys.ticketing.all, 'timezone'] as const,
     logoUrl: ['ticketing', 'logoUrl'] as const,
+    confirmationPage: () => [...queryKeys.ticketing.all, 'confirmationPage'] as const,
   },
   eventRoster: {
     all: ['eventRoster'] as const,

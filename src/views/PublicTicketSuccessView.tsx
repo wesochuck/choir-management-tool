@@ -12,6 +12,7 @@ import { formatTime12h } from '../lib/dateUtils';
 import { pb } from '../lib/pocketbase';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { queryKeys } from '../lib/queryKeys';
+import { getTicketConfirmationPageSettings } from '../services/settingsService';
 
 export default function PublicTicketSuccessView() {
   useDocumentTitle('Order Confirmation');
@@ -33,6 +34,14 @@ export default function PublicTicketSuccessView() {
     queryFn: () => ticketService.getScanContext(sessionId, purchase!.id),
     enabled: !!purchase?.id,
   });
+
+  const confirmationSettingsQuery = useQuery({
+    queryKey: queryKeys.ticketing.confirmationPage(),
+    queryFn: getTicketConfirmationPageSettings,
+    staleTime: 5 * 60_000,
+  });
+
+  const confirmationSettings = confirmationSettingsQuery.data;
 
   const [qrDataUri, setQrDataUri] = useState<string | null>(null);
   const [qrError, setQrError] = useState<string | null>(null);
@@ -97,7 +106,9 @@ export default function PublicTicketSuccessView() {
       <AppCard className="w-full max-w-[480px] items-center gap-4 text-center">
         <div className="text-success-text text-6xl">✓</div>
         <h1 className="text-display m-0">Thank You!</h1>
-        <p className="text-text-muted m-0">Your purchase has been successfully processed.</p>
+        <p className="text-text-muted m-0">
+          {confirmationSettings?.successMessage ?? 'Your purchase has been successfully processed.'}
+        </p>
 
         {purchase ? (
           <div className="border-border flex w-full flex-col gap-1 rounded-xl border bg-neutral-100 p-4 text-left shadow-sm transition-all duration-200 hover:shadow-md">
@@ -136,15 +147,15 @@ export default function PublicTicketSuccessView() {
               <EventDetails event={purchase.expand.event} />
             ) : null}
             <p className="border-border text-text-muted m-0 border-t pt-1 text-center text-xs">
-              A confirmation email has been sent with a link back to this page. Your tickets will be
-              held at Will Call on show day. Please bring a photo ID matching the buyer's name.
+              {confirmationSettings?.willCallInstructions ??
+                'A confirmation email has been sent with a link back to this page. Your tickets will be held at Will Call on show day. Please bring a photo ID matching the buyer\u2019s name.'}
             </p>
           </div>
         ) : (
           <div className="w-full rounded-lg bg-neutral-100 p-4">
             <p className="text-text-muted m-0 text-sm">
-              We could not load the full ticket details yet. Your purchase may still be processing.
-              Please refresh this page in a moment, or contact the box office if this continues.
+              {confirmationSettings?.pendingMessage ??
+                'We could not load the full ticket details yet. Your purchase may still be processing. Please refresh this page in a moment, or contact the box office if this continues.'}
             </p>
             <Button
               onClick={() => purchaseQuery.refetch()}
@@ -174,8 +185,8 @@ export default function PublicTicketSuccessView() {
             )}
 
             <p className="text-text-muted m-0 text-center text-xs">
-              Print or screenshot this entire page and bring it with you. We also sent a
-              confirmation email with a link back to this page.
+              {confirmationSettings?.qrInstructions ??
+                'Print or screenshot this entire page and bring it with you. We also sent a confirmation email with a link back to this page.'}
             </p>
           </div>
         )}
