@@ -80,8 +80,6 @@ export function MusicPieceModal({
       setNotes,
       purchaseDateInput,
       setPurchaseDateInput,
-      suggestedDuration,
-      setSuggestedDuration,
       uniqueComposers,
       uniqueArrangers,
       parentPiece,
@@ -453,23 +451,6 @@ export function MusicPieceModal({
                     onChange={(e) => setDuration(e.target.value)}
                     placeholder="e.g. 3:30"
                   />
-                  {suggestedDuration && !duration.trim() && (
-                    <div className="border-primary/30 bg-primary-light mt-2 flex flex-row items-center justify-between gap-2 rounded-lg border border-dashed p-2.5 px-3">
-                      <span className="text-primary-deep inline-flex items-center gap-1 text-xs font-medium">
-                        💡 Track length: <strong>{suggestedDuration}</strong>. Use this?
-                      </span>
-                      <button
-                        type="button"
-                        className="border-primary/40 bg-surface text-primary hover:bg-primary-light flex h-6 cursor-pointer items-center justify-center rounded-md border px-3 text-[10px] font-bold shadow-xs transition-colors active:scale-95"
-                        onClick={() => {
-                          setDuration(suggestedDuration);
-                          setSuggestedDuration(null);
-                        }}
-                      >
-                        Apply
-                      </button>
-                    </div>
-                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-label">Copies</label>

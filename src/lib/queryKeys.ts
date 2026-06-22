@@ -139,6 +139,8 @@ export const queryKeys = {
   musicLibrary: {
     all: ['musicLibrary'] as const,
     list: () => [...queryKeys.musicLibrary.all, 'list'] as const,
+    movements: (parentId: string) =>
+      [...queryKeys.musicLibrary.all, 'movements', parentId] as const,
   },
   playlist: {
     all: ['playlist'] as const,
