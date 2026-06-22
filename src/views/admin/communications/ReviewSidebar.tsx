@@ -68,6 +68,7 @@ export function ReviewSidebar({
           >
             <svg
               viewBox="0 0 24 24"
+              aria-hidden="true"
               fill="none"
               stroke="currentColor"
               strokeWidth="2.5"
@@ -134,6 +135,7 @@ export function ReviewSidebar({
         filters={filters}
         selectedEvent={selectedEvent}
         commSettings={commSettings}
+        aria-hidden="true"
         setTab={setTab}
         setEditingTemplate={setEditingTemplate}
       />
@@ -153,7 +155,7 @@ export function ReviewSidebar({
             >
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            Back
+            Back aria-hidden="true"
           </Button>
 
           <Button
@@ -174,6 +176,7 @@ export function ReviewSidebar({
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
+            aria-hidden="true"
             {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
           </Button>
 
