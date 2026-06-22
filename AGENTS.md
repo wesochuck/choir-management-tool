@@ -52,6 +52,12 @@ catch (err: unknown) {
 
 If an untyped third-party boundary is unavoidable, isolate it in a small adapter with a named type and a short comment.
 
+### React Imports
+
+This project uses the modern JSX transform (React 17+). **Do not use `import React from 'react';` just to use JSX.**
+If you include a React import that is not used for runtime hooks (like `useState`), TypeScript's strict `noUnusedLocals` rule will throw `error TS6133` in CI.
+If you only need React for types (e.g., `React.ReactNode` or `React.Dispatch`), use a type-only import: `import type React from 'react';` to prevent CI failures.
+
 ### Vitest conventions
 
 Tests run through Vitest using a compatibility layer mapped to `node:test` imports.

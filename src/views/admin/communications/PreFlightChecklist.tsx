@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Link } from 'react-router-dom';
 import { AppCard } from '../../../components/common/AppCard';
 import { AlertBanner } from './AlertBanner';
