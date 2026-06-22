@@ -137,6 +137,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
     try {
       app
         .db()
+        // SAFE: Parameterized query using bind(), preventing SQL injection
         .newQuery(
           `
                 UPDATE emailQueue

@@ -1305,6 +1305,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
             try {
                 app
                     .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
                     .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
@@ -2507,6 +2508,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             try {
                 app
                     .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
                     .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
@@ -3659,6 +3661,7 @@ onRecordAfterCreateSuccess((e) => {
             try {
                 app
                     .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
                     .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
@@ -4820,6 +4823,7 @@ onRecordAfterUpdateSuccess((e) => {
             try {
                 app
                     .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
                     .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
@@ -5901,6 +5905,7 @@ onRecordAfterCreateSuccess((e) => {
             try {
                 app
                     .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
                     .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
@@ -7131,6 +7136,7 @@ onRecordAfterUpdateSuccess((e) => {
             try {
                 app
                     .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
                     .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
@@ -8747,6 +8753,7 @@ function processEmailQueue(app) {
         try {
             app
                 .db()
+                // SAFE: Parameterized query using bind(), preventing SQL injection
                 .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Processing',
@@ -10945,6 +10952,7 @@ function processEmailQueue(app) {
         try {
             app
                 .db()
+                // SAFE: Parameterized query using bind(), preventing SQL injection
                 .newQuery(`
                 UPDATE emailQueue
                 SET status = 'Processing',
@@ -12332,6 +12340,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             try {
                 app
                     .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
                     .newQuery(`
                     UPDATE emailQueue
                     SET status = 'Processing',
