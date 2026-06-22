@@ -7655,6 +7655,107 @@ onRecordAfterUpdateSuccess((e) => {
 // --- CUSTOM ENDPOINTS ---
 
 "use strict";
+function verifyEventRecipientToken(token) {
+    const parts = parseSignedToken(token, ['e', 'p', 's']);
+    if (!parts) {
+        return { ok: false, status: 400, error: 'This RSVP link is invalid. Please request a new RSVP link.' };
+    }
+    let secret;
+    try {
+        secret = getHmacSecret($app);
+        if (!secret)
+            throw new Error('Missing secret');
+    }
+    catch (_a) {
+        return { ok: false, status: 500, error: 'HMAC_SECRET not configured' };
+    }
+    const payload = getEventRecipientPayload(parts.e, parts.p);
+    const expectedSignature = $security.hs256(payload, secret);
+    if (!$security.equal(parts.s, expectedSignature)) {
+        console.log('[RSVP Debug] Signature mismatch for event=' + parts.e + ', profile=' + parts.p);
+        console.log('[RSVP Debug] Expected: ' + expectedSignature + ', Received: ' + parts.s);
+        return { ok: false, status: 401, error: 'This RSVP link is invalid or expired. Please request a new RSVP link.' };
+    }
+    return { ok: true, data: parts };
+}
+function verifyUnsubscribeToken(token) {
+    const parts = parseSignedToken(token, ['p', 's']);
+    if (!parts) {
+        return { ok: false, status: 400, error: 'Invalid token format' };
+    }
+    let secret;
+    try {
+        secret = getHmacSecret($app);
+        if (!secret)
+            throw new Error('Missing secret');
+    }
+    catch (_a) {
+        return { ok: false, status: 500, error: 'HMAC_SECRET not configured' };
+    }
+    const payload = `p=${parts.p}`;
+    const expectedSignature = $security.hs256(payload, secret);
+    if (!$security.equal(parts.s, expectedSignature)) {
+        return { ok: false, status: 401, error: 'Invalid signature' };
+    }
+    return { ok: true, data: parts };
+}
+function buildVenueMap() {
+    const venueMap = {};
+    try {
+        const allVenues = $app.findRecordsByFilter('venues', '1 = 1', '', 200);
+        if (allVenues) {
+            allVenues.forEach((v) => {
+                venueMap[v.id] = v;
+            });
+        }
+    }
+    catch (venueFetchErr) {
+        console.log('[RSVP Error] Failed to fetch venues: ' + venueFetchErr);
+    }
+    return venueMap;
+}
+function enqueueRsvpConfirmationEmail(eventId, profile) {
+    try {
+        let recipientEmail = '';
+        const userId = profile.get('user');
+        if (userId) {
+            try {
+                const userRec = $app.findRecordById('users', userId);
+                recipientEmail = userRec.get('email') || '';
+            }
+            catch (err) {
+                console.log('[RSVP Confirmation Error] Failed to resolve email for profile ' +
+                    profile.id +
+                    ': ' +
+                    err);
+            }
+        }
+        if (recipientEmail && !profile.get('doNotEmail')) {
+            const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'RSVP Confirmation' && isSystemTemplate = true");
+            const queueCollection = $app.findCollectionByNameOrId('emailQueue');
+            const queueRecord = new Record(queueCollection, {
+                recipientId: profile.id,
+                recipientEmail: recipientEmail,
+                recipientName: profile.get('name') || 'Singer',
+                subject: template.get('subject') || '',
+                rawContent: template.get('content') || '',
+                status: 'Pending',
+                attempts: 0,
+                filters: JSON.stringify({
+                    eventId: eventId,
+                    type: 'Automated Confirmation',
+                }),
+            });
+            $app.save(queueRecord);
+            processEmailQueue($app);
+        }
+    }
+    catch (emailErr) {
+        console.log('[RSVP Confirmation Error] Failed to enqueue automated email: ' + emailErr);
+    }
+}
+
+"use strict";
 routerAdd('POST', '/api/generate-rsvp-tokens', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
@@ -7792,118 +7893,10 @@ function parseSignedToken(token, requiredKeys) {
     });
     return e.json(200, { tokens });
 });
+
+"use strict";
 routerAdd('POST', '/api/rsvp-details', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
-// --- Utility source: email/hookJson.ts ---
-"use strict";
-const decodeGoBytes = (val) => {
-    if (!val)
-        return "";
-    if (typeof val === 'string')
-        return val;
-    if (typeof val === 'object') {
-        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
-            try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
-            }
-            catch (_a) {
-                // Ignore decoding errors
-            }
-        }
-        return val;
-    }
-    return String(val);
-};
-function parseJsonField(val) {
-    if (!val)
-        return null;
-    const decoded = decodeGoBytes(val);
-    if (!decoded)
-        return null;
-    if (typeof decoded === 'object')
-        return decoded;
-    try {
-        return JSON.parse(decoded);
-    }
-    catch (_a) {
-        return null;
-    }
-}
-
-// --- Utility source: hmacTokens.ts ---
-"use strict";
-function getHmacSecret(app) {
-    try {
-        const appInstance = app || $app;
-        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    }
-    catch (_a) {
-        return "";
-    }
-}
-function getPlayerPayload(eventId) {
-    return `e=${eventId}`;
-}
-function getEventRecipientPayload(eventId, recipientId) {
-    return `e=${eventId}&p=${recipientId}`;
-}
-function getAuditionPayload(auditionId) {
-    return `a=${auditionId}`;
-}
-function getTicketPayload(purchaseId) {
-    return `t=${purchaseId}`;
-}
-function generateSignedTicketToken(app, purchaseId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getTicketPayload(purchaseId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function generateSignedPlayerToken(app, eventId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getPlayerPayload(eventId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getEventRecipientPayload(eventId, recipientId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function generateSignedAuditionToken(app, auditionId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getAuditionPayload(auditionId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
-        return null;
-    const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
-        if (idx <= 0)
-            return;
-        const key = segment.slice(0, idx);
-        if (!allowed[key])
-            return;
-        parts[key] = segment.slice(idx + 1);
-    });
-    for (let i = 0; i < requiredKeys.length; i++) {
-        if (!parts[requiredKeys[i]])
-            return null;
-    }
-    return parts;
-}
-
 // --- Utility source: rsvpValidation.ts ---
 "use strict";
 function parsePocketBaseDate(dateValue) {
@@ -8004,42 +7997,13 @@ function getRsvpWindowInfo(event) {
             error: 'Missing RSVP token. Please open full RSVP link from your email.',
         });
     }
-    const parts = parseSignedToken(token, ['e', 'p', 's']);
-    if (!parts) {
-        return e.json(400, { error: 'This RSVP link is invalid. Please request a new RSVP link.' });
+    const verification = verifyEventRecipientToken(token);
+    if (!verification.ok || !verification.data) {
+        return e.json(verification.status || 400, { error: verification.error });
     }
-    let secret;
+    const parts = verification.data;
     try {
-        secret = getHmacSecret($app);
-        if (!secret)
-            throw new Error('Missing secret');
-    }
-    catch (_a) {
-        return e.json(500, { error: 'HMAC_SECRET not configured' });
-    }
-    const payload = getEventRecipientPayload(parts.e, parts.p);
-    const expectedSignature = $security.hs256(payload, secret);
-    if (!$security.equal(parts.s, expectedSignature)) {
-        console.log('[RSVP Debug] Signature mismatch for event=' + parts.e + ', profile=' + parts.p);
-        console.log('[RSVP Debug] Expected: ' + expectedSignature + ', Received: ' + parts.s);
-        return e.json(401, {
-            error: 'This RSVP link is invalid or expired. Please request a new RSVP link.',
-        });
-    }
-    try {
-        // Fetch all venues once to eliminate N+1 queries in rehearsals loop
-        const venueMap = {};
-        try {
-            const allVenues = $app.findRecordsByFilter('venues', '1 = 1', '', 200);
-            if (allVenues) {
-                allVenues.forEach((v) => {
-                    venueMap[v.id] = v;
-                });
-            }
-        }
-        catch (venueFetchErr) {
-            console.log('[RSVP Error] Failed to fetch venues: ' + venueFetchErr);
-        }
+        const venueMap = buildVenueMap();
         const event = $app.findRecordById('events', parts.e);
         const rsvpWindow = getRsvpWindowInfo(event);
         let venueName = '';
@@ -8139,6 +8103,8 @@ function getRsvpWindowInfo(event) {
         });
     }
 });
+
+"use strict";
 routerAdd('POST', '/api/quick-rsvp', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
@@ -9397,33 +9363,16 @@ function getRsvpWindowInfo(event) {
             code: 'RSVP_NOTE_TOO_LONG',
         });
     }
-    const parts = parseSignedToken(token, ['e', 'p', 's']);
-    if (!parts) {
-        return e.json(400, { error: 'This RSVP link is invalid. Please request a new RSVP link.' });
+    const verification = verifyEventRecipientToken(token);
+    if (!verification.ok || !verification.data) {
+        return e.json(verification.status || 400, { error: verification.error });
     }
-    let secret;
-    try {
-        secret = getHmacSecret($app);
-        if (!secret)
-            throw new Error('Missing secret');
-    }
-    catch (_a) {
-        return e.json(500, { error: 'HMAC_SECRET not configured' });
-    }
-    const payload = getEventRecipientPayload(parts.e, parts.p);
-    const expectedSignature = $security.hs256(payload, secret);
-    if (!$security.equal(parts.s, expectedSignature)) {
-        console.log('[RSVP Debug] Signature mismatch for event=' + parts.e + ', profile=' + parts.p);
-        console.log('[RSVP Debug] Expected: ' + expectedSignature + ', Received: ' + parts.s);
-        return e.json(401, {
-            error: 'This RSVP link is invalid or expired. Please request a new RSVP link.',
-        });
-    }
+    const parts = verification.data;
     let event;
     try {
         event = $app.findRecordById('events', parts.e);
     }
-    catch (_b) {
+    catch (_a) {
         return e.json(404, { error: 'Event not found. RSVP link may be expired.' });
     }
     const windowValidation = validateSingerRsvpWindow(event);
@@ -9465,39 +9414,7 @@ function getRsvpWindowInfo(event) {
         if (normalizedRsvp === 'Yes' && oldRsvp !== 'Yes') {
             try {
                 const profile = $app.findRecordById('profiles', parts.p);
-                let recipientEmail = '';
-                const userId = profile.get('user');
-                if (userId) {
-                    try {
-                        const userRec = $app.findRecordById('users', userId);
-                        recipientEmail = userRec.get('email') || '';
-                    }
-                    catch (err) {
-                        console.log('[RSVP Confirmation Error] Failed to resolve email for profile ' +
-                            parts.p +
-                            ': ' +
-                            err);
-                    }
-                }
-                if (recipientEmail && !profile.get('doNotEmail')) {
-                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'RSVP Confirmation' && isSystemTemplate = true");
-                    const queueCollection = $app.findCollectionByNameOrId('emailQueue');
-                    const queueRecord = new Record(queueCollection, {
-                        recipientId: profile.id,
-                        recipientEmail: recipientEmail,
-                        recipientName: profile.get('name') || 'Singer',
-                        subject: template.get('subject') || '',
-                        rawContent: template.get('content') || '',
-                        status: 'Pending',
-                        attempts: 0,
-                        filters: JSON.stringify({
-                            eventId: parts.e,
-                            type: 'Automated Confirmation',
-                        }),
-                    });
-                    $app.save(queueRecord);
-                    processEmailQueue($app);
-                }
+                enqueueRsvpConfirmationEmail(parts.e, profile);
             }
             catch (emailErr) {
                 console.log('[RSVP Confirmation Error] Failed to enqueue automated email: ' + emailErr);
@@ -9521,7 +9438,7 @@ function getRsvpWindowInfo(event) {
         try {
             errDetails = JSON.stringify(err);
         }
-        catch (_c) {
+        catch (_b) {
             errDetails = String(err);
         }
         console.log('[RSVP Quick Error] Failed to update RSVP: ' + String(err) + ' | details=' + errDetails);
@@ -9529,151 +9446,32 @@ function getRsvpWindowInfo(event) {
     }
     return e.json(200, { success: true });
 });
-routerAdd('POST', '/api/unsubscribe', (e) => {
-    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
-// --- Utility source: email/hookJson.ts ---
-"use strict";
-const decodeGoBytes = (val) => {
-    if (!val)
-        return "";
-    if (typeof val === 'string')
-        return val;
-    if (typeof val === 'object') {
-        if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
-            try {
-                let str = "";
-                for (let i = 0; i < val.length; i++) {
-                    str += String.fromCharCode(val[i]);
-                }
-                return str;
-            }
-            catch (_a) {
-                // Ignore decoding errors
-            }
-        }
-        return val;
-    }
-    return String(val);
-};
-function parseJsonField(val) {
-    if (!val)
-        return null;
-    const decoded = decodeGoBytes(val);
-    if (!decoded)
-        return null;
-    if (typeof decoded === 'object')
-        return decoded;
-    try {
-        return JSON.parse(decoded);
-    }
-    catch (_a) {
-        return null;
-    }
-}
 
-// --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret(app) {
-    try {
-        const appInstance = app || $app;
-        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    }
-    catch (_a) {
-        return "";
-    }
-}
-function getPlayerPayload(eventId) {
-    return `e=${eventId}`;
-}
-function getEventRecipientPayload(eventId, recipientId) {
-    return `e=${eventId}&p=${recipientId}`;
-}
-function getAuditionPayload(auditionId) {
-    return `a=${auditionId}`;
-}
-function getTicketPayload(purchaseId) {
-    return `t=${purchaseId}`;
-}
-function generateSignedTicketToken(app, purchaseId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getTicketPayload(purchaseId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function generateSignedPlayerToken(app, eventId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getPlayerPayload(eventId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getEventRecipientPayload(eventId, recipientId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function generateSignedAuditionToken(app, auditionId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
-    const payload = getAuditionPayload(auditionId);
-    const signature = $security.hs256(payload, secret);
-    return `${payload}&s=${signature}`;
-}
-function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
-        return null;
-    const parts = {};
-    const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
-        if (idx <= 0)
-            return;
-        const key = segment.slice(0, idx);
-        if (!allowed[key])
-            return;
-        parts[key] = segment.slice(idx + 1);
-    });
-    for (let i = 0; i < requiredKeys.length; i++) {
-        if (!parts[requiredKeys[i]])
-            return null;
-    }
-    return parts;
-}
-// --- END CALLBACK-LOCAL UTILITIES ---
+routerAdd('POST', '/api/unsubscribe', (e) => {
+    
     const data = e.requestInfo().body;
     const token = data.token;
     if (!token || typeof token !== 'string') {
         return e.json(400, { error: 'Missing token' });
     }
-    const parts = parseSignedToken(token, ['p', 's']);
-    if (!parts) {
-        return e.json(400, { error: 'Invalid token format' });
+    const verification = verifyUnsubscribeToken(token);
+    if (!verification.ok || !verification.data) {
+        return e.json(verification.status || 400, { error: verification.error });
     }
-    let secret;
-    try {
-        secret = getHmacSecret($app);
-        if (!secret)
-            throw new Error('Missing secret');
-    }
-    catch (_a) {
-        return e.json(500, { error: 'HMAC_SECRET not configured' });
-    }
-    const payload = `p=${parts.p}`;
-    const expectedSignature = $security.hs256(payload, secret);
-    if (!$security.equal(parts.s, expectedSignature)) {
-        return e.json(401, { error: 'Invalid signature' });
-    }
+    const parts = verification.data;
     try {
         const profile = $app.findRecordById('profiles', parts.p);
         profile.set('doNotEmail', true);
         $app.save(profile);
     }
-    catch (_b) {
+    catch (_a) {
         return e.json(404, { error: 'Profile not found' });
     }
     return e.json(200, { success: true });
 });
+
+"use strict";
 routerAdd('POST', '/api/admin/bulk-update-rsvps', (e) => {
     
     const authRecord = e.auth;
@@ -9746,6 +9544,8 @@ routerAdd('POST', '/api/admin/bulk-update-rsvps', (e) => {
         return e.json(500, { error: 'Failed to bulk update RSVPs: ' + String(err) });
     }
 });
+
+"use strict";
 routerAdd('POST', '/api/admin/bulk-upsert-attendance', (e) => {
     
     const authRecord = e.auth;
@@ -9770,11 +9570,11 @@ routerAdd('POST', '/api/admin/bulk-upsert-attendance', (e) => {
         return attendance === 'Present' && (!rsvp || rsvp === 'Pending');
     };
     for (let i = 0; i < updates.length; i++) {
-        const update = updates[i] || {};
+        const update = (updates[i] || {});
         if (!update.profileId) {
             return e.json(400, { error: 'Each update requires profileId' });
         }
-        if (!allowedAttendance[update.attendance]) {
+        if (!update.attendance || !allowedAttendance[update.attendance]) {
             return e.json(400, { error: 'Invalid attendance value' });
         }
     }
@@ -9843,6 +9643,8 @@ routerAdd('POST', '/api/admin/bulk-upsert-attendance', (e) => {
         return e.json(500, { error: 'Failed to bulk upsert attendance: ' + String(err) });
     }
 });
+
+"use strict";
 routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
@@ -10329,7 +10131,7 @@ function parseSignedToken(token, requiredKeys) {
             if (typeof tzP === 'string') {
                 timezone = tzP;
             }
-            else if (typeof tzP === 'object' && tzP.timezone) {
+            else if (typeof tzP === 'object' && tzP !== null && 'timezone' in tzP && typeof tzP.timezone === 'string') {
                 timezone = tzP.timezone;
             }
         }
@@ -10367,7 +10169,7 @@ function parseSignedToken(token, requiredKeys) {
     const recipientName = (profile.get('name') || 'Singer');
     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
     if (event) {
-        const eventDate = event.get('date');
+        const eventDate = String(event.get('date') || '');
         const eventTitle = (event.get('title') || event.get('type') || 'Event');
         const eventType = (event.get('type') || 'Performance');
         const eventDetails = (event.get('details') || '');
@@ -10496,6 +10298,8 @@ function parseSignedToken(token, requiredKeys) {
     }
     return e.json(200, { resolvedContent: htmlBody });
 });
+
+"use strict";
 routerAdd('POST', '/api/singer/rsvp', (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
 // --- Utility source: email/hookJson.ts ---
@@ -11847,39 +11651,7 @@ function getRsvpWindowInfo(event) {
             // Enqueue confirmation email if RSVP changed to Yes
             if (rsvp === 'Yes' && oldRsvp !== 'Yes') {
                 try {
-                    let recipientEmail = '';
-                    const userId = profile.get('user');
-                    if (userId) {
-                        try {
-                            const userRec = $app.findRecordById('users', userId);
-                            recipientEmail = userRec.get('email') || '';
-                        }
-                        catch (err) {
-                            console.log('[RSVP Confirmation Error] Failed to resolve email for profile ' +
-                                profile.id +
-                                ': ' +
-                                err);
-                        }
-                    }
-                    if (recipientEmail && !profile.get('doNotEmail')) {
-                        const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'RSVP Confirmation' && isSystemTemplate = true");
-                        const queueCollection = $app.findCollectionByNameOrId('emailQueue');
-                        const queueRecord = new Record(queueCollection, {
-                            recipientId: profile.id,
-                            recipientEmail: recipientEmail,
-                            recipientName: profile.get('name') || 'Singer',
-                            subject: template.get('subject') || '',
-                            rawContent: template.get('content') || '',
-                            status: 'Pending',
-                            attempts: 0,
-                            filters: JSON.stringify({
-                                eventId: eventId,
-                                type: 'Automated Confirmation',
-                            }),
-                        });
-                        $app.save(queueRecord);
-                        processEmailQueue($app);
-                    }
+                    enqueueRsvpConfirmationEmail(eventId, profile);
                 }
                 catch (emailErr) {
                     console.log('[RSVP Confirmation Error] Failed to enqueue automated email: ' + emailErr);

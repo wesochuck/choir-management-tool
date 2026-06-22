@@ -439,7 +439,18 @@ function extractEnclosingArrowBody(source: string, position: number): string {
 }
 
 function buildRsvpRoutes(): string {
-  const rsvpJs = getTranspiledFile('rsvpEndpoints.ts');
+  const files = [
+    'rsvp/rsvpHelpers.ts',
+    'rsvp/generateRsvpTokens.ts',
+    'rsvp/rsvpDetails.ts',
+    'rsvp/quickRsvp.ts',
+    'rsvp/unsubscribe.ts',
+    'rsvp/bulkUpdateRsvps.ts',
+    'rsvp/bulkUpsertAttendance.ts',
+    'rsvp/resolvePlaceholders.ts',
+    'rsvp/singerRsvp.ts',
+  ];
+  const rsvpJs = files.map((f) => getTranspiledFile(f)).join('\n\n');
   return replaceSharedUtilityPlaceholders(rsvpJs);
 }
 

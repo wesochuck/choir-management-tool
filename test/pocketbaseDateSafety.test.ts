@@ -16,9 +16,10 @@ const allowlist = new Set([
   // generate-main-pb-js.ts: Node.js build script, not a Goja hook. References coercePocketBaseDate in
   // template strings that generate Goja code, but does not import it (build-time only).
   'generate-main-pb-js.ts',
-  // rsvpEndpoints.ts: passes raw event.get("date") to formatInTimezone (accepts Date|string) and
-  // returns dates in JSON responses where PocketBase serialization is correct.
-  'rsvpEndpoints.ts',
+  // resolvePlaceholders.ts and rsvpDetails.ts: pass raw event.get("date") to formatInTimezone
+  // (accepts Date|string) or return dates in JSON responses where PocketBase serialization is correct.
+  'resolvePlaceholders.ts',
+  'rsvpDetails.ts',
   // rsvpValidation.ts: contains parsePocketBaseDate() — its own date safety helper (precedes the shared one)
   'rsvpValidation.ts',
   // ticketScan/ticketValidation.ts: uses String(event.get('date') || '') which is safe for Goja
