@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
 import { pb } from '../lib/pocketbase';
+import { renderMarkdown } from '../lib/communicationUtils';
 import { eventService } from '../services/eventService';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { AppCard } from '../components/common/AppCard';
@@ -96,10 +95,9 @@ function PublicPastPerformancesView() {
                     {perf.publicDetails && (
                       <div
                         className="text-text text-sm"
+                        // @allow-dangerouslySetInnerHTML - safely escapes raw HTML using renderMarkdown
                         dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(
-                            marked.parse(perf.publicDetails, { async: false }) as string
-                          ),
+                          __html: renderMarkdown(perf.publicDetails),
                         }}
                       />
                     )}

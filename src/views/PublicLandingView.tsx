@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
 import { Link } from 'react-router-dom';
+import { renderMarkdown } from '../lib/communicationUtils';
 import { pb } from '../lib/pocketbase';
 import { settingsService } from '../services/settingsService';
 import { eventService } from '../services/eventService';
@@ -149,10 +148,9 @@ function PublicLandingView() {
           <AppCard title="About Us">
             <div
               className="prose prose-sm text-text max-w-none"
+              // @allow-dangerouslySetInnerHTML - safely escapes raw HTML using renderMarkdown
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(
-                  marked.parse(settings.aboutUsText, { async: false }) as string
-                ),
+                __html: renderMarkdown(settings.aboutUsText),
               }}
             />
           </AppCard>
@@ -194,10 +192,9 @@ function PublicLandingView() {
                   {perf.publicDetails && (
                     <div
                       className="text-text text-sm"
+                      // @allow-dangerouslySetInnerHTML - safely escapes raw HTML using renderMarkdown
                       dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(
-                          marked.parse(perf.publicDetails, { async: false }) as string
-                        ),
+                        __html: renderMarkdown(perf.publicDetails),
                       }}
                     />
                   )}

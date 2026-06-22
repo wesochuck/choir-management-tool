@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
 import { settingsService } from '../services/settingsService';
+import { renderMarkdown } from '../lib/communicationUtils';
 import { Spinner } from '../components/ui/Spinner/Spinner';
 import { AppCard } from '../components/common/AppCard';
 import { PublicLayout } from '../components/common/PublicLayout';
@@ -38,10 +37,9 @@ function PublicHistoryView() {
           {settings.historyText ? (
             <div
               className="prose prose-sm text-text max-w-none"
+              // @allow-dangerouslySetInnerHTML - safely escapes raw HTML using renderMarkdown
               dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(
-                  marked.parse(settings.historyText, { async: false }) as string
-                ),
+                __html: renderMarkdown(settings.historyText),
               }}
             />
           ) : (
