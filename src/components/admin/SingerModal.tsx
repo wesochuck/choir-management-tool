@@ -37,7 +37,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({
 
   const form = useSingerForm(isOpen, initialData, onClose, onSave, onDelete);
 
-  const isSelf = initialData?.user && user && initialData.user === user.id;
+  const isSelf = !!(initialData?.user && user && initialData.user === user.id);
   const isAdmin = (user as Record<string, unknown>)?.role === 'admin';
 
   return (
