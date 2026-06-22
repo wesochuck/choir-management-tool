@@ -1,10 +1,8 @@
 import type { NavigateFunction } from 'react-router-dom';
 import type { Event } from '../../../services/eventService';
 import type { Venue } from '../../../services/venueService';
-import {
-  renderCommunicationTemplate,
-  type CommunicationSettings,
-} from '../../../services/settingsService';
+import { type CommunicationSettings } from '../../../services/settingsService';
+import { renderCommunicationTemplate } from '../../../lib/messageTemplates';
 import { formatInTimezone } from '../../../lib/timezone';
 
 interface EventCommunicationTemplateValues extends Record<string, string> {
