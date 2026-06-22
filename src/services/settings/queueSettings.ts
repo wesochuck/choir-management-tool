@@ -1,4 +1,4 @@
-import { pb } from '../pocketbase';
+import { pb } from '../../lib/pocketbase';
 
 export const queueSettingsService = {
   async getSettings(): Promise<{ secret: string }> {

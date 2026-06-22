@@ -1,4 +1,4 @@
-import { pb } from '../pocketbase';
+import { pb } from '../../lib/pocketbase';
 import type { RecordModel } from 'pocketbase';
 
 export interface AppSetting<T> extends RecordModel {
