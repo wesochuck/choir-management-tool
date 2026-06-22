@@ -10,6 +10,7 @@ import { type Profile } from '../../services/profileService';
 import { seatingService, type SeatingSingerProfile } from '../../services/seatingService';
 import { getVoicePartsAndSections } from '../../services/settingsService';
 import { useDialog } from '../../contexts/DialogContext';
+import { safeLocalStorage } from '../../lib/storage';
 import { SeatingPerspectiveToggle } from '../../components/seating/SeatingPerspectiveToggle';
 import { ReadOnlySeatingGrid } from '../../components/seating/ReadOnlySeatingGrid';
 import { SelectedSeatCard } from '../../components/seating/SelectedSeatCard';
@@ -29,11 +30,12 @@ export default function SeatingFinderView() {
   type Perspective = 'singer' | 'director';
 
   const [perspective, setPerspective] = useState<Perspective>(() => {
-    return (localStorage.getItem('seating-perspective') as Perspective) || 'singer';
+    const saved = safeLocalStorage.getItem('seating-perspective');
+    return saved === 'singer' || saved === 'director' ? saved : 'singer';
   });
 
   useEffect(() => {
-    localStorage.setItem('seating-perspective', perspective);
+    safeLocalStorage.setItem('seating-perspective', perspective);
   }, [perspective]);
 
   const { eventId } = useParams();
