@@ -26,8 +26,8 @@ const mockDialog = {
 function createWrapper() {
   const client = new QueryClient({
     defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false, gcTime: 0 },
     },
   });
 
