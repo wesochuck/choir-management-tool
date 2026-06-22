@@ -12,19 +12,12 @@ globalRecord.$security = {
 
 const mockApp = {
     findFirstRecordByFilter: (collection: string, filter: string) => {
-        if (collection === 'appSettings' && filter === "key = 'HMAC_SECRET'") {
-            return {
-                get: (field: string) => {
-                    if (field === 'value') return JSON.stringify({ secret: 'test_secret' });
-                    return null;
-                }
-            };
-        }
         throw new Error('NotFound');
     }
 } as unknown as PocketBaseApp;
 
 globalRecord.$app = mockApp;
+globalRecord.$os = { getenv: (key: string) => key === 'HMAC_SECRET' ? 'test_secret' : '' };
 
 test('generateSignedPlayerToken produces consistent tokens', () => {
     const eventId = 'event123';
@@ -34,7 +27,7 @@ test('generateSignedPlayerToken produces consistent tokens', () => {
     assert.strictEqual(token, `e=event123&s=sig_e=event123_test_secret`);
 });
 
-test('getHmacSecret retrieves secret from appSettings', () => {
+test('getHmacSecret retrieves secret from $os.getenv', () => {
     const secret = getHmacSecret(mockApp);
     assert.strictEqual(secret, 'test_secret');
 });

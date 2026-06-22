@@ -7,15 +7,12 @@ declare const $security: {
 
 declare const $app: PocketBaseApp;
 
+declare const $os: {
+    getenv(key: string): string;
+};
+
 export function getHmacSecret(app?: PocketBaseApp): string {
-    try {
-        const appInstance = app || $app;
-        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField<{ secret?: string }>(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    } catch {
-        return "";
-    }
+    return $os.getenv("HMAC_SECRET") || "";
 }
 
 /**

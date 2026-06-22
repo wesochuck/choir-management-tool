@@ -32,8 +32,8 @@ const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: s
     const globalRef = global as unknown as Record<string, unknown>;
     globalRef.Record = MockRecord;
     globalRef.MailerMessage = MockMailerMessage;
+    globalRef.$os = { getenv: (key: string) => key === 'HMAC_SECRET' ? 'test-secret' : '' };
 
-    const hmacSetting = new MockRecord('appSettings', { key: 'HMAC_SECRET', value: JSON.stringify({ secret: 'test-secret' }) });
     const commSetting = new MockRecord('appSettings', { key: 'communications', value: JSON.stringify({ frontendUrl: 'http://localhost:5173', mailingAddress: '123 Harmony St' }) });
     const tzSetting = new MockRecord('appSettings', { key: 'timezone', value: JSON.stringify('America/New_York') });
     const choirNameSetting = new MockRecord('appSettings', { key: 'choir_name', value: JSON.stringify('City Chorus') });
@@ -127,7 +127,6 @@ const setupMockApp = (allQueueRecords: MockRecord[], onSend?: (recipientEmail: s
         findFirstRecordByFilter: (collection: string, filter: string) => {
             if (collection === 'appSettings' && filter === "key = 'communications'") return commSetting;
             if (collection === 'appSettings' && filter === "key = 'timezone'") return tzSetting;
-            if (collection === 'appSettings' && filter === "key = 'HMAC_SECRET'") return hmacSetting;
             if (collection === 'appSettings' && filter === "key = 'choir_name'") return choirNameSetting;
             throw new Error('Not found setting');
         },
