@@ -178,8 +178,6 @@ export default function PublicPlayerView() {
 
   const handleDownloadAllFiles = async () => {
     const tracksToDownload = playlist.filter((file) => !file.isFolder && file.streamUrl);
-    if (tracksToDownload.length === 0) return;
-
     await downloadRawFiles(tracksToDownload);
   };
 
