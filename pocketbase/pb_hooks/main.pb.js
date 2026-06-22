@@ -7658,7 +7658,11 @@ onRecordAfterUpdateSuccess((e) => {
 function verifyEventRecipientToken(token) {
     const parts = parseSignedToken(token, ['e', 'p', 's']);
     if (!parts) {
-        return { ok: false, status: 400, error: 'This RSVP link is invalid. Please request a new RSVP link.' };
+        return {
+            ok: false,
+            status: 400,
+            error: 'This RSVP link is invalid. Please request a new RSVP link.',
+        };
     }
     let secret;
     try {
@@ -7674,7 +7678,11 @@ function verifyEventRecipientToken(token) {
     if (!$security.equal(parts.s, expectedSignature)) {
         console.log('[RSVP Debug] Signature mismatch for event=' + parts.e + ', profile=' + parts.p);
         console.log('[RSVP Debug] Expected: ' + expectedSignature + ', Received: ' + parts.s);
-        return { ok: false, status: 401, error: 'This RSVP link is invalid or expired. Please request a new RSVP link.' };
+        return {
+            ok: false,
+            status: 401,
+            error: 'This RSVP link is invalid or expired. Please request a new RSVP link.',
+        };
     }
     return { ok: true, data: parts };
 }
@@ -7724,10 +7732,7 @@ function enqueueRsvpConfirmationEmail(eventId, profile) {
                 recipientEmail = userRec.get('email') || '';
             }
             catch (err) {
-                console.log('[RSVP Confirmation Error] Failed to resolve email for profile ' +
-                    profile.id +
-                    ': ' +
-                    err);
+                console.log('[RSVP Confirmation Error] Failed to resolve email for profile ' + profile.id + ': ' + err);
             }
         }
         if (recipientEmail && !profile.get('doNotEmail')) {
@@ -10131,7 +10136,10 @@ function parseSignedToken(token, requiredKeys) {
             if (typeof tzP === 'string') {
                 timezone = tzP;
             }
-            else if (typeof tzP === 'object' && tzP !== null && 'timezone' in tzP && typeof tzP.timezone === 'string') {
+            else if (typeof tzP === 'object' &&
+                tzP !== null &&
+                'timezone' in tzP &&
+                typeof tzP.timezone === 'string') {
                 timezone = tzP.timezone;
             }
         }
