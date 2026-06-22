@@ -16,6 +16,8 @@ export interface SelectProps extends Omit<React.ComponentPropsWithoutRef<'select
   invalid?: boolean;
   size?: SelectSize;
   visuallyHidden?: boolean;
+  multiple?: boolean;
+  placeholder?: string;
 }
 
 const sizeClasses: Record<SelectSize, string> = {
@@ -61,11 +63,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       invalid,
       size = 'default',
       visuallyHidden = false,
+      multiple = false,
       className,
       onChange,
       onBlur,
       value,
       defaultValue,
+      placeholder,
       children,
       ...rest
     },
@@ -111,9 +115,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           onChange={onChange}
           onBlur={onBlur}
           className={classNames}
+          multiple={multiple}
           // @allow-inline-style - SVG background data URI fallback for visuallyHidden native select
           style={{
-            backgroundImage: visuallyHidden ? 'none' : SELECT_CHEVRON_BACKGROUND_IMAGE,
+            backgroundImage: visuallyHidden || multiple ? 'none' : SELECT_CHEVRON_BACKGROUND_IMAGE,
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'right 12px center',
             backgroundSize: '14px 14px',
@@ -184,8 +189,27 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         ref={slRef}
         {...safeSlProps({
           size: slSize,
-          value: value !== undefined ? String(value) : undefined,
-          defaultValue: defaultValue !== undefined ? String(defaultValue) : undefined,
+          multiple: multiple ? true : undefined,
+          clearable: multiple ? true : undefined,
+          placeholder: placeholder,
+          value: multiple
+            ? Array.isArray(value)
+              ? value.map(String)
+              : value !== undefined
+                ? [String(value)]
+                : undefined
+            : value !== undefined
+              ? String(value)
+              : undefined,
+          defaultValue: multiple
+            ? Array.isArray(defaultValue)
+              ? defaultValue.map(String)
+              : defaultValue !== undefined
+                ? [String(defaultValue)]
+                : undefined
+            : defaultValue !== undefined
+              ? String(defaultValue)
+              : undefined,
           hoist: true,
           disabled: rest.disabled,
           required: rest.required,

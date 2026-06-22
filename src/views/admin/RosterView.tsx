@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProfiles } from '../../hooks/useProfiles';
 import { RosterTable } from '../../components/admin/RosterTable';
@@ -9,18 +9,15 @@ import { RosterImportModal } from '../../components/admin/RosterImportModal';
 import { exportToCSV } from '../../services/profileService';
 import { settingsService } from '../../services/settingsService';
 import { sortProfiles } from '../../lib/singerSort';
-import { getVoicePartFilterLabel } from '../../lib/voicePartLabels';
 import { useDues } from '../../hooks/useDues';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRosterConfigForm } from '../../hooks/useRosterConfigForm';
-import { Input, Divider } from '../../components/ui';
+import { Input } from '../../components/ui';
 import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
-import { useClickOutside } from '../../hooks/useClickOutside';
 import { Button, Select } from '../../components/ui';
-import { formControlBase, formControlHeight } from '../../components/ui/formControlBase';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 
@@ -56,12 +53,6 @@ export default function RosterView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const voicePartDropdownRef = useRef<HTMLDivElement>(null);
-
-  useClickOutside(voicePartDropdownRef, () => setIsDropdownOpen(false), {
-    enabled: isDropdownOpen,
-  });
 
   // Roster Sort user preference & fallback
   const { data: rosterSettings } = useQuery({
@@ -110,7 +101,7 @@ export default function RosterView() {
       newParams.delete('add');
       setSearchParams(newParams, { replace: true });
     }
-  }, [allProfiles, isLoading, searchParams, setSearchParams]);
+  }, [allProfiles, isLoading, searchParams, setSearchParams, setEditingProfile]);
 
   // Config hook integration
   const {
@@ -155,11 +146,6 @@ export default function RosterView() {
     const active = filters.voiceParts || [];
     const next = active.includes(part) ? active.filter((p) => p !== part) : [...active, part];
     setFilter('voiceParts', next);
-  };
-
-  const getDropdownLabel = () => {
-    const active = filters.voiceParts || [];
-    return getVoicePartFilterLabel(active, configSectionsHook, voicePartLabels);
   };
 
   const handleEdit = (profile: Profile) => {
@@ -263,7 +249,7 @@ export default function RosterView() {
             onVoicePartToggle={handleVoicePartToggle}
           />
 
-          <div className="flex flex-row flex-wrap items-end gap-4">
+          <div className="flex flex-row flex-wrap items-center gap-4">
             <Input
               type="text"
               placeholder="Search by name or email..."
@@ -295,99 +281,29 @@ export default function RosterView() {
               )}
             </Input>
 
-            <div ref={voicePartDropdownRef} className="relative w-[200px]">
-              <button
-                type="button"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className={`${formControlBase} ${formControlHeight} flex cursor-pointer flex-row items-center justify-between`}
-              >
-                <span
-                  className={`max-w-[145px] truncate ${(filters.voiceParts || []).length > 0 ? 'font-semibold' : 'font-normal'}`}
-                >
-                  {getDropdownLabel()}
-                </span>
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  className={`text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
-                >
-                  <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-              </button>
-
-              {isDropdownOpen && (
-                <div className="bg-surface border-border absolute top-full left-0 z-100 mt-1 flex max-h-80 w-[240px] flex-col gap-0.5 overflow-y-auto rounded-lg border py-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.08),0_1px_3px_rgba(0,0,0,0.06)]">
-                  <div className="text-overline px-2.5 py-0.5 text-gray-500">Sections</div>
-                  <div className="flex flex-col gap-0">
-                    {configSectionsHook.map((sec) => {
-                      const isChecked = (filters.voiceParts || []).includes(sec.code);
-                      return (
-                        <label
-                          key={sec.code}
-                          className="hover:bg-primary-light flex cursor-pointer items-center gap-2 px-2.5 py-1 transition-colors duration-[0.12s] select-none"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleVoicePartToggle(sec.code)}
-                            className="m-0 cursor-pointer"
-                          />
-                          <span
-                            className={`text-xs font-[450] text-gray-800 ${isChecked ? 'text-primary-deep font-[650]' : ''}`}
-                          >
-                            {sec.name}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-
-                  <Divider />
-
-                  <div className="text-overline px-2.5 py-0.5 text-gray-500">Individual Parts</div>
-                  <div className="flex flex-col gap-0">
-                    {voicePartLabels.map((part) => {
-                      const isChecked = (filters.voiceParts || []).includes(part);
-                      return (
-                        <label
-                          key={part}
-                          className="hover:bg-primary-light flex cursor-pointer items-center gap-2 px-2.5 py-1 transition-colors duration-[0.12s] select-none"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleVoicePartToggle(part)}
-                            className="m-0 cursor-pointer"
-                          />
-                          <span
-                            className={`text-xs font-[450] text-gray-800 ${isChecked ? 'text-primary-deep font-[650]' : ''}`}
-                          >
-                            {part}
-                          </span>
-                        </label>
-                      );
-                    })}
-                    <label className="hover:bg-primary-light col-span-full mt-1 flex cursor-pointer items-center gap-2 border-t border-dashed border-gray-200 px-2.5 py-1 pt-2 transition-colors duration-[0.12s] select-none">
-                      <input
-                        type="checkbox"
-                        checked={(filters.voiceParts || []).includes('__STAFF__')}
-                        onChange={() => handleVoicePartToggle('__STAFF__')}
-                        className="m-0 cursor-pointer"
-                      />
-                      <span
-                        className={`text-xs font-[450] text-gray-800 ${(filters.voiceParts || []).includes('__STAFF__') ? 'text-primary-deep font-[650]' : ''}`}
-                      >
-                        Staff / Admin (No Part)
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
+            <Select
+              multiple
+              placeholder="All Voice Parts"
+              value={filters.voiceParts || []}
+              onChange={(e) => {
+                const val = e.target.value as unknown as string[] | string;
+                const arr = Array.isArray(val) ? val : [val].filter(Boolean);
+                setFilter('voiceParts', arr);
+              }}
+              className="!w-[280px]"
+            >
+              {configSectionsHook.map((sec) => (
+                <option key={sec.code} value={sec.code}>
+                  {sec.name} (Section)
+                </option>
+              ))}
+              {voicePartLabels.map((part) => (
+                <option key={part} value={part}>
+                  {part}
+                </option>
+              ))}
+              <option value="__STAFF__">Staff / Admin (No Part)</option>
+            </Select>
 
             <Select
               value={filters.status}
