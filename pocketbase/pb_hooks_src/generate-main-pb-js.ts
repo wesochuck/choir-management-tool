@@ -132,7 +132,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
   },
   playerEndpoints: {
     files: ['playerEndpoints.ts'],
-    symbols: ['handleGeneratePlayerToken', 'handlePlayerPlaylist'],
+    symbols: ['handleGeneratePlayerToken', 'handlePlayerPlaylist', 'handleSingerPlayerPlaylist'],
     dependsOn: ['hmacTokens', 'hookJson'],
   },
   adminNotifications: {

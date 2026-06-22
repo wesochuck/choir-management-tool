@@ -1,5 +1,5 @@
 import { parseJsonField } from './email/hookJson';
-import { getHmacSecret, generateSignedPlayerToken, getPlayerPayload } from './hmacTokens';
+import { getHmacSecret, generateSignedPlayerToken, getPlayerPayload, parseSignedToken } from './hmacTokens';
 import type { PocketBaseApp, PocketBaseRequestEvent } from './email/emailTypes';
 
 declare const $app: PocketBaseApp;
@@ -78,7 +78,7 @@ export function handleSingerPlayerPlaylist(e: PocketBaseRequestEvent): void {
     }
 
     const rawSetList = event.get('setList');
-    let setList = parseJsonField(rawSetList);
+    const setList = parseJsonField(rawSetList);
     if (!Array.isArray(setList) || setList.length === 0) {
       return e.json(403, { error: 'empty_set_list: No practice tracks have been posted.' });
     }
@@ -156,15 +156,9 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
     return e.json(400, { error: 'Missing token' });
   }
 
-  const parts: Record<string, string> = {};
-  token.split('&').forEach((part) => {
-    const kv = part.split('=');
-    if (kv.length === 2) {
-      parts[kv[0]] = kv[1];
-    }
-  });
+  const parts = parseSignedToken(token, ['e', 's']);
 
-  if (!parts.e || !parts.s) {
+  if (!parts) {
     return e.json(400, { error: 'Invalid token format' });
   }
 
