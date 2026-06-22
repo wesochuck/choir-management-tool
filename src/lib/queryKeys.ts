@@ -25,7 +25,6 @@ export const queryKeys = {
   events: {
     all: ['events'] as const,
     list: () => [...queryKeys.events.all, 'list'] as const,
-    publicList: ['events', 'publicList'] as const,
     publicTicketedList: ['events', 'publicTicketedList'] as const,
     recentPublicPerformances: (limit: number) =>
       [...queryKeys.events.all, 'recentPublicPerformances', limit] as const,

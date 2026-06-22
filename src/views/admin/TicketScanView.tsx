@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ticketService } from '../../services/ticketService';
-import { eventService } from '../../services/eventService';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { ScanResultCard } from '../../components/admin/ScanResultCard';
 import type { ValidationResult } from '../../services/ticketService';
 import { Button, Input, Spinner, Select, Modal } from '../../components/ui';
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '../../lib/queryKeys';
+import { usePublicEvents } from '../../hooks/usePublicEvents';
 
 const STORAGE_KEY = 'ticket-scan-event-id';
 const HISTORY_SIZE = 50;
@@ -77,15 +75,7 @@ export default function TicketScanView() {
     return searchParams.get('eventId') || localStorage.getItem(STORAGE_KEY) || '';
   });
 
-  const {
-    data: events = [],
-    isLoading: eventsLoading,
-    error: eventsError,
-  } = useQuery({
-    queryKey: queryKeys.events.publicList,
-    queryFn: () => eventService.getPublicEvents(),
-  });
-  const eventsErrorMsg = eventsError?.message ?? null;
+  const { events, isLoading: eventsLoading, error: eventsErrorMsg } = usePublicEvents();
 
   const didInitRef = useRef(false);
 

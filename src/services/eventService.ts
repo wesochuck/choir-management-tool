@@ -52,6 +52,7 @@ export interface BulkRehearsalConfig {
 }
 
 let inFlightEvents: Promise<Event[]> | null = null;
+let inFlightPublicEvents: Promise<Event[]> | null = null;
 
 export const eventService = {
   async getEvents() {
@@ -79,13 +80,22 @@ export const eventService = {
   },
 
   async getPublicEvents() {
-    return await pb.collection('events').getFullList<Event>({
+    if (inFlightPublicEvents) return inFlightPublicEvents;
+
+    const promise = pb.collection('events').getFullList<Event>({
       filter: 'isArchived != true && isTicketingEnabled = true && date >= @now',
       sort: 'date',
       fields:
         'id,collectionId,collectionName,title,date,type,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
       expand: 'venue',
     });
+
+    inFlightPublicEvents = promise;
+    promise.finally(() => {
+      inFlightPublicEvents = null;
+    });
+
+    return promise;
   },
 
   async getEventById(id: string) {

@@ -12,6 +12,7 @@ import { formatInTimezone } from '../lib/timezone';
 import { PublicLayout } from '../components/common/PublicLayout';
 import { queryKeys } from '../lib/queryKeys';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { usePublicEvents } from '../hooks/usePublicEvents';
 
 function PublicLandingView() {
   useDocumentTitle('');
@@ -35,19 +36,15 @@ function PublicLandingView() {
     queryFn: () => eventService.getRecentPerformances(3),
   });
 
-  const ticketedQuery = useQuery({
-    queryKey: queryKeys.events.publicTicketedList,
-    queryFn: () => eventService.getPublicEvents(),
-  });
+  const { events: ticketedEvents, isLoading: ticketedLoading } = usePublicEvents();
 
   const isLoading =
     landingSettingsQuery.isLoading ||
     heroImageQuery.isLoading ||
     timezoneQuery.isLoading ||
     performancesQuery.isLoading ||
-    ticketedQuery.isLoading;
+    ticketedLoading;
   const performanceList = performancesQuery.data ?? [];
-  const ticketedEvents = ticketedQuery.data ?? [];
   const highlightedTicketedEvent = ticketedEvents[0] ?? null;
 
   if (isLoading) {

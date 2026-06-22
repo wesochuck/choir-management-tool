@@ -6,7 +6,6 @@ import {
   type DonationSettings,
   DEFAULT_DONATION_SETTINGS,
 } from '../services/donationService';
-import { eventService } from '../services/eventService';
 import { ticketService } from '../services/ticketService';
 import { AppCard } from '../components/common/AppCard';
 import { Button } from '../components/ui/Button/Button';
@@ -15,15 +14,13 @@ import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrappe
 import { formatInTimezone } from '../lib/timezone';
 import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
 import { queryKeys } from '../lib/queryKeys';
+import { usePublicEvents } from '../hooks/usePublicEvents';
 
 export default function PublicTicketListView() {
   useDocumentTitle('Ticket Sales');
   const { choirName, timezone } = useChoirSettings();
 
-  const eventsQuery = useQuery({
-    queryKey: queryKeys.events.publicList,
-    queryFn: () => eventService.getPublicEvents(),
-  });
+  const { events, isLoading: eventsLoading } = usePublicEvents();
 
   const bundlesQuery = useQuery({
     queryKey: queryKeys.tickets.publicBundles,
@@ -35,11 +32,9 @@ export default function PublicTicketListView() {
     queryFn: () => donationService.getDonationSettings(),
   });
 
-  const events = eventsQuery.data ?? [];
   const bundles = bundlesQuery.data ?? [];
   const donationSettings: DonationSettings | null = donationSettingsQuery.data ?? null;
-  const isLoading =
-    eventsQuery.isLoading || bundlesQuery.isLoading || donationSettingsQuery.isLoading;
+  const isLoading = eventsLoading || bundlesQuery.isLoading || donationSettingsQuery.isLoading;
 
   if (isLoading) {
     return (
