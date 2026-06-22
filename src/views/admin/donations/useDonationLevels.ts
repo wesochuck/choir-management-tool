@@ -19,6 +19,38 @@ export function useDonationLevels(settings: DonationSettings | null) {
   const [levelAmount, setLevelAmount] = useState(0);
   const [levelBenefit, setLevelBenefit] = useState('');
 
+  // Lifted Portal Configuration draft state
+  const [portalButtonText, setPortalButtonText] = useState('');
+  const [portalDescription, setPortalDescription] = useState('');
+  const lastSyncedSettingsRef = useRef<DonationSettings | null>(null);
+
+  useEffect(() => {
+    if (!settings) return;
+
+    const isFirstTime = !lastSyncedSettingsRef.current;
+    const dbChanged =
+      lastSyncedSettingsRef.current &&
+      (lastSyncedSettingsRef.current.buttonText !== settings.buttonText ||
+        lastSyncedSettingsRef.current.description !== settings.description);
+
+    if (isFirstTime || dbChanged) {
+      const isButtonTextDirty =
+        lastSyncedSettingsRef.current &&
+        portalButtonText !== lastSyncedSettingsRef.current.buttonText;
+      const isDescriptionDirty =
+        lastSyncedSettingsRef.current &&
+        portalDescription !== lastSyncedSettingsRef.current.description;
+
+      if (isFirstTime || !isButtonTextDirty) {
+        setPortalButtonText(settings.buttonText);
+      }
+      if (isFirstTime || !isDescriptionDirty) {
+        setPortalDescription(settings.description);
+      }
+      lastSyncedSettingsRef.current = settings;
+    }
+  }, [settings, portalButtonText, portalDescription]);
+
   const saveMutation = useMutation({
     mutationFn: (payload: DonationSettings) => donationService.saveDonationSettings(payload),
   });
@@ -60,27 +92,46 @@ export function useDonationLevels(settings: DonationSettings | null) {
             benefit: levelBenefit,
           },
         ];
-    return saveMutation.mutateAsync({ ...s, levels: newLevels });
-  }, [editingLevel, levelLabel, levelAmount, levelBenefit, saveMutation]);
+    return saveMutation.mutateAsync({
+      ...s,
+      levels: newLevels,
+      buttonText: portalButtonText,
+      description: portalDescription,
+    });
+  }, [
+    editingLevel,
+    levelLabel,
+    levelAmount,
+    levelBenefit,
+    portalButtonText,
+    portalDescription,
+    saveMutation,
+  ]);
 
   const handleDeleteLevel = useCallback(
     async (levelId: string) => {
       const s = settingsRef.current;
       if (!s) throw new Error('Settings not loaded');
       const newLevels = s.levels.filter((l) => l.id !== levelId);
-      return saveMutation.mutateAsync({ ...s, levels: newLevels });
+      return saveMutation.mutateAsync({
+        ...s,
+        levels: newLevels,
+        buttonText: portalButtonText,
+        description: portalDescription,
+      });
     },
-    [saveMutation]
+    [saveMutation, portalButtonText, portalDescription]
   );
 
-  const handleSavePublicSettings = useCallback(
-    async (buttonText: string, description: string) => {
-      const s = settingsRef.current;
-      if (!s) throw new Error('Settings not loaded');
-      return saveMutation.mutateAsync({ ...s, buttonText, description });
-    },
-    [saveMutation]
-  );
+  const handleSavePublicSettings = useCallback(async () => {
+    const s = settingsRef.current;
+    if (!s) throw new Error('Settings not loaded');
+    return saveMutation.mutateAsync({
+      ...s,
+      buttonText: portalButtonText,
+      description: portalDescription,
+    });
+  }, [saveMutation, portalButtonText, portalDescription]);
 
   return {
     isModalOpen,
@@ -98,5 +149,9 @@ export function useDonationLevels(settings: DonationSettings | null) {
     handleDeleteLevel,
     handleSavePublicSettings,
     saving: saveMutation.isPending,
+    portalButtonText,
+    setPortalButtonText,
+    portalDescription,
+    setPortalDescription,
   };
 }

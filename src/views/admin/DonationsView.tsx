@@ -1,11 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
-import {
-  donationService,
-  type DonationRecord,
-  DEFAULT_DONATION_SETTINGS,
-} from '../../services/donationService';
+import { donationService, type DonationRecord } from '../../services/donationService';
 import { AppCard } from '../../components/common/AppCard';
 import { Button, TabGroup, Tab, TabPanel, DataTable } from '../../components/ui';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
@@ -74,6 +70,10 @@ export default function DonationsView() {
     handleDeleteLevel,
     handleSavePublicSettings,
     saving,
+    portalButtonText,
+    setPortalButtonText,
+    portalDescription,
+    setPortalDescription,
   } = useDonationLevels(settings);
 
   const refundMutation = useMutation({
@@ -196,9 +196,9 @@ export default function DonationsView() {
     }
   };
 
-  const handlePublicSettingsSave = async (buttonText: string, description: string) => {
+  const handlePublicSettingsSave = async () => {
     try {
-      await handleSavePublicSettings(buttonText, description);
+      await handleSavePublicSettings();
       dialog.showToast('Public donation settings saved.');
       queryClient.invalidateQueries({ queryKey: queryKeys.donations.all });
     } catch (err) {
@@ -324,8 +324,10 @@ export default function DonationsView() {
           ) : (
             <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
               <PortalConfigCard
-                buttonText={settings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}
-                description={settings?.description ?? DEFAULT_DONATION_SETTINGS.description}
+                buttonText={portalButtonText}
+                description={portalDescription}
+                onChangeButtonText={setPortalButtonText}
+                onChangeDescription={setPortalDescription}
                 onSave={handlePublicSettingsSave}
                 isSaving={saving}
               />

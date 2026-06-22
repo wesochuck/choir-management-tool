@@ -1,31 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
 import { AppCard } from '../../../components/common/AppCard';
 import { Button, FormField, Input, Textarea } from '../../../components/ui';
 
 interface PortalConfigCardProps {
   buttonText: string;
   description: string;
-  onSave: (buttonText: string, description: string) => void;
+  onChangeButtonText: (value: string) => void;
+  onChangeDescription: (value: string) => void;
+  onSave: () => void;
   isSaving: boolean;
 }
 
 export default function PortalConfigCard({
-  buttonText: initialButtonText,
-  description: initialDescription,
+  buttonText,
+  description,
+  onChangeButtonText,
+  onChangeDescription,
   onSave,
   isSaving,
 }: PortalConfigCardProps) {
-  const [buttonText, setButtonText] = useState(initialButtonText);
-  const [description, setDescription] = useState(initialDescription);
-  const initialized = useRef(false);
-
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    setButtonText(initialButtonText);
-    setDescription(initialDescription);
-  }, [initialButtonText, initialDescription]);
-
   return (
     <AppCard>
       <div className="border-b border-slate-100 pb-3">
@@ -40,7 +32,7 @@ export default function PortalConfigCard({
           <Input
             type="text"
             value={buttonText}
-            onChange={(e) => setButtonText(e.target.value)}
+            onChange={(e) => onChangeButtonText(e.target.value)}
             placeholder="e.g. Support our Music"
             required
           />
@@ -49,14 +41,14 @@ export default function PortalConfigCard({
           <Textarea
             rows={5}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => onChangeDescription(e.target.value)}
             placeholder="e.g. Your contribution helps us keep the music playing..."
           />
         </FormField>
         <Button
           variant="primary"
           className="mt-2 w-full"
-          onClick={() => onSave(buttonText, description)}
+          onClick={onSave}
           disabled={isSaving || !buttonText.trim()}
         >
           {isSaving ? (
