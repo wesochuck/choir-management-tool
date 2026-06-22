@@ -22,7 +22,7 @@ export const CommunicationTabs: React.FC<CommunicationTabsProps> = ({
 
   return (
     <nav
-      className="border-border flex w-full items-center gap-6 overflow-x-auto border-b"
+      className="border-border flex w-full [scrollbar-width:none] items-center gap-6 overflow-x-auto border-b [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       aria-label="Communications sections"
     >
       <div className="flex min-w-max items-center gap-6">
