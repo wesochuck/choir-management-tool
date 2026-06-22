@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import type { EventRoster } from '../../services/rosterService';
 import { pb } from '../../lib/pocketbase';
@@ -239,6 +239,14 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
     },
   ];
 
+  const rowSelection = useMemo(() => {
+    const selection: Record<string, boolean> = {};
+    selectedSingerIds.forEach((id) => {
+      selection[id] = true;
+    });
+    return selection;
+  }, [selectedSingerIds]);
+
   return (
     <DataTable
       columns={columns}
@@ -258,6 +266,7 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
       onRowClick={onSingerClick ? (row) => onSingerClick(row.profile) : undefined}
       getRowId={(s) => s.profile.id}
       enableSelection
+      rowSelection={rowSelection}
       onSelectionChange={onSelectionChange}
       getRowClassName={(row) => (selectedSingerIds.has(row.profile.id) ? 'bg-emerald-50/60' : '')}
     />
