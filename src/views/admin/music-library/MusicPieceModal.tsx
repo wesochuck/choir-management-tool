@@ -458,7 +458,11 @@ export function MusicPieceModal({
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-label">Catalog ID</label>
-                  <Input value={catalogId} onChange={(e) => setCatalogId(e.target.value)} />
+                  <Input
+                    value={catalogId}
+                    onChange={(e) => setCatalogId(e.target.value)}
+                    autoComplete="off"
+                  />
                   {catalogId.trim() &&
                     catalogLookupTemplate &&
                     resolveCatalogLookupUrl(catalogLookupTemplate, catalogId) && (
@@ -478,6 +482,7 @@ export function MusicPieceModal({
                     value={purchaseDateInput}
                     onChange={(e) => setPurchaseDateInput(e.target.value)}
                     placeholder="mm/yyyy"
+                    autoComplete="off"
                   />
                 </div>
               </div>
