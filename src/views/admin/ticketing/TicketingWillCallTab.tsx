@@ -322,34 +322,37 @@ export default function TicketingWillCallTab() {
 
   return (
     <>
-      <AppCard
-        noPadding
-        title="Performance Summary"
-        actions={
-          selectedEventId && (
-            <Button
-              variant="secondary"
-              size="small"
-              onClick={handleExportCSV}
-              disabled={activePurchases.length === 0}
-              title="Export Will Call CSV"
-              icon={'⬇️'}
-            >
-              <span className="hidden md:inline">Export Will Call CSV</span>
-            </Button>
-          )
-        }
-      >
-        <div className="border-b border-slate-100 px-6 py-4">
-          <p className="mt-1 text-sm font-medium text-slate-500">
-            Choose a performance to view ticket sales, revenue, and will call activity. To enable
-            ticketing for an event, go to the{' '}
-            <Link to="/admin/events" className="text-emerald-700 underline hover:text-emerald-800">
-              Event Management
-            </Link>{' '}
-            page, edit the performance, and check the "Enable Online Ticket Sales" option on the
-            Tickets tab.
-          </p>
+      <AppCard noPadding>
+        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Performance Summary</h3>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Choose a performance to view ticket sales, revenue, and will call activity. To enable
+              ticketing for an event, go to the{' '}
+              <Link
+                to="/admin/events"
+                className="text-emerald-700 underline hover:text-emerald-800"
+              >
+                Event Management
+              </Link>{' '}
+              page, edit the performance, and check the "Enable Online Ticket Sales" option on the
+              Tickets tab.
+            </p>
+          </div>
+          {selectedEventId && (
+            <div className="shrink-0">
+              <Button
+                variant="secondary"
+                size="small"
+                onClick={handleExportCSV}
+                disabled={activePurchases.length === 0}
+                title="Export Will Call CSV"
+                icon={'⬇️'}
+              >
+                <span className="hidden md:inline">Export Will Call CSV</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-6 p-6">

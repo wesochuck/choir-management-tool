@@ -5,7 +5,7 @@ import { ticketService, type TicketBundle } from '../../../services/ticketServic
 import { queryKeys } from '../../../lib/queryKeys';
 import { formatInTimezone } from '../../../lib/timezone';
 import { Modal, FormField, Input, Textarea, Button } from '../../../components/ui';
-import { useTicketingEvents } from './ticketingQueries';
+import { useTicketingEvents, TICKETING_REFRESH_INTERVAL_MS } from './ticketingQueries';
 
 interface BundleFormModalProps {
   isOpen: boolean;
@@ -24,6 +24,7 @@ export default function BundleFormModal({ isOpen, bundle, onClose }: BundleFormM
     queryFn: () => ticketService.getAllPurchases(),
     staleTime: 30_000,
     enabled: isOpen,
+    refetchInterval: isOpen ? TICKETING_REFRESH_INTERVAL_MS : undefined,
   });
 
   const [bundleTitle, setBundleTitle] = useState('');

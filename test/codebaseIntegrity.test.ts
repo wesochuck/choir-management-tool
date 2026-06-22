@@ -527,20 +527,26 @@ test('codebase integrity: TicketingView and tabs use purchase polling instead of
   const viewFile = resolveProjectPath('src/views/admin/TicketingView.tsx');
   const willCallFile = resolveProjectPath('src/views/admin/ticketing/TicketingWillCallTab.tsx');
   const ordersFile = resolveProjectPath('src/views/admin/ticketing/TicketingOrdersTab.tsx');
+  const bundlesFile = resolveProjectPath('src/views/admin/ticketing/TicketingBundlesTab.tsx');
+  const bundleModalFile = resolveProjectPath('src/views/admin/ticketing/BundleFormModal.tsx');
   const queriesFile = resolveProjectPath('src/views/admin/ticketing/ticketingQueries.ts');
 
   const viewContent = fs.readFileSync(viewFile, 'utf8');
   const willCallContent = fs.readFileSync(willCallFile, 'utf8');
   const ordersContent = fs.readFileSync(ordersFile, 'utf8');
+  const bundlesContent = fs.readFileSync(bundlesFile, 'utf8');
+  const bundleModalContent = fs.readFileSync(bundleModalFile, 'utf8');
   const queriesContent = fs.readFileSync(queriesFile, 'utf8');
 
   assert.equal(
     viewContent.includes('useTicketPurchasesRealtime') ||
       willCallContent.includes('useTicketPurchasesRealtime') ||
       ordersContent.includes('useTicketPurchasesRealtime') ||
+      bundlesContent.includes('useTicketPurchasesRealtime') ||
+      bundleModalContent.includes('useTicketPurchasesRealtime') ||
       queriesContent.includes('useTicketPurchasesRealtime'),
     false,
-    'TicketingView/tabs must not mount PocketBase realtime; will call updates should arrive through polling'
+    'TicketingView/tabs/modals must not mount PocketBase realtime; will call/bundle updates should arrive through polling'
   );
 
   assert.ok(
@@ -551,6 +557,16 @@ test('codebase integrity: TicketingView and tabs use purchase polling instead of
     ordersContent.includes('refetchInterval: TICKETING_REFRESH_INTERVAL_MS'),
     'TicketingOrdersTab should poll all purchases'
   );
+  assert.ok(
+    bundlesContent.includes('refetchInterval: TICKETING_REFRESH_INTERVAL_MS'),
+    'TicketingBundlesTab should poll all purchases'
+  );
+  assert.ok(
+    bundleModalContent.includes(
+      'refetchInterval: isOpen ? TICKETING_REFRESH_INTERVAL_MS : undefined'
+    ),
+    'BundleFormModal should poll all purchases while open'
+  );
 
   assert.ok(
     willCallContent.includes('queryKey: queryKeys.ticketing.purchasesByEvent(selectedEventId)'),
@@ -559,6 +575,14 @@ test('codebase integrity: TicketingView and tabs use purchase polling instead of
   assert.ok(
     ordersContent.includes('queryKey: queryKeys.ticketing.allPurchases()'),
     'TicketingOrdersTab all-purchases query must have its own cache key'
+  );
+  assert.ok(
+    bundlesContent.includes('queryKey: queryKeys.ticketing.allPurchases()'),
+    'TicketingBundlesTab all-purchases query must have its own cache key'
+  );
+  assert.ok(
+    bundleModalContent.includes('queryKey: queryKeys.ticketing.allPurchases()'),
+    'BundleFormModal all-purchases query must have its own cache key'
   );
   assert.ok(
     queriesContent.includes('queryKey: queryKeys.ticketing.events()'),

@@ -189,10 +189,13 @@ export default function TicketingOrdersTab() {
   return (
     <>
       <AppCard noPadding>
-        <div className="border-b border-slate-100 px-6 py-4">
-          <p className="mt-1 text-sm font-medium text-slate-500">
-            View and manage transactions of season bundle ticket pass purchases.
-          </p>
+        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Season Pass Orders</h3>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              View and manage transactions of season bundle ticket pass purchases.
+            </p>
+          </div>
         </div>
 
         <div className="p-6">

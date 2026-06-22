@@ -7,7 +7,7 @@ import { formatInTimezone } from '../../../lib/timezone';
 import { AppCard } from '../../../components/common/AppCard';
 import { Button, Badge, ProgressBar, DataTable } from '../../../components/ui';
 import type { ColumnDef } from '../../../components/ui';
-import { useTicketingEvents } from './ticketingQueries';
+import { useTicketingEvents, TICKETING_REFRESH_INTERVAL_MS } from './ticketingQueries';
 import BundleFormModal from './BundleFormModal';
 
 const EMPTY_BUNDLES: TicketBundle[] = [];
@@ -30,6 +30,7 @@ export default function TicketingBundlesTab() {
     queryKey: queryKeys.ticketing.allPurchases(),
     queryFn: () => ticketService.getAllPurchases(),
     staleTime: 30_000,
+    refetchInterval: TICKETING_REFRESH_INTERVAL_MS,
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -203,25 +204,25 @@ export default function TicketingBundlesTab() {
 
   return (
     <>
-      <AppCard
-        noPadding
-        title="Season Bundles Configuration"
-        actions={
-          <Button
-            variant="primary"
-            size="small"
-            onClick={handleOpenCreateModal}
-            title="Create New Bundle"
-            icon={'➕'}
-          >
-            Create New Bundle
-          </Button>
-        }
-      >
-        <div className="border-b border-slate-100 px-6 py-4">
-          <p className="mt-1 text-sm font-medium text-slate-500">
-            Create and manage season ticket packages containing multiple concerts at a discount.
-          </p>
+      <AppCard noPadding>
+        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Season Bundles Configuration</h3>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Create and manage season ticket packages containing multiple concerts at a discount.
+            </p>
+          </div>
+          <div className="shrink-0">
+            <Button
+              variant="primary"
+              size="small"
+              onClick={handleOpenCreateModal}
+              title="Create New Bundle"
+              icon={'➕'}
+            >
+              Create New Bundle
+            </Button>
+          </div>
         </div>
 
         <div className="p-6">
