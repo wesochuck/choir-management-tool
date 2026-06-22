@@ -5,7 +5,6 @@ import { rosterService, type EventRoster } from '../services/rosterService';
 import { profileService } from '../services/profileService';
 import { eventService } from '../services/eventService';
 import type { Retry429Options } from '../lib/networkSafety';
-import { upsertRosterRow } from '../lib/eventRosterCache';
 
 type BulkAttendanceUpdate = {
   profileId: string;
@@ -33,6 +32,14 @@ export interface UseAttendanceOptions {
 
 interface MutationContext {
   previousRosters: EventRoster[] | undefined;
+}
+
+function upsertRosterRow(rows: EventRoster[] | undefined, roster: EventRoster): EventRoster[] {
+  const existingRows = rows ?? [];
+  const withoutDuplicate = existingRows.filter(
+    (r) => r.id !== roster.id && r.profile !== roster.profile
+  );
+  return [...withoutDuplicate, roster];
 }
 
 export const useAttendance = (eventId: string, options: UseAttendanceOptions = {}) => {

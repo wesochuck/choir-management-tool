@@ -7,7 +7,7 @@ import { pb } from '../../../lib/pocketbase';
 import { fetchChoirTimezone } from '../../../lib/timezone';
 import { chunkArray, mapWithConcurrency } from '../../../lib/networkSafety';
 
-export const FALLBACK_TZ = 'America/New_York';
+const FALLBACK_TZ = 'America/New_York';
 export const TICKETING_REFRESH_INTERVAL_MS = 3000;
 
 export interface BundleOrder {
@@ -30,7 +30,7 @@ export interface ResendConfirmationTarget {
   buyerName?: string;
 }
 
-export const fetchMissingTicketingEvents = async (missingEventIds: string[]): Promise<Event[]> => {
+const fetchMissingTicketingEvents = async (missingEventIds: string[]): Promise<Event[]> => {
   if (missingEventIds.length === 0) return [];
   const chunks = chunkArray(missingEventIds, 50);
   const missingEventsResults = await mapWithConcurrency(

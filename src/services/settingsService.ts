@@ -614,7 +614,7 @@ export interface TicketConfirmationPageSettings {
   qrInstructions: string;
 }
 
-export const DEFAULT_TICKET_CONFIRMATION_SETTINGS: TicketConfirmationPageSettings = {
+const DEFAULT_TICKET_CONFIRMATION_SETTINGS: TicketConfirmationPageSettings = {
   successMessage: 'Your purchase has been successfully processed.',
   pendingMessage:
     'We could not load the full ticket details yet. Your purchase may still be processing. Please refresh this page in a moment, or contact the box office if this continues.',
