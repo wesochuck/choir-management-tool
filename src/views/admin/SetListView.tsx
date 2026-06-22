@@ -22,12 +22,8 @@ import { MusicImportModal } from '../../components/admin/MusicImportModal';
 import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
 import { PlayerLinkModal } from '../../components/admin/PlayerLinkModal';
 import { Button, Spinner } from '../../components/ui';
-import {
-  DndContext,
-  closestCenter,
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/core';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { SetListItem } from '../../services/eventService';
 
 export default function SetListView() {

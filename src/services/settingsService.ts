@@ -1,646 +1,150 @@
-import { pb } from '../lib/pocketbase';
-import type { RecordModel } from 'pocketbase';
-import type { PublicFontChoice } from '../lib/publicFonts';
-export { renderCommunicationTemplate } from '../lib/messageTemplates';
+// Re-export all types, defaults, and functions from domain files.
+// This keeps existing imports working throughout the transition.
 
-export interface AppSetting<T> extends RecordModel {
-  key: string;
-  value: T;
-  isPublic: boolean;
-}
+import { getSetting, upsertSetting } from './settings/core';
+export { getSetting, upsertSetting };
+export type { AppSetting } from './settings/core';
 
-export interface AuditionSettings {
-  enabled: boolean;
-  slots: string[];
-  confirmationMessage: string;
-  defaultPerformanceId?: string;
-  adminNotifyEnabled?: boolean;
-  adminNotifyUsers?: string[];
-}
+import {
+  DEFAULT_AUDITION_SETTINGS,
+  getAuditionSettings,
+  saveAuditionSettings,
+} from './settings/auditionSettings';
+export type { AuditionSettings } from './settings/auditionSettings';
+export { DEFAULT_AUDITION_SETTINGS, getAuditionSettings, saveAuditionSettings };
 
-export interface CommunicationSettings {
-  emailSubject: string;
-  emailBody: string;
-  smsBody: string;
-  mailingAddress: string;
-  frontendUrl: string;
-  reminderEnabled: boolean;
-  reminderHoursBefore: number;
-  reminderSubjectTemplate: string;
-  reminderBodyTemplate: string;
-  reportEnabled: boolean;
-  reportHoursAfter: number;
-  reportSubjectTemplate: string;
-  reportBodyTemplate: string;
-}
+import {
+  DEFAULT_COMMUNICATION_SETTINGS,
+  getCommunicationSettings,
+  saveCommunicationSettings,
+} from './settings/communicationSettings';
+export type { CommunicationSettings } from './settings/communicationSettings';
+export { DEFAULT_COMMUNICATION_SETTINGS, getCommunicationSettings, saveCommunicationSettings };
 
-export interface RosterSettings {
-  defaultStatus: string;
-  defaultSort: 'lastName' | 'voicePart';
-  defaultRsvpSort?: 'lastName' | 'voicePart';
-  currentSeason?: string;
-  statusAutomationEnabled?: boolean;
-  statusAutomationMissThreshold?: number;
-  statusAutomationRecoveryEnabled?: boolean;
-  maxRehearsalMisses?: number;
-}
+import {
+  DEFAULT_COMMUNICATION_CONFIG,
+  getCommunicationConfig,
+  saveCommunicationConfig,
+} from './settings/communicationConfig';
+export type { CommunicationConfig } from './settings/communicationConfig';
+export { DEFAULT_COMMUNICATION_CONFIG, getCommunicationConfig, saveCommunicationConfig };
 
-export interface MusicGenreDef {
-  id: string;
-  label: string;
-}
+import {
+  DEFAULT_ROSTER_SETTINGS,
+  getRosterSettings,
+  saveRosterSettings,
+} from './settings/rosterSettings';
+export type { RosterSettings } from './settings/rosterSettings';
+export { DEFAULT_ROSTER_SETTINGS, getRosterSettings, saveRosterSettings };
 
-export interface MusicLibrarySettings {
-  catalogLookupUrlTemplate: string;
-  genres: MusicGenreDef[];
-}
+import {
+  DEFAULT_MUSIC_LIBRARY_SETTINGS,
+  getMusicLibrarySettings,
+  saveMusicLibrarySettings,
+} from './settings/musicLibrarySettings';
+export type { MusicGenreDef, MusicLibrarySettings } from './settings/musicLibrarySettings';
+export { DEFAULT_MUSIC_LIBRARY_SETTINGS, getMusicLibrarySettings, saveMusicLibrarySettings };
 
-export interface CommunicationConfig {
-  smtp: {
-    host: string;
-    port: number;
-    user: string;
-    pass: string;
-    from: string;
-  };
-  twilio: {
-    sid: string;
-    token: string;
-    from: string;
-    enabled: boolean;
-  };
-}
-
-export interface PollSettings {
-  defaultAutoArchiveDays: number;
-}
-
-export interface LandingPageSettings {
-  heroHeadline: string;
-  heroSubtitle: string;
-  aboutUsText: string;
-  historyText: string;
-  contactEmail: string;
-  showBrandingHeaderFooter?: boolean;
-  headerFont?: PublicFontChoice;
-  bodyFont?: PublicFontChoice;
-}
-
-export const DEFAULT_LANDING_SETTINGS: LandingPageSettings = {
-  heroHeadline: 'Welcome to Our Choir',
-  heroSubtitle: 'Voices united in harmony.',
-  aboutUsText: '',
-  historyText: '',
-  contactEmail: '',
-  showBrandingHeaderFooter: false,
-  headerFont: 'system',
-  bodyFont: 'system',
+import {
+  DEFAULT_SECTIONS,
+  DEFAULT_VOICE_PARTS,
+  DEFAULT_SEATING_SETTINGS,
+  getSeatingSettings,
+  saveSeatingSettings,
+  getVoicePartsAndSections,
+  saveVoicePartsAndSections,
+  getVoiceParts,
+  saveVoiceParts,
+} from './settings/seatingSettings';
+export type {
+  SectionDef,
+  VoicePartDef,
+  VoicePartSettings,
+  FormationStrategyType,
+  SeatingFormationDef,
+  SeatingSettings,
+} from './settings/seatingSettings';
+export {
+  DEFAULT_SECTIONS,
+  DEFAULT_VOICE_PARTS,
+  DEFAULT_SEATING_SETTINGS,
+  getSeatingSettings,
+  saveSeatingSettings,
+  getVoicePartsAndSections,
+  saveVoicePartsAndSections,
+  getVoiceParts,
+  saveVoiceParts,
 };
 
-export const DEFAULT_AUDITION_SETTINGS: AuditionSettings = {
-  enabled: true,
-  slots: [],
-  confirmationMessage: 'Thank you. A choir administrator will follow up with details.',
-  defaultPerformanceId: '',
-  adminNotifyEnabled: false,
-  adminNotifyUsers: [],
+import {
+  DEFAULT_LANDING_SETTINGS,
+  getLandingSettings,
+  saveLandingSettings,
+} from './settings/landingSettings';
+export type { LandingPageSettings } from './settings/landingSettings';
+export { DEFAULT_LANDING_SETTINGS, getLandingSettings, saveLandingSettings };
+
+import { getHeroImageUrl, saveHeroImage, getLogoUrl, saveLogo } from './settings/landingMedia';
+export { getHeroImageUrl, saveHeroImage, getLogoUrl, saveLogo };
+
+import {
+  getChoirName,
+  saveChoirName,
+  getTimezone,
+  saveTimezone,
+  getHomepageUrl,
+  saveHomepageUrl,
+} from './settings/generalSettings';
+export { getChoirName, saveChoirName, getTimezone, saveTimezone, getHomepageUrl, saveHomepageUrl };
+
+import { DEFAULT_POLL_SETTINGS, getPollSettings, savePollSettings } from './settings/pollSettings';
+export type { PollSettings } from './settings/pollSettings';
+export { DEFAULT_POLL_SETTINGS, getPollSettings, savePollSettings };
+
+import {
+  DEFAULT_TICKET_CONFIRMATION_SETTINGS,
+  getTicketConfirmationPageSettings,
+  saveTicketConfirmationPageSettings,
+} from './settings/ticketConfirmationSettings';
+export type { TicketConfirmationPageSettings } from './settings/ticketConfirmationSettings';
+export {
+  DEFAULT_TICKET_CONFIRMATION_SETTINGS,
+  getTicketConfirmationPageSettings,
+  saveTicketConfirmationPageSettings,
 };
 
-export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
-  emailSubject: 'Choir reminder: {eventTitle}',
-  emailBody: [
-    'Reminder for {eventTitle}',
-    '',
-    'When: {eventDate}',
-    'Where: {eventLocation}',
-    '',
-    '{eventDetails}',
-  ].join('\n'),
-  smsBody: 'Choir reminder: {eventTitle} on {eventDate} at {eventLocation}.',
-  mailingAddress: '123 Choir St, Harmony City, HC 12345',
-  frontendUrl: 'http://localhost:5173',
-  reminderEnabled: false,
-  reminderHoursBefore: 24,
-  reminderSubjectTemplate: 'Choir Event Reminder: {eventTitle}',
-  reminderBodyTemplate: [
-    'Hello {singerName},',
-    '',
-    'This is an automatic reminder for the upcoming choir event:',
-    '**{eventTitle}** ({eventType})',
-    '',
-    '**When:** {eventDate}',
-    '**Where:** {eventLocation}',
-    '',
-    'Details: {eventDetails}',
-    '',
-    'Please make sure your RSVP is up to date: {rsvpLinks}',
-    '',
-    'See you there!',
-    'Choir Management',
-  ].join('\n'),
-  reportEnabled: true,
-  reportHoursAfter: 12,
-  reportSubjectTemplate: 'Attendance Report: {eventTitle} ({eventDate})',
-  reportBodyTemplate: [
-    '<h2>Attendance Summary</h2>',
-    '<p><strong>Event:</strong> {eventTitle}</p>',
-    '<p><strong>Date:</strong> {eventDate}</p>',
-    '<div style="background-color: #f8faf9; padding: 15px; border-radius: 6px; margin: 20px 0;">',
-    '    <p style="margin: 0; font-size: 18px;"><strong>Attendance Rate:</strong> <span style="color: #1b4d3e;">{attendanceRate}%</span></p>',
-    '    <p style="margin: 5px 0 0 0; color: #64748b;">{presentCount} present / {totalCount} total participants</p>',
-    '</div>',
-    '',
-    '<h3 style="border-bottom: 2px solid #e9f0eb; padding-bottom: 8px;">Absentees</h3>',
-    '<ul style="padding-left: 20px;">',
-    '    {absenteesList}',
-    '</ul>',
-    '',
-    '{thresholdWarningsSection}',
-  ].join('\n'),
-};
+import { queueSettingsService } from './settings/queueSettings';
+export { queueSettingsService };
 
-const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
-  defaultStatus: '',
-  defaultSort: 'lastName',
-  defaultRsvpSort: 'lastName',
-  currentSeason: '',
-  statusAutomationEnabled: true,
-  statusAutomationMissThreshold: 3,
-  statusAutomationRecoveryEnabled: true,
-  maxRehearsalMisses: 3,
-};
-
-const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
-  catalogLookupUrlTemplate: '',
-  genres: [
-    { id: 'christmas', label: 'Christmas' },
-    { id: 'patriotic', label: 'Patriotic' },
-  ],
-};
-
-export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
-  smtp: {
-    host: '',
-    port: 587,
-    user: '',
-    pass: '',
-    from: '',
-  },
-  twilio: {
-    sid: '',
-    token: '',
-    from: '',
-    enabled: false,
-  },
-};
-
-const DEFAULT_POLL_SETTINGS: PollSettings = {
-  defaultAutoArchiveDays: 3,
-};
-
-const inFlightRequests: Record<string, Promise<unknown>> = {};
-
-const getSetting = async <T>(key: string): Promise<AppSetting<T> | null> => {
-  const existing = inFlightRequests[key];
-  if (existing) return existing as Promise<AppSetting<T> | null>;
-
-  const promise = pb
-    .collection('appSettings')
-    .getFirstListItem<AppSetting<T>>(pb.filter('key = {:key}', { key }))
-    .then((setting) => setting)
-    .catch((err: unknown) => {
-      if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
-      throw err;
-    });
-
-  inFlightRequests[key] = promise;
-  void promise.then(
-    () => {
-      delete inFlightRequests[key];
-    },
-    () => {
-      delete inFlightRequests[key];
-    }
-  );
-
-  return promise;
-};
-
-const upsertSetting = async <T>(key: string, value: T, isPublic: boolean) => {
-  const existing = await getSetting<T>(key);
-  const payload = { key, value, isPublic };
-
-  if (existing) {
-    return await pb.collection('appSettings').update<AppSetting<T>>(existing.id, payload);
-  }
-
-  return await pb.collection('appSettings').create<AppSetting<T>>(payload);
-};
-
+// Backward compat namespace for existing settingsService.getXxx callers
 export const settingsService = {
-  async getAuditionSettings() {
-    const setting = await getSetting<AuditionSettings>('auditions');
-    const value = setting?.value;
-    return {
-      ...DEFAULT_AUDITION_SETTINGS,
-      ...value,
-      slots: value?.slots || DEFAULT_AUDITION_SETTINGS.slots,
-    };
-  },
-
-  async saveAuditionSettings(value: AuditionSettings) {
-    return await upsertSetting('auditions', value, true);
-  },
-
-  async getPollSettings() {
-    const setting = await getSetting<PollSettings>('poll_settings');
-    return { ...DEFAULT_POLL_SETTINGS, ...setting?.value };
-  },
-
-  async savePollSettings(value: PollSettings) {
-    return await upsertSetting('poll_settings', value, false);
-  },
-
-  async getCommunicationSettings() {
-    const setting = await getSetting<CommunicationSettings>('communications');
-    const value = setting?.value;
-    let resolvedUrl = value?.frontendUrl;
-    if (
-      (!resolvedUrl || resolvedUrl === 'http://localhost:5173') &&
-      typeof window !== 'undefined' &&
-      window.location?.origin
-    ) {
-      resolvedUrl = window.location.origin;
-    }
-    return {
-      ...DEFAULT_COMMUNICATION_SETTINGS,
-      ...value,
-      frontendUrl: resolvedUrl || DEFAULT_COMMUNICATION_SETTINGS.frontendUrl,
-    };
-  },
-
-  async saveCommunicationSettings(value: CommunicationSettings) {
-    return await upsertSetting('communications', value, false);
-  },
-
-  async getCommunicationConfig() {
-    const setting = await getSetting<CommunicationConfig>('communications_config');
-    return { ...DEFAULT_COMMUNICATION_CONFIG, ...setting?.value };
-  },
-
-  async saveCommunicationConfig(value: CommunicationConfig) {
-    return await upsertSetting('communications_config', value, false);
-  },
-
-  async getRosterSettings() {
-    const setting = await getSetting<RosterSettings>('roster');
-    return { ...DEFAULT_ROSTER_SETTINGS, ...setting?.value };
-  },
-
-  async saveRosterSettings(value: RosterSettings) {
-    return await upsertSetting('roster', value, false);
-  },
-
-  async getMusicLibrarySettings() {
-    const setting = await getSetting<MusicLibrarySettings>('music_library');
-    const value = setting?.value;
-    return {
-      ...DEFAULT_MUSIC_LIBRARY_SETTINGS,
-      ...value,
-      genres: value?.genres || DEFAULT_MUSIC_LIBRARY_SETTINGS.genres,
-    };
-  },
-
-  async saveMusicLibrarySettings(value: MusicLibrarySettings) {
-    return await upsertSetting('music_library', value, true);
-  },
-
-  async getSeatingSettings(): Promise<SeatingSettings> {
-    const setting = await getSetting<SeatingSettings>('seating_config');
-    const value = setting?.value;
-    const voiceSettings = await getVoicePartsAndSections();
-    const activeCodes = voiceSettings.sections.map((s) => s.code.toUpperCase());
-    const activeParts = voiceSettings.voiceParts.map((vp) => vp.label.toUpperCase());
-
-    const baseFormations = value?.formations || DEFAULT_SEATING_SETTINGS.formations;
-
-    const sanitizedFormations = baseFormations.map((form) => {
-      const isVoice = !!form.isVoicePartLayout;
-      const filterList = isVoice ? activeParts : activeCodes;
-      const order = (form.sectionOrder || []).filter((code) =>
-        filterList.includes(code.toUpperCase())
-      );
-      return { ...form, sectionOrder: order, isVoicePartLayout: isVoice };
-    });
-
-    return {
-      defaultFormationId: value?.defaultFormationId || DEFAULT_SEATING_SETTINGS.defaultFormationId,
-      formations: sanitizedFormations,
-    };
-  },
-
-  async saveSeatingSettings(value: SeatingSettings) {
-    return await upsertSetting('seating_config', value, true);
-  },
-
-  async getChoirName(): Promise<string> {
-    const setting = await getSetting<string>('choir_name');
-    return setting?.value || '';
-  },
-
-  async saveChoirName(name: string) {
-    return await upsertSetting('choir_name', name, true);
-  },
-
-  async getTimezone(): Promise<string> {
-    const setting = await getSetting<string>('timezone');
-    return setting?.value || Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York';
-  },
-
-  async saveTimezone(timezone: string) {
-    return await upsertSetting('timezone', timezone, true);
-  },
-
-  async getHomepageUrl(): Promise<string> {
-    const setting = await getSetting<string>('homepage_url');
-    return setting?.value || '';
-  },
-
-  async saveHomepageUrl(url: string) {
-    return await upsertSetting('homepage_url', url, true);
-  },
-
-  async getLandingSettings(): Promise<LandingPageSettings> {
-    const stored = await getSetting<LandingPageSettings>('landingSettings');
-    return { ...DEFAULT_LANDING_SETTINGS, ...stored?.value };
-  },
-
-  async saveLandingSettings(value: LandingPageSettings): Promise<void> {
-    await upsertSetting('landingSettings', value, true);
-  },
-
-  async getHeroImageUrl(): Promise<string | null> {
-    try {
-      const record = await pb
-        .collection('appSettings')
-        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key: 'landingHeroImage' }));
-      const filename = record['logo'] as string | undefined;
-      if (!filename) return null;
-      return pb.files.getURL(record, filename);
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
-      throw err;
-    }
-  },
-
-  async saveHeroImage(file: File | null): Promise<void> {
-    const key = 'landingHeroImage';
-    let record: RecordModel;
-    try {
-      record = await pb
-        .collection('appSettings')
-        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key }));
-    } catch (err: unknown) {
-      if (!(err && typeof err === 'object' && 'status' in err && err.status === 404)) {
-        throw err;
-      }
-      record = await pb.collection('appSettings').create({
-        key,
-        value: 'heroImage',
-        isPublic: true,
-      });
-    }
-    const formData = new FormData();
-    formData.append('logo', file ?? '');
-    await pb.collection('appSettings').update(record.id, formData);
-  },
-
-  async getLogoUrl(): Promise<string | null> {
-    try {
-      const record = await pb
-        .collection('appSettings')
-        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key: 'logo' }));
-      const logo = record['logo'] as string | undefined;
-      if (!logo) return null;
-      return pb.files.getURL(record, logo);
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'status' in err && err.status === 404) return null;
-      throw err;
-    }
-  },
-
-  async saveLogo(file: File | null): Promise<void> {
-    const key = 'logo';
-
-    // Create or find the record using JSON body so the required value field
-    // is properly serialized. FormData + JSON fields can fail on create.
-    let record: RecordModel;
-    try {
-      record = await pb
-        .collection('appSettings')
-        .getFirstListItem<RecordModel>(pb.filter('key = {:key}', { key }));
-    } catch (err: unknown) {
-      if (!(err && typeof err === 'object' && 'status' in err && err.status === 404)) {
-        throw err;
-      }
-      record = await pb.collection('appSettings').create({
-        key,
-        value: 'logo',
-        isPublic: true,
-      });
-    }
-
-    // Upload or clear the file via FormData update on the existing record
-    const formData = new FormData();
-    formData.append('logo', file ?? '');
-    await pb.collection('appSettings').update(record.id, formData);
-  },
+  getAuditionSettings,
+  saveAuditionSettings,
+  getPollSettings,
+  savePollSettings,
+  getCommunicationSettings,
+  saveCommunicationSettings,
+  getCommunicationConfig,
+  saveCommunicationConfig,
+  getRosterSettings,
+  saveRosterSettings,
+  getMusicLibrarySettings,
+  saveMusicLibrarySettings,
+  getSeatingSettings,
+  saveSeatingSettings,
+  getChoirName,
+  saveChoirName,
+  getTimezone,
+  saveTimezone,
+  getHomepageUrl,
+  saveHomepageUrl,
+  getLandingSettings,
+  saveLandingSettings,
+  getHeroImageUrl,
+  saveHeroImage,
+  getLogoUrl,
+  saveLogo,
 };
 
-export interface SectionDef {
-  code: string;
-  name: string;
-  color?: string; // High-contrast hex value code selection
-  colorBg?: string;
-  colorText?: string;
-}
-
-export interface VoicePartDef {
-  label: string;
-  fullName: string;
-  sectionCode: string;
-  color?: string;
-  colorBg?: string;
-  colorText?: string;
-}
-
-export interface VoicePartSettings {
-  sections: SectionDef[];
-  voiceParts: VoicePartDef[];
-}
-
-export type FormationStrategyType = 'vertical_column' | 'horizontal_row';
-
-export interface SeatingFormationDef {
-  id: string;
-  name: string;
-  strategy: FormationStrategyType;
-  sectionOrder: string[]; // Sequential array of active SectionDef codes or VoicePartDef labels
-  isVoicePartLayout?: boolean; // Toggles layout by voice parts instead of sections
-}
-
-export interface SeatingSettings {
-  defaultFormationId: string;
-  formations: SeatingFormationDef[];
-}
-
-export const DEFAULT_SECTIONS: SectionDef[] = [
-  {
-    code: 'S',
-    name: 'Sopranos',
-    color: '#1b4d3e',
-    colorBg: 'var(--color-danger-bg)',
-    colorText: 'var(--color-danger-text)',
-  },
-  {
-    code: 'A',
-    name: 'Altos',
-    color: '#4a7c59',
-    colorBg: 'var(--color-primary-light)',
-    colorText: 'var(--color-primary-deep)',
-  },
-  { code: 'T', name: 'Tenors', color: '#92400e', colorBg: '#fef3c7', colorText: '#92400e' },
-  { code: 'B', name: 'Basses', color: '#075985', colorBg: '#e0f2fe', colorText: '#075985' },
-];
-
-export const DEFAULT_VOICE_PARTS: VoicePartDef[] = [
-  { label: 'S1', fullName: 'Soprano 1', sectionCode: 'S' },
-  { label: 'S2', fullName: 'Soprano 2', sectionCode: 'S' },
-  { label: 'A1', fullName: 'Alto 1', sectionCode: 'A' },
-  { label: 'A2', fullName: 'Alto 2', sectionCode: 'A' },
-  { label: 'T1', fullName: 'Tenor 1', sectionCode: 'T' },
-  { label: 'T2', fullName: 'Tenor 2', sectionCode: 'T' },
-  { label: 'B1', fullName: 'Bass 1', sectionCode: 'B' },
-  { label: 'B2', fullName: 'Bass 2', sectionCode: 'B' },
-];
-
-export const DEFAULT_SEATING_SETTINGS: SeatingSettings = {
-  defaultFormationId: 'columns-standard',
-  formations: [
-    {
-      id: 'columns-standard',
-      name: 'Standard Columns (S-A-T-B Left to Right)',
-      strategy: 'vertical_column',
-      sectionOrder: ['S', 'A', 'T', 'B'],
-    },
-    {
-      id: 'rows-standard',
-      name: 'Standard Rows (S-A-T-B Front to Back)',
-      strategy: 'horizontal_row',
-      sectionOrder: ['S', 'A', 'T', 'B'],
-    },
-  ],
-};
-
-export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
-  try {
-    const setting = await getSetting<VoicePartSettings>('voiceParts');
-    if (setting && setting.value) {
-      let sections = setting.value.sections || [];
-      let voiceParts = setting.value.voiceParts || [];
-
-      // Auto-migrate old format to new format
-      if (sections.length === 0 && voiceParts.length > 0) {
-        const detectedCodes = new Set<string>();
-        voiceParts = voiceParts.map((vp) => {
-          let code = vp.sectionCode;
-          if (!code) {
-            const label = vp.label || '';
-            if (/^(soprano|s)(\s*\d+)?$/i.test(label)) code = 'S';
-            else if (/^(alto|a)(\s*\d+)?$/i.test(label)) code = 'A';
-            else if (/^(tenor|t)(\s*\d+)?$/i.test(label)) code = 'T';
-            else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(label)) code = 'B';
-            else code = 'Other';
-          }
-          detectedCodes.add(code);
-          return { ...vp, sectionCode: code };
-        });
-
-        sections = [];
-        if (detectedCodes.has('S')) sections.push({ code: 'S', name: 'Sopranos' });
-        if (detectedCodes.has('A')) sections.push({ code: 'A', name: 'Altos' });
-        if (detectedCodes.has('T')) sections.push({ code: 'T', name: 'Tenors' });
-        if (detectedCodes.has('B')) sections.push({ code: 'B', name: 'Basses' });
-        if (detectedCodes.has('Other')) sections.push({ code: 'Other', name: 'Other' });
-
-        if (sections.length === 0) {
-          sections = [...DEFAULT_SECTIONS];
-        }
-      }
-
-      if (sections.length > 0 && voiceParts.length > 0) {
-        return { sections, voiceParts };
-      }
-    }
-    return { sections: DEFAULT_SECTIONS, voiceParts: DEFAULT_VOICE_PARTS };
-  } catch {
-    return { sections: DEFAULT_SECTIONS, voiceParts: DEFAULT_VOICE_PARTS };
-  }
-}
-
-export async function saveVoicePartsAndSections(
-  voiceParts: VoicePartDef[],
-  sections: SectionDef[]
-): Promise<AppSetting<VoicePartSettings>> {
-  return await upsertSetting<VoicePartSettings>('voiceParts', { voiceParts, sections }, true);
-}
-
-export async function getVoiceParts(): Promise<VoicePartDef[]> {
-  const settings = await getVoicePartsAndSections();
-  return settings.voiceParts;
-}
-
-export async function saveVoiceParts(
-  voiceParts: VoicePartDef[]
-): Promise<AppSetting<VoicePartSettings>> {
-  const current = await getVoicePartsAndSections();
-  return await saveVoicePartsAndSections(voiceParts, current.sections);
-}
-
-export interface TicketConfirmationPageSettings {
-  successMessage: string;
-  pendingMessage: string;
-  willCallInstructions: string;
-  qrInstructions: string;
-}
-
-const DEFAULT_TICKET_CONFIRMATION_SETTINGS: TicketConfirmationPageSettings = {
-  successMessage: 'Your purchase has been successfully processed.',
-  pendingMessage:
-    'We could not load the full ticket details yet. Your purchase may still be processing. Please refresh this page in a moment, or contact the box office if this continues.',
-  willCallInstructions:
-    'A confirmation email has been sent with a link back to this page. Your tickets will be held at Will Call on show day. Please bring a photo ID matching the buyer\u2019s name.',
-  qrInstructions:
-    'Print or screenshot this entire page and bring it with you. We also sent a confirmation email with a link back to this page.',
-};
-
-export async function getTicketConfirmationPageSettings(): Promise<TicketConfirmationPageSettings> {
-  const stored = await getSetting<TicketConfirmationPageSettings>('ticket_confirmation_page');
-  return { ...DEFAULT_TICKET_CONFIRMATION_SETTINGS, ...stored?.value };
-}
-
-export async function saveTicketConfirmationPageSettings(
-  value: TicketConfirmationPageSettings
-): Promise<void> {
-  await upsertSetting('ticket_confirmation_page', value, true);
-}
-
-export const queueSettingsService = {
-  async getSettings(): Promise<{ secret: string }> {
-    return pb.send('/api/admin/queue-settings', { method: 'GET' });
-  },
-
-  async generateToken(): Promise<{ secret: string }> {
-    return pb.send('/api/admin/queue-settings/generate', { method: 'POST' });
-  },
-};
+// Backward compat — remove this export once all callers are migrated
+export { renderCommunicationTemplate } from '../lib/messageTemplates';

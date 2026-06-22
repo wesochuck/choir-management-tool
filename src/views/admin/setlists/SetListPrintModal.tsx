@@ -1,6 +1,6 @@
-import type { Event } from '../../services/eventService';
-import type { SetListDisplayRow } from '../../lib/setList/setListItems';
-import { Modal, Button } from '../../components/ui';
+import type { Event } from '../../../services/eventService';
+import type { SetListDisplayRow } from '../../../lib/setList/setListItems';
+import { Modal, Button } from '../../../components/ui';
 import { SetListPrintContent } from './SetListPrintContent';
 
 interface SetListPrintModalProps {

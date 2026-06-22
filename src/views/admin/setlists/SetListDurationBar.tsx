@@ -1,5 +1,5 @@
-import type { SetListItem } from '../../services/eventService';
-import type { SetListDurationTotals } from '../../lib/setList/setListItems';
+import type { SetListItem } from '../../../services/eventService';
+import type { SetListDurationTotals } from '../../../lib/setList/setListItems';
 
 interface SetListDurationBarProps {
   items: SetListItem[];

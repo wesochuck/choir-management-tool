@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import type { MusicPiece, MusicPieceInput } from '../../services/musicLibraryService';
-import { musicLibraryService } from '../../services/musicLibraryService';
-import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
-import type { SetListItem } from '../../services/eventService';
-import { createSetListItemFromMusicPiece } from '../../lib/setList/setListItems';
-import type { DialogContextValue } from '../../contexts/DialogContext';
+import type { MusicPiece, MusicPieceInput } from '../../../services/musicLibraryService';
+import { musicLibraryService } from '../../../services/musicLibraryService';
+import { musicLibraryWorkflows } from '../../../services/musicLibraryWorkflows';
+import type { SetListItem } from '../../../services/eventService';
+import { createSetListItemFromMusicPiece } from '../../../lib/setList/setListItems';
+import type { DialogContextValue } from '../../../contexts/DialogContext';
 import type { QueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../../lib/queryKeys';
+import { queryKeys } from '../../../lib/queryKeys';
 
 export interface UseSetListLibraryProps {
   dialog: DialogContextValue;

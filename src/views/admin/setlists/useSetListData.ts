@@ -1,24 +1,25 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import type { DialogContextValue } from '../../contexts/DialogContext';
-import { eventService, type SetListItem, type Event } from '../../services/eventService';
-import { musicLibraryService, type MusicPiece } from '../../services/musicLibraryService';
-import { settingsService, type MusicGenreDef } from '../../services/settingsService';
+import type { DialogContextValue } from '../../../contexts/DialogContext';
+import { eventService, type SetListItem, type Event } from '../../../services/eventService';
+import { musicLibraryService, type MusicPiece } from '../../../services/musicLibraryService';
+import { settingsService, type MusicGenreDef } from '../../../services/settingsService';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../../lib/queryKeys';
+import { queryKeys } from '../../../lib/queryKeys';
 import {
   resolveSetListDisplayRows,
   calculateSetListDurationTotals,
   buildSetListPlainText,
   type SetListDisplayRow,
   type SetListDurationTotals,
-} from '../../lib/setList/setListItems';
-import { resolveInitialEventId } from '../../lib/eventUtils';
+} from '../../../lib/setList/setListItems';
+import { resolveInitialEventId } from '../../../lib/eventUtils';
 import {
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  type Sensors,
+  type SensorDescriptor,
+  type SensorOptions,
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -39,7 +40,7 @@ export interface UseSetListDataReturn {
   isPending: boolean;
   configuredGenres: MusicGenreDef[];
   catalogLookupTemplate: string;
-  sensors: Sensors;
+  sensors: SensorDescriptor<SensorOptions>[];
   handleDelete: (id: string) => Promise<void>;
   handleDragEnd: (event: DragEndEvent) => Promise<void>;
   handleInlineAddItem: (item: SetListItem) => Promise<void>;
@@ -261,7 +262,10 @@ export function useSetListData(
     });
 
     if (shouldCopy) {
-      const copied = sourceEvent.setList.map((i) => ({ ...i, id: crypto.randomUUID() }));
+      const copied = sourceEvent.setList.map((i: SetListItem) => ({
+        ...i,
+        id: crypto.randomUUID(),
+      }));
       await updateItems(copied);
     }
   };

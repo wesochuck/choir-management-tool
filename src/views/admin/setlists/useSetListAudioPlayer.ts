@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { MusicPiece } from '../../services/musicLibraryService';
-import { getDefaultPlayableTrackKey } from '../../lib/setList/setListItems';
-import { pb } from '../../lib/pocketbase';
+import type { MusicPiece } from '../../../services/musicLibraryService';
+import { getDefaultPlayableTrackKey } from '../../../lib/setList/setListItems';
+import { pb } from '../../../lib/pocketbase';
 
 export interface UseSetListAudioPlayerReturn {
   activeAudioUrl: string | null;

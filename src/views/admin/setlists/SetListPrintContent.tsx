@@ -1,7 +1,7 @@
-import type { Event } from '../../services/eventService';
-import type { SetListDisplayRow } from '../../lib/setList/setListItems';
-import { formatInTimezone } from '../../lib/timezone';
-import { Divider } from '../../components/ui';
+import type { Event } from '../../../services/eventService';
+import type { SetListDisplayRow } from '../../../lib/setList/setListItems';
+import { formatInTimezone } from '../../../lib/timezone';
+import { Divider } from '../../../components/ui';
 
 interface SetListPrintContentProps {
   selectedEvent: Event | null | undefined;

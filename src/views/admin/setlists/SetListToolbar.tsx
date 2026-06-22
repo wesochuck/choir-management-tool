@@ -1,6 +1,7 @@
-import type { Event } from '../../services/eventService';
-import { Select, Button } from '../../components/ui';
-import { formatInTimezone } from '../../lib/timezone';
+import React from 'react';
+import type { Event } from '../../../services/eventService';
+import { Select, Button } from '../../../components/ui';
+import { formatInTimezone } from '../../../lib/timezone';
 
 interface SetListToolbarProps {
   events: Event[];
@@ -36,7 +37,7 @@ export function SetListToolbar({
           </span>
           <Select
             value={selectedEventId}
-            onChange={(e) => onEventChange(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onEventChange(e.target.value)}
             className="w-full"
           >
             <option value="">-- Choose Event --</option>
@@ -60,7 +61,7 @@ export function SetListToolbar({
             </span>
             <Select
               value=""
-              onChange={async (e) => {
+              onChange={async (e: React.ChangeEvent<HTMLSelectElement>) => {
                 if (e.target.value) {
                   await onCopyFrom(e.target.value);
                 }
