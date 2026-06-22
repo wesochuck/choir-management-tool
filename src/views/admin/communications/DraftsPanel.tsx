@@ -48,20 +48,6 @@ export function DraftsPanel({ drafts, onResumeDraft, onDeleteDraft }: DraftsPane
       },
     },
     {
-      id: 'content',
-      header: 'Content',
-      cell: ({ row }) => (
-        <span className="text-muted max-w-[400px] truncate">
-          {row.original.content.substring(0, 100)}...
-        </span>
-      ),
-      meta: {
-        cardSection: 1,
-        cardSide: 'left',
-        cardLabel: 'Preview',
-      },
-    },
-    {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (

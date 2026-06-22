@@ -135,7 +135,6 @@ export function ReviewSidebar({
         filters={filters}
         selectedEvent={selectedEvent}
         commSettings={commSettings}
-        aria-hidden="true"
         setTab={setTab}
         setEditingTemplate={setEditingTemplate}
       />
@@ -152,10 +151,11 @@ export function ReviewSidebar({
               strokeLinecap="round"
               strokeLinejoin="round"
               className="size-4 transition-transform duration-200"
+              aria-hidden="true"
             >
               <polyline points="15 18 9 12 15 6" />
             </svg>
-            Back aria-hidden="true"
+            Back
           </Button>
 
           <Button
@@ -172,11 +172,11 @@ export function ReviewSidebar({
               strokeLinecap="round"
               strokeLinejoin="round"
               className="size-4 transition-transform duration-200"
+              aria-hidden="true"
             >
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            aria-hidden="true"
             {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
           </Button>
 
@@ -193,6 +193,7 @@ export function ReviewSidebar({
               strokeLinecap="round"
               strokeLinejoin="round"
               className="size-4 transition-transform duration-200"
+              aria-hidden="true"
             >
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
