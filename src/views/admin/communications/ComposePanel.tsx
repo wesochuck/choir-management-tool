@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useClickOutside } from '../../../hooks/useClickOutside';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
@@ -9,17 +8,21 @@ import { TemplateGrid } from '../../../components/TemplateGrid';
 import { ComposeStep } from '../../../components/ComposeStep';
 import { LivePreview } from '../../../components/LivePreview';
 import { PlaceholderPanel } from '../../../components/admin/PlaceholderPanel';
+import { useEvents } from '../../../hooks/useEvents';
+import { useVoiceParts } from '../../../hooks/useVoiceParts';
 import type {
   CommunicationFilters,
   CommunicationRecipient,
   MessageType,
   TemplateRecord,
 } from '../../../services/communicationService';
-import type { Event } from '../../../services/eventService';
-import type { SectionDef, CommunicationSettings } from '../../../services/settingsService';
+import type { CommunicationSettings } from '../../../services/settingsService';
 import type { WizardStep } from './types';
 import { mapToMessageTemplate } from './templateMapping';
 import type { ValidationWarning } from '../../../utils/communicationValidation';
+import { AudienceStatCards } from './AudienceStatCards';
+import { WizardActionBar } from './WizardActionBar';
+import { ReviewSidebar } from './ReviewSidebar';
 
 interface ComposePanelProps {
   wizardStep: WizardStep;
@@ -49,9 +52,6 @@ interface ComposePanelProps {
   renderedSmsBody: string;
   previewRecipient: CommunicationRecipient | null;
 
-  events: Event[];
-  voicePartLabels: string[];
-  configSections: SectionDef[];
   commSettings: CommunicationSettings;
   templates: TemplateRecord[];
   setTab: (tab: import('../../../types/Communication').CommunicationTab) => void;
@@ -92,9 +92,6 @@ export function ComposePanel({
   renderedSubject,
   renderedSmsBody,
   previewRecipient,
-  events,
-  voicePartLabels,
-  configSections,
   commSettings,
   templates,
   setTab,
@@ -112,23 +109,12 @@ export function ComposePanel({
   choirName,
   senderEmail,
 }: ComposePanelProps) {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { events } = useEvents();
+  const { labels: voicePartLabels, sections: configSections } = useVoiceParts();
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>('blank');
-  const [startedMessage, setStartedMessage] = useState(() => {
-    return !!(subject || content);
-  });
 
-  // If the subject or content changes externally (e.g., when a draft is resumed),
-  // automatically update the startedMessage state.
-  useEffect(() => {
-    if (subject || content) {
-      setStartedMessage(true);
-    }
-  }, [subject, content]);
-
-  const handleContinue = () => {
+  const handleUseTemplate = () => {
     if (selectedTemplateId === 'blank') {
       setSubject('');
       setContent('');
@@ -141,17 +127,13 @@ export function ComposePanel({
         setMessageType(tpl.type === 'SMS' ? 'SMS' : tpl.type === 'Both' ? 'Both' : 'Email');
       }
     }
-    setStartedMessage(true);
+    setWizardStep('COMPOSE');
   };
 
-  useClickOutside(dropdownRef, () => setIsDropdownOpen(false), {
-    enabled: isDropdownOpen,
-  });
-
-  const handleVoicePartToggle = (token: string) => {
-    const active = filters.voiceParts || [];
-    const next = active.includes(token) ? active.filter((p) => p !== token) : [...active, token];
-    updateFilter('voiceParts', next);
+  const handleVoicePartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value as unknown as string[] | string;
+    const arr = Array.isArray(val) ? val : [val].filter(Boolean);
+    updateFilter('voiceParts', arr);
   };
 
   const handleEventContextChange = (eventId: string) => {
@@ -190,19 +172,29 @@ export function ComposePanel({
       <WizardStepper
         steps={[
           { number: 1, id: 'TARGETS', label: 'Audience', isValid: true },
-          { number: 2, id: 'COMPOSE', label: 'Message', isValid: true },
+          { number: 2, id: 'TEMPLATE', label: 'Template', isValid: true },
+          { number: 3, id: 'COMPOSE', label: 'Message', isValid: true },
           {
-            number: 3,
+            number: 4,
             id: 'REVIEW',
             label: 'Review & Send',
             isValid: selectedRecipients.length > 0,
           },
         ]}
-        currentStep={wizardStep === 'TARGETS' ? 1 : wizardStep === 'COMPOSE' ? 2 : 3}
+        currentStep={
+          wizardStep === 'TARGETS'
+            ? 1
+            : wizardStep === 'TEMPLATE'
+              ? 2
+              : wizardStep === 'COMPOSE'
+                ? 3
+                : 4
+        }
         onStepClick={(num) => {
           if (num === 1) setWizardStep('TARGETS');
-          if (num === 2) setWizardStep('COMPOSE');
-          if (num === 3) setWizardStep('REVIEW');
+          if (num === 2) setWizardStep('TEMPLATE');
+          if (num === 3) setWizardStep('COMPOSE');
+          if (num === 4) setWizardStep('REVIEW');
         }}
       />
 
@@ -216,13 +208,7 @@ export function ComposePanel({
                 Select filter criteria on the left and verify reachable users on the right.
               </p>
             </div>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setWizardStep('COMPOSE');
-                setStartedMessage(false);
-              }}
-            >
+            <Button variant="primary" onClick={() => setWizardStep('TEMPLATE')}>
               Continue to Message
             </Button>
           </div>
@@ -293,94 +279,29 @@ export function ComposePanel({
                   </Select>
                 </div>
 
-                {/* Voice Part / Section dropdown */}
-                <div className="relative flex flex-col gap-1.5" ref={dropdownRef}>
+                {/* Voice Part / Section multi-select */}
+                <div className="flex flex-col gap-1.5">
                   <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
                     Voice Part / Section
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="border-border bg-surface hover:border-primary focus:border-primary focus:ring-primary flex w-full cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-left text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
+                  <Select
+                    multiple
+                    placeholder="All Voice Parts"
+                    value={filters.voiceParts || []}
+                    onChange={handleVoicePartChange}
+                    size="small"
                   >
-                    <span
-                      className={
-                        (filters.voiceParts || []).length > 0
-                          ? 'text-text font-medium'
-                          : 'text-text-muted'
-                      }
-                    >
-                      {filters.voiceParts.length === 0
-                        ? 'All Voice Parts'
-                        : `${filters.voiceParts.length} selected`}
-                    </span>
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      className={`text-text-muted transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
-                    >
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </button>
-                  {isDropdownOpen && (
-                    <div className="border-border bg-surface absolute top-full left-0 z-55 mt-1 flex max-h-60 w-full flex-col gap-1 overflow-y-auto rounded-lg border p-2 shadow-lg">
-                      <div className="text-text-muted px-2 py-1 text-xs font-bold tracking-wider uppercase">
-                        Sections
-                      </div>
-                      {configSections.map((sec) => (
-                        <label
-                          key={sec.code}
-                          className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filters.voiceParts.includes(sec.code)}
-                            onChange={() => handleVoicePartToggle(sec.code)}
-                            className="border-border text-primary focus:ring-primary mr-2 rounded"
-                          />
-                          <span
-                            className={
-                              filters.voiceParts.includes(sec.code)
-                                ? 'text-primary-deep font-medium'
-                                : 'text-text'
-                            }
-                          >
-                            {sec.name}
-                          </span>
-                        </label>
-                      ))}
-                      <div className="border-border my-1 border-t"></div>
-                      <div className="text-text-muted px-2 py-1 text-xs font-bold tracking-wider uppercase">
-                        Individual Parts
-                      </div>
-                      {voicePartLabels.map((part) => (
-                        <label
-                          key={part}
-                          className="flex cursor-pointer items-center rounded px-2 py-1.5 text-sm hover:bg-slate-50"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filters.voiceParts.includes(part)}
-                            onChange={() => handleVoicePartToggle(part)}
-                            className="border-border text-primary focus:ring-primary mr-2 rounded"
-                          />
-                          <span
-                            className={
-                              filters.voiceParts.includes(part)
-                                ? 'text-primary-deep font-medium'
-                                : 'text-text'
-                            }
-                          >
-                            {part}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                    {configSections.map((sec) => (
+                      <option key={sec.code} value={sec.code}>
+                        {sec.name} (Section)
+                      </option>
+                    ))}
+                    {voicePartLabels.map((part) => (
+                      <option key={part} value={part}>
+                        {part}
+                      </option>
+                    ))}
+                  </Select>
                 </div>
               </div>
             </AppCard>
@@ -395,46 +316,28 @@ export function ComposePanel({
                   </span>
                 }
               >
-                <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-                  {/* Total Card */}
-                  <div className="border-border flex flex-col items-center justify-center rounded-lg border bg-slate-50/50 p-4 text-center">
-                    <span className="text-text-muted text-xs font-bold tracking-wider uppercase">
-                      Selected
-                    </span>
-                    <span className="text-text mt-1 text-3xl font-extrabold">
-                      {recipientCounts.total}
-                    </span>
-                    <span className="text-text-muted mt-1 text-xs">
-                      {/* ponytail: make text readable size */}matched singers
-                    </span>
-                  </div>
-
-                  {/* Email Card */}
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-emerald-100 bg-emerald-50/30 p-4 text-center">
-                    <span className="text-xs font-bold tracking-wider text-emerald-800 uppercase">
-                      Email Reach
-                    </span>
-                    <span className="mt-1 text-3xl font-extrabold text-emerald-900">
-                      {recipientCounts.hasEmail}
-                    </span>
-                    <span className="mt-1 text-xs text-emerald-700">
-                      {/* ponytail: make text readable size */}reachable by email
-                    </span>
-                  </div>
-
-                  {/* SMS Card */}
-                  <div className="flex flex-col items-center justify-center rounded-lg border border-blue-100 bg-blue-50/30 p-4 text-center">
-                    <span className="text-xs font-bold tracking-wider text-blue-800 uppercase">
-                      SMS Reach
-                    </span>
-                    <span className="mt-1 text-3xl font-extrabold text-blue-900">
-                      {recipientCounts.hasPhone}
-                    </span>
-                    <span className="mt-1 text-xs text-blue-700">
-                      {/* ponytail: make text readable size */}reachable by SMS
-                    </span>
-                  </div>
-                </div>
+                <AudienceStatCards
+                  cards={[
+                    {
+                      label: 'Selected',
+                      count: recipientCounts.total,
+                      subtitle: 'matched singers',
+                      color: 'neutral',
+                    },
+                    {
+                      label: 'Email Reach',
+                      count: recipientCounts.hasEmail,
+                      subtitle: 'reachable by email',
+                      color: 'emerald',
+                    },
+                    {
+                      label: 'SMS Reach',
+                      count: recipientCounts.hasPhone,
+                      subtitle: 'reachable by SMS',
+                      color: 'blue',
+                    },
+                  ]}
+                />
 
                 {recipientCounts.hasPhone === 0 && (
                   <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2.5 text-xs text-amber-800">
@@ -538,68 +441,85 @@ export function ComposePanel({
             </div>
           </div>
 
-          {/* Sticky/Bottom Actions */}
-          <div className="border-border bg-surface sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-end gap-2 border-t p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
-            <Button
-              variant="primary"
-              onClick={() => {
-                setWizardStep('COMPOSE');
-                setStartedMessage(false);
-              }}
-            >
+          <WizardActionBar className="justify-end">
+            <Button variant="primary" onClick={() => setWizardStep('TEMPLATE')}>
               Continue to Message
             </Button>
+          </WizardActionBar>
+        </div>
+      )}
+
+      {wizardStep === 'TEMPLATE' && (
+        <div className="flex flex-col gap-6">
+          <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
+            <div>
+              <h2 className="text-text text-lg font-semibold">
+                Step 2: Choose how to start your message
+              </h2>
+              <p className="text-text-muted text-sm">
+                Select a template below or start with a blank message.
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
+              ← Back to Audience
+            </Button>
           </div>
+
+          <AppCard title="Templates & Quick Starts">
+            <div className="flex flex-col gap-4">
+              <TemplateGrid
+                templates={templates.map(mapToMessageTemplate)}
+                selectedTemplateId={selectedTemplateId}
+                onSelect={(tpl) => {
+                  setSelectedTemplateId(tpl.id);
+                }}
+              />
+            </div>
+          </AppCard>
+
+          <WizardActionBar className="justify-between">
+            <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
+              ← Back to Audience
+            </Button>
+            <Button variant="primary" onClick={handleUseTemplate}>
+              {selectedTemplateId === 'blank' ? 'Start Blank Message' : 'Use Template & Continue'}
+            </Button>
+          </WizardActionBar>
         </div>
       )}
 
       {wizardStep === 'COMPOSE' && (
         <div className="flex flex-col gap-4">
-          {!startedMessage ? (
-            /* Sub-step A: Template Selection */
-            <div className="flex flex-col gap-6">
-              <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
-                <div>
-                  <h2 className="text-text text-lg font-semibold">
-                    Step 2: Choose how to start your message
-                  </h2>
-                  <p className="text-text-muted text-xs">
-                    Select a template below or start with a blank message.
-                  </p>
-                </div>
-                <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
-                  ← Back to Audience
-                </Button>
-              </div>
-
-              <AppCard title="Templates & Quick Starts">
-                <div className="flex flex-col gap-4">
-                  <TemplateGrid
-                    templates={templates.map(mapToMessageTemplate)}
-                    selectedTemplateId={selectedTemplateId}
-                    onSelect={(tpl) => {
-                      setSelectedTemplateId(tpl.id);
-                    }}
-                  />
-                </div>
+          <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
+            <Button variant="outline" onClick={() => setWizardStep('TEMPLATE')}>
+              ← Back to Template Selection
+            </Button>
+            <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
+              <Button variant="secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                {isSavingDraft ? 'Saving...' : 'Save Draft'}
+              </Button>
+              <Button variant="primary" onClick={() => setWizardStep('REVIEW')}>
+                Next: Review & Send →
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
+            <div className="flex flex-col gap-4">
+              <AppCard title="Composer">
+                <ComposeStep
+                  subject={subject}
+                  onSubjectChange={setSubject}
+                  messageType={messageType}
+                  onMessageTypeChange={setMessageType}
+                  content={content}
+                  onContentChange={setContent}
+                  editorRef={editorRef}
+                  warnings={warnings}
+                />
               </AppCard>
 
-              <div className="border-border bg-surface sticky inset-x-0 bottom-0 z-50 -mx-4 flex items-center justify-between border-t p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:static lg:mx-0 lg:w-full lg:bg-transparent lg:p-0 lg:shadow-none">
-                <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
-                  ← Back to Audience
-                </Button>
-                <Button variant="primary" onClick={handleContinue}>
-                  {selectedTemplateId === 'blank'
-                    ? 'Start Blank Message'
-                    : 'Use Template & Continue'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            /* Sub-step B: Composer */
-            <div className="flex flex-col gap-4">
-              <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
-                <Button variant="outline" onClick={() => setStartedMessage(false)}>
+              <WizardActionBar>
+                <Button variant="outline" onClick={() => setWizardStep('TEMPLATE')}>
                   ← Back to Template Selection
                 </Button>
                 <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
@@ -610,63 +530,25 @@ export function ComposePanel({
                     Next: Review & Send →
                   </Button>
                 </div>
-              </div>
-              <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
-                <div className="flex flex-col gap-4">
-                  <AppCard title="Composer">
-                    <ComposeStep
-                      subject={subject}
-                      onSubjectChange={setSubject}
-                      messageType={messageType}
-                      onMessageTypeChange={setMessageType}
-                      content={content}
-                      onContentChange={setContent}
-                      editorRef={editorRef}
-                      warnings={warnings}
-                    />
-                  </AppCard>
-
-                  <div className="border-border bg-surface sticky inset-x-0 bottom-0 z-50 -mx-4 flex w-full flex-col items-center justify-between gap-2 border-t p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] md:flex-row lg:static lg:mx-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:shadow-none">
-                    <Button variant="outline" onClick={() => setStartedMessage(false)}>
-                      ← Back to Template Selection
-                    </Button>
-                    <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
-                      <Button
-                        variant="secondary"
-                        onClick={handleSaveDraft}
-                        disabled={isSavingDraft}
-                      >
-                        {isSavingDraft ? 'Saving...' : 'Save Draft'}
-                      </Button>
-                      <Button variant="primary" onClick={() => setWizardStep('REVIEW')}>
-                        Next: Review & Send →
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                <PlaceholderPanel
-                  onInsert={onInsertPlaceholder}
-                  hasEvent={!!filters.eventId}
-                  hasApprovedSetList={(() => {
-                    return selectedEvent ? selectedEvent.setListApproved !== false : false;
-                  })()}
-                  hasCallTime={!!selectedEvent?.callTime?.trim()}
-                />
-                {renderSetlistWarning()}
-              </div>
+              </WizardActionBar>
             </div>
-          )}
+            <PlaceholderPanel
+              onInsert={onInsertPlaceholder}
+              hasEvent={!!filters.eventId}
+              hasApprovedSetList={(() => {
+                return selectedEvent ? selectedEvent.setListApproved !== false : false;
+              })()}
+              hasCallTime={!!selectedEvent?.callTime?.trim()}
+            />
+            {renderSetlistWarning()}
+          </div>
         </div>
       )}
 
       {wizardStep === 'REVIEW' && (
         <div className="flex flex-col gap-4">
           <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
-            <button
-              type="button"
-              className="border-border text-text hover:border-text-muted inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:-translate-x-0.5"
-              onClick={() => setWizardStep('COMPOSE')}
-            >
+            <Button variant="outline" onClick={() => setWizardStep('COMPOSE')}>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -674,34 +556,55 @@ export function ComposePanel({
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="mr-1 inline-flex size-4 transition-transform duration-200"
+                className="mr-1 inline-flex size-4"
               >
                 <polyline points="15 18 9 12 15 6" />
               </svg>
               Back
-            </button>
+            </Button>
             <div className="flex flex-row flex-wrap items-center gap-2">
-              <button
-                type="button"
-                className="border-border text-text hover:border-primary hover:text-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:rotate-12"
+              <Button
+                variant="secondary"
                 onClick={handleSendTest}
                 disabled={isSendingTest || isSending}
                 title={`Send email test to ${user?.email || 'your email'}`}
               >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-4"
+                >
+                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                </svg>
                 {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
-              </button>
-              <button
-                type="button"
-                className="border-primary bg-primary hover:border-primary-deep hover:bg-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={sendMessage}
                 disabled={isSending || selectedRecipients.length === 0}
               >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-4"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
                 {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
-              </button>
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            {/* Left Column: Unified Live Preview */}
             <div className="flex flex-col">
               <AppCard noPadding>
                 <div className="p-4">
@@ -719,383 +622,25 @@ export function ComposePanel({
               </AppCard>
             </div>
 
-            {/* Right Column: Sidebar Stack */}
-            <aside className="flex flex-col gap-5">
-              {/* Card 1: Recipient summary */}
-              <AppCard
-                title="Recipient Summary"
-                actions={
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="small"
-                    disabled={selectedRecipients.length === 0}
-                    onClick={() =>
-                      onViewRecipients(selectedRecipients, 'Recipients Selected for Send')
-                    }
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      className="mr-1 inline-flex size-4"
-                    >
-                      <line x1="8" y1="6" x2="21" y2="6" />
-                      <line x1="8" y1="12" x2="21" y2="12" />
-                      <line x1="8" y1="18" x2="21" y2="18" />
-                      <line x1="3" y1="6" x2="3.01" y2="6" />
-                      <line x1="3" y1="12" x2="3.01" y2="12" />
-                      <line x1="3" y1="18" x2="3.01" y2="18" />
-                    </svg>
-                    View List
-                  </Button>
-                }
-              >
-                <div className="mt-1 grid grid-cols-3 gap-3 max-md:grid-cols-1">
-                  <button
-                    type="button"
-                    className="border-primary/15 bg-primary-light text-primary-deep hover:border-primary [&_svg]:hover:text-primary-deep relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border p-4 text-center font-sans transition-all duration-250 hover:-translate-y-0.5 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={selectedRecipients.length === 0}
-                    onClick={() =>
-                      onViewRecipients(selectedRecipients, 'Recipient List (Total Audience)')
-                    }
-                  >
-                    <div className="text-text-muted flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
-                      {/* ponytail: make text readable size */}
-                      <svg
-                        className="text-text-muted size-4 transition-colors duration-250"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                      <span>Total Audience</span>
-                    </div>
-                    <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
-                      {recipientCounts.total}
-                    </strong>
-                    <span className="text-text-muted text-xs">matched singers</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border border-green-600/15 bg-green-50/50 p-4 text-center font-sans text-green-800 transition-all duration-250 hover:-translate-y-0.5 hover:border-green-600 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:hover:text-green-600"
-                    disabled={selectedRecipients.filter((r) => r.email?.trim()).length === 0}
-                    onClick={() =>
-                      onViewRecipients(
-                        selectedRecipients.filter((r) => r.email?.trim()),
-                        'Recipient List (Via Email)'
-                      )
-                    }
-                  >
-                    <div className="text-text-muted flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
-                      {/* ponytail: make text readable size */}
-                      <svg
-                        className="text-text-muted size-4 transition-colors duration-250"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                        <polyline points="22,6 12,13 2,6" />
-                      </svg>
-                      <span>Via Email</span>
-                    </div>
-                    <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
-                      {recipientCounts.hasEmail}
-                    </strong>
-                    <span className="text-text-muted text-xs">receive email</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="relative flex w-full cursor-pointer flex-col items-center gap-1.5 overflow-hidden rounded-lg border border-blue-600/15 bg-blue-50/50 p-4 text-center font-sans text-blue-800 transition-all duration-250 hover:-translate-y-0.5 hover:border-blue-600 hover:shadow-xs active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 [&_svg]:hover:text-blue-600"
-                    disabled={selectedRecipients.filter((r) => r.phone?.trim()).length === 0}
-                    onClick={() =>
-                      onViewRecipients(
-                        selectedRecipients.filter((r) => r.phone?.trim()),
-                        'Recipient List (Via SMS)'
-                      )
-                    }
-                  >
-                    <div className="text-text-muted flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
-                      {/* ponytail: make text readable size */}
-                      <svg
-                        className="text-text-muted size-4 transition-colors duration-250"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                        <line x1="12" y1="18" x2="12.01" y2="18" />
-                      </svg>
-                      <span>Via SMS</span>
-                    </div>
-                    <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
-                      {recipientCounts.hasPhone}
-                    </strong>
-                    <span className="text-text-muted text-xs">receive SMS text</span>
-                  </button>
-                </div>
-              </AppCard>
-
-              {/* Card 2: Pre-flight checklist */}
-              <AppCard title="Pre-Flight Checklist">
-                <div className="flex flex-col gap-2">
-                  {subject === '' && (messageType === 'Email' || messageType === 'Both') && (
-                    <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                      <span aria-hidden="true">⚠️</span>
-                      <span>
-                        <strong>Subject is empty.</strong> Add a subject line for better open rates.
-                      </span>
-                    </div>
-                  )}
-                  {content.length < 10 && (
-                    <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                      <span aria-hidden="true">⚠️</span>
-                      <span>
-                        <strong>Very short message body.</strong>
-                      </span>
-                    </div>
-                  )}
-                  {selectedRecipients.length === 0 && (
-                    <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                      <span aria-hidden="true">⚠️</span>
-                      <span>
-                        <strong>No recipients selected.</strong>
-                      </span>
-                    </div>
-                  )}
-
-                  {!filters.eventId &&
-                    (() => {
-                      const eventPlaceholders = [
-                        '{eventTitle}',
-                        '{eventType}',
-                        '{eventDate}',
-                        '{eventLocation}',
-                        '{eventDetails}',
-                        '{setlist}',
-                        '{{PLAYER_LINK}}',
-                        '{{RSVP_LINKS}}',
-                      ];
-
-                      const combinedText = (subject + ' ' + content).toLowerCase();
-                      const foundPlaceholders = eventPlaceholders.filter((p) =>
-                        combinedText.includes(p.toLowerCase())
-                      );
-
-                      if (foundPlaceholders.length > 0) {
-                        return (
-                          <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                            <span aria-hidden="true">⚠️</span>
-                            <span>
-                              <strong>No event selected</strong> but active event placeholders
-                              exist: <code>{foundPlaceholders.join(', ')}</code>.
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      return null;
-                    })()}
-
-                  {filters.eventId &&
-                    (() => {
-                      const hasApprovedSetList = selectedEvent
-                        ? selectedEvent.setListApproved !== false
-                        : false;
-                      const hasPlayerPlaceholder = content
-                        .toLowerCase()
-                        .includes('{{player_link}}');
-
-                      if (!hasApprovedSetList && hasPlayerPlaceholder) {
-                        return (
-                          <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                            <span aria-hidden="true">⚠️</span>
-                            <span>
-                              <strong>Practice player not approved.</strong> Set list is unapproved;{' '}
-                              <code>{'{{PLAYER_LINK}}'}</code> button will not render.
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      return null;
-                    })()}
-
-                  {renderSetlistWarning()}
-
-                  {selectedRecipients.some((r) => !r.email) &&
-                    (messageType === 'Email' || messageType === 'Both') && (
-                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-blue-100 border-l-blue-600 bg-blue-50 p-3 text-xs leading-normal text-blue-900 transition-transform duration-200 hover:translate-x-0.5">
-                        <svg
-                          className="mt-0.5 size-4 flex-shrink-0"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="16" x2="12" y2="12" />
-                          <line x1="12" y1="8" x2="12.01" y2="8" />
-                        </svg>
-                        <span>
-                          <strong>
-                            {selectedRecipients.filter((r) => !r.email).length} singers
-                          </strong>{' '}
-                          have no email configured and will skip this channel.
-                        </span>
-                      </div>
-                    )}
-
-                  {selectedRecipients.some((r) => !r.phone) &&
-                    (messageType === 'SMS' || messageType === 'Both') && (
-                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-blue-100 border-l-blue-600 bg-blue-50 p-3 text-xs leading-normal text-blue-900 transition-transform duration-200 hover:translate-x-0.5">
-                        <svg
-                          className="mt-0.5 size-4 flex-shrink-0"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="16" x2="12" y2="12" />
-                          <line x1="12" y1="8" x2="12.01" y2="8" />
-                        </svg>
-                        <span>
-                          <strong>
-                            {selectedRecipients.filter((r) => !r.phone).length} singers
-                          </strong>{' '}
-                          have no phone configured and will skip this channel.
-                        </span>
-                      </div>
-                    )}
-
-                  {commSettings.mailingAddress.includes('123 Choir St') &&
-                    (messageType === 'Email' || messageType === 'Both') && (
-                      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-                        <span aria-hidden="true">⚠️</span>
-                        <span>
-                          <strong>Default physical address active.</strong> Please{' '}
-                          <button
-                            type="button"
-                            className="text-primary hover:text-primary-deep cursor-pointer font-semibold underline"
-                            onClick={() => {
-                              setTab('settings');
-                              setEditingTemplate(null);
-                            }}
-                          >
-                            update this in settings
-                          </button>{' '}
-                          for CAN-SPAM legal compliance.
-                        </span>
-                      </div>
-                    )}
-
-                  <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-emerald-100 border-l-emerald-600 bg-emerald-50 p-3 text-xs leading-normal text-emerald-900 transition-transform duration-200 hover:translate-x-0.5">
-                    <svg
-                      className="mt-0.5 size-4 flex-shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                    <span>Compliance footer will be attached.</span>
-                  </div>
-                </div>
-              </AppCard>
-
-              {/* Card 3: Sending Actions */}
-              <AppCard title="Sending Actions">
-                <div className="flex w-full gap-3 max-md:flex-col-reverse">
-                  <button
-                    type="button"
-                    className="border-border text-text hover:border-text-muted inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:-translate-x-0.5"
-                    onClick={() => setWizardStep('COMPOSE')}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="size-4 transition-transform duration-200"
-                    >
-                      <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                    Back
-                  </button>
-
-                  <button
-                    type="button"
-                    className="border-border text-text hover:border-primary hover:text-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border bg-white px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-200 hover:bg-slate-50 active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:rotate-12"
-                    onClick={handleSendTest}
-                    disabled={isSendingTest || isSending}
-                    title={`Send email test to ${user?.email || 'your email'}`}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="size-4 transition-transform duration-200"
-                    >
-                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                    </svg>
-                    {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="border-primary bg-primary hover:border-primary-deep hover:bg-primary-deep inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-4.5 py-2.5 text-sm font-semibold whitespace-nowrap text-white shadow-[0_2px_4px_rgba(74,124,89,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_6px_rgba(74,124,89,0.25)] active:scale-97 disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none [&_svg]:hover:translate-x-0.5 [&_svg]:hover:-translate-y-0.5"
-                    onClick={sendMessage}
-                    disabled={isSending || selectedRecipients.length === 0}
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="size-4 transition-transform duration-200"
-                    >
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                    {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
-                  </button>
-                </div>
-              </AppCard>
-            </aside>
+            <ReviewSidebar
+              selectedRecipients={selectedRecipients}
+              recipientCounts={recipientCounts}
+              onViewRecipients={onViewRecipients}
+              subject={subject}
+              content={content}
+              messageType={messageType}
+              filters={filters}
+              selectedEvent={selectedEvent}
+              commSettings={commSettings}
+              setTab={setTab}
+              setEditingTemplate={setEditingTemplate}
+              isSendingTest={isSendingTest}
+              isSending={isSending}
+              handleSendTest={handleSendTest}
+              sendMessage={sendMessage}
+              setWizardStep={setWizardStep}
+              user={user}
+            />
           </div>
         </div>
       )}

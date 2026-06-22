@@ -241,6 +241,26 @@ After each extraction:
 3. **Type check:** `rtk npx tsc --noEmit` or verify via IDE that all props still match
 4. **Manual check:** Verify each extracted component renders identically (sidebar cards still clickable, voice part selection still works, warning banners still colored correctly)
 
-### Current test coverage
-
 Check `test/views/admin/communications/` — if no tests exist for ComposePanel, add basic render tests for each extracted sub-component during Phase 1.
+
+---
+
+## Phase 5 — Additional Architectural Improvements
+
+After reviewing the code, there are a few structural improvements we should make to simplify the logic:
+
+### 5a. Move `setlist` warning into standard `warnings` prop
+**Current:** `ComposePanel` has a custom `renderSetlistWarning()` function (lines 166-186) to warn about unapproved setlists.
+**Recommendation:** `ComposePanel` already receives a `warnings: ValidationWarning[]` prop. Move the setlist validation logic up to `useCommunicationDraft.ts` (or wherever `warnings` are computed) so it flows down generically to `<ComposeStep warnings={warnings} />`. This removes business logic from the UI component.
+
+### 5b. Eliminate `startedMessage` sub-step state
+**Current:** The `COMPOSE` step has a hidden internal sub-step tracked by `const [startedMessage, setStartedMessage] = useState(...)`. It uses an effect to sync with `subject || content`.
+**Recommendation:** Instead of hiding a sub-step inside step 2, update `WizardStep` to have four distinct steps: `TARGETS`, `TEMPLATE`, `COMPOSE`, `REVIEW`. This eliminates the need for synced local state, makes the navigation purely controlled by the parent `wizardStep` prop, and makes the UI stepper accurately reflect the user's journey.
+
+### 5c. Standardize the `ActionBar` (Sticky Footer)
+**Current:** There are at least 5 different top/bottom action bars with buttons (e.g., lines 212, 541, 587, 601, 629) with duplicated responsive padding and sticky positioning classes.
+**Recommendation:** Extract a simple `<WizardActionBar>` wrapper component that handles the responsive layout (`sticky inset-x-0 bottom-0 z-50 p-3 lg:static ...`) so you don't have to duplicate those complex Tailwind classes 5 times.
+
+### 5d. Resolve "Ponytail" readability comments
+**Current:** There are multiple `/* ponytail: make text readable size */` comments near `text-xs` classes on the stat cards.
+**Recommendation:** Bump the subtitle texts from `text-xs` to `text-sm` and increase the contrast slightly (e.g. `text-text-muted` -> `text-slate-600`) when extracting the `AudienceStatCards` component.

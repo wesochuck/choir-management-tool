@@ -5,7 +5,6 @@ import { AppCard } from '../../components/common/AppCard';
 import EasyMDE from 'easymde';
 import { useDialog } from '../../contexts/DialogContext';
 import { useEvents } from '../../hooks/useEvents';
-import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useAuth } from '../../contexts/AuthContext';
 import { CommunicationTabs } from '../../components/CommunicationTabs';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
@@ -33,7 +32,6 @@ import type { AutomatedTask, CommunicationRouteState, WizardStep } from './commu
 export default function CommunicationView() {
   const dialog = useDialog();
   const location = useLocation();
-  const { labels: voicePartLabels, sections: configSections } = useVoiceParts();
   const { events } = useEvents();
   const { user } = useAuth();
 
@@ -386,9 +384,6 @@ export default function CommunicationView() {
           {...preview}
           wizardStep={wizardStep}
           setWizardStep={setWizardStep}
-          events={events}
-          voicePartLabels={voicePartLabels}
-          configSections={configSections}
           commSettings={library.commSettings}
           templates={library.templates}
           setTab={setTab}

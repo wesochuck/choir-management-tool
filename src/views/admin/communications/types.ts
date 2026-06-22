@@ -1,7 +1,7 @@
 import type { Event } from '../../../services/eventService';
 import type { CommunicationRecipient } from '../../../services/communicationService';
 
-export type WizardStep = 'TARGETS' | 'COMPOSE' | 'REVIEW';
+export type WizardStep = 'TARGETS' | 'TEMPLATE' | 'COMPOSE' | 'REVIEW';
 
 export interface AutomatedTask {
   id: string;
