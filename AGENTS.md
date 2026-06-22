@@ -220,6 +220,8 @@ This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state.
 
 - **Shared query keys live in `src/lib/queryKeys.ts`.** Do not inline ad-hoc key arrays at call sites.
 
+- **Do not blindly sync query data to local state via `useEffect`.** If a query has a `staleTime` and triggers a background refetch, the `useEffect` will fire and overwrite any unsaved user input (draft wiping). If local state must be initialized from a query, use a `useRef` to gate initialization so it only happens once per mount or explicit transition (e.g. modal open), or use a form library's `defaultValues`.
+
 - **`useMutation`'s returned object is not referentially stable across renders.** Only the underlying observer methods (`mutate`, `mutateAsync`) are stable, but TanStack re-spreads its result object every render (see `node_modules/@tanstack/react-query/build/modern/useMutation.js:40`). Depending on `.mutateAsync` in a `useCallback` / `useEffect` dep array triggers `react-hooks/exhaustive-deps` warnings the lint rule cannot see through. Per the no-`eslint-disable` rule, **include the whole mutation object in deps**:
 
   ```ts
