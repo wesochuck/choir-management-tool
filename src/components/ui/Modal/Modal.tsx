@@ -74,9 +74,8 @@ export function Modal({
   }, [isOpen]);
 
   const handleRequestClose = async (e: Event) => {
+    e.preventDefault();
     if (isDirty) {
-      e.preventDefault();
-
       const confirmDiscard = dialog
         ? await dialog.confirm({
             title: 'Unsaved Changes',
