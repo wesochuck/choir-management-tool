@@ -404,7 +404,9 @@ export function ComposePanel({
                     <span className="text-text mt-1 text-3xl font-extrabold">
                       {recipientCounts.total}
                     </span>
-                    <span className="text-text-muted mt-1 text-[11px]">matched singers</span>
+                    <span className="text-text-muted mt-1 text-xs">
+                      {/* ponytail: make text readable size */}matched singers
+                    </span>
                   </div>
 
                   {/* Email Card */}
@@ -415,7 +417,9 @@ export function ComposePanel({
                     <span className="mt-1 text-3xl font-extrabold text-emerald-900">
                       {recipientCounts.hasEmail}
                     </span>
-                    <span className="mt-1 text-[11px] text-emerald-700">reachable by email</span>
+                    <span className="mt-1 text-xs text-emerald-700">
+                      {/* ponytail: make text readable size */}reachable by email
+                    </span>
                   </div>
 
                   {/* SMS Card */}
@@ -426,7 +430,9 @@ export function ComposePanel({
                     <span className="mt-1 text-3xl font-extrabold text-blue-900">
                       {recipientCounts.hasPhone}
                     </span>
-                    <span className="mt-1 text-[11px] text-blue-700">reachable by SMS</span>
+                    <span className="mt-1 text-xs text-blue-700">
+                      {/* ponytail: make text readable size */}reachable by SMS
+                    </span>
                   </div>
                 </div>
 
@@ -755,7 +761,8 @@ export function ComposePanel({
                       onViewRecipients(selectedRecipients, 'Recipient List (Total Audience)')
                     }
                   >
-                    <div className="text-text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                    <div className="text-text-muted flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                      {/* ponytail: make text readable size */}
                       <svg
                         className="text-text-muted size-4 transition-colors duration-250"
                         viewBox="0 0 24 24"
@@ -775,7 +782,7 @@ export function ComposePanel({
                     <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
                       {recipientCounts.total}
                     </strong>
-                    <span className="text-text-muted text-[10px]">matched singers</span>
+                    <span className="text-text-muted text-xs">matched singers</span>
                   </button>
 
                   <button
@@ -789,7 +796,8 @@ export function ComposePanel({
                       )
                     }
                   >
-                    <div className="text-text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                    <div className="text-text-muted flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                      {/* ponytail: make text readable size */}
                       <svg
                         className="text-text-muted size-4 transition-colors duration-250"
                         viewBox="0 0 24 24"
@@ -807,7 +815,7 @@ export function ComposePanel({
                     <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
                       {recipientCounts.hasEmail}
                     </strong>
-                    <span className="text-text-muted text-[10px]">receive email</span>
+                    <span className="text-text-muted text-xs">receive email</span>
                   </button>
 
                   <button
@@ -821,7 +829,8 @@ export function ComposePanel({
                       )
                     }
                   >
-                    <div className="text-text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                    <div className="text-text-muted flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase">
+                      {/* ponytail: make text readable size */}
                       <svg
                         className="text-text-muted size-4 transition-colors duration-250"
                         viewBox="0 0 24 24"
@@ -839,7 +848,7 @@ export function ComposePanel({
                     <strong className="text-text mt-1 mb-0.5 text-2xl leading-none font-bold">
                       {recipientCounts.hasPhone}
                     </strong>
-                    <span className="text-text-muted text-[10px]">receive SMS text</span>
+                    <span className="text-text-muted text-xs">receive SMS text</span>
                   </button>
                 </div>
               </AppCard>
