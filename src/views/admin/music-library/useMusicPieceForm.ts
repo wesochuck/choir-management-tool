@@ -235,8 +235,6 @@ export function useMusicPieceForm({
       setNotes: details.setNotes,
       purchaseDateInput: details.purchaseDateInput,
       setPurchaseDateInput: details.setPurchaseDateInput,
-      suggestedDuration: details.suggestedDuration,
-      setSuggestedDuration: details.setSuggestedDuration,
       uniqueComposers: details.uniqueComposers,
       uniqueArrangers: details.uniqueArrangers,
       parentPiece: details.parentPiece,

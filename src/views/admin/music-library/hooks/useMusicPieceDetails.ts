@@ -27,7 +27,6 @@ export function useMusicPieceDetails({
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [purchaseDateInput, setPurchaseDateInput] = useState('');
-  const [suggestedDuration, setSuggestedDuration] = useState<string | null>(null);
 
   const uniquePeople = useMemo(() => {
     const pool = new Set<string>();
@@ -70,7 +69,6 @@ export function useMusicPieceDetails({
       setSectionBuckets(piece.sectionBuckets || []);
       setSelectedGenres(piece.genres || []);
       setNotes(piece.notes || '');
-      setSuggestedDuration(null);
     } else {
       setTitle(initialTitle || '');
       setComposer('');
@@ -82,7 +80,6 @@ export function useMusicPieceDetails({
       setSectionBuckets([]);
       setSelectedGenres([]);
       setNotes('');
-      setSuggestedDuration(null);
     }
   }, [piece, initialTitle]);
 
@@ -199,7 +196,6 @@ export function useMusicPieceDetails({
     setSectionBuckets([]);
     setSelectedGenres([]);
     setNotes('');
-    setSuggestedDuration(null);
   };
 
   return {
@@ -223,8 +219,6 @@ export function useMusicPieceDetails({
     setNotes,
     purchaseDateInput,
     setPurchaseDateInput,
-    suggestedDuration,
-    setSuggestedDuration,
     uniqueComposers,
     uniqueArrangers,
     parentPiece,

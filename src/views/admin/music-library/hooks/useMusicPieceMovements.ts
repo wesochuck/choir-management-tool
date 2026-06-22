@@ -51,10 +51,12 @@ export function useMusicPieceMovements({
   const movements = useMemo(() => movementsQuery.data || [], [movementsQuery.data]);
 
   useEffect(() => {
-    if (movementsQuery.data) {
-      setIsMultiMovement(movementsQuery.data.length > 0);
+    if (piece) {
+      setIsMultiMovement(movementsQuery.data ? movementsQuery.data.length > 0 : false);
+    } else {
+      setIsMultiMovement(false);
     }
-  }, [movementsQuery.data]);
+  }, [piece, isOpen, movementsQuery.data]);
 
   useEffect(() => {
     if (piece) {
@@ -71,7 +73,6 @@ export function useMusicPieceMovements({
   }, [localMovementsList, piece]);
 
   useEffect(() => {
-    setIsMultiMovement(false);
     setIsMultiMovementInput(false);
     setLocalMovementsList([]);
     setTuttiFile(null);
