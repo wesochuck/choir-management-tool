@@ -24,6 +24,8 @@ import { profileService } from '../../services/profileService';
 import { rosterService } from '../../services/rosterService';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
+import { ReadOnlyAdminSeatingPanel } from '../../components/admin/ReadOnlyAdminSeatingPanel';
+import type { SeatingDisplayProfile } from '../../components/seating/types';
 
 const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
 
@@ -115,6 +117,7 @@ export default function SeatingView() {
 
   const [isSingerModalOpen, setIsSingerModalOpen] = useState(false);
   const [isSingerLookupOpen, setIsSingerLookupOpen] = useState(false);
+  const [forceMobileEditor, setForceMobileEditor] = useState(false);
 
   const [isNewChartModalOpen, setIsNewChartModalOpen] = useState(false);
   const [newChartName, setNewChartName] = useState('');
@@ -222,6 +225,14 @@ export default function SeatingView() {
       return sectionCode ? order.includes(sectionCode) : false;
     }).length;
   }, [activeProfiles, optimisticAssignments, currentFormation, voiceParts]);
+
+  const seatingDisplayProfilesById = useMemo(() => {
+    const map = new Map<string, SeatingDisplayProfile>();
+    activeProfiles.forEach((p) =>
+      map.set(p.id, { id: p.id, name: p.name, voicePart: p.voicePart })
+    );
+    return map;
+  }, [activeProfiles]);
 
   const handlePrint = () => {
     window.print();
@@ -661,7 +672,7 @@ export default function SeatingView() {
               ) : (
                 <div className="flex min-w-0 flex-col gap-6">
                   {printMode === 'visual' && (
-                    <div className="no-print border-border bg-primary-light text-primary-deep rounded-md border p-2 text-center text-sm shadow-sm">
+                    <div className="no-print border-border bg-primary-light text-primary-deep hidden rounded-md border p-2 text-center text-sm shadow-sm md:block">
                       <strong>Editor Mode:</strong>{' '}
                       {singersListPosition === 'bottom' ? (
                         <span>
@@ -687,41 +698,79 @@ export default function SeatingView() {
                     </div>
                   )}
                   {printMode === 'visual' && (
-                    <SeatingGrid
-                      rowCounts={rowCounts}
-                      assignments={optimisticAssignments}
-                      suggestions={suggestions}
-                      activeProfiles={activeProfiles}
-                      sections={sections}
-                      voiceParts={voiceParts}
-                      onAssign={assignSinger}
-                      onUpdateRowCounts={async (newRowCounts, newAssignments) => {
-                        const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
-                        if (newAssignments) {
-                          updates.assignments = newAssignments;
-                        }
-                        await updateChart(updates);
-                      }}
-                      isVoicePartLayout={currentFormation?.isVoicePartLayout}
-                      sectionOrder={currentFormation?.sectionOrder}
-                    />
+                    <div className="block md:hidden">
+                      {selectedVenue?.isOpenSeating || forceMobileEditor ? (
+                        <SeatingGrid
+                          rowCounts={rowCounts}
+                          assignments={optimisticAssignments}
+                          suggestions={suggestions}
+                          activeProfiles={activeProfiles}
+                          sections={sections}
+                          voiceParts={voiceParts}
+                          onAssign={assignSinger}
+                          onUpdateRowCounts={async (newRowCounts, newAssignments) => {
+                            const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
+                            if (newAssignments) {
+                              updates.assignments = newAssignments;
+                            }
+                            await updateChart(updates);
+                          }}
+                          isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                          sectionOrder={currentFormation?.sectionOrder}
+                        />
+                      ) : (
+                        <ReadOnlyAdminSeatingPanel
+                          rowCounts={rowCounts}
+                          assignments={optimisticAssignments}
+                          profilesById={seatingDisplayProfilesById}
+                          sections={sections}
+                          voiceParts={voiceParts}
+                          chartName={activeChart?.name}
+                          onEditAnyway={() => setForceMobileEditor(true)}
+                        />
+                      )}
+                    </div>
+                  )}
+                  {printMode === 'visual' && (
+                    <div className="hidden md:block">
+                      <SeatingGrid
+                        rowCounts={rowCounts}
+                        assignments={optimisticAssignments}
+                        suggestions={suggestions}
+                        activeProfiles={activeProfiles}
+                        sections={sections}
+                        voiceParts={voiceParts}
+                        onAssign={assignSinger}
+                        onUpdateRowCounts={async (newRowCounts, newAssignments) => {
+                          const updates: Partial<SeatingChart> = { layoutOverride: newRowCounts };
+                          if (newAssignments) {
+                            updates.assignments = newAssignments;
+                          }
+                          await updateChart(updates);
+                        }}
+                        isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                        sectionOrder={currentFormation?.sectionOrder}
+                      />
+                    </div>
                   )}
 
                   {!selectedVenue?.isOpenSeating &&
                     singersListPosition === 'bottom' &&
                     printMode === 'visual' && (
-                      <SeatingBottomDock
-                        activeProfiles={activeProfiles}
-                        assignments={optimisticAssignments}
-                        sections={sections}
-                        voiceParts={voiceParts}
-                        assignSinger={assignSinger}
-                        onAddSinger={() => setIsSingerModalOpen(true)}
-                        onLookupSinger={() => setIsSingerLookupOpen(true)}
-                        onRemoveRsvp={handleRemoveRsvp}
-                        isVoicePartLayout={currentFormation?.isVoicePartLayout}
-                        sectionOrder={currentFormation?.sectionOrder}
-                      />
+                      <div className="hidden md:block">
+                        <SeatingBottomDock
+                          activeProfiles={activeProfiles}
+                          assignments={optimisticAssignments}
+                          sections={sections}
+                          voiceParts={voiceParts}
+                          assignSinger={assignSinger}
+                          onAddSinger={() => setIsSingerModalOpen(true)}
+                          onLookupSinger={() => setIsSingerLookupOpen(true)}
+                          onRemoveRsvp={handleRemoveRsvp}
+                          isVoicePartLayout={currentFormation?.isVoicePartLayout}
+                          sectionOrder={currentFormation?.sectionOrder}
+                        />
+                      </div>
                     )}
 
                   {printMode === 'text' && unassignedCount > 0 && (
