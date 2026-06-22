@@ -352,7 +352,7 @@ export default function TicketScanView() {
               <Spinner size="small" />
               Loading events...
             </div>
-          ) : eventsError ? (
+          ) : eventsErrorMsg ? (
             <p className="text-danger-text text-sm">{eventsErrorMsg}</p>
           ) : (
             <Select id="event-select" value={selectedEventId} onChange={handleEventChange}>
@@ -375,7 +375,7 @@ export default function TicketScanView() {
       {!selectedEventId && (
         <div className="flex flex-1 items-center justify-center p-8 text-center">
           {!eventsLoading &&
-          !eventsError &&
+          !eventsErrorMsg &&
           events.filter((e) => e.type === 'Performance').length === 0 ? (
             <p className="text-danger-text text-sm font-semibold">No upcoming concerts to scan.</p>
           ) : (
@@ -394,7 +394,7 @@ export default function TicketScanView() {
                   <Button
                     variant="secondary"
                     onClick={startCamera}
-                    disabled={eventsLoading || !!eventsError}
+                    disabled={eventsLoading || !!eventsErrorMsg}
                     className="min-h-12 w-full md:w-auto"
                   >
                     Start Camera
