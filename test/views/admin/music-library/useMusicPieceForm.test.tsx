@@ -5,7 +5,10 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, act } from '@testing-library/react';
 
-import { useMusicPieceForm } from '../../../../src/views/admin/music-library/useMusicPieceForm';
+import {
+  useMusicPieceForm,
+  type UseMusicPieceFormParams,
+} from '../../../../src/views/admin/music-library/useMusicPieceForm';
 import { DialogContext } from '../../../../src/contexts/DialogContext';
 import { ChoirNameProvider } from '../../../../src/hooks/useDocumentTitle';
 import { venueService } from '../../../../src/services/venueService';
@@ -180,7 +183,7 @@ describe('useMusicPieceForm hook', () => {
     mock.method(eventService, 'getEvents', async () => []);
 
     const onClose = mock.fn();
-    const onSave = mock.fn(async () => {});
+    const onSave = mock.fn(async (_data: Parameters<UseMusicPieceFormParams['onSave']>[0]) => {});
 
     const { result } = renderHook(
       () =>
@@ -206,7 +209,10 @@ describe('useMusicPieceForm hook', () => {
     });
 
     assert.strictEqual(onSave.mock.callCount(), 1);
-    const savedData = onSave.mock.calls[0].arguments[0];
+    const call = onSave.mock.calls[0];
+    assert.ok(call);
+    const savedData = call.arguments[0];
+    assert.ok(savedData);
     assert.strictEqual(savedData.title, 'Hallelujah Chorus');
     assert.strictEqual(savedData.composer, 'Handel');
     assert.strictEqual(savedData.duration, '4:15');
