@@ -25,8 +25,8 @@ export type UtilityBundleName =
   | 'attendanceFinalizer'
   | 'playerEndpoints'
   | 'stripeService'
+  | 'pocketbaseDate'
   | 'checkoutEndpoints'
-  | 'qrHelper'
   | 'ticketScanValidation';
 
 export type UtilityBundle = {
@@ -157,7 +157,18 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     symbols: ['createCheckoutSession', 'retrieveCheckoutSession', 'refundPaymentIntent'],
   },
   checkoutEndpoints: {
-    files: ['checkoutEndpoints.ts'],
+    files: [
+      'checkout/checkoutHelpers.ts',
+      'checkout/emailHelpers.ts',
+      'checkout/createTicketsSession.ts',
+      'checkout/createBundleSession.ts',
+      'checkout/createDonationSession.ts',
+      'checkout/stripeWebhook.ts',
+      'checkout/adminRefundTicket.ts',
+      'checkout/adminRefundBundle.ts',
+      'checkout/adminRefundDonation.ts',
+      'checkout/adminResendConfirmation.ts',
+    ],
     symbols: [
       'handleCreateTicketsSession',
       'handleStripeWebhook',

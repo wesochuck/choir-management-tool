@@ -14097,11 +14097,8 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -14176,6 +14173,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -14296,7 +14296,10 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -14441,6 +14444,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -14590,6 +14596,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -14663,6 +14672,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -14994,6 +15006,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -15026,6 +15041,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -15062,6 +15080,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -15094,6 +15115,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -15849,11 +15873,8 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -15928,6 +15949,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -16048,7 +16072,10 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -16193,6 +16220,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -16342,6 +16372,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -16415,6 +16448,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -16746,6 +16782,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -16778,6 +16817,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -16814,6 +16856,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -16846,6 +16891,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -17601,11 +17649,8 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -17680,6 +17725,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -17800,7 +17848,10 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -17945,6 +17996,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -18094,6 +18148,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -18167,6 +18224,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -18498,6 +18558,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -18530,6 +18593,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -18566,6 +18632,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -18598,6 +18667,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -19353,11 +19425,8 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -19432,6 +19501,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -19552,7 +19624,10 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -19697,6 +19772,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -19846,6 +19924,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -19919,6 +20000,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -20250,6 +20334,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -20282,6 +20369,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -20318,6 +20408,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -20350,6 +20443,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -21105,11 +21201,8 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -21184,6 +21277,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -21304,7 +21400,10 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -21449,6 +21548,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -21598,6 +21700,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -21671,6 +21776,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -22002,6 +22110,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -22034,6 +22145,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -22070,6 +22184,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -22102,6 +22219,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -22857,11 +22977,8 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -22936,6 +23053,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -23056,7 +23176,10 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -23201,6 +23324,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -23350,6 +23476,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -23423,6 +23552,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -23754,6 +23886,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -23786,6 +23921,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -23822,6 +23960,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -23854,6 +23995,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -24609,11 +24753,8 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -24688,6 +24829,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -24808,7 +24952,10 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -24953,6 +25100,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -25102,6 +25252,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -25175,6 +25328,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -25506,6 +25662,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -25538,6 +25697,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -25574,6 +25736,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -25606,6 +25771,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -26360,11 +26528,8 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
-    // --- Utility source: checkoutEndpoints.ts ---
+    // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
-    /**
-     * Finds or creates a Patron profile for a given email and name.
-     */
     function getOrCreatePatronProfile(email, name) {
         try {
             // Try finding by user email first
@@ -26439,6 +26604,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
         return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
     }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
     function enqueueTicketConfirmationEmail(options) {
         var _a, _b;
         const timezone = getTimezoneSetting();
@@ -26559,7 +26727,10 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         });
         $app.save(mailRecord);
     }
-    async function handleCreateTicketsSession(e) {
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
         var _a;
         const body = e.requestInfo().body;
         const eventId = body.eventId;
@@ -26704,6 +26875,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
     function handleCreateBundleSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -26853,6 +27027,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
     function handleCreateDonationSession(e) {
         var _a;
         const body = e.requestInfo().body;
@@ -26926,6 +27103,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
         }
     }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
     async function handleStripeWebhook(e) {
         var _a, _b;
         let rawBody;
@@ -27257,6 +27437,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         }
         return e.json(200, { success: true });
     }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
     function handleAdminRefundTicket(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -27289,6 +27472,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
     function handleAdminRefundBundle(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -27325,6 +27511,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
     function handleAdminRefundDonation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
@@ -27357,6 +27546,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
         }
     }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
     function handleAdminResendTicketConfirmation(e) {
         const authRecord = e.auth;
         if (!authRecord || authRecord.get('role') !== 'admin') {
