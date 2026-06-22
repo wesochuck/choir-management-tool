@@ -523,34 +523,70 @@ test('codebase integrity: useAttendance uses polling instead of realtime subscri
   );
 });
 
-test('codebase integrity: TicketingView uses purchase polling instead of realtime subscriptions', () => {
+test('codebase integrity: TicketingView and tabs use purchase polling instead of realtime subscriptions', () => {
   const viewFile = resolveProjectPath('src/views/admin/TicketingView.tsx');
-  const content = fs.readFileSync(viewFile, 'utf8');
+  const willCallFile = resolveProjectPath('src/views/admin/ticketing/TicketingWillCallTab.tsx');
+  const ordersFile = resolveProjectPath('src/views/admin/ticketing/TicketingOrdersTab.tsx');
+  const bundlesFile = resolveProjectPath('src/views/admin/ticketing/TicketingBundlesTab.tsx');
+  const bundleModalFile = resolveProjectPath('src/views/admin/ticketing/BundleFormModal.tsx');
+  const queriesFile = resolveProjectPath('src/views/admin/ticketing/ticketingQueries.ts');
+
+  const viewContent = fs.readFileSync(viewFile, 'utf8');
+  const willCallContent = fs.readFileSync(willCallFile, 'utf8');
+  const ordersContent = fs.readFileSync(ordersFile, 'utf8');
+  const bundlesContent = fs.readFileSync(bundlesFile, 'utf8');
+  const bundleModalContent = fs.readFileSync(bundleModalFile, 'utf8');
+  const queriesContent = fs.readFileSync(queriesFile, 'utf8');
 
   assert.equal(
-    content.includes('useTicketPurchasesRealtime'),
+    viewContent.includes('useTicketPurchasesRealtime') ||
+      willCallContent.includes('useTicketPurchasesRealtime') ||
+      ordersContent.includes('useTicketPurchasesRealtime') ||
+      bundlesContent.includes('useTicketPurchasesRealtime') ||
+      bundleModalContent.includes('useTicketPurchasesRealtime') ||
+      queriesContent.includes('useTicketPurchasesRealtime'),
     false,
-    'TicketingView must not mount PocketBase realtime; will call updates should arrive through polling'
-  );
-
-  const intervalMatches = content.match(/refetchInterval: TICKETING_REFRESH_INTERVAL_MS/g) ?? [];
-  assert.equal(
-    intervalMatches.length,
-    2,
-    'TicketingView should poll the selected event purchases and all purchases, but not metadata queries'
+    'TicketingView/tabs/modals must not mount PocketBase realtime; will call/bundle updates should arrive through polling'
   );
 
   assert.ok(
-    content.includes('queryKey: queryKeys.ticketing.purchasesByEvent(selectedEventId)'),
-    'TicketingView selected-event purchases query must have its own cache key'
+    willCallContent.includes('refetchInterval: TICKETING_REFRESH_INTERVAL_MS'),
+    'TicketingWillCallTab should poll selected event purchases'
   );
   assert.ok(
-    content.includes('queryKey: queryKeys.ticketing.allPurchases()'),
-    'TicketingView all-purchases query must have its own cache key'
+    ordersContent.includes('refetchInterval: TICKETING_REFRESH_INTERVAL_MS'),
+    'TicketingOrdersTab should poll all purchases'
   );
   assert.ok(
-    content.includes('queryKey: queryKeys.ticketing.events()'),
-    'TicketingView metadata queries should remain separate from fast purchase polling'
+    bundlesContent.includes('refetchInterval: TICKETING_REFRESH_INTERVAL_MS'),
+    'TicketingBundlesTab should poll all purchases'
+  );
+  assert.ok(
+    bundleModalContent.includes(
+      'refetchInterval: isOpen ? TICKETING_REFRESH_INTERVAL_MS : undefined'
+    ),
+    'BundleFormModal should poll all purchases while open'
+  );
+
+  assert.ok(
+    willCallContent.includes('queryKey: queryKeys.ticketing.purchasesByEvent(selectedEventId)'),
+    'TicketingWillCallTab selected-event purchases query must have its own cache key'
+  );
+  assert.ok(
+    ordersContent.includes('queryKey: queryKeys.ticketing.allPurchases()'),
+    'TicketingOrdersTab all-purchases query must have its own cache key'
+  );
+  assert.ok(
+    bundlesContent.includes('queryKey: queryKeys.ticketing.allPurchases()'),
+    'TicketingBundlesTab all-purchases query must have its own cache key'
+  );
+  assert.ok(
+    bundleModalContent.includes('queryKey: queryKeys.ticketing.allPurchases()'),
+    'BundleFormModal all-purchases query must have its own cache key'
+  );
+  assert.ok(
+    queriesContent.includes('queryKey: queryKeys.ticketing.events()'),
+    'ticketingQueries metadata queries should remain separate from fast purchase polling'
   );
 });
 

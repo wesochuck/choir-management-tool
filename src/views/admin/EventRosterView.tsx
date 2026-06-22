@@ -343,7 +343,6 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
               <Select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
-                size="small"
                 className="w-full"
                 aria-label="Sort singers"
               >
@@ -359,8 +358,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                     setRsvpFilter('All');
                   }}
                   variant="outline"
-                  size="small"
-                  className="h-10 shrink-0 px-3 whitespace-nowrap"
+                  className="shrink-0 px-3 whitespace-nowrap"
                 >
                   Reset Filters
                 </Button>
