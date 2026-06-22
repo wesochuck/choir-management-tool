@@ -1,50 +1,34 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useEvents } from '../../hooks/useEvents';
-import { eventService, type SetListItem } from '../../services/eventService';
-import {
-  musicLibraryService,
-  type MusicPiece,
-  type MusicPieceInput,
-} from '../../services/musicLibraryService';
-import { settingsService, type MusicGenreDef } from '../../services/settingsService';
-import { AppCard } from '../../components/common/AppCard';
-import { SortableSetListItem } from '../../components/admin/SortableSetListItem';
-import { SetListInlineCreator } from '../../components/admin/SetListInlineCreator';
-import { SetListItemEditModal } from '../../components/admin/SetListItemEditModal';
-import { PlayerLinkModal } from '../../components/admin/PlayerLinkModal';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useEventPlayerLink } from './events/useEventPlayerLink';
-import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
-import { MusicPieceModal } from './music-library/MusicPieceModal';
-import { musicLibraryWorkflows } from '../../services/musicLibraryWorkflows';
 import { useDialog } from '../../contexts/DialogContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSetListData } from './setlists/useSetListData';
+import { useSetListLibrary } from './setlists/useSetListLibrary';
+import { useSetListAudioPlayer } from './setlists/useSetListAudioPlayer';
+import { SetListToolbar } from './setlists/SetListToolbar';
+import { SetListDurationBar } from './setlists/SetListDurationBar';
+import { SetListPrintContent } from './setlists/SetListPrintContent';
+import { SetListPrintModal } from './setlists/SetListPrintModal';
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { AppCard } from '../../components/common/AppCard';
+import { SetListInlineCreator } from '../../components/admin/SetListInlineCreator';
+import { SortableSetListItem } from '../../components/admin/SortableSetListItem';
+import { SetListItemEditModal } from '../../components/admin/SetListItemEditModal';
+import { MusicPieceModal } from './music-library/MusicPieceModal';
+import { MusicImportModal } from '../../components/admin/MusicImportModal';
+import { FloatingAudioPlayer } from './music-library/FloatingAudioPlayer';
+import { PlayerLinkModal } from '../../components/admin/PlayerLinkModal';
+import { Button, Spinner } from '../../components/ui';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
+  SortableContext,
+  verticalListSortingStrategy,
 } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { resolveInitialEventId } from '../../lib/eventUtils';
-import {
-  resolveSetListDisplayRows,
-  calculateSetListDurationTotals,
-  getDefaultPlayableTrackKey,
-  createSetListItemFromMusicPiece,
-  buildSetListPlainText,
-} from '../../lib/setList/setListItems';
-import { pb } from '../../lib/pocketbase';
-import { MusicImportModal } from '../../components/admin/MusicImportModal';
-import { Modal } from '../../components/ui';
-import { useChoirSettings } from '../../hooks/useDocumentTitle';
-import { formatInTimezone } from '../../lib/timezone';
-import { Button, Select, Spinner, Divider } from '../../components/ui';
-import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../../lib/queryKeys';
+import type { SetListItem } from '../../services/eventService';
 
 export default function SetListView() {
   const { timezone } = useChoirSettings();
@@ -53,143 +37,33 @@ export default function SetListView() {
   const dialog = useDialog();
   const queryClient = useQueryClient();
 
-  const setListMutation = useMutation({
-    mutationFn: ({ eventId, items }: { eventId: string; items: SetListItem[] }) =>
-      eventService.updateEvent(eventId, { setList: items }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
+  const setList = useSetListData(events, searchParams, timezone, dialog);
+  const library = useSetListLibrary({
+    dialog,
+    queryClient,
+    items: setList.items,
+    updateItems: setList.updateItems,
+    library: setList.library,
   });
+  const audio = useSetListAudioPlayer();
+  const playerLink = useEventPlayerLink(dialog);
 
-  const eventUpdateMutation = useMutation({
-    mutationFn: ({ eventId, data }: { eventId: string; data: Record<string, unknown> }) =>
-      eventService.updateEvent(eventId, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
-  });
-
-  const hasDefaultedRef = useRef(false);
-
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [localGapSeconds, setLocalGapSeconds] = useState<number>(0);
-  const [localApproved, setLocalApproved] = useState<boolean>(true);
-
-  const selectedEvent = useMemo(() => {
-    return events.find((e) => e.id === selectedEventId);
-  }, [events, selectedEventId]);
-
-  const parentPerformance = useMemo(() => {
-    if (!selectedEvent || selectedEvent.type !== 'Rehearsal') return null;
-    const parentId = selectedEvent.parentPerformanceId;
-    return events.find((e) => e.id === parentId) || selectedEvent.expand?.parentPerformanceId;
-  }, [selectedEvent, events]);
-
-  const [items, setItems] = useState<SetListItem[]>([]);
-  const { data: library = [], isLoading } = useQuery({
-    queryKey: queryKeys.musicLibrary.list(),
-    queryFn: () => musicLibraryService.getLibrary(),
-  });
-
-  // Cumulative duration totals incorporating resolved library pieces
-  const durationTotals = useMemo(() => {
-    return calculateSetListDurationTotals(items, library, localGapSeconds);
-  }, [items, library, localGapSeconds]);
-
-  // Resolves linked music library piece info and computes running timestamps
-  const itemsWithDetails = useMemo(() => {
-    return resolveSetListDisplayRows(items, library);
-  }, [items, library]);
-
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-
-  // Library Piece Modal state
-  const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
-  const [libraryEditingPiece, setLibraryEditingPiece] = useState<MusicPiece | null>(null);
-  const [configuredGenres, setConfiguredGenres] = useState<MusicGenreDef[]>([]);
-  const [catalogLookupTemplate, setCatalogLookupTemplate] = useState('');
-  const [pendingSetListAdd, setPendingSetListAdd] = useState(false);
-  const [prefilledTitleForSetList, setPrefilledTitleForSetList] = useState<string | null>(null);
-
-  // Custom Item Modal state
+  // Custom item edit modal
   const [isItemEditModalOpen, setIsItemEditModalOpen] = useState(false);
   const [itemEditing, setItemEditing] = useState<SetListItem | null>(null);
 
-  // Print Modal state
+  // Print modal state
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const plainText = useMemo(() => {
-    if (!selectedEvent) return '';
-    return buildSetListPlainText(
-      selectedEvent.title || selectedEvent.type,
-      selectedEvent.date,
-      timezone,
-      selectedEvent.expand?.venue?.name || '',
-      itemsWithDetails
-    );
-  }, [selectedEvent, timezone, itemsWithDetails]);
-
-  const handlePrintList = () => {
-    window.print();
-  };
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(plainText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      dialog.showToast('Set list copied to clipboard.');
-    } catch (err) {
-      console.error('Failed to copy set list:', err);
-    }
-  }, [plainText, dialog]);
-
-  // Audio player state
-  const [activeAudioUrl, setActiveAudioUrl] = useState<string | null>(null);
-  const [activeAudioTitle, setActiveAudioTitle] = useState('');
-  const [activeAudioPart, setActiveAudioPart] = useState('');
-
-  const handlePlayRowTrack = (piece: MusicPiece) => {
-    const key = getDefaultPlayableTrackKey(piece);
-    if (!key) return;
-
-    const filename = piece.audioTrackMapping?.[key];
-    if (!filename) return;
-
-    setActiveAudioUrl(pb.files.getURL(piece, filename));
-    setActiveAudioTitle(piece.title);
-    setActiveAudioPart(key === 'tutti' ? 'Tutti' : key);
-  };
-
-  const {
-    handleOpenPlayer,
-    isOpen: isPlayerLinkOpen,
-    url: playerLinkUrl,
-    eventTitle: playerLinkEventTitle,
-    setIsOpen: setPlayerLinkOpen,
-  } = useEventPlayerLink(dialog);
-
-  const handleOpenPieceEditor = (pieceId: string) => {
-    const selectedPiece = library.find((p) => p.id === pieceId);
-    if (!selectedPiece) return;
-
-    // Resolve to top-level parent work if clicked item is a child movement
-    if (selectedPiece.parentId) {
-      const parentPiece = library.find((p) => p.id === selectedPiece.parentId);
-      if (parentPiece) {
-        setLibraryEditingPiece(parentPiece);
-        setIsLibraryModalOpen(true);
-        return;
-      }
-    }
-
-    // Fallback for standalone standard pieces
-    setLibraryEditingPiece(selectedPiece);
-    setIsLibraryModalOpen(true);
-  };
+  // Import modal (legacy — no longer actively used)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleEdit = (item: SetListItem) => {
-    const displayRow = itemsWithDetails.find((i) => i.id === item.id);
+    const displayRow = setList.itemsWithDetails.find((i) => i.id === item.id);
     const pieceId = item.pieceId || displayRow?.resolvedPiece?.id;
     if (pieceId) {
-      handleOpenPieceEditor(pieceId);
+      library.handleOpenPieceEditor(pieceId);
     } else {
       setItemEditing(item);
       setIsItemEditModalOpen(true);
@@ -197,239 +71,26 @@ export default function SetListView() {
   };
 
   const handleSaveItem = async (updatedItem: SetListItem) => {
-    await updateItems(items.map((i) => (i.id === updatedItem.id ? updatedItem : i)));
+    await setList.updateItems(
+      setList.items.map((i) => (i.id === updatedItem.id ? updatedItem : i))
+    );
+    setIsItemEditModalOpen(false);
   };
 
-  const handleCreateNewPieceFromSetList = (title: string) => {
-    setLibraryEditingPiece(null);
-    setPrefilledTitleForSetList(title);
-    setPendingSetListAdd(true);
-    setIsLibraryModalOpen(true);
+  const handlePrintList = () => {
+    window.print();
   };
 
-  const handleSaveLibraryPiece = async (
-    data: Partial<MusicPieceInput> & {
-      tuttiFile?: File | null;
-      movements?: { title: string; duration?: string }[];
-    }
-  ) => {
+  const handleCopy = useCallback(async () => {
     try {
-      let savedPiece: MusicPiece;
-      if (libraryEditingPiece) {
-        const updateData = { ...data };
-        delete updateData.movements;
-        savedPiece = await musicLibraryService.updatePiece(libraryEditingPiece.id, updateData);
-      } else {
-        const { tuttiFile, movements, ...rest } = data;
-        const pieceData = { ...rest };
-
-        if (tuttiFile || (movements && movements.length > 0)) {
-          savedPiece = await musicLibraryWorkflows.createPieceWithMovementsAndTutti(pieceData, {
-            tuttiFile,
-            movements,
-          });
-        } else {
-          savedPiece = await musicLibraryService.createPiece(pieceData);
-        }
-      }
-
-      setIsLibraryModalOpen(false);
-      // Refresh library to reflect changes
-      const updatedLib = await musicLibraryService.getLibrary();
-      queryClient.setQueryData(queryKeys.musicLibrary.list(), updatedLib);
-
-      if (pendingSetListAdd) {
-        const newItem = createSetListItemFromMusicPiece(savedPiece);
-        await updateItems([...items, newItem]);
-      }
-      setPendingSetListAdd(false);
-      setPrefilledTitleForSetList(null);
+      await navigator.clipboard.writeText(setList.plainText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      dialog.showToast('Set list copied to clipboard.');
     } catch (err) {
-      console.error(err);
-      dialog.showMessage({
-        title: 'Error',
-        message: 'Could not save the library piece.',
-        variant: 'danger',
-      });
+      console.error('Failed to copy set list:', err);
     }
-  };
-
-  const handleDeleteLibraryPiece = async () => {
-    if (!libraryEditingPiece) return;
-    try {
-      await musicLibraryService.deletePiece(libraryEditingPiece.id);
-      setIsLibraryModalOpen(false);
-      const updatedLib = await musicLibraryService.getLibrary();
-      queryClient.setQueryData(queryKeys.musicLibrary.list(), updatedLib);
-    } catch (err) {
-      console.error(err);
-      dialog.showMessage({
-        title: 'Error',
-        message: 'Failed to delete the music piece.',
-        variant: 'danger',
-      });
-    }
-  };
-
-  useEffect(() => {
-    selectedEventIdRef.current = selectedEventId;
-  }, [selectedEventId]);
-
-  useEffect(() => {
-    return () => {
-      if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (events.length > 0 && !selectedEventId && !hasDefaultedRef.current) {
-      hasDefaultedRef.current = true;
-      const urlEventId = searchParams.get('eventId');
-      const resolved = resolveInitialEventId(events, urlEventId, {
-        futureOnly: true,
-        type: 'Performance',
-      });
-
-      if (resolved) {
-        setSelectedEventId(resolved);
-      }
-    }
-  }, [events, selectedEventId, searchParams]);
-
-  const { data: musicLibrarySettings } = useQuery({
-    queryKey: queryKeys.appSettings.musicLibrary,
-    queryFn: () => settingsService.getMusicLibrarySettings(),
-  });
-
-  useEffect(() => {
-    if (musicLibrarySettings) {
-      setCatalogLookupTemplate(musicLibrarySettings.catalogLookupUrlTemplate || '');
-      setConfiguredGenres(musicLibrarySettings.genres || []);
-    }
-  }, [musicLibrarySettings]);
-
-  // Load event items when selectedEventId or events change
-  useEffect(() => {
-    if (selectedEventId) {
-      const ev = events.find((e) => e.id === selectedEventId);
-      setItems(ev?.setList || []);
-      setLocalGapSeconds(ev?.announcementGapSeconds ?? 0);
-      setLocalApproved(ev?.setListApproved !== false);
-    } else {
-      setItems([]);
-      setLocalGapSeconds(0);
-      setLocalApproved(true);
-    }
-  }, [selectedEventId, events]);
-
-  const handleToggleApproved = async (checked: boolean) => {
-    if (!selectedEventId) return;
-    setLocalApproved(checked);
-    try {
-      await eventUpdateMutation.mutateAsync({
-        eventId: selectedEventId,
-        data: { setListApproved: checked },
-      });
-    } catch (error) {
-      console.error('Failed to update set list approval status:', error);
-      const ev = events.find((e) => e.id === selectedEventId);
-      setLocalApproved(ev?.setListApproved !== false);
-    }
-  };
-
-  const gapSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const selectedEventIdRef = useRef(selectedEventId);
-
-  const handleAnnouncementGapChange = useCallback(
-    (seconds: number) => {
-      setLocalGapSeconds(seconds);
-      if (gapSaveTimerRef.current) clearTimeout(gapSaveTimerRef.current);
-      // eslint-disable-next-line react-hooks/immutability
-      gapSaveTimerRef.current = setTimeout(async () => {
-        const eventId = selectedEventIdRef.current;
-        if (!eventId) return;
-        try {
-          await eventUpdateMutation.mutateAsync({
-            eventId,
-            data: { announcementGapSeconds: seconds },
-          });
-        } catch (error) {
-          console.error('Failed to save announcement gap:', error);
-        }
-      }, 500);
-    },
-    [eventUpdateMutation]
-  );
-
-  const updateItems = async (newItems: SetListItem[]): Promise<boolean> => {
-    const previousItems = items;
-    setItems(newItems);
-    const success = await saveSetList(newItems);
-    if (!success) {
-      setItems(previousItems);
-    }
-    return success;
-  };
-
-  const saveSetList = async (newItems: SetListItem[]): Promise<boolean> => {
-    if (!selectedEventId) return false;
-    try {
-      await setListMutation.mutateAsync({ eventId: selectedEventId, items: newItems });
-      return true;
-    } catch (error) {
-      console.error('Failed to save set list:', error);
-      return false;
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    const confirmed = await dialog.confirm({
-      title: 'Remove Item',
-      message: 'Are you sure you want to remove this item from the set list?',
-      confirmLabel: 'Remove',
-      variant: 'danger',
-    });
-    if (confirmed) {
-      const newItems = items.filter((i) => i.id !== id);
-      await updateItems(newItems);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = items.findIndex((i) => i.id === active.id);
-      const newIndex = items.findIndex((i) => i.id === over.id);
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      await updateItems(newItems);
-    }
-  };
-
-  const handleInlineAddItem = async (item: SetListItem) => {
-    const nextItems = [...items, item];
-    const success = await updateItems(nextItems);
-    if (!success) return;
-  };
-
-  const handleCopyFrom = async (sourceEventId: string) => {
-    const sourceEvent = events.find((e) => e.id === sourceEventId);
-    if (!sourceEvent || !sourceEvent.setList) return;
-
-    const shouldCopy = await dialog.confirm({
-      title: 'Copy Set List',
-      message: `Replace current list with items from ${sourceEvent.title || sourceEvent.date}?`,
-    });
-
-    if (shouldCopy) {
-      const copied = sourceEvent.setList.map((i) => ({ ...i, id: crypto.randomUUID() }));
-      await updateItems(copied);
-    }
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor)
-  );
+  }, [setList.plainText, dialog]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -437,11 +98,11 @@ export default function SetListView() {
         title="Set Lists"
         description="Manage performance set lists, timings, and singer visibility"
         actions={
-          selectedEvent ? (
+          setList.selectedEvent ? (
             <>
               <Button
                 variant="secondary"
-                onClick={() => handleOpenPlayer(selectedEvent)}
+                onClick={() => playerLink.handleOpenPlayer(setList.selectedEvent)}
                 title="Open practice player link generator"
               >
                 <span aria-hidden="true">🎧</span>
@@ -462,120 +123,39 @@ export default function SetListView() {
 
       <div className="no-print">
         <AppCard noPadding>
-          <div className="border-border flex flex-col gap-4 border-b px-4 py-3">
-            <div className="grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(260px,0.8fr)]">
-              <div>
-                <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
-                  Select Event
-                </span>
-                <Select
-                  value={selectedEventId}
-                  onChange={(e) => setSelectedEventId(e.target.value)}
-                  className="w-full"
-                >
-                  <option value="">-- Choose Event --</option>
-                  {events.map((e) => (
-                    <option key={e.id} value={e.id}>
-                      {formatInTimezone(e.date, timezone, {
-                        year: 'numeric',
-                        month: 'numeric',
-                        day: 'numeric',
-                      })}{' '}
-                      - {e.title || e.type}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+          <SetListToolbar
+            events={events}
+            selectedEventId={setList.selectedEventId}
+            selectedEvent={setList.selectedEvent}
+            parentPerformance={setList.parentPerformance}
+            localApproved={setList.localApproved}
+            timezone={timezone}
+            onEventChange={setList.setSelectedEventId}
+            onCopyFrom={setList.handleCopyFrom}
+            onToggleApproved={setList.handleToggleApproved}
+            onGoToParent={() => {
+              if (setList.parentPerformance) {
+                setList.setSelectedEventId(setList.parentPerformance.id);
+              }
+            }}
+          />
 
-              {selectedEvent ? (
-                <div>
-                  <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
-                    Copy from Previous
-                  </span>
-                  <Select
-                    value=""
-                    onChange={async (e) => {
-                      if (e.target.value) {
-                        await handleCopyFrom(e.target.value);
-                      }
-                    }}
-                    className="w-full"
-                  >
-                    <option value="">-- Copy Set List --</option>
-                    {events
-                      .filter((e) => e.id !== selectedEventId && e.setList && e.setList.length > 0)
-                      .map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {formatInTimezone(e.date, timezone, {
-                            year: 'numeric',
-                            month: 'numeric',
-                            day: 'numeric',
-                          })}{' '}
-                          - {e.title || e.type}
-                        </option>
-                      ))}
-                  </Select>
-                </div>
-              ) : (
-                <div className="hidden sm:block" />
-              )}
-
-              {selectedEvent && selectedEvent.type === 'Performance' && (
-                <div className="flex flex-col">
-                  <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
-                    Singer Visibility
-                  </span>
-                  <label className="border-border bg-surface text-text flex h-[44px] w-full cursor-pointer items-center gap-2.5 rounded-md border px-4 text-sm font-semibold shadow-sm transition-colors select-none hover:bg-slate-50">
-                    <input
-                      type="checkbox"
-                      checked={localApproved}
-                      onChange={(e) => handleToggleApproved(e.target.checked)}
-                      className="accent-primary size-4 cursor-pointer"
-                    />
-                    <span>Approved for Singers</span>
-                  </label>
-                </div>
-              )}
-
-              {selectedEvent && selectedEvent.type === 'Rehearsal' && (
-                <div className="flex flex-col">
-                  <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
-                    Parent Set List
-                  </span>
-                  {parentPerformance ? (
-                    <Button
-                      variant="secondary"
-                      className="flex h-11 w-full items-center justify-center gap-2"
-                      onClick={() => setSelectedEventId(parentPerformance.id)}
-                    >
-                      🔗 Go to parent: {parentPerformance.title || 'Concert'}
-                    </Button>
-                  ) : (
-                    <div className="border-border text-text-muted bg-surface-muted flex h-11 items-center justify-center rounded-md border px-4 text-sm">
-                      No parent linked
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {selectedEventId ? (
+          {setList.selectedEventId ? (
             <div className="flex flex-col gap-4 p-4">
-              {selectedEvent?.type === 'Rehearsal' && (
+              {setList.selectedEvent?.type === 'Rehearsal' && (
                 <div className="border-warning-border bg-warning-bg/70 text-warning-text rounded-r-md border-l-4 p-3 text-sm leading-relaxed">
                   <div className="mb-1 font-semibold">⚠️ Rehearsal Mode</div>
                   <p className="m-0">
                     This rehearsal inherits its set list and singer visibility from the parent
-                    Performance: <strong>{parentPerformance?.title || 'Concert'}</strong>. Direct
-                    edits here will not be visible on the Singer Dashboard.
+                    Performance: <strong>{setList.parentPerformance?.title || 'Concert'}</strong>.
+                    Direct edits here will not be visible on the Singer Dashboard.
                   </p>
-                  {parentPerformance && (
+                  {setList.parentPerformance && (
                     <Button
                       variant="secondary"
                       size="small"
                       className="mt-2"
-                      onClick={() => setSelectedEventId(parentPerformance.id)}
+                      onClick={() => setList.setSelectedEventId(setList.parentPerformance!.id)}
                     >
                       Manage Parent Set List
                     </Button>
@@ -584,66 +164,40 @@ export default function SetListView() {
               )}
 
               <div className="flex flex-col gap-4">
-                {items.length > 0 && (
-                  <div className="border-primary-light bg-primary-light/40 text-primary-deep flex flex-col gap-3 rounded-lg border px-4 py-3 text-sm font-semibold lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                      <span>
-                        🎼 Songs: <span className="text-text">{durationTotals.songs}</span>
-                      </span>
-                      <span>
-                        ⏸️ Intermissions:{' '}
-                        <span className="text-text">{durationTotals.intermissions}</span>
-                      </span>
-                      <span className="flex items-center gap-2">
-                        📢 Gaps:
-                        <input
-                          type="number"
-                          className="border-border bg-surface text-text focus:border-primary focus:ring-primary/30 h-9 w-16 rounded-md border px-2 text-sm transition outline-none focus:ring-2"
-                          min={0}
-                          step={1}
-                          value={localGapSeconds}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value, 10);
-                            handleAnnouncementGapChange(isNaN(val) ? 0 : val);
-                          }}
-                        />
-                        <span className="text-primary-deep/80 text-xs font-normal">
-                          sec × {Math.max(0, items.length - 1)} =
-                        </span>
-                        <span className="text-text">{durationTotals.gaps}</span>
-                      </span>
-                    </div>
-                    <div className="text-primary-deep flex items-center gap-1 text-[0.95rem] font-bold">
-                      ⏱️ Total: <span className="text-text">{durationTotals.total}</span>
-                    </div>
-                  </div>
+                {setList.items.length > 0 && (
+                  <SetListDurationBar
+                    items={setList.items}
+                    durationTotals={setList.durationTotals}
+                    localGapSeconds={setList.localGapSeconds}
+                    onGapChange={setList.handleAnnouncementGapChange}
+                  />
                 )}
 
                 <div>
                   <SetListInlineCreator
-                    library={library}
-                    onAddItem={handleInlineAddItem}
-                    onCreateNewPiece={handleCreateNewPieceFromSetList}
-                    disabled={isLoading}
+                    library={setList.library}
+                    onAddItem={setList.handleInlineAddItem}
+                    onCreateNewPiece={library.handleCreateNewPieceFromSetList}
+                    disabled={setList.isLoading}
                   />
                 </div>
 
-                {items.length === 0 ? (
+                {setList.items.length === 0 ? (
                   <div className="text-text-muted p-12 text-center text-sm">
                     No items in set list. Select event/add items above to build.
                   </div>
                 ) : (
                   <div className="border-border bg-surface-muted/50 flex flex-col gap-2 rounded-md border p-2">
                     <DndContext
-                      sensors={sensors}
+                      sensors={setList.sensors}
                       collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
+                      onDragEnd={setList.handleDragEnd}
                     >
                       <SortableContext
-                        items={items.map((i) => i.id)}
+                        items={setList.items.map((i) => i.id)}
                         strategy={verticalListSortingStrategy}
                       >
-                        {itemsWithDetails.map((item) => (
+                        {setList.itemsWithDetails.map((item) => (
                           <SortableSetListItem
                             key={item.id}
                             item={item}
@@ -654,10 +208,10 @@ export default function SetListView() {
                             cumulativeStart={item.cumulativeStart}
                             cumulativeEnd={item.cumulativeEnd}
                             onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onPlayTrack={handlePlayRowTrack}
-                            onPieceClick={handleOpenPieceEditor}
-                            genres={configuredGenres}
+                            onDelete={setList.handleDelete}
+                            onPlayTrack={audio.handlePlayRowTrack}
+                            onPieceClick={library.handleOpenPieceEditor}
+                            genres={setList.configuredGenres}
                           />
                         ))}
                       </SortableContext>
@@ -666,13 +220,13 @@ export default function SetListView() {
                 )}
               </div>
 
-              {items.length > 0 ? (
+              {setList.items.length > 0 ? (
                 <div className="text-text-muted flex flex-col justify-between gap-2 px-2 py-1 text-xs sm:flex-row sm:items-center">
                   <span className="italic">
                     Tip: Drag the ⣿ handle on any row to reorder set list items. Changes are saved
                     automatically.
                   </span>
-                  {(setListMutation.isPending || eventUpdateMutation.isPending) && (
+                  {setList.isPending && (
                     <div className="flex shrink-0 items-center gap-1.5 font-medium">
                       <Spinner size="small" />
                       <span>Saving...</span>
@@ -680,7 +234,7 @@ export default function SetListView() {
                   )}
                 </div>
               ) : (
-                (setListMutation.isPending || eventUpdateMutation.isPending) && (
+                setList.isPending && (
                   <div className="text-text-muted flex justify-end px-2 py-1 text-xs font-medium">
                     <div className="flex items-center gap-1.5">
                       <Spinner size="small" />
@@ -702,81 +256,24 @@ export default function SetListView() {
 
       {/* @allow-inline-style - print page styling rule for print-only rendering */}
       <div className="mx-auto hidden max-w-2xl p-8 print:block" style={{ page: 'setlist' }}>
-        {selectedEvent && (
-          <>
-            <div className="mb-6 text-center">
-              <h2 className="mb-1 text-2xl font-bold text-gray-900">
-                {selectedEvent.title || selectedEvent.type}
-              </h2>
-              <p className="text-sm text-gray-600">
-                {formatInTimezone(selectedEvent.date, timezone, {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-                {' at '}
-                {formatInTimezone(selectedEvent.date, timezone, {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
-                {selectedEvent.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
-              </p>
-            </div>
-            <Divider />
-            <div className="flex flex-col gap-2">
-              {(() => {
-                let songIndex = 1;
-                return itemsWithDetails.map((item) => {
-                  if (item.type === 'intermission') {
-                    return (
-                      <div
-                        key={item.id}
-                        className="my-2 border-y border-dashed border-gray-300 py-2 text-center text-base font-bold text-gray-600"
-                      >
-                        {item.displayTitle || 'Intermission'}
-                      </div>
-                    );
-                  }
-                  const el = (
-                    <div
-                      key={item.id}
-                      className="flex items-baseline justify-between gap-4 border-b border-gray-100 py-1 text-lg"
-                    >
-                      <span className="font-medium text-gray-900">
-                        {songIndex}. {item.displayTitle}
-                      </span>
-                      {item.displayComposer && (
-                        <span className="text-right text-base text-gray-600 italic">
-                          {item.displayComposer}
-                        </span>
-                      )}
-                    </div>
-                  );
-                  songIndex++;
-                  return el;
-                });
-              })()}
-            </div>
-          </>
-        )}
+        <SetListPrintContent
+          selectedEvent={setList.selectedEvent}
+          itemsWithDetails={setList.itemsWithDetails}
+          timezone={timezone}
+        />
       </div>
 
       <div className="no-print">
         <MusicPieceModal
-          isOpen={isLibraryModalOpen}
-          piece={libraryEditingPiece}
-          onClose={() => {
-            setIsLibraryModalOpen(false);
-            setPendingSetListAdd(false);
-            setPrefilledTitleForSetList(null);
-          }}
-          onSave={handleSaveLibraryPiece}
-          onDelete={libraryEditingPiece ? handleDeleteLibraryPiece : undefined}
-          catalogLookupTemplate={catalogLookupTemplate}
-          allPieces={library}
-          allGenres={configuredGenres}
-          initialTitle={prefilledTitleForSetList || undefined}
+          isOpen={library.isLibraryModalOpen}
+          piece={library.libraryEditingPiece}
+          onClose={library.onCloseLibraryModal}
+          onSave={library.handleSaveLibraryPiece}
+          onDelete={library.libraryEditingPiece ? library.handleDeleteLibraryPiece : undefined}
+          catalogLookupTemplate={setList.catalogLookupTemplate}
+          allPieces={setList.library}
+          allGenres={setList.configuredGenres}
+          initialTitle={library.prefilledTitleForSetList || undefined}
         />
 
         <SetListItemEditModal
@@ -793,107 +290,28 @@ export default function SetListView() {
         />
 
         <FloatingAudioPlayer
-          url={activeAudioUrl}
-          title={activeAudioTitle}
-          part={activeAudioPart}
-          onClose={() => setActiveAudioUrl(null)}
+          url={audio.activeAudioUrl}
+          title={audio.activeAudioTitle}
+          part={audio.activeAudioPart}
+          onClose={audio.clearAudio}
         />
 
-        <Modal
+        <SetListPrintModal
           isOpen={isPrintModalOpen}
           onClose={() => setIsPrintModalOpen(false)}
-          title="Printable Set List"
-          maxWidth="600px"
-          footer={
-            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:w-auto sm:flex-row sm:items-center">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsPrintModalOpen(false)}
-                  className="w-full sm:w-auto"
-                >
-                  Close
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleCopy}
-                  className="w-full sm:w-auto"
-                  icon={
-                    copied ? <span aria-hidden="true">✓</span> : <span aria-hidden="true">📋</span>
-                  }
-                >
-                  {copied ? 'Copied!' : 'Copy Plain Text'}
-                </Button>
-              </div>
-              <Button variant="primary" className="w-full sm:w-auto" onClick={handlePrintList}>
-                <span aria-hidden="true">🖨️</span>
-                <span>Print List</span>
-              </Button>
-            </div>
-          }
-        >
-          <div className="border-border rounded-md border bg-white p-6 font-[Georgia,serif] text-gray-800 shadow-[inset_0_2px_4px_rgb(0_0_0_/_6%)]">
-            <div className="mb-4 text-center">
-              <h3 className="!m-0 mb-0.5 text-[1.4rem] font-bold text-gray-900">
-                {selectedEvent?.title || selectedEvent?.type}
-              </h3>
-              <div className="text-text-muted text-[0.85rem] font-medium">
-                {selectedEvent &&
-                  formatInTimezone(selectedEvent.date, timezone, {
-                    weekday: 'long',
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                {selectedEvent &&
-                  ` at ${formatInTimezone(selectedEvent.date, timezone, { hour: 'numeric', minute: '2-digit' })}`}
-                {selectedEvent?.expand?.venue?.name && ` | ${selectedEvent.expand.venue.name}`}
-              </div>
-            </div>
-            <div className="border-border mb-4 border-b"></div>
-            <div className="flex flex-col gap-2">
-              {(() => {
-                let songIndex = 1;
-                return itemsWithDetails.map((item) => {
-                  if (item.type === 'intermission') {
-                    return (
-                      <div
-                        key={item.id}
-                        className="border-border text-text-muted my-2 border-y border-dashed py-[6px] text-center text-[0.95rem] font-bold"
-                      >
-                        ⏸️ {item.displayTitle || 'Intermission'}
-                      </div>
-                    );
-                  } else {
-                    const el = (
-                      <div
-                        key={item.id}
-                        className="flex justify-between border-b border-gray-50 py-[2px] text-[1.05rem]"
-                      >
-                        <span className="font-medium">
-                          {songIndex}. {item.displayTitle}
-                        </span>
-                        {item.displayComposer && (
-                          <span className="text-text-muted text-right text-[0.9rem] italic">
-                            {item.displayComposer}
-                          </span>
-                        )}
-                      </div>
-                    );
-                    songIndex++;
-                    return el;
-                  }
-                });
-              })()}
-            </div>
-          </div>
-        </Modal>
+          selectedEvent={setList.selectedEvent}
+          itemsWithDetails={setList.itemsWithDetails}
+          timezone={timezone}
+          onCopy={handleCopy}
+          onPrint={handlePrintList}
+          copied={copied}
+        />
 
         <PlayerLinkModal
-          isOpen={isPlayerLinkOpen}
-          onClose={() => setPlayerLinkOpen(false)}
-          url={playerLinkUrl}
-          eventTitle={playerLinkEventTitle}
+          isOpen={playerLink.isOpen}
+          onClose={() => playerLink.setIsOpen(false)}
+          url={playerLink.url}
+          eventTitle={playerLink.eventTitle}
         />
       </div>
     </div>
