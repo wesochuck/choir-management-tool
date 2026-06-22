@@ -31,3 +31,9 @@ dist-ssr
 .planning/tmp/
 .kilo/
 .jules/
+
+# Local CLI state, temporary scratchpads, and lint logs
+.antigravitycli/
+scratch/
+*lint*.txt
+lint-results.json
