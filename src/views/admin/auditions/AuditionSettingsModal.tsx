@@ -1,4 +1,4 @@
-import { useState, useEffect, type ChangeEvent } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent } from 'react';
 import { Button, Select, Input, Textarea, Modal } from '../../../components/ui';
 import { useDialog } from '../../../contexts/DialogContext';
 import { formatInTimezone, zonedInputValueToUtc } from '../../../lib/timezone';
@@ -37,9 +37,11 @@ export function AuditionSettingsModal({
   const [genEnd, setGenEnd] = useState('20:00');
   const [genInterval, setGenInterval] = useState('15');
 
-  // Initialize draft when modal opens or settings changes
+  const wasOpenRef = useRef(false);
+
+  // Initialize draft when modal opens
   useEffect(() => {
-    if (isOpen && settings) {
+    if (isOpen && !wasOpenRef.current && settings) {
       const snapshot = JSON.parse(JSON.stringify(settings)) as AuditionSettings;
       setSettingsDraft(snapshot);
       setBackupDraft(snapshot);
@@ -48,6 +50,7 @@ export function AuditionSettingsModal({
       setSettingsDraft(null);
       setBackupDraft(null);
     }
+    wasOpenRef.current = isOpen;
   }, [isOpen, settings]);
 
   const generateSlots = () => {
