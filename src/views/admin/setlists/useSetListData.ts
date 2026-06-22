@@ -83,7 +83,11 @@ export function useSetListData(
   const parentPerformance = useMemo(() => {
     if (!selectedEvent || selectedEvent.type !== 'Rehearsal') return null;
     const parentId = selectedEvent.parentPerformanceId;
-    return events.find((e) => e.id === parentId) || selectedEvent.expand?.parentPerformanceId;
+    return (
+      events.find((e) => e.id === parentId) ||
+      (selectedEvent.expand?.parentPerformanceId as Event) ||
+      null
+    );
   }, [selectedEvent, events]);
 
   const [items, setItems] = useState<SetListItem[]>([]);

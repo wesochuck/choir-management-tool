@@ -98,7 +98,9 @@ export default function SetListView() {
             <>
               <Button
                 variant="secondary"
-                onClick={() => playerLink.handleOpenPlayer(setList.selectedEvent)}
+                onClick={() =>
+                  setList.selectedEvent && playerLink.handleOpenPlayer(setList.selectedEvent)
+                }
                 title="Open practice player link generator"
               >
                 <span aria-hidden="true">🎧</span>
