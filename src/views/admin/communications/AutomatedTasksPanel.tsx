@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import {
-  renderCommunicationTemplate,
-  type CommunicationSettings,
-} from '../../../services/settingsService';
+import { type CommunicationSettings } from '../../../services/settingsService';
+import { renderCommunicationTemplate } from '../../../lib/messageTemplates';
 import type { AutomatedTask } from './types';
 import { Button, DataTable, type ColumnDef } from '../../../components/ui';
 

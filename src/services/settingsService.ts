@@ -145,6 +145,3 @@ export const settingsService = {
   getLogoUrl,
   saveLogo,
 };
-
-// Backward compat — remove this export once all callers are migrated
-export { renderCommunicationTemplate } from '../lib/messageTemplates';
