@@ -1,5 +1,5 @@
 import { parseJsonField } from '../email/hookJson';
-import { parseSignedToken, generateSignedTicketToken } from '../hmacTokens';
+import { parseSignedToken, generateSignedTicketToken, getHmacSecret } from '../hmacTokens';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from '../email/emailTypes';
 
 declare const $app: PocketBaseApp;
@@ -15,16 +15,6 @@ const REASON_MESSAGES = {
   not_paid: 'Ticket has been refunded',
   wrong_event: 'This ticket is for a different concert',
 };
-
-function getHmacSecretFromApp(app: PocketBaseApp): string {
-  try {
-    const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-    const parsed = parseJsonField<{ secret?: string }>(record.get('value'));
-    return parsed && parsed.secret ? parsed.secret : '';
-  } catch {
-    return '';
-  }
-}
 
 function getBaseUrl(app: PocketBaseApp): string {
   try {
@@ -62,7 +52,7 @@ export async function handleValidateScan(e: PocketBaseRequestEvent): Promise<unk
     return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
   }
 
-  const secret = getHmacSecretFromApp($app);
+  const secret = getHmacSecret($app);
   if (!secret) {
     return e.json(500, { error: 'Server configuration error' });
   }
@@ -173,7 +163,7 @@ export async function handleGetScanContext(e: PocketBaseRequestEvent): Promise<u
     return e.json(409, { error: 'Purchase is not yet paid' });
   }
 
-  const secret = getHmacSecretFromApp($app);
+  const secret = getHmacSecret($app);
   if (!secret) {
     return e.json(500, { error: 'Server configuration error' });
   }

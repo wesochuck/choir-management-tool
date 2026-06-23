@@ -1066,15 +1066,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -2269,15 +2261,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -3422,15 +3406,7 @@ onRecordAfterCreateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -4584,15 +4560,7 @@ onRecordAfterUpdateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -5666,15 +5634,7 @@ onRecordAfterCreateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -6897,15 +6857,7 @@ onRecordAfterUpdateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -7812,15 +7764,7 @@ function parseJsonField(val) {
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret(app) {
-    try {
-        const appInstance = app || $app;
-        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    }
-    catch (_a) {
-        return "";
-    }
+    return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -8514,15 +8458,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret(app) {
-    try {
-        const appInstance = app || $app;
-        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    }
-    catch (_a) {
-        return "";
-    }
+    return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -9997,15 +9933,7 @@ function renderMarkdown(text) {
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret(app) {
-    try {
-        const appInstance = app || $app;
-        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    }
-    catch (_a) {
-        return "";
-    }
+    return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -10713,15 +10641,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret(app) {
-    try {
-        const appInstance = app || $app;
-        const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-        const parsed = parseJsonField(record.get("value"));
-        return parsed && parsed.secret ? parsed.secret : "";
-    }
-    catch (_a) {
-        return "";
-    }
+    return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -12101,15 +12021,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -12939,15 +12851,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -13552,15 +13456,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -13628,16 +13524,6 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -13674,7 +13560,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -13773,7 +13659,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -15328,15 +15214,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -15404,16 +15282,6 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -15450,7 +15318,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -15549,7 +15417,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -17104,15 +16972,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -17180,16 +17040,6 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -17226,7 +17076,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -17325,7 +17175,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -18880,15 +18730,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -18956,16 +18798,6 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -19002,7 +18834,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -19101,7 +18933,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -20656,15 +20488,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -20732,16 +20556,6 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -20778,7 +20592,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -20877,7 +20691,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -22432,15 +22246,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -22508,16 +22314,6 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -22554,7 +22350,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -22653,7 +22449,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -24208,15 +24004,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -24284,16 +24072,6 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -24330,7 +24108,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -24429,7 +24207,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -25983,15 +25761,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -26059,16 +25829,6 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -26105,7 +25865,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -26204,7 +25964,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -27458,15 +27218,7 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -27712,16 +27464,6 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -27758,7 +27500,7 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -27857,7 +27599,7 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -27949,15 +27691,7 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -28203,16 +27937,6 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
         not_paid: 'Ticket has been refunded',
         wrong_event: 'This ticket is for a different concert',
     };
-    function getHmacSecretFromApp(app) {
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get('value'));
-            return parsed && parsed.secret ? parsed.secret : '';
-        }
-        catch (_a) {
-            return '';
-        }
-    }
     function getBaseUrl(app) {
         var _a, _b, _c, _d;
         try {
@@ -28249,7 +27973,7 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -28348,7 +28072,7 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecretFromApp($app);
+        const secret = getHmacSecret($app);
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -28440,15 +28164,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -28976,15 +28692,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -29880,15 +29588,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -30784,15 +30484,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -31688,15 +31380,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
