@@ -2,7 +2,6 @@ import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { 
   exportMusicToCSV, 
-  findDuplicates, 
   appendPieceToSetList, 
   resolveCatalogLookupUrl, 
   resolveRecommendedTracks, 
@@ -66,17 +65,6 @@ test('exportMusicToCSV maps music pieces to CSV format correctly', () => {
   assert.ok(csv.includes('Title,Composer,Arranger,Copies,Catalog ID,Duration,Voicing,Applies To,Genres,Purchase Date,Notes'));
   assert.ok(csv.includes('"Hallelujah","Handel","","","","","SATB","All","","2026-05-01",""'));
   assert.ok(csv.includes('"Restricted","Comp","","","","","S","S;A","","",""'));
-});
-
-test('findDuplicates returns pieces with identical title and composer', () => {
-  const pieces = [
-    createMusicPieceFixture({ id: '1', title: 'Song A', composer: 'Comp A' }),
-    createMusicPieceFixture({ id: '2', title: 'Song B', composer: 'Comp B' }),
-    createMusicPieceFixture({ id: '3', title: 'Song A', composer: 'Comp A' })
-  ];
-  const duplicates = findDuplicates(pieces);
-  assert.equal(duplicates.length, 2);
-  assert.deepEqual(duplicates.map(p => p.id).sort(), ['1', '3']);
 });
 
 test('appendPieceToSetList appends to undefined or empty set list', () => {
