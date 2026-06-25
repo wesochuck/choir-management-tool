@@ -5,6 +5,7 @@ import { SeatingPerspectiveToggle } from '../seating/SeatingPerspectiveToggle';
 import { ReadOnlySeatingGrid } from '../seating/ReadOnlySeatingGrid';
 import { SelectedSeatCard } from '../seating/SelectedSeatCard';
 import { Button } from '../ui';
+import { safeLocalStorage } from '../../lib/storage';
 
 interface ReadOnlyAdminSeatingPanelProps {
   rowCounts: number[];
@@ -26,12 +27,13 @@ export function ReadOnlyAdminSeatingPanel({
   onEditAnyway,
 }: ReadOnlyAdminSeatingPanelProps) {
   const [perspective, setPerspective] = useState<'singer' | 'director'>(() => {
-    return (localStorage.getItem('admin-seating-perspective') as 'singer' | 'director') || 'singer';
+    const stored = safeLocalStorage.getItem('admin-seating-perspective');
+    return stored === 'singer' || stored === 'director' ? stored : 'singer';
   });
   const [selectedSeat, setSelectedSeat] = useState<SelectedSeatInfo | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('admin-seating-perspective', perspective);
+    safeLocalStorage.setItem('admin-seating-perspective', perspective);
   }, [perspective]);
 
   return (
