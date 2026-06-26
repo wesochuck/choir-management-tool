@@ -11,6 +11,57 @@ import { useMusicPieceMovements } from './hooks/useMusicPieceMovements';
 import type { MusicPiece, MusicPieceInput } from '../../../services/musicLibraryService';
 import type { MusicGenreDef } from '../../../services/settingsService';
 
+type MusicPieceDetailsForSave = Pick<
+  ReturnType<typeof useMusicPieceDetails>,
+  | 'title'
+  | 'composer'
+  | 'arranger'
+  | 'purchaseDateInput'
+  | 'duration'
+  | 'copies'
+  | 'catalogId'
+  | 'sectionBuckets'
+  | 'selectedGenres'
+  | 'notes'
+>;
+
+type MusicPieceMovementsForSave = Pick<
+  ReturnType<typeof useMusicPieceMovements>,
+  'tuttiFile' | 'isMultiMovementInput' | 'localMovementsList'
+>;
+
+export function buildMusicPieceSavePayload({
+  piece,
+  details,
+  movements,
+}: {
+  piece: MusicPiece | null;
+  details: MusicPieceDetailsForSave;
+  movements: MusicPieceMovementsForSave;
+}): Partial<MusicPieceInput> & {
+  tuttiFile?: File | null;
+  movements?: { title: string; duration?: string }[];
+} {
+  const serializedPurchaseDate = parseFuzzyMonthYearInput(details.purchaseDateInput);
+  return {
+    title: details.title,
+    composer: details.composer,
+    arranger: details.arranger,
+    purchaseDate: serializedPurchaseDate,
+    duration: details.duration.trim(),
+    copies: details.copies ? parseInt(details.copies, 10) : undefined,
+    catalogId: details.catalogId,
+    sectionBuckets: details.sectionBuckets,
+    genres: details.selectedGenres,
+    notes: details.notes,
+    tuttiFile: !piece ? movements.tuttiFile : undefined,
+    movements:
+      !piece && movements.isMultiMovementInput
+        ? movements.localMovementsList.map((m) => ({ title: m.title, duration: m.duration }))
+        : undefined,
+  };
+}
+
 export interface UseMusicPieceFormParams {
   isOpen: boolean;
   piece: MusicPiece | null;
@@ -126,24 +177,7 @@ export function useMusicPieceForm({
   };
 
   const buildSavePayload = () => {
-    const serializedPurchaseDate = parseFuzzyMonthYearInput(details.purchaseDateInput);
-    return {
-      title: details.title,
-      composer: details.composer,
-      arranger: details.arranger,
-      purchaseDate: serializedPurchaseDate,
-      duration: details.duration.trim(),
-      copies: details.copies ? parseInt(details.copies, 10) : undefined,
-      catalogId: details.catalogId,
-      sectionBuckets: details.sectionBuckets,
-      genres: details.selectedGenres,
-      notes: details.notes,
-      tuttiFile: !piece ? movements.tuttiFile : undefined,
-      movements:
-        !piece && movements.isMultiMovementInput
-          ? movements.localMovementsList.map((m) => ({ title: m.title, duration: m.duration }))
-          : undefined,
-    };
+    return buildMusicPieceSavePayload({ piece, details, movements });
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
