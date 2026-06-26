@@ -13,7 +13,7 @@ Mandatory instructions for AI coding agents working in this repository.
 - Do not modify hosted or production data unless credentials, environment configuration, and explicit user authorization are present.
 - Do not log secrets, `HMAC_SECRET`, or full signed tokens.
 - Avoid unbounded network fan-out.
-- **Prefer Shoelace (`@shoelace-style/shoelace`) and Web Awesome (`@web-awesome/web-awesome`) wrappers under `src/components/ui/` over custom HTML/fallback solutions.** These components are already integrated, tested, and consistent with the app's design system. Building custom fallbacks (plain `<button>`, raw file inputs, hand-rolled clipboard buttons, etc.) duplicates effort and introduces visual/behavioral inconsistencies. If a Shoelace/Web Awesome component exists as a wrapper, use it. If no wrapper exists, create one following the existing patterns (`safeSlProps`, test mode duality, variant mapping) rather than dropping to raw HTML.
+- **Prefer Shoelace (`@shoelace-style/shoelace`) wrappers under `src/components/ui/` over custom HTML/fallback solutions.** These components are already integrated, tested, and consistent with the app's design system. Building custom fallbacks (plain `<button>`, raw file inputs, hand-rolled clipboard buttons, etc.) duplicates effort and introduces visual/behavioral inconsistencies. If a Shoelace wrapper exists, use it. If no wrapper exists, create one following the existing patterns (`safeSlProps`, test mode duality, variant mapping) rather than dropping to raw HTML.
 
 ## 2. Commands and Verification
 
@@ -80,7 +80,16 @@ Use the wrapper's `mock` API:
 - `assert.strictEqual(fn.mock.callCount(), 1);`
 - `assert.deepStrictEqual(fn.mock.calls[0].arguments, ['arg1']);`
 
-Default tests run in the Node environment. Component or hook tests requiring DOM/window APIs belong under `src/components/ui/**/*.test.ts`, `test/views/**/*.test.ts`, or must start with:
+Default tests run in the Node environment. The `dom` Vitest project (jsdom) includes:
+
+- `src/components/ui/**/*.test.{ts,tsx}`
+- `src/components/admin/**/*.test.{ts,tsx}`
+- `src/hooks/**/*.test.{ts,tsx}`
+- `test/views/**/*.test.{ts,tsx}`
+- `test/**/*.test.tsx`
+- A handful of legacy `test/*.test.ts` files force-included by name (`test/eventCardSetList.test.ts`, `test/useVoiceParts.test.ts`, `test/attendanceRsvpSync.test.ts`, `test/eventRosterTable.test.ts`)
+
+Test files outside those globs default to the `node` environment. To use jsdom in a new file outside the globs, start the file with:
 
 ```ts
 // @vitest-environment jsdom
@@ -340,7 +349,7 @@ When the shared `Button` `icon` prop is used, the component automatically wraps 
 
 ## 4. PocketBase Rules
 
-Always assume PocketBase `0.36.9` is currently installed. Verify against `package.json` and the hosted instance before relying on SDK features.
+The hosted PocketBase server is on `0.36.9`. The JS SDK in `package.json` is still `^0.26.9` (no SDK upgrade has been done). Assume server = `0.36.9` and client SDK = `0.26.9` — they are not in lockstep. Verify the API you want is available on the SDK version actually installed before relying on it, and confirm the server-side feature exists before calling it from a hook.
 
 ### Generated hooks
 
