@@ -580,3 +580,28 @@ After deploy, before declaring done:
 - [ ] `rtk npm run generate:pb-hooks && rtk npm run check:pb-hooks` pass
 - [ ] `rtk npx tsc -b --force` passes
 - [ ] `rtk npm test` passes
+
+## Aggregate/calc audit
+
+These items are higher-risk than they look because they affect admin
+dashboards and patron records. A regression in any of them would
+silently skew financial reporting or capacity planning.
+
+- [ ] **Confirm all ticket totals / capacity / export calculations use only `status === 'paid'`.** Search the codebase for any place that aggregates `ticketPurchases` by amount, count, or capacity, and verify each has a `status = 'paid'` filter or guard. Specifically check:
+  - `pocketbase/pb_hooks_src/checkout/createTicketsSession.ts` (capacity check) — already filtered, confirmed.
+  - `pocketbase/pb_hooks_src/checkout/createBundleSession.ts` (capacity check) — already filtered, confirmed.
+  - `pocketbase/pb_hooks_src/ticketScan/ticketValidation.ts` (scan eligibility) — already filtered, confirmed.
+  - `pocketbase/pb_hooks_src/generate-main-pb-js.ts:682` (reminderSent query) — already filtered, confirmed.
+  - `src/services/ticketService.ts:221` (capacity helper) — already filtered, confirmed.
+  - `src/services/communication/ticketBuyerResolver.ts:14` (buyer resolution) — already filtered, confirmed.
+  - `src/views/admin/PatronsView.tsx:89` (patron LTV) — `paidPurchases` is filtered, confirmed.
+  - `src/views/admin/ticketing/TicketingWillCallTab.tsx:70` (will-call list) — `purchases.filter((p) => p.status === 'paid')`, confirmed.
+- [ ] **Confirm donation count / total / average calculations use only `status === 'paid'`.** Same audit pattern. Specifically check:
+  - `src/services/donationService.ts:111` (`getDonations`) — accepts a filter argument, callers are responsible for the filter.
+  - `src/views/admin/PatronsView.tsx:77` (donation LTV) — passes `status = "paid"` filter, confirmed.
+  - `src/views/admin/donations/useDonationFilters.ts:73-75` (donation stats) — already filters to paid, confirmed.
+  - `src/components/admin/SingerPatronageHistoryTab.tsx:67-68` (patronage history) — already filters to paid, confirmed.
+- [ ] **Add regression tests proving `expired` rows do not affect ticket or donation totals.** New tests required, beyond the state-transition tests:
+  - `test/ticketTotalsExcludingExpired.test.ts` (or similar): mocks a mix of `paid`, `pending`, `expired`, and `refunded` rows; runs the aggregate logic from `TicketingWillCallTab`, `PatronsView`, and the capacity check; asserts that only `paid` rows are counted.
+  - `test/donationTotalsExcludingExpired.test.ts` (or similar): same for donations.
+  - These tests guard against future code changes that drop or weaken the `status = 'paid'` filter.
