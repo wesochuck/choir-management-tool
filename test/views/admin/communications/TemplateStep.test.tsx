@@ -34,10 +34,6 @@ function makeTemplateSelection(
   };
 }
 
-function buttonLabels(): string[] {
-  return screen.getAllByRole('button').map((b) => b.textContent ?? '');
-}
-
 describe('TemplateStep', () => {
   afterEach(() => {
     cleanup();
@@ -53,15 +49,14 @@ describe('TemplateStep', () => {
     );
 
     assert.ok(screen.getByText('Step 2: Choose how to start your message'));
-    const labels = buttonLabels();
     assert.equal(
-      labels.some((l) => l.includes('Start Blank Message')),
-      false,
+      screen.queryByText('Start Blank Message'),
+      null,
       'should not render a Start Blank Message button'
     );
     assert.equal(
-      labels.some((l) => l.includes('Use Template & Continue')),
-      false,
+      screen.queryByText('Use Template & Continue'),
+      null,
       'should not render a Use Template & Continue button'
     );
   });
