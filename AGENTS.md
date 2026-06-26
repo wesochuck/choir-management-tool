@@ -86,6 +86,23 @@ Default tests run in the Node environment. Component or hook tests requiring DOM
 // @vitest-environment jsdom
 ```
 
+DOM tests that call `render(...)` from `@testing-library/react` MUST unmount between tests. The default `@testing-library/react` auto-cleanup is off in this project's Vitest setup, so add `afterEach(cleanup)` explicitly:
+
+```ts
+// @vitest-environment jsdom
+import { afterEach, describe, it } from 'node:test';
+import { cleanup, render } from '@testing-library/react';
+
+describe('MyComponent', () => {
+  afterEach(() => {
+    cleanup();
+  });
+  // ...
+});
+```
+
+Symptom of skipping this: the file's first two tests pass, then the worker dies with "Worker exited unexpectedly" or hangs past the timeout, because rendered DOM accumulates across tests. `renderHook` (no DOM) does not need this. The pattern is used in `test/CommunicationTabs.test.tsx`, `src/components/ui/Button/Button.test.ts`, and most `src/components/ui/**` and `test/views/**` component tests.
+
 ### Styling and dialogs
 
 Use Tailwind utility classes for layout, spacing, colors, sizing, typography, and micro-adjustments. Do not add standalone component CSS unless Tailwind cannot express the requirement, such as complex animations or print styles.
