@@ -52,7 +52,7 @@ export async function handleValidateScan(e: PocketBaseRequestEvent): Promise<unk
     return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
   }
 
-  const secret = getHmacSecret($app);
+  const secret = getHmacSecret();
   if (!secret) {
     return e.json(500, { error: 'Server configuration error' });
   }
@@ -163,12 +163,12 @@ export async function handleGetScanContext(e: PocketBaseRequestEvent): Promise<u
     return e.json(409, { error: 'Purchase is not yet paid' });
   }
 
-  const secret = getHmacSecret($app);
+  const secret = getHmacSecret();
   if (!secret) {
     return e.json(500, { error: 'Server configuration error' });
   }
 
-  const token = generateSignedTicketToken($app, purchase.id, secret);
+  const token = generateSignedTicketToken(purchase.id);
   const baseUrl = getBaseUrl($app);
   const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
 

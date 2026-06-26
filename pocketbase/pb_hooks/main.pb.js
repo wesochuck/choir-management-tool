@@ -1065,7 +1065,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -1080,26 +1080,26 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -1240,7 +1240,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
             console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = 'http://localhost:5173';
         let mailingAddress = '123 Choir St, Harmony City, HC 12345';
         let choirName = '';
@@ -1480,7 +1480,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = '';
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -1537,7 +1537,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                                     }
                                 }
                                 else {
-                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -1567,7 +1567,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -1581,7 +1581,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
                         }
                         if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                             secret) {
-                            const token = generateSignedPlayerToken(app, event.id, secret);
+                            const token = generateSignedPlayerToken(event.id);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -1811,7 +1811,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
             const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
 
             const stripeSessionId = purchase.get("stripeSessionId") || "";
-            const ticketToken = generateSignedTicketToken($app, purchase.id);
+            const ticketToken = generateSignedTicketToken(purchase.id);
             const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
             const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
             const qrSvgSrc = "";
@@ -2260,7 +2260,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -2275,26 +2275,26 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -2435,7 +2435,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
             console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = 'http://localhost:5173';
         let mailingAddress = '123 Choir St, Harmony City, HC 12345';
         let choirName = '';
@@ -2675,7 +2675,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = '';
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -2732,7 +2732,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                                     }
                                 }
                                 else {
-                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -2762,7 +2762,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -2776,7 +2776,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
                         }
                         if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                             secret) {
-                            const token = generateSignedPlayerToken(app, event.id, secret);
+                            const token = generateSignedPlayerToken(event.id);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -3405,7 +3405,7 @@ onRecordAfterCreateSuccess((e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -3420,26 +3420,26 @@ onRecordAfterCreateSuccess((e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -3580,7 +3580,7 @@ onRecordAfterCreateSuccess((e) => {
             console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = 'http://localhost:5173';
         let mailingAddress = '123 Choir St, Harmony City, HC 12345';
         let choirName = '';
@@ -3820,7 +3820,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = '';
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -3877,7 +3877,7 @@ onRecordAfterCreateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -3907,7 +3907,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -3921,7 +3921,7 @@ onRecordAfterCreateSuccess((e) => {
                         }
                         if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                             secret) {
-                            const token = generateSignedPlayerToken(app, event.id, secret);
+                            const token = generateSignedPlayerToken(event.id);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -4559,7 +4559,7 @@ onRecordAfterUpdateSuccess((e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -4574,26 +4574,26 @@ onRecordAfterUpdateSuccess((e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -4734,7 +4734,7 @@ onRecordAfterUpdateSuccess((e) => {
             console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = 'http://localhost:5173';
         let mailingAddress = '123 Choir St, Harmony City, HC 12345';
         let choirName = '';
@@ -4974,7 +4974,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = '';
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -5031,7 +5031,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -5061,7 +5061,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -5075,7 +5075,7 @@ onRecordAfterUpdateSuccess((e) => {
                         }
                         if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                             secret) {
-                            const token = generateSignedPlayerToken(app, event.id, secret);
+                            const token = generateSignedPlayerToken(event.id);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -5633,7 +5633,7 @@ onRecordAfterCreateSuccess((e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -5648,26 +5648,26 @@ onRecordAfterCreateSuccess((e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -5808,7 +5808,7 @@ onRecordAfterCreateSuccess((e) => {
             console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = 'http://localhost:5173';
         let mailingAddress = '123 Choir St, Harmony City, HC 12345';
         let choirName = '';
@@ -6048,7 +6048,7 @@ onRecordAfterCreateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = '';
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -6105,7 +6105,7 @@ onRecordAfterCreateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -6135,7 +6135,7 @@ onRecordAfterCreateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -6149,7 +6149,7 @@ onRecordAfterCreateSuccess((e) => {
                         }
                         if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                             secret) {
-                            const token = generateSignedPlayerToken(app, event.id, secret);
+                            const token = generateSignedPlayerToken(event.id);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -6856,7 +6856,7 @@ onRecordAfterUpdateSuccess((e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -6871,26 +6871,26 @@ onRecordAfterUpdateSuccess((e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -7031,7 +7031,7 @@ onRecordAfterUpdateSuccess((e) => {
             console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = 'http://localhost:5173';
         let mailingAddress = '123 Choir St, Harmony City, HC 12345';
         let choirName = '';
@@ -7271,7 +7271,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = '';
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -7328,7 +7328,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     }
                                 }
                                 else {
-                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -7358,7 +7358,7 @@ onRecordAfterUpdateSuccess((e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -7372,7 +7372,7 @@ onRecordAfterUpdateSuccess((e) => {
                         }
                         if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                             secret) {
-                            const token = generateSignedPlayerToken(app, event.id, secret);
+                            const token = generateSignedPlayerToken(event.id);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -7624,7 +7624,7 @@ function verifyEventRecipientToken(token) {
     }
     let secret;
     try {
-        secret = getHmacSecret($app);
+        secret = getHmacSecret();
         if (!secret)
             throw new Error('Missing secret');
     }
@@ -7651,7 +7651,7 @@ function verifyUnsubscribeToken(token) {
     }
     let secret;
     try {
-        secret = getHmacSecret($app);
+        secret = getHmacSecret();
         if (!secret)
             throw new Error('Missing secret');
     }
@@ -7763,7 +7763,7 @@ function parseJsonField(val) {
 
 // --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret(app) {
+function getHmacSecret() {
     return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
@@ -7778,26 +7778,26 @@ function getAuditionPayload(auditionId) {
 function getTicketPayload(purchaseId) {
     return `t=${purchaseId}`;
 }
-function generateSignedTicketToken(app, purchaseId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedTicketToken(purchaseId) {
+    const secret = getHmacSecret();
     const payload = getTicketPayload(purchaseId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedPlayerToken(app, eventId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedPlayerToken(eventId) {
+    const secret = getHmacSecret();
     const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedEventRecipientToken(eventId, recipientId) {
+    const secret = getHmacSecret();
     const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedAuditionToken(app, auditionId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedAuditionToken(auditionId) {
+    const secret = getHmacSecret();
     const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
@@ -7835,7 +7835,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     let secret;
     try {
-        secret = getHmacSecret($app);
+        secret = getHmacSecret();
         if (!secret)
             throw new Error('Missing secret');
     }
@@ -7844,7 +7844,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     const tokens = {};
     profileIds.forEach((pId) => {
-        tokens[pId] = generateSignedEventRecipientToken($app, eventId, pId, secret);
+        tokens[pId] = generateSignedEventRecipientToken(eventId, pId);
     });
     return e.json(200, { tokens });
 });
@@ -8457,7 +8457,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 
 // --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret(app) {
+function getHmacSecret() {
     return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
@@ -8472,26 +8472,26 @@ function getAuditionPayload(auditionId) {
 function getTicketPayload(purchaseId) {
     return `t=${purchaseId}`;
 }
-function generateSignedTicketToken(app, purchaseId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedTicketToken(purchaseId) {
+    const secret = getHmacSecret();
     const payload = getTicketPayload(purchaseId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedPlayerToken(app, eventId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedPlayerToken(eventId) {
+    const secret = getHmacSecret();
     const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedEventRecipientToken(eventId, recipientId) {
+    const secret = getHmacSecret();
     const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedAuditionToken(app, auditionId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedAuditionToken(auditionId) {
+    const secret = getHmacSecret();
     const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
@@ -8632,7 +8632,7 @@ function processEmailQueue(app) {
         console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
     }
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getHmacSecret();
     let baseUrl = 'http://localhost:5173';
     let mailingAddress = '123 Choir St, Harmony City, HC 12345';
     let choirName = '';
@@ -8872,7 +8872,7 @@ function processEmailQueue(app) {
                                 // Generate a direct link to the backend ICS download route
                                 let icsLink = '';
                                 if (secret) {
-                                    const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                                 firstRehearsalHtml = `
@@ -8929,7 +8929,7 @@ function processEmailQueue(app) {
                                 }
                             }
                             else {
-                                const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                const token = generateSignedEventRecipientToken(event.id, recipientId);
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                         }
@@ -8959,7 +8959,7 @@ function processEmailQueue(app) {
                         .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                         .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                     if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                        const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                        const token = generateSignedEventRecipientToken(event.id, recipientId);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -8973,7 +8973,7 @@ function processEmailQueue(app) {
                     }
                     if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                         secret) {
-                        const token = generateSignedPlayerToken(app, event.id, secret);
+                        const token = generateSignedPlayerToken(event.id);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -9932,7 +9932,7 @@ function renderMarkdown(text) {
 
 // --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret(app) {
+function getHmacSecret() {
     return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
@@ -9947,26 +9947,26 @@ function getAuditionPayload(auditionId) {
 function getTicketPayload(purchaseId) {
     return `t=${purchaseId}`;
 }
-function generateSignedTicketToken(app, purchaseId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedTicketToken(purchaseId) {
+    const secret = getHmacSecret();
     const payload = getTicketPayload(purchaseId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedPlayerToken(app, eventId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedPlayerToken(eventId) {
+    const secret = getHmacSecret();
     const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedEventRecipientToken(eventId, recipientId) {
+    const secret = getHmacSecret();
     const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedAuditionToken(app, auditionId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedAuditionToken(auditionId) {
+    const secret = getHmacSecret();
     const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
@@ -10014,7 +10014,7 @@ function parseSignedToken(token, requiredKeys) {
     }
     let secret;
     try {
-        secret = getHmacSecret($app);
+        secret = getHmacSecret();
         if (!secret)
             throw new Error('Missing secret');
     }
@@ -10166,7 +10166,7 @@ function parseSignedToken(token, requiredKeys) {
             .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')));
         // Resolve RSVP links
         if (htmlBody.indexOf('{{RSVP_LINKS}}') !== -1 || htmlBody.indexOf('{rsvpLinks}') !== -1) {
-            const token = generateSignedEventRecipientToken($app, event.id, profile.id, secret);
+            const token = generateSignedEventRecipientToken(event.id, profile.id);
             const rsvpLink = baseUrl + '/rsvp?token=' + encodeURIComponent(token);
             const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -10180,7 +10180,7 @@ function parseSignedToken(token, requiredKeys) {
         }
         // Resolve Player links
         if (htmlBody.indexOf('{{PLAYER_LINK}}') !== -1 || htmlBody.indexOf('{playerLink}') !== -1) {
-            const token = generateSignedPlayerToken($app, event.id, secret);
+            const token = generateSignedPlayerToken(event.id);
             const playerLink = baseUrl + '/player?token=' + encodeURIComponent(token);
             const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -10640,7 +10640,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 
 // --- Utility source: hmacTokens.ts ---
 "use strict";
-function getHmacSecret(app) {
+function getHmacSecret() {
     return $os.getenv("HMAC_SECRET") || "";
 }
 function getPlayerPayload(eventId) {
@@ -10655,26 +10655,26 @@ function getAuditionPayload(auditionId) {
 function getTicketPayload(purchaseId) {
     return `t=${purchaseId}`;
 }
-function generateSignedTicketToken(app, purchaseId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedTicketToken(purchaseId) {
+    const secret = getHmacSecret();
     const payload = getTicketPayload(purchaseId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedPlayerToken(app, eventId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedPlayerToken(eventId) {
+    const secret = getHmacSecret();
     const payload = getPlayerPayload(eventId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedEventRecipientToken(eventId, recipientId) {
+    const secret = getHmacSecret();
     const payload = getEventRecipientPayload(eventId, recipientId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
 }
-function generateSignedAuditionToken(app, auditionId, secretOverride) {
-    const secret = secretOverride || getHmacSecret(app);
+function generateSignedAuditionToken(auditionId) {
+    const secret = getHmacSecret();
     const payload = getAuditionPayload(auditionId);
     const signature = $security.hs256(payload, secret);
     return `${payload}&s=${signature}`;
@@ -10815,7 +10815,7 @@ function processEmailQueue(app) {
         console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
     }
     // Build variables used for layout rendering
-    const secret = getHmacSecret(app);
+    const secret = getHmacSecret();
     let baseUrl = 'http://localhost:5173';
     let mailingAddress = '123 Choir St, Harmony City, HC 12345';
     let choirName = '';
@@ -11055,7 +11055,7 @@ function processEmailQueue(app) {
                                 // Generate a direct link to the backend ICS download route
                                 let icsLink = '';
                                 if (secret) {
-                                    const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                                 firstRehearsalHtml = `
@@ -11112,7 +11112,7 @@ function processEmailQueue(app) {
                                 }
                             }
                             else {
-                                const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                const token = generateSignedEventRecipientToken(event.id, recipientId);
                                 icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                             }
                         }
@@ -11142,7 +11142,7 @@ function processEmailQueue(app) {
                         .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                         .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                     if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                        const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                        const token = generateSignedEventRecipientToken(event.id, recipientId);
                         const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                         const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -11156,7 +11156,7 @@ function processEmailQueue(app) {
                     }
                     if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                         secret) {
-                        const token = generateSignedPlayerToken(app, event.id, secret);
+                        const token = generateSignedPlayerToken(event.id);
                         const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                         const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -12020,7 +12020,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -12035,26 +12035,26 @@ routerAdd("POST", "/api/queue/process", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -12195,7 +12195,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
         }
         // Build variables used for layout rendering
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         let baseUrl = 'http://localhost:5173';
         let mailingAddress = '123 Choir St, Harmony City, HC 12345';
         let choirName = '';
@@ -12435,7 +12435,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     // Generate a direct link to the backend ICS download route
                                     let icsLink = '';
                                     if (secret) {
-                                        const token = generateSignedEventRecipientToken(app, firstReh.id, recipientId, secret);
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
                                         icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                     }
                                     firstRehearsalHtml = `
@@ -12492,7 +12492,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     }
                                 }
                                 else {
-                                    const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
                                     icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
                                 }
                             }
@@ -12522,7 +12522,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                             .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
                             .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
                         if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(app, event.id, recipientId, secret);
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
                             const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
                             const rsvpHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -12536,7 +12536,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                         }
                         if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
                             secret) {
-                            const token = generateSignedPlayerToken(app, event.id, secret);
+                            const token = generateSignedPlayerToken(event.id);
                             const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
                             const playerHtml = `
     <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -12850,7 +12850,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -12865,26 +12865,26 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -12922,11 +12922,11 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         if (!eventId) {
             return e.json(400, { error: 'Missing eventId' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
-        const token = generateSignedPlayerToken($app, eventId, secret);
+        const token = generateSignedPlayerToken(eventId);
         return e.json(200, { token });
     }
     function handleSingerPlayerPlaylist(e) {
@@ -13021,7 +13021,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
@@ -13449,7 +13449,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -13464,26 +13464,26 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -13554,7 +13554,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -13653,11 +13653,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -13850,7 +13850,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -13904,7 +13904,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -15207,7 +15207,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -15222,26 +15222,26 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -15312,7 +15312,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -15411,11 +15411,11 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -15608,7 +15608,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -15662,7 +15662,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -16965,7 +16965,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -16980,26 +16980,26 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -17070,7 +17070,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -17169,11 +17169,11 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -17366,7 +17366,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -17420,7 +17420,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -18723,7 +18723,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -18738,26 +18738,26 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -18828,7 +18828,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -18927,11 +18927,11 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -19124,7 +19124,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -19178,7 +19178,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -20481,7 +20481,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -20496,26 +20496,26 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -20586,7 +20586,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -20685,11 +20685,11 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -20882,7 +20882,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -20936,7 +20936,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -22239,7 +22239,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -22254,26 +22254,26 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -22344,7 +22344,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -22443,11 +22443,11 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -22640,7 +22640,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -22694,7 +22694,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -23997,7 +23997,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -24012,26 +24012,26 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -24102,7 +24102,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -24201,11 +24201,11 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -24398,7 +24398,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -24452,7 +24452,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -25754,7 +25754,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -25769,26 +25769,26 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -25859,7 +25859,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -25958,11 +25958,11 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -26155,7 +26155,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -26209,7 +26209,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const timezone = getTimezoneSetting();
         const choirName = getChoirNameSetting();
         const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
         const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
         const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
@@ -27211,7 +27211,7 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -27226,26 +27226,26 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -27494,7 +27494,7 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -27593,11 +27593,11 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -27684,7 +27684,7 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -27699,26 +27699,26 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -27967,7 +27967,7 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
         if (!parsed) {
             return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
@@ -28066,11 +28066,11 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
         if (purchase.get('status') !== 'paid') {
             return e.json(409, { error: 'Purchase is not yet paid' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Server configuration error' });
         }
-        const token = generateSignedTicketToken($app, purchase.id, secret);
+        const token = generateSignedTicketToken(purchase.id);
         const baseUrl = getBaseUrl($app);
         const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
         const buyerName = String(purchase.get('buyerName') || '');
@@ -28157,7 +28157,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -28172,26 +28172,26 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -28229,11 +28229,11 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         if (!eventId) {
             return e.json(400, { error: 'Missing eventId' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
-        const token = generateSignedPlayerToken($app, eventId, secret);
+        const token = generateSignedPlayerToken(eventId);
         return e.json(200, { token });
     }
     function handleSingerPlayerPlaylist(e) {
@@ -28328,7 +28328,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
@@ -28679,7 +28679,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -28694,26 +28694,26 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -28936,7 +28936,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -29069,7 +29069,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -29261,7 +29261,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
                 profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -29289,7 +29289,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
             const salt = $security.randomString(16);
             profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -29575,7 +29575,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -29590,26 +29590,26 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -29832,7 +29832,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -29965,7 +29965,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -30157,7 +30157,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
                 profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -30185,7 +30185,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
             const salt = $security.randomString(16);
             profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -30471,7 +30471,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -30486,26 +30486,26 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -30728,7 +30728,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -30861,7 +30861,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -31053,7 +31053,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
                 profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -31081,7 +31081,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
             const salt = $security.randomString(16);
             profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -31367,7 +31367,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
+    function getHmacSecret() {
         return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
@@ -31382,26 +31382,26 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -31624,7 +31624,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -31757,7 +31757,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret(app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'Configuration error' });
         }
@@ -31949,7 +31949,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
                 profile.set('calendarSalt', salt);
                 app.saveNoValidate(profile);
             }
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -31977,7 +31977,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
             const salt = $security.randomString(16);
             profile.set('calendarSalt', salt);
             app.saveNoValidate(profile);
-            const secret = getHmacSecret(app);
+            const secret = getHmacSecret();
             if (!secret) {
                 return e.json(500, { error: 'Configuration error' });
             }
@@ -32160,16 +32160,8 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
 
     // --- Utility source: hmacTokens.ts ---
     "use strict";
-    function getHmacSecret(app) {
-        try {
-            const appInstance = app || $app;
-            const record = appInstance.findFirstRecordByFilter("appSettings", "key = 'HMAC_SECRET'");
-            const parsed = parseJsonField(record.get("value"));
-            return parsed && parsed.secret ? parsed.secret : "";
-        }
-        catch (_a) {
-            return "";
-        }
+    function getHmacSecret() {
+        return $os.getenv("HMAC_SECRET") || "";
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -32183,26 +32175,26 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
     function getTicketPayload(purchaseId) {
         return `t=${purchaseId}`;
     }
-    function generateSignedTicketToken(app, purchaseId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
         const payload = getTicketPayload(purchaseId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedPlayerToken(app, eventId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
         const payload = getPlayerPayload(eventId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedEventRecipientToken(app, eventId, recipientId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
         const payload = getEventRecipientPayload(eventId, recipientId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
     }
-    function generateSignedAuditionToken(app, auditionId, secretOverride) {
-        const secret = secretOverride || getHmacSecret(app);
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
         const payload = getAuditionPayload(auditionId);
         const signature = $security.hs256(payload, secret);
         return `${payload}&s=${signature}`;
@@ -32240,11 +32232,11 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
         if (!eventId) {
             return e.json(400, { error: 'Missing eventId' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'HMAC_SECRET not configured' });
         }
-        const token = generateSignedPlayerToken($app, eventId, secret);
+        const token = generateSignedPlayerToken(eventId);
         return e.json(200, { token });
     }
     function handleSingerPlayerPlaylist(e) {
@@ -32339,7 +32331,7 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
         if (!parts) {
             return e.json(400, { error: 'Invalid token format' });
         }
-        const secret = getHmacSecret($app);
+        const secret = getHmacSecret();
         if (!secret) {
             return e.json(500, { error: 'HMAC_SECRET not configured' });
         }

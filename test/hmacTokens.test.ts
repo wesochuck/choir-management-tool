@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 const globalRecord = globalThis as Record<string, unknown>;
 globalRecord.$security = {
-  hs256: (payload: string, secret: string) => `sig_${payload}_${secret}`
+  hs256: (payload: string, secret: string) => `sig_${payload}_${secret}`,
+};
+globalRecord.$os = {
+  getenv: (key: string) => (key === 'HMAC_SECRET' ? 'test-secret-for-tickets' : ''),
 };
 
 describe('hmacTokens', () => {
@@ -12,12 +15,11 @@ describe('hmacTokens', () => {
     assert.equal(getTicketPayload('purchase_123'), 't=purchase_123');
   });
 
-  it('generateSignedTicketToken produces valid signed token with secretOverride', async () => {
-    const { generateSignedTicketToken, parseSignedToken } = await import('../pocketbase/pb_hooks_src/hmacTokens.ts');
-    const mockApp = {} as never;
-    const secret = 'test-secret-for-tickets';
+  it('generateSignedTicketToken produces a valid signed token using $os.getenv', async () => {
+    const { generateSignedTicketToken, parseSignedToken } =
+      await import('../pocketbase/pb_hooks_src/hmacTokens.ts');
 
-    const token = generateSignedTicketToken(mockApp, 'purchase_xyz', secret);
+    const token = generateSignedTicketToken('purchase_xyz');
 
     assert.ok(token.startsWith('t=purchase_xyz&s='));
     assert.ok(token.length > 't=purchase_xyz&s='.length);

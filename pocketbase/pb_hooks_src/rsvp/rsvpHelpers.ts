@@ -35,7 +35,7 @@ export function verifyEventRecipientToken(token: string): VerifiedTokenResult {
 
   let secret: string;
   try {
-    secret = getHmacSecret($app);
+    secret = getHmacSecret();
     if (!secret) throw new Error('Missing secret');
   } catch {
     return { ok: false, status: 500, error: 'HMAC_SECRET not configured' };
@@ -65,7 +65,7 @@ export function verifyUnsubscribeToken(token: string): VerifiedTokenResult {
 
   let secret: string;
   try {
-    secret = getHmacSecret($app);
+    secret = getHmacSecret();
     if (!secret) throw new Error('Missing secret');
   } catch {
     return { ok: false, status: 500, error: 'HMAC_SECRET not configured' };

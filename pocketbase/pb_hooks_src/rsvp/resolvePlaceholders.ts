@@ -46,7 +46,7 @@ routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
 
   let secret: string;
   try {
-    secret = getHmacSecret($app);
+    secret = getHmacSecret();
     if (!secret) throw new Error('Missing secret');
   } catch {
     return e.json(500, { error: 'HMAC_SECRET not configured' });
@@ -203,7 +203,7 @@ routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
 
     // Resolve RSVP links
     if (htmlBody.indexOf('{{RSVP_LINKS}}') !== -1 || htmlBody.indexOf('{rsvpLinks}') !== -1) {
-      const token = generateSignedEventRecipientToken($app, event.id, profile.id, secret);
+      const token = generateSignedEventRecipientToken(event.id, profile.id);
       const rsvpLink = baseUrl + '/rsvp?token=' + encodeURIComponent(token);
       const rsvpHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
@@ -218,7 +218,7 @@ routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
 
     // Resolve Player links
     if (htmlBody.indexOf('{{PLAYER_LINK}}') !== -1 || htmlBody.indexOf('{playerLink}') !== -1) {
-      const token = generateSignedPlayerToken($app, event.id, secret);
+      const token = generateSignedPlayerToken(event.id);
       const playerLink = baseUrl + '/player?token=' + encodeURIComponent(token);
       const playerHtml = `
 <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">

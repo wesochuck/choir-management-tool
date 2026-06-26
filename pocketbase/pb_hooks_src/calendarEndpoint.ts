@@ -154,7 +154,7 @@ export function handleCalendarDownload(e: PocketBaseRequestEvent): unknown {
     return e.json(400, { error: 'Invalid token format' });
   }
 
-  const secret = getHmacSecret(app);
+  const secret = getHmacSecret();
   if (!secret) {
     return e.json(500, { error: 'Configuration error' });
   }
@@ -327,7 +327,7 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
     return e.json(400, { error: 'Invalid token format' });
   }
 
-  const secret = getHmacSecret(app);
+  const secret = getHmacSecret();
   if (!secret) {
     return e.json(500, { error: 'Configuration error' });
   }
@@ -579,7 +579,7 @@ export function handleCalendarFeedUrl(e: PocketBaseRequestEvent): unknown {
       app.saveNoValidate(profile);
     }
 
-    const secret = getHmacSecret(app);
+    const secret = getHmacSecret();
     if (!secret) {
       return e.json(500, { error: 'Configuration error' });
     }
@@ -612,7 +612,7 @@ export function handleCalendarFeedReset(e: PocketBaseRequestEvent): unknown {
     profile.set('calendarSalt', salt);
     app.saveNoValidate(profile);
 
-    const secret = getHmacSecret(app);
+    const secret = getHmacSecret();
     if (!secret) {
       return e.json(500, { error: 'Configuration error' });
     }

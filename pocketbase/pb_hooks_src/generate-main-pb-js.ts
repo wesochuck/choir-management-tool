@@ -712,7 +712,7 @@ events.forEach(event => {
         const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
 
         const stripeSessionId = purchase.get("stripeSessionId") || "";
-        const ticketToken = generateSignedTicketToken($app, purchase.id);
+        const ticketToken = generateSignedTicketToken(purchase.id);
         const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
         const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
         const qrSvgSrc = "";

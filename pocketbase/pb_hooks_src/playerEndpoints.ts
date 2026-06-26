@@ -1,5 +1,10 @@
 import { parseJsonField } from './email/hookJson';
-import { getHmacSecret, generateSignedPlayerToken, getPlayerPayload, parseSignedToken } from './hmacTokens';
+import {
+  getHmacSecret,
+  generateSignedPlayerToken,
+  getPlayerPayload,
+  parseSignedToken,
+} from './hmacTokens';
 import type { PocketBaseApp, PocketBaseRequestEvent } from './email/emailTypes';
 
 declare const $app: PocketBaseApp;
@@ -43,12 +48,12 @@ export function handleGeneratePlayerToken(e: PocketBaseRequestEvent): void {
     return e.json(400, { error: 'Missing eventId' });
   }
 
-  const secret = getHmacSecret($app);
+  const secret = getHmacSecret();
   if (!secret) {
     return e.json(500, { error: 'HMAC_SECRET not configured' });
   }
 
-  const token = generateSignedPlayerToken($app, eventId as string, secret);
+  const token = generateSignedPlayerToken(eventId as string);
 
   return e.json(200, { token });
 }
@@ -162,7 +167,7 @@ export function handlePlayerPlaylist(e: PocketBaseRequestEvent): void {
     return e.json(400, { error: 'Invalid token format' });
   }
 
-  const secret = getHmacSecret($app);
+  const secret = getHmacSecret();
   if (!secret) {
     return e.json(500, { error: 'HMAC_SECRET not configured' });
   }

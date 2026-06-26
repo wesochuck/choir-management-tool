@@ -26,7 +26,7 @@ routerAdd('POST', '/api/generate-rsvp-tokens', (e) => {
 
   let secret: string;
   try {
-    secret = getHmacSecret($app);
+    secret = getHmacSecret();
     if (!secret) throw new Error('Missing secret');
   } catch {
     return e.json(500, { error: 'HMAC_SECRET not configured' });
@@ -34,7 +34,7 @@ routerAdd('POST', '/api/generate-rsvp-tokens', (e) => {
 
   const tokens: { [key: string]: string } = {};
   (profileIds as string[]).forEach((pId) => {
-    tokens[pId] = generateSignedEventRecipientToken($app, eventId as string, pId, secret);
+    tokens[pId] = generateSignedEventRecipientToken(eventId as string, pId);
   });
 
   return e.json(200, { tokens });

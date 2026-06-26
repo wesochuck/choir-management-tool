@@ -26,7 +26,7 @@ export function enqueueTicketConfirmationEmail(options: {
   const choirName = getChoirNameSetting();
   const baseUrl = getBaseUrl();
 
-  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+  const ticketToken = generateSignedTicketToken(options.purchase.id);
   const stripeSessionId =
     options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
   const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
@@ -109,7 +109,7 @@ export function enqueueBundleTicketConfirmationEmail(options: {
   const choirName = getChoirNameSetting();
   const baseUrl = getBaseUrl();
 
-  const ticketToken = generateSignedTicketToken($app, options.purchase.id);
+  const ticketToken = generateSignedTicketToken(options.purchase.id);
   const stripeSessionId =
     options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
   const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
