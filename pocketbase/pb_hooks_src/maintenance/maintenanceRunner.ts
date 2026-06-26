@@ -6,7 +6,6 @@ import type {
 } from './maintenanceTypes';
 import {
   getMaintenanceState,
-  saveMaintenanceTaskRun,
   isTaskDue,
   hasActiveLock,
   tryAcquireTaskLock,
@@ -72,7 +71,8 @@ export function runMaintenance(app: PocketBaseApp): MaintenanceRunSummary {
     }
     state = getMaintenanceState(app);
     if (result.status === 'ran' && (result.errors ?? 0) === 0) {
-      saveMaintenanceTaskRun(app, name, now.toISOString());
+      if (!state.lastRuns) state.lastRuns = {};
+      state.lastRuns[name] = now.toISOString();
     }
     releaseTaskLock(app, state, name);
     results.push(result);

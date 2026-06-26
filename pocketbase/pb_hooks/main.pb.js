@@ -33741,7 +33741,7 @@ routerAdd("POST", "/api/maintenance/run", (e) => {
             const raw = record.get('value');
             const parsed = parseJsonField(raw);
             if (!parsed || typeof parsed !== 'object') {
-                console.log('[Maintenance] maintenance_state is malformed, treating as empty: ' + JSON.stringify(raw));
+                console.log('[Maintenance] maintenance_state is malformed, treating as empty');
                 return {};
             }
             return parsed;
@@ -33808,7 +33808,7 @@ routerAdd("POST", "/api/maintenance/run", (e) => {
     function releaseTaskLock(app, state, taskName) {
         if (state.running) {
             state.running[taskName] = undefined;
-            const keys = Object.keys(state.running).filter(k => state.running[k] !== undefined);
+            const keys = Object.keys(state.running).filter((k) => state.running[k] !== undefined);
             if (keys.length === 0) {
                 state.running = undefined;
             }
@@ -33859,20 +33859,30 @@ routerAdd("POST", "/api/maintenance/run", (e) => {
     "use strict";
     function runPostEventReportTask(app, state, now) {
         const hoursAfter = 12;
-        const end = new Date(now.getTime() - (hoursAfter * 60 * 60 * 1000));
-        const start = new Date(end.getTime() - (1 * 60 * 60 * 1000));
-        const events = app.findRecordsByFilter("events", "date >= {:start} && date < {:end} && isArchived != true", "-date", 100, 0, { start, end });
+        const end = new Date(now.getTime() - hoursAfter * 60 * 60 * 1000);
+        const start = new Date(end.getTime() - 1 * 60 * 60 * 1000);
+        const events = app.findRecordsByFilter('events', 'date >= {:start} && date < {:end} && isArchived != true', '-date', 100, 0, { start, end });
         if (!events || events.length === 0) {
             return { task: 'postEventReport', status: 'ran', processed: 0, updated: 0, errors: 0 };
         }
-        const admins = app.findRecordsByFilter("users", "role = 'admin'");
+        const admins = app.findRecordsByFilter('users', "role = 'admin'");
         if (!admins || admins.length === 0) {
-            return { task: 'postEventReport', status: 'ran', processed: events.length, updated: 0, errors: 0 };
+            return {
+                task: 'postEventReport',
+                status: 'ran',
+                processed: events.length,
+                updated: 0,
+                errors: 0,
+            };
         }
-        let commSettings = { mailingAddress: "123 Choir St, Harmony City, HC 12345", reportSubjectTemplate: "Attendance Report: {eventTitle}", reportBodyTemplate: "Report for {eventTitle}..." };
+        let commSettings = {
+            mailingAddress: '123 Choir St, Harmony City, HC 12345',
+            reportSubjectTemplate: 'Attendance Report: {eventTitle}',
+            reportBodyTemplate: 'Report for {eventTitle}...',
+        };
         try {
-            const setting = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const parsed = parseJsonField(setting.get("value"));
+            const setting = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const parsed = parseJsonField(setting.get('value'));
             if (parsed) {
                 if (parsed.mailingAddress)
                     commSettings.mailingAddress = parsed.mailingAddress;
@@ -33883,128 +33893,150 @@ routerAdd("POST", "/api/maintenance/run", (e) => {
             }
         }
         catch (e) {
-            console.log("Warning: Failed to parse communications settings", e);
+            console.log('Warning: Failed to parse communications settings', e);
         }
         let updated = 0;
         let errors = 0;
-        events.forEach(event => {
+        events.forEach((event) => {
             finalizeUnmarkedAttendanceForEvent(app, event);
-            const isPerformance = event.get("type") === "Performance";
-            const linkedPerfId = isPerformance ? event.id : event.get("parentPerformanceId");
+            const isPerformance = event.get('type') === 'Performance';
+            const linkedPerfId = isPerformance ? event.id : event.get('parentPerformanceId');
             let maxRehearsalMisses = 3;
             try {
-                const rosterSettingRecord = app.findFirstRecordByFilter("appSettings", "key = 'roster'");
-                const parsed = parseJsonField(rosterSettingRecord.get("value"));
+                const rosterSettingRecord = app.findFirstRecordByFilter('appSettings', "key = 'roster'");
+                const parsed = parseJsonField(rosterSettingRecord.get('value'));
                 if (parsed && parsed.maxRehearsalMisses !== undefined) {
                     maxRehearsalMisses = Number(parsed.maxRehearsalMisses);
                 }
             }
             catch (e) { }
-            const rosters = app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
+            const rosters = app.findRecordsByFilter('eventRosters', 'event = {:eventId}', 'profile.name', 500, 0, { eventId: event.id });
             if (!rosters || rosters.length === 0)
                 return;
             const total = rosters.length;
-            const present = rosters.filter(r => r.get("attendance") === "Present").length;
+            const present = rosters.filter((r) => r.get('attendance') === 'Present').length;
             const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
-            const eventDateObj = coercePocketBaseDate(event.get("date"));
+            const eventDateObj = coercePocketBaseDate(event.get('date'));
             const eventDateStr = eventDateObj
-                ? (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear()
-                : "";
-            const eventTitle = String(event.get("title") || "");
+                ? eventDateObj.getMonth() +
+                    1 +
+                    '/' +
+                    eventDateObj.getDate() +
+                    '/' +
+                    eventDateObj.getFullYear()
+                : '';
+            const eventTitle = String(event.get('title') || '');
             const subject = sanitizeEmailSubject(commSettings.reportSubjectTemplate
                 .replace(/{eventTitle}/g, () => eventTitle)
                 .replace(/{eventDate}/g, () => eventDateStr));
-            let exceededLimitListHtml = "";
+            let exceededLimitListHtml = '';
             if (linkedPerfId) {
-                const cycleRehearsals = app.findRecordsByFilter("events", "parentPerformanceId = {:perfId} && type = 'Rehearsal'", "date", 200, 0, { perfId: linkedPerfId });
+                const cycleRehearsals = app.findRecordsByFilter('events', "parentPerformanceId = {:perfId} && type = 'Rehearsal'", 'date', 200, 0, { perfId: linkedPerfId });
                 if (cycleRehearsals && cycleRehearsals.length > 0) {
-                    const pastRehearsals = cycleRehearsals.filter(r => parsePocketBaseDate(r.get("date")) <= now);
+                    const pastRehearsals = cycleRehearsals.filter((r) => parsePocketBaseDate(r.get('date')) <= now);
                     if (pastRehearsals.length > 0) {
-                        const pastRehearsalIds = pastRehearsals.map(r => r.id);
-                        const activeProfiles = app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
+                        const pastRehearsalIds = pastRehearsals.map((r) => r.id);
+                        const activeProfiles = app.findRecordsByFilter('profiles', "voicePart != '' && globalStatus != 'Inactive'", 'name', 1000, 0);
                         const exceededSingers = [];
                         const pastRehearsalRosters = [];
-                        const filterParts = pastRehearsalIds.map((_, i) => "event = {:rid" + i + "}").join(" || ");
+                        const filterParts = pastRehearsalIds
+                            .map((_, i) => 'event = {:rid' + i + '}')
+                            .join(' || ');
                         const filterParams = {};
-                        pastRehearsalIds.forEach((id, i) => { filterParams["rid" + i] = id; });
+                        pastRehearsalIds.forEach((id, i) => {
+                            filterParams['rid' + i] = id;
+                        });
                         try {
-                            const allRosters = app.findRecordsByFilter("eventRosters", filterParts, "", 5000, 0, filterParams);
+                            const allRosters = app.findRecordsByFilter('eventRosters', filterParts, '', 5000, 0, filterParams);
                             pastRehearsalRosters.push(...(allRosters || []));
                         }
                         catch (e) { }
                         const performingProfileIds = {};
                         try {
-                            const perfRosters = app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
+                            const perfRosters = app.findRecordsByFilter('eventRosters', 'event = {:perfId}', '', 1000, 0, { perfId: linkedPerfId });
                             if (perfRosters) {
-                                perfRosters.forEach(r => {
-                                    if (r.get("rsvp") === "Yes") {
-                                        performingProfileIds[r.get("profile")] = true;
+                                perfRosters.forEach((r) => {
+                                    if (r.get('rsvp') === 'Yes') {
+                                        performingProfileIds[r.get('profile')] = true;
                                     }
                                 });
                             }
                         }
                         catch (e) { }
                         const pastRostersByProfile = {};
-                        pastRehearsalRosters.forEach(r => {
-                            const profileId = r.get("profile");
+                        pastRehearsalRosters.forEach((r) => {
+                            const profileId = r.get('profile');
                             if (!pastRostersByProfile[profileId]) {
                                 pastRostersByProfile[profileId] = [];
                             }
                             pastRostersByProfile[profileId].push(r);
                         });
-                        activeProfiles.forEach(profile => {
+                        activeProfiles.forEach((profile) => {
                             if (!performingProfileIds[profile.id])
                                 return;
                             const profileRosters = pastRostersByProfile[profile.id] || [];
                             let missCount = 0;
-                            pastRehearsals.forEach(reh => {
-                                const r = profileRosters.find(x => x.get("event") === reh.id);
-                                const wasDeclined = r ? r.get("rsvp") === "No" : false;
-                                const wasAbsent = r ? r.get("attendance") === "Absent" : false;
-                                const notMarkedPresent = r ? r.get("attendance") !== "Present" : true;
+                            pastRehearsals.forEach((reh) => {
+                                const r = profileRosters.find((x) => x.get('event') === reh.id);
+                                const wasDeclined = r ? r.get('rsvp') === 'No' : false;
+                                const wasAbsent = r ? r.get('attendance') === 'Absent' : false;
+                                const notMarkedPresent = r ? r.get('attendance') !== 'Present' : true;
                                 if (wasDeclined || wasAbsent || notMarkedPresent) {
                                     missCount++;
                                 }
                             });
                             if (missCount > maxRehearsalMisses) {
                                 exceededSingers.push({
-                                    name: profile.get("name"),
-                                    missCount: missCount
+                                    name: profile.get('name'),
+                                    missCount: missCount,
                                 });
                             }
                         });
                         if (exceededSingers.length > 0) {
-                            exceededLimitListHtml = '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' +
-                                exceededSingers.map(s => '<li style="margin-bottom: 4px;"><strong>' + escapeHtml(s.name) + '</strong>: ' + s.missCount + ' missed rehearsals (Limit: ' + maxRehearsalMisses + ')</li>').join('') +
-                                '</ul>';
+                            exceededLimitListHtml =
+                                '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' +
+                                    exceededSingers
+                                        .map((s) => '<li style="margin-bottom: 4px;"><strong>' +
+                                        escapeHtml(s.name) +
+                                        '</strong>: ' +
+                                        s.missCount +
+                                        ' missed rehearsals (Limit: ' +
+                                        maxRehearsalMisses +
+                                        ')</li>')
+                                        .join('') +
+                                    '</ul>';
                         }
                     }
                 }
             }
             const body = renderAttendanceReportBody({
-                eventTitle: event.get("title"),
+                eventTitle: event.get('title'),
                 eventDate: eventDateStr,
                 attendanceRate: attendanceRate,
                 presentCount: present,
                 totalCount: total,
                 mailingAddress: commSettings.mailingAddress,
-                exceededLimitListHtml: exceededLimitListHtml || undefined
+                exceededLimitListHtml: exceededLimitListHtml || undefined,
             });
             try {
-                const messageCollection = app.findCollectionByNameOrId("messages");
+                const messageCollection = app.findCollectionByNameOrId('messages');
                 const record = new Record(messageCollection, {
                     subject,
                     content: body,
-                    type: "Email",
-                    status: "Sent",
-                    recipients: admins.map(a => ({ id: a.id, name: a.get("name") || "Admin", email: a.get("email") })),
-                    filters: { type: "Automated Report", eventId: event.id }
+                    type: 'Email',
+                    status: 'Sent',
+                    recipients: admins.map((a) => ({
+                        id: a.id,
+                        name: a.get('name') || 'Admin',
+                        email: a.get('email'),
+                    })),
+                    filters: { type: 'Automated Report', eventId: event.id },
                 });
                 app.save(record);
                 updated++;
             }
             catch (e) {
-                console.log("[Cron Error] Failed to create attendance report message: " + e);
+                console.log('[Cron Error] Failed to create attendance report message: ' + e);
                 errors++;
             }
         });
@@ -34021,71 +34053,87 @@ routerAdd("POST", "/api/maintenance/run", (e) => {
     "use strict";
     function runTicketBuyerReminderTask(app, state, now) {
         var _a;
-        const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
-        const events = app.findRecordsByFilter("events", "type = 'Performance' && date >= {:now} && date <= {:tomorrow} && isArchived != true && isTicketingEnabled = true", "date", 100, 0, { now, tomorrow });
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const events = app.findRecordsByFilter('events', "type = 'Performance' && date >= {:now} && date <= {:tomorrow} && isArchived != true && isTicketingEnabled = true", 'date', 100, 0, { now, tomorrow });
         if (!events || events.length === 0) {
-            return { task: 'ticketBuyerReminder', status: 'ran', processed: 0, queued: 0, updated: 0, skipped: 0, errors: 0 };
+            return {
+                task: 'ticketBuyerReminder',
+                status: 'ran',
+                processed: 0,
+                queued: 0,
+                updated: 0,
+                skipped: 0,
+                errors: 0,
+            };
         }
         let template;
         try {
-            template = app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Concert Reminder' && isSystemTemplate = true");
+            template = app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Concert Reminder' && isSystemTemplate = true");
         }
         catch (e) {
-            console.log("[Reminder Cron] Ticket Concert Reminder template not found");
-            return { task: 'ticketBuyerReminder', status: 'ran', processed: events.length, queued: 0, updated: 0, skipped: events.length, errors: 0 };
+            console.log('[Reminder Cron] Ticket Concert Reminder template not found');
+            return {
+                task: 'ticketBuyerReminder',
+                status: 'ran',
+                processed: events.length,
+                queued: 0,
+                updated: 0,
+                skipped: events.length,
+                errors: 0,
+            };
         }
-        let timezone = "America/New_York";
+        let timezone = 'America/New_York';
         try {
-            const tzSetting = app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-            const tzP = parseJsonField(tzSetting.get("value"));
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const tzP = parseJsonField(tzSetting.get('value'));
             if (tzP && tzP.timezone)
                 timezone = tzP.timezone;
         }
         catch (e) { }
-        let choirName = "Choir Management Tool";
+        let choirName = 'Choir Management Tool';
         try {
-            const choirRecord = app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
-            const parsed = parseJsonField(choirRecord.get("value"));
-            const val = parsed.name || parsed.choirName || parsed.value || (typeof parsed === 'string' ? parsed : "");
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name' || key = 'choirName'");
+            const parsed = parseJsonField(choirRecord.get('value'));
+            const val = parsed.name || parsed.choirName || parsed.value || (typeof parsed === 'string' ? parsed : '');
             if (val)
                 choirName = val;
         }
         catch (e) { }
-        let baseUrl = "http://localhost:5173";
+        let baseUrl = 'http://localhost:5173';
         try {
-            const commRecord = app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-            const comms = parseJsonField(commRecord.get("value"));
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
             if (comms && comms.frontendUrl)
                 baseUrl = comms.frontendUrl;
         }
         catch (e) { }
-        if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
             const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const url = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || "";
+            const url = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
             if (url)
                 baseUrl = url;
         }
-        baseUrl = baseUrl.trim().replace(/[\/]+$/g, "");
+        baseUrl = baseUrl.trim().replace(/[\/]+$/g, '');
         let processed = 0;
         let queued = 0;
         let updated = 0;
         let skipped = 0;
         let errors = 0;
-        events.forEach(event => {
+        events.forEach((event) => {
             var _a;
             processed++;
-            const purchases = app.findRecordsByFilter("ticketPurchases", "event = {:eventId} && status = 'paid' && reminderSent != true", "", 1000, 0, { eventId: event.id });
+            const purchases = app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid' && reminderSent != true", '', 1000, 0, { eventId: event.id });
             if (!purchases || purchases.length === 0) {
                 skipped++;
                 return;
             }
-            const eventTitle = event.get("title") || "";
-            const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(event.get("date"))) !== null && _a !== void 0 ? _a : new Date(""), timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-            const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
-            purchases.forEach(purchase => {
-                const buyerName = purchase.get("buyerName") || "Music Lover";
-                const quantity = purchase.get("quantity") || 0;
-                let content = template.get("content") || "";
+            const eventTitle = event.get('title') || '';
+            const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            const doorsOpenTime = event.get('doorsOpenTime') || 'N/A';
+            purchases.forEach((purchase) => {
+                const buyerName = purchase.get('buyerName') || 'Music Lover';
+                const quantity = purchase.get('quantity') || 0;
+                let content = template.get('content') || '';
                 content = content
                     .replace(/{buyerName}/g, buyerName)
                     .replace(/{eventTitle}/g, eventTitle)
@@ -34093,56 +34141,56 @@ routerAdd("POST", "/api/maintenance/run", (e) => {
                     .replace(/{doorsOpenTime}/g, doorsOpenTime)
                     .replace(/{quantity}/g, String(quantity))
                     .replace(/{choirName}/g, choirName);
-                const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
-                const stripeSessionId = purchase.get("stripeSessionId") || "";
+                const subject = (template.get('subject') || 'Concert Reminder').replace(/{eventTitle}/g, eventTitle);
+                const stripeSessionId = purchase.get('stripeSessionId') || '';
                 const ticketToken = generateSignedTicketToken(purchase.id);
-                const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
-                const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
-                const qrSvgSrc = "";
+                const scanUrl = baseUrl + '/admin/tickets/scan?token=' + encodeURIComponent(ticketToken);
+                const successUrl = baseUrl + '/tickets/order/success?session_id=' + encodeURIComponent(stripeSessionId);
+                const qrSvgSrc = '';
                 try {
-                    const queueCollection = app.findCollectionByNameOrId("emailQueue");
+                    const queueCollection = app.findCollectionByNameOrId('emailQueue');
                     const mailRecord = new Record(queueCollection, {
-                        recipientId: "buyer_" + purchase.id,
-                        recipientEmail: purchase.get("buyerEmail"),
+                        recipientId: 'buyer_' + purchase.id,
+                        recipientEmail: purchase.get('buyerEmail'),
                         recipientName: buyerName,
                         subject: subject,
                         rawContent: content,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
                         filters: JSON.stringify({
                             eventId: event.id,
-                            type: "Ticket Buyer Reminder",
+                            type: 'Ticket Buyer Reminder',
                             ticketToken: ticketToken,
                             scanUrl: scanUrl,
                             qrSvgSrc: qrSvgSrc,
-                            successUrl: successUrl
-                        })
+                            successUrl: successUrl,
+                        }),
                     });
                     app.save(mailRecord);
                     queued++;
-                    purchase.set("reminderSent", true);
+                    purchase.set('reminderSent', true);
                     app.save(purchase);
                     updated++;
                 }
                 catch (e) {
-                    console.log("[Reminder Cron] Failed to enqueue email for purchase " + purchase.id + ": " + e);
+                    console.log('[Reminder Cron] Failed to enqueue email for purchase ' + purchase.id + ': ' + e);
                     errors++;
                 }
             });
             try {
-                const messageCollection = app.findCollectionByNameOrId("messages");
+                const messageCollection = app.findCollectionByNameOrId('messages');
                 const msgRecord = new Record(messageCollection, {
-                    subject: "Ticket Buyer Reminders Sent: " + eventTitle,
-                    content: "Sent reminders for " + eventTitle,
-                    type: "Email",
-                    status: "Sent",
+                    subject: 'Ticket Buyer Reminders Sent: ' + eventTitle,
+                    content: 'Sent reminders for ' + eventTitle,
+                    type: 'Email',
+                    status: 'Sent',
                     recipients: [],
-                    filters: { eventId: event.id, type: "Ticket Buyer Reminder" }
+                    filters: { eventId: event.id, type: 'Ticket Buyer Reminder' },
                 });
                 app.save(msgRecord);
             }
             catch (e) {
-                console.log("[Reminder Cron] Failed to log message for event " + event.id + ": " + e);
+                console.log('[Reminder Cron] Failed to log message for event ' + event.id + ': ' + e);
                 errors++;
             }
         });
@@ -34234,12 +34282,14 @@ routerAdd("POST", "/api/maintenance/run", (e) => {
             }
             state = getMaintenanceState(app);
             if (result.status === 'ran' && ((_a = result.errors) !== null && _a !== void 0 ? _a : 0) === 0) {
-                saveMaintenanceTaskRun(app, name, now.toISOString());
+                if (!state.lastRuns)
+                    state.lastRuns = {};
+                state.lastRuns[name] = now.toISOString();
             }
             releaseTaskLock(app, state, name);
             results.push(result);
         }
-        const anyQueued = results.some(r => { var _a; return ((_a = r.queued) !== null && _a !== void 0 ? _a : 0) > 0; });
+        const anyQueued = results.some((r) => { var _a; return ((_a = r.queued) !== null && _a !== void 0 ? _a : 0) > 0; });
         if (anyQueued) {
             results.push(runEmailQueueTask(app));
         }

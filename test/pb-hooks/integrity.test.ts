@@ -374,7 +374,7 @@ test('post_event_report subject templating inserts dynamic values literally', ()
   const maintenanceRoute = extractRouteCallback(content, '/api/maintenance/run');
 
   assert.ok(
-    maintenanceRoute.includes('const eventTitle = String(event.get("title") || "");'),
+    maintenanceRoute.includes("const eventTitle = String(event.get('title') || '');"),
     'Attendance report task should normalize event title before template replacement'
   );
   assert.ok(
@@ -386,7 +386,7 @@ test('post_event_report subject templating inserts dynamic values literally', ()
     'Attendance report task should use a functional replacer for eventDate'
   );
   assert.ok(
-    !maintenanceRoute.includes('.replace(/{eventTitle}/g, event.get("title"))'),
+    !maintenanceRoute.includes(".replace(/{eventTitle}/g, event.get('title'))"),
     'Attendance report task should not use a dynamic replacement string for eventTitle'
   );
 });

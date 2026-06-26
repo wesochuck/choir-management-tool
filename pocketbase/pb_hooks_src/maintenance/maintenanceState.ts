@@ -14,9 +14,7 @@ export function getMaintenanceState(app: PocketBaseApp): MaintenanceState {
     const raw = record.get('value');
     const parsed = parseJsonField<MaintenanceState>(raw);
     if (!parsed || typeof parsed !== 'object') {
-      console.log(
-        '[Maintenance] maintenance_state is malformed, treating as empty: ' + JSON.stringify(raw)
-      );
+      console.log('[Maintenance] maintenance_state is malformed, treating as empty');
       return {};
     }
     return parsed;

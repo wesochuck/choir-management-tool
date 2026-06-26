@@ -292,7 +292,7 @@ describe('runMaintenance', () => {
 
     assert.ok(
       sharedState.lastRuns?.postEventReport,
-      'saveMaintenanceTaskRun was called for postEventReport'
+      'lastRuns.postEventReport was set after successful run'
     );
   });
 
@@ -319,7 +319,7 @@ describe('runMaintenance', () => {
     runMaintenance(makeApp() as never);
     assert.ok(
       !sharedState.lastRuns?.postEventReport,
-      'saveMaintenanceTaskRun should not have been called for postEventReport'
+      'lastRuns.postEventReport should not be set when errors > 0'
     );
   });
 
@@ -371,7 +371,7 @@ describe('runMaintenance', () => {
     runMaintenance(makeApp() as never);
     assert.ok(
       !sharedState.lastRuns?.cleanup,
-      'saveMaintenanceTaskRun should not have been called for cleanup'
+      'lastRuns.cleanup should not be set when status is failed'
     );
   });
 
@@ -383,7 +383,7 @@ describe('runMaintenance', () => {
     }));
 
     runMaintenance(makeApp() as never);
-    assert.ok(sharedState.lastRuns?.cleanup, 'saveMaintenanceTaskRun was called for cleanup');
+    assert.ok(sharedState.lastRuns?.cleanup, 'lastRuns.cleanup was set after successful run');
   });
 
   it('JSON.stringify(summary) does not leak MAINTENANCE_SECRET or token strings', () => {
