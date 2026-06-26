@@ -30900,7 +30900,7 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
     return handleSingerPlayerPlaylist(e);
 });
 
-routerAdd("POST", "/api/maintenance/run", (e) => {
+routerAdd("GET", "/api/maintenance/run", (e) => {
     // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
     // --- Utility source: email/hookJson.ts ---
     "use strict";

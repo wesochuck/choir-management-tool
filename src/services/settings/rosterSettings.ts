@@ -22,8 +22,6 @@ const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   maxRehearsalMisses: 3,
 };
 
-export { DEFAULT_ROSTER_SETTINGS };
-
 export async function getRosterSettings(): Promise<RosterSettings> {
   const setting = await getSetting<RosterSettings>('roster');
   return { ...DEFAULT_ROSTER_SETTINGS, ...setting?.value };

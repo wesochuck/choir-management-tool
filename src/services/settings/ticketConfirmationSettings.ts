@@ -17,8 +17,6 @@ const DEFAULT_TICKET_CONFIRMATION_SETTINGS: TicketConfirmationPageSettings = {
     'Print or screenshot this entire page and bring it with you. We also sent a confirmation email with a link back to this page.',
 };
 
-export { DEFAULT_TICKET_CONFIRMATION_SETTINGS };
-
 export async function getTicketConfirmationPageSettings(): Promise<TicketConfirmationPageSettings> {
   const stored = await getSetting<TicketConfirmationPageSettings>('ticket_confirmation_page');
   return { ...DEFAULT_TICKET_CONFIRMATION_SETTINGS, ...stored?.value };

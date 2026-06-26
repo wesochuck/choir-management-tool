@@ -18,8 +18,6 @@ const DEFAULT_MUSIC_LIBRARY_SETTINGS: MusicLibrarySettings = {
   ],
 };
 
-export { DEFAULT_MUSIC_LIBRARY_SETTINGS };
-
 export async function getMusicLibrarySettings(): Promise<MusicLibrarySettings> {
   const setting = await getSetting<MusicLibrarySettings>('music_library');
   const value = setting?.value;

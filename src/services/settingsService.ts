@@ -1,8 +1,6 @@
 // Re-export all types, defaults, and functions from domain files.
 // This keeps existing imports working throughout the transition.
 
-import { getSetting, upsertSetting } from './settings/core';
-export { getSetting, upsertSetting };
 export type { AppSetting } from './settings/core';
 
 import {
@@ -29,21 +27,13 @@ import {
 export type { CommunicationConfig } from './settings/communicationConfig';
 export { DEFAULT_COMMUNICATION_CONFIG, getCommunicationConfig, saveCommunicationConfig };
 
-import {
-  DEFAULT_ROSTER_SETTINGS,
-  getRosterSettings,
-  saveRosterSettings,
-} from './settings/rosterSettings';
+import { getRosterSettings, saveRosterSettings } from './settings/rosterSettings';
 export type { RosterSettings } from './settings/rosterSettings';
-export { DEFAULT_ROSTER_SETTINGS, getRosterSettings, saveRosterSettings };
+export { getRosterSettings, saveRosterSettings };
 
-import {
-  DEFAULT_MUSIC_LIBRARY_SETTINGS,
-  getMusicLibrarySettings,
-  saveMusicLibrarySettings,
-} from './settings/musicLibrarySettings';
+import { getMusicLibrarySettings, saveMusicLibrarySettings } from './settings/musicLibrarySettings';
 export type { MusicGenreDef, MusicLibrarySettings } from './settings/musicLibrarySettings';
-export { DEFAULT_MUSIC_LIBRARY_SETTINGS, getMusicLibrarySettings, saveMusicLibrarySettings };
+export { getMusicLibrarySettings, saveMusicLibrarySettings };
 
 import {
   DEFAULT_SECTIONS,
@@ -97,21 +87,16 @@ import {
 } from './settings/generalSettings';
 export { getChoirName, saveChoirName, getTimezone, saveTimezone, getHomepageUrl, saveHomepageUrl };
 
-import { DEFAULT_POLL_SETTINGS, getPollSettings, savePollSettings } from './settings/pollSettings';
+import { getPollSettings, savePollSettings } from './settings/pollSettings';
 export type { PollSettings } from './settings/pollSettings';
-export { DEFAULT_POLL_SETTINGS, getPollSettings, savePollSettings };
+export { getPollSettings, savePollSettings };
 
 import {
-  DEFAULT_TICKET_CONFIRMATION_SETTINGS,
   getTicketConfirmationPageSettings,
   saveTicketConfirmationPageSettings,
 } from './settings/ticketConfirmationSettings';
 export type { TicketConfirmationPageSettings } from './settings/ticketConfirmationSettings';
-export {
-  DEFAULT_TICKET_CONFIRMATION_SETTINGS,
-  getTicketConfirmationPageSettings,
-  saveTicketConfirmationPageSettings,
-};
+export { getTicketConfirmationPageSettings, saveTicketConfirmationPageSettings };
 
 import { queueSettingsService } from './settings/queueSettings';
 export { queueSettingsService };

@@ -11,7 +11,10 @@
     "pocketbase/pb_hooks_src/hmacTokens.ts",
     "pocketbase/pb_hooks_src/rsvpValidation.ts",
     "pocketbase/pb_hooks_src/email/emailTypes.ts",
-    "pocketbase/pb_hooks_src/ticketScan/ticketValidation.ts"
+    "pocketbase/pb_hooks_src/ticketScan/ticketValidation.ts",
+    "pocketbase/pb_hooks_src/checkout/**",
+    "pocketbase/pb_hooks_src/rsvp/**",
+    "pocketbase/pb_hooks_src/maintenance/**"
   ],
   "ignoreExportsUsedInFile": {
     "type": true

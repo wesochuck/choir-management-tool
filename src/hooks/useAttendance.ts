@@ -11,20 +11,6 @@ type BulkAttendanceUpdate = {
   attendance: 'Present' | 'Absent' | 'Pending';
 };
 
-export interface AttendanceItem {
-  id: string;
-  profileId: string;
-  name: string;
-  voicePart: string;
-  attendance: 'Present' | 'Absent' | 'Pending';
-  rsvp: 'Yes' | 'No' | 'Pending';
-  rsvpNote?: string;
-  rosterId?: string;
-  folderNumber: string;
-  folderReturned: boolean;
-  photo?: string;
-}
-
 export interface UseAttendanceOptions {
   onRateLimitRetry?: Retry429Options['onRetry'];
   rosterRefreshIntervalMs?: number | false;
