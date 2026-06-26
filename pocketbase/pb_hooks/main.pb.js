@@ -1066,7 +1066,7 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -1105,12 +1105,12 @@ cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -2261,7 +2261,7 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -2300,12 +2300,12 @@ cronAdd("process_email_queue_job", "*/2 * * * *", () => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -3406,7 +3406,7 @@ onRecordAfterCreateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -3445,12 +3445,12 @@ onRecordAfterCreateSuccess((e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -4560,7 +4560,7 @@ onRecordAfterUpdateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -4599,12 +4599,12 @@ onRecordAfterUpdateSuccess((e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -5634,7 +5634,7 @@ onRecordAfterCreateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -5673,12 +5673,12 @@ onRecordAfterCreateSuccess((e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -6857,7 +6857,7 @@ onRecordAfterUpdateSuccess((e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -6896,12 +6896,12 @@ onRecordAfterUpdateSuccess((e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -7764,7 +7764,7 @@ function parseJsonField(val) {
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret() {
-    return $os.getenv("HMAC_SECRET") || "";
+    return $os.getenv('HMAC_SECRET') || '';
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -7803,12 +7803,12 @@ function generateSignedAuditionToken(auditionId) {
     return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
+    if (!token || typeof token !== 'string')
         return null;
     const parts = {};
     const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
+    token.split('&').forEach((segment) => {
+        const idx = segment.indexOf('=');
         if (idx <= 0)
             return;
         const key = segment.slice(0, idx);
@@ -8458,7 +8458,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret() {
-    return $os.getenv("HMAC_SECRET") || "";
+    return $os.getenv('HMAC_SECRET') || '';
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -8497,12 +8497,12 @@ function generateSignedAuditionToken(auditionId) {
     return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
+    if (!token || typeof token !== 'string')
         return null;
     const parts = {};
     const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
+    token.split('&').forEach((segment) => {
+        const idx = segment.indexOf('=');
         if (idx <= 0)
             return;
         const key = segment.slice(0, idx);
@@ -9933,7 +9933,7 @@ function renderMarkdown(text) {
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret() {
-    return $os.getenv("HMAC_SECRET") || "";
+    return $os.getenv('HMAC_SECRET') || '';
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -9972,12 +9972,12 @@ function generateSignedAuditionToken(auditionId) {
     return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
+    if (!token || typeof token !== 'string')
         return null;
     const parts = {};
     const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
+    token.split('&').forEach((segment) => {
+        const idx = segment.indexOf('=');
         if (idx <= 0)
             return;
         const key = segment.slice(0, idx);
@@ -10641,7 +10641,7 @@ function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerT
 // --- Utility source: hmacTokens.ts ---
 "use strict";
 function getHmacSecret() {
-    return $os.getenv("HMAC_SECRET") || "";
+    return $os.getenv('HMAC_SECRET') || '';
 }
 function getPlayerPayload(eventId) {
     return `e=${eventId}`;
@@ -10680,12 +10680,12 @@ function generateSignedAuditionToken(auditionId) {
     return `${payload}&s=${signature}`;
 }
 function parseSignedToken(token, requiredKeys) {
-    if (!token || typeof token !== "string")
+    if (!token || typeof token !== 'string')
         return null;
     const parts = {};
     const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-    token.split("&").forEach(segment => {
-        const idx = segment.indexOf("=");
+    token.split('&').forEach((segment) => {
+        const idx = segment.indexOf('=');
         if (idx <= 0)
             return;
         const key = segment.slice(0, idx);
@@ -12021,7 +12021,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -12060,12 +12060,12 @@ routerAdd("POST", "/api/queue/process", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -12851,7 +12851,7 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -12890,12 +12890,12 @@ routerAdd("POST", "/api/generate-player-token", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -13450,7 +13450,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -13489,12 +13489,12 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -15208,7 +15208,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -15247,12 +15247,12 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -16966,7 +16966,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -17005,12 +17005,12 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -18724,7 +18724,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -18763,12 +18763,12 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -20482,7 +20482,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -20521,12 +20521,12 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -22240,7 +22240,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -22279,12 +22279,12 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -23998,7 +23998,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -24037,12 +24037,12 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -25755,7 +25755,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -25794,12 +25794,12 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -27212,7 +27212,7 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -27251,12 +27251,12 @@ routerAdd("POST", "/api/tickets/validate", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -27685,7 +27685,7 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -27724,12 +27724,12 @@ routerAdd("GET", "/api/tickets/scan-context", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -28158,7 +28158,7 @@ routerAdd("GET", "/api/player-playlist", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -28197,12 +28197,12 @@ routerAdd("GET", "/api/player-playlist", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -28680,7 +28680,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -28719,12 +28719,12 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -29576,7 +29576,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -29615,12 +29615,12 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -30472,7 +30472,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -30511,12 +30511,12 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -31368,7 +31368,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -31407,12 +31407,12 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
@@ -32161,7 +32161,7 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
     // --- Utility source: hmacTokens.ts ---
     "use strict";
     function getHmacSecret() {
-        return $os.getenv("HMAC_SECRET") || "";
+        return $os.getenv('HMAC_SECRET') || '';
     }
     function getPlayerPayload(eventId) {
         return `e=${eventId}`;
@@ -32200,12 +32200,12 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
         return `${payload}&s=${signature}`;
     }
     function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== "string")
+        if (!token || typeof token !== 'string')
             return null;
         const parts = {};
         const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split("&").forEach(segment => {
-            const idx = segment.indexOf("=");
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
             if (idx <= 0)
                 return;
             const key = segment.slice(0, idx);
