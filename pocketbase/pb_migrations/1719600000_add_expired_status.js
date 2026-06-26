@@ -6,9 +6,14 @@ migrate(
     const ticketPurchases = app.findCollectionByNameOrId('pbc_ticketPurchases_001');
     if (ticketPurchases) {
       const statusField = ticketPurchases.fields.getByName('status');
-      if (statusField && Array.isArray(statusField.options.values)) {
-        if (!statusField.options.values.includes('expired')) {
-          statusField.options.values.push('expired');
+      if (statusField) {
+        const values = statusField.options?.values ?? statusField.values;
+        if (Array.isArray(values) && !values.includes('expired')) {
+          if (statusField.options) {
+            statusField.options.values.push('expired');
+          } else {
+            values.push('expired');
+          }
         }
       }
       ticketPurchases.fields.add(new DateField({ name: 'expiredAt', required: false }));
@@ -19,9 +24,14 @@ migrate(
     const donations = app.findCollectionByNameOrId('pbc_donations_001');
     if (donations) {
       const statusField = donations.fields.getByName('status');
-      if (statusField && Array.isArray(statusField.options.values)) {
-        if (!statusField.options.values.includes('expired')) {
-          statusField.options.values.push('expired');
+      if (statusField) {
+        const values = statusField.options?.values ?? statusField.values;
+        if (Array.isArray(values) && !values.includes('expired')) {
+          if (statusField.options) {
+            statusField.options.values.push('expired');
+          } else {
+            values.push('expired');
+          }
         }
       }
       donations.fields.add(new DateField({ name: 'expiredAt', required: false }));
@@ -36,8 +46,16 @@ migrate(
     const removeExpired = (collection) => {
       if (!collection) return;
       const statusField = collection.fields.getByName('status');
-      if (statusField && Array.isArray(statusField.options.values)) {
-        statusField.options.values = statusField.options.values.filter((v) => v !== 'expired');
+      if (statusField) {
+        const values = statusField.options?.values ?? statusField.values;
+        if (Array.isArray(values)) {
+          const filtered = values.filter((v) => v !== 'expired');
+          if (statusField.options) {
+            statusField.options.values = filtered;
+          } else {
+            statusField.values = filtered;
+          }
+        }
       }
       const expiredAt = collection.fields.getByName('expiredAt');
       if (expiredAt) {
