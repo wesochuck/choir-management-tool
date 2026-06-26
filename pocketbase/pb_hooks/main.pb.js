@@ -10,4863 +10,6 @@ if (typeof process === 'undefined') {
     };
 }
 
-// --- CRON JOBS ---
-
-cronAdd("post_event_report", "0 * * * *", () => {
-    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
-    // --- Utility source: email/hookJson.ts ---
-    "use strict";
-    const decodeGoBytes = (val) => {
-        if (!val)
-            return "";
-        if (typeof val === 'string')
-            return val;
-        if (typeof val === 'object') {
-            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
-                try {
-                    let str = "";
-                    for (let i = 0; i < val.length; i++) {
-                        str += String.fromCharCode(val[i]);
-                    }
-                    return str;
-                }
-                catch (_a) {
-                    // Ignore decoding errors
-                }
-            }
-            return val;
-        }
-        return String(val);
-    };
-    function parseJsonField(val) {
-        if (!val)
-            return null;
-        const decoded = decodeGoBytes(val);
-        if (!decoded)
-            return null;
-        if (typeof decoded === 'object')
-            return decoded;
-        try {
-            return JSON.parse(decoded);
-        }
-        catch (_a) {
-            return null;
-        }
-    }
-
-    // --- Utility source: email/hookText.ts ---
-    "use strict";
-    function escapeHtml(str) {
-        if (!str)
-            return "";
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
-    function sanitizeHtmlTemplateData(data) {
-        const sanitized = {};
-        const entries = Object.entries(data);
-        for (const [key, value] of entries) {
-            sanitized[key] = escapeHtml(value == null ? "" : String(value));
-        }
-        return sanitized;
-    }
-    function sanitizeEmailSubject(str) {
-        if (!str)
-            return "";
-        return String(str).replace(/[\r\n]+/g, " ").trim();
-    }
-    function normalizeBaseUrl(url) {
-        if (!url)
-            return "http://localhost:5173";
-        return String(url).trim().replace(/\/+$/g, "");
-    }
-    function nthSundayOfMonth(year, monthIndex, occurrence) {
-        const first = new Date(Date.UTC(year, monthIndex, 1));
-        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
-    }
-    function lastSundayOfMonth(year, monthIndex) {
-        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
-        return last.getUTCDate() - last.getUTCDay();
-    }
-    function firstSundayOfMonth(year, monthIndex) {
-        return nthSundayOfMonth(year, monthIndex, 1);
-    }
-    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
-        const year = date.getUTCFullYear();
-        const dstStartDay = nthSundayOfMonth(year, 2, 2);
-        const dstEndDay = nthSundayOfMonth(year, 10, 1);
-        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isEuropeDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
-        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isSydneyDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
-        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
-        return date.getTime() >= dstStart || date.getTime() < dstEnd;
-    }
-    function getTimezoneOffsetInfo(date, timezone) {
-        const tz = String(timezone || "").toLowerCase();
-        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
-            return { offsetMinutes: 0, abbreviation: "UTC" };
-        }
-        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
-            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
-            return {
-                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
-                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
-            };
-        };
-        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
-            return usZone(-300, -240, "EST", "EDT");
-        }
-        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
-            return usZone(-360, -300, "CST", "CDT");
-        }
-        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
-            return usZone(-420, -360, "MST", "MDT");
-        }
-        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
-            return usZone(-540, -480, "AKST", "AKDT");
-        }
-        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
-            return { offsetMinutes: -420, abbreviation: "MST" };
-        }
-        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
-            return { offsetMinutes: -600, abbreviation: "HST" };
-        }
-        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
-            return usZone(-480, -420, "PST", "PDT");
-        }
-        if (tz.indexOf("london") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
-        }
-        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
-        }
-        if (tz.indexOf("tokyo") >= 0) {
-            return { offsetMinutes: 540, abbreviation: "JST" };
-        }
-        if (tz.indexOf("sydney") >= 0) {
-            const isDst = isSydneyDst(date);
-            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
-        }
-        return { offsetMinutes: 0, abbreviation: "UTC" };
-    }
-    function formatInTimezone(date, timezone, options) {
-        if (!date)
-            return "";
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
-        try {
-            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
-            if (typeof process === 'undefined' && typeof window === 'undefined') {
-                throw new Error("Goja VM: use custom formatting");
-            }
-            // Try native Intl first (V8 / browser / Node.js)
-            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
-        }
-        catch (_a) {
-            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
-            // Shift date by offset to get target local time in UTC coordinates
-            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
-            const localDate = new Date(localTimeMs);
-            // Format manually using the shifted localDate components
-            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const wday = weekdays[localDate.getUTCDay()];
-            const wdayFull = weekdaysFull[localDate.getUTCDay()];
-            const mon = months[localDate.getUTCMonth()];
-            const monFull = monthsFull[localDate.getUTCMonth()];
-            const day = localDate.getUTCDate();
-            const yr = localDate.getUTCFullYear();
-            let hr = localDate.getUTCHours();
-            const ampm = hr >= 12 ? "PM" : "AM";
-            hr = hr % 12;
-            if (hr === 0)
-                hr = 12;
-            const minVal = localDate.getUTCMinutes();
-            const min = minVal < 10 ? "0" + minVal : String(minVal);
-            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
-            // Build formats based on options requested:
-            // Case 1: Just time (hour + minute)
-            if (options.hour && !options.day) {
-                return hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 2: Long date format: "Sunday, June 14, 2026"
-            if (options.weekday === "long" && options.year) {
-                return wdayFull + ", " + monFull + " " + day + ", " + yr;
-            }
-            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
-            if (options.weekday === "short" && options.hour) {
-                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 4: Date only with weekday: "Sun, Jun 14"
-            if (options.weekday === "short" && !options.hour) {
-                return wday + ", " + mon + " " + day;
-            }
-            // Case 5: Date only without weekday: "Jun 14, 2026"
-            if (options.month && !options.hour) {
-                const m = options.month === "long" ? monFull : mon;
-                return m + " " + day + (options.year ? ", " + yr : "");
-            }
-            // Generic fallback: "06/14/2026, 7:00 PM"
-            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
-            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-        }
-    }
-
-    // --- Utility source: email/attendanceReport.ts ---
-    "use strict";
-    function renderAttendanceReportBody(data) {
-        const safe = sanitizeHtmlTemplateData(data);
-        const exceededLimitSection = data.exceededLimitListHtml ? `
-        <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 20px 0;" />
-        <h3 style="color: #b45309; margin-top: 0;">Singers Exceeding Rehearsal Miss Limit</h3>
-        ${data.exceededLimitListHtml}
-        ` : '';
-        return `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
-        <h2>Attendance Report</h2>
-        <p>Event: ${safe.eventTitle}</p>
-        <p>Date: ${safe.eventDate}</p>
-        <p>Attendance Rate: ${safe.attendanceRate}% (${safe.presentCount}/${safe.totalCount} present)</p>
-        ${exceededLimitSection}
-        <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
-        <div style="font-size: 12px; color: #94a3b8; text-align: center;">
-            <p style="margin: 0 0 10px 0;">${safe.mailingAddress}</p>
-            <p>Choir Management Tool</p>
-        </div>
-    </div>
-    `;
-    }
-
-    // --- Utility source: attendanceFinalizer.ts ---
-    "use strict";
-    function finalizeUnmarkedAttendanceForEvent(app, event) {
-        const isPerformance = event.get("type") === "Performance";
-        const parentPerf = event.get("parentPerformanceId");
-        const linkedPerfId = isPerformance ? event.id : (typeof parentPerf === "string" ? parentPerf : "");
-        if (!linkedPerfId)
-            return;
-        let linkedPerformance = null;
-        try {
-            linkedPerformance = app.findRecordById("events", linkedPerfId);
-        }
-        catch (_a) {
-            // ignore
-        }
-        if (!linkedPerformance)
-            return;
-        const activeProfiles = app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
-        // Batch: fetch all RSVP'd rosters for the linked performance at once
-        const performingProfileIds = {};
-        try {
-            const perfRosters = app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
-            if (perfRosters) {
-                perfRosters.forEach(r => {
-                    if (r.get("rsvp") === "Yes") {
-                        performingProfileIds[r.get("profile")] = true;
-                    }
-                });
-            }
-        }
-        catch (_b) {
-            // ignore
-        }
-        // Batch: fetch all existing rosters for the current event at once
-        const existingRostersByProfile = {};
-        try {
-            const existingRosters = app.findRecordsByFilter("eventRosters", "event = {:eventId}", "", 1000, 0, { eventId: event.id });
-            if (existingRosters) {
-                existingRosters.forEach(r => {
-                    existingRostersByProfile[r.get("profile")] = r;
-                });
-            }
-        }
-        catch (_c) {
-            // ignore
-        }
-        for (const profile of activeProfiles || []) {
-            if (!performingProfileIds[profile.id])
-                continue;
-            let rosterRecord = existingRostersByProfile[profile.id] || null;
-            if (!rosterRecord) {
-                const rosterCollection = app.findCollectionByNameOrId("eventRosters");
-                rosterRecord = new Record(rosterCollection, {
-                    event: event.id,
-                    profile: profile.id,
-                    rsvp: "Pending",
-                    attendance: "Absent"
-                });
-                try {
-                    app.save(rosterRecord);
-                }
-                catch (e) {
-                    console.log("Failed to auto-create Absent roster record: " + e);
-                }
-            }
-            else if (rosterRecord.get("attendance") === "Pending" || rosterRecord.get("attendance") === "") {
-                rosterRecord.set("attendance", "Absent");
-                try {
-                    app.save(rosterRecord);
-                }
-                catch (e) {
-                    console.log("Failed to auto-update roster record to Absent: " + e);
-                }
-            }
-        }
-    }
-
-    // --- Utility source: rsvpValidation.ts ---
-    "use strict";
-    function parsePocketBaseDate(dateValue) {
-        const raw = String(dateValue || "").trim();
-        if (!raw)
-            return null;
-        const normalized = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.replace(" ", "T") : raw;
-        const withTimezone = /^\d{4}-\d{2}-\d{2}/.test(normalized) && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)
-            ? normalized + "Z"
-            : normalized;
-        try {
-            const parsed = new Date(withTimezone);
-            if (!Number.isNaN(parsed.getTime()))
-                return parsed;
-        }
-        catch (_a) {
-            // Goja can be stricter than browsers for date strings; fall back below.
-        }
-        try {
-            const parsed = new Date(raw);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        catch (_b) {
-            return null;
-        }
-    }
-    function validateSingerRsvpWindow(event) {
-        if (event.get("isArchived")) {
-            return {
-                ok: false,
-                status: 410,
-                error: "This event has been archived/deleted.",
-            };
-        }
-        const eventType = String(event.get("type") || "");
-        if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
-            return {
-                ok: false,
-                status: 410,
-                error: "The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.",
-            };
-        }
-        if (eventType === "Rehearsal") {
-            const eventDate = parsePocketBaseDate(event.get("date"));
-            if (!eventDate) {
-                return { ok: false, status: 400, error: "Invalid rehearsal date." };
-            }
-            if (eventDate.getTime() < Date.now()) {
-                return { ok: false, status: 410, error: "This rehearsal has already passed." };
-            }
-        }
-        return { ok: true };
-    }
-    function getRsvpWindowInfo(event) {
-        if (event.get("isArchived")) {
-            return {
-                canSubmit: false,
-                isReadOnly: true,
-                reason: "This event has been archived/deleted.",
-            };
-        }
-        const eventType = String(event.get("type") || "");
-        if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
-            return {
-                canSubmit: false,
-                isReadOnly: true,
-                reason: "The RSVP window for this performance is closed. Your current response is shown below.",
-            };
-        }
-        if (eventType === "Rehearsal") {
-            const eventDate = parsePocketBaseDate(event.get("date"));
-            if (!eventDate) {
-                return {
-                    canSubmit: false,
-                    isReadOnly: true,
-                    reason: "Invalid rehearsal date.",
-                };
-            }
-            if (eventDate.getTime() < Date.now()) {
-                return {
-                    canSubmit: false,
-                    isReadOnly: true,
-                    reason: "This rehearsal has already passed.",
-                };
-            }
-        }
-        return {
-            canSubmit: true,
-            isReadOnly: false,
-            reason: "",
-        };
-    }
-
-    // --- Utility source: pocketbaseDate.ts ---
-    "use strict";
-    function coercePocketBaseDate(value) {
-        if (!value)
-            return null;
-        if (value instanceof Date) {
-            return Number.isNaN(value.getTime()) ? null : value;
-        }
-        if (typeof value === 'string') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'number') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'object') {
-            const dateLike = value;
-            if (typeof dateLike.toISOString === 'function') {
-                try {
-                    const parsed = new Date(dateLike.toISOString());
-                    if (!Number.isNaN(parsed.getTime()))
-                        return parsed;
-                }
-                catch (_a) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.valueOf === 'function') {
-                try {
-                    const valueOfResult = dateLike.valueOf();
-                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
-                        const parsed = new Date(valueOfResult);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
-                        return valueOfResult;
-                    }
-                }
-                catch (_b) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.toString === 'function') {
-                try {
-                    const stringValue = dateLike.toString();
-                    // Avoid parsing the default "[object Object]" output.
-                    if (stringValue && stringValue !== '[object Object]') {
-                        const parsed = new Date(stringValue);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                }
-                catch (_c) {
-                    // Fall through.
-                }
-            }
-        }
-        return null;
-    }
-    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed >= comparisonDate;
-    }
-    function isPocketBaseDateBefore(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed < comparisonDate;
-    }
-    // --- END CALLBACK-LOCAL UTILITIES ---
-
-    const hoursAfter = 12;
-    const now = new Date();
-    const end = new Date(now.getTime() - (hoursAfter * 60 * 60 * 1000));
-    const start = new Date(end.getTime() - (1 * 60 * 60 * 1000));
-
-    const events = $app.findRecordsByFilter("events", "date >= {:start} && date < {:end} && isArchived != true", "-date", 100, 0, { start, end });
-    if (!events || events.length === 0) return;
-
-    const admins = $app.findRecordsByFilter("users", "role = 'admin'");
-    if (!admins || admins.length === 0) return;
-
-    let commSettings = { mailingAddress: "123 Choir St, Harmony City, HC 12345", reportSubjectTemplate: "Attendance Report: {eventTitle}", reportBodyTemplate: "Report for {eventTitle}..." };
-    try {
-        const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-        const parsed = parseJsonField(setting.get("value"));
-        if (parsed) {
-            if (parsed.mailingAddress) commSettings.mailingAddress = parsed.mailingAddress;
-            if (parsed.reportSubjectTemplate) commSettings.reportSubjectTemplate = parsed.reportSubjectTemplate;
-            if (parsed.reportBodyTemplate) commSettings.reportBodyTemplate = parsed.reportBodyTemplate;
-        }
-    } catch (e) {
-        console.log("Warning: Failed to parse communications settings", e);
-    }
-
-    events.forEach(event => {
-        // 1. Resolve linked performance & auto-finalize unmarked attendance for performing singers
-        finalizeUnmarkedAttendanceForEvent($app, event);
-
-        const isPerformance = event.get("type") === "Performance";
-        const linkedPerfId = isPerformance ? event.id : event.get("parentPerformanceId");
-
-        let maxRehearsalMisses = 3;
-        try {
-            const rosterSettingRecord = $app.findFirstRecordByFilter("appSettings", "key = 'roster'");
-            const parsed = parseJsonField(rosterSettingRecord.get("value"));
-            if (parsed && parsed.maxRehearsalMisses !== undefined) {
-                maxRehearsalMisses = Number(parsed.maxRehearsalMisses);
-            }
-        } catch (e) {}
-
-        const rosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
-        if (!rosters || rosters.length === 0) return;
-
-        const total = rosters.length;
-        const present = rosters.filter(r => r.get("attendance") === "Present").length;
-        const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
-        const eventDateObj = coercePocketBaseDate(event.get("date"));
-        const eventDateStr = eventDateObj
-          ? (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear()
-          : "";
-        const eventTitle = String(event.get("title") || "");
-        const subject = sanitizeEmailSubject(
-            commSettings.reportSubjectTemplate
-                .replace(/{eventTitle}/g, () => eventTitle)
-                .replace(/{eventDate}/g, () => eventDateStr)
-        );
-
-        // Calculate exceeded limit section (only including past rehearsals)
-        let exceededLimitListHtml = "";
-        if (linkedPerfId) {
-            const cycleRehearsals = $app.findRecordsByFilter(
-                "events",
-                "parentPerformanceId = {:perfId} && type = 'Rehearsal'",
-                "date",
-                200,
-                0,
-                { perfId: linkedPerfId }
-            );
-
-            if (cycleRehearsals && cycleRehearsals.length > 0) {
-                const pastRehearsals = cycleRehearsals.filter(r => parsePocketBaseDate(r.get("date")) <= now);
-
-                if (pastRehearsals.length > 0) {
-                    const pastRehearsalIds = pastRehearsals.map(r => r.id);
-                    const activeProfiles = $app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
-                    const exceededSingers = [];
-
-                    // Batch: fetch all rosters for past rehearsals at once
-                    const pastRehearsalRosters = [];
-                    const filterParts = pastRehearsalIds.map((_, i) => "event = {:rid" + i + "}").join(" || ");
-                    const filterParams = {};
-                    pastRehearsalIds.forEach((id, i) => { filterParams["rid" + i] = id; });
-                    try {
-                        const allRosters = $app.findRecordsByFilter("eventRosters", filterParts, "", 5000, 0, filterParams);
-                        pastRehearsalRosters.push(...(allRosters || []));
-                    } catch (e) {}
-
-                    // Batch: fetch all RSVP'd rosters for the linked performance at once
-                    const performingProfileIds = {};
-                    try {
-                        const perfRosters = $app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
-                        if (perfRosters) {
-                            perfRosters.forEach(r => {
-                                if (r.get("rsvp") === "Yes") {
-                                    performingProfileIds[r.get("profile")] = true;
-                                }
-                            });
-                        }
-                    } catch (e) {}
-
-                    // Build a map of rehearsal rosters by profile for quick lookup
-                    const pastRostersByProfile = {};
-                    pastRehearsalRosters.forEach(r => {
-                        const profileId = r.get("profile");
-                        if (!pastRostersByProfile[profileId]) {
-                            pastRostersByProfile[profileId] = [];
-                        }
-                        pastRostersByProfile[profileId].push(r);
-                    });
-
-                    activeProfiles.forEach(profile => {
-                        if (!performingProfileIds[profile.id]) return;
-                        const profileRosters = pastRostersByProfile[profile.id] || [];
-                        let missCount = 0;
-                        pastRehearsals.forEach(reh => {
-                            const r = profileRosters.find(x => x.get("event") === reh.id);
-                                
-                                const wasDeclined = r ? r.get("rsvp") === "No" : false;
-                                const wasAbsent = r ? r.get("attendance") === "Absent" : false;
-                                const notMarkedPresent = r ? r.get("attendance") !== "Present" : true;
-
-                                if (wasDeclined || wasAbsent || notMarkedPresent) {
-                                    missCount++;
-                                }
-                            });
-
-                            if (missCount > maxRehearsalMisses) {
-                                exceededSingers.push({
-                                    name: profile.get("name"),
-                                    missCount: missCount
-                                });
-                            }
-                        });
-
-                    if (exceededSingers.length > 0) {
-                        exceededLimitListHtml = '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' + 
-                            exceededSingers.map(s => '<li style="margin-bottom: 4px;"><strong>' + escapeHtml(s.name) + '</strong>: ' + s.missCount + ' missed rehearsals (Limit: ' + maxRehearsalMisses + ')</li>').join('') + 
-                            '</ul>';
-                    }
-                }
-            }
-        }
-
-        const body = renderAttendanceReportBody({
-            eventTitle: event.get("title"),
-            eventDate: eventDateStr,
-            attendanceRate: attendanceRate,
-            presentCount: present,
-            totalCount: total,
-            mailingAddress: commSettings.mailingAddress,
-            exceededLimitListHtml: exceededLimitListHtml || undefined
-        });
-
-        try {
-            const messageCollection = $app.findCollectionByNameOrId("messages");
-            const record = new Record(messageCollection, {
-                subject,
-                content: body,
-                type: "Email",
-                status: "Sent",
-                recipients: admins.map(a => ({ id: a.id, name: a.get("name") || "Admin", email: a.get("email") })),
-                filters: { type: "Automated Report", eventId: event.id }
-            });
-            $app.save(record);
-        } catch (e) {
-            console.log("[Cron Error] Failed to create attendance report message: " + e);
-        }
-    });
-});
-
-cronAdd("ticket_buyer_reminder", "0 * * * *", () => {
-    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
-    // --- Utility source: email/hookJson.ts ---
-    "use strict";
-    const decodeGoBytes = (val) => {
-        if (!val)
-            return "";
-        if (typeof val === 'string')
-            return val;
-        if (typeof val === 'object') {
-            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
-                try {
-                    let str = "";
-                    for (let i = 0; i < val.length; i++) {
-                        str += String.fromCharCode(val[i]);
-                    }
-                    return str;
-                }
-                catch (_a) {
-                    // Ignore decoding errors
-                }
-            }
-            return val;
-        }
-        return String(val);
-    };
-    function parseJsonField(val) {
-        if (!val)
-            return null;
-        const decoded = decodeGoBytes(val);
-        if (!decoded)
-            return null;
-        if (typeof decoded === 'object')
-            return decoded;
-        try {
-            return JSON.parse(decoded);
-        }
-        catch (_a) {
-            return null;
-        }
-    }
-
-    // --- Utility source: email/hookText.ts ---
-    "use strict";
-    function escapeHtml(str) {
-        if (!str)
-            return "";
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
-    function sanitizeHtmlTemplateData(data) {
-        const sanitized = {};
-        const entries = Object.entries(data);
-        for (const [key, value] of entries) {
-            sanitized[key] = escapeHtml(value == null ? "" : String(value));
-        }
-        return sanitized;
-    }
-    function sanitizeEmailSubject(str) {
-        if (!str)
-            return "";
-        return String(str).replace(/[\r\n]+/g, " ").trim();
-    }
-    function normalizeBaseUrl(url) {
-        if (!url)
-            return "http://localhost:5173";
-        return String(url).trim().replace(/\/+$/g, "");
-    }
-    function nthSundayOfMonth(year, monthIndex, occurrence) {
-        const first = new Date(Date.UTC(year, monthIndex, 1));
-        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
-    }
-    function lastSundayOfMonth(year, monthIndex) {
-        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
-        return last.getUTCDate() - last.getUTCDay();
-    }
-    function firstSundayOfMonth(year, monthIndex) {
-        return nthSundayOfMonth(year, monthIndex, 1);
-    }
-    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
-        const year = date.getUTCFullYear();
-        const dstStartDay = nthSundayOfMonth(year, 2, 2);
-        const dstEndDay = nthSundayOfMonth(year, 10, 1);
-        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isEuropeDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
-        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isSydneyDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
-        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
-        return date.getTime() >= dstStart || date.getTime() < dstEnd;
-    }
-    function getTimezoneOffsetInfo(date, timezone) {
-        const tz = String(timezone || "").toLowerCase();
-        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
-            return { offsetMinutes: 0, abbreviation: "UTC" };
-        }
-        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
-            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
-            return {
-                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
-                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
-            };
-        };
-        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
-            return usZone(-300, -240, "EST", "EDT");
-        }
-        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
-            return usZone(-360, -300, "CST", "CDT");
-        }
-        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
-            return usZone(-420, -360, "MST", "MDT");
-        }
-        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
-            return usZone(-540, -480, "AKST", "AKDT");
-        }
-        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
-            return { offsetMinutes: -420, abbreviation: "MST" };
-        }
-        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
-            return { offsetMinutes: -600, abbreviation: "HST" };
-        }
-        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
-            return usZone(-480, -420, "PST", "PDT");
-        }
-        if (tz.indexOf("london") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
-        }
-        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
-        }
-        if (tz.indexOf("tokyo") >= 0) {
-            return { offsetMinutes: 540, abbreviation: "JST" };
-        }
-        if (tz.indexOf("sydney") >= 0) {
-            const isDst = isSydneyDst(date);
-            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
-        }
-        return { offsetMinutes: 0, abbreviation: "UTC" };
-    }
-    function formatInTimezone(date, timezone, options) {
-        if (!date)
-            return "";
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
-        try {
-            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
-            if (typeof process === 'undefined' && typeof window === 'undefined') {
-                throw new Error("Goja VM: use custom formatting");
-            }
-            // Try native Intl first (V8 / browser / Node.js)
-            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
-        }
-        catch (_a) {
-            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
-            // Shift date by offset to get target local time in UTC coordinates
-            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
-            const localDate = new Date(localTimeMs);
-            // Format manually using the shifted localDate components
-            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const wday = weekdays[localDate.getUTCDay()];
-            const wdayFull = weekdaysFull[localDate.getUTCDay()];
-            const mon = months[localDate.getUTCMonth()];
-            const monFull = monthsFull[localDate.getUTCMonth()];
-            const day = localDate.getUTCDate();
-            const yr = localDate.getUTCFullYear();
-            let hr = localDate.getUTCHours();
-            const ampm = hr >= 12 ? "PM" : "AM";
-            hr = hr % 12;
-            if (hr === 0)
-                hr = 12;
-            const minVal = localDate.getUTCMinutes();
-            const min = minVal < 10 ? "0" + minVal : String(minVal);
-            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
-            // Build formats based on options requested:
-            // Case 1: Just time (hour + minute)
-            if (options.hour && !options.day) {
-                return hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 2: Long date format: "Sunday, June 14, 2026"
-            if (options.weekday === "long" && options.year) {
-                return wdayFull + ", " + monFull + " " + day + ", " + yr;
-            }
-            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
-            if (options.weekday === "short" && options.hour) {
-                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 4: Date only with weekday: "Sun, Jun 14"
-            if (options.weekday === "short" && !options.hour) {
-                return wday + ", " + mon + " " + day;
-            }
-            // Case 5: Date only without weekday: "Jun 14, 2026"
-            if (options.month && !options.hour) {
-                const m = options.month === "long" ? monFull : mon;
-                return m + " " + day + (options.year ? ", " + yr : "");
-            }
-            // Generic fallback: "06/14/2026, 7:00 PM"
-            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
-            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-        }
-    }
-
-    // --- Utility source: email/hookPlaceholders.ts ---
-    "use strict";
-    function renderSetlistHtml(rawSetList) {
-        const setList = parseJsonField(rawSetList);
-        if (setList && setList.length > 0) {
-            const rows = setList.map((item, i) => {
-                const num = i + 1;
-                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
-                const composer = escapeHtml(item.composer || '');
-                const duration = escapeHtml(item.duration || '');
-                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
-            }).join('');
-            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
-        }
-        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
-    }
-
-    // --- Utility source: email/emailRendering.ts ---
-    "use strict";
-    function renderMarkdown(text) {
-        if (!text)
-            return "";
-        // Escape raw HTML first
-        let html = text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
-        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
-            const level = hashes.length;
-            // Using inline styles for headings for better email client compatibility
-            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
-            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
-        });
-        // Bold: **text** or __text__
-        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
-        // Italic: *text* or _text_
-        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
-        // Links: [text](url)
-        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
-            const sanitizedUrl = url.trim();
-            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
-                return text;
-            }
-            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
-            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
-        });
-        // Lists (Ordered and Unordered)
-        const lines = html.split("\n");
-        let inUl = false;
-        let inOl = false;
-        const processedLines = lines.map(line => {
-            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
-            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
-            if (ulMatch) {
-                const content = ulMatch[2];
-                let prefix = "";
-                if (inOl) {
-                    inOl = false;
-                    prefix = "</ol>";
-                }
-                if (!inUl) {
-                    inUl = true;
-                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
-                }
-                return `<li>${content}</li>`;
-            }
-            else if (olMatch) {
-                const content = olMatch[2];
-                let prefix = "";
-                if (inUl) {
-                    inUl = false;
-                    prefix = "</ul>";
-                }
-                if (!inOl) {
-                    inOl = true;
-                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
-                }
-                return `<li>${content}</li>`;
-            }
-            else {
-                let result = line;
-                if (inUl) {
-                    inUl = false;
-                    result = "</ul>" + line;
-                }
-                if (inOl) {
-                    inOl = false;
-                    result = "</ol>" + line;
-                }
-                return result;
-            }
-        });
-        if (inUl)
-            processedLines.push("</ul>");
-        if (inOl)
-            processedLines.push("</ol>");
-        html = processedLines.join("\n");
-        // Line breaks and paragraphs
-        const blocks = html.split(/\n\s*\n/);
-        html = blocks.map(block => {
-            const trimmed = block.trim();
-            if (!trimmed)
-                return "";
-            if (trimmed.startsWith("<ul"))
-                return block;
-            if (trimmed.startsWith("<ol"))
-                return block;
-            if (trimmed.match(/^<h\d/))
-                return block;
-            if (trimmed.startsWith("<div"))
-                return block; // Keep footers/buttons intact
-            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
-        }).join("\n");
-        return html;
-    }
-
-    // --- Utility source: email/emailStyles.ts ---
-    "use strict";
-    const EMAIL_CSS = `
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
-    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
-    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
-    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
-    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
-    a { color: #4a7c59; text-decoration: underline; }
-    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
-    `.trim();
-
-    // --- Utility source: email/mailjetRenderer.ts ---
-    "use strict";
-    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
-        const displayTitle = headerTitle || "Choir Management";
-        return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            ${EMAIL_CSS}
-        </style>
-    </head>
-    <body>
-        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-                <td align="center">
-                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                            <td class="header">
-                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="content">
-                                ${contentHtml}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="footer">
-                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
-                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
-                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-        `.trim();
-    }
-
-    // --- Utility source: hmacTokens.ts ---
-    "use strict";
-    function getHmacSecret() {
-        return $os.getenv('HMAC_SECRET') || '';
-    }
-    function getPlayerPayload(eventId) {
-        return `e=${eventId}`;
-    }
-    function getEventRecipientPayload(eventId, recipientId) {
-        return `e=${eventId}&p=${recipientId}`;
-    }
-    function getAuditionPayload(auditionId) {
-        return `a=${auditionId}`;
-    }
-    function getTicketPayload(purchaseId) {
-        return `t=${purchaseId}`;
-    }
-    function generateSignedTicketToken(purchaseId) {
-        const secret = getHmacSecret();
-        const payload = getTicketPayload(purchaseId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedPlayerToken(eventId) {
-        const secret = getHmacSecret();
-        const payload = getPlayerPayload(eventId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedEventRecipientToken(eventId, recipientId) {
-        const secret = getHmacSecret();
-        const payload = getEventRecipientPayload(eventId, recipientId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedAuditionToken(auditionId) {
-        const secret = getHmacSecret();
-        const payload = getAuditionPayload(auditionId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== 'string')
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split('&').forEach((segment) => {
-            const idx = segment.indexOf('=');
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
-
-    // --- Utility source: pocketbaseDate.ts ---
-    "use strict";
-    function coercePocketBaseDate(value) {
-        if (!value)
-            return null;
-        if (value instanceof Date) {
-            return Number.isNaN(value.getTime()) ? null : value;
-        }
-        if (typeof value === 'string') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'number') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'object') {
-            const dateLike = value;
-            if (typeof dateLike.toISOString === 'function') {
-                try {
-                    const parsed = new Date(dateLike.toISOString());
-                    if (!Number.isNaN(parsed.getTime()))
-                        return parsed;
-                }
-                catch (_a) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.valueOf === 'function') {
-                try {
-                    const valueOfResult = dateLike.valueOf();
-                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
-                        const parsed = new Date(valueOfResult);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
-                        return valueOfResult;
-                    }
-                }
-                catch (_b) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.toString === 'function') {
-                try {
-                    const stringValue = dateLike.toString();
-                    // Avoid parsing the default "[object Object]" output.
-                    if (stringValue && stringValue !== '[object Object]') {
-                        const parsed = new Date(stringValue);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                }
-                catch (_c) {
-                    // Fall through.
-                }
-            }
-        }
-        return null;
-    }
-    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed >= comparisonDate;
-    }
-    function isPocketBaseDateBefore(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed < comparisonDate;
-    }
-
-    // --- Utility source: email/queueProcessor.ts ---
-    "use strict";
-    function processEmailQueue(app) {
-        var _a;
-        const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
-            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
-            return;
-        }
-        const EMAIL_QUEUE_BATCH_SIZE = 150;
-        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
-        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
-        // Stale Processing record recovery
-        try {
-            app
-                .db()
-                .newQuery(`
-                UPDATE emailQueue
-                SET status = 'Pending',
-                    processingRunId = NULL,
-                    processingStartedAt = NULL
-                WHERE status = 'Processing'
-                  AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `)
-                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
-                .execute();
-            app
-                .db()
-                .newQuery(`
-                UPDATE emailQueue
-                SET status = 'Failed',
-                    processingRunId = NULL,
-                    processingStartedAt = NULL
-                WHERE status = 'Processing'
-                  AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= {:maxAttempts}
-            `)
-                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
-                .execute();
-        }
-        catch (recoverErr) {
-            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
-        }
-        // Build variables used for layout rendering
-        const secret = getHmacSecret();
-        let baseUrl = 'http://localhost:5173';
-        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
-        let choirName = '';
-        try {
-            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
-            const comms = parseJsonField(commRecord.get('value'));
-            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                baseUrl = comms.frontendUrl;
-            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
-                mailingAddress = comms.mailingAddress;
-        }
-        catch (_b) {
-            // use default baseUrl and mailingAddress
-        }
-        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
-            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
-            if (appSettingsUrl) {
-                baseUrl = appSettingsUrl;
-            }
-        }
-        baseUrl = normalizeBaseUrl(baseUrl);
-        try {
-            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get('value'));
-            if (val)
-                choirName = val;
-        }
-        catch (_c) {
-            // use default choirName
-        }
-        let timezone = 'America/New_York';
-        try {
-            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
-            const valueStr = tzSetting.get('value');
-            const tzP = parseJsonField(valueStr);
-            if (tzP) {
-                if (typeof tzP === 'string') {
-                    timezone = tzP;
-                }
-                else if (typeof tzP === 'object' && tzP.timezone) {
-                    timezone = tzP.timezone;
-                }
-            }
-        }
-        catch (_d) {
-            // use default timezone
-        }
-        let totalClaimed = 0;
-        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
-            const runId = $security.randomString(20);
-            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
-            // Atomic SQLite-level claiming
-            try {
-                app
-                    .db()
-                    // SAFE: Parameterized query using bind(), preventing SQL injection
-                    .newQuery(`
-                    UPDATE emailQueue
-                    SET status = 'Processing',
-                        processingRunId = {:runId},
-                        processingStartedAt = datetime('now')
-                    WHERE id IN (
-                        SELECT id
-                        FROM emailQueue
-                        WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < {:maxAttempts})
-                        ORDER BY created ASC
-                        LIMIT {:batchSize}
-                    )
-                `)
-                    .bind({
-                    runId: runId,
-                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
-                })
-                    .execute();
-            }
-            catch (claimErr) {
-                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
-                return;
-            }
-            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
-            if (!records || records.length === 0) {
-                if (totalClaimed === 0) {
-                    console.log('[Email Queue] No records claimed for run: ' + runId);
-                }
-                break;
-            }
-            totalClaimed += records.length;
-            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
-            records.forEach((record) => {
-                var _a, _b, _c;
-                try {
-                    const rawContent = record.get('rawContent') || '';
-                    const recipientId = record.get('recipientId');
-                    const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
-                    const filters = parseJsonField(record.get('filters')) || {};
-                    const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
-                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
-                    // delivers only the plain-text body to the recipient's phone.
-                    if (isSms) {
-                        const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
-                        record.set('status', 'Sent');
-                        record.set('sentAt', new Date().toISOString());
-                        record.set('processingRunId', null);
-                        record.set('processingStartedAt', null);
-                        record.set('errorMessage', '');
-                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
-                        return;
-                    }
-                    let htmlBody = '';
-                    if (filters.contentType === 'html') {
-                        htmlBody = rawContent;
-                    }
-                    else {
-                        // Temporarily protect placeholders containing underscores from markdown parsing
-                        const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
-                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
-                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
-                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
-                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
-                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
-                        htmlBody = renderMarkdown(protectedContent);
-                        // Restore protected placeholders
-                        htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
-                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
-                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
-                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
-                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
-                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
-                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
-                    }
-                    let subject = record.get('subject') || '';
-                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
-                    // Fetch dynamic event details if enqueued under filters
-                    let event = null;
-                    if (filters && filters.eventId) {
-                        try {
-                            event = app.findRecordById('events', filters.eventId);
-                        }
-                        catch (_d) {
-                            // event not found
-                        }
-                    }
-                    // Perform template placeholder resolutions (same engine as legacy)
-                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
-                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
-                    if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
-                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
-                        const eventType = (event.get('type') || 'Performance');
-                        const eventDetails = (event.get('details') || '');
-                        let venueName = 'TBD';
-                        let venueAddress = '';
-                        try {
-                            const venueRecord = app.findRecordById('venues', event.get('venue'));
-                            venueName = (venueRecord.get('name') || 'TBD');
-                            venueAddress = (venueRecord.get('address') || '');
-                        }
-                        catch (_e) {
-                            // venue not found
-                        }
-                        const dateLong = formatInTimezone(eventDate, timezone, {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                        });
-                        const timeStr = formatInTimezone(eventDate, timezone, {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                        });
-                        const dateShort = formatInTimezone(eventDate, timezone, {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                        });
-                        // Resolve event placeholders in subject too
-                        subject = subject
-                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
-                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
-                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
-                        let locationHtml = escapeHtml(venueName);
-                        if (venueAddress.trim()) {
-                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
-                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
-                        }
-                        const eventInfoHtml = `
-    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
-        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
-        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
-            📅 <strong>${escapeHtml(dateLong)}</strong><br>
-            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${locationHtml}</strong>
-        </div>
-    </div>
-    `;
-                        // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = '';
-                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
-                            event.get('type') === 'Performance') {
-                            try {
-                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
-                                if (rehearsals && rehearsals.length > 0) {
-                                    const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
-                                    const dLong = formatInTimezone(rehDate, timezone, {
-                                        weekday: 'short',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    });
-                                    const dTime = formatInTimezone(rehDate, timezone, {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                    });
-                                    // Generate a direct link to the backend ICS download route
-                                    let icsLink = '';
-                                    if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
-                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-                                    }
-                                    firstRehearsalHtml = `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
-      <tr>
-        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
-            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
-            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-        </td>
-        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
-            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
-        </td>
-      </tr>
-    </table>
-                                    `.trim();
-                                }
-                            }
-                            catch (_f) {
-                                // Ignore rehearsals fetching or formatting errors
-                            }
-                        }
-                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = '';
-                        if (htmlBody.includes('{eventCalendarLink}')) {
-                            let icsLink = '';
-                            let slotDateLong = dateLong;
-                            let slotTimeStr = timeStr;
-                            if (secret) {
-                                const auditionId = filters.auditionId;
-                                if (auditionId) {
-                                    const payload = `a=${auditionId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
-                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-                                    try {
-                                        const audition = app.findRecordById('auditions', auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
-                                        if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
-                                                weekday: 'long',
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
-                                                hour: 'numeric',
-                                                minute: '2-digit',
-                                                timeZoneName: 'short',
-                                            });
-                                        }
-                                    }
-                                    catch (_g) {
-                                        // Ignore audition record resolution/formatting errors
-                                    }
-                                }
-                                else {
-                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
-                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-                                }
-                            }
-                            eventCalendarHtml = `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
-      <tr>
-        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
-            <strong style="color: #4a7c59;">Save the Date:</strong><br>
-            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
-        </td>
-        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
-            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
-        </td>
-      </tr>
-    </table>
-                            `.trim();
-                        }
-                        htmlBody = htmlBody
-                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
-                            .replace(/{eventType}/g, () => escapeHtml(eventType))
-                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => locationHtml)
-                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
-                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
-                            .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
-                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
-                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(event.id, recipientId);
-                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
-                            const rsvpHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
-    </div>
-    `;
-                            htmlBody = htmlBody
-                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
-                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
-                        }
-                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
-                            secret) {
-                            const token = generateSignedPlayerToken(event.id);
-                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
-                            const playerHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
-    </div>
-    `;
-                            htmlBody = htmlBody
-                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
-                                .replace(/{playerLink}/g, () => playerHtml);
-                        }
-                    }
-                    else {
-                        // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
-                    }
-                    // Clear setlist placeholder when no event
-                    if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, '');
-                    }
-                    // Resolve ticket QR code placeholder
-                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
-                        const isBundle = !!filters.bundleId;
-                        const caption = isBundle
-                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
-                            : '';
-                        const ticketQrHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        ${caption}
-        <img src="${filters.qrSvgSrc}"
-             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
-             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
-        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
-           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
-            View your ticket QR
-        </a>
-        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
-    </div>`.trim();
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
-                    }
-                    else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
-                    }
-                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
-                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
-                        const ticketButtonHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${escapeHtml(filters.successUrl)}"
-           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            View Your Tickets
-        </a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
-            Open this link on your phone at the door for quick verification.
-        </p>
-    </div>`.trim();
-                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
-                    }
-                    else {
-                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
-                    }
-                    // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
-                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = 'l=' + pollId + '&p=' + recipientId;
-                            const signature = $security.hs256(payload, secret);
-                            const token = payload + '&s=' + signature;
-                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
-                            let pollButtonLabel = 'Answer our quick question';
-                            try {
-                                const pollRecord = app.findRecordById('polls', pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
-                                if (typeof question === 'string' && question.trim()) {
-                                    pollButtonLabel = question.trim();
-                                }
-                            }
-                            catch (_a) {
-                                // keep safe fallback label if poll lookup fails
-                            }
-                            return `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
-    </div>
-    `.trim();
-                        });
-                    }
-                    // Compile secure unsubscribe URL
-                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
-                    if (secret) {
-                        const payload = `p=${recipientId}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
-                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
-                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
-                    }
-                    // Final template layout wrap
-                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
-                    record.set('status', 'Sent');
-                    record.set('sentAt', new Date().toISOString());
-                    record.set('processingRunId', null);
-                    record.set('processingStartedAt', null);
-                    record.set('errorMessage', '');
-                    console.log(`[Email Queue] Sent record: ${record.id}`);
-                }
-                catch (err) {
-                    const rawAttempts = record.get('attempts');
-                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
-                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set('attempts', currentAttempts);
-                    const message = err instanceof Error ? err.message : String(err);
-                    record.set('errorMessage', message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
-                    record.set('status', nextStatus);
-                    record.set('processingRunId', null);
-                    record.set('processingStartedAt', null);
-                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
-                }
-                finally {
-                    app.save(record);
-                }
-            });
-            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
-                break;
-            }
-        }
-        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
-        }
-    }
-    // --- END CALLBACK-LOCAL UTILITIES ---
-
-    const now = new Date();
-    const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
-
-    const events = $app.findRecordsByFilter(
-        "events", 
-        "type = 'Performance' && date >= {:now} && date <= {:tomorrow} && isArchived != true && isTicketingEnabled = true", 
-        "date", 
-        100, 
-        0, 
-        { now, tomorrow }
-    );
-
-    if (!events || events.length === 0) return;
-
-    let template;
-    try {
-        template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Concert Reminder' && isSystemTemplate = true");
-    } catch (e) {
-        console.log("[Reminder Cron] Ticket Concert Reminder template not found");
-        return;
-    }
-
-    let timezone = "America/New_York";
-    try {
-        const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-        const tzP = parseJsonField(tzSetting.get("value"));
-        if (tzP && tzP.timezone) timezone = tzP.timezone;
-    } catch (e) {}
-
-    let choirName = "Choir Management Tool";
-    try {
-        const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
-        const parsed = parseJsonField(choirRecord.get("value"));
-        const val = parsed.name || parsed.choirName || parsed.value || (typeof parsed === 'string' ? parsed : "");
-        if (val) choirName = val;
-    } catch (e) {}
-
-    let baseUrl = "http://localhost:5173";
-    try {
-        const commRecord = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-        const comms = parseJsonField(commRecord.get("value"));
-        if (comms && comms.frontendUrl) baseUrl = comms.frontendUrl;
-    } catch (e) {}
-    if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
-        const meta = $app.settings()?.meta;
-        const url = meta?.appUrl || meta?.appURL || "";
-        if (url) baseUrl = url;
-    }
-    baseUrl = baseUrl.trim().replace(/[/]+$/g, "");
-
-    events.forEach(event => {
-        const purchases = $app.findRecordsByFilter(
-            "ticketPurchases",
-            "event = {:eventId} && status = 'paid' && reminderSent != true",
-            "",
-            1000,
-            0,
-            { eventId: event.id }
-        );
-
-        if (!purchases || purchases.length === 0) return;
-
-        const eventTitle = event.get("title") || "";
-        const eventDateStr = formatInTimezone(
-          coercePocketBaseDate(event.get("date")) ?? new Date(""),
-          timezone,
-          { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
-        );
-        const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
-
-        purchases.forEach(async purchase => {
-            const buyerName = purchase.get("buyerName") || "Music Lover";
-            const quantity = purchase.get("quantity") || 0;
-            
-            let content = template.get("content") || "";
-            content = content
-                .replace(/{buyerName}/g, buyerName)
-                .replace(/{eventTitle}/g, eventTitle)
-                .replace(/{eventDate}/g, eventDateStr)
-                .replace(/{doorsOpenTime}/g, doorsOpenTime)
-                .replace(/{quantity}/g, String(quantity))
-                .replace(/{choirName}/g, choirName);
-
-            const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
-
-            const stripeSessionId = purchase.get("stripeSessionId") || "";
-            const ticketToken = generateSignedTicketToken(purchase.id);
-            const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
-            const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
-            const qrSvgSrc = "";
-
-            try {
-                const queueCollection = $app.findCollectionByNameOrId("emailQueue");
-                const mailRecord = new Record(queueCollection, {
-                    recipientId: "buyer_" + purchase.id,
-                    recipientEmail: purchase.get("buyerEmail"),
-                    recipientName: buyerName,
-                    subject: subject,
-                    rawContent: content,
-                    status: "Pending",
-                    attempts: 0,
-                    filters: JSON.stringify({
-                        eventId: event.id,
-                        type: "Ticket Buyer Reminder",
-                        ticketToken: ticketToken,
-                        scanUrl: scanUrl,
-                        qrSvgSrc: qrSvgSrc,
-                        successUrl: successUrl
-                    })
-                });
-                $app.save(mailRecord);
-
-                purchase.set("reminderSent", true);
-                $app.save(purchase);
-            } catch (e) {
-                console.log("[Reminder Cron] Failed to enqueue email for purchase " + purchase.id + ": " + e);
-            }
-        });
-
-        try {
-            const messageCollection = $app.findCollectionByNameOrId("messages");
-            const msgRecord = new Record(messageCollection, {
-                subject: "Ticket Buyer Reminders Sent: " + eventTitle,
-                content: "Sent reminders for " + eventTitle,
-                type: "Email",
-                status: "Sent",
-                recipients: [],
-                filters: { eventId: event.id, type: "Ticket Buyer Reminder" }
-            });
-            $app.save(msgRecord);
-        } catch (e) {
-            console.log("[Reminder Cron] Failed to log message for event " + event.id + ": " + e);
-        }
-    });
-
-    processEmailQueue($app);
-});
-
-cronAdd("process_email_queue_job", "*/2 * * * *", () => {
-    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
-    // --- Utility source: email/hookJson.ts ---
-    "use strict";
-    const decodeGoBytes = (val) => {
-        if (!val)
-            return "";
-        if (typeof val === 'string')
-            return val;
-        if (typeof val === 'object') {
-            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
-                try {
-                    let str = "";
-                    for (let i = 0; i < val.length; i++) {
-                        str += String.fromCharCode(val[i]);
-                    }
-                    return str;
-                }
-                catch (_a) {
-                    // Ignore decoding errors
-                }
-            }
-            return val;
-        }
-        return String(val);
-    };
-    function parseJsonField(val) {
-        if (!val)
-            return null;
-        const decoded = decodeGoBytes(val);
-        if (!decoded)
-            return null;
-        if (typeof decoded === 'object')
-            return decoded;
-        try {
-            return JSON.parse(decoded);
-        }
-        catch (_a) {
-            return null;
-        }
-    }
-
-    // --- Utility source: email/hookText.ts ---
-    "use strict";
-    function escapeHtml(str) {
-        if (!str)
-            return "";
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
-    function sanitizeHtmlTemplateData(data) {
-        const sanitized = {};
-        const entries = Object.entries(data);
-        for (const [key, value] of entries) {
-            sanitized[key] = escapeHtml(value == null ? "" : String(value));
-        }
-        return sanitized;
-    }
-    function sanitizeEmailSubject(str) {
-        if (!str)
-            return "";
-        return String(str).replace(/[\r\n]+/g, " ").trim();
-    }
-    function normalizeBaseUrl(url) {
-        if (!url)
-            return "http://localhost:5173";
-        return String(url).trim().replace(/\/+$/g, "");
-    }
-    function nthSundayOfMonth(year, monthIndex, occurrence) {
-        const first = new Date(Date.UTC(year, monthIndex, 1));
-        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
-    }
-    function lastSundayOfMonth(year, monthIndex) {
-        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
-        return last.getUTCDate() - last.getUTCDay();
-    }
-    function firstSundayOfMonth(year, monthIndex) {
-        return nthSundayOfMonth(year, monthIndex, 1);
-    }
-    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
-        const year = date.getUTCFullYear();
-        const dstStartDay = nthSundayOfMonth(year, 2, 2);
-        const dstEndDay = nthSundayOfMonth(year, 10, 1);
-        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isEuropeDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
-        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isSydneyDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
-        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
-        return date.getTime() >= dstStart || date.getTime() < dstEnd;
-    }
-    function getTimezoneOffsetInfo(date, timezone) {
-        const tz = String(timezone || "").toLowerCase();
-        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
-            return { offsetMinutes: 0, abbreviation: "UTC" };
-        }
-        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
-            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
-            return {
-                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
-                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
-            };
-        };
-        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
-            return usZone(-300, -240, "EST", "EDT");
-        }
-        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
-            return usZone(-360, -300, "CST", "CDT");
-        }
-        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
-            return usZone(-420, -360, "MST", "MDT");
-        }
-        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
-            return usZone(-540, -480, "AKST", "AKDT");
-        }
-        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
-            return { offsetMinutes: -420, abbreviation: "MST" };
-        }
-        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
-            return { offsetMinutes: -600, abbreviation: "HST" };
-        }
-        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
-            return usZone(-480, -420, "PST", "PDT");
-        }
-        if (tz.indexOf("london") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
-        }
-        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
-        }
-        if (tz.indexOf("tokyo") >= 0) {
-            return { offsetMinutes: 540, abbreviation: "JST" };
-        }
-        if (tz.indexOf("sydney") >= 0) {
-            const isDst = isSydneyDst(date);
-            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
-        }
-        return { offsetMinutes: 0, abbreviation: "UTC" };
-    }
-    function formatInTimezone(date, timezone, options) {
-        if (!date)
-            return "";
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
-        try {
-            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
-            if (typeof process === 'undefined' && typeof window === 'undefined') {
-                throw new Error("Goja VM: use custom formatting");
-            }
-            // Try native Intl first (V8 / browser / Node.js)
-            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
-        }
-        catch (_a) {
-            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
-            // Shift date by offset to get target local time in UTC coordinates
-            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
-            const localDate = new Date(localTimeMs);
-            // Format manually using the shifted localDate components
-            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const wday = weekdays[localDate.getUTCDay()];
-            const wdayFull = weekdaysFull[localDate.getUTCDay()];
-            const mon = months[localDate.getUTCMonth()];
-            const monFull = monthsFull[localDate.getUTCMonth()];
-            const day = localDate.getUTCDate();
-            const yr = localDate.getUTCFullYear();
-            let hr = localDate.getUTCHours();
-            const ampm = hr >= 12 ? "PM" : "AM";
-            hr = hr % 12;
-            if (hr === 0)
-                hr = 12;
-            const minVal = localDate.getUTCMinutes();
-            const min = minVal < 10 ? "0" + minVal : String(minVal);
-            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
-            // Build formats based on options requested:
-            // Case 1: Just time (hour + minute)
-            if (options.hour && !options.day) {
-                return hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 2: Long date format: "Sunday, June 14, 2026"
-            if (options.weekday === "long" && options.year) {
-                return wdayFull + ", " + monFull + " " + day + ", " + yr;
-            }
-            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
-            if (options.weekday === "short" && options.hour) {
-                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 4: Date only with weekday: "Sun, Jun 14"
-            if (options.weekday === "short" && !options.hour) {
-                return wday + ", " + mon + " " + day;
-            }
-            // Case 5: Date only without weekday: "Jun 14, 2026"
-            if (options.month && !options.hour) {
-                const m = options.month === "long" ? monFull : mon;
-                return m + " " + day + (options.year ? ", " + yr : "");
-            }
-            // Generic fallback: "06/14/2026, 7:00 PM"
-            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
-            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-        }
-    }
-
-    // --- Utility source: email/hookPlaceholders.ts ---
-    "use strict";
-    function renderSetlistHtml(rawSetList) {
-        const setList = parseJsonField(rawSetList);
-        if (setList && setList.length > 0) {
-            const rows = setList.map((item, i) => {
-                const num = i + 1;
-                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
-                const composer = escapeHtml(item.composer || '');
-                const duration = escapeHtml(item.duration || '');
-                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
-            }).join('');
-            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
-        }
-        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
-    }
-
-    // --- Utility source: email/emailRendering.ts ---
-    "use strict";
-    function renderMarkdown(text) {
-        if (!text)
-            return "";
-        // Escape raw HTML first
-        let html = text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
-        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
-            const level = hashes.length;
-            // Using inline styles for headings for better email client compatibility
-            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
-            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
-        });
-        // Bold: **text** or __text__
-        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
-        // Italic: *text* or _text_
-        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
-        // Links: [text](url)
-        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
-            const sanitizedUrl = url.trim();
-            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
-                return text;
-            }
-            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
-            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
-        });
-        // Lists (Ordered and Unordered)
-        const lines = html.split("\n");
-        let inUl = false;
-        let inOl = false;
-        const processedLines = lines.map(line => {
-            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
-            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
-            if (ulMatch) {
-                const content = ulMatch[2];
-                let prefix = "";
-                if (inOl) {
-                    inOl = false;
-                    prefix = "</ol>";
-                }
-                if (!inUl) {
-                    inUl = true;
-                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
-                }
-                return `<li>${content}</li>`;
-            }
-            else if (olMatch) {
-                const content = olMatch[2];
-                let prefix = "";
-                if (inUl) {
-                    inUl = false;
-                    prefix = "</ul>";
-                }
-                if (!inOl) {
-                    inOl = true;
-                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
-                }
-                return `<li>${content}</li>`;
-            }
-            else {
-                let result = line;
-                if (inUl) {
-                    inUl = false;
-                    result = "</ul>" + line;
-                }
-                if (inOl) {
-                    inOl = false;
-                    result = "</ol>" + line;
-                }
-                return result;
-            }
-        });
-        if (inUl)
-            processedLines.push("</ul>");
-        if (inOl)
-            processedLines.push("</ol>");
-        html = processedLines.join("\n");
-        // Line breaks and paragraphs
-        const blocks = html.split(/\n\s*\n/);
-        html = blocks.map(block => {
-            const trimmed = block.trim();
-            if (!trimmed)
-                return "";
-            if (trimmed.startsWith("<ul"))
-                return block;
-            if (trimmed.startsWith("<ol"))
-                return block;
-            if (trimmed.match(/^<h\d/))
-                return block;
-            if (trimmed.startsWith("<div"))
-                return block; // Keep footers/buttons intact
-            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
-        }).join("\n");
-        return html;
-    }
-
-    // --- Utility source: email/emailStyles.ts ---
-    "use strict";
-    const EMAIL_CSS = `
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
-    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
-    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
-    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
-    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
-    a { color: #4a7c59; text-decoration: underline; }
-    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
-    `.trim();
-
-    // --- Utility source: email/mailjetRenderer.ts ---
-    "use strict";
-    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
-        const displayTitle = headerTitle || "Choir Management";
-        return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-            ${EMAIL_CSS}
-        </style>
-    </head>
-    <body>
-        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-                <td align="center">
-                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
-                        <tr>
-                            <td class="header">
-                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="content">
-                                ${contentHtml}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="footer">
-                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
-                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
-                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
-                            </td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-    </body>
-    </html>
-        `.trim();
-    }
-
-    // --- Utility source: hmacTokens.ts ---
-    "use strict";
-    function getHmacSecret() {
-        return $os.getenv('HMAC_SECRET') || '';
-    }
-    function getPlayerPayload(eventId) {
-        return `e=${eventId}`;
-    }
-    function getEventRecipientPayload(eventId, recipientId) {
-        return `e=${eventId}&p=${recipientId}`;
-    }
-    function getAuditionPayload(auditionId) {
-        return `a=${auditionId}`;
-    }
-    function getTicketPayload(purchaseId) {
-        return `t=${purchaseId}`;
-    }
-    function generateSignedTicketToken(purchaseId) {
-        const secret = getHmacSecret();
-        const payload = getTicketPayload(purchaseId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedPlayerToken(eventId) {
-        const secret = getHmacSecret();
-        const payload = getPlayerPayload(eventId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedEventRecipientToken(eventId, recipientId) {
-        const secret = getHmacSecret();
-        const payload = getEventRecipientPayload(eventId, recipientId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedAuditionToken(auditionId) {
-        const secret = getHmacSecret();
-        const payload = getAuditionPayload(auditionId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== 'string')
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split('&').forEach((segment) => {
-            const idx = segment.indexOf('=');
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
-
-    // --- Utility source: pocketbaseDate.ts ---
-    "use strict";
-    function coercePocketBaseDate(value) {
-        if (!value)
-            return null;
-        if (value instanceof Date) {
-            return Number.isNaN(value.getTime()) ? null : value;
-        }
-        if (typeof value === 'string') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'number') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'object') {
-            const dateLike = value;
-            if (typeof dateLike.toISOString === 'function') {
-                try {
-                    const parsed = new Date(dateLike.toISOString());
-                    if (!Number.isNaN(parsed.getTime()))
-                        return parsed;
-                }
-                catch (_a) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.valueOf === 'function') {
-                try {
-                    const valueOfResult = dateLike.valueOf();
-                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
-                        const parsed = new Date(valueOfResult);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
-                        return valueOfResult;
-                    }
-                }
-                catch (_b) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.toString === 'function') {
-                try {
-                    const stringValue = dateLike.toString();
-                    // Avoid parsing the default "[object Object]" output.
-                    if (stringValue && stringValue !== '[object Object]') {
-                        const parsed = new Date(stringValue);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                }
-                catch (_c) {
-                    // Fall through.
-                }
-            }
-        }
-        return null;
-    }
-    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed >= comparisonDate;
-    }
-    function isPocketBaseDateBefore(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed < comparisonDate;
-    }
-
-    // --- Utility source: email/queueProcessor.ts ---
-    "use strict";
-    function processEmailQueue(app) {
-        var _a;
-        const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
-            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
-            return;
-        }
-        const EMAIL_QUEUE_BATCH_SIZE = 150;
-        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
-        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
-        // Stale Processing record recovery
-        try {
-            app
-                .db()
-                .newQuery(`
-                UPDATE emailQueue
-                SET status = 'Pending',
-                    processingRunId = NULL,
-                    processingStartedAt = NULL
-                WHERE status = 'Processing'
-                  AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND (attempts IS NULL OR attempts < {:maxAttempts})
-            `)
-                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
-                .execute();
-            app
-                .db()
-                .newQuery(`
-                UPDATE emailQueue
-                SET status = 'Failed',
-                    processingRunId = NULL,
-                    processingStartedAt = NULL
-                WHERE status = 'Processing'
-                  AND processingStartedAt < datetime('now', '-15 minutes')
-                  AND attempts >= {:maxAttempts}
-            `)
-                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
-                .execute();
-        }
-        catch (recoverErr) {
-            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
-        }
-        // Build variables used for layout rendering
-        const secret = getHmacSecret();
-        let baseUrl = 'http://localhost:5173';
-        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
-        let choirName = '';
-        try {
-            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
-            const comms = parseJsonField(commRecord.get('value'));
-            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                baseUrl = comms.frontendUrl;
-            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
-                mailingAddress = comms.mailingAddress;
-        }
-        catch (_b) {
-            // use default baseUrl and mailingAddress
-        }
-        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
-            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
-            if (appSettingsUrl) {
-                baseUrl = appSettingsUrl;
-            }
-        }
-        baseUrl = normalizeBaseUrl(baseUrl);
-        try {
-            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get('value'));
-            if (val)
-                choirName = val;
-        }
-        catch (_c) {
-            // use default choirName
-        }
-        let timezone = 'America/New_York';
-        try {
-            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
-            const valueStr = tzSetting.get('value');
-            const tzP = parseJsonField(valueStr);
-            if (tzP) {
-                if (typeof tzP === 'string') {
-                    timezone = tzP;
-                }
-                else if (typeof tzP === 'object' && tzP.timezone) {
-                    timezone = tzP.timezone;
-                }
-            }
-        }
-        catch (_d) {
-            // use default timezone
-        }
-        let totalClaimed = 0;
-        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
-            const runId = $security.randomString(20);
-            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
-            // Atomic SQLite-level claiming
-            try {
-                app
-                    .db()
-                    // SAFE: Parameterized query using bind(), preventing SQL injection
-                    .newQuery(`
-                    UPDATE emailQueue
-                    SET status = 'Processing',
-                        processingRunId = {:runId},
-                        processingStartedAt = datetime('now')
-                    WHERE id IN (
-                        SELECT id
-                        FROM emailQueue
-                        WHERE status = 'Pending'
-                          AND (attempts IS NULL OR attempts < {:maxAttempts})
-                        ORDER BY created ASC
-                        LIMIT {:batchSize}
-                    )
-                `)
-                    .bind({
-                    runId: runId,
-                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
-                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
-                })
-                    .execute();
-            }
-            catch (claimErr) {
-                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
-                return;
-            }
-            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
-            if (!records || records.length === 0) {
-                if (totalClaimed === 0) {
-                    console.log('[Email Queue] No records claimed for run: ' + runId);
-                }
-                break;
-            }
-            totalClaimed += records.length;
-            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
-            records.forEach((record) => {
-                var _a, _b, _c;
-                try {
-                    const rawContent = record.get('rawContent') || '';
-                    const recipientId = record.get('recipientId');
-                    const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
-                    const filters = parseJsonField(record.get('filters')) || {};
-                    const isSms = filters.channel === 'sms';
-                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
-                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
-                    // delivers only the plain-text body to the recipient's phone.
-                    if (isSms) {
-                        const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
-                        record.set('status', 'Sent');
-                        record.set('sentAt', new Date().toISOString());
-                        record.set('processingRunId', null);
-                        record.set('processingStartedAt', null);
-                        record.set('errorMessage', '');
-                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
-                        return;
-                    }
-                    let htmlBody = '';
-                    if (filters.contentType === 'html') {
-                        htmlBody = rawContent;
-                    }
-                    else {
-                        // Temporarily protect placeholders containing underscores from markdown parsing
-                        const protectedContent = rawContent
-                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
-                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
-                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
-                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
-                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
-                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
-                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
-                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
-                        htmlBody = renderMarkdown(protectedContent);
-                        // Restore protected placeholders
-                        htmlBody = htmlBody
-                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
-                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
-                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
-                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
-                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
-                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
-                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
-                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
-                    }
-                    let subject = record.get('subject') || '';
-                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
-                    // Fetch dynamic event details if enqueued under filters
-                    let event = null;
-                    if (filters && filters.eventId) {
-                        try {
-                            event = app.findRecordById('events', filters.eventId);
-                        }
-                        catch (_d) {
-                            // event not found
-                        }
-                    }
-                    // Perform template placeholder resolutions (same engine as legacy)
-                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
-                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
-                    if (event) {
-                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
-                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
-                        const eventType = (event.get('type') || 'Performance');
-                        const eventDetails = (event.get('details') || '');
-                        let venueName = 'TBD';
-                        let venueAddress = '';
-                        try {
-                            const venueRecord = app.findRecordById('venues', event.get('venue'));
-                            venueName = (venueRecord.get('name') || 'TBD');
-                            venueAddress = (venueRecord.get('address') || '');
-                        }
-                        catch (_e) {
-                            // venue not found
-                        }
-                        const dateLong = formatInTimezone(eventDate, timezone, {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                        });
-                        const timeStr = formatInTimezone(eventDate, timezone, {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                        });
-                        const dateShort = formatInTimezone(eventDate, timezone, {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: 'numeric',
-                            minute: '2-digit',
-                        });
-                        // Resolve event placeholders in subject too
-                        subject = subject
-                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
-                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
-                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
-                        let locationHtml = escapeHtml(venueName);
-                        if (venueAddress.trim()) {
-                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
-                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
-                        }
-                        const eventInfoHtml = `
-    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
-        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
-        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
-            📅 <strong>${escapeHtml(dateLong)}</strong><br>
-            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
-            📍 <strong>${locationHtml}</strong>
-        </div>
-    </div>
-    `;
-                        // Optionally generate an "Add to Calendar" link for the first rehearsal
-                        let firstRehearsalHtml = '';
-                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
-                            event.get('type') === 'Performance') {
-                            try {
-                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
-                                if (rehearsals && rehearsals.length > 0) {
-                                    const firstReh = rehearsals[0];
-                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
-                                    const dLong = formatInTimezone(rehDate, timezone, {
-                                        weekday: 'short',
-                                        month: 'long',
-                                        day: 'numeric',
-                                    });
-                                    const dTime = formatInTimezone(rehDate, timezone, {
-                                        hour: 'numeric',
-                                        minute: '2-digit',
-                                    });
-                                    // Generate a direct link to the backend ICS download route
-                                    let icsLink = '';
-                                    if (secret) {
-                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
-                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-                                    }
-                                    firstRehearsalHtml = `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
-      <tr>
-        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
-            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
-            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
-        </td>
-        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
-            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
-        </td>
-      </tr>
-    </table>
-                                    `.trim();
-                                }
-                            }
-                            catch (_f) {
-                                // Ignore rehearsals fetching or formatting errors
-                            }
-                        }
-                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
-                        let eventCalendarHtml = '';
-                        if (htmlBody.includes('{eventCalendarLink}')) {
-                            let icsLink = '';
-                            let slotDateLong = dateLong;
-                            let slotTimeStr = timeStr;
-                            if (secret) {
-                                const auditionId = filters.auditionId;
-                                if (auditionId) {
-                                    const payload = `a=${auditionId}`;
-                                    const signature = $security.hs256(payload, secret);
-                                    const token = `${payload}&s=${signature}`;
-                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-                                    try {
-                                        const audition = app.findRecordById('auditions', auditionId);
-                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
-                                        if (auditionSlot) {
-                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
-                                                weekday: 'long',
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                            });
-                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
-                                                hour: 'numeric',
-                                                minute: '2-digit',
-                                                timeZoneName: 'short',
-                                            });
-                                        }
-                                    }
-                                    catch (_g) {
-                                        // Ignore audition record resolution/formatting errors
-                                    }
-                                }
-                                else {
-                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
-                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
-                                }
-                            }
-                            eventCalendarHtml = `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
-      <tr>
-        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
-            <strong style="color: #4a7c59;">Save the Date:</strong><br>
-            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
-        </td>
-        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
-            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
-        </td>
-      </tr>
-    </table>
-                            `.trim();
-                        }
-                        htmlBody = htmlBody
-                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
-                            .replace(/{eventType}/g, () => escapeHtml(eventType))
-                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
-                            .replace(/{eventLocation}/g, () => locationHtml)
-                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
-                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
-                            .replace(/{eventInfo}/g, () => eventInfoHtml)
-                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
-                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
-                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
-                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
-                            const token = generateSignedEventRecipientToken(event.id, recipientId);
-                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
-                            const rsvpHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
-    </div>
-    `;
-                            htmlBody = htmlBody
-                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
-                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
-                        }
-                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
-                            secret) {
-                            const token = generateSignedPlayerToken(event.id);
-                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
-                            const playerHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
-    </div>
-    `;
-                            htmlBody = htmlBody
-                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
-                                .replace(/{playerLink}/g, () => playerHtml);
-                        }
-                    }
-                    else {
-                        // If there's no event context, clear out the player link placeholders
-                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
-                    }
-                    // Clear setlist placeholder when no event
-                    if (!event) {
-                        htmlBody = htmlBody.replace(/{setlist}/g, '');
-                    }
-                    // Resolve ticket QR code placeholder
-                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
-                        const isBundle = !!filters.bundleId;
-                        const caption = isBundle
-                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
-                            : '';
-                        const ticketQrHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        ${caption}
-        <img src="${filters.qrSvgSrc}"
-             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
-             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
-        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
-           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
-            View your ticket QR
-        </a>
-        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
-    </div>`.trim();
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
-                    }
-                    else {
-                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
-                    }
-                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
-                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
-                        const ticketButtonHtml = `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${escapeHtml(filters.successUrl)}"
-           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            View Your Tickets
-        </a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
-            Open this link on your phone at the door for quick verification.
-        </p>
-    </div>`.trim();
-                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
-                    }
-                    else {
-                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
-                    }
-                    // Resolve poll links: {{POLL_LINK:pollId}}
-                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
-                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
-                            const payload = 'l=' + pollId + '&p=' + recipientId;
-                            const signature = $security.hs256(payload, secret);
-                            const token = payload + '&s=' + signature;
-                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
-                            let pollButtonLabel = 'Answer our quick question';
-                            try {
-                                const pollRecord = app.findRecordById('polls', pollId);
-                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
-                                if (typeof question === 'string' && question.trim()) {
-                                    pollButtonLabel = question.trim();
-                                }
-                            }
-                            catch (_a) {
-                                // keep safe fallback label if poll lookup fails
-                            }
-                            return `
-    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
-        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
-        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
-    </div>
-    `.trim();
-                        });
-                    }
-                    // Compile secure unsubscribe URL
-                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
-                    if (secret) {
-                        const payload = `p=${recipientId}`;
-                        const signature = $security.hs256(payload, secret);
-                        const token = `${payload}&s=${signature}`;
-                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
-                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
-                    }
-                    // Final template layout wrap
-                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
-                    record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
-                    record.set('status', 'Sent');
-                    record.set('sentAt', new Date().toISOString());
-                    record.set('processingRunId', null);
-                    record.set('processingStartedAt', null);
-                    record.set('errorMessage', '');
-                    console.log(`[Email Queue] Sent record: ${record.id}`);
-                }
-                catch (err) {
-                    const rawAttempts = record.get('attempts');
-                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
-                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
-                    record.set('attempts', currentAttempts);
-                    const message = err instanceof Error ? err.message : String(err);
-                    record.set('errorMessage', message);
-                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
-                    record.set('status', nextStatus);
-                    record.set('processingRunId', null);
-                    record.set('processingStartedAt', null);
-                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
-                }
-                finally {
-                    app.save(record);
-                }
-            });
-            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
-                break;
-            }
-        }
-        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
-            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
-        }
-    }
-    // --- END CALLBACK-LOCAL UTILITIES ---
-
-    console.log("[Cron Engine] Evaluating pending outbound message matrices...");
-    processEmailQueue($app);
-});
-
-cronAdd("expire_stale_pending_payments", "30 3 * * *", () => {
-    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
-    // --- Utility source: stripeService.ts ---
-    "use strict";
-    function createCheckoutSession(lineItems, metadata, customerEmail, successUrl, cancelUrl) {
-        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
-        if (!stripeSecretKey) {
-            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
-        }
-        // Build form URL-encoded body
-        const params = [];
-        params.push("mode=payment");
-        params.push(`success_url=${encodeURIComponent(successUrl)}`);
-        params.push(`cancel_url=${encodeURIComponent(cancelUrl)}`);
-        if (customerEmail) {
-            params.push(`customer_email=${encodeURIComponent(customerEmail)}`);
-        }
-        // native promo codes enabled
-        params.push("allow_promotion_codes=true");
-        lineItems.forEach((item, idx) => {
-            params.push(`line_items[${idx}][price_data][currency]=${item.price_data.currency}`);
-            params.push(`line_items[${idx}][price_data][product_data][name]=${encodeURIComponent(item.price_data.product_data.name)}`);
-            params.push(`line_items[${idx}][price_data][unit_amount]=${item.price_data.unit_amount}`);
-            params.push(`line_items[${idx}][quantity]=${item.quantity}`);
-        });
-        Object.entries(metadata).forEach(([key, val]) => {
-            params.push(`metadata[${key}]=${encodeURIComponent(val)}`);
-        });
-        const res = $http.send({
-            url: "https://api.stripe.com/v1/checkout/sessions",
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + stripeSecretKey,
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: params.join("&")
-        });
-        if (res.statusCode >= 400) {
-            throw new Error("Stripe checkout session creation failed: " + res.raw);
-        }
-        return JSON.parse(res.raw);
-    }
-    function retrieveCheckoutSession(sessionId) {
-        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
-        if (!stripeSecretKey) {
-            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
-        }
-        const res = $http.send({
-            url: "https://api.stripe.com/v1/checkout/sessions/" + sessionId,
-            method: "GET",
-            headers: {
-                "Authorization": "Bearer " + stripeSecretKey
-            }
-        });
-        if (res.statusCode >= 400) {
-            throw new Error("Stripe session retrieval failed: " + res.raw);
-        }
-        return JSON.parse(res.raw);
-    }
-    function refundPaymentIntent(paymentIntentId) {
-        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
-        if (!stripeSecretKey) {
-            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
-        }
-        const res = $http.send({
-            url: "https://api.stripe.com/v1/refunds",
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + stripeSecretKey,
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: `payment_intent=${paymentIntentId}`
-        });
-        if (res.statusCode >= 400) {
-            throw new Error("Stripe refund failed: " + res.raw);
-        }
-        return JSON.parse(res.raw);
-    }
-
-    // --- Utility source: email/hookText.ts ---
-    "use strict";
-    function escapeHtml(str) {
-        if (!str)
-            return "";
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
-    function sanitizeHtmlTemplateData(data) {
-        const sanitized = {};
-        const entries = Object.entries(data);
-        for (const [key, value] of entries) {
-            sanitized[key] = escapeHtml(value == null ? "" : String(value));
-        }
-        return sanitized;
-    }
-    function sanitizeEmailSubject(str) {
-        if (!str)
-            return "";
-        return String(str).replace(/[\r\n]+/g, " ").trim();
-    }
-    function normalizeBaseUrl(url) {
-        if (!url)
-            return "http://localhost:5173";
-        return String(url).trim().replace(/\/+$/g, "");
-    }
-    function nthSundayOfMonth(year, monthIndex, occurrence) {
-        const first = new Date(Date.UTC(year, monthIndex, 1));
-        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
-    }
-    function lastSundayOfMonth(year, monthIndex) {
-        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
-        return last.getUTCDate() - last.getUTCDay();
-    }
-    function firstSundayOfMonth(year, monthIndex) {
-        return nthSundayOfMonth(year, monthIndex, 1);
-    }
-    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
-        const year = date.getUTCFullYear();
-        const dstStartDay = nthSundayOfMonth(year, 2, 2);
-        const dstEndDay = nthSundayOfMonth(year, 10, 1);
-        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
-        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isEuropeDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
-        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
-        return date.getTime() >= dstStart && date.getTime() < dstEnd;
-    }
-    function isSydneyDst(date) {
-        const year = date.getUTCFullYear();
-        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
-        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
-        return date.getTime() >= dstStart || date.getTime() < dstEnd;
-    }
-    function getTimezoneOffsetInfo(date, timezone) {
-        const tz = String(timezone || "").toLowerCase();
-        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
-            return { offsetMinutes: 0, abbreviation: "UTC" };
-        }
-        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
-            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
-            return {
-                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
-                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
-            };
-        };
-        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
-            return usZone(-300, -240, "EST", "EDT");
-        }
-        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
-            return usZone(-360, -300, "CST", "CDT");
-        }
-        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
-            return usZone(-420, -360, "MST", "MDT");
-        }
-        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
-            return usZone(-540, -480, "AKST", "AKDT");
-        }
-        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
-            return { offsetMinutes: -420, abbreviation: "MST" };
-        }
-        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
-            return { offsetMinutes: -600, abbreviation: "HST" };
-        }
-        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
-            return usZone(-480, -420, "PST", "PDT");
-        }
-        if (tz.indexOf("london") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
-        }
-        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
-            const isDst = isEuropeDst(date);
-            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
-        }
-        if (tz.indexOf("tokyo") >= 0) {
-            return { offsetMinutes: 540, abbreviation: "JST" };
-        }
-        if (tz.indexOf("sydney") >= 0) {
-            const isDst = isSydneyDst(date);
-            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
-        }
-        return { offsetMinutes: 0, abbreviation: "UTC" };
-    }
-    function formatInTimezone(date, timezone, options) {
-        if (!date)
-            return "";
-        const d = new Date(date);
-        if (isNaN(d.getTime()))
-            return "";
-        try {
-            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
-            if (typeof process === 'undefined' && typeof window === 'undefined') {
-                throw new Error("Goja VM: use custom formatting");
-            }
-            // Try native Intl first (V8 / browser / Node.js)
-            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
-        }
-        catch (_a) {
-            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
-            // Shift date by offset to get target local time in UTC coordinates
-            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
-            const localDate = new Date(localTimeMs);
-            // Format manually using the shifted localDate components
-            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const wday = weekdays[localDate.getUTCDay()];
-            const wdayFull = weekdaysFull[localDate.getUTCDay()];
-            const mon = months[localDate.getUTCMonth()];
-            const monFull = monthsFull[localDate.getUTCMonth()];
-            const day = localDate.getUTCDate();
-            const yr = localDate.getUTCFullYear();
-            let hr = localDate.getUTCHours();
-            const ampm = hr >= 12 ? "PM" : "AM";
-            hr = hr % 12;
-            if (hr === 0)
-                hr = 12;
-            const minVal = localDate.getUTCMinutes();
-            const min = minVal < 10 ? "0" + minVal : String(minVal);
-            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
-            // Build formats based on options requested:
-            // Case 1: Just time (hour + minute)
-            if (options.hour && !options.day) {
-                return hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 2: Long date format: "Sunday, June 14, 2026"
-            if (options.weekday === "long" && options.year) {
-                return wdayFull + ", " + monFull + " " + day + ", " + yr;
-            }
-            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
-            if (options.weekday === "short" && options.hour) {
-                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-            }
-            // Case 4: Date only with weekday: "Sun, Jun 14"
-            if (options.weekday === "short" && !options.hour) {
-                return wday + ", " + mon + " " + day;
-            }
-            // Case 5: Date only without weekday: "Jun 14, 2026"
-            if (options.month && !options.hour) {
-                const m = options.month === "long" ? monFull : mon;
-                return m + " " + day + (options.year ? ", " + yr : "");
-            }
-            // Generic fallback: "06/14/2026, 7:00 PM"
-            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
-            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
-            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
-        }
-    }
-
-    // --- Utility source: timezone.ts ---
-    "use strict";
-    function zonedInputValueToUtcLocal(localString, timeZone) {
-        if (!localString)
-            return "";
-        const parts = localString.split("T");
-        if (parts.length !== 2)
-            return new Date(localString).toISOString();
-        const [datePart, timePart] = parts;
-        const [year, month, day] = datePart.split("-").map(Number);
-        const [hours, minutes] = timePart.split(":").map(Number);
-        // 1. Construct standard UTC Date using the target numbers as a baseline guess
-        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
-        // 2. We do up to 3 iterative passes to converge to the exact correct offset
-        // This handles DST transitions correctly.
-        for (let iter = 0; iter < 3; iter++) {
-            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
-            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
-            // The local representation of this candidate UTC date is:
-            const localRepTime = utcDate.getTime() + offsetMs;
-            const localRepDate = new Date(localRepTime);
-            // Candidate "local representation" parts
-            const formattedYear = localRepDate.getUTCFullYear();
-            const formattedMonth = localRepDate.getUTCMonth() + 1;
-            const formattedDay = localRepDate.getUTCDate();
-            let formattedHour = localRepDate.getUTCHours();
-            const formattedMinute = localRepDate.getUTCMinutes();
-            const formattedSecond = localRepDate.getUTCSeconds();
-            if (formattedHour === 24) {
-                formattedHour = 0;
-            }
-            // Compute target zoned timestamp representation for the current candidate UTC date
-            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
-            // Offset difference is: candidate UTC - candidate zoned local representation
-            const diffMs = utcDate.getTime() - zonedTimestamp;
-            // Adjust target UTC by the calculated offset
-            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
-            const candidateUtcTime = targetZonedTimestamp + diffMs;
-            if (utcDate.getTime() === candidateUtcTime) {
-                break; // Converged!
-            }
-            utcDate = new Date(candidateUtcTime);
-        }
-        return utcDate.toISOString();
-    }
-
-    // --- Utility source: email/hookJson.ts ---
-    "use strict";
-    const decodeGoBytes = (val) => {
-        if (!val)
-            return "";
-        if (typeof val === 'string')
-            return val;
-        if (typeof val === 'object') {
-            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
-                try {
-                    let str = "";
-                    for (let i = 0; i < val.length; i++) {
-                        str += String.fromCharCode(val[i]);
-                    }
-                    return str;
-                }
-                catch (_a) {
-                    // Ignore decoding errors
-                }
-            }
-            return val;
-        }
-        return String(val);
-    };
-    function parseJsonField(val) {
-        if (!val)
-            return null;
-        const decoded = decodeGoBytes(val);
-        if (!decoded)
-            return null;
-        if (typeof decoded === 'object')
-            return decoded;
-        try {
-            return JSON.parse(decoded);
-        }
-        catch (_a) {
-            return null;
-        }
-    }
-
-    // --- Utility source: hmacTokens.ts ---
-    "use strict";
-    function getHmacSecret() {
-        return $os.getenv('HMAC_SECRET') || '';
-    }
-    function getPlayerPayload(eventId) {
-        return `e=${eventId}`;
-    }
-    function getEventRecipientPayload(eventId, recipientId) {
-        return `e=${eventId}&p=${recipientId}`;
-    }
-    function getAuditionPayload(auditionId) {
-        return `a=${auditionId}`;
-    }
-    function getTicketPayload(purchaseId) {
-        return `t=${purchaseId}`;
-    }
-    function generateSignedTicketToken(purchaseId) {
-        const secret = getHmacSecret();
-        const payload = getTicketPayload(purchaseId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedPlayerToken(eventId) {
-        const secret = getHmacSecret();
-        const payload = getPlayerPayload(eventId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedEventRecipientToken(eventId, recipientId) {
-        const secret = getHmacSecret();
-        const payload = getEventRecipientPayload(eventId, recipientId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function generateSignedAuditionToken(auditionId) {
-        const secret = getHmacSecret();
-        const payload = getAuditionPayload(auditionId);
-        const signature = $security.hs256(payload, secret);
-        return `${payload}&s=${signature}`;
-    }
-    function parseSignedToken(token, requiredKeys) {
-        if (!token || typeof token !== 'string')
-            return null;
-        const parts = {};
-        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
-        token.split('&').forEach((segment) => {
-            const idx = segment.indexOf('=');
-            if (idx <= 0)
-                return;
-            const key = segment.slice(0, idx);
-            if (!allowed[key])
-                return;
-            parts[key] = segment.slice(idx + 1);
-        });
-        for (let i = 0; i < requiredKeys.length; i++) {
-            if (!parts[requiredKeys[i]])
-                return null;
-        }
-        return parts;
-    }
-
-    // --- Utility source: ticketScan/ticketValidation.ts ---
-    "use strict";
-    const REASON_MESSAGES = {
-        malformed: 'QR code is not valid',
-        bad_signature: 'QR code is not valid',
-        not_found: 'Ticket not found',
-        not_paid: 'Ticket has been refunded',
-        wrong_event: 'This ticket is for a different concert',
-    };
-    function getBaseUrl(app) {
-        var _a, _b, _c, _d;
-        try {
-            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
-            const comms = parseJsonField(record.get('value'));
-            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
-                return comms.frontendUrl.replace(/\/+$/, '');
-        }
-        catch (_e) {
-            /* use default */
-        }
-        try {
-            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
-            if (url)
-                return url.replace(/\/+$/, '');
-        }
-        catch (_f) {
-            /* use default */
-        }
-        return 'http://localhost:5173';
-    }
-    async function handleValidateScan(e) {
-        const body = e.requestInfo().body;
-        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
-        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
-        if (!token || !eventId) {
-            return e.json(400, { error: 'Missing token or eventId' });
-        }
-        const authRecord = e.auth;
-        if (!authRecord || authRecord.get('role') !== 'admin') {
-            return e.json(403, { error: 'Admin access required' });
-        }
-        const parsed = parseSignedToken(token, ['t', 's']);
-        if (!parsed) {
-            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
-        }
-        const secret = getHmacSecret();
-        if (!secret) {
-            return e.json(500, { error: 'Server configuration error' });
-        }
-        const payload = `t=${parsed.t}`;
-        const expectedSig = $security.hs256(payload, secret);
-        if (!$security.equal(parsed.s, expectedSig)) {
-            return e.json(200, {
-                valid: false,
-                reason: 'bad_signature',
-                message: REASON_MESSAGES.bad_signature,
-            });
-        }
-        let purchase;
-        try {
-            purchase = $app.findRecordById('ticketPurchases', parsed.t);
-        }
-        catch (_a) {
-            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
-        }
-        if (purchase.get('status') !== 'paid') {
-            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
-        }
-        const buyerName = String(purchase.get('buyerName') || '');
-        const quantity = Number(purchase.get('quantity') || 0);
-        const purchaseEventId = purchase.get('event');
-        if (purchaseEventId === eventId) {
-            let eventTitle = '';
-            let eventDate = '';
-            try {
-                const event = $app.findRecordById('events', eventId);
-                eventTitle = String(event.get('title') || '');
-                eventDate = String(event.get('date') || '');
-            }
-            catch (_b) {
-                // keep empty values
-            }
-            return e.json(200, {
-                valid: true,
-                buyerName,
-                quantity,
-                eventId,
-                eventTitle,
-                eventDate,
-                isBundlePass: false,
-            });
-        }
-        const bundleId = purchase.get('bundle');
-        if (bundleId && typeof bundleId === 'string') {
-            try {
-                const bundle = $app.findRecordById('ticketBundles', bundleId);
-                const bundleEvents = bundle.get('events');
-                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
-                if (eventIds.includes(eventId)) {
-                    let eventTitle = '';
-                    let eventDate = '';
-                    try {
-                        const scannedEvent = $app.findRecordById('events', eventId);
-                        eventTitle = String(scannedEvent.get('title') || '');
-                        eventDate = String(scannedEvent.get('date') || '');
-                    }
-                    catch (_c) {
-                        // keep empty values
-                    }
-                    return e.json(200, {
-                        valid: true,
-                        buyerName,
-                        quantity,
-                        eventId,
-                        eventTitle,
-                        eventDate,
-                        isBundlePass: true,
-                        bundleTitle: String(bundle.get('title') || ''),
-                    });
-                }
-            }
-            catch (_d) {
-                // bundle not found — fall through to wrong_event
-            }
-        }
-        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
-    }
-    async function handleGetScanContext(e) {
-        const query = e.requestInfo().query;
-        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
-        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
-        if (!sessionId || !purchaseId) {
-            return e.json(400, { error: 'Missing session_id or purchase_id' });
-        }
-        let purchase;
-        try {
-            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
-        }
-        catch (_a) {
-            return e.json(404, { error: 'Purchase not found' });
-        }
-        if (purchase.get('status') !== 'paid') {
-            return e.json(409, { error: 'Purchase is not yet paid' });
-        }
-        const secret = getHmacSecret();
-        if (!secret) {
-            return e.json(500, { error: 'Server configuration error' });
-        }
-        const token = generateSignedTicketToken(purchase.id);
-        const baseUrl = getBaseUrl($app);
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
-        const buyerName = String(purchase.get('buyerName') || '');
-        const bundleId = purchase.get('bundle');
-        const isBundlePass = !!bundleId;
-        let eventTitle = '';
-        let eventDate = '';
-        let bundleTitle;
-        if (isBundlePass && typeof bundleId === 'string') {
-            try {
-                const bundle = $app.findRecordById('ticketBundles', bundleId);
-                bundleTitle = String(bundle.get('title') || '');
-            }
-            catch (_b) {
-                // bundle not found
-            }
-        }
-        else {
-            try {
-                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
-                eventTitle = String(event.get('title') || '');
-                eventDate = String(event.get('date') || '');
-            }
-            catch (_c) {
-                // event not found
-            }
-        }
-        return e.json(200, {
-            token,
-            scanUrl,
-            buyerName,
-            eventTitle,
-            eventDate,
-            isBundlePass,
-            bundleTitle,
-        });
-    }
-
-    // --- Utility source: pocketbaseDate.ts ---
-    "use strict";
-    function coercePocketBaseDate(value) {
-        if (!value)
-            return null;
-        if (value instanceof Date) {
-            return Number.isNaN(value.getTime()) ? null : value;
-        }
-        if (typeof value === 'string') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'number') {
-            const parsed = new Date(value);
-            return Number.isNaN(parsed.getTime()) ? null : parsed;
-        }
-        if (typeof value === 'object') {
-            const dateLike = value;
-            if (typeof dateLike.toISOString === 'function') {
-                try {
-                    const parsed = new Date(dateLike.toISOString());
-                    if (!Number.isNaN(parsed.getTime()))
-                        return parsed;
-                }
-                catch (_a) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.valueOf === 'function') {
-                try {
-                    const valueOfResult = dateLike.valueOf();
-                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
-                        const parsed = new Date(valueOfResult);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
-                        return valueOfResult;
-                    }
-                }
-                catch (_b) {
-                    // Fall through.
-                }
-            }
-            if (typeof dateLike.toString === 'function') {
-                try {
-                    const stringValue = dateLike.toString();
-                    // Avoid parsing the default "[object Object]" output.
-                    if (stringValue && stringValue !== '[object Object]') {
-                        const parsed = new Date(stringValue);
-                        if (!Number.isNaN(parsed.getTime()))
-                            return parsed;
-                    }
-                }
-                catch (_c) {
-                    // Fall through.
-                }
-            }
-        }
-        return null;
-    }
-    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed >= comparisonDate;
-    }
-    function isPocketBaseDateBefore(value, comparisonDate) {
-        const parsed = coercePocketBaseDate(value);
-        return !!parsed && parsed < comparisonDate;
-    }
-
-    // --- Utility source: checkout/checkoutHelpers.ts ---
-    "use strict";
-    function getOrCreatePatronProfile(email, name) {
-        try {
-            // Try finding by user email first
-            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
-        }
-        catch (_a) {
-            // Try finding by name as a fallback
-            try {
-                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
-            }
-            catch (_b) {
-                // No profile found, create a new Patron profile.
-                // We create a user account so they can be linked to this email in the future.
-                let userId;
-                try {
-                    const user = $app.findAuthRecordByEmail('users', email);
-                    userId = user.id;
-                }
-                catch (_c) {
-                    const usersCollection = $app.findCollectionByNameOrId('users');
-                    const password = $security.randomString(32);
-                    const newUser = new Record(usersCollection, {
-                        email: email,
-                        password: password,
-                        passwordConfirm: password,
-                        role: 'singer', // Patrons are singers with no voice part
-                        name: name || email,
-                    });
-                    $app.save(newUser);
-                    userId = newUser.id;
-                }
-                const profilesCollection = $app.findCollectionByNameOrId('profiles');
-                const newProfile = new Record(profilesCollection, {
-                    user: userId,
-                    name: name || email,
-                    globalStatus: 'Active',
-                    voicePart: '',
-                });
-                $app.save(newProfile);
-                return newProfile;
-            }
-        }
-    }
-    function getTimezoneSetting() {
-        try {
-            const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
-            const valueStr = tzSetting.get('value');
-            const tzP = parseJsonField(valueStr);
-            if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone)
-                return tzP.timezone;
-        }
-        catch (_a) {
-            // use default
-        }
-        return 'America/New_York';
-    }
-    function getChoirNameSetting() {
-        try {
-            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get('value'));
-            if (val)
-                return val;
-        }
-        catch (_a) {
-            // use default
-        }
-        return 'Choir Management Tool';
-    }
-    function getBaseUrl() {
-        var _a;
-        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
-        return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
-    }
-
-    // --- Utility source: checkout/emailHelpers.ts ---
-    "use strict";
-    function enqueueTicketConfirmationEmail(options) {
-        var _a, _b;
-        const timezone = getTimezoneSetting();
-        const choirName = getChoirNameSetting();
-        const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken(options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
-        const eventTitle = String(options.event.get('title') || '');
-        const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-        });
-        const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
-        let content = String(template.get('content') || '');
-        const rawSubject = String(template.get('subject') || '');
-        const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
-        content = content
-            .replace(/{buyerName}/g, finalRecipientName)
-            .replace(/{eventTitle}/g, eventTitle)
-            .replace(/{eventDate}/g, eventDateStr)
-            .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
-            .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
-            .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName)
-            .replace(/{successUrl}/g, successUrl);
-        const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
-        const mailRecord = new Record(emailQueueCollection, {
-            recipientId: 'buyer_' + stripeSessionId,
-            recipientEmail: finalRecipientEmail,
-            recipientName: finalRecipientName,
-            subject: subject,
-            rawContent: content,
-            status: 'Pending',
-            attempts: 0,
-            filters: JSON.stringify({
-                eventId: options.event.id,
-                ticketToken,
-                scanUrl,
-                qrSvgSrc,
-                successUrl,
-                type: 'Automated Confirmation',
-                resent: !!options.resent,
-            }),
-        });
-        $app.save(mailRecord);
-    }
-    function enqueueBundleTicketConfirmationEmail(options) {
-        var _a;
-        const timezone = getTimezoneSetting();
-        const choirName = getChoirNameSetting();
-        const baseUrl = getBaseUrl();
-        const ticketToken = generateSignedTicketToken(options.purchase.id);
-        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
-        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
-        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
-        const qrSvgSrc = '';
-        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
-        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
-        const eventDetailsParts = [];
-        options.bundleEventIds.forEach((eventId) => {
-            var _a;
-            try {
-                const ev = $app.findRecordById('events', eventId);
-                const evTitle = String(ev.get('title') || '');
-                const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                });
-                eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
-            }
-            catch (_b) {
-                // Ignore individual event loading errors.
-            }
-        });
-        const eventDetailsStr = eventDetailsParts.join('\n');
-        const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
-        let content = String(template.get('content') || '');
-        const rawSubject = String(template.get('subject') || '');
-        const bundleTitle = String(options.bundle.get('title') || '');
-        const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
-        content = content
-            .replace(/{buyerName}/g, finalRecipientName)
-            .replace(/{bundleTitle}/g, bundleTitle)
-            .replace(/{eventDetails}/g, eventDetailsStr)
-            .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
-            .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
-            .replace(/{choirName}/g, choirName)
-            .replace(/{successUrl}/g, successUrl);
-        const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
-        const mailRecord = new Record(emailQueueCollection, {
-            recipientId: 'buyer_' + stripeSessionId,
-            recipientEmail: finalRecipientEmail,
-            recipientName: finalRecipientName,
-            subject: subject,
-            rawContent: content,
-            status: 'Pending',
-            attempts: 0,
-            filters: JSON.stringify({
-                bundleId: options.bundle.id,
-                ticketToken,
-                scanUrl,
-                qrSvgSrc,
-                successUrl,
-                type: 'Automated Bundle Confirmation',
-                resent: !!options.resent,
-            }),
-        });
-        $app.save(mailRecord);
-    }
-
-    // --- Utility source: checkout/createTicketsSession.ts ---
-    "use strict";
-    function handleCreateTicketsSession(e) {
-        var _a;
-        const body = e.requestInfo().body;
-        const eventId = body.eventId;
-        const quantity = body.quantity;
-        const email = body.email;
-        const name = body.name;
-        const marketingOptIn = body.marketingOptIn === true;
-        if (!eventId || !quantity || !email || !name) {
-            return e.json(400, { error: 'Missing required fields' });
-        }
-        const qty = Number(quantity);
-        if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: 'Invalid ticket quantity' });
-        }
-        let event;
-        try {
-            event = $app.findRecordById('events', eventId);
-        }
-        catch (_b) {
-            return e.json(404, { error: 'Event not found' });
-        }
-        if (event.get('isArchived')) {
-            return e.json(400, { error: 'Event has been archived' });
-        }
-        if (!event.get('isTicketingEnabled')) {
-            return e.json(400, { error: 'Ticketing is not enabled for this event' });
-        }
-        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
-        if (!checkoutEventDate || checkoutEventDate < new Date()) {
-            return e.json(400, { error: 'Ticket sales are closed for this event' });
-        }
-        // Derive sold count from paid ticketPurchases
-        let soldCount = 0;
-        try {
-            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
-            paidPurchases.forEach((p) => {
-                const q = p.get('quantity');
-                soldCount += typeof q === 'number' ? q : 0;
-            });
-        }
-        catch (err) {
-            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
-        }
-        const capacity = event.get('ticketCapacity');
-        const capacityNum = typeof capacity === 'number' ? capacity : 0;
-        if (capacityNum > 0 && soldCount + qty > capacityNum) {
-            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
-        }
-        // Select price based on day-of rules in event timezone
-        let timezone = 'America/New_York';
-        try {
-            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
-            const val = settingsRecord.get('value');
-            const parsed = parseJsonField(val);
-            if (parsed && parsed.timezone) {
-                timezone = parsed.timezone;
-            }
-        }
-        catch (_c) {
-            // use default timezone
-        }
-        const nowFormatted = formatInTimezone(new Date(), timezone, {});
-        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
-        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
-        const nowStr = nowFormatted.split(',')[0];
-        const eventDateStr = eventFormatted.split(',')[0];
-        const isShowDay = nowStr === eventDateStr;
-        const advancePriceCents = event.get('advancePriceCents');
-        const dayOfPriceCents = event.get('dayOfPriceCents');
-        const unitPriceCents = isShowDay
-            ? typeof dayOfPriceCents === 'number'
-                ? dayOfPriceCents
-                : 0
-            : typeof advancePriceCents === 'number'
-                ? advancePriceCents
-                : 0;
-        if (unitPriceCents < 0) {
-            return e.json(400, { error: 'Invalid ticket price configuration' });
-        }
-        // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
-        const totalTicketsCents = unitPriceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
-        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
-        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = `${appUrl}/tickets/${eventId}`;
-        const lineItems = [
-            {
-                price_data: {
-                    currency: 'usd',
-                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
-                    unit_amount: unitPriceCents,
-                },
-                quantity: qty,
-            },
-        ];
-        if (feeCents > 0) {
-            lineItems.push({
-                price_data: {
-                    currency: 'usd',
-                    product_data: { name: 'Processing Fee' },
-                    unit_amount: feeCents,
-                },
-                quantity: 1,
-            });
-        }
-        const metadata = {
-            paymentType: 'ticket',
-            eventId,
-            quantity: String(qty),
-            unitPriceCents: String(unitPriceCents),
-            feeCents: String(feeCents),
-            buyerName: name,
-            buyerEmail: email,
-            marketingOptIn: marketingOptIn ? 'true' : 'false',
-        };
-        try {
-            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
-            // Pre-save pending record
-            const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
-            const record = new Record(collection, {
-                event: eventId,
-                profile: profile.id,
-                buyerName: name,
-                buyerEmail: email,
-                quantity: qty,
-                unitPriceCents: unitPriceCents,
-                feeCents: feeCents,
-                amountPaidCents: totalTicketsCents + feeCents,
-                currency: 'usd',
-                stripeSessionId: session.id,
-                marketingOptIn,
-                status: 'pending',
-            });
-            $app.save(record);
-            return e.json(200, { url: session.url, sessionId: session.id });
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
-        }
-    }
-
-    // --- Utility source: checkout/createBundleSession.ts ---
-    "use strict";
-    function handleCreateBundleSession(e) {
-        var _a;
-        const body = e.requestInfo().body;
-        const bundleId = body.bundleId;
-        const quantity = body.quantity;
-        const email = body.email;
-        const name = body.name;
-        const marketingOptIn = body.marketingOptIn === true;
-        if (!bundleId || !quantity || !email || !name) {
-            return e.json(400, { error: 'Missing required fields' });
-        }
-        const qty = Number(quantity);
-        if (isNaN(qty) || qty <= 0 || qty > 10) {
-            return e.json(400, { error: 'Invalid ticket bundle quantity' });
-        }
-        let bundle;
-        try {
-            bundle = $app.findRecordById('ticketBundles', bundleId);
-        }
-        catch (_b) {
-            return e.json(404, { error: 'Bundle not found' });
-        }
-        if (!bundle.get('isActive')) {
-            return e.json(400, { error: 'This bundle is not currently active for purchase' });
-        }
-        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
-        if (saleEndDate && new Date() > saleEndDate) {
-            return e.json(400, { error: 'The sale period for this bundle has ended' });
-        }
-        const bundleEventsVal = bundle.get('events');
-        const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-        if (bundleEventIds.length === 0) {
-            return e.json(400, { error: 'This bundle does not contain any events' });
-        }
-        // 1. Check bundle capacity
-        let bundleSoldCount = 0;
-        const firstEventId = bundleEventIds[0];
-        try {
-            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
-            bundlePurchases.forEach((p) => {
-                const q = p.get('quantity');
-                bundleSoldCount += typeof q === 'number' ? q : 0;
-            });
-        }
-        catch (err) {
-            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
-        }
-        const bundleCapacity = Number(bundle.get('capacity') || 0);
-        if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
-            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
-        }
-        // 2. Check individual event capacities
-        for (const eventId of bundleEventIds) {
-            let event;
-            try {
-                event = $app.findRecordById('events', eventId);
-            }
-            catch (_c) {
-                return e.json(404, { error: `Included event ${eventId} not found` });
-            }
-            if (event.get('isArchived')) {
-                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
-            }
-            let eventSoldCount = 0;
-            try {
-                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
-                eventPurchases.forEach((p) => {
-                    const q = p.get('quantity');
-                    eventSoldCount += typeof q === 'number' ? q : 0;
-                });
-            }
-            catch (err) {
-                console.log(`Error querying event ${eventId} sales: ` +
-                    (err instanceof Error ? err.message : String(err)));
-            }
-            const eventCapacity = Number(event.get('ticketCapacity') || 0);
-            if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
-                return e.json(400, {
-                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
-                });
-            }
-        }
-        const priceCents = Number(bundle.get('priceCents') || 0);
-        const totalTicketsCents = priceCents * qty;
-        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
-        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
-        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
-        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = `${appUrl}/tickets`;
-        const lineItems = [
-            {
-                price_data: {
-                    currency: 'usd',
-                    product_data: {
-                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
-                    },
-                    unit_amount: priceCents,
-                },
-                quantity: qty,
-            },
-        ];
-        if (feeCents > 0) {
-            lineItems.push({
-                price_data: {
-                    currency: 'usd',
-                    product_data: { name: 'Processing Fee' },
-                    unit_amount: feeCents,
-                },
-                quantity: 1,
-            });
-        }
-        const metadata = {
-            paymentType: 'bundle',
-            bundleId,
-            quantity: String(qty),
-            unitPriceCents: String(priceCents),
-            feeCents: String(feeCents),
-            buyerName: name,
-            buyerEmail: email,
-            marketingOptIn: marketingOptIn ? 'true' : 'false',
-        };
-        try {
-            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
-            // Pre-save pending record
-            const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
-            const record = new Record(collection, {
-                bundle: bundleId,
-                profile: profile.id,
-                buyerName: name,
-                buyerEmail: email,
-                quantity: qty,
-                unitPriceCents: bundle.get('priceCents'),
-                feeCents: feeCents,
-                amountPaidCents: totalTicketsCents + feeCents,
-                currency: 'usd',
-                stripeSessionId: session.id,
-                marketingOptIn,
-                status: 'pending',
-            });
-            $app.save(record);
-            return e.json(200, { url: session.url, sessionId: session.id });
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
-        }
-    }
-
-    // --- Utility source: checkout/createDonationSession.ts ---
-    "use strict";
-    function handleCreateDonationSession(e) {
-        var _a;
-        const body = e.requestInfo().body;
-        const amountCents = Number(body.amountCents || 0);
-        const name = body.name;
-        const email = body.email;
-        const tributeType = body.tributeType || 'none';
-        const tributeName = body.tributeName || '';
-        const isAnonymous = !!body.isAnonymous;
-        if (!amountCents || !name || !email) {
-            return e.json(400, { error: 'Missing required fields' });
-        }
-        if (amountCents < 500) {
-            return e.json(400, { error: 'Donation amount must be at least $5.00' });
-        }
-        let choirName = 'Choir Management Tool';
-        try {
-            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
-            const val = parseJsonField(choirRecord.get('value'));
-            if (val)
-                choirName = val;
-        }
-        catch (_b) {
-            // default
-        }
-        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
-        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
-        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
-        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
-        const cancelUrl = `${appUrl}/donate`;
-        const lineItems = [
-            {
-                price_data: {
-                    currency: 'usd',
-                    product_data: { name: `Donation to ${choirName}` },
-                    unit_amount: amountCents,
-                },
-                quantity: 1,
-            },
-        ];
-        const metadata = {
-            paymentType: 'donation',
-            amountPaidCents: String(amountCents),
-            donorName: name,
-            donorEmail: email,
-            tributeType,
-            tributeName,
-            isAnonymous: String(isAnonymous),
-        };
-        try {
-            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
-            // Pre-save pending record
-            const profile = getOrCreatePatronProfile(email, name);
-            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
-            const record = new Record(collection, {
-                amountPaidCents: amountCents,
-                donorName: name,
-                donorEmail: email,
-                profile: profile.id,
-                tributeType: tributeType,
-                tributeName: tributeName,
-                isAnonymous: isAnonymous,
-                status: 'pending',
-                stripeSessionId: session.id,
-            });
-            $app.save(record);
-            return e.json(200, { url: session.url, sessionId: session.id });
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
-        }
-    }
-
-    // --- Utility source: checkout/stripeWebhook.ts ---
-    "use strict";
-    function expirePendingPaymentRecord(app, collectionName, stripeSessionId, source) {
-        if (!stripeSessionId) {
-            console.log('[expirePendingPaymentRecord] ' + source + ': missing stripeSessionId');
-            return 'noop-missing-id';
-        }
-        let record;
-        try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
-        }
-        catch (_a) {
-            // No matching row. Per AGENTS.md §4, log defensively.
-            console.log('[expirePendingPaymentRecord] ' +
-                source +
-                ': no row found collection=' +
-                collectionName +
-                ' sessionId=' +
-                stripeSessionId);
-            return 'noop-not-found';
-        }
-        const currentStatus = String(record.get('status') || '');
-        if (currentStatus === 'paid') {
-            return 'noop-already-paid';
-        }
-        if (currentStatus === 'refunded') {
-            return 'noop-already-refunded';
-        }
-        if (currentStatus === 'expired') {
-            return 'noop-already-expired';
-        }
-        // currentStatus === 'pending' (or unexpected value; treat as pending)
-        record.set('status', 'expired');
-        record.set('expiredAt', new Date().toISOString());
-        try {
-            app.save(record);
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            console.log('[expirePendingPaymentRecord] ' +
-                source +
-                ': save failed collection=' +
-                collectionName +
-                ' sessionId=' +
-                stripeSessionId +
-                ' error=' +
-                message);
-            return 'noop-error';
-        }
-        return 'expired';
-    }
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-    const CRON_PAGE_SIZE = 100;
-    const CRON_MAX_PAGES = 50;
-    const CRON_SKIPPED_PAGE_SIZE = 25;
-    function expireStalePendingRecords(app, collectionName, source, nowMs) {
-        const now = typeof nowMs === 'number' ? nowMs : Date.now();
-        const cutoff = new Date(now - SEVEN_DAYS_MS).toISOString();
-        let missing = 0;
-        try {
-            const missingRows = app.findRecordsByFilter(collectionName, "status = 'pending' && created < {:cutoff} && stripeSessionId = ''", '', CRON_SKIPPED_PAGE_SIZE, 0, { cutoff });
-            missing = missingRows.length;
-            for (let i = 0; i < missingRows.length; i++) {
-                const r = missingRows[i];
-                const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
-            }
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            console.log('[Backstop] ' + collectionName + ': diagnostic query failed: ' + message);
-        }
-        let processed = 0;
-        let errors = 0;
-        let pagesProcessed = 0;
-        let hitMaxPages = false;
-        for (let page = 0; page < CRON_MAX_PAGES; page++) {
-            let batch;
-            try {
-                batch = app.findRecordsByFilter(collectionName, "status = 'pending' && created < {:cutoff} && stripeSessionId != ''", '', CRON_PAGE_SIZE, 0, { cutoff });
-            }
-            catch (err) {
-                const message = err instanceof Error ? err.message : String(err);
-                console.log('[Backstop] ' + collectionName + ': query failed: ' + message);
-                break;
-            }
-            if (!batch || batch.length === 0) {
-                break;
-            }
-            pagesProcessed += 1;
-            for (let i = 0; i < batch.length; i++) {
-                const r = batch[i];
-                const sessionId = r && r.get ? String(r.get('stripeSessionId') || '') : '';
-                const result = expirePendingPaymentRecord(app, collectionName, sessionId, source);
-                if (result === 'expired') {
-                    processed += 1;
-                }
-                else {
-                    errors += 1;
-                }
-            }
-            if (batch.length < CRON_PAGE_SIZE) {
-                break;
-            }
-        }
-        if (pagesProcessed >= CRON_MAX_PAGES) {
-            hitMaxPages = true;
-        }
-        console.log('[Backstop] ' +
-            collectionName +
-            ' processed=' +
-            processed +
-            ' errors=' +
-            errors +
-            ' skippedNoSessionId=' +
-            missing +
-            ' pages=' +
-            pagesProcessed +
-            (hitMaxPages ? ' hitMaxPages=true' : ''));
-        return { processed, errors, skippedNoSessionId: missing, pagesProcessed, hitMaxPages };
-    }
-    async function handleStripeWebhook(e) {
-        var _a, _b;
-        let rawBody;
-        try {
-            rawBody = readerToString(e.request.body);
-        }
-        catch (_c) {
-            return e.json(400, { error: 'Failed to read request body' });
-        }
-        const sig = e.request.header.get('Stripe-Signature') || '';
-        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
-        if (!sig || !webhookSecret) {
-            return e.json(400, { error: 'Missing signature or webhook config' });
-        }
-        // Parse Stripe-Signature components: t=123,v1=abc
-        let timestamp = '';
-        let signature = '';
-        sig.split(',').forEach((part) => {
-            const pair = part.split('=');
-            if (pair.length === 2) {
-                const k = pair[0].trim();
-                const v = pair[1].trim();
-                if (k === 't')
-                    timestamp = v;
-                if (k === 'v1')
-                    signature = v;
-            }
-        });
-        if (!timestamp || !signature) {
-            return e.json(400, { error: 'Invalid signature format' });
-        }
-        // Validate replay attacks
-        const nowSecs = Math.floor(Date.now() / 1000);
-        if (Math.abs(nowSecs - Number(timestamp)) > 300) {
-            return e.json(400, { error: 'Expired timestamp' });
-        }
-        // Compute local signature
-        const signedPayload = timestamp + '.' + rawBody;
-        const localSig = $security.hs256(signedPayload, webhookSecret);
-        if (!$security.equal(localSig, signature)) {
-            return e.json(400, { error: 'Signature verification failed' });
-        }
-        let eventObj;
-        try {
-            eventObj = JSON.parse(rawBody);
-        }
-        catch (_d) {
-            return e.json(400, { error: 'Invalid JSON body' });
-        }
-        if (eventObj.type === 'checkout.session.completed') {
-            const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
-            if (!session) {
-                return e.json(400, { error: 'Missing session object' });
-            }
-            const metadata = session.metadata || {};
-            const paymentType = metadata.paymentType;
-            if (paymentType === 'ticket') {
-                const eventId = metadata.eventId;
-                const stripeSessionId = session.id || '';
-                const quantity = Number(metadata.quantity || 0);
-                if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: 'Invalid session metadata' });
-                }
-                // Idempotency & Reconciliation: Check if record exists
-                let record;
-                try {
-                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
-                    if (record.get('status') === 'paid') {
-                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
-                    }
-                    if (record.get('status') === 'refunded') {
-                        console.log('[Stripe Webhook] completed: ignoring event for refunded ticket sessionId=' +
-                            stripeSessionId);
-                        return e.json(200, {
-                            success: true,
-                            message: 'Refunded record not overwritten',
-                        });
-                    }
-                    // pending or expired -> paid. Clear any prior expiredAt
-                    // so the row fully returns to "not expired" state.
-                    record.set('status', 'paid');
-                    record.set('stripePaymentIntentId', session.payment_intent || '');
-                    record.set('stripeCustomerId', session.customer || '');
-                    record.set('fulfilledAt', new Date().toISOString());
-                    record.set('expiredAt', '');
-                }
-                catch (_e) {
-                    // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
-                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
-                    record = new Record(collection, {
-                        event: eventId,
-                        profile: profile.id,
-                        buyerName: metadata.buyerName || '',
-                        buyerEmail: metadata.buyerEmail || '',
-                        quantity: quantity,
-                        unitPriceCents: Number(metadata.unitPriceCents || 0),
-                        feeCents: Number(metadata.feeCents || 0),
-                        amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || 'usd',
-                        stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || '',
-                        stripeCustomerId: session.customer || '',
-                        status: 'paid',
-                        marketingOptIn: metadata.marketingOptIn === 'true',
-                        fulfilledAt: new Date().toISOString(),
-                    });
-                }
-                $app.save(record);
-                // Look up event for email
-                let targetEvent;
-                try {
-                    targetEvent = $app.findRecordById('events', eventId);
-                }
-                catch (_f) {
-                    return e.json(400, { error: 'Event not found during webhook processing' });
-                }
-                // Enqueue Ticket Confirmation email
-                try {
-                    enqueueTicketConfirmationEmail({
-                        purchase: record,
-                        event: targetEvent,
-                        stripeSessionId,
-                        amountPaidCents: session.amount_total || 0,
-                        resent: false,
-                    });
-                }
-                catch (mailErr) {
-                    console.log('Failed to enqueue confirmation email: ' +
-                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
-                }
-            }
-            else if (paymentType === 'bundle') {
-                const bundleId = metadata.bundleId;
-                const stripeSessionId = session.id || '';
-                const quantity = Number(metadata.quantity || 0);
-                if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
-                    return e.json(400, { error: 'Invalid session metadata' });
-                }
-                // Idempotency & Reconciliation: Check if record exists
-                let record;
-                try {
-                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
-                    if (record.get('status') === 'paid') {
-                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
-                    }
-                    if (record.get('status') === 'refunded') {
-                        console.log('[Stripe Webhook] completed: ignoring event for refunded bundle sessionId=' +
-                            stripeSessionId);
-                        return e.json(200, {
-                            success: true,
-                            message: 'Refunded record not overwritten',
-                        });
-                    }
-                    // pending or expired -> paid. Clear any prior expiredAt.
-                    record.set('status', 'paid');
-                    record.set('stripePaymentIntentId', session.payment_intent || '');
-                    record.set('stripeCustomerId', session.customer || '');
-                    record.set('fulfilledAt', new Date().toISOString());
-                    record.set('expiredAt', '');
-                }
-                catch (_g) {
-                    // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
-                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
-                    record = new Record(collection, {
-                        bundle: bundleId,
-                        profile: profile.id,
-                        buyerName: metadata.buyerName || '',
-                        buyerEmail: metadata.buyerEmail || '',
-                        quantity: quantity,
-                        unitPriceCents: Number(metadata.unitPriceCents || 0),
-                        feeCents: Number(metadata.feeCents || 0),
-                        amountPaidCents: session.amount_total || 0,
-                        currency: session.currency || 'usd',
-                        stripeSessionId: stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || '',
-                        stripeCustomerId: session.customer || '',
-                        status: 'paid',
-                        marketingOptIn: metadata.marketingOptIn === 'true',
-                        fulfilledAt: new Date().toISOString(),
-                    });
-                }
-                $app.save(record);
-                // Look up bundle for email
-                let targetBundle;
-                let bundleEventIds;
-                try {
-                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
-                    const bundleEventsVal = targetBundle.get('events');
-                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                }
-                catch (_h) {
-                    return e.json(400, { error: 'Bundle not found during webhook processing' });
-                }
-                // Enqueue Consolidated Ticket Confirmation email
-                try {
-                    enqueueBundleTicketConfirmationEmail({
-                        purchase: record,
-                        bundle: targetBundle,
-                        bundleEventIds,
-                        stripeSessionId,
-                        amountPaidCents: session.amount_total || 0,
-                        resent: false,
-                    });
-                }
-                catch (mailErr) {
-                    console.log('Failed to enqueue bundle confirmation email: ' +
-                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
-                }
-            }
-            else if (paymentType === 'donation') {
-                const stripeSessionId = session.id || '';
-                if (!stripeSessionId) {
-                    return e.json(400, { error: 'Missing session ID' });
-                }
-                // Idempotency & Reconciliation: Check if record exists
-                let record;
-                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
-                const donorName = metadata.donorName || '';
-                const donorEmail = metadata.donorEmail || '';
-                const tributeType = metadata.tributeType || 'none';
-                const tributeName = metadata.tributeName || '';
-                const isAnonymous = metadata.isAnonymous === 'true';
-                try {
-                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
-                        stripeSessionId,
-                    });
-                    if (record.get('status') === 'paid') {
-                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
-                    }
-                    if (record.get('status') === 'refunded') {
-                        console.log('[Stripe Webhook] completed: ignoring event for refunded donation sessionId=' +
-                            stripeSessionId);
-                        return e.json(200, {
-                            success: true,
-                            message: 'Refunded record not overwritten',
-                        });
-                    }
-                    // pending or expired -> paid. Clear any prior expiredAt.
-                    record.set('status', 'paid');
-                    record.set('stripePaymentIntentId', session.payment_intent || '');
-                    record.set('expiredAt', '');
-                }
-                catch (_j) {
-                    // Record not found, fallback to creation (existing logic)
-                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
-                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
-                    record = new Record(collection, {
-                        amountPaidCents,
-                        donorName,
-                        donorEmail,
-                        profile: profile.id,
-                        tributeType,
-                        tributeName,
-                        isAnonymous,
-                        status: 'paid',
-                        stripeSessionId,
-                        stripePaymentIntentId: session.payment_intent || '',
-                    });
-                }
-                $app.save(record);
-                // Enqueue Donation Receipt
-                try {
-                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
-                    let content = template.get('content') || '';
-                    const subject = template.get('subject') || '';
-                    let choirName = 'Choir Management Tool';
-                    try {
-                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
-                        const val = parseJsonField(choirRecord.get('value'));
-                        if (val)
-                            choirName = val;
-                    }
-                    catch (_k) {
-                        // default
-                    }
-                    let tributeSection = '';
-                    if (tributeType === 'memory' && tributeName) {
-                        tributeSection = `This donation was made in memory of ${tributeName}.`;
-                    }
-                    else if (tributeType === 'honor' && tributeName) {
-                        tributeSection = `This donation was made in honor of ${tributeName}.`;
-                    }
-                    content = content
-                        .replace(/{donorName}/g, donorName)
-                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
-                        .replace(/{choirName}/g, choirName)
-                        .replace(/{tributeSection}/g, tributeSection);
-                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
-                    const mailRecord = new Record(emailQueueCollection, {
-                        recipientId: 'donor_' + stripeSessionId,
-                        recipientEmail: donorEmail,
-                        recipientName: donorName || 'Donor',
-                        subject: subject.replace(/{choirName}/g, choirName),
-                        rawContent: content,
-                        status: 'Pending',
-                        attempts: 0,
-                        filters: JSON.stringify({ type: 'Donation Receipt' }),
-                    });
-                    $app.save(mailRecord);
-                }
-                catch (mailErr) {
-                    console.log('Failed to enqueue donation receipt: ' +
-                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
-                }
-            }
-            else if (paymentType === 'dues') {
-                const profileId = metadata.profileId;
-                const season = metadata.season;
-                if (profileId && season) {
-                    try {
-                        let duesRecord;
-                        try {
-                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
-                            duesRecord.set('paid', true);
-                        }
-                        catch (_l) {
-                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
-                            duesRecord = new Record(duesColl, {
-                                profile: profileId,
-                                season: season,
-                                paid: true,
-                            });
-                        }
-                        $app.save(duesRecord);
-                    }
-                    catch (err) {
-                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
-                    }
-                }
-            }
-        }
-        else if (eventObj.type === 'checkout.session.expired') {
-            const session = eventObj.data && eventObj.data.object;
-            if (!session) {
-                console.log('[Stripe Webhook] expired: missing session object');
-                return e.json(200, { success: true, message: 'No session' });
-            }
-            const stripeSessionId = session.id || '';
-            if (!stripeSessionId) {
-                console.log('[Stripe Webhook] expired: missing session id');
-                return e.json(200, { success: true, message: 'No session id' });
-            }
-            const paymentType = (session.metadata && session.metadata.paymentType) || '';
-            if (paymentType !== 'ticket' && paymentType !== 'bundle' && paymentType !== 'donation') {
-                console.log('[Stripe Webhook] expired: unsupported paymentType=' + paymentType);
-                return e.json(200, { success: true, message: 'Unsupported paymentType' });
-            }
-            const collectionName = paymentType === 'donation' ? 'donations' : 'ticketPurchases';
-            const result = expirePendingPaymentRecord($app, collectionName, stripeSessionId, 'webhook');
-            console.log('[Stripe Webhook] expired: ' +
-                result +
-                ' collection=' +
-                collectionName +
-                ' sessionId=' +
-                stripeSessionId);
-            return e.json(200, { success: true, message: result });
-        }
-        else if (eventObj.type === 'charge.refunded') {
-            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
-            const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
-            if (paymentIntentId) {
-                try {
-                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
-                    if (purchases && purchases.length > 0) {
-                        const txApp = $app;
-                        txApp.runInTransaction((tx) => {
-                            purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
-                            });
-                        });
-                    }
-                }
-                catch (err) {
-                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
-                        paymentIntentId +
-                        '. Error: ' +
-                        (err instanceof Error ? err.message : String(err)));
-                }
-            }
-        }
-        return e.json(200, { success: true });
-    }
-
-    // --- Utility source: checkout/adminRefundTicket.ts ---
-    "use strict";
-    function handleAdminRefundTicket(e) {
-        const authRecord = e.auth;
-        if (!authRecord || authRecord.get('role') !== 'admin') {
-            return e.json(403, { error: 'Forbidden' });
-        }
-        const body = e.requestInfo().body;
-        const purchaseId = body.purchaseId;
-        if (!purchaseId) {
-            return e.json(400, { error: 'Missing purchaseId' });
-        }
-        let purchase;
-        try {
-            purchase = $app.findRecordById('ticketPurchases', purchaseId);
-        }
-        catch (_a) {
-            return e.json(404, { error: 'Purchase record not found' });
-        }
-        const pi = purchase.get('stripePaymentIntentId');
-        if (!pi) {
-            return e.json(400, { error: 'Stripe payment intent missing on record' });
-        }
-        try {
-            refundPaymentIntent(pi);
-            purchase.set('status', 'refunded');
-            $app.save(purchase);
-            return e.json(200, { success: true });
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
-        }
-    }
-
-    // --- Utility source: checkout/adminRefundBundle.ts ---
-    "use strict";
-    function handleAdminRefundBundle(e) {
-        const authRecord = e.auth;
-        if (!authRecord || authRecord.get('role') !== 'admin') {
-            return e.json(403, { error: 'Forbidden' });
-        }
-        const body = e.requestInfo().body;
-        const paymentIntentId = body.paymentIntentId;
-        if (!paymentIntentId) {
-            return e.json(400, { error: 'Missing paymentIntentId' });
-        }
-        let purchases;
-        try {
-            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
-        }
-        catch (_a) {
-            return e.json(404, { error: 'No purchases found for the payment intent' });
-        }
-        if (purchases.length === 0) {
-            return e.json(404, { error: 'No purchase records found' });
-        }
-        try {
-            refundPaymentIntent(paymentIntentId);
-            const txApp = $app;
-            txApp.runInTransaction((tx) => {
-                purchases.forEach((p) => {
-                    p.set('status', 'refunded');
-                    tx.save(p);
-                });
-            });
-            return e.json(200, { success: true });
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
-        }
-    }
-
-    // --- Utility source: checkout/adminRefundDonation.ts ---
-    "use strict";
-    function handleAdminRefundDonation(e) {
-        const authRecord = e.auth;
-        if (!authRecord || authRecord.get('role') !== 'admin') {
-            return e.json(403, { error: 'Forbidden' });
-        }
-        const body = e.requestInfo().body;
-        const donationId = body.donationId;
-        if (!donationId) {
-            return e.json(400, { error: 'Missing donationId' });
-        }
-        let donation;
-        try {
-            donation = $app.findRecordById('donations', donationId);
-        }
-        catch (_a) {
-            return e.json(404, { error: 'Donation record not found' });
-        }
-        const pi = donation.get('stripePaymentIntentId');
-        if (!pi) {
-            return e.json(400, { error: 'Stripe payment intent missing on record' });
-        }
-        try {
-            refundPaymentIntent(pi);
-            donation.set('status', 'refunded');
-            $app.save(donation);
-            return e.json(200, { success: true });
-        }
-        catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
-        }
-    }
-
-    // --- Utility source: checkout/adminResendConfirmation.ts ---
-    "use strict";
-    function handleAdminResendTicketConfirmation(e) {
-        const authRecord = e.auth;
-        if (!authRecord || authRecord.get('role') !== 'admin') {
-            return e.json(403, { error: 'Forbidden: Admins only' });
-        }
-        const body = e.requestInfo().body;
-        const purchaseId = typeof body.purchaseId === 'string' ? body.purchaseId : '';
-        const recipientEmail = typeof body.recipientEmail === 'string' ? body.recipientEmail.trim() : '';
-        if (!purchaseId) {
-            return e.json(400, { error: 'Missing purchaseId' });
-        }
-        if (recipientEmail && !recipientEmail.includes('@')) {
-            return e.json(400, { error: 'Invalid recipient email' });
-        }
-        let purchase;
-        try {
-            purchase = $app.findRecordById('ticketPurchases', purchaseId);
-        }
-        catch (_a) {
-            return e.json(404, { error: 'Ticket purchase not found' });
-        }
-        if (purchase.get('status') !== 'paid') {
-            return e.json(400, { error: 'Only paid ticket purchases can be resent' });
-        }
-        const finalRecipientEmail = recipientEmail || String(purchase.get('buyerEmail') || '');
-        if (!finalRecipientEmail) {
-            return e.json(400, { error: 'No recipient email available' });
-        }
-        const finalRecipientName = String(purchase.get('buyerName') || 'Buyer');
-        try {
-            const bundleId = purchase.get('bundle');
-            if (bundleId && typeof bundleId === 'string') {
-                const bundle = $app.findRecordById('ticketBundles', bundleId);
-                const bundleEventsVal = bundle.get('events');
-                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
-                enqueueBundleTicketConfirmationEmail({
-                    purchase,
-                    bundle,
-                    bundleEventIds,
-                    recipientEmail: finalRecipientEmail,
-                    recipientName: finalRecipientName,
-                    resent: true,
-                });
-            }
-            else {
-                const eventId = String(purchase.get('event') || '');
-                if (!eventId) {
-                    return e.json(400, { error: 'Ticket purchase is not linked to an event' });
-                }
-                const event = $app.findRecordById('events', eventId);
-                enqueueTicketConfirmationEmail({
-                    purchase,
-                    event,
-                    recipientEmail: finalRecipientEmail,
-                    recipientName: finalRecipientName,
-                    resent: true,
-                });
-            }
-        }
-        catch (err) {
-            return e.json(500, {
-                error: 'Failed to enqueue ticket confirmation email',
-                details: err instanceof Error ? err.message : String(err),
-            });
-        }
-        return e.json(200, {
-            success: true,
-            recipientEmail: finalRecipientEmail,
-        });
-    }
-    // --- END CALLBACK-LOCAL UTILITIES ---
-
-    try {
-      expireStalePendingRecords($app, 'ticketPurchases', 'cron');
-    } catch (err) {
-      console.log('[Backstop] ticketPurchases cron failed: ' + (err instanceof Error ? err.message : String(err)));
-    }
-    try {
-      expireStalePendingRecords($app, 'donations', 'cron');
-    } catch (err) {
-      console.log('[Backstop] donations cron failed: ' + (err instanceof Error ? err.message : String(err)));
-    }
-});
-
 // --- RECORD HOOKS ---
 
 onRecordAfterCreateSuccess((e) => {
@@ -16294,7 +11437,9 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -16350,10 +11495,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -18228,7 +13370,9 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -18284,10 +13428,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -20162,7 +15303,9 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -20218,10 +15361,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -22096,7 +17236,9 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -22152,10 +17294,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -24030,7 +19169,9 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -24086,10 +19227,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -25964,7 +21102,9 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -26020,10 +21160,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -27898,7 +23035,9 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -27954,10 +23093,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -29831,7 +24967,9 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         }
         let record;
         try {
-            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
         }
         catch (_a) {
             // No matching row. Per AGENTS.md §4, log defensively.
@@ -29887,10 +25025,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             for (let i = 0; i < missingRows.length; i++) {
                 const r = missingRows[i];
                 const id = r && r.id ? r.id : '<unknown>';
-                console.log('[Backstop] ' +
-                    collectionName +
-                    ': stale pending row missing stripeSessionId id=' +
-                    id);
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
             }
         }
         catch (err) {
@@ -35763,4 +30898,3409 @@ routerAdd("GET", "/api/singer/player-playlist", (e) => {
     // --- END CALLBACK-LOCAL UTILITIES ---
 
     return handleSingerPlayerPlaylist(e);
+});
+
+routerAdd("POST", "/api/maintenance/run", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: email/hookText.ts ---
+    "use strict";
+    function escapeHtml(str) {
+        if (!str)
+            return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+    function sanitizeHtmlTemplateData(data) {
+        const sanitized = {};
+        const entries = Object.entries(data);
+        for (const [key, value] of entries) {
+            sanitized[key] = escapeHtml(value == null ? "" : String(value));
+        }
+        return sanitized;
+    }
+    function sanitizeEmailSubject(str) {
+        if (!str)
+            return "";
+        return String(str).replace(/[\r\n]+/g, " ").trim();
+    }
+    function normalizeBaseUrl(url) {
+        if (!url)
+            return "http://localhost:5173";
+        return String(url).trim().replace(/\/+$/g, "");
+    }
+    function nthSundayOfMonth(year, monthIndex, occurrence) {
+        const first = new Date(Date.UTC(year, monthIndex, 1));
+        return 1 + ((7 - first.getUTCDay()) % 7) + ((occurrence - 1) * 7);
+    }
+    function lastSundayOfMonth(year, monthIndex) {
+        const last = new Date(Date.UTC(year, monthIndex + 1, 0));
+        return last.getUTCDate() - last.getUTCDay();
+    }
+    function firstSundayOfMonth(year, monthIndex) {
+        return nthSundayOfMonth(year, monthIndex, 1);
+    }
+    function isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes) {
+        const year = date.getUTCFullYear();
+        const dstStartDay = nthSundayOfMonth(year, 2, 2);
+        const dstEndDay = nthSundayOfMonth(year, 10, 1);
+        const dstStart = Date.UTC(year, 2, dstStartDay, 2, 0, 0, 0) - standardOffsetMinutes * 60 * 1000;
+        const dstEnd = Date.UTC(year, 10, dstEndDay, 2, 0, 0, 0) - daylightOffsetMinutes * 60 * 1000;
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isEuropeDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 2, lastSundayOfMonth(year, 2), 1, 0, 0, 0);
+        const dstEnd = Date.UTC(year, 9, lastSundayOfMonth(year, 9), 1, 0, 0, 0);
+        return date.getTime() >= dstStart && date.getTime() < dstEnd;
+    }
+    function isSydneyDst(date) {
+        const year = date.getUTCFullYear();
+        const dstStart = Date.UTC(year, 9, firstSundayOfMonth(year, 9), 2, 0, 0, 0) - 10 * 60 * 60 * 1000;
+        const dstEnd = Date.UTC(year, 3, firstSundayOfMonth(year, 3), 3, 0, 0, 0) - 11 * 60 * 60 * 1000;
+        return date.getTime() >= dstStart || date.getTime() < dstEnd;
+    }
+    function getTimezoneOffsetInfo(date, timezone) {
+        const tz = String(timezone || "").toLowerCase();
+        if (tz === "utc" || tz === "etc/utc" || tz === "gmt") {
+            return { offsetMinutes: 0, abbreviation: "UTC" };
+        }
+        const usZone = (standardOffsetMinutes, daylightOffsetMinutes, standardAbbreviation, daylightAbbreviation) => {
+            const isDst = isUsDst(date, standardOffsetMinutes, daylightOffsetMinutes);
+            return {
+                offsetMinutes: isDst ? daylightOffsetMinutes : standardOffsetMinutes,
+                abbreviation: isDst ? daylightAbbreviation : standardAbbreviation,
+            };
+        };
+        if (tz.indexOf("new_york") >= 0 || tz.indexOf("eastern") >= 0 || tz.indexOf("detroit") >= 0) {
+            return usZone(-300, -240, "EST", "EDT");
+        }
+        if (tz.indexOf("chicago") >= 0 || tz.indexOf("central") >= 0) {
+            return usZone(-360, -300, "CST", "CDT");
+        }
+        if (tz.indexOf("denver") >= 0 || tz.indexOf("mountain") >= 0) {
+            return usZone(-420, -360, "MST", "MDT");
+        }
+        if (tz.indexOf("anchorage") >= 0 || tz.indexOf("alaska") >= 0) {
+            return usZone(-540, -480, "AKST", "AKDT");
+        }
+        if (tz.indexOf("phoenix") >= 0 || tz.indexOf("arizona") >= 0) {
+            return { offsetMinutes: -420, abbreviation: "MST" };
+        }
+        if (tz.indexOf("honolulu") >= 0 || tz.indexOf("hawaii") >= 0) {
+            return { offsetMinutes: -600, abbreviation: "HST" };
+        }
+        if (tz.indexOf("los_angeles") >= 0 || tz === "pacific" || tz.indexOf("pacific time") >= 0) {
+            return usZone(-480, -420, "PST", "PDT");
+        }
+        if (tz.indexOf("london") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 60 : 0, abbreviation: isDst ? "BST" : "GMT" };
+        }
+        if (tz.indexOf("paris") >= 0 || tz.indexOf("berlin") >= 0 || tz.indexOf("rome") >= 0 || tz.indexOf("madrid") >= 0) {
+            const isDst = isEuropeDst(date);
+            return { offsetMinutes: isDst ? 120 : 60, abbreviation: isDst ? "CEST" : "CET" };
+        }
+        if (tz.indexOf("tokyo") >= 0) {
+            return { offsetMinutes: 540, abbreviation: "JST" };
+        }
+        if (tz.indexOf("sydney") >= 0) {
+            const isDst = isSydneyDst(date);
+            return { offsetMinutes: isDst ? 660 : 600, abbreviation: isDst ? "AEDT" : "AEST" };
+        }
+        return { offsetMinutes: 0, abbreviation: "UTC" };
+    }
+    function formatInTimezone(date, timezone, options) {
+        if (!date)
+            return "";
+        const d = new Date(date);
+        if (isNaN(d.getTime()))
+            return "";
+        try {
+            // Bypass Intl.DateTimeFormat in Goja VM (PocketBase backend)
+            if (typeof process === 'undefined' && typeof window === 'undefined') {
+                throw new Error("Goja VM: use custom formatting");
+            }
+            // Try native Intl first (V8 / browser / Node.js)
+            return new Intl.DateTimeFormat("en-US", Object.assign(Object.assign({}, options), { timeZone: timezone })).format(d);
+        }
+        catch (_a) {
+            const offsetInfo = getTimezoneOffsetInfo(d, timezone);
+            // Shift date by offset to get target local time in UTC coordinates
+            const localTimeMs = d.getTime() + (offsetInfo.offsetMinutes * 60 * 1000);
+            const localDate = new Date(localTimeMs);
+            // Format manually using the shifted localDate components
+            const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const weekdaysFull = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthsFull = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const wday = weekdays[localDate.getUTCDay()];
+            const wdayFull = weekdaysFull[localDate.getUTCDay()];
+            const mon = months[localDate.getUTCMonth()];
+            const monFull = monthsFull[localDate.getUTCMonth()];
+            const day = localDate.getUTCDate();
+            const yr = localDate.getUTCFullYear();
+            let hr = localDate.getUTCHours();
+            const ampm = hr >= 12 ? "PM" : "AM";
+            hr = hr % 12;
+            if (hr === 0)
+                hr = 12;
+            const minVal = localDate.getUTCMinutes();
+            const min = minVal < 10 ? "0" + minVal : String(minVal);
+            const timezoneSuffix = options.timeZoneName ? " " + offsetInfo.abbreviation : "";
+            // Build formats based on options requested:
+            // Case 1: Just time (hour + minute)
+            if (options.hour && !options.day) {
+                return hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 2: Long date format: "Sunday, June 14, 2026"
+            if (options.weekday === "long" && options.year) {
+                return wdayFull + ", " + monFull + " " + day + ", " + yr;
+            }
+            // Case 3: Short format with time: "Sun, Jun 14, 7:00 PM"
+            if (options.weekday === "short" && options.hour) {
+                return wday + ", " + mon + " " + day + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+            }
+            // Case 4: Date only with weekday: "Sun, Jun 14"
+            if (options.weekday === "short" && !options.hour) {
+                return wday + ", " + mon + " " + day;
+            }
+            // Case 5: Date only without weekday: "Jun 14, 2026"
+            if (options.month && !options.hour) {
+                const m = options.month === "long" ? monFull : mon;
+                return m + " " + day + (options.year ? ", " + yr : "");
+            }
+            // Generic fallback: "06/14/2026, 7:00 PM"
+            const doubleDigitMonth = (localDate.getUTCMonth() + 1 < 10) ? "0" + (localDate.getUTCMonth() + 1) : String(localDate.getUTCMonth() + 1);
+            const doubleDigitDay = (day < 10) ? "0" + day : String(day);
+            return doubleDigitMonth + "/" + doubleDigitDay + "/" + yr + ", " + hr + ":" + min + " " + ampm + timezoneSuffix;
+        }
+    }
+
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: hmacTokens.ts ---
+    "use strict";
+    function getHmacSecret() {
+        return $os.getenv('HMAC_SECRET') || '';
+    }
+    function getPlayerPayload(eventId) {
+        return `e=${eventId}`;
+    }
+    function getEventRecipientPayload(eventId, recipientId) {
+        return `e=${eventId}&p=${recipientId}`;
+    }
+    function getAuditionPayload(auditionId) {
+        return `a=${auditionId}`;
+    }
+    function getTicketPayload(purchaseId) {
+        return `t=${purchaseId}`;
+    }
+    function generateSignedTicketToken(purchaseId) {
+        const secret = getHmacSecret();
+        const payload = getTicketPayload(purchaseId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedPlayerToken(eventId) {
+        const secret = getHmacSecret();
+        const payload = getPlayerPayload(eventId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedEventRecipientToken(eventId, recipientId) {
+        const secret = getHmacSecret();
+        const payload = getEventRecipientPayload(eventId, recipientId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function generateSignedAuditionToken(auditionId) {
+        const secret = getHmacSecret();
+        const payload = getAuditionPayload(auditionId);
+        const signature = $security.hs256(payload, secret);
+        return `${payload}&s=${signature}`;
+    }
+    function parseSignedToken(token, requiredKeys) {
+        if (!token || typeof token !== 'string')
+            return null;
+        const parts = {};
+        const allowed = { s: true, e: true, p: true, a: true, c: true, t: true };
+        token.split('&').forEach((segment) => {
+            const idx = segment.indexOf('=');
+            if (idx <= 0)
+                return;
+            const key = segment.slice(0, idx);
+            if (!allowed[key])
+                return;
+            parts[key] = segment.slice(idx + 1);
+        });
+        for (let i = 0; i < requiredKeys.length; i++) {
+            if (!parts[requiredKeys[i]])
+                return null;
+        }
+        return parts;
+    }
+
+    // --- Utility source: pocketbaseDate.ts ---
+    "use strict";
+    function coercePocketBaseDate(value) {
+        if (!value)
+            return null;
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === 'string') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'number') {
+            const parsed = new Date(value);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (typeof value === 'object') {
+            const dateLike = value;
+            if (typeof dateLike.toISOString === 'function') {
+                try {
+                    const parsed = new Date(dateLike.toISOString());
+                    if (!Number.isNaN(parsed.getTime()))
+                        return parsed;
+                }
+                catch (_a) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.valueOf === 'function') {
+                try {
+                    const valueOfResult = dateLike.valueOf();
+                    if (typeof valueOfResult === 'string' || typeof valueOfResult === 'number') {
+                        const parsed = new Date(valueOfResult);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                    if (valueOfResult instanceof Date && !Number.isNaN(valueOfResult.getTime())) {
+                        return valueOfResult;
+                    }
+                }
+                catch (_b) {
+                    // Fall through.
+                }
+            }
+            if (typeof dateLike.toString === 'function') {
+                try {
+                    const stringValue = dateLike.toString();
+                    // Avoid parsing the default "[object Object]" output.
+                    if (stringValue && stringValue !== '[object Object]') {
+                        const parsed = new Date(stringValue);
+                        if (!Number.isNaN(parsed.getTime()))
+                            return parsed;
+                    }
+                }
+                catch (_c) {
+                    // Fall through.
+                }
+            }
+        }
+        return null;
+    }
+    function isPocketBaseDateAtOrAfter(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed >= comparisonDate;
+    }
+    function isPocketBaseDateBefore(value, comparisonDate) {
+        const parsed = coercePocketBaseDate(value);
+        return !!parsed && parsed < comparisonDate;
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: stripeService.ts ---
+    "use strict";
+    function createCheckoutSession(lineItems, metadata, customerEmail, successUrl, cancelUrl) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        // Build form URL-encoded body
+        const params = [];
+        params.push("mode=payment");
+        params.push(`success_url=${encodeURIComponent(successUrl)}`);
+        params.push(`cancel_url=${encodeURIComponent(cancelUrl)}`);
+        if (customerEmail) {
+            params.push(`customer_email=${encodeURIComponent(customerEmail)}`);
+        }
+        // native promo codes enabled
+        params.push("allow_promotion_codes=true");
+        lineItems.forEach((item, idx) => {
+            params.push(`line_items[${idx}][price_data][currency]=${item.price_data.currency}`);
+            params.push(`line_items[${idx}][price_data][product_data][name]=${encodeURIComponent(item.price_data.product_data.name)}`);
+            params.push(`line_items[${idx}][price_data][unit_amount]=${item.price_data.unit_amount}`);
+            params.push(`line_items[${idx}][quantity]=${item.quantity}`);
+        });
+        Object.entries(metadata).forEach(([key, val]) => {
+            params.push(`metadata[${key}]=${encodeURIComponent(val)}`);
+        });
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/checkout/sessions",
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: params.join("&")
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe checkout session creation failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+    function retrieveCheckoutSession(sessionId) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/checkout/sessions/" + sessionId,
+            method: "GET",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey
+            }
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe session retrieval failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+    function refundPaymentIntent(paymentIntentId) {
+        const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+        if (!stripeSecretKey) {
+            throw new Error("Missing STRIPE_SECRET_KEY environment variable");
+        }
+        const res = $http.send({
+            url: "https://api.stripe.com/v1/refunds",
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + stripeSecretKey,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `payment_intent=${paymentIntentId}`
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Stripe refund failed: " + res.raw);
+        }
+        return JSON.parse(res.raw);
+    }
+
+    // --- Utility source: timezone.ts ---
+    "use strict";
+    function zonedInputValueToUtcLocal(localString, timeZone) {
+        if (!localString)
+            return "";
+        const parts = localString.split("T");
+        if (parts.length !== 2)
+            return new Date(localString).toISOString();
+        const [datePart, timePart] = parts;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hours, minutes] = timePart.split(":").map(Number);
+        // 1. Construct standard UTC Date using the target numbers as a baseline guess
+        let utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+        // 2. We do up to 3 iterative passes to converge to the exact correct offset
+        // This handles DST transitions correctly.
+        for (let iter = 0; iter < 3; iter++) {
+            const offsetInfo = getTimezoneOffsetInfo(utcDate, timeZone);
+            const offsetMs = offsetInfo.offsetMinutes * 60 * 1000;
+            // The local representation of this candidate UTC date is:
+            const localRepTime = utcDate.getTime() + offsetMs;
+            const localRepDate = new Date(localRepTime);
+            // Candidate "local representation" parts
+            const formattedYear = localRepDate.getUTCFullYear();
+            const formattedMonth = localRepDate.getUTCMonth() + 1;
+            const formattedDay = localRepDate.getUTCDate();
+            let formattedHour = localRepDate.getUTCHours();
+            const formattedMinute = localRepDate.getUTCMinutes();
+            const formattedSecond = localRepDate.getUTCSeconds();
+            if (formattedHour === 24) {
+                formattedHour = 0;
+            }
+            // Compute target zoned timestamp representation for the current candidate UTC date
+            const zonedTimestamp = Date.UTC(formattedYear, formattedMonth - 1, formattedDay, formattedHour, formattedMinute, formattedSecond);
+            // Offset difference is: candidate UTC - candidate zoned local representation
+            const diffMs = utcDate.getTime() - zonedTimestamp;
+            // Adjust target UTC by the calculated offset
+            const targetZonedTimestamp = Date.UTC(year, month - 1, day, hours, minutes);
+            const candidateUtcTime = targetZonedTimestamp + diffMs;
+            if (utcDate.getTime() === candidateUtcTime) {
+                break; // Converged!
+            }
+            utcDate = new Date(candidateUtcTime);
+        }
+        return utcDate.toISOString();
+    }
+
+    // --- Utility source: ticketScan/ticketValidation.ts ---
+    "use strict";
+    const REASON_MESSAGES = {
+        malformed: 'QR code is not valid',
+        bad_signature: 'QR code is not valid',
+        not_found: 'Ticket not found',
+        not_paid: 'Ticket has been refunded',
+        wrong_event: 'This ticket is for a different concert',
+    };
+    function getBaseUrl(app) {
+        var _a, _b, _c, _d;
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(record.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                return comms.frontendUrl.replace(/\/+$/, '');
+        }
+        catch (_e) {
+            /* use default */
+        }
+        try {
+            const url = ((_b = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta) === null || _b === void 0 ? void 0 : _b.appUrl) || ((_d = (_c = app.settings()) === null || _c === void 0 ? void 0 : _c.meta) === null || _d === void 0 ? void 0 : _d.appURL) || '';
+            if (url)
+                return url.replace(/\/+$/, '');
+        }
+        catch (_f) {
+            /* use default */
+        }
+        return 'http://localhost:5173';
+    }
+    async function handleValidateScan(e) {
+        const body = e.requestInfo().body;
+        const token = typeof (body === null || body === void 0 ? void 0 : body.token) === 'string' ? body.token : '';
+        const eventId = typeof (body === null || body === void 0 ? void 0 : body.eventId) === 'string' ? body.eventId : '';
+        if (!token || !eventId) {
+            return e.json(400, { error: 'Missing token or eventId' });
+        }
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Admin access required' });
+        }
+        const parsed = parseSignedToken(token, ['t', 's']);
+        if (!parsed) {
+            return e.json(200, { valid: false, reason: 'malformed', message: REASON_MESSAGES.malformed });
+        }
+        const secret = getHmacSecret();
+        if (!secret) {
+            return e.json(500, { error: 'Server configuration error' });
+        }
+        const payload = `t=${parsed.t}`;
+        const expectedSig = $security.hs256(payload, secret);
+        if (!$security.equal(parsed.s, expectedSig)) {
+            return e.json(200, {
+                valid: false,
+                reason: 'bad_signature',
+                message: REASON_MESSAGES.bad_signature,
+            });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById('ticketPurchases', parsed.t);
+        }
+        catch (_a) {
+            return e.json(200, { valid: false, reason: 'not_found', message: REASON_MESSAGES.not_found });
+        }
+        if (purchase.get('status') !== 'paid') {
+            return e.json(200, { valid: false, reason: 'not_paid', message: REASON_MESSAGES.not_paid });
+        }
+        const buyerName = String(purchase.get('buyerName') || '');
+        const quantity = Number(purchase.get('quantity') || 0);
+        const purchaseEventId = purchase.get('event');
+        if (purchaseEventId === eventId) {
+            let eventTitle = '';
+            let eventDate = '';
+            try {
+                const event = $app.findRecordById('events', eventId);
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
+            }
+            catch (_b) {
+                // keep empty values
+            }
+            return e.json(200, {
+                valid: true,
+                buyerName,
+                quantity,
+                eventId,
+                eventTitle,
+                eventDate,
+                isBundlePass: false,
+            });
+        }
+        const bundleId = purchase.get('bundle');
+        if (bundleId && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEvents = bundle.get('events');
+                const eventIds = Array.isArray(bundleEvents) ? bundleEvents : [];
+                if (eventIds.includes(eventId)) {
+                    let eventTitle = '';
+                    let eventDate = '';
+                    try {
+                        const scannedEvent = $app.findRecordById('events', eventId);
+                        eventTitle = String(scannedEvent.get('title') || '');
+                        eventDate = String(scannedEvent.get('date') || '');
+                    }
+                    catch (_c) {
+                        // keep empty values
+                    }
+                    return e.json(200, {
+                        valid: true,
+                        buyerName,
+                        quantity,
+                        eventId,
+                        eventTitle,
+                        eventDate,
+                        isBundlePass: true,
+                        bundleTitle: String(bundle.get('title') || ''),
+                    });
+                }
+            }
+            catch (_d) {
+                // bundle not found — fall through to wrong_event
+            }
+        }
+        return e.json(200, { valid: false, reason: 'wrong_event', message: REASON_MESSAGES.wrong_event });
+    }
+    async function handleGetScanContext(e) {
+        const query = e.requestInfo().query;
+        const sessionId = typeof query['session_id'] === 'string' ? query['session_id'] : '';
+        const purchaseId = typeof query['purchase_id'] === 'string' ? query['purchase_id'] : '';
+        if (!sessionId || !purchaseId) {
+            return e.json(400, { error: 'Missing session_id or purchase_id' });
+        }
+        let purchase;
+        try {
+            purchase = $app.findFirstRecordByFilter('ticketPurchases', 'id = {:purchaseId} && stripeSessionId = {:sessionId}', { purchaseId, sessionId });
+        }
+        catch (_a) {
+            return e.json(404, { error: 'Purchase not found' });
+        }
+        if (purchase.get('status') !== 'paid') {
+            return e.json(409, { error: 'Purchase is not yet paid' });
+        }
+        const secret = getHmacSecret();
+        if (!secret) {
+            return e.json(500, { error: 'Server configuration error' });
+        }
+        const token = generateSignedTicketToken(purchase.id);
+        const baseUrl = getBaseUrl($app);
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(token)}`;
+        const buyerName = String(purchase.get('buyerName') || '');
+        const bundleId = purchase.get('bundle');
+        const isBundlePass = !!bundleId;
+        let eventTitle = '';
+        let eventDate = '';
+        let bundleTitle;
+        if (isBundlePass && typeof bundleId === 'string') {
+            try {
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                bundleTitle = String(bundle.get('title') || '');
+            }
+            catch (_b) {
+                // bundle not found
+            }
+        }
+        else {
+            try {
+                const event = $app.findRecordById('events', String(purchase.get('event') || ''));
+                eventTitle = String(event.get('title') || '');
+                eventDate = String(event.get('date') || '');
+            }
+            catch (_c) {
+                // event not found
+            }
+        }
+        return e.json(200, {
+            token,
+            scanUrl,
+            buyerName,
+            eventTitle,
+            eventDate,
+            isBundlePass,
+            bundleTitle,
+        });
+    }
+
+    // --- Utility source: checkout/checkoutHelpers.ts ---
+    "use strict";
+    function getOrCreatePatronProfile(email, name) {
+        try {
+            // Try finding by user email first
+            return $app.findFirstRecordByFilter('profiles', 'user.email = {:email}', { email });
+        }
+        catch (_a) {
+            // Try finding by name as a fallback
+            try {
+                return $app.findFirstRecordByFilter('profiles', 'name = {:name}', { name });
+            }
+            catch (_b) {
+                // No profile found, create a new Patron profile.
+                // We create a user account so they can be linked to this email in the future.
+                let userId;
+                try {
+                    const user = $app.findAuthRecordByEmail('users', email);
+                    userId = user.id;
+                }
+                catch (_c) {
+                    const usersCollection = $app.findCollectionByNameOrId('users');
+                    const password = $security.randomString(32);
+                    const newUser = new Record(usersCollection, {
+                        email: email,
+                        password: password,
+                        passwordConfirm: password,
+                        role: 'singer', // Patrons are singers with no voice part
+                        name: name || email,
+                    });
+                    $app.save(newUser);
+                    userId = newUser.id;
+                }
+                const profilesCollection = $app.findCollectionByNameOrId('profiles');
+                const newProfile = new Record(profilesCollection, {
+                    user: userId,
+                    name: name || email,
+                    globalStatus: 'Active',
+                    voicePart: '',
+                });
+                $app.save(newProfile);
+                return newProfile;
+            }
+        }
+    }
+    function getTimezoneSetting() {
+        try {
+            const tzSetting = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP === null || tzP === void 0 ? void 0 : tzP.timezone)
+                return tzP.timezone;
+        }
+        catch (_a) {
+            // use default
+        }
+        return 'America/New_York';
+    }
+    function getChoirNameSetting() {
+        try {
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                return val;
+        }
+        catch (_a) {
+            // use default
+        }
+        return 'Choir Management Tool';
+    }
+    function getBaseUrl() {
+        var _a;
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
+    }
+
+    // --- Utility source: checkout/emailHelpers.ts ---
+    "use strict";
+    function enqueueTicketConfirmationEmail(options) {
+        var _a, _b;
+        const timezone = getTimezoneSetting();
+        const choirName = getChoirNameSetting();
+        const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
+        const eventTitle = String(options.event.get('title') || '');
+        const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(options.event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        });
+        const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Confirmation' && isSystemTemplate = true");
+        let content = String(template.get('content') || '');
+        const rawSubject = String(template.get('subject') || '');
+        const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
+        content = content
+            .replace(/{buyerName}/g, finalRecipientName)
+            .replace(/{eventTitle}/g, eventTitle)
+            .replace(/{eventDate}/g, eventDateStr)
+            .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
+            .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
+            .replace(/{amountPaid}/g, (((_b = options.amountPaidCents) !== null && _b !== void 0 ? _b : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
+        const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
+        const mailRecord = new Record(emailQueueCollection, {
+            recipientId: 'buyer_' + stripeSessionId,
+            recipientEmail: finalRecipientEmail,
+            recipientName: finalRecipientName,
+            subject: subject,
+            rawContent: content,
+            status: 'Pending',
+            attempts: 0,
+            filters: JSON.stringify({
+                eventId: options.event.id,
+                ticketToken,
+                scanUrl,
+                qrSvgSrc,
+                successUrl,
+                type: 'Automated Confirmation',
+                resent: !!options.resent,
+            }),
+        });
+        $app.save(mailRecord);
+    }
+    function enqueueBundleTicketConfirmationEmail(options) {
+        var _a;
+        const timezone = getTimezoneSetting();
+        const choirName = getChoirNameSetting();
+        const baseUrl = getBaseUrl();
+        const ticketToken = generateSignedTicketToken(options.purchase.id);
+        const stripeSessionId = options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+        const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+        const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+        const qrSvgSrc = '';
+        const finalRecipientEmail = options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+        const finalRecipientName = options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
+        const eventDetailsParts = [];
+        options.bundleEventIds.forEach((eventId) => {
+            var _a;
+            try {
+                const ev = $app.findRecordById('events', eventId);
+                const evTitle = String(ev.get('title') || '');
+                const evDateStr = formatInTimezone((_a = coercePocketBaseDate(ev.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                });
+                eventDetailsParts.push(`- ${evTitle} on ${evDateStr}`);
+            }
+            catch (_b) {
+                // Ignore individual event loading errors.
+            }
+        });
+        const eventDetailsStr = eventDetailsParts.join('\n');
+        const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Bundle Ticket Confirmation' && isSystemTemplate = true");
+        let content = String(template.get('content') || '');
+        const rawSubject = String(template.get('subject') || '');
+        const bundleTitle = String(options.bundle.get('title') || '');
+        const subject = rawSubject.replace(/{bundleTitle}/g, bundleTitle);
+        content = content
+            .replace(/{buyerName}/g, finalRecipientName)
+            .replace(/{bundleTitle}/g, bundleTitle)
+            .replace(/{eventDetails}/g, eventDetailsStr)
+            .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
+            .replace(/{amountPaid}/g, (((_a = options.amountPaidCents) !== null && _a !== void 0 ? _a : Number(options.purchase.get('amountPaidCents') || 0)) / 100).toFixed(2))
+            .replace(/{choirName}/g, choirName)
+            .replace(/{successUrl}/g, successUrl);
+        const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
+        const mailRecord = new Record(emailQueueCollection, {
+            recipientId: 'buyer_' + stripeSessionId,
+            recipientEmail: finalRecipientEmail,
+            recipientName: finalRecipientName,
+            subject: subject,
+            rawContent: content,
+            status: 'Pending',
+            attempts: 0,
+            filters: JSON.stringify({
+                bundleId: options.bundle.id,
+                ticketToken,
+                scanUrl,
+                qrSvgSrc,
+                successUrl,
+                type: 'Automated Bundle Confirmation',
+                resent: !!options.resent,
+            }),
+        });
+        $app.save(mailRecord);
+    }
+
+    // --- Utility source: checkout/createTicketsSession.ts ---
+    "use strict";
+    function handleCreateTicketsSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const eventId = body.eventId;
+        const quantity = body.quantity;
+        const email = body.email;
+        const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
+        if (!eventId || !quantity || !email || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        const qty = Number(quantity);
+        if (isNaN(qty) || qty <= 0 || qty > 10) {
+            return e.json(400, { error: 'Invalid ticket quantity' });
+        }
+        let event;
+        try {
+            event = $app.findRecordById('events', eventId);
+        }
+        catch (_b) {
+            return e.json(404, { error: 'Event not found' });
+        }
+        if (event.get('isArchived')) {
+            return e.json(400, { error: 'Event has been archived' });
+        }
+        if (!event.get('isTicketingEnabled')) {
+            return e.json(400, { error: 'Ticketing is not enabled for this event' });
+        }
+        const checkoutEventDate = coercePocketBaseDate(event.get('date'));
+        if (!checkoutEventDate || checkoutEventDate < new Date()) {
+            return e.json(400, { error: 'Ticket sales are closed for this event' });
+        }
+        // Derive sold count from paid ticketPurchases
+        let soldCount = 0;
+        try {
+            const paidPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+            paidPurchases.forEach((p) => {
+                const q = p.get('quantity');
+                soldCount += typeof q === 'number' ? q : 0;
+            });
+        }
+        catch (err) {
+            console.log('Error querying paid purchases: ' + (err instanceof Error ? err.message : String(err)));
+        }
+        const capacity = event.get('ticketCapacity');
+        const capacityNum = typeof capacity === 'number' ? capacity : 0;
+        if (capacityNum > 0 && soldCount + qty > capacityNum) {
+            return e.json(400, { error: 'Requested quantity exceeds remaining ticket capacity' });
+        }
+        // Select price based on day-of rules in event timezone
+        let timezone = 'America/New_York';
+        try {
+            const settingsRecord = $app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const val = settingsRecord.get('value');
+            const parsed = parseJsonField(val);
+            if (parsed && parsed.timezone) {
+                timezone = parsed.timezone;
+            }
+        }
+        catch (_c) {
+            // use default timezone
+        }
+        const nowFormatted = formatInTimezone(new Date(), timezone, {});
+        const checkoutEventDateForFormatting = coercePocketBaseDate(event.get('date'));
+        const eventFormatted = formatInTimezone(checkoutEventDateForFormatting !== null && checkoutEventDateForFormatting !== void 0 ? checkoutEventDateForFormatting : new Date(''), timezone, {});
+        const nowStr = nowFormatted.split(',')[0];
+        const eventDateStr = eventFormatted.split(',')[0];
+        const isShowDay = nowStr === eventDateStr;
+        const advancePriceCents = event.get('advancePriceCents');
+        const dayOfPriceCents = event.get('dayOfPriceCents');
+        const unitPriceCents = isShowDay
+            ? typeof dayOfPriceCents === 'number'
+                ? dayOfPriceCents
+                : 0
+            : typeof advancePriceCents === 'number'
+                ? advancePriceCents
+                : 0;
+        if (unitPriceCents < 0) {
+            return e.json(400, { error: 'Invalid ticket price configuration' });
+        }
+        // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
+        const totalTicketsCents = unitPriceCents * qty;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/tickets/${eventId}`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: `Ticket: ${String(event.get('title') || 'Event')}` },
+                    unit_amount: unitPriceCents,
+                },
+                quantity: qty,
+            },
+        ];
+        if (feeCents > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
+                },
+                quantity: 1,
+            });
+        }
+        const metadata = {
+            paymentType: 'ticket',
+            eventId,
+            quantity: String(qty),
+            unitPriceCents: String(unitPriceCents),
+            feeCents: String(feeCents),
+            buyerName: name,
+            buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
+            const record = new Record(collection, {
+                event: eventId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: unitPriceCents,
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: 'usd',
+                stripeSessionId: session.id,
+                marketingOptIn,
+                status: 'pending',
+            });
+            $app.save(record);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
+        }
+    }
+
+    // --- Utility source: checkout/createBundleSession.ts ---
+    "use strict";
+    function handleCreateBundleSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const bundleId = body.bundleId;
+        const quantity = body.quantity;
+        const email = body.email;
+        const name = body.name;
+        const marketingOptIn = body.marketingOptIn === true;
+        if (!bundleId || !quantity || !email || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        const qty = Number(quantity);
+        if (isNaN(qty) || qty <= 0 || qty > 10) {
+            return e.json(400, { error: 'Invalid ticket bundle quantity' });
+        }
+        let bundle;
+        try {
+            bundle = $app.findRecordById('ticketBundles', bundleId);
+        }
+        catch (_b) {
+            return e.json(404, { error: 'Bundle not found' });
+        }
+        if (!bundle.get('isActive')) {
+            return e.json(400, { error: 'This bundle is not currently active for purchase' });
+        }
+        const saleEndDate = coercePocketBaseDate(bundle.get('saleEndDate'));
+        if (saleEndDate && new Date() > saleEndDate) {
+            return e.json(400, { error: 'The sale period for this bundle has ended' });
+        }
+        const bundleEventsVal = bundle.get('events');
+        const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+        if (bundleEventIds.length === 0) {
+            return e.json(400, { error: 'This bundle does not contain any events' });
+        }
+        // 1. Check bundle capacity
+        let bundleSoldCount = 0;
+        const firstEventId = bundleEventIds[0];
+        try {
+            const bundlePurchases = $app.findRecordsByFilter('ticketPurchases', "bundle = {:bundleId} && event = {:eventId} && status = 'paid'", '', 10000, 0, { bundleId, eventId: firstEventId });
+            bundlePurchases.forEach((p) => {
+                const q = p.get('quantity');
+                bundleSoldCount += typeof q === 'number' ? q : 0;
+            });
+        }
+        catch (err) {
+            console.log('Error querying bundle sales: ' + (err instanceof Error ? err.message : String(err)));
+        }
+        const bundleCapacity = Number(bundle.get('capacity') || 0);
+        if (bundleCapacity > 0 && bundleSoldCount + qty > bundleCapacity) {
+            return e.json(400, { error: 'Requested quantity exceeds remaining bundle capacity' });
+        }
+        // 2. Check individual event capacities
+        for (const eventId of bundleEventIds) {
+            let event;
+            try {
+                event = $app.findRecordById('events', eventId);
+            }
+            catch (_c) {
+                return e.json(404, { error: `Included event ${eventId} not found` });
+            }
+            if (event.get('isArchived')) {
+                return e.json(400, { error: `Included event "${event.get('title')}" is archived` });
+            }
+            let eventSoldCount = 0;
+            try {
+                const eventPurchases = $app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid'", '', 10000, 0, { eventId });
+                eventPurchases.forEach((p) => {
+                    const q = p.get('quantity');
+                    eventSoldCount += typeof q === 'number' ? q : 0;
+                });
+            }
+            catch (err) {
+                console.log(`Error querying event ${eventId} sales: ` +
+                    (err instanceof Error ? err.message : String(err)));
+            }
+            const eventCapacity = Number(event.get('ticketCapacity') || 0);
+            if (eventCapacity > 0 && eventSoldCount + qty > eventCapacity) {
+                return e.json(400, {
+                    error: `Requested quantity exceeds remaining capacity for event "${event.get('title')}"`,
+                });
+            }
+        }
+        const priceCents = Number(bundle.get('priceCents') || 0);
+        const totalTicketsCents = priceCents * qty;
+        const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
+        const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/tickets`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: 'usd',
+                    product_data: {
+                        name: `Season Ticket Bundle: ${String(bundle.get('title') || 'Season Pass')}`,
+                    },
+                    unit_amount: priceCents,
+                },
+                quantity: qty,
+            },
+        ];
+        if (feeCents > 0) {
+            lineItems.push({
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: 'Processing Fee' },
+                    unit_amount: feeCents,
+                },
+                quantity: 1,
+            });
+        }
+        const metadata = {
+            paymentType: 'bundle',
+            bundleId,
+            quantity: String(qty),
+            unitPriceCents: String(priceCents),
+            feeCents: String(feeCents),
+            buyerName: name,
+            buyerEmail: email,
+            marketingOptIn: marketingOptIn ? 'true' : 'false',
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
+            const record = new Record(collection, {
+                bundle: bundleId,
+                profile: profile.id,
+                buyerName: name,
+                buyerEmail: email,
+                quantity: qty,
+                unitPriceCents: bundle.get('priceCents'),
+                feeCents: feeCents,
+                amountPaidCents: totalTicketsCents + feeCents,
+                currency: 'usd',
+                stripeSessionId: session.id,
+                marketingOptIn,
+                status: 'pending',
+            });
+            $app.save(record);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
+        }
+    }
+
+    // --- Utility source: checkout/createDonationSession.ts ---
+    "use strict";
+    function handleCreateDonationSession(e) {
+        var _a;
+        const body = e.requestInfo().body;
+        const amountCents = Number(body.amountCents || 0);
+        const name = body.name;
+        const email = body.email;
+        const tributeType = body.tributeType || 'none';
+        const tributeName = body.tributeName || '';
+        const isAnonymous = !!body.isAnonymous;
+        if (!amountCents || !name || !email) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (amountCents < 500) {
+            return e.json(400, { error: 'Donation amount must be at least $5.00' });
+        }
+        let choirName = 'Choir Management Tool';
+        try {
+            const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_b) {
+            // default
+        }
+        const meta = (_a = $app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+        const settingsAppUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || (meta === null || meta === void 0 ? void 0 : meta.AppURL) || '';
+        const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
+        const successUrl = `${appUrl}/donate/success?session_id={CHECKOUT_SESSION_ID}`;
+        const cancelUrl = `${appUrl}/donate`;
+        const lineItems = [
+            {
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: `Donation to ${choirName}` },
+                    unit_amount: amountCents,
+                },
+                quantity: 1,
+            },
+        ];
+        const metadata = {
+            paymentType: 'donation',
+            amountPaidCents: String(amountCents),
+            donorName: name,
+            donorEmail: email,
+            tributeType,
+            tributeName,
+            isAnonymous: String(isAnonymous),
+        };
+        try {
+            const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
+            // Pre-save pending record
+            const profile = getOrCreatePatronProfile(email, name);
+            const collection = $app.findCollectionByNameOrId('pbc_donations_001');
+            const record = new Record(collection, {
+                amountPaidCents: amountCents,
+                donorName: name,
+                donorEmail: email,
+                profile: profile.id,
+                tributeType: tributeType,
+                tributeName: tributeName,
+                isAnonymous: isAnonymous,
+                status: 'pending',
+                stripeSessionId: session.id,
+            });
+            $app.save(record);
+            return e.json(200, { url: session.url, sessionId: session.id });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: 'Failed to create Stripe Checkout session', details: message });
+        }
+    }
+
+    // --- Utility source: checkout/stripeWebhook.ts ---
+    "use strict";
+    function expirePendingPaymentRecord(app, collectionName, stripeSessionId, source) {
+        if (!stripeSessionId) {
+            console.log('[expirePendingPaymentRecord] ' + source + ': missing stripeSessionId');
+            return 'noop-missing-id';
+        }
+        let record;
+        try {
+            record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+                stripeSessionId,
+            });
+        }
+        catch (_a) {
+            // No matching row. Per AGENTS.md §4, log defensively.
+            console.log('[expirePendingPaymentRecord] ' +
+                source +
+                ': no row found collection=' +
+                collectionName +
+                ' sessionId=' +
+                stripeSessionId);
+            return 'noop-not-found';
+        }
+        const currentStatus = String(record.get('status') || '');
+        if (currentStatus === 'paid') {
+            return 'noop-already-paid';
+        }
+        if (currentStatus === 'refunded') {
+            return 'noop-already-refunded';
+        }
+        if (currentStatus === 'expired') {
+            return 'noop-already-expired';
+        }
+        // currentStatus === 'pending' (or unexpected value; treat as pending)
+        record.set('status', 'expired');
+        record.set('expiredAt', new Date().toISOString());
+        try {
+            app.save(record);
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.log('[expirePendingPaymentRecord] ' +
+                source +
+                ': save failed collection=' +
+                collectionName +
+                ' sessionId=' +
+                stripeSessionId +
+                ' error=' +
+                message);
+            return 'noop-error';
+        }
+        return 'expired';
+    }
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const CRON_PAGE_SIZE = 100;
+    const CRON_MAX_PAGES = 50;
+    const CRON_SKIPPED_PAGE_SIZE = 25;
+    function expireStalePendingRecords(app, collectionName, source, nowMs) {
+        const now = typeof nowMs === 'number' ? nowMs : Date.now();
+        const cutoff = new Date(now - SEVEN_DAYS_MS).toISOString();
+        let missing = 0;
+        try {
+            const missingRows = app.findRecordsByFilter(collectionName, "status = 'pending' && created < {:cutoff} && stripeSessionId = ''", '', CRON_SKIPPED_PAGE_SIZE, 0, { cutoff });
+            missing = missingRows.length;
+            for (let i = 0; i < missingRows.length; i++) {
+                const r = missingRows[i];
+                const id = r && r.id ? r.id : '<unknown>';
+                console.log('[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id);
+            }
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.log('[Backstop] ' + collectionName + ': diagnostic query failed: ' + message);
+        }
+        let processed = 0;
+        let errors = 0;
+        let pagesProcessed = 0;
+        let hitMaxPages = false;
+        for (let page = 0; page < CRON_MAX_PAGES; page++) {
+            let batch;
+            try {
+                batch = app.findRecordsByFilter(collectionName, "status = 'pending' && created < {:cutoff} && stripeSessionId != ''", '', CRON_PAGE_SIZE, 0, { cutoff });
+            }
+            catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                console.log('[Backstop] ' + collectionName + ': query failed: ' + message);
+                break;
+            }
+            if (!batch || batch.length === 0) {
+                break;
+            }
+            pagesProcessed += 1;
+            for (let i = 0; i < batch.length; i++) {
+                const r = batch[i];
+                const sessionId = r && r.get ? String(r.get('stripeSessionId') || '') : '';
+                const result = expirePendingPaymentRecord(app, collectionName, sessionId, source);
+                if (result === 'expired') {
+                    processed += 1;
+                }
+                else {
+                    errors += 1;
+                }
+            }
+            if (batch.length < CRON_PAGE_SIZE) {
+                break;
+            }
+        }
+        if (pagesProcessed >= CRON_MAX_PAGES) {
+            hitMaxPages = true;
+        }
+        console.log('[Backstop] ' +
+            collectionName +
+            ' processed=' +
+            processed +
+            ' errors=' +
+            errors +
+            ' skippedNoSessionId=' +
+            missing +
+            ' pages=' +
+            pagesProcessed +
+            (hitMaxPages ? ' hitMaxPages=true' : ''));
+        return { processed, errors, skippedNoSessionId: missing, pagesProcessed, hitMaxPages };
+    }
+    async function handleStripeWebhook(e) {
+        var _a, _b;
+        let rawBody;
+        try {
+            rawBody = readerToString(e.request.body);
+        }
+        catch (_c) {
+            return e.json(400, { error: 'Failed to read request body' });
+        }
+        const sig = e.request.header.get('Stripe-Signature') || '';
+        const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+        if (!sig || !webhookSecret) {
+            return e.json(400, { error: 'Missing signature or webhook config' });
+        }
+        // Parse Stripe-Signature components: t=123,v1=abc
+        let timestamp = '';
+        let signature = '';
+        sig.split(',').forEach((part) => {
+            const pair = part.split('=');
+            if (pair.length === 2) {
+                const k = pair[0].trim();
+                const v = pair[1].trim();
+                if (k === 't')
+                    timestamp = v;
+                if (k === 'v1')
+                    signature = v;
+            }
+        });
+        if (!timestamp || !signature) {
+            return e.json(400, { error: 'Invalid signature format' });
+        }
+        // Validate replay attacks
+        const nowSecs = Math.floor(Date.now() / 1000);
+        if (Math.abs(nowSecs - Number(timestamp)) > 300) {
+            return e.json(400, { error: 'Expired timestamp' });
+        }
+        // Compute local signature
+        const signedPayload = timestamp + '.' + rawBody;
+        const localSig = $security.hs256(signedPayload, webhookSecret);
+        if (!$security.equal(localSig, signature)) {
+            return e.json(400, { error: 'Signature verification failed' });
+        }
+        let eventObj;
+        try {
+            eventObj = JSON.parse(rawBody);
+        }
+        catch (_d) {
+            return e.json(400, { error: 'Invalid JSON body' });
+        }
+        if (eventObj.type === 'checkout.session.completed') {
+            const session = (_a = eventObj.data) === null || _a === void 0 ? void 0 : _a.object;
+            if (!session) {
+                return e.json(400, { error: 'Missing session object' });
+            }
+            const metadata = session.metadata || {};
+            const paymentType = metadata.paymentType;
+            if (paymentType === 'ticket') {
+                const eventId = metadata.eventId;
+                const stripeSessionId = session.id || '';
+                const quantity = Number(metadata.quantity || 0);
+                if (!eventId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
+                    return e.json(400, { error: 'Invalid session metadata' });
+                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
+                try {
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate event ignored' });
+                    }
+                    if (record.get('status') === 'refunded') {
+                        console.log('[Stripe Webhook] completed: ignoring event for refunded ticket sessionId=' +
+                            stripeSessionId);
+                        return e.json(200, {
+                            success: true,
+                            message: 'Refunded record not overwritten',
+                        });
+                    }
+                    // pending or expired -> paid. Clear any prior expiredAt
+                    // so the row fully returns to "not expired" state.
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
+                    record.set('expiredAt', '');
+                }
+                catch (_e) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
+                    record = new Record(collection, {
+                        event: eventId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || 'usd',
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
+                    });
+                }
+                $app.save(record);
+                // Look up event for email
+                let targetEvent;
+                try {
+                    targetEvent = $app.findRecordById('events', eventId);
+                }
+                catch (_f) {
+                    return e.json(400, { error: 'Event not found during webhook processing' });
+                }
+                // Enqueue Ticket Confirmation email
+                try {
+                    enqueueTicketConfirmationEmail({
+                        purchase: record,
+                        event: targetEvent,
+                        stripeSessionId,
+                        amountPaidCents: session.amount_total || 0,
+                        resent: false,
+                    });
+                }
+                catch (mailErr) {
+                    console.log('Failed to enqueue confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === 'bundle') {
+                const bundleId = metadata.bundleId;
+                const stripeSessionId = session.id || '';
+                const quantity = Number(metadata.quantity || 0);
+                if (!bundleId || !stripeSessionId || isNaN(quantity) || quantity <= 0) {
+                    return e.json(400, { error: 'Invalid session metadata' });
+                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
+                try {
+                    record = $app.findFirstRecordByFilter('ticketPurchases', 'stripeSessionId = {:stripeSessionId}', { stripeSessionId });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
+                    }
+                    if (record.get('status') === 'refunded') {
+                        console.log('[Stripe Webhook] completed: ignoring event for refunded bundle sessionId=' +
+                            stripeSessionId);
+                        return e.json(200, {
+                            success: true,
+                            message: 'Refunded record not overwritten',
+                        });
+                    }
+                    // pending or expired -> paid. Clear any prior expiredAt.
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('stripeCustomerId', session.customer || '');
+                    record.set('fulfilledAt', new Date().toISOString());
+                    record.set('expiredAt', '');
+                }
+                catch (_g) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(metadata.buyerEmail || '', metadata.buyerName || '');
+                    const collection = $app.findCollectionByNameOrId('pbc_ticketPurchases_001');
+                    record = new Record(collection, {
+                        bundle: bundleId,
+                        profile: profile.id,
+                        buyerName: metadata.buyerName || '',
+                        buyerEmail: metadata.buyerEmail || '',
+                        quantity: quantity,
+                        unitPriceCents: Number(metadata.unitPriceCents || 0),
+                        feeCents: Number(metadata.feeCents || 0),
+                        amountPaidCents: session.amount_total || 0,
+                        currency: session.currency || 'usd',
+                        stripeSessionId: stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || '',
+                        stripeCustomerId: session.customer || '',
+                        status: 'paid',
+                        marketingOptIn: metadata.marketingOptIn === 'true',
+                        fulfilledAt: new Date().toISOString(),
+                    });
+                }
+                $app.save(record);
+                // Look up bundle for email
+                let targetBundle;
+                let bundleEventIds;
+                try {
+                    targetBundle = $app.findRecordById('ticketBundles', bundleId);
+                    const bundleEventsVal = targetBundle.get('events');
+                    bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                }
+                catch (_h) {
+                    return e.json(400, { error: 'Bundle not found during webhook processing' });
+                }
+                // Enqueue Consolidated Ticket Confirmation email
+                try {
+                    enqueueBundleTicketConfirmationEmail({
+                        purchase: record,
+                        bundle: targetBundle,
+                        bundleEventIds,
+                        stripeSessionId,
+                        amountPaidCents: session.amount_total || 0,
+                        resent: false,
+                    });
+                }
+                catch (mailErr) {
+                    console.log('Failed to enqueue bundle confirmation email: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === 'donation') {
+                const stripeSessionId = session.id || '';
+                if (!stripeSessionId) {
+                    return e.json(400, { error: 'Missing session ID' });
+                }
+                // Idempotency & Reconciliation: Check if record exists
+                let record;
+                const amountPaidCents = Number(metadata.amountPaidCents || session.amount_total || 0);
+                const donorName = metadata.donorName || '';
+                const donorEmail = metadata.donorEmail || '';
+                const tributeType = metadata.tributeType || 'none';
+                const tributeName = metadata.tributeName || '';
+                const isAnonymous = metadata.isAnonymous === 'true';
+                try {
+                    record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
+                        stripeSessionId,
+                    });
+                    if (record.get('status') === 'paid') {
+                        return e.json(200, { success: true, message: 'Duplicate donation ignored' });
+                    }
+                    if (record.get('status') === 'refunded') {
+                        console.log('[Stripe Webhook] completed: ignoring event for refunded donation sessionId=' +
+                            stripeSessionId);
+                        return e.json(200, {
+                            success: true,
+                            message: 'Refunded record not overwritten',
+                        });
+                    }
+                    // pending or expired -> paid. Clear any prior expiredAt.
+                    record.set('status', 'paid');
+                    record.set('stripePaymentIntentId', session.payment_intent || '');
+                    record.set('expiredAt', '');
+                }
+                catch (_j) {
+                    // Record not found, fallback to creation (existing logic)
+                    const profile = getOrCreatePatronProfile(donorEmail, donorName);
+                    const collection = $app.findCollectionByNameOrId('pbc_donations_001');
+                    record = new Record(collection, {
+                        amountPaidCents,
+                        donorName,
+                        donorEmail,
+                        profile: profile.id,
+                        tributeType,
+                        tributeName,
+                        isAnonymous,
+                        status: 'paid',
+                        stripeSessionId,
+                        stripePaymentIntentId: session.payment_intent || '',
+                    });
+                }
+                $app.save(record);
+                // Enqueue Donation Receipt
+                try {
+                    const template = $app.findFirstRecordByFilter('messageTemplates', "title = 'Donation Receipt' && isSystemTemplate = true");
+                    let content = template.get('content') || '';
+                    const subject = template.get('subject') || '';
+                    let choirName = 'Choir Management Tool';
+                    try {
+                        const choirRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                        const val = parseJsonField(choirRecord.get('value'));
+                        if (val)
+                            choirName = val;
+                    }
+                    catch (_k) {
+                        // default
+                    }
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{amountPaid}/g, (amountPaidCents / 100).toFixed(2))
+                        .replace(/{choirName}/g, choirName)
+                        .replace(/{tributeSection}/g, tributeSection);
+                    const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
+                    const mailRecord = new Record(emailQueueCollection, {
+                        recipientId: 'donor_' + stripeSessionId,
+                        recipientEmail: donorEmail,
+                        recipientName: donorName || 'Donor',
+                        subject: subject.replace(/{choirName}/g, choirName),
+                        rawContent: content,
+                        status: 'Pending',
+                        attempts: 0,
+                        filters: JSON.stringify({ type: 'Donation Receipt' }),
+                    });
+                    $app.save(mailRecord);
+                }
+                catch (mailErr) {
+                    console.log('Failed to enqueue donation receipt: ' +
+                        (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+            }
+            else if (paymentType === 'dues') {
+                const profileId = metadata.profileId;
+                const season = metadata.season;
+                if (profileId && season) {
+                    try {
+                        let duesRecord;
+                        try {
+                            duesRecord = $app.findFirstRecordByFilter('seasonalDues', 'profile = {:profileId} && season = {:season}', { profileId, season });
+                            duesRecord.set('paid', true);
+                        }
+                        catch (_l) {
+                            const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
+                            duesRecord = new Record(duesColl, {
+                                profile: profileId,
+                                season: season,
+                                paid: true,
+                            });
+                        }
+                        $app.save(duesRecord);
+                    }
+                    catch (err) {
+                        console.log('Failed to fulfill dues payment: ' + (err instanceof Error ? err.message : String(err)));
+                    }
+                }
+            }
+        }
+        else if (eventObj.type === 'checkout.session.expired') {
+            const session = eventObj.data && eventObj.data.object;
+            if (!session) {
+                console.log('[Stripe Webhook] expired: missing session object');
+                return e.json(200, { success: true, message: 'No session' });
+            }
+            const stripeSessionId = session.id || '';
+            if (!stripeSessionId) {
+                console.log('[Stripe Webhook] expired: missing session id');
+                return e.json(200, { success: true, message: 'No session id' });
+            }
+            const paymentType = (session.metadata && session.metadata.paymentType) || '';
+            if (paymentType !== 'ticket' && paymentType !== 'bundle' && paymentType !== 'donation') {
+                console.log('[Stripe Webhook] expired: unsupported paymentType=' + paymentType);
+                return e.json(200, { success: true, message: 'Unsupported paymentType' });
+            }
+            const collectionName = paymentType === 'donation' ? 'donations' : 'ticketPurchases';
+            const result = expirePendingPaymentRecord($app, collectionName, stripeSessionId, 'webhook');
+            console.log('[Stripe Webhook] expired: ' +
+                result +
+                ' collection=' +
+                collectionName +
+                ' sessionId=' +
+                stripeSessionId);
+            return e.json(200, { success: true, message: result });
+        }
+        else if (eventObj.type === 'charge.refunded') {
+            const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
+            const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
+            if (paymentIntentId) {
+                try {
+                    const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (purchases && purchases.length > 0) {
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            purchases.forEach((p) => {
+                                p.set('status', 'refunded');
+                                tx.save(p);
+                            });
+                        });
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+            }
+        }
+        return e.json(200, { success: true });
+    }
+
+    // --- Utility source: checkout/adminRefundTicket.ts ---
+    "use strict";
+    function handleAdminRefundTicket(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const body = e.requestInfo().body;
+        const purchaseId = body.purchaseId;
+        if (!purchaseId) {
+            return e.json(400, { error: 'Missing purchaseId' });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
+        }
+        catch (_a) {
+            return e.json(404, { error: 'Purchase record not found' });
+        }
+        const pi = purchase.get('stripePaymentIntentId');
+        if (!pi) {
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
+        }
+        try {
+            refundPaymentIntent(pi);
+            purchase.set('status', 'refunded');
+            $app.save(purchase);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
+        }
+    }
+
+    // --- Utility source: checkout/adminRefundBundle.ts ---
+    "use strict";
+    function handleAdminRefundBundle(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const body = e.requestInfo().body;
+        const paymentIntentId = body.paymentIntentId;
+        if (!paymentIntentId) {
+            return e.json(400, { error: 'Missing paymentIntentId' });
+        }
+        let purchases;
+        try {
+            purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+        }
+        catch (_a) {
+            return e.json(404, { error: 'No purchases found for the payment intent' });
+        }
+        if (purchases.length === 0) {
+            return e.json(404, { error: 'No purchase records found' });
+        }
+        try {
+            refundPaymentIntent(paymentIntentId);
+            const txApp = $app;
+            txApp.runInTransaction((tx) => {
+                purchases.forEach((p) => {
+                    p.set('status', 'refunded');
+                    tx.save(p);
+                });
+            });
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
+        }
+    }
+
+    // --- Utility source: checkout/adminRefundDonation.ts ---
+    "use strict";
+    function handleAdminRefundDonation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const body = e.requestInfo().body;
+        const donationId = body.donationId;
+        if (!donationId) {
+            return e.json(400, { error: 'Missing donationId' });
+        }
+        let donation;
+        try {
+            donation = $app.findRecordById('donations', donationId);
+        }
+        catch (_a) {
+            return e.json(404, { error: 'Donation record not found' });
+        }
+        const pi = donation.get('stripePaymentIntentId');
+        if (!pi) {
+            return e.json(400, { error: 'Stripe payment intent missing on record' });
+        }
+        try {
+            refundPaymentIntent(pi);
+            donation.set('status', 'refunded');
+            $app.save(donation);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return e.json(500, { error: 'Failed to issue Stripe refund', details: message });
+        }
+    }
+
+    // --- Utility source: checkout/adminResendConfirmation.ts ---
+    "use strict";
+    function handleAdminResendTicketConfirmation(e) {
+        const authRecord = e.auth;
+        if (!authRecord || authRecord.get('role') !== 'admin') {
+            return e.json(403, { error: 'Forbidden: Admins only' });
+        }
+        const body = e.requestInfo().body;
+        const purchaseId = typeof body.purchaseId === 'string' ? body.purchaseId : '';
+        const recipientEmail = typeof body.recipientEmail === 'string' ? body.recipientEmail.trim() : '';
+        if (!purchaseId) {
+            return e.json(400, { error: 'Missing purchaseId' });
+        }
+        if (recipientEmail && !recipientEmail.includes('@')) {
+            return e.json(400, { error: 'Invalid recipient email' });
+        }
+        let purchase;
+        try {
+            purchase = $app.findRecordById('ticketPurchases', purchaseId);
+        }
+        catch (_a) {
+            return e.json(404, { error: 'Ticket purchase not found' });
+        }
+        if (purchase.get('status') !== 'paid') {
+            return e.json(400, { error: 'Only paid ticket purchases can be resent' });
+        }
+        const finalRecipientEmail = recipientEmail || String(purchase.get('buyerEmail') || '');
+        if (!finalRecipientEmail) {
+            return e.json(400, { error: 'No recipient email available' });
+        }
+        const finalRecipientName = String(purchase.get('buyerName') || 'Buyer');
+        try {
+            const bundleId = purchase.get('bundle');
+            if (bundleId && typeof bundleId === 'string') {
+                const bundle = $app.findRecordById('ticketBundles', bundleId);
+                const bundleEventsVal = bundle.get('events');
+                const bundleEventIds = Array.isArray(bundleEventsVal) ? bundleEventsVal : [];
+                enqueueBundleTicketConfirmationEmail({
+                    purchase,
+                    bundle,
+                    bundleEventIds,
+                    recipientEmail: finalRecipientEmail,
+                    recipientName: finalRecipientName,
+                    resent: true,
+                });
+            }
+            else {
+                const eventId = String(purchase.get('event') || '');
+                if (!eventId) {
+                    return e.json(400, { error: 'Ticket purchase is not linked to an event' });
+                }
+                const event = $app.findRecordById('events', eventId);
+                enqueueTicketConfirmationEmail({
+                    purchase,
+                    event,
+                    recipientEmail: finalRecipientEmail,
+                    recipientName: finalRecipientName,
+                    resent: true,
+                });
+            }
+        }
+        catch (err) {
+            return e.json(500, {
+                error: 'Failed to enqueue ticket confirmation email',
+                details: err instanceof Error ? err.message : String(err),
+            });
+        }
+        return e.json(200, {
+            success: true,
+            recipientEmail: finalRecipientEmail,
+        });
+    }
+
+    // --- Utility source: attendanceFinalizer.ts ---
+    "use strict";
+    function finalizeUnmarkedAttendanceForEvent(app, event) {
+        const isPerformance = event.get("type") === "Performance";
+        const parentPerf = event.get("parentPerformanceId");
+        const linkedPerfId = isPerformance ? event.id : (typeof parentPerf === "string" ? parentPerf : "");
+        if (!linkedPerfId)
+            return;
+        let linkedPerformance = null;
+        try {
+            linkedPerformance = app.findRecordById("events", linkedPerfId);
+        }
+        catch (_a) {
+            // ignore
+        }
+        if (!linkedPerformance)
+            return;
+        const activeProfiles = app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
+        // Batch: fetch all RSVP'd rosters for the linked performance at once
+        const performingProfileIds = {};
+        try {
+            const perfRosters = app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
+            if (perfRosters) {
+                perfRosters.forEach(r => {
+                    if (r.get("rsvp") === "Yes") {
+                        performingProfileIds[r.get("profile")] = true;
+                    }
+                });
+            }
+        }
+        catch (_b) {
+            // ignore
+        }
+        // Batch: fetch all existing rosters for the current event at once
+        const existingRostersByProfile = {};
+        try {
+            const existingRosters = app.findRecordsByFilter("eventRosters", "event = {:eventId}", "", 1000, 0, { eventId: event.id });
+            if (existingRosters) {
+                existingRosters.forEach(r => {
+                    existingRostersByProfile[r.get("profile")] = r;
+                });
+            }
+        }
+        catch (_c) {
+            // ignore
+        }
+        for (const profile of activeProfiles || []) {
+            if (!performingProfileIds[profile.id])
+                continue;
+            let rosterRecord = existingRostersByProfile[profile.id] || null;
+            if (!rosterRecord) {
+                const rosterCollection = app.findCollectionByNameOrId("eventRosters");
+                rosterRecord = new Record(rosterCollection, {
+                    event: event.id,
+                    profile: profile.id,
+                    rsvp: "Pending",
+                    attendance: "Absent"
+                });
+                try {
+                    app.save(rosterRecord);
+                }
+                catch (e) {
+                    console.log("Failed to auto-create Absent roster record: " + e);
+                }
+            }
+            else if (rosterRecord.get("attendance") === "Pending" || rosterRecord.get("attendance") === "") {
+                rosterRecord.set("attendance", "Absent");
+                try {
+                    app.save(rosterRecord);
+                }
+                catch (e) {
+                    console.log("Failed to auto-update roster record to Absent: " + e);
+                }
+            }
+        }
+    }
+
+    // --- Utility source: email/attendanceReport.ts ---
+    "use strict";
+    function renderAttendanceReportBody(data) {
+        const safe = sanitizeHtmlTemplateData(data);
+        const exceededLimitSection = data.exceededLimitListHtml ? `
+        <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 20px 0;" />
+        <h3 style="color: #b45309; margin-top: 0;">Singers Exceeding Rehearsal Miss Limit</h3>
+        ${data.exceededLimitListHtml}
+        ` : '';
+        return `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e9f0eb; border-radius: 8px;">
+        <h2>Attendance Report</h2>
+        <p>Event: ${safe.eventTitle}</p>
+        <p>Date: ${safe.eventDate}</p>
+        <p>Attendance Rate: ${safe.attendanceRate}% (${safe.presentCount}/${safe.totalCount} present)</p>
+        ${exceededLimitSection}
+        <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 30px 0;" />
+        <div style="font-size: 12px; color: #94a3b8; text-align: center;">
+            <p style="margin: 0 0 10px 0;">${safe.mailingAddress}</p>
+            <p>Choir Management Tool</p>
+        </div>
+    </div>
+    `;
+    }
+
+    // --- Utility source: rsvpValidation.ts ---
+    "use strict";
+    function parsePocketBaseDate(dateValue) {
+        const raw = String(dateValue || "").trim();
+        if (!raw)
+            return null;
+        const normalized = /^\d{4}-\d{2}-\d{2}/.test(raw) ? raw.replace(" ", "T") : raw;
+        const withTimezone = /^\d{4}-\d{2}-\d{2}/.test(normalized) && !/(Z|[+-]\d{2}:?\d{2})$/.test(normalized)
+            ? normalized + "Z"
+            : normalized;
+        try {
+            const parsed = new Date(withTimezone);
+            if (!Number.isNaN(parsed.getTime()))
+                return parsed;
+        }
+        catch (_a) {
+            // Goja can be stricter than browsers for date strings; fall back below.
+        }
+        try {
+            const parsed = new Date(raw);
+            return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        catch (_b) {
+            return null;
+        }
+    }
+    function validateSingerRsvpWindow(event) {
+        if (event.get("isArchived")) {
+            return {
+                ok: false,
+                status: 410,
+                error: "This event has been archived/deleted.",
+            };
+        }
+        const eventType = String(event.get("type") || "");
+        if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+            return {
+                ok: false,
+                status: 410,
+                error: "The RSVP window for this performance is closed. Contact choir admins if you need help changing your commitment.",
+            };
+        }
+        if (eventType === "Rehearsal") {
+            const eventDate = parsePocketBaseDate(event.get("date"));
+            if (!eventDate) {
+                return { ok: false, status: 400, error: "Invalid rehearsal date." };
+            }
+            if (eventDate.getTime() < Date.now()) {
+                return { ok: false, status: 410, error: "This rehearsal has already passed." };
+            }
+        }
+        return { ok: true };
+    }
+    function getRsvpWindowInfo(event) {
+        if (event.get("isArchived")) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "This event has been archived/deleted.",
+            };
+        }
+        const eventType = String(event.get("type") || "");
+        if (eventType === "Performance" && !event.get("isOpenForRSVP")) {
+            return {
+                canSubmit: false,
+                isReadOnly: true,
+                reason: "The RSVP window for this performance is closed. Your current response is shown below.",
+            };
+        }
+        if (eventType === "Rehearsal") {
+            const eventDate = parsePocketBaseDate(event.get("date"));
+            if (!eventDate) {
+                return {
+                    canSubmit: false,
+                    isReadOnly: true,
+                    reason: "Invalid rehearsal date.",
+                };
+            }
+            if (eventDate.getTime() < Date.now()) {
+                return {
+                    canSubmit: false,
+                    isReadOnly: true,
+                    reason: "This rehearsal has already passed.",
+                };
+            }
+        }
+        return {
+            canSubmit: true,
+            isReadOnly: false,
+            reason: "",
+        };
+    }
+
+    // --- Utility source: maintenance/maintenanceTypes.ts ---
+    "use strict";
+
+    // --- Utility source: maintenance/maintenanceState.ts ---
+    "use strict";
+    function getMaintenanceState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'maintenance_state'");
+            if (!record)
+                return {};
+            const raw = record.get('value');
+            const parsed = parseJsonField(raw);
+            if (!parsed || typeof parsed !== 'object') {
+                console.log('[Maintenance] maintenance_state is malformed, treating as empty');
+                return {};
+            }
+            return parsed;
+        }
+        catch (_a) {
+            return {};
+        }
+    }
+    function saveMaintenanceState(app, state) {
+        const valueObj = JSON.stringify(state);
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'maintenance_state'");
+            record.set('value', valueObj);
+            app.save(record);
+        }
+        catch (_a) {
+            const collection = app.findCollectionByNameOrId('appSettings');
+            const record = new Record(collection, {
+                key: 'maintenance_state',
+                value: valueObj,
+            });
+            app.save(record);
+        }
+    }
+    function saveMaintenanceTaskRun(app, taskName, ranAtIso) {
+        const state = getMaintenanceState(app);
+        if (!state.lastRuns) {
+            state.lastRuns = {};
+        }
+        state.lastRuns[taskName] = ranAtIso;
+        saveMaintenanceState(app, state);
+    }
+    function isTaskDue(state, taskName, intervalMs, now) {
+        if (!state.lastRuns || !state.lastRuns[taskName])
+            return true;
+        const lastRun = new Date(state.lastRuns[taskName]).getTime();
+        if (isNaN(lastRun))
+            return true;
+        return now.getTime() - lastRun >= intervalMs;
+    }
+    function hasActiveLock(state, taskName, now) {
+        var _a;
+        const lock = (_a = state.running) === null || _a === void 0 ? void 0 : _a[taskName];
+        if (!(lock === null || lock === void 0 ? void 0 : lock.expiresAt))
+            return false;
+        const expiresAt = new Date(lock.expiresAt).getTime();
+        if (isNaN(expiresAt))
+            return false;
+        return expiresAt > now.getTime();
+    }
+    function tryAcquireTaskLock(app, state, taskName, ttlMs, now) {
+        if (hasActiveLock(state, taskName, now))
+            return false;
+        if (!state.running) {
+            state.running = {};
+        }
+        state.running[taskName] = {
+            startedAt: now.toISOString(),
+            expiresAt: new Date(now.getTime() + ttlMs).toISOString(),
+        };
+        saveMaintenanceState(app, state);
+        return true;
+    }
+    function releaseTaskLock(app, state, taskName) {
+        if (state.running) {
+            state.running[taskName] = undefined;
+            const keys = Object.keys(state.running).filter((k) => state.running[k] !== undefined);
+            if (keys.length === 0) {
+                state.running = undefined;
+            }
+        }
+        saveMaintenanceState(app, state);
+    }
+
+    // --- Utility source: maintenance/maintenanceAuth.ts ---
+    "use strict";
+    function isMaintenanceRequestAuthorized(e, app) {
+        const admin = e.auth;
+        if (admin && admin.get('role') === 'admin') {
+            return true;
+        }
+        const secret = $os.getenv('MAINTENANCE_SECRET');
+        if (!secret) {
+            return false;
+        }
+        const queryToken = e.requestInfo().query.token;
+        if (typeof queryToken === 'string' && $security.equal(queryToken, secret)) {
+            return true;
+        }
+        const headers = e.requestInfo().headers || {};
+        const authHeader = headers['Authorization'] || headers['authorization'];
+        if (typeof authHeader === 'string') {
+            const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+            if (bearerMatch && $security.equal(bearerMatch[1], secret)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // --- Utility source: maintenance/emailQueueTask.ts ---
+    "use strict";
+    function runEmailQueueTask(app) {
+        try {
+            processEmailQueue(app);
+            return { task: 'emailQueue', status: 'ran' };
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            return { task: 'emailQueue', status: 'failed', errors: 1, message };
+        }
+    }
+
+    // --- Utility source: maintenance/postEventReportTask.ts ---
+    "use strict";
+    function runPostEventReportTask(app, state, now) {
+        const hoursAfter = 12;
+        const end = new Date(now.getTime() - hoursAfter * 60 * 60 * 1000);
+        const start = new Date(end.getTime() - 1 * 60 * 60 * 1000);
+        const events = app.findRecordsByFilter('events', 'date >= {:start} && date < {:end} && isArchived != true', '-date', 100, 0, { start, end });
+        if (!events || events.length === 0) {
+            return { task: 'postEventReport', status: 'ran', processed: 0, updated: 0, errors: 0 };
+        }
+        const admins = app.findRecordsByFilter('users', "role = 'admin'");
+        if (!admins || admins.length === 0) {
+            return {
+                task: 'postEventReport',
+                status: 'ran',
+                processed: events.length,
+                updated: 0,
+                errors: 0,
+            };
+        }
+        let commSettings = {
+            mailingAddress: '123 Choir St, Harmony City, HC 12345',
+            reportSubjectTemplate: 'Attendance Report: {eventTitle}',
+            reportBodyTemplate: 'Report for {eventTitle}...',
+        };
+        try {
+            const setting = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const parsed = parseJsonField(setting.get('value'));
+            if (parsed) {
+                if (parsed.mailingAddress)
+                    commSettings.mailingAddress = parsed.mailingAddress;
+                if (parsed.reportSubjectTemplate)
+                    commSettings.reportSubjectTemplate = parsed.reportSubjectTemplate;
+                if (parsed.reportBodyTemplate)
+                    commSettings.reportBodyTemplate = parsed.reportBodyTemplate;
+            }
+        }
+        catch (e) {
+            console.log('Warning: Failed to parse communications settings', e);
+        }
+        let updated = 0;
+        let errors = 0;
+        events.forEach((event) => {
+            finalizeUnmarkedAttendanceForEvent(app, event);
+            const isPerformance = event.get('type') === 'Performance';
+            const linkedPerfId = isPerformance ? event.id : event.get('parentPerformanceId');
+            let maxRehearsalMisses = 3;
+            try {
+                const rosterSettingRecord = app.findFirstRecordByFilter('appSettings', "key = 'roster'");
+                const parsed = parseJsonField(rosterSettingRecord.get('value'));
+                if (parsed && parsed.maxRehearsalMisses !== undefined) {
+                    maxRehearsalMisses = Number(parsed.maxRehearsalMisses);
+                }
+            }
+            catch (e) { }
+            const rosters = app.findRecordsByFilter('eventRosters', 'event = {:eventId}', 'profile.name', 500, 0, { eventId: event.id });
+            if (!rosters || rosters.length === 0)
+                return;
+            const total = rosters.length;
+            const present = rosters.filter((r) => r.get('attendance') === 'Present').length;
+            const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+            const eventDateObj = coercePocketBaseDate(event.get('date'));
+            const eventDateStr = eventDateObj
+                ? eventDateObj.getMonth() +
+                    1 +
+                    '/' +
+                    eventDateObj.getDate() +
+                    '/' +
+                    eventDateObj.getFullYear()
+                : '';
+            const eventTitle = String(event.get('title') || '');
+            const subject = sanitizeEmailSubject(commSettings.reportSubjectTemplate
+                .replace(/{eventTitle}/g, () => eventTitle)
+                .replace(/{eventDate}/g, () => eventDateStr));
+            let exceededLimitListHtml = '';
+            if (linkedPerfId) {
+                const cycleRehearsals = app.findRecordsByFilter('events', "parentPerformanceId = {:perfId} && type = 'Rehearsal'", 'date', 200, 0, { perfId: linkedPerfId });
+                if (cycleRehearsals && cycleRehearsals.length > 0) {
+                    const pastRehearsals = cycleRehearsals.filter((r) => parsePocketBaseDate(r.get('date')) <= now);
+                    if (pastRehearsals.length > 0) {
+                        const pastRehearsalIds = pastRehearsals.map((r) => r.id);
+                        const activeProfiles = app.findRecordsByFilter('profiles', "voicePart != '' && globalStatus != 'Inactive'", 'name', 1000, 0);
+                        const exceededSingers = [];
+                        const pastRehearsalRosters = [];
+                        const filterParts = pastRehearsalIds
+                            .map((_, i) => 'event = {:rid' + i + '}')
+                            .join(' || ');
+                        const filterParams = {};
+                        pastRehearsalIds.forEach((id, i) => {
+                            filterParams['rid' + i] = id;
+                        });
+                        try {
+                            const allRosters = app.findRecordsByFilter('eventRosters', filterParts, '', 5000, 0, filterParams);
+                            pastRehearsalRosters.push(...(allRosters || []));
+                        }
+                        catch (e) { }
+                        const performingProfileIds = {};
+                        try {
+                            const perfRosters = app.findRecordsByFilter('eventRosters', 'event = {:perfId}', '', 1000, 0, { perfId: linkedPerfId });
+                            if (perfRosters) {
+                                perfRosters.forEach((r) => {
+                                    if (r.get('rsvp') === 'Yes') {
+                                        performingProfileIds[r.get('profile')] = true;
+                                    }
+                                });
+                            }
+                        }
+                        catch (e) { }
+                        const pastRostersByProfile = {};
+                        pastRehearsalRosters.forEach((r) => {
+                            const profileId = r.get('profile');
+                            if (!pastRostersByProfile[profileId]) {
+                                pastRostersByProfile[profileId] = [];
+                            }
+                            pastRostersByProfile[profileId].push(r);
+                        });
+                        activeProfiles.forEach((profile) => {
+                            if (!performingProfileIds[profile.id])
+                                return;
+                            const profileRosters = pastRostersByProfile[profile.id] || [];
+                            let missCount = 0;
+                            pastRehearsals.forEach((reh) => {
+                                const r = profileRosters.find((x) => x.get('event') === reh.id);
+                                const wasDeclined = r ? r.get('rsvp') === 'No' : false;
+                                const wasAbsent = r ? r.get('attendance') === 'Absent' : false;
+                                const notMarkedPresent = r ? r.get('attendance') !== 'Present' : true;
+                                if (wasDeclined || wasAbsent || notMarkedPresent) {
+                                    missCount++;
+                                }
+                            });
+                            if (missCount > maxRehearsalMisses) {
+                                exceededSingers.push({
+                                    name: profile.get('name'),
+                                    missCount: missCount,
+                                });
+                            }
+                        });
+                        if (exceededSingers.length > 0) {
+                            exceededLimitListHtml =
+                                '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' +
+                                    exceededSingers
+                                        .map((s) => '<li style="margin-bottom: 4px;"><strong>' +
+                                        escapeHtml(s.name) +
+                                        '</strong>: ' +
+                                        s.missCount +
+                                        ' missed rehearsals (Limit: ' +
+                                        maxRehearsalMisses +
+                                        ')</li>')
+                                        .join('') +
+                                    '</ul>';
+                        }
+                    }
+                }
+            }
+            const body = renderAttendanceReportBody({
+                eventTitle: event.get('title'),
+                eventDate: eventDateStr,
+                attendanceRate: attendanceRate,
+                presentCount: present,
+                totalCount: total,
+                mailingAddress: commSettings.mailingAddress,
+                exceededLimitListHtml: exceededLimitListHtml || undefined,
+            });
+            try {
+                const messageCollection = app.findCollectionByNameOrId('messages');
+                const record = new Record(messageCollection, {
+                    subject,
+                    content: body,
+                    type: 'Email',
+                    status: 'Sent',
+                    recipients: admins.map((a) => ({
+                        id: a.id,
+                        name: a.get('name') || 'Admin',
+                        email: a.get('email'),
+                    })),
+                    filters: { type: 'Automated Report', eventId: event.id },
+                });
+                app.save(record);
+                updated++;
+            }
+            catch (e) {
+                console.log('[Cron Error] Failed to create attendance report message: ' + e);
+                errors++;
+            }
+        });
+        return {
+            task: 'postEventReport',
+            status: errors > 0 ? 'failed' : 'ran',
+            processed: events.length,
+            updated,
+            errors,
+        };
+    }
+
+    // --- Utility source: maintenance/ticketBuyerReminderTask.ts ---
+    "use strict";
+    function runTicketBuyerReminderTask(app, state, now) {
+        var _a;
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const events = app.findRecordsByFilter('events', "type = 'Performance' && date >= {:now} && date <= {:tomorrow} && isArchived != true && isTicketingEnabled = true", 'date', 100, 0, { now, tomorrow });
+        if (!events || events.length === 0) {
+            return {
+                task: 'ticketBuyerReminder',
+                status: 'ran',
+                processed: 0,
+                queued: 0,
+                updated: 0,
+                skipped: 0,
+                errors: 0,
+            };
+        }
+        let template;
+        try {
+            template = app.findFirstRecordByFilter('messageTemplates', "title = 'Ticket Concert Reminder' && isSystemTemplate = true");
+        }
+        catch (e) {
+            console.log('[Reminder Cron] Ticket Concert Reminder template not found');
+            return {
+                task: 'ticketBuyerReminder',
+                status: 'ran',
+                processed: events.length,
+                queued: 0,
+                updated: 0,
+                skipped: events.length,
+                errors: 0,
+            };
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const tzP = parseJsonField(tzSetting.get('value'));
+            if (tzP && tzP.timezone)
+                timezone = tzP.timezone;
+        }
+        catch (e) { }
+        let choirName = 'Choir Management Tool';
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name' || key = 'choirName'");
+            const parsed = parseJsonField(choirRecord.get('value'));
+            const val = parsed.name || parsed.choirName || parsed.value || (typeof parsed === 'string' ? parsed : '');
+            if (val)
+                choirName = val;
+        }
+        catch (e) { }
+        let baseUrl = 'http://localhost:5173';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms && comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+        }
+        catch (e) { }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const url = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (url)
+                baseUrl = url;
+        }
+        baseUrl = baseUrl.trim().replace(/[\/]+$/g, '');
+        let processed = 0;
+        let queued = 0;
+        let updated = 0;
+        let skipped = 0;
+        let errors = 0;
+        events.forEach((event) => {
+            var _a;
+            processed++;
+            const purchases = app.findRecordsByFilter('ticketPurchases', "event = {:eventId} && status = 'paid' && reminderSent != true", '', 1000, 0, { eventId: event.id });
+            if (!purchases || purchases.length === 0) {
+                skipped++;
+                return;
+            }
+            const eventTitle = event.get('title') || '';
+            const eventDateStr = formatInTimezone((_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date(''), timezone, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+            const doorsOpenTime = event.get('doorsOpenTime') || 'N/A';
+            purchases.forEach((purchase) => {
+                const buyerName = purchase.get('buyerName') || 'Music Lover';
+                const quantity = purchase.get('quantity') || 0;
+                let content = template.get('content') || '';
+                content = content
+                    .replace(/{buyerName}/g, buyerName)
+                    .replace(/{eventTitle}/g, eventTitle)
+                    .replace(/{eventDate}/g, eventDateStr)
+                    .replace(/{doorsOpenTime}/g, doorsOpenTime)
+                    .replace(/{quantity}/g, String(quantity))
+                    .replace(/{choirName}/g, choirName);
+                const subject = (template.get('subject') || 'Concert Reminder').replace(/{eventTitle}/g, eventTitle);
+                const stripeSessionId = purchase.get('stripeSessionId') || '';
+                const ticketToken = generateSignedTicketToken(purchase.id);
+                const scanUrl = baseUrl + '/admin/tickets/scan?token=' + encodeURIComponent(ticketToken);
+                const successUrl = baseUrl + '/tickets/order/success?session_id=' + encodeURIComponent(stripeSessionId);
+                const qrSvgSrc = '';
+                try {
+                    const queueCollection = app.findCollectionByNameOrId('emailQueue');
+                    const mailRecord = new Record(queueCollection, {
+                        recipientId: 'buyer_' + purchase.id,
+                        recipientEmail: purchase.get('buyerEmail'),
+                        recipientName: buyerName,
+                        subject: subject,
+                        rawContent: content,
+                        status: 'Pending',
+                        attempts: 0,
+                        filters: JSON.stringify({
+                            eventId: event.id,
+                            type: 'Ticket Buyer Reminder',
+                            ticketToken: ticketToken,
+                            scanUrl: scanUrl,
+                            qrSvgSrc: qrSvgSrc,
+                            successUrl: successUrl,
+                        }),
+                    });
+                    app.save(mailRecord);
+                    queued++;
+                    purchase.set('reminderSent', true);
+                    app.save(purchase);
+                    updated++;
+                }
+                catch (e) {
+                    console.log('[Reminder Cron] Failed to enqueue email for purchase ' + purchase.id + ': ' + e);
+                    errors++;
+                }
+            });
+            try {
+                const messageCollection = app.findCollectionByNameOrId('messages');
+                const msgRecord = new Record(messageCollection, {
+                    subject: 'Ticket Buyer Reminders Sent: ' + eventTitle,
+                    content: 'Sent reminders for ' + eventTitle,
+                    type: 'Email',
+                    status: 'Sent',
+                    recipients: [],
+                    filters: { eventId: event.id, type: 'Ticket Buyer Reminder' },
+                });
+                app.save(msgRecord);
+            }
+            catch (e) {
+                console.log('[Reminder Cron] Failed to log message for event ' + event.id + ': ' + e);
+                errors++;
+            }
+        });
+        return {
+            task: 'ticketBuyerReminder',
+            status: errors > 0 ? 'failed' : 'ran',
+            processed,
+            queued,
+            updated,
+            skipped,
+            errors,
+        };
+    }
+
+    // --- Utility source: maintenance/cleanupTask.ts ---
+    "use strict";
+    function runCleanupTask(app) {
+        const collections = ['ticketPurchases', 'donations'];
+        let processed = 0;
+        let errors = 0;
+        for (const collection of collections) {
+            try {
+                const r = expireStalePendingRecords(app, collection, 'cleanup');
+                processed += r.processed;
+                errors += r.errors;
+            }
+            catch (err) {
+                errors += 1;
+                const message = err instanceof Error ? err.message : String(err);
+                console.log('[Maintenance] cleanup failed for ' + collection + ': ' + message);
+            }
+        }
+        return {
+            task: 'cleanup',
+            status: errors > 0 ? 'failed' : 'ran',
+            processed,
+            errors,
+        };
+    }
+
+    // --- Utility source: maintenance/maintenanceRunner.ts ---
+    "use strict";
+    const TASK_DUE_INTERVALS_MS = {
+        postEventReport: 60 * 60 * 1000,
+        ticketBuyerReminder: 60 * 60 * 1000,
+        cleanup: 24 * 60 * 60 * 1000,
+    };
+    const TASK_LOCK_TTL_MS = {
+        postEventReport: 10 * 60 * 1000,
+        ticketBuyerReminder: 10 * 60 * 1000,
+        cleanup: 30 * 60 * 1000,
+    };
+    function safeError(err) {
+        if (err instanceof Error)
+            return err.message;
+        return String(err);
+    }
+    function runMaintenance(app) {
+        var _a;
+        const startedAt = new Date().toISOString();
+        let state = getMaintenanceState(app);
+        const now = new Date();
+        const results = [];
+        results.push(runEmailQueueTask(app));
+        const scheduledTasks = [
+            { name: 'postEventReport', fn: runPostEventReportTask },
+            { name: 'ticketBuyerReminder', fn: runTicketBuyerReminderTask },
+            { name: 'cleanup', fn: runCleanupTask },
+        ];
+        for (const { name, fn } of scheduledTasks) {
+            if (!isTaskDue(state, name, TASK_DUE_INTERVALS_MS[name], now)) {
+                results.push({ task: name, status: 'skipped', message: 'Not due' });
+                continue;
+            }
+            if (hasActiveLock(state, name, now)) {
+                results.push({ task: name, status: 'skipped', message: 'Already running' });
+                continue;
+            }
+            if (!tryAcquireTaskLock(app, state, name, TASK_LOCK_TTL_MS[name], now)) {
+                results.push({ task: name, status: 'skipped', message: 'Could not acquire lock' });
+                continue;
+            }
+            let result;
+            try {
+                result = fn(app, state, now);
+            }
+            catch (err) {
+                result = { task: name, status: 'failed', errors: 1, message: safeError(err) };
+            }
+            state = getMaintenanceState(app);
+            if (result.status === 'ran' && ((_a = result.errors) !== null && _a !== void 0 ? _a : 0) === 0) {
+                if (!state.lastRuns)
+                    state.lastRuns = {};
+                state.lastRuns[name] = now.toISOString();
+            }
+            releaseTaskLock(app, state, name);
+            results.push(result);
+        }
+        const anyQueued = results.some((r) => { var _a; return ((_a = r.queued) !== null && _a !== void 0 ? _a : 0) > 0; });
+        if (anyQueued) {
+            results.push(runEmailQueueTask(app));
+        }
+        const finishedAt = new Date().toISOString();
+        return { startedAt, finishedAt, results };
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    if (!isMaintenanceRequestAuthorized(e, $app)) {
+      return e.json(403, { error: "Forbidden" });
+    }
+    const summary = runMaintenance($app);
+    return e.json(200, { success: true, summary });
 });

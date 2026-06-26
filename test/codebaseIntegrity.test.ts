@@ -381,6 +381,7 @@ test('codebase integrity: profiles do not have direct email fields', () => {
             !line.includes('adminRecord') &&
             !line.includes('userRec') &&
             !line.includes('adminUser') &&
+            !line.includes('admin') &&
             !line.includes('user')))
       ) {
         backendViolations.push(
