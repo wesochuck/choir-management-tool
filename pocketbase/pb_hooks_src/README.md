@@ -17,13 +17,13 @@ PocketHost requires backend callbacks (hooks, crons, routers) to be **self-conta
 ## Structure
 
 - `email/`: Shared utilities for text, JSON, rendering, and dispatch logic.
-- `maintenance/`: Scheduled maintenance tasks (dispatched via `POST /api/maintenance/run`).
+- `maintenance/`: Scheduled maintenance tasks (dispatched via `GET /api/maintenance/run`).
 - `generate-main-pb-js.ts`: The deterministic generator script.
 - `templates/`: (Optional) snippets for the hook file structure.
 
 ## Scheduled maintenance
 
-PocketHost calls `POST /api/maintenance/run` on a schedule (recommended: every 5 minutes).
+PocketHost calls `GET /api/maintenance/run` on a schedule (recommended: every 5 minutes).
 
 Do not add new PocketBase cron jobs for scheduled maintenance. Add a
 maintenance task under `pocketbase/pb_hooks_src/maintenance/` and register

@@ -380,6 +380,16 @@ rtk npm run check:pb-hooks
 
 PocketHost requires hooks, crons, routers, and callbacks to be self-contained. Use the generator workflow so shared utilities are inlined correctly.
 
+### Scheduled maintenance (replaces PocketBase `cronAdd`)
+
+PocketHost's `cronAdd` is unreliable due to instance hibernation. **Do not use `cronAdd` for new scheduled work.** Instead:
+
+1. Create a task file under `pocketbase/pb_hooks_src/maintenance/` that exports a function matching the `(app, state, now) => MaintenanceTaskResult` signature.
+2. Import it in `maintenanceRunner.ts` and add it to the `scheduledTasks` array with its due interval and lock TTL.
+3. Add the source file to the `maintenance` bundle in `generate-main-pb-js.ts`.
+
+PocketHost calls `GET /api/maintenance/run?token=<secret>` every 5 minutes. The runner executes the email queue on every invocation, then runs each scheduled task only when due (with a TTL lock to prevent overlap).
+
 For advisory hooks, wrap the full callback body in `try/catch`. Logging must be defensive; do not assume `e.record`, `record.id`, or related records exist.
 
 Use `e.record.originalCopy()` for previous record state, with compatibility fallback when needed:

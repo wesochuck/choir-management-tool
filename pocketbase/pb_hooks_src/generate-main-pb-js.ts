@@ -941,7 +941,7 @@ ${renderRoute('GET', '/api/singer/seating-profiles', 'return handleSingerSeating
 ${renderRoute('GET', '/api/singer/player-playlist', 'return handleSingerPlayerPlaylist(e);')}
 
 ${renderRoute(
-  'POST',
+  'GET',
   '/api/maintenance/run',
   `
 if (!isMaintenanceRequestAuthorized(e, $app)) {

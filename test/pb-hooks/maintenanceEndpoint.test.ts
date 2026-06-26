@@ -8,10 +8,10 @@ function readGeneratedMain(): string {
   return fs.readFileSync(mainPath, 'utf8');
 }
 
-test('generated main.pb.js contains maintenance POST route', () => {
+test('generated main.pb.js contains maintenance GET route', () => {
   const content = readGeneratedMain();
   assert.ok(
-    content.includes('routerAdd("POST", "/api/maintenance/run",'),
+    content.includes('routerAdd("GET", "/api/maintenance/run",'),
     'Expected routerAdd for maintenance endpoint'
   );
 });

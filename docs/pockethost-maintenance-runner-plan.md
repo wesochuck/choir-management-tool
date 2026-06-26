@@ -2,7 +2,7 @@
 
 ## Goal
 
-Replace the 4 PocketBase cron jobs with one authenticated maintenance endpoint (`POST /api/maintenance/run`) that PocketHost calls on a 5-minute schedule. The endpoint dispatches to a single runner that invokes each scheduled task, isolates failures, and returns a structured summary.
+Replace the 4 PocketBase cron jobs with one authenticated maintenance endpoint (`GET /api/maintenance/run`) that PocketHost calls on a 5-minute schedule. The endpoint dispatches to a single runner that invokes each scheduled task, isolates failures, and returns a structured summary.
 
 **Crons removed in this PR** (in `pocketbase/pb_hooks_src/generate-main-pb-js.ts:1184-1190`):
 
@@ -335,7 +335,7 @@ These test the *generated* `main.pb.js` (read from disk after `generate:pb-hooks
    ```md
    ## Scheduled maintenance
 
-   PocketHost calls `POST /api/maintenance/run` on a schedule (recommended: every 5 minutes).
+   PocketHost calls `GET /api/maintenance/run` on a schedule (recommended: every 5 minutes).
 
    Do not add new PocketBase cron jobs for scheduled maintenance. Add a
    maintenance task under `pocketbase/pb_hooks_src/maintenance/` and register
@@ -373,7 +373,7 @@ Post-merge, manual:
 3. Verify the cron registration log line is gone and the `/api/maintenance/run` route is registered.
 4. `curl -X POST https://<app>/api/maintenance/run?token=<secret>` → expect `200 { success: true, summary: { results: [...] } }`.
 5. `curl -X POST https://<app>/api/maintenance/run` (no token, no auth) → expect `403`.
-6. Configure PocketHost scheduled webhook to `POST /api/maintenance/run?token=<secret>` every 5 min.
+6. Configure PocketHost scheduled webhook to `GET /api/maintenance/run?token=<secret>` every 5 min.
 7. Watch delivery logs and the structured `summary` field over the first 24 hours.
 8. After confidence, no further action is required — crons are already removed in this PR.
 
