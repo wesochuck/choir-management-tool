@@ -3,20 +3,19 @@ import { Button } from '../../../components/ui';
 import { TemplateGrid } from '../../../components/TemplateGrid';
 import type { TemplateRecord } from '../../../services/communicationService';
 import { mapToMessageTemplate } from './templateMapping';
-import { WizardActionBar } from './WizardActionBar';
 
 interface TemplateStepProps {
   templates: TemplateRecord[];
   templateSelection: {
     selectedTemplateId: string | null;
     setSelectedTemplateId: (id: string | null) => void;
-    handleUseTemplate: () => void;
+    handleUseTemplate: (id: string) => void;
   };
   onBack: () => void;
 }
 
 export function TemplateStep({ templates, templateSelection, onBack }: TemplateStepProps) {
-  const { selectedTemplateId, setSelectedTemplateId, handleUseTemplate } = templateSelection;
+  const { selectedTemplateId, handleUseTemplate } = templateSelection;
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,21 +38,10 @@ export function TemplateStep({ templates, templateSelection, onBack }: TemplateS
           <TemplateGrid
             templates={templates.map(mapToMessageTemplate)}
             selectedTemplateId={selectedTemplateId}
-            onSelect={(tpl) => {
-              setSelectedTemplateId(tpl.id);
-            }}
+            onSelect={(tpl) => handleUseTemplate(tpl.id)}
           />
         </div>
       </AppCard>
-
-      <WizardActionBar className="justify-between">
-        <Button variant="outline" onClick={onBack}>
-          ← Back to Audience
-        </Button>
-        <Button variant="primary" onClick={handleUseTemplate}>
-          {selectedTemplateId === 'blank' ? 'Start Blank Message' : 'Use Template & Continue'}
-        </Button>
-      </WizardActionBar>
     </div>
   );
 }

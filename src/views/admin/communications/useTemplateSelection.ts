@@ -18,21 +18,25 @@ export function useTemplateSelection({
 }: UseTemplateSelectionArgs) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>('blank');
 
-  const handleUseTemplate = useCallback(() => {
-    if (selectedTemplateId === 'blank') {
-      setSubject('');
-      setContent('');
-      setMessageType('Email');
-    } else {
-      const tpl = templates.find((t) => t.id === selectedTemplateId);
-      if (tpl) {
-        setSubject(tpl.subject || '');
-        setContent(tpl.content || '');
-        setMessageType(tpl.type === 'SMS' ? 'SMS' : tpl.type === 'Both' ? 'Both' : 'Email');
+  const handleUseTemplate = useCallback(
+    (templateId: string) => {
+      setSelectedTemplateId(templateId);
+      if (templateId === 'blank') {
+        setSubject('');
+        setContent('');
+        setMessageType('Email');
+      } else {
+        const tpl = templates.find((t) => t.id === templateId);
+        if (tpl) {
+          setSubject(tpl.subject || '');
+          setContent(tpl.content || '');
+          setMessageType(tpl.type === 'SMS' ? 'SMS' : tpl.type === 'Both' ? 'Both' : 'Email');
+        }
       }
-    }
-    onContinue();
-  }, [selectedTemplateId, templates, setSubject, setContent, setMessageType, onContinue]);
+      onContinue();
+    },
+    [templates, setSubject, setContent, setMessageType, onContinue]
+  );
 
   return {
     selectedTemplateId,

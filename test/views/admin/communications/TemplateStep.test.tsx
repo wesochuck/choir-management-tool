@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { describe, it, mock } from 'node:test';
+import { afterEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 
 import { TemplateStep } from '../../../../src/views/admin/communications/TemplateStep';
 import type { TemplateRecord } from '../../../../src/services/communicationService';
@@ -22,7 +22,7 @@ function makeTemplateSelection(
   overrides: Partial<{
     selectedTemplateId: string | null;
     setSelectedTemplateId: (id: string | null) => void;
-    handleUseTemplate: () => void;
+    handleUseTemplate: (id: string) => void;
   }> = {}
 ) {
   const setSelectedTemplateId = overrides.setSelectedTemplateId ?? mock.fn();
@@ -34,8 +34,16 @@ function makeTemplateSelection(
   };
 }
 
+function buttonLabels(): string[] {
+  return screen.getAllByRole('button').map((b) => b.textContent ?? '');
+}
+
 describe('TemplateStep', () => {
-  it('renders the template selection UI', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('renders the template selection UI without a separate Start / Continue button', () => {
     render(
       <TemplateStep
         templates={mockTemplates}
@@ -45,22 +53,20 @@ describe('TemplateStep', () => {
     );
 
     assert.ok(screen.getByText('Step 2: Choose how to start your message'));
-    assert.ok(screen.getByRole('button', { name: /Start Blank Message/i }));
-  });
-
-  it('shows "Use Template & Continue" when a template is selected', () => {
-    render(
-      <TemplateStep
-        templates={mockTemplates}
-        templateSelection={makeTemplateSelection({ selectedTemplateId: 'tpl-1' })}
-        onBack={mock.fn()}
-      />
+    const labels = buttonLabels();
+    assert.equal(
+      labels.some((l) => l.includes('Start Blank Message')),
+      false,
+      'should not render a Start Blank Message button'
     );
-
-    assert.ok(screen.getByRole('button', { name: /Use Template & Continue/i }));
+    assert.equal(
+      labels.some((l) => l.includes('Use Template & Continue')),
+      false,
+      'should not render a Use Template & Continue button'
+    );
   });
 
-  it('calls handleUseTemplate when the primary button is clicked', () => {
+  it('calls handleUseTemplate with the selected id when a template card is clicked', () => {
     const handleUseTemplate = mock.fn();
     render(
       <TemplateStep
@@ -70,9 +76,39 @@ describe('TemplateStep', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Start Blank Message/i }));
+    fireEvent.click(screen.getByText('Rehearsal Reminder'));
 
     assert.strictEqual(handleUseTemplate.mock.callCount(), 1);
+    assert.strictEqual(handleUseTemplate.mock.calls[0].arguments[0], 'tpl-1');
+  });
+
+  it('calls handleUseTemplate with "blank" when the blank template is clicked', () => {
+    const handleUseTemplate = mock.fn();
+    render(
+      <TemplateStep
+        templates={mockTemplates}
+        templateSelection={makeTemplateSelection({ handleUseTemplate })}
+        onBack={mock.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Blank Message'));
+
+    assert.strictEqual(handleUseTemplate.mock.callCount(), 1);
+    assert.strictEqual(handleUseTemplate.mock.calls[0].arguments[0], 'blank');
+  });
+
+  it('does not call handleUseTemplate on initial render', () => {
+    const handleUseTemplate = mock.fn();
+    render(
+      <TemplateStep
+        templates={mockTemplates}
+        templateSelection={makeTemplateSelection({ handleUseTemplate })}
+        onBack={mock.fn()}
+      />
+    );
+
+    assert.strictEqual(handleUseTemplate.mock.callCount(), 0);
   });
 
   it('calls onBack when the back button is clicked', () => {
