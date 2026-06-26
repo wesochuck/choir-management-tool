@@ -380,8 +380,8 @@ export default function CommunicationView() {
 
       {tab === 'compose' && (
         <ComposePanel
-          {...draft}
-          {...preview}
+          draft={draft}
+          preview={preview}
           wizardStep={wizardStep}
           setWizardStep={setWizardStep}
           commSettings={library.commSettings}

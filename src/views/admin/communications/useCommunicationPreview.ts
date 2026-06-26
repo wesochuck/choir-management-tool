@@ -84,3 +84,5 @@ export function useCommunicationPreview({
     renderedSmsBody,
   };
 }
+
+export type UseCommunicationPreviewReturn = ReturnType<typeof useCommunicationPreview>;

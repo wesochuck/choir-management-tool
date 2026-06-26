@@ -105,8 +105,7 @@ export function useCommunicationDraft({
   });
 
   const sendTestMutation = useMutation({
-    mutationFn: (input: SendMessageInput) =>
-      communicationService.sendBulkMessage(input),
+    mutationFn: (input: SendMessageInput) => communicationService.sendBulkMessage(input),
   });
 
   const selectedRecipients = useMemo(
@@ -162,7 +161,10 @@ export function useCommunicationDraft({
         recipients: selectedRecipients,
         filters: filters as unknown as Record<string, unknown>,
       };
-      const record = await saveDraftMutation.mutateAsync({ data: input, id: activeDraftId || undefined });
+      const record = await saveDraftMutation.mutateAsync({
+        data: input,
+        id: activeDraftId || undefined,
+      });
       setActiveDraftId(record.id);
       dialog.showToast('Your message has been saved as a draft.');
     } catch (err: unknown) {
@@ -350,3 +352,5 @@ export function useCommunicationDraft({
     sendMessage,
   };
 }
+
+export type UseCommunicationDraftReturn = ReturnType<typeof useCommunicationDraft>;

@@ -1,109 +1,53 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import EasyMDE from 'easymde';
-import { AppCard } from '../../../components/common/AppCard';
-import { Button, Select } from '../../../components/ui';
-import { WizardStepper } from '../../../components/WizardStepper';
-import { TemplateGrid } from '../../../components/TemplateGrid';
-import { ComposeStep } from '../../../components/ComposeStep';
-import { LivePreview } from '../../../components/LivePreview';
-import { PlaceholderPanel } from '../../../components/admin/PlaceholderPanel';
+import type React from 'react';
+import type EasyMDE from 'easymde';
 import { useEvents } from '../../../hooks/useEvents';
 import { useVoiceParts } from '../../../hooks/useVoiceParts';
+import { WizardStepper } from '../../../components/WizardStepper';
 import type {
-  CommunicationFilters,
   CommunicationRecipient,
   MessageType,
   TemplateRecord,
 } from '../../../services/communicationService';
 import type { CommunicationSettings } from '../../../services/settingsService';
+import type { CommunicationTab } from '../../../types/Communication';
+import type { ChoirUser } from '../../../types/auth';
 import type { WizardStep } from './types';
-import { mapToMessageTemplate } from './templateMapping';
-import type { ValidationWarning } from '../../../utils/communicationValidation';
-import { AudienceStatCards } from './AudienceStatCards';
-import { WizardActionBar } from './WizardActionBar';
-import { ReviewSidebar } from './ReviewSidebar';
+import type { UseCommunicationDraftReturn } from './useCommunicationDraft';
+import type { UseCommunicationPreviewReturn } from './useCommunicationPreview';
+import { useTemplateSelection } from './useTemplateSelection';
+import { AudienceStep } from './AudienceStep';
+import { TemplateStep } from './TemplateStep';
+import { ComposeMessageStep } from './ComposeMessageStep';
+import { ReviewStep } from './ReviewStep';
 
 interface ComposePanelProps {
+  draft: UseCommunicationDraftReturn;
+  preview: UseCommunicationPreviewReturn;
   wizardStep: WizardStep;
   setWizardStep: (step: WizardStep) => void;
-
-  filters: CommunicationFilters;
-  updateFilter: <K extends keyof CommunicationFilters>(
-    key: K,
-    value: CommunicationFilters[K]
-  ) => void;
-
-  recipients: CommunicationRecipient[];
-  selectedRecipients: CommunicationRecipient[];
-  recipientCounts: { total: number; hasEmail: number; hasPhone: number };
-
-  subject: string;
-  setSubject: (value: string) => void;
-  content: string;
-  setContent: (value: string) => void;
-  messageType: MessageType;
-  setMessageType: (value: MessageType) => void;
-
-  warnings: ValidationWarning[];
-
-  previewHtml: string;
-  renderedSubject: string;
-  renderedSmsBody: string;
-  previewRecipient: CommunicationRecipient | null;
-
   commSettings: CommunicationSettings;
   templates: TemplateRecord[];
-  setTab: (tab: import('../../../types/Communication').CommunicationTab) => void;
+  setTab: (tab: CommunicationTab) => void;
   setEditingTemplate: React.Dispatch<React.SetStateAction<Partial<TemplateRecord> | null>>;
-
-  isSending: boolean;
-  isSendingTest: boolean;
-  isSavingDraft: boolean;
-
-  handleSaveDraft: () => Promise<void>;
-  handleSendTest: () => Promise<void>;
-  sendMessage: () => Promise<void>;
-  onInsertPlaceholder: (tag: string) => void;
-
   editorRef: React.MutableRefObject<EasyMDE | null>;
+  onInsertPlaceholder: (tag: string) => void;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
-  user: import('../../../types/auth').ChoirUser | null;
+  user: ChoirUser | null;
   choirName: string;
   senderEmail: string;
 }
 
 export function ComposePanel({
+  draft,
+  preview,
   wizardStep,
   setWizardStep,
-  filters,
-  updateFilter,
-  recipients,
-  selectedRecipients,
-  recipientCounts,
-  subject,
-  setSubject,
-  content,
-  setContent,
-  messageType,
-  setMessageType,
-  warnings,
-  previewHtml,
-  renderedSubject,
-  renderedSmsBody,
-  previewRecipient,
   commSettings,
   templates,
   setTab,
   setEditingTemplate,
-  isSending,
-  isSendingTest,
-  isSavingDraft,
-  handleSaveDraft,
-  handleSendTest,
-  sendMessage,
-  onInsertPlaceholder,
   editorRef,
+  onInsertPlaceholder,
   onViewRecipients,
   user,
   choirName,
@@ -112,60 +56,15 @@ export function ComposePanel({
   const { events } = useEvents();
   const { labels: voicePartLabels, sections: configSections } = useVoiceParts();
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>('blank');
+  const templateSelection = useTemplateSelection({
+    templates,
+    setSubject: draft.setSubject as (v: string) => void,
+    setContent: draft.setContent as (v: string) => void,
+    setMessageType: draft.setMessageType as (v: MessageType) => void,
+    onContinue: () => setWizardStep('COMPOSE'),
+  });
 
-  const handleUseTemplate = () => {
-    if (selectedTemplateId === 'blank') {
-      setSubject('');
-      setContent('');
-      setMessageType('Email');
-    } else {
-      const tpl = templates.find((t) => t.id === selectedTemplateId);
-      if (tpl) {
-        setSubject(tpl.subject || '');
-        setContent(tpl.content || '');
-        setMessageType(tpl.type === 'SMS' ? 'SMS' : tpl.type === 'Both' ? 'Both' : 'Email');
-      }
-    }
-    setWizardStep('COMPOSE');
-  };
-
-  const handleVoicePartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value as unknown as string[] | string;
-    const arr = Array.isArray(val) ? val : [val].filter(Boolean);
-    updateFilter('voiceParts', arr);
-  };
-
-  const handleEventContextChange = (eventId: string) => {
-    updateFilter('eventId', eventId);
-    if (!eventId && filters.rsvp !== 'All') {
-      updateFilter('rsvp', 'All');
-    }
-  };
-
-  const selectedEvent = events.find((e) => e.id === filters.eventId) || null;
-
-  const renderSetlistWarning = () => {
-    if (!filters.eventId) return null;
-    const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
-    if (hasApprovedSetList) return null;
-    if (!content.toLowerCase().includes('{setlist}')) return null;
-    return (
-      <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
-        <span aria-hidden="true">⚠️</span>
-        <span>
-          <strong>Set list not approved.</strong> The set list hasn't been approved for singers yet.{' '}
-          <Link
-            to="/admin/setlists"
-            className="text-primary hover:text-primary-deep cursor-pointer font-semibold underline"
-          >
-            Open Set List Builder
-          </Link>{' '}
-          to approve it before sending.
-        </span>
-      </div>
-    );
-  };
+  const selectedEvent = preview.selectedEvent;
 
   return (
     <div className="flex flex-col gap-4">
@@ -178,7 +77,7 @@ export function ComposePanel({
             number: 4,
             id: 'REVIEW',
             label: 'Review & Send',
-            isValid: selectedRecipients.length > 0,
+            isValid: draft.selectedRecipients.length > 0,
           },
         ]}
         currentStep={
@@ -199,450 +98,49 @@ export function ComposePanel({
       />
 
       {wizardStep === 'TARGETS' && (
-        <div className="flex flex-col gap-6">
-          {/* Top Actions */}
-          <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
-            <div>
-              <h2 className="text-text text-lg font-semibold">Step 1: Define Your Audience</h2>
-              <p className="text-text-muted text-xs">
-                Select filter criteria on the left and verify reachable users on the right.
-              </p>
-            </div>
-            <Button variant="primary" onClick={() => setWizardStep('TEMPLATE')}>
-              Continue to Message
-            </Button>
-          </div>
-
-          {/* Two Column Grid */}
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[380px_1fr]">
-            {/* Left Column: Filters */}
-            <AppCard title="Audience Filters">
-              <div className="flex flex-col gap-4">
-                {/* Event Context */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                    Event Context
-                  </label>
-                  <Select
-                    size="small"
-                    value={filters.eventId}
-                    onChange={(event) => handleEventContextChange(event.target.value)}
-                  >
-                    <option value="">No Specific Event</option>
-                    {events.map((event) => (
-                      <option key={event.id} value={event.id}>
-                        {event.title || event.expand?.venue?.name || ''}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-
-                {/* RSVP Status */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                    RSVP Status
-                  </label>
-                  <Select
-                    size="small"
-                    value={filters.rsvp}
-                    onChange={(event) =>
-                      updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
-                    }
-                    disabled={!filters.eventId}
-                  >
-                    <option value="All">All Members</option>
-                    <option value="Yes">Attending Only</option>
-                    <option value="No">Declined Only</option>
-                    <option value="Pending">No Response (Pending)</option>
-                  </Select>
-                  {!filters.eventId && (
-                    <span className="text-text-muted text-[11px] italic">
-                      Select an event first to filter by RSVP status.
-                    </span>
-                  )}
-                </div>
-
-                {/* Member Status */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                    Member Status
-                  </label>
-                  <Select
-                    size="small"
-                    value={filters.globalStatus}
-                    onChange={(event) => updateFilter('globalStatus', event.target.value)}
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Idle">Idle</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="">All Statuses</option>
-                  </Select>
-                </div>
-
-                {/* Voice Part / Section multi-select */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                    Voice Part / Section
-                  </label>
-                  <Select
-                    multiple
-                    placeholder="All Voice Parts"
-                    value={filters.voiceParts || []}
-                    onChange={handleVoicePartChange}
-                    size="small"
-                  >
-                    {configSections.map((sec) => (
-                      <option key={sec.code} value={sec.code}>
-                        {sec.name} (Section)
-                      </option>
-                    ))}
-                    {voicePartLabels.map((part) => (
-                      <option key={part} value={part}>
-                        {part}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              </div>
-            </AppCard>
-
-            {/* Right Column: Recipient Summary & Preview */}
-            <div className="flex flex-col gap-6">
-              <AppCard
-                title="Audience Summary"
-                actions={
-                  <span className="bg-primary-light text-primary-deep inline-flex items-center rounded px-2.5 py-0.5 text-xs font-semibold tracking-wider uppercase">
-                    {recipientCounts.total} Matched
-                  </span>
-                }
-              >
-                <AudienceStatCards
-                  cards={[
-                    {
-                      label: 'Selected',
-                      count: recipientCounts.total,
-                      subtitle: 'matched singers',
-                      color: 'neutral',
-                    },
-                    {
-                      label: 'Email Reach',
-                      count: recipientCounts.hasEmail,
-                      subtitle: 'reachable by email',
-                      color: 'emerald',
-                    },
-                    {
-                      label: 'SMS Reach',
-                      count: recipientCounts.hasPhone,
-                      subtitle: 'reachable by SMS',
-                      color: 'blue',
-                    },
-                  ]}
-                />
-
-                {recipientCounts.hasPhone === 0 && (
-                  <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50/50 px-3 py-2.5 text-xs text-amber-800">
-                    <svg
-                      className="size-4 flex-shrink-0 text-amber-600"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
-                    </svg>
-                    <span>SMS is unavailable for this audience.</span>
-                  </div>
-                )}
-
-                <div className="border-border flex items-center justify-between border-t pt-4">
-                  <span className="text-text-muted text-xs">Need to audit the exact names?</span>
-                  <button
-                    type="button"
-                    className="text-primary hover:text-primary-deep inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold hover:underline"
-                    disabled={recipients.length === 0}
-                    onClick={() => onViewRecipients(recipients, 'Matched Singers')}
-                  >
-                    <svg
-                      className="size-4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                      />
-                    </svg>
-                    View matched singers
-                  </button>
-                </div>
-              </AppCard>
-
-              {/* Matched Singers Preview Panel */}
-              <AppCard title="Singer Preview (showing first 5)">
-                <div className="divide-border -my-2 flex flex-col divide-y">
-                  {recipients.length === 0 ? (
-                    <div className="text-text-muted py-4 text-center text-sm italic">
-                      No singers matched with the current filters.
-                    </div>
-                  ) : (
-                    recipients.slice(0, 5).map((singer) => (
-                      <div
-                        key={singer.id}
-                        className="flex items-center justify-between py-2 text-sm"
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-text font-medium">{singer.name}</span>
-                          <span className="text-text-muted text-xs">
-                            {singer.voicePart || 'No Voice Part'}
-                          </span>
-                        </div>
-                        <div className="flex gap-1.5">
-                          {singer.email ? (
-                            <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                              Email
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
-                              No Email
-                            </span>
-                          )}
-                          {singer.phone ? (
-                            <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                              SMS
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
-                              No SMS
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  {recipients.length > 5 && (
-                    <div className="text-text-muted py-2 text-center text-xs italic">
-                      and {recipients.length - 5} more singers...
-                    </div>
-                  )}
-                </div>
-              </AppCard>
-            </div>
-          </div>
-
-          <WizardActionBar className="justify-end">
-            <Button variant="primary" onClick={() => setWizardStep('TEMPLATE')}>
-              Continue to Message
-            </Button>
-          </WizardActionBar>
-        </div>
+        <AudienceStep
+          draft={draft}
+          events={events}
+          voicePartLabels={voicePartLabels}
+          configSections={configSections}
+          onViewRecipients={onViewRecipients}
+          onContinue={() => setWizardStep('TEMPLATE')}
+        />
       )}
 
       {wizardStep === 'TEMPLATE' && (
-        <div className="flex flex-col gap-6">
-          <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
-            <div>
-              <h2 className="text-text text-lg font-semibold">
-                Step 2: Choose how to start your message
-              </h2>
-              <p className="text-text-muted text-sm">
-                Select a template below or start with a blank message.
-              </p>
-            </div>
-            <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
-              ← Back to Audience
-            </Button>
-          </div>
-
-          <AppCard title="Templates & Quick Starts">
-            <div className="flex flex-col gap-4">
-              <TemplateGrid
-                templates={templates.map(mapToMessageTemplate)}
-                selectedTemplateId={selectedTemplateId}
-                onSelect={(tpl) => {
-                  setSelectedTemplateId(tpl.id);
-                }}
-              />
-            </div>
-          </AppCard>
-
-          <WizardActionBar className="justify-between">
-            <Button variant="outline" onClick={() => setWizardStep('TARGETS')}>
-              ← Back to Audience
-            </Button>
-            <Button variant="primary" onClick={handleUseTemplate}>
-              {selectedTemplateId === 'blank' ? 'Start Blank Message' : 'Use Template & Continue'}
-            </Button>
-          </WizardActionBar>
-        </div>
+        <TemplateStep
+          templates={templates}
+          templateSelection={templateSelection}
+          onBack={() => setWizardStep('TARGETS')}
+        />
       )}
 
       {wizardStep === 'COMPOSE' && (
-        <div className="flex flex-col gap-4">
-          <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
-            <Button variant="outline" onClick={() => setWizardStep('TEMPLATE')}>
-              ← Back to Template Selection
-            </Button>
-            <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
-              <Button variant="secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
-                {isSavingDraft ? 'Saving...' : 'Save Draft'}
-              </Button>
-              <Button variant="primary" onClick={() => setWizardStep('REVIEW')}>
-                Next: Review & Send →
-              </Button>
-            </div>
-          </div>
-          <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
-            <div className="flex flex-col gap-4">
-              <AppCard title="Composer">
-                <ComposeStep
-                  subject={subject}
-                  onSubjectChange={setSubject}
-                  messageType={messageType}
-                  onMessageTypeChange={setMessageType}
-                  content={content}
-                  onContentChange={setContent}
-                  editorRef={editorRef}
-                  warnings={warnings}
-                />
-              </AppCard>
-
-              <WizardActionBar>
-                <Button variant="outline" onClick={() => setWizardStep('TEMPLATE')}>
-                  ← Back to Template Selection
-                </Button>
-                <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
-                  <Button variant="secondary" onClick={handleSaveDraft} disabled={isSavingDraft}>
-                    {isSavingDraft ? 'Saving...' : 'Save Draft'}
-                  </Button>
-                  <Button variant="primary" onClick={() => setWizardStep('REVIEW')}>
-                    Next: Review & Send →
-                  </Button>
-                </div>
-              </WizardActionBar>
-            </div>
-            <PlaceholderPanel
-              onInsert={onInsertPlaceholder}
-              hasEvent={!!filters.eventId}
-              hasApprovedSetList={(() => {
-                return selectedEvent ? selectedEvent.setListApproved !== false : false;
-              })()}
-              hasCallTime={!!selectedEvent?.callTime?.trim()}
-            />
-            {renderSetlistWarning()}
-          </div>
-        </div>
+        <ComposeMessageStep
+          draft={draft}
+          editorRef={editorRef}
+          onInsertPlaceholder={onInsertPlaceholder}
+          selectedEvent={selectedEvent}
+          onBack={() => setWizardStep('TEMPLATE')}
+          onContinue={() => setWizardStep('REVIEW')}
+        />
       )}
 
       {wizardStep === 'REVIEW' && (
-        <div className="flex flex-col gap-4">
-          <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
-            <Button variant="outline" onClick={() => setWizardStep('COMPOSE')}>
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-1 inline-flex size-4"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              Back
-            </Button>
-            <div className="flex flex-row flex-wrap items-center gap-2">
-              <Button
-                variant="secondary"
-                onClick={handleSendTest}
-                disabled={isSendingTest || isSending}
-                title={`Send email test to ${user?.email || 'your email'}`}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="size-4"
-                >
-                  <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                  <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                </svg>
-                {isSendingTest ? 'Sending test...' : 'Send Test to Me'}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={sendMessage}
-                disabled={isSending || selectedRecipients.length === 0}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="size-4"
-                >
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
-                {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="flex flex-col">
-              <AppCard noPadding>
-                <div className="p-4">
-                  <LivePreview
-                    channel={messageType}
-                    subject={renderedSubject}
-                    bodyHtml={previewHtml}
-                    smsBody={renderedSmsBody}
-                    recipientName={previewRecipient?.name}
-                    recipientEmail={previewRecipient?.email}
-                    senderName={choirName}
-                    senderEmail={senderEmail}
-                  />
-                </div>
-              </AppCard>
-            </div>
-
-            <ReviewSidebar
-              selectedRecipients={selectedRecipients}
-              recipientCounts={recipientCounts}
-              onViewRecipients={onViewRecipients}
-              subject={subject}
-              content={content}
-              messageType={messageType}
-              filters={filters}
-              selectedEvent={selectedEvent}
-              commSettings={commSettings}
-              setTab={setTab}
-              setEditingTemplate={setEditingTemplate}
-              isSendingTest={isSendingTest}
-              isSending={isSending}
-              handleSendTest={handleSendTest}
-              sendMessage={sendMessage}
-              setWizardStep={setWizardStep}
-              user={user}
-            />
-          </div>
-        </div>
+        <ReviewStep
+          draft={draft}
+          preview={preview}
+          commSettings={commSettings}
+          selectedEvent={selectedEvent}
+          user={user}
+          choirName={choirName}
+          senderEmail={senderEmail}
+          onBack={() => setWizardStep('COMPOSE')}
+          onViewRecipients={onViewRecipients}
+          setTab={setTab}
+          setEditingTemplate={setEditingTemplate}
+        />
       )}
     </div>
   );
