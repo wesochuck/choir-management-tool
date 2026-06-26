@@ -172,6 +172,8 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     symbols: [
       'handleCreateTicketsSession',
       'handleStripeWebhook',
+      'expirePendingPaymentRecord',
+      'expireStalePendingRecords',
       'handleAdminRefundTicket',
       'handleCreateBundleSession',
       'handleAdminRefundBundle',
@@ -767,6 +769,30 @@ processEmailQueue($app);`;
 console.log("[Cron Engine] Evaluating pending outbound message matrices...");
 processEmailQueue($app);`;
 
+  // Backstop for abandoned Stripe checkouts. Runs daily. The main path
+  // is the checkout.session.expired webhook; this cron catches
+  // webhooks that were missed (Stripe retry cap is ~3 days, so a
+  // pending row 7+ days old is almost certainly a stranded webhook).
+  //
+  // The actual work is in expireStalePendingRecords, which is
+  // inlined by the generator from checkout/stripeWebhook.ts
+  // (the same file as expirePendingPaymentRecord and the webhook
+  // body itself). This file just calls the helper for each
+  // collection. Per AGENTS.md §4, Goja hooks avoid sorting by
+  // 'created' or 'updated' unless the schema is verified; the
+  // helper uses empty sort '' and loop-until-empty pagination.
+  const expireStalePendingPaymentsBody = `
+try {
+  expireStalePendingRecords($app, 'ticketPurchases', 'cron');
+} catch (err) {
+  console.log('[Backstop] ticketPurchases cron failed: ' + (err instanceof Error ? err.message : String(err)));
+}
+try {
+  expireStalePendingRecords($app, 'donations', 'cron');
+} catch (err) {
+  console.log('[Backstop] donations cron failed: ' + (err instanceof Error ? err.message : String(err)));
+}`;
+
   const createHookBody = `
 try {
     const record = e?.record;
@@ -1160,6 +1186,8 @@ ${renderCron('post_event_report', '0 * * * *', postEventReportBody)}
 ${renderCron('ticket_buyer_reminder', '0 * * * *', ticketBuyerReminderBody)}
 
 ${renderCron('process_email_queue_job', '*/2 * * * *', processQueueBody)}
+
+${renderCron('expire_stale_pending_payments', '30 3 * * *', expireStalePendingPaymentsBody)}
 
 // --- RECORD HOOKS ---
 

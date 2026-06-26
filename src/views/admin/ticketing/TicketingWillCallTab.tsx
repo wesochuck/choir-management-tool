@@ -280,7 +280,15 @@ export default function TicketingWillCallTab() {
       id: 'status',
       header: 'Status',
       cell: ({ row }) => (
-        <Badge tone={row.original.status === 'paid' ? 'success' : 'danger'}>
+        <Badge
+          tone={
+            row.original.status === 'paid'
+              ? 'success'
+              : row.original.status === 'expired'
+                ? 'warning'
+                : 'danger'
+          }
+        >
           {row.original.status}
         </Badge>
       ),

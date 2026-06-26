@@ -145,8 +145,8 @@ test('Generated main.pb.js integrity', () => {
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
-    3,
-    'Generated main file should contain exactly 3 cron registrations'
+    4,
+    'Generated main file should contain exactly 4 cron registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'onRecordAfterCreateSuccess(('),
@@ -193,8 +193,8 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    64,
-    'Generated file should contain exactly 64 callback-local utility regions'
+    66,
+    'Generated file should contain exactly 66 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));

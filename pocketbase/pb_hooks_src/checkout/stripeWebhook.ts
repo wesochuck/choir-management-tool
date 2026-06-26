@@ -37,6 +37,218 @@ interface TicketingRequestEvent extends PocketBaseRequestEvent {
 
 declare function readerToString(reader: unknown, maxBytes?: number): string;
 
+export type ExpireResult =
+  | 'expired'
+  | 'noop-already-paid'
+  | 'noop-already-refunded'
+  | 'noop-already-expired'
+  | 'noop-not-found'
+  | 'noop-missing-id'
+  | 'noop-error';
+
+/**
+ * Mark a pending ticket/donation row as expired. Idempotent.
+ *
+ * Transitions:
+ *   pending    -> expired    (and set expiredAt)
+ *   paid       -> no-op       (noop-already-paid)
+ *   refunded   -> no-op       (noop-already-refunded)
+ *   expired    -> no-op       (noop-already-expired)
+ *
+ * `app` is injected so this helper is testable without depending on
+ * the global $app. The webhook body and the backstop cron both call
+ * this as `expirePendingPaymentRecord($app, ...)`.
+ *
+ * Defensive: catches all errors from findFirstRecordByFilter and
+ * save, logs defensively (record may be null in pathological
+ * cases), and returns a result code instead of throwing. Per
+ * AGENTS.md §4, "Logging must be defensive."
+ */
+export function expirePendingPaymentRecord(
+  app: PocketBaseApp,
+  collectionName: string,
+  stripeSessionId: string,
+  source: string
+): ExpireResult {
+  if (!stripeSessionId) {
+    console.log('[expirePendingPaymentRecord] ' + source + ': missing stripeSessionId');
+    return 'noop-missing-id';
+  }
+
+  let record: PocketBaseRecord;
+  try {
+    record = app.findFirstRecordByFilter(collectionName, 'stripeSessionId = {:stripeSessionId}', {
+      stripeSessionId,
+    });
+  } catch {
+    // No matching row. Per AGENTS.md §4, log defensively.
+    console.log(
+      '[expirePendingPaymentRecord] ' +
+        source +
+        ': no row found collection=' +
+        collectionName +
+        ' sessionId=' +
+        stripeSessionId
+    );
+    return 'noop-not-found';
+  }
+
+  const currentStatus = String(record.get('status') || '');
+
+  if (currentStatus === 'paid') {
+    return 'noop-already-paid';
+  }
+  if (currentStatus === 'refunded') {
+    return 'noop-already-refunded';
+  }
+  if (currentStatus === 'expired') {
+    return 'noop-already-expired';
+  }
+
+  // currentStatus === 'pending' (or unexpected value; treat as pending)
+  record.set('status', 'expired');
+  record.set('expiredAt', new Date().toISOString());
+
+  try {
+    app.save(record);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.log(
+      '[expirePendingPaymentRecord] ' +
+        source +
+        ': save failed collection=' +
+        collectionName +
+        ' sessionId=' +
+        stripeSessionId +
+        ' error=' +
+        message
+    );
+    return 'noop-error';
+  }
+
+  return 'expired';
+}
+
+export interface ExpireStaleSummary {
+  processed: number;
+  errors: number;
+  skippedNoSessionId: number;
+  pagesProcessed: number;
+  hitMaxPages: boolean;
+}
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const CRON_PAGE_SIZE = 100;
+const CRON_MAX_PAGES = 50;
+const CRON_SKIPPED_PAGE_SIZE = 25;
+
+/**
+ * Backstop cron: expire any pending ticket/donation rows older than
+ * 7 days. The primary path is the checkout.session.expired webhook;
+ * this catches webhooks Stripe gave up on (retry cap is ~3 days).
+ *
+ * - Diagnostic query: separately identifies rows with missing
+ *   stripeSessionId and logs them, but does NOT feed them into the
+ *   main loop. Without this filter, the cron would repeatedly
+ *   select the same bad records on the same first page.
+ * - Empty sort '' per AGENTS.md §4 (no 'created' sort in Goja).
+ * - Loop-until-empty pagination, bounded by MAX_PAGES.
+ *
+ * Testable: $app is injected. Tests can mock findRecordsByFilter to
+ * return a sequence of pages and assert the calls.
+ */
+export function expireStalePendingRecords(
+  app: PocketBaseApp,
+  collectionName: string,
+  source: string,
+  nowMs?: number
+): ExpireStaleSummary {
+  const now = typeof nowMs === 'number' ? nowMs : Date.now();
+  const cutoff = new Date(now - SEVEN_DAYS_MS).toISOString();
+
+  let missing = 0;
+  try {
+    const missingRows = app.findRecordsByFilter(
+      collectionName,
+      "status = 'pending' && created < {:cutoff} && stripeSessionId = ''",
+      '',
+      CRON_SKIPPED_PAGE_SIZE,
+      0,
+      { cutoff }
+    );
+    missing = missingRows.length;
+    for (let i = 0; i < missingRows.length; i++) {
+      const r = missingRows[i];
+      const id = r && r.id ? r.id : '<unknown>';
+      console.log(
+        '[Backstop] ' + collectionName + ': stale pending row missing stripeSessionId id=' + id
+      );
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.log('[Backstop] ' + collectionName + ': diagnostic query failed: ' + message);
+  }
+
+  let processed = 0;
+  let errors = 0;
+  let pagesProcessed = 0;
+  let hitMaxPages = false;
+
+  for (let page = 0; page < CRON_MAX_PAGES; page++) {
+    let batch;
+    try {
+      batch = app.findRecordsByFilter(
+        collectionName,
+        "status = 'pending' && created < {:cutoff} && stripeSessionId != ''",
+        '',
+        CRON_PAGE_SIZE,
+        0,
+        { cutoff }
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.log('[Backstop] ' + collectionName + ': query failed: ' + message);
+      break;
+    }
+    if (!batch || batch.length === 0) {
+      break;
+    }
+    pagesProcessed += 1;
+    for (let i = 0; i < batch.length; i++) {
+      const r = batch[i];
+      const sessionId = r && r.get ? String(r.get('stripeSessionId') || '') : '';
+      const result = expirePendingPaymentRecord(app, collectionName, sessionId, source);
+      if (result === 'expired') {
+        processed += 1;
+      } else {
+        errors += 1;
+      }
+    }
+    if (batch.length < CRON_PAGE_SIZE) {
+      break;
+    }
+  }
+  if (pagesProcessed >= CRON_MAX_PAGES) {
+    hitMaxPages = true;
+  }
+
+  console.log(
+    '[Backstop] ' +
+      collectionName +
+      ' processed=' +
+      processed +
+      ' errors=' +
+      errors +
+      ' skippedNoSessionId=' +
+      missing +
+      ' pages=' +
+      pagesProcessed +
+      (hitMaxPages ? ' hitMaxPages=true' : '')
+  );
+
+  return { processed, errors, skippedNoSessionId: missing, pagesProcessed, hitMaxPages };
+}
+
 export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unknown> {
   let rawBody: string;
   try {
@@ -132,11 +344,23 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         if (record.get('status') === 'paid') {
           return e.json(200, { success: true, message: 'Duplicate event ignored' });
         }
-        // Update existing pending record
+        if (record.get('status') === 'refunded') {
+          console.log(
+            '[Stripe Webhook] completed: ignoring event for refunded ticket sessionId=' +
+              stripeSessionId
+          );
+          return e.json(200, {
+            success: true,
+            message: 'Refunded record not overwritten',
+          });
+        }
+        // pending or expired -> paid. Clear any prior expiredAt
+        // so the row fully returns to "not expired" state.
         record.set('status', 'paid');
         record.set('stripePaymentIntentId', session.payment_intent || '');
         record.set('stripeCustomerId', session.customer || '');
         record.set('fulfilledAt', new Date().toISOString());
+        record.set('expiredAt', '');
       } catch {
         // Record not found, fallback to creation (existing logic)
         const profile = getOrCreatePatronProfile(
@@ -208,11 +432,22 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         if (record.get('status') === 'paid') {
           return e.json(200, { success: true, message: 'Duplicate bundle purchase ignored' });
         }
-        // Update existing pending record
+        if (record.get('status') === 'refunded') {
+          console.log(
+            '[Stripe Webhook] completed: ignoring event for refunded bundle sessionId=' +
+              stripeSessionId
+          );
+          return e.json(200, {
+            success: true,
+            message: 'Refunded record not overwritten',
+          });
+        }
+        // pending or expired -> paid. Clear any prior expiredAt.
         record.set('status', 'paid');
         record.set('stripePaymentIntentId', session.payment_intent || '');
         record.set('stripeCustomerId', session.customer || '');
         record.set('fulfilledAt', new Date().toISOString());
+        record.set('expiredAt', '');
       } catch {
         // Record not found, fallback to creation (existing logic)
         const profile = getOrCreatePatronProfile(
@@ -290,9 +525,20 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         if (record.get('status') === 'paid') {
           return e.json(200, { success: true, message: 'Duplicate donation ignored' });
         }
-        // Update existing pending record
+        if (record.get('status') === 'refunded') {
+          console.log(
+            '[Stripe Webhook] completed: ignoring event for refunded donation sessionId=' +
+              stripeSessionId
+          );
+          return e.json(200, {
+            success: true,
+            message: 'Refunded record not overwritten',
+          });
+        }
+        // pending or expired -> paid. Clear any prior expiredAt.
         record.set('status', 'paid');
         record.set('stripePaymentIntentId', session.payment_intent || '');
+        record.set('expiredAt', '');
       } catch {
         // Record not found, fallback to creation (existing logic)
         const profile = getOrCreatePatronProfile(donorEmail, donorName);
@@ -393,6 +639,33 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         }
       }
     }
+  } else if (eventObj.type === 'checkout.session.expired') {
+    const session = eventObj.data && eventObj.data.object;
+    if (!session) {
+      console.log('[Stripe Webhook] expired: missing session object');
+      return e.json(200, { success: true, message: 'No session' });
+    }
+    const stripeSessionId = session.id || '';
+    if (!stripeSessionId) {
+      console.log('[Stripe Webhook] expired: missing session id');
+      return e.json(200, { success: true, message: 'No session id' });
+    }
+    const paymentType = (session.metadata && session.metadata.paymentType) || '';
+    if (paymentType !== 'ticket' && paymentType !== 'bundle' && paymentType !== 'donation') {
+      console.log('[Stripe Webhook] expired: unsupported paymentType=' + paymentType);
+      return e.json(200, { success: true, message: 'Unsupported paymentType' });
+    }
+    const collectionName = paymentType === 'donation' ? 'donations' : 'ticketPurchases';
+    const result = expirePendingPaymentRecord($app, collectionName, stripeSessionId, 'webhook');
+    console.log(
+      '[Stripe Webhook] expired: ' +
+        result +
+        ' collection=' +
+        collectionName +
+        ' sessionId=' +
+        stripeSessionId
+    );
+    return e.json(200, { success: true, message: result });
   } else if (eventObj.type === 'charge.refunded') {
     const charge = eventObj.data?.object;
     const paymentIntentId = charge?.payment_intent;

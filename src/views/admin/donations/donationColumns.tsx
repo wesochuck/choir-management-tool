@@ -98,7 +98,9 @@ export function createDonationColumns(
               ? 'success'
               : row.original.status === 'refunded'
                 ? 'danger'
-                : 'neutral'
+                : row.original.status === 'expired'
+                  ? 'warning'
+                  : 'neutral'
           }
         >
           {row.original.status}

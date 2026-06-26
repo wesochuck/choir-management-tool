@@ -17,9 +17,10 @@ export interface DonationRecord extends RecordModel {
   tributeType: 'none' | 'memory' | 'honor';
   tributeName?: string;
   isAnonymous: boolean;
-  status: 'paid' | 'pending' | 'refunded';
+  status: 'paid' | 'pending' | 'refunded' | 'expired';
   stripeSessionId: string;
   stripePaymentIntentId: string;
+  expiredAt?: string;
   created: string;
   expand?: {
     profile?: import('./profileService').Profile;
