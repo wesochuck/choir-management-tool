@@ -27,7 +27,8 @@ export type UtilityBundleName =
   | 'stripeService'
   | 'pocketbaseDate'
   | 'checkoutEndpoints'
-  | 'ticketScanValidation';
+  | 'ticketScanValidation'
+  | 'maintenance';
 
 export type UtilityBundle = {
   files: string[];
@@ -195,6 +196,45 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     files: ['ticketScan/ticketValidation.ts'],
     symbols: ['handleValidateScan', 'handleGetScanContext'],
     dependsOn: ['hmacTokens', 'hookJson', 'hookText'],
+  },
+  maintenance: {
+    files: [
+      'maintenance/maintenanceTypes.ts',
+      'maintenance/maintenanceState.ts',
+      'maintenance/maintenanceAuth.ts',
+      'maintenance/emailQueueTask.ts',
+      'maintenance/postEventReportTask.ts',
+      'maintenance/ticketBuyerReminderTask.ts',
+      'maintenance/cleanupTask.ts',
+      'maintenance/maintenanceRunner.ts',
+    ],
+    symbols: [
+      'isMaintenanceRequestAuthorized',
+      'runMaintenance',
+      'runEmailQueueTask',
+      'runPostEventReportTask',
+      'runTicketBuyerReminderTask',
+      'runCleanupTask',
+      'getMaintenanceState',
+      'saveMaintenanceState',
+      'saveMaintenanceTaskRun',
+      'isTaskDue',
+      'hasActiveLock',
+      'tryAcquireTaskLock',
+      'releaseTaskLock',
+    ],
+    dependsOn: [
+      'queueProcessor',
+      'checkoutEndpoints',
+      'hookJson',
+      'hookText',
+      'timezone',
+      'pocketbaseDate',
+      'attendanceFinalizer',
+      'attendanceReport',
+      'rsvpValidation',
+      'hmacTokens',
+    ],
   },
 };
 
@@ -457,342 +497,6 @@ function buildRsvpRoutes(): string {
 }
 
 export function generate(): void {
-  const postEventReportBody = `
-const hoursAfter = 12;
-const now = new Date();
-const end = new Date(now.getTime() - (hoursAfter * 60 * 60 * 1000));
-const start = new Date(end.getTime() - (1 * 60 * 60 * 1000));
-
-const events = $app.findRecordsByFilter("events", "date >= {:start} && date < {:end} && isArchived != true", "-date", 100, 0, { start, end });
-if (!events || events.length === 0) return;
-
-const admins = $app.findRecordsByFilter("users", "role = 'admin'");
-if (!admins || admins.length === 0) return;
-
-let commSettings = { mailingAddress: "123 Choir St, Harmony City, HC 12345", reportSubjectTemplate: "Attendance Report: {eventTitle}", reportBodyTemplate: "Report for {eventTitle}..." };
-try {
-    const setting = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-    const parsed = parseJsonField(setting.get("value"));
-    if (parsed) {
-        if (parsed.mailingAddress) commSettings.mailingAddress = parsed.mailingAddress;
-        if (parsed.reportSubjectTemplate) commSettings.reportSubjectTemplate = parsed.reportSubjectTemplate;
-        if (parsed.reportBodyTemplate) commSettings.reportBodyTemplate = parsed.reportBodyTemplate;
-    }
-} catch (e) {
-    console.log("Warning: Failed to parse communications settings", e);
-}
-
-events.forEach(event => {
-    // 1. Resolve linked performance & auto-finalize unmarked attendance for performing singers
-    finalizeUnmarkedAttendanceForEvent($app, event);
-
-    const isPerformance = event.get("type") === "Performance";
-    const linkedPerfId = isPerformance ? event.id : event.get("parentPerformanceId");
-
-    let maxRehearsalMisses = 3;
-    try {
-        const rosterSettingRecord = $app.findFirstRecordByFilter("appSettings", "key = 'roster'");
-        const parsed = parseJsonField(rosterSettingRecord.get("value"));
-        if (parsed && parsed.maxRehearsalMisses !== undefined) {
-            maxRehearsalMisses = Number(parsed.maxRehearsalMisses);
-        }
-    } catch (e) {}
-
-    const rosters = $app.findRecordsByFilter("eventRosters", "event = {:eventId}", "profile.name", 500, 0, { eventId: event.id });
-    if (!rosters || rosters.length === 0) return;
-
-    const total = rosters.length;
-    const present = rosters.filter(r => r.get("attendance") === "Present").length;
-    const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
-    const eventDateObj = coercePocketBaseDate(event.get("date"));
-    const eventDateStr = eventDateObj
-      ? (eventDateObj.getMonth() + 1) + "/" + eventDateObj.getDate() + "/" + eventDateObj.getFullYear()
-      : "";
-    const eventTitle = String(event.get("title") || "");
-    const subject = sanitizeEmailSubject(
-        commSettings.reportSubjectTemplate
-            .replace(/{eventTitle}/g, () => eventTitle)
-            .replace(/{eventDate}/g, () => eventDateStr)
-    );
-
-    // Calculate exceeded limit section (only including past rehearsals)
-    let exceededLimitListHtml = "";
-    if (linkedPerfId) {
-        const cycleRehearsals = $app.findRecordsByFilter(
-            "events",
-            "parentPerformanceId = {:perfId} && type = 'Rehearsal'",
-            "date",
-            200,
-            0,
-            { perfId: linkedPerfId }
-        );
-
-        if (cycleRehearsals && cycleRehearsals.length > 0) {
-            const pastRehearsals = cycleRehearsals.filter(r => parsePocketBaseDate(r.get("date")) <= now);
-
-            if (pastRehearsals.length > 0) {
-                const pastRehearsalIds = pastRehearsals.map(r => r.id);
-                const activeProfiles = $app.findRecordsByFilter("profiles", "voicePart != '' && globalStatus != 'Inactive'", "name", 1000, 0);
-                const exceededSingers = [];
-
-                // Batch: fetch all rosters for past rehearsals at once
-                const pastRehearsalRosters = [];
-                const filterParts = pastRehearsalIds.map((_, i) => "event = {:rid" + i + "}").join(" || ");
-                const filterParams = {};
-                pastRehearsalIds.forEach((id, i) => { filterParams["rid" + i] = id; });
-                try {
-                    const allRosters = $app.findRecordsByFilter("eventRosters", filterParts, "", 5000, 0, filterParams);
-                    pastRehearsalRosters.push(...(allRosters || []));
-                } catch (e) {}
-
-                // Batch: fetch all RSVP'd rosters for the linked performance at once
-                const performingProfileIds = {};
-                try {
-                    const perfRosters = $app.findRecordsByFilter("eventRosters", "event = {:perfId}", "", 1000, 0, { perfId: linkedPerfId });
-                    if (perfRosters) {
-                        perfRosters.forEach(r => {
-                            if (r.get("rsvp") === "Yes") {
-                                performingProfileIds[r.get("profile")] = true;
-                            }
-                        });
-                    }
-                } catch (e) {}
-
-                // Build a map of rehearsal rosters by profile for quick lookup
-                const pastRostersByProfile = {};
-                pastRehearsalRosters.forEach(r => {
-                    const profileId = r.get("profile");
-                    if (!pastRostersByProfile[profileId]) {
-                        pastRostersByProfile[profileId] = [];
-                    }
-                    pastRostersByProfile[profileId].push(r);
-                });
-
-                activeProfiles.forEach(profile => {
-                    if (!performingProfileIds[profile.id]) return;
-                    const profileRosters = pastRostersByProfile[profile.id] || [];
-                    let missCount = 0;
-                    pastRehearsals.forEach(reh => {
-                        const r = profileRosters.find(x => x.get("event") === reh.id);
-                            
-                            const wasDeclined = r ? r.get("rsvp") === "No" : false;
-                            const wasAbsent = r ? r.get("attendance") === "Absent" : false;
-                            const notMarkedPresent = r ? r.get("attendance") !== "Present" : true;
-
-                            if (wasDeclined || wasAbsent || notMarkedPresent) {
-                                missCount++;
-                            }
-                        });
-
-                        if (missCount > maxRehearsalMisses) {
-                            exceededSingers.push({
-                                name: profile.get("name"),
-                                missCount: missCount
-                            });
-                        }
-                    });
-
-                if (exceededSingers.length > 0) {
-                    exceededLimitListHtml = '<ul style="padding-left: 20px; margin: 10px 0; color: #b45309;">' + 
-                        exceededSingers.map(s => '<li style="margin-bottom: 4px;"><strong>' + escapeHtml(s.name) + '</strong>: ' + s.missCount + ' missed rehearsals (Limit: ' + maxRehearsalMisses + ')</li>').join('') + 
-                        '</ul>';
-                }
-            }
-        }
-    }
-
-    const body = renderAttendanceReportBody({
-        eventTitle: event.get("title"),
-        eventDate: eventDateStr,
-        attendanceRate: attendanceRate,
-        presentCount: present,
-        totalCount: total,
-        mailingAddress: commSettings.mailingAddress,
-        exceededLimitListHtml: exceededLimitListHtml || undefined
-    });
-
-    try {
-        const messageCollection = $app.findCollectionByNameOrId("messages");
-        const record = new Record(messageCollection, {
-            subject,
-            content: body,
-            type: "Email",
-            status: "Sent",
-            recipients: admins.map(a => ({ id: a.id, name: a.get("name") || "Admin", email: a.get("email") })),
-            filters: { type: "Automated Report", eventId: event.id }
-        });
-        $app.save(record);
-    } catch (e) {
-        console.log("[Cron Error] Failed to create attendance report message: " + e);
-    }
-});`;
-
-  const ticketBuyerReminderBody = `
-const now = new Date();
-const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
-
-const events = $app.findRecordsByFilter(
-    "events", 
-    "type = 'Performance' && date >= {:now} && date <= {:tomorrow} && isArchived != true && isTicketingEnabled = true", 
-    "date", 
-    100, 
-    0, 
-    { now, tomorrow }
-);
-
-if (!events || events.length === 0) return;
-
-let template;
-try {
-    template = $app.findFirstRecordByFilter("messageTemplates", "title = 'Ticket Concert Reminder' && isSystemTemplate = true");
-} catch (e) {
-    console.log("[Reminder Cron] Ticket Concert Reminder template not found");
-    return;
-}
-
-let timezone = "America/New_York";
-try {
-    const tzSetting = $app.findFirstRecordByFilter("appSettings", "key = 'timezone'");
-    const tzP = parseJsonField(tzSetting.get("value"));
-    if (tzP && tzP.timezone) timezone = tzP.timezone;
-} catch (e) {}
-
-let choirName = "Choir Management Tool";
-try {
-    const choirRecord = $app.findFirstRecordByFilter("appSettings", "key = 'choir_name' || key = 'choirName'");
-    const parsed = parseJsonField(choirRecord.get("value"));
-    const val = parsed.name || parsed.choirName || parsed.value || (typeof parsed === 'string' ? parsed : "");
-    if (val) choirName = val;
-} catch (e) {}
-
-let baseUrl = "http://localhost:5173";
-try {
-    const commRecord = $app.findFirstRecordByFilter("appSettings", "key = 'communications'");
-    const comms = parseJsonField(commRecord.get("value"));
-    if (comms && comms.frontendUrl) baseUrl = comms.frontendUrl;
-} catch (e) {}
-if (baseUrl === "http://localhost:5173" || !baseUrl || baseUrl.indexOf("localhost") !== -1) {
-    const meta = $app.settings()?.meta;
-    const url = meta?.appUrl || meta?.appURL || "";
-    if (url) baseUrl = url;
-}
-baseUrl = baseUrl.trim().replace(/[\/]+$/g, "");
-
-events.forEach(event => {
-    const purchases = $app.findRecordsByFilter(
-        "ticketPurchases",
-        "event = {:eventId} && status = 'paid' && reminderSent != true",
-        "",
-        1000,
-        0,
-        { eventId: event.id }
-    );
-
-    if (!purchases || purchases.length === 0) return;
-
-    const eventTitle = event.get("title") || "";
-    const eventDateStr = formatInTimezone(
-      coercePocketBaseDate(event.get("date")) ?? new Date(""),
-      timezone,
-      { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
-    );
-    const doorsOpenTime = event.get("doorsOpenTime") || "N/A";
-
-    purchases.forEach(async purchase => {
-        const buyerName = purchase.get("buyerName") || "Music Lover";
-        const quantity = purchase.get("quantity") || 0;
-        
-        let content = template.get("content") || "";
-        content = content
-            .replace(/{buyerName}/g, buyerName)
-            .replace(/{eventTitle}/g, eventTitle)
-            .replace(/{eventDate}/g, eventDateStr)
-            .replace(/{doorsOpenTime}/g, doorsOpenTime)
-            .replace(/{quantity}/g, String(quantity))
-            .replace(/{choirName}/g, choirName);
-
-        const subject = (template.get("subject") || "Concert Reminder").replace(/{eventTitle}/g, eventTitle);
-
-        const stripeSessionId = purchase.get("stripeSessionId") || "";
-        const ticketToken = generateSignedTicketToken(purchase.id);
-        const scanUrl = baseUrl + "/admin/tickets/scan?token=" + encodeURIComponent(ticketToken);
-        const successUrl = baseUrl + "/tickets/order/success?session_id=" + encodeURIComponent(stripeSessionId);
-        const qrSvgSrc = "";
-
-        try {
-            const queueCollection = $app.findCollectionByNameOrId("emailQueue");
-            const mailRecord = new Record(queueCollection, {
-                recipientId: "buyer_" + purchase.id,
-                recipientEmail: purchase.get("buyerEmail"),
-                recipientName: buyerName,
-                subject: subject,
-                rawContent: content,
-                status: "Pending",
-                attempts: 0,
-                filters: JSON.stringify({
-                    eventId: event.id,
-                    type: "Ticket Buyer Reminder",
-                    ticketToken: ticketToken,
-                    scanUrl: scanUrl,
-                    qrSvgSrc: qrSvgSrc,
-                    successUrl: successUrl
-                })
-            });
-            $app.save(mailRecord);
-
-            purchase.set("reminderSent", true);
-            $app.save(purchase);
-        } catch (e) {
-            console.log("[Reminder Cron] Failed to enqueue email for purchase " + purchase.id + ": " + e);
-        }
-    });
-
-    try {
-        const messageCollection = $app.findCollectionByNameOrId("messages");
-        const msgRecord = new Record(messageCollection, {
-            subject: "Ticket Buyer Reminders Sent: " + eventTitle,
-            content: "Sent reminders for " + eventTitle,
-            type: "Email",
-            status: "Sent",
-            recipients: [],
-            filters: { eventId: event.id, type: "Ticket Buyer Reminder" }
-        });
-        $app.save(msgRecord);
-    } catch (e) {
-        console.log("[Reminder Cron] Failed to log message for event " + event.id + ": " + e);
-    }
-});
-
-processEmailQueue($app);`;
-
-  const processQueueBody = `
-console.log("[Cron Engine] Evaluating pending outbound message matrices...");
-processEmailQueue($app);`;
-
-  // Backstop for abandoned Stripe checkouts. Runs daily. The main path
-  // is the checkout.session.expired webhook; this cron catches
-  // webhooks that were missed (Stripe retry cap is ~3 days, so a
-  // pending row 7+ days old is almost certainly a stranded webhook).
-  //
-  // The actual work is in expireStalePendingRecords, which is
-  // inlined by the generator from checkout/stripeWebhook.ts
-  // (the same file as expirePendingPaymentRecord and the webhook
-  // body itself). This file just calls the helper for each
-  // collection. Per AGENTS.md §4, Goja hooks avoid sorting by
-  // 'created' or 'updated' unless the schema is verified; the
-  // helper uses empty sort '' and loop-until-empty pagination.
-  const expireStalePendingPaymentsBody = `
-try {
-  expireStalePendingRecords($app, 'ticketPurchases', 'cron');
-} catch (err) {
-  console.log('[Backstop] ticketPurchases cron failed: ' + (err instanceof Error ? err.message : String(err)));
-}
-try {
-  expireStalePendingRecords($app, 'donations', 'cron');
-} catch (err) {
-  console.log('[Backstop] donations cron failed: ' + (err instanceof Error ? err.message : String(err)));
-}`;
-
   const createHookBody = `
 try {
     const record = e?.record;
@@ -1179,16 +883,6 @@ if (typeof process === 'undefined') {
     };
 }
 
-// --- CRON JOBS ---
-
-${renderCron('post_event_report', '0 * * * *', postEventReportBody)}
-
-${renderCron('ticket_buyer_reminder', '0 * * * *', ticketBuyerReminderBody)}
-
-${renderCron('process_email_queue_job', '*/2 * * * *', processQueueBody)}
-
-${renderCron('expire_stale_pending_payments', '30 3 * * *', expireStalePendingPaymentsBody)}
-
 // --- RECORD HOOKS ---
 
 ${renderRecordHook('onRecordAfterCreateSuccess', 'messages', createHookBody)}
@@ -1245,6 +939,18 @@ ${renderRoute('POST', '/api/singer/calendar-feed-url/reset', 'return handleCalen
 ${renderRoute('GET', '/api/singer/seating-profiles', 'return handleSingerSeatingProfiles(e);')}
 
 ${renderRoute('GET', '/api/singer/player-playlist', 'return handleSingerPlayerPlaylist(e);')}
+
+${renderRoute(
+  'POST',
+  '/api/maintenance/run',
+  `
+if (!isMaintenanceRequestAuthorized(e, $app)) {
+  return e.json(403, { error: "Forbidden" });
+}
+const summary = runMaintenance($app);
+return e.json(200, { success: true, summary });
+`
+)}
 `.trim();
 
   fs.writeFileSync(OUTPUT_FILE, `${mainPbJs}\n`);

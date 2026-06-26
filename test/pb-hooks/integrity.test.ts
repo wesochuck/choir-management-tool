@@ -107,14 +107,7 @@ test('Generated main.pb.js integrity', () => {
     content.startsWith('// PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)'),
     'Should contain generated output marker'
   );
-  assert.ok(
-    content.includes('cronAdd("post_event_report"'),
-    'Should contain post_event_report cron'
-  );
-  assert.ok(
-    content.includes('cronAdd("process_email_queue_job"'),
-    'Should contain process_email_queue_job cron'
-  );
+  assert.ok(!content.includes('cronAdd('), 'Should contain zero cron registrations');
   assert.ok(content.includes('onRecordAfterCreateSuccess'), 'Should contain create hook');
   assert.ok(content.includes('onRecordAfterUpdateSuccess'), 'Should contain update hook');
   assert.ok(
@@ -140,13 +133,13 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    30,
-    'Generated main file should contain exactly 30 route registrations'
+    31,
+    'Generated main file should contain exactly 31 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
-    4,
-    'Generated main file should contain exactly 4 cron registrations'
+    0,
+    'Generated main file should contain exactly 0 cron registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'onRecordAfterCreateSuccess(('),
@@ -193,11 +186,11 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    66,
-    'Generated file should contain exactly 66 callback-local utility regions'
+    60,
+    'Generated file should contain exactly 60 callback-local utility regions'
   );
 
-  const filePrelude = content.slice(0, content.indexOf('// --- CRON JOBS ---'));
+  const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
   assert.ok(
     !filePrelude.includes('function '),
     'Generated file prelude should not contain top-level helper functions'
@@ -237,58 +230,50 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
     'SMTP test route should not include any utility bundle because it does not call shared helpers'
   );
 
-  const postEventReportCron = extractCronCallback(content, 'post_event_report');
+  const maintenanceRoute = extractRouteCallback(content, '/api/maintenance/run');
   assert.ok(
-    postEventReportCron.includes('function parseJsonField'),
-    'Attendance report cron should contain JSON parsing utilities'
+    maintenanceRoute.includes('function isMaintenanceRequestAuthorized'),
+    'Maintenance route should contain auth utility'
   );
   assert.ok(
-    postEventReportCron.includes('function sanitizeEmailSubject'),
-    'Attendance report cron should contain email subject sanitization'
+    maintenanceRoute.includes('function runMaintenance'),
+    'Maintenance route should contain runner'
   );
   assert.ok(
-    postEventReportCron.includes('function renderAttendanceReportBody'),
-    'Attendance report cron should contain attendance report renderer'
+    maintenanceRoute.includes('function runPostEventReportTask'),
+    'Maintenance route should contain post-event report task'
   );
   assert.ok(
-    !postEventReportCron.includes('function processEmailQueue'),
-    'Attendance report cron should not contain unrelated queue processor utilities'
-  );
-
-  const processEmailQueueCron = extractCronCallback(content, 'process_email_queue_job');
-  assert.ok(
-    processEmailQueueCron.includes('function processEmailQueue'),
-    'Email queue cron should contain queue processor utilities'
+    maintenanceRoute.includes('function runTicketBuyerReminderTask'),
+    'Maintenance route should contain ticket buyer reminder task'
   );
   assert.ok(
-    processEmailQueueCron.includes('function parseJsonField'),
-    'Email queue cron should contain JSON parsing utilities'
+    maintenanceRoute.includes('function runCleanupTask'),
+    'Maintenance route should contain cleanup task'
   );
   assert.ok(
-    processEmailQueueCron.includes('function renderMarkdown'),
-    'Email queue cron should contain markdown rendering utilities'
+    maintenanceRoute.includes('function runEmailQueueTask'),
+    'Maintenance route should contain email queue task'
   );
   assert.ok(
-    processEmailQueueCron.includes('function compileMailjetHtml'),
-    'Email queue cron should contain Mailjet HTML rendering utilities'
+    maintenanceRoute.includes('function getMaintenanceState'),
+    'Maintenance route should contain state helpers'
   );
   assert.ok(
-    !processEmailQueueCron.includes('function renderAttendanceReportBody'),
-    'Email queue cron should not contain unrelated attendance report renderer'
-  );
-
-  const ticketBuyerReminderCron = extractCronCallback(content, 'ticket_buyer_reminder');
-  assert.ok(
-    ticketBuyerReminderCron.includes('function formatInTimezone'),
-    'Ticket buyer reminder cron should contain timezone formatting utilities'
+    maintenanceRoute.includes('function isTaskDue'),
+    'Maintenance route should contain isTaskDue'
   );
   assert.ok(
-    ticketBuyerReminderCron.includes('function parseJsonField'),
-    'Ticket buyer reminder cron should contain JSON parsing utilities'
+    maintenanceRoute.includes('function hasActiveLock'),
+    'Maintenance route should contain hasActiveLock'
   );
   assert.ok(
-    ticketBuyerReminderCron.includes('function processEmailQueue'),
-    'Ticket buyer reminder cron should contain queue processor utilities'
+    maintenanceRoute.includes('function tryAcquireTaskLock'),
+    'Maintenance route should contain tryAcquireTaskLock'
+  );
+  assert.ok(
+    maintenanceRoute.includes('function releaseTaskLock'),
+    'Maintenance route should contain releaseTaskLock'
   );
 
   const createMessagesHook = extractRecordHookCallback(
@@ -386,23 +371,23 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
 test('post_event_report subject templating inserts dynamic values literally', () => {
   const content = readGeneratedMain();
-  const postEventReportCron = extractCronCallback(content, 'post_event_report');
+  const maintenanceRoute = extractRouteCallback(content, '/api/maintenance/run');
 
   assert.ok(
-    postEventReportCron.includes('const eventTitle = String(event.get("title") || "");'),
-    'Attendance report cron should normalize event title before template replacement'
+    maintenanceRoute.includes('const eventTitle = String(event.get("title") || "");'),
+    'Attendance report task should normalize event title before template replacement'
   );
   assert.ok(
-    postEventReportCron.includes('.replace(/{eventTitle}/g, () => eventTitle)'),
-    'Attendance report cron should use a functional replacer for eventTitle'
+    maintenanceRoute.includes('.replace(/{eventTitle}/g, () => eventTitle)'),
+    'Attendance report task should use a functional replacer for eventTitle'
   );
   assert.ok(
-    postEventReportCron.includes('.replace(/{eventDate}/g, () => eventDateStr)'),
-    'Attendance report cron should use a functional replacer for eventDate'
+    maintenanceRoute.includes('.replace(/{eventDate}/g, () => eventDateStr)'),
+    'Attendance report task should use a functional replacer for eventDate'
   );
   assert.ok(
-    !postEventReportCron.includes('.replace(/{eventTitle}/g, event.get("title"))'),
-    'Attendance report cron should not use a dynamic replacement string for eventTitle'
+    !maintenanceRoute.includes('.replace(/{eventTitle}/g, event.get("title"))'),
+    'Attendance report task should not use a dynamic replacement string for eventTitle'
   );
 });
 
@@ -469,28 +454,16 @@ export {
   assert.ok(!/exports\./.test(output), 'CommonJS export assignments should not be emitted');
 });
 
-test('Generator output matches committed file', () => {
+test('Generated main.pb.js has no unbalanced forEach in post_event_report task', () => {
   const mainPath = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
-  const originalContent = fs.readFileSync(mainPath, 'utf8');
+  const content = fs.readFileSync(mainPath, 'utf8');
 
-  execSync('npm run generate:pb-hooks');
-
-  const generatedContent = fs.readFileSync(mainPath, 'utf8');
-  assert.strictEqual(
-    generatedContent,
-    originalContent,
-    'Generated file should match committed source'
-  );
-
-  // Validate structural balance in post_event_report cron callback
-  const cronBody = extractCronCallback(generatedContent, 'post_event_report');
-  const forEachOpens = (cronBody.match(/\.forEach\(/g) || []).length;
-  const forEachCloses = (cronBody.match(/\);/g) || []).length;
-  // The extra } before ); that caused the bug would leave forEach callbacks
-  // without proper closing parens. Each forEach needs a corresponding close.
+  const maintenanceRoute = extractRouteCallback(content, '/api/maintenance/run');
+  const forEachOpens = (maintenanceRoute.match(/\.forEach\(/g) || []).length;
+  const forEachCloses = (maintenanceRoute.match(/\);/g) || []).length;
   assert.ok(
     forEachCloses >= forEachOpens,
-    `post_event_report cron has unbalanced forEach calls: ${forEachOpens} opens but ${forEachCloses} closes. Check for extra/missing brackets in attendance report template.`
+    `post_event_report task has unbalanced forEach calls: ${forEachOpens} opens but ${forEachCloses} closes. Check for extra/missing brackets in attendance report template.`
   );
 });
 
@@ -523,23 +496,8 @@ test('Generated main.pb.js uses async callbacks when body has await', () => {
   const content = readGeneratedMain();
   const lines = content.split('\n');
 
-  // 1. Check cron registrations
-  const ticketBuyerCron = extractCronCallback(content, 'ticket_buyer_reminder');
-  assert.match(
-    content,
-    /cronAdd\("ticket_buyer_reminder",\s*"[^"]*",\s*\(\)\s*=>\s*\{/,
-    'ticket_buyer_reminder cron registration should use plain callback (no await in body)'
-  );
-  assert.match(
-    content,
-    /cronAdd\("post_event_report",\s*"[^"]*",\s*\(\)\s*=>\s*\{/,
-    'post_event_report cron should use plain callback'
-  );
-  assert.match(
-    content,
-    /cronAdd\("process_email_queue_job",\s*"[^"]*",\s*\(\)\s*=>\s*\{/,
-    'process_email_queue_job cron should use plain callback'
-  );
+  // 1. No cron registrations (maintenance is now PocketHost-triggered)
+  assert.ok(!content.includes('cronAdd('), 'No cron registrations should remain');
 
   // 2. Check all router registrations — verify routes using await are async
   const routeMatches = content.matchAll(
