@@ -6,6 +6,7 @@ import { ScanResultCard } from '../../components/admin/ScanResultCard';
 import type { ValidationResult } from '../../services/ticketService';
 import { Button, Input, Spinner, Select, Modal } from '../../components/ui';
 import { usePublicEvents } from '../../hooks/usePublicEvents';
+import { safeLocalStorage } from '../../lib/storage';
 
 const STORAGE_KEY = 'ticket-scan-event-id';
 const HISTORY_SIZE = 50;
@@ -67,12 +68,12 @@ export default function TicketScanView() {
   useEffect(() => {
     const urlEventId = searchParams.get('eventId');
     if (urlEventId) {
-      localStorage.setItem(STORAGE_KEY, urlEventId);
+      safeLocalStorage.setItem(STORAGE_KEY, urlEventId);
     }
   }, [searchParams]);
 
   const [selectedEventId, setSelectedEventId] = useState(() => {
-    return searchParams.get('eventId') || localStorage.getItem(STORAGE_KEY) || '';
+    return searchParams.get('eventId') || safeLocalStorage.getItem(STORAGE_KEY) || '';
   });
 
   const { events, isLoading: eventsLoading, error: eventsErrorMsg } = usePublicEvents();
@@ -86,7 +87,7 @@ export default function TicketScanView() {
     didInitRef.current = true;
 
     const urlEventId = searchParams.get('eventId');
-    const storedEventId = localStorage.getItem(STORAGE_KEY);
+    const storedEventId = safeLocalStorage.getItem(STORAGE_KEY);
 
     const isUrlValid = urlEventId && events.some((e) => e.id === urlEventId);
     const isStoredValid = storedEventId && events.some((e) => e.id === storedEventId);
@@ -102,11 +103,11 @@ export default function TicketScanView() {
         const defaultEvent = performanceEvents[0];
         setSelectedEventId(defaultEvent.id);
         setSearchParams({ eventId: defaultEvent.id }, { replace: true });
-        localStorage.setItem(STORAGE_KEY, defaultEvent.id);
+        safeLocalStorage.setItem(STORAGE_KEY, defaultEvent.id);
       } else {
         setSelectedEventId('');
         setSearchParams({}, { replace: true });
-        localStorage.removeItem(STORAGE_KEY);
+        safeLocalStorage.removeItem(STORAGE_KEY);
       }
     }
   }, [events, eventsLoading, searchParams, setSearchParams]);
@@ -136,10 +137,10 @@ export default function TicketScanView() {
     setSelectedEventId(value);
     if (value) {
       setSearchParams({ eventId: value }, { replace: true });
-      localStorage.setItem(STORAGE_KEY, value);
+      safeLocalStorage.setItem(STORAGE_KEY, value);
     } else {
       setSearchParams({}, { replace: true });
-      localStorage.removeItem(STORAGE_KEY);
+      safeLocalStorage.removeItem(STORAGE_KEY);
     }
   };
 
