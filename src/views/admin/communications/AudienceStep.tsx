@@ -120,7 +120,7 @@ export function AudienceStep({
                 onChange={(event) => updateFilter('globalStatus', event.target.value)}
               >
                 <option value="Active">Active</option>
-                <option value="Idle">Idle</option>
+                <option value="Idle">On Break</option>
                 <option value="Inactive">Inactive</option>
                 <option value="">All Statuses</option>
               </Select>

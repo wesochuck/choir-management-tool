@@ -22,7 +22,7 @@ export function RosterDisplayOptionsSettings({
           >
             <option value="">All Statuses</option>
             <option value="Active">Active</option>
-            <option value="Idle">Idle</option>
+            <option value="Idle">On Break</option>
             <option value="Inactive">Inactive</option>
           </Select>
           <p className="text-xs text-slate-500">

@@ -56,7 +56,7 @@ export function getGlobalStatusDisplay(status: string): StatusDisplay {
     case 'active':
       return { label: 'Active', tone: 'success' };
     case 'idle':
-      return { label: 'Idle', tone: 'warning' };
+      return { label: 'On Break', tone: 'warning' };
     case 'leave':
       return { label: 'On Leave', tone: 'warning' };
     case 'inactive':

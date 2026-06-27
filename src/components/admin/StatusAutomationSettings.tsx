@@ -67,7 +67,7 @@ export function StatusAutomationSettings({
               <span className="text-label">Enable Automated Status Recovery</span>
             </label>
             <p className="pl-6 text-xs text-slate-500">
-              Automatically mark inactive singers as "Idle" when they RSVP 'Yes' to a future
+              Automatically mark inactive singers as "On Break" when they RSVP 'Yes' to a future
               Performance.
             </p>
           </div>

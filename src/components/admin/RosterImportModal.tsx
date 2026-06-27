@@ -310,7 +310,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       label: 'Voice Part',
       desc: 'S1, A2, etc. (should match your configured parts)',
     },
-    { key: 'globalStatus', label: 'Global Status', desc: 'Active, Idle, or Inactive' },
+    { key: 'globalStatus', label: 'Global Status', desc: 'Active, On Break, or Inactive' },
     { key: 'notes', label: 'Notes', desc: 'Administrative notes' },
   ];
 

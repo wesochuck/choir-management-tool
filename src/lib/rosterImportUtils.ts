@@ -183,7 +183,11 @@ export function validateAndMapSingers(
     let globalStatus: MappedSinger['data']['globalStatus'] = 'Active';
     if (rawStatus) {
       const cleanStatus = rawStatus.toLowerCase().replace(/\s+/g, '');
-      if (cleanStatus.includes('future') || cleanStatus.includes('idle')) {
+      if (
+        cleanStatus.includes('future') ||
+        cleanStatus.includes('idle') ||
+        cleanStatus.includes('onbreak')
+      ) {
         globalStatus = 'Idle';
       } else if (cleanStatus.includes('inactive')) {
         globalStatus = 'Inactive';
