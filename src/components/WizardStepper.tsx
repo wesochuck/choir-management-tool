@@ -36,12 +36,14 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
               <button
                 type="button"
                 disabled={isDisabled}
+                aria-label={`Step ${step.number}: ${step.label}${isActive ? ' (current step)' : ''}${isCompleted ? ' (completed)' : ''}`}
                 className={`inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent px-1 py-1.5 whitespace-nowrap md:px-2 ${
                   isActive ? 'text-primary-deep font-semibold' : 'text-text-muted'
                 }`}
                 onClick={() => onStepClick(step.number)}
               >
                 <span
+                  aria-hidden="true"
                   className={`inline-flex size-7 items-center justify-center rounded-full border text-xs font-semibold transition-all duration-150 ${
                     isActive
                       ? 'border-primary bg-primary text-white'
@@ -53,6 +55,7 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
                   {isCompleted ? '✓' : step.number}
                 </span>
                 <span
+                  aria-hidden="true"
                   className={`hidden text-sm transition-all duration-150 md:inline ${
                     isActive ? 'text-primary-deep font-semibold' : 'text-text-muted'
                   }`}
