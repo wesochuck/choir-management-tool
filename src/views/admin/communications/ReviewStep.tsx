@@ -43,8 +43,8 @@ export function ReviewStep({
 }: ReviewStepProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
-        <Button variant="outline" onClick={onBack}>
+      <div className="border-border flex w-full flex-col gap-3 border-b pb-2.5 md:flex-row md:items-center md:justify-between">
+        <Button variant="outline" onClick={onBack} className="w-full md:w-auto">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -58,12 +58,13 @@ export function ReviewStep({
           </svg>
           Back
         </Button>
-        <div className="flex flex-row flex-wrap items-center gap-2">
+        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
             variant="secondary"
             onClick={draft.handleSendTest}
             disabled={draft.isSendingTest || draft.isSending}
             title={`Send email test to ${user?.email || 'your email'}`}
+            className="w-full sm:w-auto"
           >
             <svg
               viewBox="0 0 24 24"
@@ -83,6 +84,7 @@ export function ReviewStep({
             variant="primary"
             onClick={draft.sendMessage}
             disabled={draft.isSending || draft.selectedRecipients.length === 0}
+            className="w-full sm:w-auto"
           >
             <svg
               viewBox="0 0 24 24"
@@ -100,8 +102,32 @@ export function ReviewStep({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="flex flex-col">
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+        <div className="flex flex-col lg:order-2">
+          <ReviewSidebar
+            selectedRecipients={draft.selectedRecipients}
+            recipientCounts={draft.recipientCounts}
+            onViewRecipients={onViewRecipients}
+            subject={draft.subject}
+            content={draft.content}
+            messageType={draft.messageType}
+            filters={draft.filters}
+            selectedEvent={selectedEvent}
+            commSettings={commSettings}
+            setTab={setTab}
+            setEditingTemplate={setEditingTemplate}
+            isSendingTest={draft.isSendingTest}
+            isSending={draft.isSending}
+            handleSendTest={draft.handleSendTest}
+            sendMessage={draft.sendMessage}
+            setWizardStep={(step) => {
+              if (step === 'COMPOSE') onBack();
+            }}
+            user={user}
+          />
+        </div>
+
+        <div className="flex flex-col lg:order-1">
           <AppCard noPadding>
             <div className="p-4">
               <LivePreview
@@ -117,28 +143,6 @@ export function ReviewStep({
             </div>
           </AppCard>
         </div>
-
-        <ReviewSidebar
-          selectedRecipients={draft.selectedRecipients}
-          recipientCounts={draft.recipientCounts}
-          onViewRecipients={onViewRecipients}
-          subject={draft.subject}
-          content={draft.content}
-          messageType={draft.messageType}
-          filters={draft.filters}
-          selectedEvent={selectedEvent}
-          commSettings={commSettings}
-          setTab={setTab}
-          setEditingTemplate={setEditingTemplate}
-          isSendingTest={draft.isSendingTest}
-          isSending={draft.isSending}
-          handleSendTest={draft.handleSendTest}
-          sendMessage={draft.sendMessage}
-          setWizardStep={(step) => {
-            if (step === 'COMPOSE') onBack();
-          }}
-          user={user}
-        />
       </div>
     </div>
   );

@@ -46,14 +46,16 @@ export function AudienceStep({
   return (
     <div className="flex flex-col gap-6">
       {/* Top Actions */}
-      <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
+      <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col max-md:items-stretch">
         <div>
-          <h2 className="text-text text-lg font-semibold">Step 1: Define Your Audience</h2>
+          <h2 className="text-text text-base font-semibold sm:text-lg">
+            Step 1: Define Your Audience
+          </h2>
           <p className="text-text-muted text-xs">
             Select filter criteria on the left and verify reachable users on the right.
           </p>
         </div>
-        <Button variant="primary" onClick={onContinue}>
+        <Button variant="primary" onClick={onContinue} className="w-full sm:w-auto">
           Continue to Message
         </Button>
       </div>

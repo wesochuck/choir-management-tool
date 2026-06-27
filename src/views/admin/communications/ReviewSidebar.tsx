@@ -142,7 +142,11 @@ export function ReviewSidebar({
       {/* Card 3: Sending Actions */}
       <AppCard title="Sending Actions">
         <div className="flex w-full gap-3 max-md:flex-col-reverse">
-          <Button variant="outline" onClick={() => setWizardStep('COMPOSE')}>
+          <Button
+            variant="outline"
+            onClick={() => setWizardStep('COMPOSE')}
+            className="w-full md:w-auto"
+          >
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -163,6 +167,7 @@ export function ReviewSidebar({
             onClick={handleSendTest}
             disabled={isSendingTest || isSending}
             title={`Send email test to ${user?.email || 'your email'}`}
+            className="w-full md:w-auto"
           >
             <svg
               viewBox="0 0 24 24"
@@ -184,6 +189,7 @@ export function ReviewSidebar({
             variant="primary"
             onClick={sendMessage}
             disabled={isSending || selectedRecipients.length === 0}
+            className="w-full md:w-auto"
           >
             <svg
               viewBox="0 0 24 24"
