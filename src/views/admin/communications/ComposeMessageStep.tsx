@@ -30,24 +30,25 @@ export function ComposeMessageStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="border-border flex w-full flex-col items-center justify-between gap-2 border-b pb-2.5 md:flex-row">
-        <Button variant="outline" onClick={onBack}>
+      <div className="border-border flex w-full flex-col gap-3 border-b pb-2.5 md:flex-row md:items-center md:justify-between">
+        <Button variant="outline" onClick={onBack} className="w-full md:w-auto">
           ← Back to Template Selection
         </Button>
-        <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
+        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
           <Button
             variant="secondary"
             onClick={draft.handleSaveDraft}
             disabled={draft.isSavingDraft}
+            className="w-full sm:w-auto"
           >
             {draft.isSavingDraft ? 'Saving...' : 'Save Draft'}
           </Button>
-          <Button variant="primary" onClick={onContinue}>
+          <Button variant="primary" onClick={onContinue} className="w-full sm:w-auto">
             Next: Review & Send →
           </Button>
         </div>
       </div>
-      <div className="flex flex-col items-start gap-6 lg:grid lg:grid-cols-[1fr_300px]">
+      <div className="flex flex-col items-stretch gap-6 lg:grid lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-4">
           <AppCard title="Composer">
             <ComposeStep
@@ -63,18 +64,19 @@ export function ComposeMessageStep({
           </AppCard>
 
           <WizardActionBar>
-            <Button variant="outline" onClick={onBack}>
+            <Button variant="outline" onClick={onBack} className="w-full sm:w-auto">
               ← Back to Template Selection
             </Button>
-            <div className="flex flex-2 flex-row flex-wrap items-center gap-2 lg:flex-none">
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
               <Button
                 variant="secondary"
                 onClick={draft.handleSaveDraft}
                 disabled={draft.isSavingDraft}
+                className="w-full sm:w-auto"
               >
                 {draft.isSavingDraft ? 'Saving...' : 'Save Draft'}
               </Button>
-              <Button variant="primary" onClick={onContinue}>
+              <Button variant="primary" onClick={onContinue} className="w-full sm:w-auto">
                 Next: Review & Send →
               </Button>
             </div>

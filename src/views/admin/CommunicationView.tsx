@@ -326,7 +326,7 @@ export default function CommunicationView() {
   };
   if (library.isLoading) {
     return (
-      <div className="mx-auto max-w-7xl p-6">
+      <div className="mx-auto max-w-7xl p-3 sm:p-6">
         <AppCard className="flex items-center justify-center py-12">
           <p>Loading Communications...</p>
         </AppCard>
@@ -335,7 +335,7 @@ export default function CommunicationView() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
+    <div className="mx-auto max-w-7xl p-3 sm:p-6">
       <div className="mb-6">
         <AdminPageHeader
           title="Communications"
