@@ -312,7 +312,7 @@ export default function RosterView() {
             >
               <option value="">All Statuses</option>
               <option value="Active">Active</option>
-              <option value="Idle">Idle</option>
+              <option value="Idle">On Break</option>
               <option value="Inactive">Inactive</option>
             </Select>
 

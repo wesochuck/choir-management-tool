@@ -567,7 +567,7 @@ export default function PollsDashboardView() {
               </FormField>
               <div className="flex flex-col gap-4">
                 <p className="m-0 text-xs font-medium text-slate-400">
-                  Recipients default to all singers with status Active or Idle.
+                  Recipients default to all singers with status Active or On Break.
                 </p>
                 <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
                   <Button variant="secondary" onClick={() => setIsQuickCreateOpen(false)}>

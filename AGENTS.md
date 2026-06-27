@@ -592,3 +592,7 @@ Before the final response, confirm and summarize:
 - Whether unsafe TypeScript patterns were avoided.
 - Whether schema changes include forward migrations.
 - Any remaining risks or follow-up needed.
+
+## 9. Domain Language and UI Labels
+
+- **On Break / Idle mapping:** The singer status for a temporarily inactive singer is stored in the database and API as `'Idle'`. However, in the user interface, this status must ALWAYS be displayed as `"On Break"`. Do not change the underlying database enum, API payloads, or CSV import value mappings away from `'Idle'`, but ensure all `<option>`, labels, and help text presented to the user read `"On Break"`.

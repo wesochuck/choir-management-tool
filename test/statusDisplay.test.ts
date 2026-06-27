@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getAttendanceDisplay, getGlobalStatusDisplay, getRsvpDisplay } from '../src/lib/statusDisplay';
+import {
+  getAttendanceDisplay,
+  getGlobalStatusDisplay,
+  getRsvpDisplay,
+} from '../src/lib/statusDisplay';
 
 test('attendance display maps known statuses', () => {
   assert.deepEqual(getAttendanceDisplay('Present'), { label: 'Present', tone: 'success' });
@@ -15,15 +19,27 @@ test('rsvp display maps known statuses', () => {
 });
 
 test('rsvp display eventRoster variant maps statuses', () => {
-  assert.deepEqual(getRsvpDisplay('Yes', { variant: 'eventRoster' }), { label: '🟢 Attending', tone: 'success' });
-  assert.deepEqual(getRsvpDisplay('No', { variant: 'eventRoster' }), { label: '🔴 Declined', tone: 'danger' });
-  assert.deepEqual(getRsvpDisplay('Pending', { variant: 'eventRoster' }), { label: '⏳ No Response', tone: 'muted' });
-  assert.deepEqual(getRsvpDisplay('unknown-value', { variant: 'eventRoster' }), { label: '⏳ No Response', tone: 'muted' });
+  assert.deepEqual(getRsvpDisplay('Yes', { variant: 'eventRoster' }), {
+    label: '🟢 Attending',
+    tone: 'success',
+  });
+  assert.deepEqual(getRsvpDisplay('No', { variant: 'eventRoster' }), {
+    label: '🔴 Declined',
+    tone: 'danger',
+  });
+  assert.deepEqual(getRsvpDisplay('Pending', { variant: 'eventRoster' }), {
+    label: '⏳ No Response',
+    tone: 'muted',
+  });
+  assert.deepEqual(getRsvpDisplay('unknown-value', { variant: 'eventRoster' }), {
+    label: '⏳ No Response',
+    tone: 'muted',
+  });
 });
 
 test('global status display maps known statuses', () => {
   assert.deepEqual(getGlobalStatusDisplay('Active'), { label: 'Active', tone: 'success' });
-  assert.deepEqual(getGlobalStatusDisplay('Idle'), { label: 'Idle', tone: 'warning' });
+  assert.deepEqual(getGlobalStatusDisplay('Idle'), { label: 'On Break', tone: 'warning' });
   assert.deepEqual(getGlobalStatusDisplay('Leave'), { label: 'On Leave', tone: 'warning' });
   assert.deepEqual(getGlobalStatusDisplay('Inactive'), { label: 'Inactive', tone: 'muted' });
 });
