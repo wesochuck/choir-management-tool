@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { PageLayout } from './components/common/PageLayout';
 import { Button } from './components/ui';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from './lib/queryKeys';
+import { settingsService } from './services/settingsService';
 
 function lazyWithReload<T extends React.ComponentType<Record<string, never>>>(
   importer: () => Promise<{ default: T }>
@@ -117,6 +120,24 @@ function MainDashboard() {
 function FallbackRoute() {
   const { user } = useAuth();
   return <Navigate to={user ? '/dashboard' : '/'} replace />;
+}
+
+export function DirectoryRoute() {
+  const { data: settings, isLoading } = useQuery({
+    queryKey: queryKeys.appSettings.directory,
+    queryFn: () => settingsService.getDirectorySettings(),
+    staleTime: 5 * 60_000,
+  });
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
+  if (isLoading) return <AppLoader />;
+  if (!settings?.enabled && !isAdmin) return <Navigate to="/dashboard" replace />;
+  return (
+    <PageLayout title="Singer Directory" backTo="/dashboard">
+      <DirectoryView />
+    </PageLayout>
+  );
 }
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -429,9 +450,7 @@ export default function App() {
               path="/directory"
               element={
                 <ProtectedRoute>
-                  <PageLayout title="Singer Directory" backTo="/dashboard">
-                    <DirectoryView />
-                  </PageLayout>
+                  <DirectoryRoute />
                 </ProtectedRoute>
               }
             />

@@ -19,7 +19,7 @@ import { Button, Modal } from '../../components/ui';
 export default function DashboardView() {
   const queryClient = useQueryClient();
   const dialog = useDialog();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { events, myRosters, myProfile, isLoading, error, updateRSVP } = useMyEvents();
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<MessageRecord | null>(null);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -78,6 +78,14 @@ export default function DashboardView() {
     queryFn: () => settingsService.getRosterSettings(),
   });
   const maxRehearsalMisses = rosterSettingsQuery.data?.maxRehearsalMisses ?? 3;
+
+  const directorySettingsQuery = useQuery({
+    queryKey: queryKeys.appSettings.directory,
+    queryFn: () => settingsService.getDirectorySettings(),
+    staleTime: 5 * 60_000,
+  });
+  const showDirectoryButton =
+    directorySettingsQuery.data?.enabled !== false || user?.role === 'admin';
 
   useEffect(() => {
     setCurrentTime(Date.now());
@@ -185,9 +193,11 @@ export default function DashboardView() {
       title="Singer Dashboard"
       actions={
         <div className="flex flex-row gap-2">
-          <Button as={Link} to="/directory" variant="outline">
-            Singer Directory
-          </Button>
+          {showDirectoryButton && (
+            <Button as={Link} to="/directory" variant="outline">
+              Singer Directory
+            </Button>
+          )}
           <Button as={Link} to="/profile" variant="outline">
             My Profile
           </Button>

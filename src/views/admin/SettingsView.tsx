@@ -8,7 +8,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
-import { Button, Select, Input, CopyButton } from '../../components/ui';
+import { Button, Select, Input, CopyButton, Checkbox } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -54,12 +54,14 @@ export default function SettingsView() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLogoRemoved, setIsLogoRemoved] = useState(false);
+  const [directoryEnabled, setDirectoryEnabled] = useState(true);
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
       await Promise.all([
         choirName ? settingsService.saveChoirName(choirName) : Promise.resolve(),
         settingsService.saveTimezone(timezone),
+        settingsService.saveDirectorySettings({ enabled: directoryEnabled }),
         logoFile
           ? settingsService.saveLogo(logoFile)
           : logoUrl === null
@@ -69,6 +71,7 @@ export default function SettingsView() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.choirSettings.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.directory });
       setMessage('Settings saved successfully');
     },
     onError: (err: unknown) => {
@@ -79,22 +82,26 @@ export default function SettingsView() {
   const settingsQuery = useQuery({
     queryKey: queryKeys.choirSettings.admin,
     queryFn: async () => {
-      const [loadedChoirName, loadedTimezone, loadedLogoUrl] = await Promise.all([
-        settingsService.getChoirName(),
-        settingsService.getTimezone(),
-        settingsService.getLogoUrl(),
-      ]);
-      return { loadedChoirName, loadedTimezone, loadedLogoUrl };
+      const [loadedChoirName, loadedTimezone, loadedLogoUrl, loadedDirectorySettings] =
+        await Promise.all([
+          settingsService.getChoirName(),
+          settingsService.getTimezone(),
+          settingsService.getLogoUrl(),
+          settingsService.getDirectorySettings(),
+        ]);
+      return { loadedChoirName, loadedTimezone, loadedLogoUrl, loadedDirectorySettings };
     },
     staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
     if (!settingsQuery.data) return;
-    const { loadedChoirName, loadedTimezone, loadedLogoUrl } = settingsQuery.data;
+    const { loadedChoirName, loadedTimezone, loadedLogoUrl, loadedDirectorySettings } =
+      settingsQuery.data;
     setChoirName(loadedChoirName);
     setTimezone(loadedTimezone);
     setLogoUrl(loadedLogoUrl);
+    setDirectoryEnabled(loadedDirectorySettings?.enabled ?? true);
   }, [settingsQuery.data]);
 
   const isLoading = settingsQuery.isLoading;
@@ -108,13 +115,16 @@ export default function SettingsView() {
       },
       { choirName, timezone }
     );
+    const directoryDirty =
+      directoryEnabled !== (settingsData?.loadedDirectorySettings?.enabled ?? true);
     const logoDirty = logoFile !== null || isLogoRemoved;
-    return fieldsDirty || logoDirty;
-  }, [settingsData, choirName, timezone, logoFile, isLogoRemoved]);
+    return fieldsDirty || directoryDirty || logoDirty;
+  }, [settingsData, choirName, timezone, directoryEnabled, logoFile, isLogoRemoved]);
 
   const handleGlobalDiscard = () => {
     setChoirName(settingsData?.loadedChoirName ?? '');
     setTimezone(settingsData?.loadedTimezone ?? 'America/New_York');
+    setDirectoryEnabled(settingsData?.loadedDirectorySettings?.enabled ?? true);
     if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
     setLogoUrl(settingsData?.loadedLogoUrl ?? null);
     setLogoFile(null);
@@ -288,6 +298,22 @@ export default function SettingsView() {
             <p className="text-text-muted text-xs">
               This timezone controls all event scheduling, display clocks, and email/SMS automatic
               reminders.
+            </p>
+          </div>
+        </AppCard>
+
+        <AppCard title="Singer Directory">
+          <div className="flex flex-col gap-2">
+            <Checkbox
+              id="enable-directory"
+              checked={directoryEnabled}
+              onChange={(event) => setDirectoryEnabled(event.target.checked)}
+            >
+              Enable Singer Directory
+            </Checkbox>
+            <p className="text-text-muted text-xs">
+              Allow singers to see the directory of all active members. Admins always retain preview
+              access.
             </p>
           </div>
         </AppCard>

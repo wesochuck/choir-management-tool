@@ -101,6 +101,10 @@ export { getTicketConfirmationPageSettings, saveTicketConfirmationPageSettings }
 import { queueSettingsService } from './settings/queueSettings';
 export { queueSettingsService };
 
+import { getDirectorySettings, saveDirectorySettings } from './settings/directorySettings';
+export type { DirectorySettings } from './settings/directorySettings';
+export { getDirectorySettings, saveDirectorySettings };
+
 // Backward compat namespace for existing settingsService.getXxx callers
 export const settingsService = {
   getAuditionSettings,
@@ -129,4 +133,6 @@ export const settingsService = {
   saveHeroImage,
   getLogoUrl,
   saveLogo,
+  getDirectorySettings,
+  saveDirectorySettings,
 };

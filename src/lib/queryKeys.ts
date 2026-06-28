@@ -9,6 +9,7 @@ export const queryKeys = {
     roster: ['appSettings', 'roster'] as const,
     musicLibrary: ['appSettings', 'musicLibrary'] as const,
     heroImage: ['appSettings', 'heroImage'] as const,
+    directory: ['appSettings', 'directorySettings'] as const,
   },
   venues: {
     all: ['venues'] as const,

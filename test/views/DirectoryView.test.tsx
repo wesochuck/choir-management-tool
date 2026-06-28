@@ -1,12 +1,21 @@
 // @vitest-environment jsdom
 import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { render, waitFor, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { profileService, type Profile } from '../../src/services/profileService';
 import DirectoryView from '../../src/views/singer/DirectoryView';
+import { DirectoryRoute } from '../../src/App';
+import DashboardView from '../../src/views/singer/DashboardView';
+import * as useMyEventsModule from '../../src/hooks/useMyEvents';
+import { AuthContext } from '../../src/contexts/AuthContext';
+import { settingsService } from '../../src/services/settingsService';
+import { resourceService } from '../../src/services/resourceService';
+import { communicationService } from '../../src/services/communicationService';
+import { pollService } from '../../src/services/pollService';
+import { DialogProvider } from '../../src/contexts/DialogProvider';
 
 function createWrapper() {
   const client = new QueryClient({
@@ -128,6 +137,193 @@ describe('DirectoryView', () => {
 
     await waitFor(() => {
       assert.ok(container.textContent?.includes('No Matching Singers'));
+    });
+  });
+
+  it('allows singers to access directory when enabled', async () => {
+    mock.method(profileService, 'getDirectoryProfiles', async () => sampleProfiles);
+    mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: true }));
+
+    const authValue = {
+      user: { id: 'u1', role: 'singer' },
+      isLoading: false,
+    };
+
+    const { container } = render(
+      <AuthContext.Provider value={authValue as any}>
+        <MemoryRouter initialEntries={['/directory']}>
+          <Routes>
+            <Route path="/directory" element={<DirectoryRoute />} />
+            <Route path="/dashboard" element={<div>Dashboard View</div>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      assert.ok(container.textContent?.includes('Alice Soprano'));
+    });
+  });
+
+  it('redirects singers to dashboard when directory is disabled', async () => {
+    mock.method(profileService, 'getDirectoryProfiles', async () => sampleProfiles);
+    mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: false }));
+
+    const authValue = {
+      user: { id: 'u1', role: 'singer' },
+      isLoading: false,
+    };
+
+    const { container } = render(
+      <AuthContext.Provider value={authValue as any}>
+        <MemoryRouter initialEntries={['/directory']}>
+          <Routes>
+            <Route path="/directory" element={<DirectoryRoute />} />
+            <Route path="/dashboard" element={<div>Dashboard View</div>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      assert.ok(container.textContent?.includes('Dashboard View'));
+      assert.equal(container.textContent?.includes('Alice Soprano'), false);
+    });
+  });
+
+  it('allows admins to access directory even when disabled', async () => {
+    mock.method(profileService, 'getDirectoryProfiles', async () => sampleProfiles);
+    mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: false }));
+
+    const authValue = {
+      user: { id: 'u_admin', role: 'admin' },
+      isLoading: false,
+    };
+
+    const { container } = render(
+      <AuthContext.Provider value={authValue as any}>
+        <MemoryRouter initialEntries={['/directory']}>
+          <Routes>
+            <Route path="/directory" element={<DirectoryRoute />} />
+            <Route path="/dashboard" element={<div>Dashboard View</div>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthContext.Provider>,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      assert.ok(container.textContent?.includes('Alice Soprano'));
+    });
+  });
+
+  it('shows Singer Directory button on dashboard when enabled', async () => {
+    mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: true }));
+    mock.method(resourceService, 'getResources', async () => []);
+    mock.method(communicationService, 'getMessages', async () => []);
+    mock.method(pollService, 'getActivePollsForSinger', async () => []);
+    mock.method(useMyEventsModule, 'useMyEvents', () => ({
+      events: [],
+      myRosters: {},
+      myProfile: { id: 'p1' },
+      isLoading: false,
+      error: null,
+      updateRSVP: async () => {},
+      refresh: async () => {},
+    }));
+
+    const authValue = {
+      user: { id: 'u1', role: 'singer' },
+      isLoading: false,
+    };
+
+    const { container } = render(
+      <AuthContext.Provider value={authValue as any}>
+        <DialogProvider>
+          <MemoryRouter>
+            <DashboardView />
+          </MemoryRouter>
+        </DialogProvider>
+      </AuthContext.Provider>,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      assert.ok(container.textContent?.includes('Singer Directory'));
+    });
+  });
+
+  it('hides Singer Directory button on dashboard for singers when disabled', async () => {
+    mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: false }));
+    mock.method(resourceService, 'getResources', async () => []);
+    mock.method(communicationService, 'getMessages', async () => []);
+    mock.method(pollService, 'getActivePollsForSinger', async () => []);
+    mock.method(useMyEventsModule, 'useMyEvents', () => ({
+      events: [],
+      myRosters: {},
+      myProfile: { id: 'p1' },
+      isLoading: false,
+      error: null,
+      updateRSVP: async () => {},
+      refresh: async () => {},
+    }));
+
+    const authValue = {
+      user: { id: 'u1', role: 'singer' },
+      isLoading: false,
+    };
+
+    const { container } = render(
+      <AuthContext.Provider value={authValue as any}>
+        <DialogProvider>
+          <MemoryRouter>
+            <DashboardView />
+          </MemoryRouter>
+        </DialogProvider>
+      </AuthContext.Provider>,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      assert.equal(container.textContent?.includes('Singer Directory'), false);
+    });
+  });
+
+  it('shows Singer Directory button on dashboard for admins even when disabled', async () => {
+    mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: false }));
+    mock.method(resourceService, 'getResources', async () => []);
+    mock.method(communicationService, 'getMessages', async () => []);
+    mock.method(pollService, 'getActivePollsForSinger', async () => []);
+    mock.method(useMyEventsModule, 'useMyEvents', () => ({
+      events: [],
+      myRosters: {},
+      myProfile: { id: 'p1' },
+      isLoading: false,
+      error: null,
+      updateRSVP: async () => {},
+      refresh: async () => {},
+    }));
+
+    const authValue = {
+      user: { id: 'u_admin', role: 'admin' },
+      isLoading: false,
+    };
+
+    const { container } = render(
+      <AuthContext.Provider value={authValue as any}>
+        <DialogProvider>
+          <MemoryRouter>
+            <DashboardView />
+          </MemoryRouter>
+        </DialogProvider>
+      </AuthContext.Provider>,
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      assert.ok(container.textContent?.includes('Singer Directory'));
     });
   });
 });
