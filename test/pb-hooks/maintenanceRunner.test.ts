@@ -7,8 +7,8 @@ import assert from 'node:assert/strict';
 const mockRecordInstances: Array<{
   id: string;
   data: Record<string, unknown>;
-  set: (...args: unknown[]) => void;
-  get: (f: string) => unknown;
+  set: (field: string, value: unknown) => void;
+  get: (field: string) => unknown;
 }> = [];
 
 class MockRecord {
@@ -47,6 +47,7 @@ import * as emailQueueTask from '../../pocketbase/pb_hooks_src/maintenance/email
 import * as postEventReportTask from '../../pocketbase/pb_hooks_src/maintenance/postEventReportTask';
 import * as ticketBuyerReminderTask from '../../pocketbase/pb_hooks_src/maintenance/ticketBuyerReminderTask';
 import * as cleanupTask from '../../pocketbase/pb_hooks_src/maintenance/cleanupTask';
+import * as eventReminderTask from '../../pocketbase/pb_hooks_src/maintenance/eventReminderTask';
 
 import { runMaintenance } from '../../pocketbase/pb_hooks_src/maintenance/maintenanceRunner';
 
@@ -82,12 +83,16 @@ const mockSaveMaintenanceTaskRun = mock.method(
     if (sharedState.lastRuns) sharedState.lastRuns[name] = iso;
   }
 );
-const mockIsTaskDue = mock.method(maintenanceState, 'isTaskDue', (s, name, intervalMs, now) => {
-  if (!s.lastRuns || !s.lastRuns[name]) return true;
-  const lastRun = new Date(s.lastRuns[name]).getTime();
-  if (isNaN(lastRun)) return true;
-  return now.getTime() - lastRun >= intervalMs;
-});
+const mockIsTaskDue = mock.method(
+  maintenanceState,
+  'isTaskDue',
+  (s: MaintenanceState, name: string, intervalMs: number, now: Date) => {
+    if (!s.lastRuns || !s.lastRuns[name]) return true;
+    const lastRun = new Date(s.lastRuns[name]).getTime();
+    if (isNaN(lastRun)) return true;
+    return now.getTime() - lastRun >= intervalMs;
+  }
+);
 const mockHasActiveLock = mock.method(
   maintenanceState,
   'hasActiveLock',
@@ -151,6 +156,11 @@ const mockRunCleanupTask = mock.method(
   'runCleanupTask',
   (): MaintenanceTaskResult => ({ task: 'cleanup', status: 'ran' })
 );
+const mockRunEventReminderTask = mock.method(
+  eventReminderTask,
+  'runEventReminderTask',
+  (): MaintenanceTaskResult => ({ task: 'eventReminder', status: 'ran' })
+);
 
 /** All mocks that hold call-state we reset between tests. */
 const allMocks = [
@@ -164,6 +174,7 @@ const allMocks = [
   mockRunPostEventReportTask,
   mockRunTicketBuyerReminderTask,
   mockRunCleanupTask,
+  mockRunEventReminderTask,
 ] as const;
 
 function reinstallDefaults(): void {
@@ -171,12 +182,14 @@ function reinstallDefaults(): void {
   mockSaveMaintenanceTaskRun.mock.mockImplementation((_app: unknown, name: string, iso: string) => {
     if (sharedState.lastRuns) sharedState.lastRuns[name] = iso;
   });
-  mockIsTaskDue.mock.mockImplementation((s, name, intervalMs, now) => {
-    if (!s.lastRuns || !s.lastRuns[name]) return true;
-    const lastRun = new Date(s.lastRuns[name]).getTime();
-    if (isNaN(lastRun)) return true;
-    return now.getTime() - lastRun >= intervalMs;
-  });
+  mockIsTaskDue.mock.mockImplementation(
+    (s: MaintenanceState, name: string, intervalMs: number, now: Date) => {
+      if (!s.lastRuns || !s.lastRuns[name]) return true;
+      const lastRun = new Date(s.lastRuns[name]).getTime();
+      if (isNaN(lastRun)) return true;
+      return now.getTime() - lastRun >= intervalMs;
+    }
+  );
   mockHasActiveLock.mock.mockImplementation((s: MaintenanceState, name: string, now: Date) => {
     const lock = s.running?.[name];
     if (!lock?.expiresAt) return false;
@@ -208,23 +221,37 @@ function reinstallDefaults(): void {
       }
     }
   );
-  mockRunEmailQueueTask.mock.mockImplementation(() => ({
-    task: 'emailQueue',
-    status: 'ran',
-  }));
-  mockRunPostEventReportTask.mock.mockImplementation(() => ({
-    task: 'postEventReport',
-    status: 'ran',
-  }));
-  mockRunTicketBuyerReminderTask.mock.mockImplementation(() => ({
-    task: 'ticketBuyerReminder',
-    status: 'ran',
-    queued: 0,
-  }));
-  mockRunCleanupTask.mock.mockImplementation(() => ({
-    task: 'cleanup',
-    status: 'ran',
-  }));
+  mockRunEmailQueueTask.mock.mockImplementation(
+    (): MaintenanceTaskResult => ({
+      task: 'emailQueue',
+      status: 'ran',
+    })
+  );
+  mockRunPostEventReportTask.mock.mockImplementation(
+    (): MaintenanceTaskResult => ({
+      task: 'postEventReport',
+      status: 'ran',
+    })
+  );
+  mockRunTicketBuyerReminderTask.mock.mockImplementation(
+    (): MaintenanceTaskResult => ({
+      task: 'ticketBuyerReminder',
+      status: 'ran',
+      queued: 0,
+    })
+  );
+  mockRunCleanupTask.mock.mockImplementation(
+    (): MaintenanceTaskResult => ({
+      task: 'cleanup',
+      status: 'ran',
+    })
+  );
+  mockRunEventReminderTask.mock.mockImplementation(
+    (): MaintenanceTaskResult => ({
+      task: 'eventReminder',
+      status: 'ran',
+    })
+  );
 }
 
 // ----------------------------------------------------------------
@@ -248,12 +275,12 @@ afterEach(() => {
 // Tests
 // ----------------------------------------------------------------
 describe('runMaintenance', () => {
-  it('returns startedAt, finishedAt, and 4 results (1 emailQueue + 3 scheduled)', () => {
+  it('returns startedAt, finishedAt, and 5 results (1 emailQueue + 4 scheduled)', () => {
     const summary: MaintenanceRunSummary = runMaintenance(makeApp() as never);
 
     assert.ok(summary.startedAt);
     assert.ok(summary.finishedAt);
-    assert.strictEqual(summary.results.length, 4);
+    assert.strictEqual(summary.results.length, 5);
 
     for (const r of summary.results) {
       assert.strictEqual(r.status, 'ran');
@@ -279,10 +306,12 @@ describe('runMaintenance', () => {
   });
 
   it('postEventReport due + lock acquired + success => runs, lastRuns saved', () => {
-    mockRunPostEventReportTask.mock.mockImplementation(() => ({
-      task: 'postEventReport',
-      status: 'ran',
-    }));
+    mockRunPostEventReportTask.mock.mockImplementation(
+      (): MaintenanceTaskResult => ({
+        task: 'postEventReport',
+        status: 'ran',
+      })
+    );
 
     const summary = runMaintenance(makeApp() as never);
     const pr = summary.results.find((r) => r.task === 'postEventReport');
@@ -297,7 +326,7 @@ describe('runMaintenance', () => {
   });
 
   it('postEventReport due + throws => returns failed with errors:1', () => {
-    mockRunPostEventReportTask.mock.mockImplementation(() => {
+    mockRunPostEventReportTask.mock.mockImplementation((): MaintenanceTaskResult => {
       throw new Error('DB timeout');
     });
 
@@ -310,11 +339,13 @@ describe('runMaintenance', () => {
   });
 
   it('postEventReport returns ran with errors:1 => lastRuns NOT saved', () => {
-    mockRunPostEventReportTask.mock.mockImplementation(() => ({
-      task: 'postEventReport',
-      status: 'ran',
-      errors: 1,
-    }));
+    mockRunPostEventReportTask.mock.mockImplementation(
+      (): MaintenanceTaskResult => ({
+        task: 'postEventReport',
+        status: 'ran',
+        errors: 1,
+      })
+    );
 
     runMaintenance(makeApp() as never);
     assert.ok(
@@ -338,35 +369,41 @@ describe('runMaintenance', () => {
     assert.strictEqual(pr.message, 'Already running');
   });
 
-  it('ticketBuyerReminder queued > 0 => second emailQueue pass (5 results)', () => {
-    mockRunTicketBuyerReminderTask.mock.mockImplementation(() => ({
-      task: 'ticketBuyerReminder',
-      status: 'ran',
-      queued: 3,
-    }));
+  it('ticketBuyerReminder queued > 0 => second emailQueue pass (6 results)', () => {
+    mockRunTicketBuyerReminderTask.mock.mockImplementation(
+      (): MaintenanceTaskResult => ({
+        task: 'ticketBuyerReminder',
+        status: 'ran',
+        queued: 3,
+      })
+    );
+
+    const summary = runMaintenance(makeApp() as never);
+    assert.strictEqual(summary.results.length, 6);
+    assert.strictEqual(summary.results[5].task, 'emailQueue');
+  });
+
+  it('ticketBuyerReminder queued === 0 => no second emailQueue pass (5 results)', () => {
+    mockRunTicketBuyerReminderTask.mock.mockImplementation(
+      (): MaintenanceTaskResult => ({
+        task: 'ticketBuyerReminder',
+        status: 'ran',
+        queued: 0,
+      })
+    );
 
     const summary = runMaintenance(makeApp() as never);
     assert.strictEqual(summary.results.length, 5);
-    assert.strictEqual(summary.results[4].task, 'emailQueue');
-  });
-
-  it('ticketBuyerReminder queued === 0 => no second emailQueue pass (4 results)', () => {
-    mockRunTicketBuyerReminderTask.mock.mockImplementation(() => ({
-      task: 'ticketBuyerReminder',
-      status: 'ran',
-      queued: 0,
-    }));
-
-    const summary = runMaintenance(makeApp() as never);
-    assert.strictEqual(summary.results.length, 4);
   });
 
   it('cleanup returns failed (errors:1) => lastRuns NOT saved', () => {
-    mockRunCleanupTask.mock.mockImplementation(() => ({
-      task: 'cleanup',
-      status: 'failed',
-      errors: 1,
-    }));
+    mockRunCleanupTask.mock.mockImplementation(
+      (): MaintenanceTaskResult => ({
+        task: 'cleanup',
+        status: 'failed',
+        errors: 1,
+      })
+    );
 
     runMaintenance(makeApp() as never);
     assert.ok(
@@ -375,19 +412,34 @@ describe('runMaintenance', () => {
     );
   });
 
+  it('cleanup returns ran with errors:1 => lastRuns NOT saved', () => {
+    mockRunCleanupTask.mock.mockImplementation(
+      (): MaintenanceTaskResult => ({
+        task: 'cleanup',
+        status: 'ran',
+        errors: 1,
+      })
+    );
+
+    runMaintenance(makeApp() as never);
+    assert.ok(!sharedState.lastRuns?.cleanup, 'lastRuns.cleanup should not be set when errors > 0');
+  });
+
   it('cleanup returns ran with errors:0 => lastRuns saved', () => {
-    mockRunCleanupTask.mock.mockImplementation(() => ({
-      task: 'cleanup',
-      status: 'ran',
-      errors: 0,
-    }));
+    mockRunCleanupTask.mock.mockImplementation(
+      (): MaintenanceTaskResult => ({
+        task: 'cleanup',
+        status: 'ran',
+        errors: 0,
+      })
+    );
 
     runMaintenance(makeApp() as never);
     assert.ok(sharedState.lastRuns?.cleanup, 'lastRuns.cleanup was set after successful run');
   });
 
   it('JSON.stringify(summary) does not leak MAINTENANCE_SECRET or token strings', () => {
-    mockRunPostEventReportTask.mock.mockImplementation(() => {
+    mockRunPostEventReportTask.mock.mockImplementation((): MaintenanceTaskResult => {
       throw new Error('generic error');
     });
 

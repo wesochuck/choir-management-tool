@@ -2,7 +2,8 @@ export type MaintenanceTaskName =
   | 'emailQueue'
   | 'postEventReport'
   | 'ticketBuyerReminder'
-  | 'cleanup';
+  | 'cleanup'
+  | 'eventReminder';
 
 export interface MaintenanceTaskLock {
   startedAt: string;

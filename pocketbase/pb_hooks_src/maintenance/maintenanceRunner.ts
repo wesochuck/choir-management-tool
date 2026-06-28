@@ -15,17 +15,20 @@ import { runEmailQueueTask } from './emailQueueTask';
 import { runPostEventReportTask } from './postEventReportTask';
 import { runTicketBuyerReminderTask } from './ticketBuyerReminderTask';
 import { runCleanupTask } from './cleanupTask';
+import { runEventReminderTask } from './eventReminderTask';
 
 const TASK_DUE_INTERVALS_MS: Record<string, number> = {
   postEventReport: 60 * 60 * 1000,
   ticketBuyerReminder: 60 * 60 * 1000,
   cleanup: 24 * 60 * 60 * 1000,
+  eventReminder: 5 * 60 * 1000, // Check reminders every 5 minutes
 };
 
 const TASK_LOCK_TTL_MS: Record<string, number> = {
   postEventReport: 10 * 60 * 1000,
   ticketBuyerReminder: 10 * 60 * 1000,
   cleanup: 30 * 60 * 1000,
+  eventReminder: 4 * 60 * 1000,
 };
 
 function safeError(err: unknown): string {
@@ -42,12 +45,13 @@ export function runMaintenance(app: PocketBaseApp): MaintenanceRunSummary {
   results.push(runEmailQueueTask(app));
 
   const scheduledTasks: Array<{
-    name: 'postEventReport' | 'ticketBuyerReminder' | 'cleanup';
+    name: 'postEventReport' | 'ticketBuyerReminder' | 'cleanup' | 'eventReminder';
     fn: (app: PocketBaseApp, state: MaintenanceState, now: Date) => MaintenanceTaskResult;
   }> = [
     { name: 'postEventReport', fn: runPostEventReportTask },
     { name: 'ticketBuyerReminder', fn: runTicketBuyerReminderTask },
     { name: 'cleanup', fn: runCleanupTask },
+    { name: 'eventReminder', fn: runEventReminderTask },
   ];
 
   for (const { name, fn } of scheduledTasks) {

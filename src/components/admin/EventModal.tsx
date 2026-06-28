@@ -129,6 +129,8 @@ export const EventModal: React.FC<EventModalProps> = ({
         callTime: '',
         parentPerformanceId: '',
         venue: '',
+        enableAutomatedReminder: false,
+        reminderLeadTimeHours: 48,
       });
       setAdvancePriceInput('');
       setDayOfPriceInput('');
@@ -310,6 +312,10 @@ export const EventModal: React.FC<EventModalProps> = ({
       const publicDetailsChanged =
         (formData.publicDetails || '') !== (initialData.publicDetails || '');
       const graphicChanged = eventGraphicFile !== null || isGraphicRemoved;
+      const automatedReminderEnabledChanged =
+        Boolean(formData.enableAutomatedReminder) !== Boolean(initialData.enableAutomatedReminder);
+      const reminderLeadTimeChanged =
+        (formData.reminderLeadTimeHours ?? 48) !== (initialData.reminderLeadTimeHours ?? 48);
 
       return (
         titleChanged ||
@@ -327,7 +333,9 @@ export const EventModal: React.FC<EventModalProps> = ({
         capacityChanged ||
         doorsOpenChanged ||
         publicDetailsChanged ||
-        graphicChanged
+        graphicChanged ||
+        automatedReminderEnabledChanged ||
+        reminderLeadTimeChanged
       );
     } else {
       const hasTitle = Boolean(formData.title?.trim());
@@ -599,6 +607,60 @@ export const EventModal: React.FC<EventModalProps> = ({
                 />
                 <span className="text-text text-sm font-bold">Open for RSVP Links</span>
               </label>
+
+              <div className="flex flex-col gap-3 rounded-lg border border-dashed border-gray-200 bg-gray-50/30 p-4">
+                <label className="flex cursor-pointer flex-row items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.enableAutomatedReminder || false}
+                    onChange={(e) =>
+                      setFormData({ ...formData, enableAutomatedReminder: e.target.checked })
+                    }
+                    className="border-border text-primary focus:ring-primary size-4 rounded-sm focus:ring-offset-0"
+                  />
+                  <span className="text-text text-sm font-bold">
+                    Enable Automated Reminder Email
+                  </span>
+                </label>
+
+                {formData.enableAutomatedReminder && (
+                  <div className="flex flex-col gap-3 pl-6">
+                    <div className="flex max-w-[200px] flex-col gap-1.5">
+                      <label className="text-label">Lead Time (Hours before event)</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={
+                          formData.reminderLeadTimeHours !== undefined &&
+                          formData.reminderLeadTimeHours !== null
+                            ? formData.reminderLeadTimeHours
+                            : 48
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData({
+                            ...formData,
+                            reminderLeadTimeHours: val === '' ? undefined : Number(val),
+                          });
+                        }}
+                      />
+                    </div>
+                    <div className="text-text-muted text-xs">
+                      This will automatically send a reminder to all active singers using the{' '}
+                      <button
+                        type="button"
+                        onClick={() => navigate('/admin/communications')}
+                        className="text-primary inline cursor-pointer border-none bg-transparent p-0 font-semibold hover:underline"
+                      >
+                        {formData.type === 'Performance'
+                          ? 'Performance Reminder Template'
+                          : 'Rehearsal Reminder Template'}
+                      </button>
+                      .
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-label">

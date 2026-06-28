@@ -206,6 +206,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'maintenance/postEventReportTask.ts',
       'maintenance/ticketBuyerReminderTask.ts',
       'maintenance/cleanupTask.ts',
+      'maintenance/eventReminderTask.ts',
       'maintenance/maintenanceRunner.ts',
     ],
     symbols: [
@@ -214,6 +215,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'runEmailQueueTask',
       'runPostEventReportTask',
       'runTicketBuyerReminderTask',
+      'runEventReminderTask',
       'runCleanupTask',
       'getMaintenanceState',
       'saveMaintenanceState',
@@ -234,6 +236,8 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'attendanceReport',
       'rsvpValidation',
       'hmacTokens',
+      'emailRendering',
+      'hookPlaceholders',
     ],
   },
 };

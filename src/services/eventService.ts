@@ -38,6 +38,9 @@ export interface Event extends RecordModel {
   publicDetails?: string;
   eventGraphic?: string;
   isArchived?: boolean;
+  enableAutomatedReminder?: boolean;
+  reminderLeadTimeHours?: number;
+  reminderSentAt?: string;
   expand?: {
     venue?: Venue;
     parentPerformanceId?: Event;

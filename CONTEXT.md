@@ -82,7 +82,7 @@ A shelf at the bottom of the seating chart containing active singers who have no
 
 ## Automated Reminder
 
-A scheduled outbound message (Email or SMS) automatically triggered before an event starts, based on a configurable lead time. It targets active choir members with event details and personalized RSVP links.
+A scheduled outbound message automatically triggered before an event starts. Configured on a per-event basis via an `enableAutomatedReminder` flag and a `reminderLeadTimeHours` lead time. Dispatch state is tracked via a `reminderSentAt` timestamp to prevent duplicate sends.
 
 ## Attendance Report
 
@@ -98,7 +98,7 @@ A partially composed or unsent message that is saved to the database (with a sta
 
 ## Message Template
 
-A reusable layout or pre-written text block containing placeholders that can be loaded instantly in the compose editor to simplify bulk messaging for common scenarios (e.g. event reminders, weather delays, dues alerts).
+A reusable layout or pre-written text block containing placeholders. Templates can optionally have a `systemRole` (e.g., 'performance_reminder', 'rehearsal_reminder') allowing background tasks to automatically locate and dispatch them without manual selection.
 
 ## Event Cloning
 
