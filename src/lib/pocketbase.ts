@@ -74,12 +74,35 @@ interface PocketBaseErrorData {
 export function formatPocketBaseError(err: unknown): string {
   if (!err) return 'An unknown error occurred';
 
-  const error = err as { data?: PocketBaseErrorData; message?: string };
+  let validationData: PocketBaseErrorData | undefined;
 
-  if (error.data && typeof error.data === 'object' && Object.keys(error.data).length > 0) {
-    const details = Object.entries(error.data)
+  if (typeof err === 'object' && err !== null) {
+    const errObj = err as Record<string, unknown>;
+    const responseObj = errObj.response as Record<string, unknown> | undefined;
+    const dataObj = errObj.data as Record<string, unknown> | undefined;
+
+    // ClientResponseError stores the API response JSON in .response
+    if (responseObj?.data && typeof responseObj.data === 'object') {
+      validationData = responseObj.data as PocketBaseErrorData;
+    }
+    // Fallback if it's placed in .data.data
+    else if (dataObj?.data && typeof dataObj.data === 'object') {
+      validationData = dataObj.data as PocketBaseErrorData;
+    }
+    // Fallback if it's exactly the dictionary
+    else if (
+      dataObj &&
+      typeof dataObj === 'object' &&
+      !('code' in dataObj && 'message' in dataObj)
+    ) {
+      validationData = dataObj as PocketBaseErrorData;
+    }
+  }
+
+  if (validationData && Object.keys(validationData).length > 0) {
+    const details = Object.entries(validationData)
       .map(([field, info]) => {
-        // Skip if info is not a field-error object (e.g. if error.data is the entire response)
+        // Skip if info is not a field-error object
         if (!info || typeof info !== 'object' || !('message' in info)) {
           return null;
         }

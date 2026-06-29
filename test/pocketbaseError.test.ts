@@ -133,8 +133,36 @@ test('formatPocketBaseError with multiple field errors', () => {
   const expected = [
     'Please enter a valid email address.',
     'Password must be between 8 and 72 characters.',
-    'First Name is required.'
+    'First Name is required.',
   ].join('\n');
 
   assert.equal(formatPocketBaseError(errorObj), expected);
+});
+
+test('formatPocketBaseError with ClientResponseError containing response.data', () => {
+  const errorObj = {
+    response: {
+      code: 400,
+      message: 'Failed to create record.',
+      data: {
+        venue: { code: 'validation_required', message: 'Missing required value.' },
+      },
+    },
+  };
+
+  assert.equal(formatPocketBaseError(errorObj), 'Venue is required.');
+});
+
+test('formatPocketBaseError with ClientResponseError containing data.data', () => {
+  const errorObj = {
+    data: {
+      code: 400,
+      message: 'Failed to create record.',
+      data: {
+        venue: { code: 'validation_required', message: 'Missing required value.' },
+      },
+    },
+  };
+
+  assert.equal(formatPocketBaseError(errorObj), 'Venue is required.');
 });
