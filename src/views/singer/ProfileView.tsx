@@ -30,6 +30,7 @@ export default function ProfileView() {
   const [receiveAttendanceReports, setReceiveAttendanceReports] = useState(true);
   const [receiveRsvpDeclineNotices, setReceiveRsvpDeclineNotices] = useState(false);
   const [receiveAdminNotifications, setReceiveAdminNotifications] = useState(true);
+  const [receiveFinancialAlerts, setReceiveFinancialAlerts] = useState(false);
   const [showInDirectory, setShowInDirectory] = useState(true);
 
   const profileQuery = useQuery({
@@ -77,6 +78,7 @@ export default function ProfileView() {
       setReceiveAttendanceReports(p.receiveAttendanceReports !== false);
       setReceiveRsvpDeclineNotices(Boolean(p.receiveRsvpDeclineNotices));
       setReceiveAdminNotifications(p.receiveAdminNotifications !== false);
+      setReceiveFinancialAlerts(Boolean(p.receiveFinancialAlerts));
       setEmail(currentUser.email || '');
       setShowInDirectory(p.showInDirectory !== false);
     } else {
@@ -154,6 +156,7 @@ export default function ProfileView() {
           receiveAttendanceReports,
           receiveRsvpDeclineNotices,
           receiveAdminNotifications,
+          receiveFinancialAlerts,
           showInDirectory,
         });
       } else {
@@ -272,6 +275,23 @@ export default function ProfileView() {
                   </span>
                   <span className="text-muted text-xs">
                     Receive automated general admin alerts and system notifications.
+                  </span>
+                </div>
+              </label>
+
+              <label className="my-1 flex cursor-pointer flex-row items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={receiveFinancialAlerts}
+                  onChange={(e) => setReceiveFinancialAlerts(e.target.checked)}
+                  className="accent-primary size-[18px] shrink-0 cursor-pointer"
+                />
+                <div className="flex flex-col gap-[2px]">
+                  <span className="text-label font-semibold">
+                    Receive financial transaction alerts
+                  </span>
+                  <span className="text-muted text-xs">
+                    Receive automated email alerts for ticket sales, donations, and refunds.
                   </span>
                 </div>
               </label>

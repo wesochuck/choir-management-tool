@@ -10852,6 +10852,835 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -11682,6 +12511,19 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -11760,6 +12602,19 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -11857,6 +12712,25 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -11914,20 +12788,84 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -12785,6 +13723,835 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -13615,6 +15382,19 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -13693,6 +15473,19 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -13790,6 +15583,25 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -13847,20 +15659,84 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -14718,6 +16594,835 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -15548,6 +18253,19 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -15626,6 +18344,19 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -15723,6 +18454,25 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -15780,20 +18530,84 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -16651,6 +19465,835 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -17481,6 +21124,19 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -17559,6 +21215,19 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -17656,6 +21325,25 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -17713,20 +21401,84 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -18584,6 +22336,835 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -19414,6 +23995,19 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -19492,6 +24086,19 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -19589,6 +24196,25 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -19646,20 +24272,84 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -20517,6 +25207,835 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -21347,6 +26866,19 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -21425,6 +26957,19 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -21522,6 +27067,25 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -21579,20 +27143,84 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -22450,6 +28078,835 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -23280,6 +29737,19 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -23358,6 +29828,19 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -23455,6 +29938,25 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -23512,20 +30014,84 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -24382,6 +30948,835 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/hookPlaceholders.ts ---
+    "use strict";
+    function renderSetlistHtml(rawSetList) {
+        const setList = parseJsonField(rawSetList);
+        if (setList && setList.length > 0) {
+            const rows = setList.map((item, i) => {
+                const num = i + 1;
+                const title = item.type === 'intermission' ? `<em>${escapeHtml(item.title)}</em>` : escapeHtml(item.title);
+                const composer = escapeHtml(item.composer || '');
+                const duration = escapeHtml(item.duration || '');
+                return `<tr><td style="padding: 4px 8px; text-align: right; color: #666; font-size: 0.85em;">${num}.</td><td style="padding: 4px 8px;">${title}</td><td style="padding: 4px 8px; color: #555; font-size: 0.9em;">${composer || '&nbsp;'}</td><td style="padding: 4px 8px; text-align: right; color: #888; font-size: 0.85em;">${duration || '&nbsp;'}</td></tr>`;
+            }).join('');
+            return `<table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; border-collapse: collapse; font-family: sans-serif; font-size: 0.9em;"><thead><tr style="border-bottom: 2px solid #4a7c59;"><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;"></th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Piece</th><th style="padding: 6px 8px; text-align: left; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Composer</th><th style="padding: 6px 8px; text-align: right; color: #4a7c59; font-weight: 600; font-size: 0.8em; text-transform: uppercase;">Duration</th></tr></thead><tbody>${rows}</tbody></table>`;
+        }
+        return '<div style="margin: 16px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif; font-size: 0.9em; color: #555;"><em>Program to be announced.</em></div>';
+    }
+
+    // --- Utility source: email/emailRendering.ts ---
+    "use strict";
+    function renderMarkdown(text) {
+        if (!text)
+            return "";
+        // Escape raw HTML first
+        let html = text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        // Headings: # h1, ## h2, ### h3, #### h4, ##### h5, ###### h6
+        html = html.replace(/^(#{1,6})\s+(.*)/gm, (_, hashes, content) => {
+            const level = hashes.length;
+            // Using inline styles for headings for better email client compatibility
+            const fontSize = level === 1 ? '1.8rem' : level === 2 ? '1.5rem' : level === 3 ? '1.25rem' : '1.1rem';
+            return `<h${level} style="margin: 16px 0 8px 0; line-height: 1.2; font-size: ${fontSize}; color: #2c3e50;">${content}</h${level}>`;
+        });
+        // Bold: **text** or __text__
+        html = html.replace(/(\*\*|__)(.*?)\1/g, "<strong>$2</strong>");
+        // Italic: *text* or _text_
+        html = html.replace(/(\*|_)(.*?)\1/g, "<em>$2</em>");
+        // Links: [text](url)
+        html = html.replace(/\[(.*?)\]\((.*?)\)/g, (_, text, url) => {
+            const sanitizedUrl = url.trim();
+            if (!/^(https?|mailto|tel):/i.test(sanitizedUrl)) {
+                return text;
+            }
+            const safeUrl = sanitizedUrl.replace(/"/g, '&quot;');
+            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${text}</a>`;
+        });
+        // Lists (Ordered and Unordered)
+        const lines = html.split("\n");
+        let inUl = false;
+        let inOl = false;
+        const processedLines = lines.map(line => {
+            const ulMatch = line.match(/^(\*|-)\s+(.*)/);
+            const olMatch = line.match(/^(\d+)\.\s+(.*)/);
+            if (ulMatch) {
+                const content = ulMatch[2];
+                let prefix = "";
+                if (inOl) {
+                    inOl = false;
+                    prefix = "</ol>";
+                }
+                if (!inUl) {
+                    inUl = true;
+                    return prefix + `<ul style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else if (olMatch) {
+                const content = olMatch[2];
+                let prefix = "";
+                if (inUl) {
+                    inUl = false;
+                    prefix = "</ul>";
+                }
+                if (!inOl) {
+                    inOl = true;
+                    return prefix + `<ol style="margin: 8px 0; padding-left: 20px;"><li>${content}</li>`;
+                }
+                return `<li>${content}</li>`;
+            }
+            else {
+                let result = line;
+                if (inUl) {
+                    inUl = false;
+                    result = "</ul>" + line;
+                }
+                if (inOl) {
+                    inOl = false;
+                    result = "</ol>" + line;
+                }
+                return result;
+            }
+        });
+        if (inUl)
+            processedLines.push("</ul>");
+        if (inOl)
+            processedLines.push("</ol>");
+        html = processedLines.join("\n");
+        // Line breaks and paragraphs
+        const blocks = html.split(/\n\s*\n/);
+        html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed)
+                return "";
+            if (trimmed.startsWith("<ul"))
+                return block;
+            if (trimmed.startsWith("<ol"))
+                return block;
+            if (trimmed.match(/^<h\d/))
+                return block;
+            if (trimmed.startsWith("<div"))
+                return block; // Keep footers/buttons intact
+            return `<p style="margin-bottom: 12px;">${block.replace(/\n/g, "<br>")}</p>`;
+        }).join("\n");
+        return html;
+    }
+
+    // --- Utility source: email/emailStyles.ts ---
+    "use strict";
+    const EMAIL_CSS = `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f7f5; color: #1a202c; }
+    .wrapper { width: 100%; table-layout: fixed; background-color: #f4f7f5; padding-bottom: 40px; pt: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background-color: #4a7c59; padding: 24px; text-align: center; color: #ffffff; }
+    .content { padding: 32px; line-height: 1.6; font-size: 16px; }
+    .footer { background-color: #f8fafc; padding: 24px; text-align: center; font-size: 12px; color: #718096; border-top: 1px solid #edf2f7; }
+    a { color: #4a7c59; text-decoration: underline; }
+    .btn { display: inline-block; padding: 12px 24px; background-color: #4a7c59; color: #ffffff !important; border-radius: 6px; font-weight: bold; text-decoration: none; margin-top: 16px; }
+    `.trim();
+
+    // --- Utility source: email/mailjetRenderer.ts ---
+    "use strict";
+    function compileMailjetHtml(contentHtml, mailingAddress, unsubscribeUrl, headerTitle) {
+        const displayTitle = headerTitle || "Choir Management";
+        return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            ${EMAIL_CSS}
+        </style>
+    </head>
+    <body>
+        <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+                <td align="center">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td class="header">
+                                <h1 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">${displayTitle}</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="content">
+                                ${contentHtml}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="footer">
+                                <p style="margin: 0 0 8px 0;">${mailingAddress}</p>
+                                <p style="margin: 0;">You are receiving this because you are an active member of the choir.</p>
+                                <p style="margin: 8px 0 0 0;"><a href="${unsubscribeUrl}">Unsubscribe from these emails</a></p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+        `.trim();
+    }
+
+    // --- Utility source: email/queueProcessor.ts ---
+    "use strict";
+    function processEmailQueue(app) {
+        var _a;
+        const settings = app.settings();
+        if (!settings.smtp || !settings.smtp.enabled) {
+            console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
+            return;
+        }
+        const EMAIL_QUEUE_BATCH_SIZE = 150;
+        const EMAIL_QUEUE_MAX_ATTEMPTS = 3;
+        const EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION = 6;
+        // Stale Processing record recovery
+        try {
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Pending',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND (attempts IS NULL OR attempts < {:maxAttempts})
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+            app
+                .db()
+                .newQuery(`
+                UPDATE emailQueue
+                SET status = 'Failed',
+                    processingRunId = NULL,
+                    processingStartedAt = NULL
+                WHERE status = 'Processing'
+                  AND processingStartedAt < datetime('now', '-15 minutes')
+                  AND attempts >= {:maxAttempts}
+            `)
+                .bind({ maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS })
+                .execute();
+        }
+        catch (recoverErr) {
+            console.log('[Email Queue] Error recovering stale records: ' + recoverErr);
+        }
+        // Build variables used for layout rendering
+        const secret = getHmacSecret();
+        let baseUrl = 'http://localhost:5173';
+        let mailingAddress = '123 Choir St, Harmony City, HC 12345';
+        let choirName = '';
+        try {
+            const commRecord = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const comms = parseJsonField(commRecord.get('value'));
+            if (comms === null || comms === void 0 ? void 0 : comms.frontendUrl)
+                baseUrl = comms.frontendUrl;
+            if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
+                mailingAddress = comms.mailingAddress;
+        }
+        catch (_b) {
+            // use default baseUrl and mailingAddress
+        }
+        if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
+            const meta = (_a = app.settings()) === null || _a === void 0 ? void 0 : _a.meta;
+            const appSettingsUrl = (meta === null || meta === void 0 ? void 0 : meta.appUrl) || (meta === null || meta === void 0 ? void 0 : meta.appURL) || '';
+            if (appSettingsUrl) {
+                baseUrl = appSettingsUrl;
+            }
+        }
+        baseUrl = normalizeBaseUrl(baseUrl);
+        try {
+            const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+            const val = parseJsonField(choirRecord.get('value'));
+            if (val)
+                choirName = val;
+        }
+        catch (_c) {
+            // use default choirName
+        }
+        let timezone = 'America/New_York';
+        try {
+            const tzSetting = app.findFirstRecordByFilter('appSettings', "key = 'timezone'");
+            const valueStr = tzSetting.get('value');
+            const tzP = parseJsonField(valueStr);
+            if (tzP) {
+                if (typeof tzP === 'string') {
+                    timezone = tzP;
+                }
+                else if (typeof tzP === 'object' && tzP.timezone) {
+                    timezone = tzP.timezone;
+                }
+            }
+        }
+        catch (_d) {
+            // use default timezone
+        }
+        let totalClaimed = 0;
+        for (let batchNumber = 1; batchNumber <= EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION; batchNumber++) {
+            const runId = $security.randomString(20);
+            console.log(`[Email Queue] Starting processing run: ${runId} (batch ${batchNumber}/${EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION})`);
+            // Atomic SQLite-level claiming
+            try {
+                app
+                    .db()
+                    // SAFE: Parameterized query using bind(), preventing SQL injection
+                    .newQuery(`
+                    UPDATE emailQueue
+                    SET status = 'Processing',
+                        processingRunId = {:runId},
+                        processingStartedAt = datetime('now')
+                    WHERE id IN (
+                        SELECT id
+                        FROM emailQueue
+                        WHERE status = 'Pending'
+                          AND (attempts IS NULL OR attempts < {:maxAttempts})
+                        ORDER BY created ASC
+                        LIMIT {:batchSize}
+                    )
+                `)
+                    .bind({
+                    runId: runId,
+                    maxAttempts: EMAIL_QUEUE_MAX_ATTEMPTS,
+                    batchSize: EMAIL_QUEUE_BATCH_SIZE,
+                })
+                    .execute();
+            }
+            catch (claimErr) {
+                console.log('[Email Queue] Error claiming records for run ' + runId + ': ' + claimErr);
+                return;
+            }
+            const records = app.findRecordsByFilter('emailQueue', "status = 'Processing' && processingRunId = {:runId}", 'created', EMAIL_QUEUE_BATCH_SIZE, 0, { runId });
+            if (!records || records.length === 0) {
+                if (totalClaimed === 0) {
+                    console.log('[Email Queue] No records claimed for run: ' + runId);
+                }
+                break;
+            }
+            totalClaimed += records.length;
+            console.log(`[Email Queue] Claimed ${records.length} records for run: ${runId}`);
+            records.forEach((record) => {
+                var _a, _b, _c;
+                try {
+                    const rawContent = record.get('rawContent') || '';
+                    const recipientId = record.get('recipientId');
+                    const recipientEmail = record.get('recipientEmail');
+                    const recipientName = record.get('recipientName') || 'Singer';
+                    const filters = parseJsonField(record.get('filters')) || {};
+                    const isSms = filters.channel === 'sms';
+                    // SMS entries: send plain text, skip HTML rendering and layout wrapping.
+                    // SMS carriers cannot render HTML — the SMTP2Go email-to-SMS gateway
+                    // delivers only the plain-text body to the recipient's phone.
+                    if (isSms) {
+                        const subject = record.get('subject') || '';
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                        record.set('status', 'Sent');
+                        record.set('sentAt', new Date().toISOString());
+                        record.set('processingRunId', null);
+                        record.set('processingStartedAt', null);
+                        record.set('errorMessage', '');
+                        console.log(`[Email Queue] Sent SMS record: ${record.id}`);
+                        return;
+                    }
+                    let htmlBody = '';
+                    if (filters.contentType === 'html') {
+                        htmlBody = rawContent;
+                    }
+                    else {
+                        // Temporarily protect placeholders containing underscores from markdown parsing
+                        const protectedContent = rawContent
+                            .replace(/{{MAILING_ADDRESS}}/g, '%%MAILINGADDRESS%%')
+                            .replace(/{{UNSUBSCRIBE_LINK}}/g, '%%UNSUBSCRIBELINK%%')
+                            .replace(/{{EVENT_INFO}}/g, '%%EVENTINFO%%')
+                            .replace(/{{RSVP_LINKS}}/g, '%%RSVPLINKS%%')
+                            .replace(/{{PLAYER_LINK}}/g, '%%PLAYERLINK%%')
+                            .replace(/{{TICKET_QR}}/g, '%%TICKETQR%%')
+                            .replace(/{{TICKET_BUTTON}}/g, '%%TICKETBUTTON%%')
+                            .replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, id) => '%%POLLLINK_' + id + '%%');
+                        htmlBody = renderMarkdown(protectedContent);
+                        // Restore protected placeholders
+                        htmlBody = htmlBody
+                            .replace(/%%MAILINGADDRESS%%/g, '{{MAILING_ADDRESS}}')
+                            .replace(/%%UNSUBSCRIBELINK%%/g, '{{UNSUBSCRIBE_LINK}}')
+                            .replace(/%%EVENTINFO%%/g, '{{EVENT_INFO}}')
+                            .replace(/%%RSVPLINKS%%/g, '{{RSVP_LINKS}}')
+                            .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
+                            .replace(/%%TICKETQR%%/g, '{{TICKET_QR}}')
+                            .replace(/%%TICKETBUTTON%%/g, '{{TICKET_BUTTON}}')
+                            .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
+                    }
+                    let subject = record.get('subject') || '';
+                    subject = subject.replace(/{singerName}/g, () => sanitizeEmailSubject(recipientName));
+                    // Fetch dynamic event details if enqueued under filters
+                    let event = null;
+                    if (filters && filters.eventId) {
+                        try {
+                            event = app.findRecordById('events', filters.eventId);
+                        }
+                        catch (_d) {
+                            // event not found
+                        }
+                    }
+                    // Perform template placeholder resolutions (same engine as legacy)
+                    htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
+                    htmlBody = htmlBody.replace(/{{MAILING_ADDRESS}}/g, () => escapeHtml(mailingAddress));
+                    if (event) {
+                        const eventDate = (_a = coercePocketBaseDate(event.get('date'))) !== null && _a !== void 0 ? _a : new Date('');
+                        const eventTitle = (event.get('title') || event.get('type') || 'Event');
+                        const eventType = (event.get('type') || 'Performance');
+                        const eventDetails = (event.get('details') || '');
+                        let venueName = 'TBD';
+                        let venueAddress = '';
+                        try {
+                            const venueRecord = app.findRecordById('venues', event.get('venue'));
+                            venueName = (venueRecord.get('name') || 'TBD');
+                            venueAddress = (venueRecord.get('address') || '');
+                        }
+                        catch (_e) {
+                            // venue not found
+                        }
+                        const dateLong = formatInTimezone(eventDate, timezone, {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                        });
+                        const timeStr = formatInTimezone(eventDate, timezone, {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        const dateShort = formatInTimezone(eventDate, timezone, {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit',
+                        });
+                        // Resolve event placeholders in subject too
+                        subject = subject
+                            .replace(/{eventTitle}/g, () => sanitizeEmailSubject(eventTitle))
+                            .replace(/{eventType}/g, () => sanitizeEmailSubject(eventType))
+                            .replace(/{eventDate}/g, () => sanitizeEmailSubject(dateShort));
+                        let locationHtml = escapeHtml(venueName);
+                        if (venueAddress.trim()) {
+                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venueAddress)}`;
+                            locationHtml = `<a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" style="color: #4a7c59; text-decoration: underline;">${escapeHtml(venueName)}</a>`;
+                        }
+                        const eventInfoHtml = `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f8faf9; border-left: 4px solid #4a7c59; border-radius: 4px; font-family: sans-serif;">
+        <strong style="font-size: 1.1em; color: #1a1a1a;">${escapeHtml(eventTitle)}</strong><br>
+        <div style="margin-top: 8px; font-size: 0.95em; color: #444; line-height: 1.6;">
+            📅 <strong>${escapeHtml(dateLong)}</strong><br>
+            ⏰ <strong>${escapeHtml(timeStr)}</strong><br>
+            📍 <strong>${locationHtml}</strong>
+        </div>
+    </div>
+    `;
+                        // Optionally generate an "Add to Calendar" link for the first rehearsal
+                        let firstRehearsalHtml = '';
+                        if (htmlBody.includes('{firstRehearsalCalendarLink}') &&
+                            event.get('type') === 'Performance') {
+                            try {
+                                const rehearsals = app.findRecordsByFilter('events', 'parentPerformanceId = {:eventId}', 'date', 1, 0, { eventId: event.id });
+                                if (rehearsals && rehearsals.length > 0) {
+                                    const firstReh = rehearsals[0];
+                                    const rehDate = (_b = coercePocketBaseDate(firstReh.get('date'))) !== null && _b !== void 0 ? _b : new Date('');
+                                    const dLong = formatInTimezone(rehDate, timezone, {
+                                        weekday: 'short',
+                                        month: 'long',
+                                        day: 'numeric',
+                                    });
+                                    const dTime = formatInTimezone(rehDate, timezone, {
+                                        hour: 'numeric',
+                                        minute: '2-digit',
+                                    });
+                                    // Generate a direct link to the backend ICS download route
+                                    let icsLink = '';
+                                    if (secret) {
+                                        const token = generateSignedEventRecipientToken(firstReh.id, recipientId);
+                                        icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    }
+                                    firstRehearsalHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">First Rehearsal:</strong><br>
+            ${escapeHtml(dLong)} at ${escapeHtml(dTime)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                                    `.trim();
+                                }
+                            }
+                            catch (_f) {
+                                // Ignore rehearsals fetching or formatting errors
+                            }
+                        }
+                        // Optionally generate an "Add to Calendar" link for the event itself (or audition)
+                        let eventCalendarHtml = '';
+                        if (htmlBody.includes('{eventCalendarLink}')) {
+                            let icsLink = '';
+                            let slotDateLong = dateLong;
+                            let slotTimeStr = timeStr;
+                            if (secret) {
+                                const auditionId = filters.auditionId;
+                                if (auditionId) {
+                                    const payload = `a=${auditionId}`;
+                                    const signature = $security.hs256(payload, secret);
+                                    const token = `${payload}&s=${signature}`;
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                    try {
+                                        const audition = app.findRecordById('auditions', auditionId);
+                                        const auditionSlot = (_c = coercePocketBaseDate(audition.get('scheduledTimeSlot'))) !== null && _c !== void 0 ? _c : new Date('');
+                                        if (auditionSlot) {
+                                            slotDateLong = formatInTimezone(auditionSlot, timezone, {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric',
+                                            });
+                                            slotTimeStr = formatInTimezone(auditionSlot, timezone, {
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                                timeZoneName: 'short',
+                                            });
+                                        }
+                                    }
+                                    catch (_g) {
+                                        // Ignore audition record resolution/formatting errors
+                                    }
+                                }
+                                else {
+                                    const token = generateSignedEventRecipientToken(event.id, recipientId);
+                                    icsLink = `${baseUrl}/api/calendar/download?token=${encodeURIComponent(token)}`;
+                                }
+                            }
+                            eventCalendarHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; font-family: sans-serif; font-size: 0.9em; box-sizing: border-box; width: 100%;">
+      <tr>
+        <td align="left" valign="middle" style="padding: 12px; font-family: sans-serif; font-size: 14px; line-height: 1.5; color: #334155;">
+            <strong style="color: #4a7c59;">Save the Date:</strong><br>
+            ${escapeHtml(slotDateLong)} at ${escapeHtml(slotTimeStr)}
+        </td>
+        <td align="right" valign="middle" style="padding: 12px; padding-left: 10px; width: 120px;">
+            ${icsLink ? `<a href="${icsLink}" style="display: inline-block; padding: 8px 16px; background-color: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: 600; border: 1px solid #cbd5e1; font-family: sans-serif; font-size: 13px; white-space: nowrap;">Add to Calendar</a>` : ''}
+        </td>
+      </tr>
+    </table>
+                            `.trim();
+                        }
+                        htmlBody = htmlBody
+                            .replace(/{eventTitle}/g, () => escapeHtml(eventTitle))
+                            .replace(/{eventType}/g, () => escapeHtml(eventType))
+                            .replace(/{eventDate}/g, () => escapeHtml(dateShort))
+                            .replace(/{eventLocation}/g, () => locationHtml)
+                            .replace(/{eventDetails}/g, () => escapeHtml(eventDetails))
+                            .replace(/{{EVENT_INFO}}/g, () => eventInfoHtml)
+                            .replace(/{eventInfo}/g, () => eventInfoHtml)
+                            .replace(/{setlist}/g, () => renderSetlistHtml(event.get('setList')))
+                            .replace(/{firstRehearsalCalendarLink}/g, () => firstRehearsalHtml)
+                            .replace(/{eventCalendarLink}/g, () => eventCalendarHtml);
+                        if ((htmlBody.includes('{{RSVP_LINKS}}') || htmlBody.includes('{rsvpLinks}')) && secret) {
+                            const token = generateSignedEventRecipientToken(event.id, recipientId);
+                            const rsvpLink = `${baseUrl}/rsvp?token=${encodeURIComponent(token)}`;
+                            const rsvpHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${rsvpLink}" style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Let us know if you can sing with us</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">No login required</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{RSVP_LINKS}}/g, () => rsvpHtml)
+                                .replace(/{rsvpLinks}/g, () => rsvpHtml);
+                        }
+                        if ((htmlBody.includes('{{PLAYER_LINK}}') || htmlBody.includes('{playerLink}')) &&
+                            secret) {
+                            const token = generateSignedPlayerToken(event.id);
+                            const playerLink = `${baseUrl}/player?token=${encodeURIComponent(token)}`;
+                            const playerHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${playerLink}" style="display: inline-block; padding: 14px 28px; background-color: #1e3a8a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Open Practice Player</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Access practice tracks (No login required)</p>
+    </div>
+    `;
+                            htmlBody = htmlBody
+                                .replace(/{{PLAYER_LINK}}/g, () => playerHtml)
+                                .replace(/{playerLink}/g, () => playerHtml);
+                        }
+                    }
+                    else {
+                        // If there's no event context, clear out the player link placeholders
+                        htmlBody = htmlBody.replace(/{{PLAYER_LINK}}/g, '').replace(/{playerLink}/g, '');
+                    }
+                    // Clear setlist placeholder when no event
+                    if (!event) {
+                        htmlBody = htmlBody.replace(/{setlist}/g, '');
+                    }
+                    // Resolve ticket QR code placeholder
+                    if (htmlBody.includes('{{TICKET_QR}}') && filters.ticketToken && filters.qrSvgSrc) {
+                        const isBundle = !!filters.bundleId;
+                        const caption = isBundle
+                            ? '<p style="text-align:center; color:#475569; font-size:13px; margin:8px 0 0;">Valid for any of the included performances</p>'
+                            : '';
+                        const ticketQrHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        ${caption}
+        <img src="${filters.qrSvgSrc}"
+             style="display:block; margin:12px auto; max-width:280px; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff"
+             alt="If you don't see the QR, use the 'View your ticket QR' button below" />
+        <a href="${filters.successUrl || baseUrl + '/tickets/order/success'}"
+           style="display:block; margin:12px auto; padding:12px 24px; background:#4a7c59; color:white; text-align:center; border-radius:8px; font-weight:bold; text-decoration:none; max-width:320px">
+            View your ticket QR
+        </a>
+        <p style="margin-top:8px; font-size:12px; color:#718096;">Pro tip: open this email on your phone for quick scanning at the door.</p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, () => ticketQrHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_QR}}/g, '');
+                    }
+                    // Resolve ticket button placeholder (styled CTA without requiring QR SVG)
+                    if (htmlBody.includes('{{TICKET_BUTTON}}') && filters.successUrl) {
+                        const ticketButtonHtml = `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${escapeHtml(filters.successUrl)}"
+           style="display: inline-block; padding: 14px 28px; background-color: #4a7c59; color: #ffffff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            View Your Tickets
+        </a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">
+            Open this link on your phone at the door for quick verification.
+        </p>
+    </div>`.trim();
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, () => ticketButtonHtml);
+                    }
+                    else {
+                        htmlBody = htmlBody.replace(/{{TICKET_BUTTON}}/g, '');
+                    }
+                    // Resolve poll links: {{POLL_LINK:pollId}}
+                    if (htmlBody.includes('{{POLL_LINK:') && secret) {
+                        htmlBody = htmlBody.replace(/{{POLL_LINK:([a-zA-Z0-9]+)}}/g, (_, pollId) => {
+                            const payload = 'l=' + pollId + '&p=' + recipientId;
+                            const signature = $security.hs256(payload, secret);
+                            const token = payload + '&s=' + signature;
+                            const pollLink = baseUrl + '/poll?token=' + encodeURIComponent(token);
+                            let pollButtonLabel = 'Answer our quick question';
+                            try {
+                                const pollRecord = app.findRecordById('polls', pollId);
+                                const question = pollRecord === null || pollRecord === void 0 ? void 0 : pollRecord.get('question');
+                                if (typeof question === 'string' && question.trim()) {
+                                    pollButtonLabel = question.trim();
+                                }
+                            }
+                            catch (_a) {
+                                // keep safe fallback label if poll lookup fails
+                            }
+                            return `
+    <div style="margin: 24px 0; text-align: center; font-family: sans-serif;">
+        <a href="${pollLink}" style="display: inline-block; padding: 14px 28px; background-color: #7c4a4a; color: white; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">${escapeHtml(pollButtonLabel)}</a>
+        <p style="margin-top: 12px; font-size: 12px; color: #718096;">Engagement Poll (No login required)</p>
+    </div>
+    `.trim();
+                        });
+                    }
+                    // Compile secure unsubscribe URL
+                    let unsubscribeUrl = `${baseUrl}/unsubscribe`;
+                    if (secret) {
+                        const payload = `p=${recipientId}`;
+                        const signature = $security.hs256(payload, secret);
+                        const token = `${payload}&s=${signature}`;
+                        unsubscribeUrl = `${baseUrl}/unsubscribe?token=${encodeURIComponent(token)}`;
+                        htmlBody = htmlBody.replace(/{{UNSUBSCRIBE_LINK}}/g, () => unsubscribeUrl);
+                    }
+                    // Final template layout wrap
+                    const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
+                    record.set('htmlBody', finalHtml);
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                    record.set('status', 'Sent');
+                    record.set('sentAt', new Date().toISOString());
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    record.set('errorMessage', '');
+                    console.log(`[Email Queue] Sent record: ${record.id}`);
+                }
+                catch (err) {
+                    const rawAttempts = record.get('attempts');
+                    const attempts = typeof rawAttempts === 'number' ? rawAttempts : 0;
+                    const currentAttempts = (isNaN(attempts) ? 0 : attempts) + 1;
+                    record.set('attempts', currentAttempts);
+                    const message = err instanceof Error ? err.message : String(err);
+                    record.set('errorMessage', message);
+                    const nextStatus = currentAttempts >= EMAIL_QUEUE_MAX_ATTEMPTS ? 'Failed' : 'Pending';
+                    record.set('status', nextStatus);
+                    record.set('processingRunId', null);
+                    record.set('processingStartedAt', null);
+                    console.log(`[Email Queue] Failed record: ${record.id}, attempts: ${currentAttempts}, error: ${message}`);
+                }
+                finally {
+                    app.save(record);
+                }
+            });
+            if (records.length < EMAIL_QUEUE_BATCH_SIZE) {
+                break;
+            }
+        }
+        if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
+            console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
+        }
+    }
+
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -25212,6 +32607,19 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -25290,6 +32698,19 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -25387,6 +32808,25 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -25444,20 +32884,84 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -32266,6 +39770,131 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
         });
     }
 
+    // --- Utility source: checkout/financialNotifications.ts ---
+    "use strict";
+    function notifyOfFinancialEvent(app, type, details) {
+        try {
+            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            if (!adminUsers || adminUsers.length === 0)
+                return;
+            const adminUserIds = adminUsers.map((u) => u.id);
+            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            if (!adminProfiles || adminProfiles.length === 0)
+                return;
+            let templateTitle = '';
+            if (type === 'Sale') {
+                templateTitle = 'Admin Notice: Ticket Sale';
+            }
+            else if (type === 'Donation') {
+                templateTitle = 'Admin Notice: Donation';
+            }
+            else if (type === 'Refund') {
+                templateTitle = 'Admin Notice: Refund';
+            }
+            let template = null;
+            try {
+                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+            }
+            catch (err) {
+                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                return;
+            }
+            if (!template) {
+                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                return;
+            }
+            let choirName = 'Choir Management Tool';
+            try {
+                const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
+                const val = parseJsonField(choirRecord.get('value'));
+                if (val)
+                    choirName = val;
+            }
+            catch (_a) {
+                // Use default
+            }
+            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const finalTemplate = template;
+            adminProfiles.forEach((adminProf) => {
+                const userId = adminProf.get("user");
+                if (!userId || adminUserIds.indexOf(userId) === -1) {
+                    return;
+                }
+                const adminUser = adminUsers.find((u) => u.id === userId);
+                const recipientEmail = adminUser ? adminUser.get("email") : "";
+                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                    return;
+                }
+                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
+                let subject = finalTemplate.get("subject") || "";
+                let content = finalTemplate.get("content") || "";
+                // Replace common placeholders
+                subject = subject
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                content = content
+                    .replace(/{choirName}/g, choirName)
+                    .replace(/{adminName}/g, adminName);
+                if (type === 'Sale') {
+                    const buyerName = details.buyerName || 'Unknown Buyer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const targetName = details.targetName || 'Event/Bundle';
+                    const quantity = String(details.quantity || 0);
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{targetName}/g, targetName)
+                        .replace(/{quantity}/g, quantity)
+                        .replace(/{amountPaid}/g, amountPaid);
+                }
+                else if (type === 'Donation') {
+                    const donorName = details.donorName || 'Anonymous Donor';
+                    const donorEmail = details.donorEmail || '';
+                    const amountPaid = (details.amountPaid || 0).toFixed(2);
+                    const tributeSection = details.tributeSection || '';
+                    subject = subject.replace(/{donorName}/g, donorName);
+                    content = content
+                        .replace(/{donorName}/g, donorName)
+                        .replace(/{donorEmail}/g, donorEmail)
+                        .replace(/{amountPaid}/g, amountPaid)
+                        .replace(/{tributeSection}/g, tributeSection);
+                }
+                else if (type === 'Refund') {
+                    const buyerName = details.buyerName || 'Unknown Customer';
+                    const buyerEmail = details.buyerEmail || '';
+                    const amountRefunded = (details.amountRefunded || 0).toFixed(2);
+                    const targetName = details.targetName || 'Refunded Item';
+                    subject = subject.replace(/{buyerName}/g, buyerName);
+                    content = content
+                        .replace(/{buyerName}/g, buyerName)
+                        .replace(/{buyerEmail}/g, buyerEmail)
+                        .replace(/{amountRefunded}/g, amountRefunded)
+                        .replace(/{targetName}/g, targetName);
+                }
+                const queueRecord = new Record(queueCollection, {
+                    recipientId: adminProf.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: adminName,
+                    subject: subject,
+                    rawContent: content,
+                    status: "Pending",
+                    attempts: 0,
+                    filters: JSON.stringify({
+                        type: "Automated Financial Alert"
+                    })
+                });
+                app.save(queueRecord);
+            });
+            // Trigger queue processor to dispatch emails immediately
+            processEmailQueue(app);
+        }
+        catch (err) {
+            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+        }
+    }
+
     // --- Utility source: checkout/checkoutHelpers.ts ---
     "use strict";
     function getOrCreatePatronProfile(email, name) {
@@ -33096,6 +40725,19 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     console.log('Failed to enqueue confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for ticket sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetEvent.get('title') || 'Event'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send ticket sale financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'bundle') {
                 const bundleId = metadata.bundleId;
@@ -33174,6 +40816,19 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                 catch (mailErr) {
                     console.log('Failed to enqueue bundle confirmation email: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
+                }
+                // Send financial alert for bundle sale
+                try {
+                    notifyOfFinancialEvent($app, 'Sale', {
+                        buyerName: record.get('buyerName'),
+                        buyerEmail: record.get('buyerEmail'),
+                        targetName: (targetBundle.get('title') || 'Bundle'),
+                        quantity: quantity,
+                        amountPaid: (session.amount_total || 0) / 100,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send bundle sale financial alert: ' + alertErr);
                 }
             }
             else if (paymentType === 'donation') {
@@ -33271,6 +40926,25 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     console.log('Failed to enqueue donation receipt: ' +
                         (mailErr instanceof Error ? mailErr.message : String(mailErr)));
                 }
+                // Send financial alert for donation
+                try {
+                    let tributeSection = '';
+                    if (tributeType === 'memory' && tributeName) {
+                        tributeSection = `This donation was made in memory of ${tributeName}.`;
+                    }
+                    else if (tributeType === 'honor' && tributeName) {
+                        tributeSection = `This donation was made in honor of ${tributeName}.`;
+                    }
+                    notifyOfFinancialEvent($app, 'Donation', {
+                        donorName,
+                        donorEmail,
+                        amountPaid: amountPaidCents / 100,
+                        tributeSection,
+                    });
+                }
+                catch (alertErr) {
+                    console.log('Failed to send donation financial alert: ' + alertErr);
+                }
             }
             else if (paymentType === 'dues') {
                 const profileId = metadata.profileId;
@@ -33328,20 +41002,84 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             const charge = (_b = eventObj.data) === null || _b === void 0 ? void 0 : _b.object;
             const paymentIntentId = charge === null || charge === void 0 ? void 0 : charge.payment_intent;
             if (paymentIntentId) {
+                // 1. Process ticketPurchases refunds
                 try {
                     const purchases = $app.findRecordsByFilter('ticketPurchases', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
                     if (purchases && purchases.length > 0) {
+                        let alreadyRefunded = true;
                         const txApp = $app;
                         txApp.runInTransaction((tx) => {
                             purchases.forEach((p) => {
-                                p.set('status', 'refunded');
-                                tx.save(p);
+                                if (p.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    p.set('status', 'refunded');
+                                    tx.save(p);
+                                }
                             });
                         });
+                        // Only send alert if this is the first time we process this refund
+                        if (!alreadyRefunded) {
+                            const first = purchases[0];
+                            let targetName = 'Tickets';
+                            if (first.get('bundle')) {
+                                try {
+                                    const bundleRecord = $app.findRecordById('ticketBundles', first.get('bundle'));
+                                    targetName = (bundleRecord.get('title') || 'Ticket Bundle');
+                                }
+                                catch (_m) { }
+                            }
+                            else if (first.get('event')) {
+                                try {
+                                    const eventRecord = $app.findRecordById('events', first.get('event'));
+                                    targetName = (eventRecord.get('title') || 'Tickets');
+                                }
+                                catch (_o) { }
+                            }
+                            const totalAmount = purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+                            notifyOfFinancialEvent($app, 'Refund', {
+                                buyerName: first.get('buyerName'),
+                                buyerEmail: first.get('buyerEmail'),
+                                amountRefunded: totalAmount,
+                                targetName: targetName,
+                            });
+                        }
                     }
                 }
                 catch (err) {
                     console.log('Refunded purchase records not found or error for Payment Intent ID: ' +
+                        paymentIntentId +
+                        '. Error: ' +
+                        (err instanceof Error ? err.message : String(err)));
+                }
+                // 2. Process donations refunds
+                try {
+                    const donations = $app.findRecordsByFilter('donations', 'stripePaymentIntentId = {:paymentIntentId}', '', 1000, 0, { paymentIntentId });
+                    if (donations && donations.length > 0) {
+                        let alreadyRefunded = true;
+                        const txApp = $app;
+                        txApp.runInTransaction((tx) => {
+                            donations.forEach((d) => {
+                                if (d.get('status') !== 'refunded') {
+                                    alreadyRefunded = false;
+                                    d.set('status', 'refunded');
+                                    tx.save(d);
+                                }
+                            });
+                        });
+                        if (!alreadyRefunded) {
+                            donations.forEach((d) => {
+                                notifyOfFinancialEvent($app, 'Refund', {
+                                    buyerName: d.get('donorName'),
+                                    buyerEmail: d.get('donorEmail'),
+                                    amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                                    targetName: 'Donation',
+                                });
+                            });
+                        }
+                    }
+                }
+                catch (err) {
+                    console.log('Refunded donation records not found or error for Payment Intent ID: ' +
                         paymentIntentId +
                         '. Error: ' +
                         (err instanceof Error ? err.message : String(err)));
@@ -34243,7 +41981,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
         try {
             const nowMs = now.getTime();
             // 1. Fetch events that are active and have automated reminders enabled
-            const events = app.findRecordsByFilter('events', "enableAutomatedReminder = true && reminderSentAt = null && isArchived != true", 'date', 100, 0);
+            const events = app.findRecordsByFilter('events', 'enableAutomatedReminder = true && reminderSentAt = null && isArchived != true', 'date', 100, 0);
             if (!events || events.length === 0) {
                 return {
                     task: 'eventReminder',
@@ -34272,7 +42010,10 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             try {
                 const choirRecord = app.findFirstRecordByFilter('appSettings', "key = 'choir_name' || key = 'choirName'");
                 const parsed = parseJsonField(choirRecord.get('value'));
-                const val = parsed.name || parsed.choirName || parsed.value || (typeof parsed === 'string' ? parsed : '');
+                const val = parsed.name ||
+                    parsed.choirName ||
+                    parsed.value ||
+                    (typeof parsed === 'string' ? parsed : '');
                 if (val)
                     choirName = val;
             }
@@ -34333,7 +42074,8 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     }
                     continue;
                 }
-                const leadTimeHours = event.get('reminderLeadTimeHours') !== null && event.get('reminderLeadTimeHours') !== undefined
+                const leadTimeHours = event.get('reminderLeadTimeHours') !== null &&
+                    event.get('reminderLeadTimeHours') !== undefined
                     ? Number(event.get('reminderLeadTimeHours'))
                     : 48;
                 const leadTimeMs = leadTimeHours * 60 * 60 * 1000;
@@ -34347,7 +42089,9 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                 const systemRole = eventType === 'Performance' ? 'performance_reminder' : 'rehearsal_reminder';
                 let template = null;
                 try {
-                    template = app.findFirstRecordByFilter('messageTemplates', "systemRole = {:systemRole}", { systemRole });
+                    template = app.findFirstRecordByFilter('messageTemplates', 'systemRole = {:systemRole}', {
+                        systemRole,
+                    });
                 }
                 catch (e) {
                     console.log('[Event Reminder] Template not found for systemRole: ' + systemRole);
@@ -34374,7 +42118,10 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     month: 'long',
                     day: 'numeric',
                 });
-                const timeStr = formatInTimezone(event.get('date'), timezone, { hour: 'numeric', minute: '2-digit' });
+                const timeStr = formatInTimezone(event.get('date'), timezone, {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                });
                 const dateShort = formatInTimezone(event.get('date'), timezone, {
                     weekday: 'short',
                     month: 'short',

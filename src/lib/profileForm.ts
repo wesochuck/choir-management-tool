@@ -12,6 +12,7 @@ export const defaultProfileInput: ProfileInput = {
   receiveAttendanceReports: true,
   receiveRsvpDeclineNotices: false,
   receiveAdminNotifications: true,
+  receiveFinancialAlerts: false,
   isSectionLeader: false,
   statusIsManual: false,
   role: 'singer',
@@ -30,6 +31,7 @@ export function profileToFormData(profile: Profile | null | undefined): ProfileI
     receiveAttendanceReports: profile.receiveAttendanceReports !== false,
     receiveRsvpDeclineNotices: Boolean(profile.receiveRsvpDeclineNotices),
     receiveAdminNotifications: profile.receiveAdminNotifications !== false,
+    receiveFinancialAlerts: Boolean(profile.receiveFinancialAlerts),
     isSectionLeader: Boolean(profile.isSectionLeader),
     statusIsManual: Boolean(profile.statusIsManual),
     role: profile.expand?.user?.role || 'singer',
@@ -50,6 +52,7 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
       formData.receiveAttendanceReports !== true ||
       formData.receiveRsvpDeclineNotices ||
       formData.receiveAdminNotifications !== true ||
+      formData.receiveFinancialAlerts ||
       formData.isSectionLeader ||
       formData.statusIsManual ||
       formData.role !== 'singer' ||
@@ -71,6 +74,7 @@ export function isProfileFormDirty(formData: ProfileInput, initialData?: Profile
       Boolean(initialData.receiveRsvpDeclineNotices) ||
     (formData.receiveAdminNotifications !== false) !==
       (initialData.receiveAdminNotifications !== false) ||
+    Boolean(formData.receiveFinancialAlerts) !== Boolean(initialData.receiveFinancialAlerts) ||
     Boolean(formData.isSectionLeader) !== Boolean(initialData.isSectionLeader) ||
     Boolean(formData.statusIsManual) !== Boolean(initialData.statusIsManual) ||
     (formData.role || 'singer') !== (initialData.expand?.user?.role || 'singer') ||

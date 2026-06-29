@@ -5,6 +5,7 @@ import {
   enqueueBundleTicketConfirmationEmail,
 } from './emailHelpers';
 import { getOrCreatePatronProfile } from './checkoutHelpers';
+import { notifyOfFinancialEvent } from './financialNotifications';
 
 declare const $app: PocketBaseApp;
 declare const $security: {
@@ -412,6 +413,19 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
             (mailErr instanceof Error ? mailErr.message : String(mailErr))
         );
       }
+
+      // Send financial alert for ticket sale
+      try {
+        notifyOfFinancialEvent($app, 'Sale', {
+          buyerName: record.get('buyerName') as string,
+          buyerEmail: record.get('buyerEmail') as string,
+          targetName: (targetEvent.get('title') || 'Event') as string,
+          quantity: quantity,
+          amountPaid: (session.amount_total || 0) / 100,
+        });
+      } catch (alertErr: unknown) {
+        console.log('Failed to send ticket sale financial alert: ' + alertErr);
+      }
     } else if (paymentType === 'bundle') {
       const bundleId = metadata.bundleId;
       const stripeSessionId = session.id || '';
@@ -502,6 +516,19 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
           'Failed to enqueue bundle confirmation email: ' +
             (mailErr instanceof Error ? mailErr.message : String(mailErr))
         );
+      }
+
+      // Send financial alert for bundle sale
+      try {
+        notifyOfFinancialEvent($app, 'Sale', {
+          buyerName: record.get('buyerName') as string,
+          buyerEmail: record.get('buyerEmail') as string,
+          targetName: (targetBundle.get('title') || 'Bundle') as string,
+          quantity: quantity,
+          amountPaid: (session.amount_total || 0) / 100,
+        });
+      } catch (alertErr: unknown) {
+        console.log('Failed to send bundle sale financial alert: ' + alertErr);
       }
     } else if (paymentType === 'donation') {
       const stripeSessionId = session.id || '';
@@ -609,6 +636,25 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
             (mailErr instanceof Error ? mailErr.message : String(mailErr))
         );
       }
+
+      // Send financial alert for donation
+      try {
+        let tributeSection = '';
+        if (tributeType === 'memory' && tributeName) {
+          tributeSection = `This donation was made in memory of ${tributeName}.`;
+        } else if (tributeType === 'honor' && tributeName) {
+          tributeSection = `This donation was made in honor of ${tributeName}.`;
+        }
+
+        notifyOfFinancialEvent($app, 'Donation', {
+          donorName,
+          donorEmail,
+          amountPaid: amountPaidCents / 100,
+          tributeSection,
+        });
+      } catch (alertErr: unknown) {
+        console.log('Failed to send donation financial alert: ' + alertErr);
+      }
     } else if (paymentType === 'dues') {
       const profileId = metadata.profileId;
       const season = metadata.season;
@@ -670,6 +716,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
     const charge = eventObj.data?.object;
     const paymentIntentId = charge?.payment_intent;
     if (paymentIntentId) {
+      // 1. Process ticketPurchases refunds
       try {
         const purchases = $app.findRecordsByFilter(
           'ticketPurchases',
@@ -680,17 +727,94 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
           { paymentIntentId }
         );
         if (purchases && purchases.length > 0) {
+          let alreadyRefunded = true;
           const txApp = $app as unknown as AppWithTransaction;
           txApp.runInTransaction((tx) => {
             purchases.forEach((p) => {
-              p.set('status', 'refunded');
-              tx.save(p);
+              if (p.get('status') !== 'refunded') {
+                alreadyRefunded = false;
+                p.set('status', 'refunded');
+                tx.save(p);
+              }
             });
           });
+
+          // Only send alert if this is the first time we process this refund
+          if (!alreadyRefunded) {
+            const first = purchases[0];
+            let targetName = 'Tickets';
+            if (first.get('bundle')) {
+              try {
+                const bundleRecord = $app.findRecordById(
+                  'ticketBundles',
+                  first.get('bundle') as string
+                );
+                targetName = (bundleRecord.get('title') || 'Ticket Bundle') as string;
+              } catch {}
+            } else if (first.get('event')) {
+              try {
+                const eventRecord = $app.findRecordById('events', first.get('event') as string);
+                targetName = (eventRecord.get('title') || 'Tickets') as string;
+              } catch {}
+            }
+
+            const totalAmount =
+              purchases.reduce((sum, p) => sum + (Number(p.get('amountPaidCents')) || 0), 0) / 100;
+
+            notifyOfFinancialEvent($app, 'Refund', {
+              buyerName: first.get('buyerName') as string,
+              buyerEmail: first.get('buyerEmail') as string,
+              amountRefunded: totalAmount,
+              targetName: targetName,
+            });
+          }
         }
       } catch (err: unknown) {
         console.log(
           'Refunded purchase records not found or error for Payment Intent ID: ' +
+            paymentIntentId +
+            '. Error: ' +
+            (err instanceof Error ? err.message : String(err))
+        );
+      }
+
+      // 2. Process donations refunds
+      try {
+        const donations = $app.findRecordsByFilter(
+          'donations',
+          'stripePaymentIntentId = {:paymentIntentId}',
+          '',
+          1000,
+          0,
+          { paymentIntentId }
+        );
+        if (donations && donations.length > 0) {
+          let alreadyRefunded = true;
+          const txApp = $app as unknown as AppWithTransaction;
+          txApp.runInTransaction((tx) => {
+            donations.forEach((d) => {
+              if (d.get('status') !== 'refunded') {
+                alreadyRefunded = false;
+                d.set('status', 'refunded');
+                tx.save(d);
+              }
+            });
+          });
+
+          if (!alreadyRefunded) {
+            donations.forEach((d) => {
+              notifyOfFinancialEvent($app, 'Refund', {
+                buyerName: d.get('donorName') as string,
+                buyerEmail: d.get('donorEmail') as string,
+                amountRefunded: (Number(d.get('amountPaidCents')) || 0) / 100,
+                targetName: 'Donation',
+              });
+            });
+          }
+        }
+      } catch (err: unknown) {
+        console.log(
+          'Refunded donation records not found or error for Payment Intent ID: ' +
             paymentIntentId +
             '. Error: ' +
             (err instanceof Error ? err.message : String(err))

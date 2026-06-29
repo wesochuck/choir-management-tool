@@ -212,6 +212,17 @@ export function SingerProfileForm({
             >
               Receive General Admin Notifications
             </Checkbox>
+            <Checkbox
+              checked={Boolean(formData.receiveFinancialAlerts)}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  receiveFinancialAlerts: e.target.checked,
+                })
+              }
+            >
+              Receive Financial Alerts
+            </Checkbox>
           </>
         )}
         {initialData &&

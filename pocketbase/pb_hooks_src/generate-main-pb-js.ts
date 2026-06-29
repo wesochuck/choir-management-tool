@@ -28,6 +28,7 @@ export type UtilityBundleName =
   | 'pocketbaseDate'
   | 'checkoutEndpoints'
   | 'ticketScanValidation'
+  | 'financialNotifications'
   | 'maintenance';
 
 export type UtilityBundle = {
@@ -190,12 +191,18 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'hmacTokens',
       'ticketScanValidation',
       'pocketbaseDate',
+      'financialNotifications',
     ],
   },
   ticketScanValidation: {
     files: ['ticketScan/ticketValidation.ts'],
     symbols: ['handleValidateScan', 'handleGetScanContext'],
     dependsOn: ['hmacTokens', 'hookJson', 'hookText'],
+  },
+  financialNotifications: {
+    files: ['checkout/financialNotifications.ts'],
+    symbols: ['notifyOfFinancialEvent'],
+    dependsOn: ['queueProcessor', 'hookJson'],
   },
   maintenance: {
     files: [

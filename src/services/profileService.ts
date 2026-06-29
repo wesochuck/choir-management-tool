@@ -15,6 +15,7 @@ export interface Profile extends RecordModel {
   receiveAttendanceReports?: boolean;
   receiveRsvpDeclineNotices?: boolean;
   receiveAdminNotifications?: boolean;
+  receiveFinancialAlerts?: boolean;
   isSectionLeader?: boolean;
   statusIsManual?: boolean;
   statusLastChangedAt?: string;
@@ -38,6 +39,7 @@ export interface ProfileInput extends Partial<Profile> {
   receiveAttendanceReports?: boolean;
   receiveRsvpDeclineNotices?: boolean;
   receiveAdminNotifications?: boolean;
+  receiveFinancialAlerts?: boolean;
   isSectionLeader?: boolean;
   statusIsManual?: boolean;
   role?: 'admin' | 'singer';
@@ -71,7 +73,7 @@ export const generateRandomPassword = (length = 12): string => {
     cryptoObj.getRandomValues(array);
     return Array.from(array, (num) => chars[num % chars.length]).join('');
   }
-  
+
   throw new Error('Secure random number generation is not supported in this environment');
 };
 
@@ -292,6 +294,7 @@ export const profileService = {
       receiveAttendanceReports: boolean;
       receiveRsvpDeclineNotices: boolean;
       receiveAdminNotifications: boolean;
+      receiveFinancialAlerts?: boolean;
       phone?: string;
       showInDirectory?: boolean;
     }
@@ -304,6 +307,8 @@ export const profileService = {
       receiveRsvpDeclineNotices: data.receiveRsvpDeclineNotices,
       receiveAdminNotifications: data.receiveAdminNotifications,
     };
+    if (data.receiveFinancialAlerts !== undefined)
+      profileData.receiveFinancialAlerts = data.receiveFinancialAlerts;
     if (data.phone !== undefined) profileData.phone = data.phone;
     if (data.showInDirectory !== undefined) profileData.showInDirectory = data.showInDirectory;
 
