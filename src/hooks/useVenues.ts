@@ -42,24 +42,16 @@ export const useVenues = () => {
       return await addVenueMutation.mutateAsync(data);
     } catch (err: unknown) {
       console.error('[useVenues.addVenue] mutation failed:', err);
-      throw new Error(toErrorMessage(err, 'Failed to add venue'));
+      throw err;
     }
   };
 
   const editVenue = async (id: string, data: Partial<Venue>) => {
-    try {
-      await editVenueMutation.mutateAsync({ id, data });
-    } catch (err: unknown) {
-      throw new Error(toErrorMessage(err, 'Failed to update venue'));
-    }
+    await editVenueMutation.mutateAsync({ id, data });
   };
 
   const removeVenue = async (id: string) => {
-    try {
-      await removeVenueMutation.mutateAsync(id);
-    } catch (err: unknown) {
-      throw new Error(toErrorMessage(err, 'Failed to delete venue'));
-    }
+    await removeVenueMutation.mutateAsync(id);
   };
 
   return {

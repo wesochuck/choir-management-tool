@@ -49,35 +49,19 @@ export const useEvents = () => {
   });
 
   const addEvent = async (data: Partial<Event> | FormData, bulkConfig?: BulkRehearsalConfig) => {
-    try {
-      return await addEventMutation.mutateAsync({ data, bulkConfig });
-    } catch (err: unknown) {
-      throw new Error(toErrorMessage(err, 'Failed to add event'));
-    }
+    return await addEventMutation.mutateAsync({ data, bulkConfig });
   };
 
   const editEvent = async (id: string, data: Partial<Event> | FormData) => {
-    try {
-      return await editEventMutation.mutateAsync({ id, data });
-    } catch (err: unknown) {
-      throw new Error(toErrorMessage(err, 'Failed to update event'));
-    }
+    return await editEventMutation.mutateAsync({ id, data });
   };
 
   const removeEvent = async (id: string) => {
-    try {
-      await removeEventMutation.mutateAsync(id);
-    } catch (err: unknown) {
-      throw new Error(toErrorMessage(err, 'Failed to delete event'));
-    }
+    await removeEventMutation.mutateAsync(id);
   };
 
   const bulkAddRehearsals = async (performance: Event, config: BulkRehearsalConfig) => {
-    try {
-      await bulkAddMutation.mutateAsync({ performance, config });
-    } catch (err: unknown) {
-      throw new Error(toErrorMessage(err, 'Failed to bulk create rehearsals'));
-    }
+    await bulkAddMutation.mutateAsync({ performance, config });
   };
 
   const performances = useMemo(() => {

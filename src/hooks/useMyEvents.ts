@@ -71,11 +71,7 @@ export const useMyEvents = () => {
 
   const updateRSVP = async (eventId: string, rsvp: 'Yes' | 'No', rsvpNote = '') => {
     if (!myProfile) throw new Error('No profile found for current user');
-    try {
-      await updateRSVPMutation.mutateAsync({ eventId, rsvp, rsvpNote });
-    } catch (err: unknown) {
-      throw new Error(err instanceof Error ? err.message : 'Failed to update RSVP');
-    }
+    await updateRSVPMutation.mutateAsync({ eventId, rsvp, rsvpNote });
   };
 
   return {

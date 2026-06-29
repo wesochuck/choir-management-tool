@@ -88,33 +88,21 @@ export const useProfiles = (options: UseProfilesOptions = {}) => {
 
   const addProfile = useCallback(
     async (data: ProfileInput) => {
-      try {
-        await addProfileMutation.mutateAsync(data);
-      } catch (err: unknown) {
-        throw new Error(err instanceof Error ? err.message : 'Failed to add profile');
-      }
+      await addProfileMutation.mutateAsync(data);
     },
     [addProfileMutation]
   );
 
   const editProfile = useCallback(
     async (id: string, data: ProfileInput) => {
-      try {
-        await editProfileMutation.mutateAsync({ id, data });
-      } catch (err: unknown) {
-        throw new Error(err instanceof Error ? err.message : 'Failed to update profile');
-      }
+      await editProfileMutation.mutateAsync({ id, data });
     },
     [editProfileMutation]
   );
 
   const removeProfile = useCallback(
     async (id: string) => {
-      try {
-        await removeProfileMutation.mutateAsync(id);
-      } catch (err: unknown) {
-        throw new Error(err instanceof Error ? err.message : 'Failed to delete profile');
-      }
+      await removeProfileMutation.mutateAsync(id);
     },
     [removeProfileMutation]
   );

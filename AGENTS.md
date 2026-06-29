@@ -471,6 +471,12 @@ On any `Failed to create/update record` error with HTTP 400, inspect `pb_debug.l
 
 If `pb_hooks` are modified, deploy and restart/wake the PocketHost instance, then confirm the expected hook startup log appears before testing behavior.
 
+### Error propagation and formatting
+
+Do not wrap or swallow PocketBase API errors in custom hooks (such as mutations in `useEvents`, `useProfiles`, etc.) using `throw new Error(err.message)` or helper wrappers that convert the error to a generic message string.
+
+Doing so strips validation details like `err.response.data` or `err.data` from the thrown object. This prevents `formatPocketBaseError(err)` in view components from extracting specific field errors (e.g. "Venue is required."), forcing them to fallback to a generic message. Always propagate the raw error object from service/mutation calls directly up to the UI view components.
+
 ## 5. Network and Rate-Limit Safety
 
 Prefer helpers from:
