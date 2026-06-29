@@ -3,6 +3,7 @@ import type { Profile } from '../../services/profileService';
 import { getUniqueDisplayNames } from '../../lib/stringUtils';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import { getContrastColor } from '../../lib/colorUtils';
+import { Button } from '../ui';
 
 interface SeatingBottomDockProps {
   activeProfiles: Profile[];
@@ -171,22 +172,16 @@ export function SeatingBottomDock({
           </div>
           <div className="no-print flex flex-row flex-wrap justify-end gap-1">
             {onLookupSinger && (
-              <button
-                type="button"
-                onClick={onLookupSinger}
-                className="border-border bg-surface text-primary-deep inline-flex h-8 min-h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium tracking-wide whitespace-nowrap shadow-xs"
-              >
-                🔍 Lookup
-              </button>
+              <Button variant="outline" size="small" onClick={onLookupSinger}>
+                <span aria-hidden="true">🔍</span>
+                <span>Lookup</span>
+              </Button>
             )}
             {onAddSinger && (
-              <button
-                type="button"
-                onClick={onAddSinger}
-                className="border-border bg-surface text-primary-deep inline-flex h-8 min-h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium tracking-wide whitespace-nowrap shadow-xs"
-              >
-                + Add
-              </button>
+              <Button variant="outline" size="small" onClick={onAddSinger}>
+                <span aria-hidden="true">+</span>
+                <span>Add</span>
+              </Button>
             )}
           </div>
         </div>
