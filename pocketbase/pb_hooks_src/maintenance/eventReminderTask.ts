@@ -217,11 +217,41 @@ export function runEventReminderTask(
 </div>
 `;
 
+      let targetEventId = event.id;
+      if (eventType === 'Rehearsal') {
+        const parentId = event.get('parentPerformanceId') as string;
+        if (parentId) {
+          targetEventId = parentId;
+        }
+      }
+
+      // Fetch "Yes" RSVPs for targetEventId
+      const rosters = app.findRecordsByFilter(
+        'eventRosters',
+        'event = {:targetEventId} && rsvp = "Yes"',
+        '',
+        1000,
+        0,
+        { targetEventId }
+      );
+
+      const rsvpProfileMap: Record<string, boolean> = {};
+      if (rosters) {
+        rosters.forEach((r) => {
+          const profileId = r.get('profile') as string;
+          if (profileId) {
+            rsvpProfileMap[profileId] = true;
+          }
+        });
+      }
+
       let rawContentTemplate = (template.get('content') as string) || '';
       let subjectTemplate = (template.get('subject') as string) || 'Event Reminder';
 
       // Queue email for each active profile
       profiles.forEach((profile) => {
+        if (!rsvpProfileMap[profile.id]) return;
+
         const userId = profile.get('user') as string;
         const user = userId ? userMap[userId] : null;
         const recipientEmail = user ? (user.get('email') as string) : '';

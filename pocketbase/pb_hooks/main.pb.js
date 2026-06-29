@@ -11560,11 +11560,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -11579,14 +11579,17 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -11599,28 +11602,26 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -11665,11 +11666,11 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -11677,7 +11678,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -14431,11 +14432,11 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -14450,14 +14451,17 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -14470,28 +14474,26 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -14536,11 +14538,11 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -14548,7 +14550,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -17302,11 +17304,11 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -17321,14 +17323,17 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -17341,28 +17346,26 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -17407,11 +17410,11 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -17419,7 +17422,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -20173,11 +20176,11 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -20192,14 +20195,17 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -20212,28 +20218,26 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -20278,11 +20282,11 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -20290,7 +20294,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -23044,11 +23048,11 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -23063,14 +23067,17 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -23083,28 +23090,26 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -23149,11 +23154,11 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -23161,7 +23166,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -25915,11 +25920,11 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -25934,14 +25939,17 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -25954,28 +25962,26 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -26020,11 +26026,11 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -26032,7 +26038,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -28786,11 +28792,11 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -28805,14 +28811,17 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -28825,28 +28834,26 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -28891,11 +28898,11 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -28903,7 +28910,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -31656,11 +31663,11 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -31675,14 +31682,17 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -31695,28 +31705,26 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -31761,11 +31769,11 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -31773,7 +31781,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -39774,11 +39782,11 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
     "use strict";
     function notifyOfFinancialEvent(app, type, details) {
         try {
-            const adminUsers = app.findRecordsByFilter("users", "role = 'admin'", "");
+            const adminUsers = app.findRecordsByFilter('users', "role = 'admin'", '');
             if (!adminUsers || adminUsers.length === 0)
                 return;
             const adminUserIds = adminUsers.map((u) => u.id);
-            const adminProfiles = app.findRecordsByFilter("profiles", "globalStatus != 'Inactive' && receiveFinancialAlerts = true", "");
+            const adminProfiles = app.findRecordsByFilter('profiles', "globalStatus != 'Inactive' && receiveFinancialAlerts = true", '');
             if (!adminProfiles || adminProfiles.length === 0)
                 return;
             let templateTitle = '';
@@ -39793,14 +39801,17 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             }
             let template = null;
             try {
-                template = app.findFirstRecordByFilter("messageTemplates", "title = {:title} && isSystemTemplate = true", { title: templateTitle });
+                template = app.findFirstRecordByFilter('messageTemplates', 'title = {:title} && isSystemTemplate = true', { title: templateTitle });
             }
             catch (err) {
-                console.log("[Financial Alert Hook Error] Failed to find message template: " + templateTitle + ". Error: " + err);
+                console.log('[Financial Alert Hook Error] Failed to find message template: ' +
+                    templateTitle +
+                    '. Error: ' +
+                    err);
                 return;
             }
             if (!template) {
-                console.log("[Financial Alert Hook Error] Message template is null: " + templateTitle);
+                console.log('[Financial Alert Hook Error] Message template is null: ' + templateTitle);
                 return;
             }
             let choirName = 'Choir Management Tool';
@@ -39813,28 +39824,26 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             catch (_a) {
                 // Use default
             }
-            const queueCollection = app.findCollectionByNameOrId("emailQueue");
+            const queueCollection = app.findCollectionByNameOrId('emailQueue');
             const finalTemplate = template;
             adminProfiles.forEach((adminProf) => {
-                const userId = adminProf.get("user");
+                const userId = adminProf.get('user');
                 if (!userId || adminUserIds.indexOf(userId) === -1) {
                     return;
                 }
                 const adminUser = adminUsers.find((u) => u.id === userId);
-                const recipientEmail = adminUser ? adminUser.get("email") : "";
-                if (adminProf.get("doNotEmail") || !recipientEmail) {
+                const recipientEmail = adminUser ? adminUser.get('email') : '';
+                if (adminProf.get('doNotEmail') || !recipientEmail) {
                     return;
                 }
-                const adminName = (adminProf.get("name") || (adminUser ? adminUser.get("name") : "") || "Administrator");
-                let subject = finalTemplate.get("subject") || "";
-                let content = finalTemplate.get("content") || "";
+                const adminName = (adminProf.get('name') ||
+                    (adminUser ? adminUser.get('name') : '') ||
+                    'Administrator');
+                let subject = finalTemplate.get('subject') || '';
+                let content = finalTemplate.get('content') || '';
                 // Replace common placeholders
-                subject = subject
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
-                content = content
-                    .replace(/{choirName}/g, choirName)
-                    .replace(/{adminName}/g, adminName);
+                subject = subject.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
+                content = content.replace(/{choirName}/g, choirName).replace(/{adminName}/g, adminName);
                 if (type === 'Sale') {
                     const buyerName = details.buyerName || 'Unknown Buyer';
                     const buyerEmail = details.buyerEmail || '';
@@ -39879,11 +39888,11 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     recipientName: adminName,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
                     filters: JSON.stringify({
-                        type: "Automated Financial Alert"
-                    })
+                        type: 'Automated Financial Alert',
+                    }),
                 });
                 app.save(queueRecord);
             });
@@ -39891,7 +39900,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             processEmailQueue(app);
         }
         catch (err) {
-            console.log("[Financial Alert Hook Error] Failed to process financial notification: " + err);
+            console.log('[Financial Alert Hook Error] Failed to process financial notification: ' + err);
         }
     }
 
@@ -42144,10 +42153,30 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
         </div>
     </div>
     `;
+                let targetEventId = event.id;
+                if (eventType === 'Rehearsal') {
+                    const parentId = event.get('parentPerformanceId');
+                    if (parentId) {
+                        targetEventId = parentId;
+                    }
+                }
+                // Fetch "Yes" RSVPs for targetEventId
+                const rosters = app.findRecordsByFilter('eventRosters', 'event = {:targetEventId} && rsvp = "Yes"', '', 1000, 0, { targetEventId });
+                const rsvpProfileMap = {};
+                if (rosters) {
+                    rosters.forEach((r) => {
+                        const profileId = r.get('profile');
+                        if (profileId) {
+                            rsvpProfileMap[profileId] = true;
+                        }
+                    });
+                }
                 let rawContentTemplate = template.get('content') || '';
                 let subjectTemplate = template.get('subject') || 'Event Reminder';
                 // Queue email for each active profile
                 profiles.forEach((profile) => {
+                    if (!rsvpProfileMap[profile.id])
+                        return;
                     const userId = profile.get('user');
                     const user = userId ? userMap[userId] : null;
                     const recipientEmail = user ? user.get('email') : '';

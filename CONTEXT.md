@@ -82,7 +82,7 @@ A shelf at the bottom of the seating chart containing active singers who have no
 
 ## Automated Reminder
 
-A scheduled outbound message automatically triggered before an event starts. Configured on a per-event basis via an `enableAutomatedReminder` flag and a `reminderLeadTimeHours` lead time. Dispatch state is tracked via a `reminderSentAt` timestamp to prevent duplicate sends.
+A scheduled outbound message automatically triggered before an event starts. Configured on a per-event basis via an `enableAutomatedReminder` flag and a `reminderLeadTimeHours` lead time. Dispatch state is tracked via a `reminderSentAt` timestamp to prevent duplicate sends. Reminders are exclusively sent to active singers whose RSVP Status is "Yes (Attending)" for the target event roster. For Rehearsals linked to a parent Performance, the Rehearsal's own RSVP list is completely ignored, and reminders are instead sent to the "Yes (Attending)" roster of the parent Performance.
 
 ## Attendance Report
 
