@@ -67,9 +67,19 @@ export const generateRandomPassword = (length = 12): string => {
   const cryptoObj = typeof window !== 'undefined' ? window.crypto : globalThis.crypto;
 
   if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
-    const array = new Uint32Array(length);
-    cryptoObj.getRandomValues(array);
-    return Array.from(array, (num) => chars[num % chars.length]).join('');
+    let password = '';
+    const array = new Uint8Array(Math.max(length * 2, 32));
+    const maxValid = 256 - (256 % chars.length); // Prevent modulo bias
+
+    while (password.length < length) {
+      cryptoObj.getRandomValues(array);
+      for (let i = 0; i < array.length && password.length < length; i++) {
+        if (array[i] < maxValid) {
+          password += chars[array[i] % chars.length];
+        }
+      }
+    }
+    return password;
   }
   
   throw new Error('Secure random number generation is not supported in this environment');
