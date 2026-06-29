@@ -206,7 +206,7 @@ export function PollDetailsModal({
                     })
                   }
                 >
-                  View contacted list \u2192
+                  View contacted list
                 </button>
               </span>
             ) : (
