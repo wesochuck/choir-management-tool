@@ -3,6 +3,17 @@ import { processEmailQueue } from './email/queueProcessor';
 
 declare const Record: new (collection: unknown, data?: unknown) => PocketBaseRecord;
 
+function getPerformerLabel(app: PocketBaseApp): string {
+  try {
+    const record = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+    const value = record?.get('value');
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  } catch {
+    // ignore
+  }
+  return 'Performer';
+}
+
 export function notifyAdminsOfDecline(app: PocketBaseApp, eventId: string, profile: PocketBaseRecord, rsvpNote: string) {
     const voicePart = (profile.get("voicePart") as string) || "";
     // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
@@ -44,7 +55,8 @@ export function notifyAdminsOfDecline(app: PocketBaseApp, eventId: string, profi
         }
 
         const queueCollection = app.findCollectionByNameOrId("emailQueue");
-        const singerName = (profile.get("name") || "Singer") as string;
+        const performerLabel = getPerformerLabel(app);
+        const singerName = (profile.get("name") || performerLabel) as string;
 
         const finalTemplate = template; // aliasing for local block type stability
         adminProfiles.forEach((adminProf: PocketBaseRecord) => {

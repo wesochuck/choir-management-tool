@@ -255,7 +255,14 @@ export function runEventReminderTask(
         const userId = profile.get('user') as string;
         const user = userId ? userMap[userId] : null;
         const recipientEmail = user ? (user.get('email') as string) : '';
-        const recipientName = (profile.get('name') || 'Singer') as string;
+        const performerLabel = (() => {
+          try {
+            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+            const v = r?.get('value');
+            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+          } catch { return 'Performer'; }
+        })();
+        const recipientName = (profile.get('name') || performerLabel) as string;
 
         if (!recipientEmail) return;
 

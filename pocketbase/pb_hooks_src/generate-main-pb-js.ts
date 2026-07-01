@@ -150,6 +150,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     files: ['rsvpValidation.ts'],
     symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
   },
+
   pocketbaseDate: {
     files: ['pocketbaseDate.ts'],
     symbols: ['coercePocketBaseDate', 'isPocketBaseDateAtOrAfter', 'isPocketBaseDateBefore'],
@@ -609,7 +610,7 @@ try {
             const queueRecord = new Record(queueCollection, {
                 recipientId: audition.id,
                 recipientEmail: contact.trim(),
-                recipientName: audition.get("name") || "Singer",
+                recipientName: audition.get("name") || getPerformerLabel(),
                 subject: template.get("subject") || "",
                 rawContent: rawContent,
                 status: "Pending",
@@ -740,7 +741,16 @@ try {
                 return timezone;
             }
 
-            function formatSlotFriendly(slot) {
+    function getPerformerLabel() {
+        try {
+            const r = $app.findFirstRecordByFilter("appSettings", "key = 'performer_label'");
+            const v = r ? r.get("value") : null;
+            if (typeof v === "string" && v.trim()) return v.trim();
+        } catch (err) {}
+        return "Performer";
+    }
+
+    function formatSlotFriendly(slot) {
                 if (!slot) return "";
                 try {
                     const d = new Date(slot);
@@ -780,7 +790,7 @@ try {
             const queueRecord = new Record(queueCollection, {
                 recipientId: audition.id,
                 recipientEmail: contact.trim(),
-                recipientName: audition.get("name") || "Singer",
+                recipientName: audition.get("name") || getPerformerLabel(),
                 subject: template.get("subject") || "",
                 rawContent: rawContent,
                 status: "Pending",

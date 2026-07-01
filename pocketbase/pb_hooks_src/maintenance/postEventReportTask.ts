@@ -229,6 +229,15 @@ export function runPostEventReportTask(
       }
     }
 
+    const performerLabel = (() => {
+      try {
+        const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+        const v = r?.get('value');
+        return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+      } catch { return 'Performer'; }
+    })();
+    const performerLabelPlural = `${performerLabel}s`;
+
     const body = renderAttendanceReportBody({
       eventTitle: event.get('title'),
       eventDate: eventDateStr,
@@ -237,6 +246,7 @@ export function runPostEventReportTask(
       totalCount: total,
       mailingAddress: commSettings.mailingAddress,
       exceededLimitListHtml: exceededLimitListHtml || undefined,
+      performerLabelPlural,
     });
 
     try {

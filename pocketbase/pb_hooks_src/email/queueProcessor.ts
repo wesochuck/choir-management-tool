@@ -189,7 +189,14 @@ export function processEmailQueue(app: PocketBaseApp): void {
         const rawContent = (record.get('rawContent') as string) || '';
         const recipientId = record.get('recipientId') as string;
         const recipientEmail = record.get('recipientEmail') as string;
-        const recipientName = (record.get('recipientName') as string) || 'Singer';
+        const performerLabel = (() => {
+          try {
+            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+            const v = r?.get('value');
+            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+          } catch { return 'Performer'; }
+        })();
+        const recipientName = (record.get('recipientName') as string) || performerLabel;
         const filters = parseJsonField<Record<string, string>>(record.get('filters')) || {};
         const isSms = filters.channel === 'sms';
 

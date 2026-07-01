@@ -50,6 +50,13 @@ export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord)
     const type = record.get("type") as string;
     const isSms = type === "SMS";
     const isBoth = type === "Both";
+    const performerLabel = (() => {
+      try {
+        const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+        const v = r?.get('value');
+        return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+      } catch { return 'Performer'; }
+    })();
 
     console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
 
@@ -72,7 +79,7 @@ export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord)
                     messageRef: record.id,
                     recipientId: recipient.id,
                     recipientEmail: phone + '@sms.smtp2go.com',
-                    recipientName: recipient.name || "Singer",
+                    recipientName: recipient.name || performerLabel,
                     subject: '',
                     rawContent: smsContent,
                     status: "Pending",
@@ -91,7 +98,7 @@ export function enqueueBulkMessage(app: PocketBaseApp, record: PocketBaseRecord)
                 messageRef: record.id,
                 recipientId: recipient.id,
                 recipientEmail: recipient.email,
-                recipientName: recipient.name || "Singer",
+                recipientName: recipient.name || performerLabel,
                 subject: subject,
                 rawContent: content,
                 status: "Pending",

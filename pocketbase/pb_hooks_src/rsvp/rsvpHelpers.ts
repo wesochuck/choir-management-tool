@@ -121,7 +121,9 @@ export function enqueueRsvpConfirmationEmail(eventId: string, profile: PocketBas
       const queueRecord = new Record(queueCollection, {
         recipientId: profile.id,
         recipientEmail: recipientEmail,
-        recipientName: profile.get('name') || 'Singer',
+        recipientName: profile.get('name') || ((() => {
+          try { const r = $app.findFirstRecordByFilter('appSettings', "key = 'performer_label'"); const v = r?.get('value'); return typeof v === 'string' && v.trim() ? v.trim() : 'Performer'; } catch { return 'Performer'; }
+        })()),
         subject: template.get('subject') || '',
         rawContent: template.get('content') || '',
         status: 'Pending',

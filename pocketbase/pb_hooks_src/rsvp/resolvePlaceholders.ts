@@ -141,7 +141,10 @@ routerAdd('POST', '/api/singer/resolve-placeholders', (e) => {
     .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
 
   // Resolve {singerName}
-  const recipientName = (profile.get('name') || 'Singer') as string;
+  const performerLabel = (() => {
+    try { const r = $app.findFirstRecordByFilter('appSettings', "key = 'performer_label'"); const v = r?.get('value'); return typeof v === 'string' && v.trim() ? v.trim() : 'Performer'; } catch { return 'Performer'; }
+  })();
+  const recipientName = (profile.get('name') || performerLabel) as string;
   htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
 
   if (event) {

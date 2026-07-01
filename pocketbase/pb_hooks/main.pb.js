@@ -88,6 +88,16 @@ onRecordAfterCreateSuccess((e) => {
         const type = record.get("type");
         const isSms = type === "SMS";
         const isBoth = type === "Both";
+        const performerLabel = (() => {
+            try {
+                const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                const v = r === null || r === void 0 ? void 0 : r.get('value');
+                return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+            }
+            catch (_a) {
+                return 'Performer';
+            }
+        })();
         console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
         let smsCount = 0;
         let emailCount = 0;
@@ -105,7 +115,7 @@ onRecordAfterCreateSuccess((e) => {
                         messageRef: record.id,
                         recipientId: recipient.id,
                         recipientEmail: phone + '@sms.smtp2go.com',
-                        recipientName: recipient.name || "Singer",
+                        recipientName: recipient.name || performerLabel,
                         subject: '',
                         rawContent: smsContent,
                         status: "Pending",
@@ -122,7 +132,7 @@ onRecordAfterCreateSuccess((e) => {
                     messageRef: record.id,
                     recipientId: recipient.id,
                     recipientEmail: recipient.email,
-                    recipientName: recipient.name || "Singer",
+                    recipientName: recipient.name || performerLabel,
                     subject: subject,
                     rawContent: content,
                     status: "Pending",
@@ -764,7 +774,17 @@ onRecordAfterCreateSuccess((e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -1242,6 +1262,16 @@ onRecordAfterUpdateSuccess((e) => {
         const type = record.get("type");
         const isSms = type === "SMS";
         const isBoth = type === "Both";
+        const performerLabel = (() => {
+            try {
+                const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                const v = r === null || r === void 0 ? void 0 : r.get('value');
+                return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+            }
+            catch (_a) {
+                return 'Performer';
+            }
+        })();
         console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
         let smsCount = 0;
         let emailCount = 0;
@@ -1259,7 +1289,7 @@ onRecordAfterUpdateSuccess((e) => {
                         messageRef: record.id,
                         recipientId: recipient.id,
                         recipientEmail: phone + '@sms.smtp2go.com',
-                        recipientName: recipient.name || "Singer",
+                        recipientName: recipient.name || performerLabel,
                         subject: '',
                         rawContent: smsContent,
                         status: "Pending",
@@ -1276,7 +1306,7 @@ onRecordAfterUpdateSuccess((e) => {
                     messageRef: record.id,
                     recipientId: recipient.id,
                     recipientEmail: recipient.email,
-                    recipientName: recipient.name || "Singer",
+                    recipientName: recipient.name || performerLabel,
                     subject: subject,
                     rawContent: content,
                     status: "Pending",
@@ -1918,7 +1948,17 @@ onRecordAfterUpdateSuccess((e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -2992,7 +3032,17 @@ onRecordAfterCreateSuccess((e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -3447,7 +3497,7 @@ onRecordAfterCreateSuccess((e) => {
                 const queueRecord = new Record(queueCollection, {
                     recipientId: audition.id,
                     recipientEmail: contact.trim(),
-                    recipientName: audition.get("name") || "Singer",
+                    recipientName: audition.get("name") || getPerformerLabel(),
                     subject: template.get("subject") || "",
                     rawContent: rawContent,
                     status: "Pending",
@@ -4215,7 +4265,17 @@ onRecordAfterUpdateSuccess((e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -4635,7 +4695,16 @@ onRecordAfterUpdateSuccess((e) => {
                     return timezone;
                 }
 
-                function formatSlotFriendly(slot) {
+        function getPerformerLabel() {
+            try {
+                const r = $app.findFirstRecordByFilter("appSettings", "key = 'performer_label'");
+                const v = r ? r.get("value") : null;
+                if (typeof v === "string" && v.trim()) return v.trim();
+            } catch (err) {}
+            return "Performer";
+        }
+
+        function formatSlotFriendly(slot) {
                     if (!slot) return "";
                     try {
                         const d = new Date(slot);
@@ -4675,7 +4744,7 @@ onRecordAfterUpdateSuccess((e) => {
                 const queueRecord = new Record(queueCollection, {
                     recipientId: audition.id,
                     recipientEmail: contact.trim(),
-                    recipientName: audition.get("name") || "Singer",
+                    recipientName: audition.get("name") || getPerformerLabel(),
                     subject: template.get("subject") || "",
                     rawContent: rawContent,
                     status: "Pending",
@@ -4785,7 +4854,16 @@ function enqueueRsvpConfirmationEmail(eventId, profile) {
             const queueRecord = new Record(queueCollection, {
                 recipientId: profile.id,
                 recipientEmail: recipientEmail,
-                recipientName: profile.get('name') || 'Singer',
+                recipientName: profile.get('name') || ((() => {
+                    try {
+                        const r = $app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                        const v = r === null || r === void 0 ? void 0 : r.get('value');
+                        return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                    }
+                    catch (_a) {
+                        return 'Performer';
+                    }
+                })()),
                 subject: template.get('subject') || '',
                 rawContent: template.get('content') || '',
                 status: 'Pending',
@@ -5816,7 +5894,17 @@ function processEmailQueue(app) {
                 const rawContent = record.get('rawContent') || '';
                 const recipientId = record.get('recipientId');
                 const recipientEmail = record.get('recipientEmail');
-                const recipientName = record.get('recipientName') || 'Singer';
+                const performerLabel = (() => {
+                    try {
+                        const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                        const v = r === null || r === void 0 ? void 0 : r.get('value');
+                        return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                    }
+                    catch (_a) {
+                        return 'Performer';
+                    }
+                })();
+                const recipientName = record.get('recipientName') || performerLabel;
                 const filters = parseJsonField(record.get('filters')) || {};
                 const isSms = filters.channel === 'sms';
                 // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -6204,6 +6292,18 @@ function processEmailQueue(app) {
 
 // --- Utility source: adminNotifications.ts ---
 "use strict";
+function getPerformerLabel(app) {
+    try {
+        const record = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+        const value = record === null || record === void 0 ? void 0 : record.get('value');
+        if (typeof value === 'string' && value.trim())
+            return value.trim();
+    }
+    catch (_a) {
+        // ignore
+    }
+    return 'Performer';
+}
 function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
     const voicePart = profile.get("voicePart") || "";
     // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
@@ -6242,7 +6342,8 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
             console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
         }
         const queueCollection = app.findCollectionByNameOrId("emailQueue");
-        const singerName = (profile.get("name") || "Singer");
+        const performerLabel = getPerformerLabel(app);
+        const singerName = (profile.get("name") || performerLabel);
         const finalTemplate = template; // aliasing for local block type stability
         adminProfiles.forEach((adminProf) => {
             const userId = adminProf.get("user");
@@ -7195,7 +7296,17 @@ function parseSignedToken(token, requiredKeys) {
         .replace(/%%PLAYERLINK%%/g, '{{PLAYER_LINK}}')
         .replace(/%%POLLLINK_([a-zA-Z0-9]+)%%/g, (_, id) => '{{POLL_LINK:' + id + '}}');
     // Resolve {singerName}
-    const recipientName = (profile.get('name') || 'Singer');
+    const performerLabel = (() => {
+        try {
+            const r = $app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+            const v = r === null || r === void 0 ? void 0 : r.get('value');
+            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+        }
+        catch (_a) {
+            return 'Performer';
+        }
+    })();
+    const recipientName = (profile.get('name') || performerLabel);
     htmlBody = htmlBody.replace(/{singerName}/g, () => escapeHtml(recipientName));
     if (event) {
         const eventDate = String(event.get('date') || '');
@@ -7999,7 +8110,17 @@ function processEmailQueue(app) {
                 const rawContent = record.get('rawContent') || '';
                 const recipientId = record.get('recipientId');
                 const recipientEmail = record.get('recipientEmail');
-                const recipientName = record.get('recipientName') || 'Singer';
+                const performerLabel = (() => {
+                    try {
+                        const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                        const v = r === null || r === void 0 ? void 0 : r.get('value');
+                        return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                    }
+                    catch (_a) {
+                        return 'Performer';
+                    }
+                })();
+                const recipientName = record.get('recipientName') || performerLabel;
                 const filters = parseJsonField(record.get('filters')) || {};
                 const isSms = filters.channel === 'sms';
                 // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -8387,6 +8508,18 @@ function processEmailQueue(app) {
 
 // --- Utility source: adminNotifications.ts ---
 "use strict";
+function getPerformerLabel(app) {
+    try {
+        const record = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+        const value = record === null || record === void 0 ? void 0 : record.get('value');
+        if (typeof value === 'string' && value.trim())
+            return value.trim();
+    }
+    catch (_a) {
+        // ignore
+    }
+    return 'Performer';
+}
 function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
     const voicePart = profile.get("voicePart") || "";
     // Primary singer signal check: profiles with empty voicePart are excluded from singer-focused contexts
@@ -8425,7 +8558,8 @@ function notifyAdminsOfDecline(app, eventId, profile, rsvpNote) {
             console.log("[RSVP Decline Hook Error] Failed to find event: " + err);
         }
         const queueCollection = app.findCollectionByNameOrId("emailQueue");
-        const singerName = (profile.get("name") || "Singer");
+        const performerLabel = getPerformerLabel(app);
+        const singerName = (profile.get("name") || performerLabel);
         const finalTemplate = template; // aliasing for local block type stability
         adminProfiles.forEach((adminProf) => {
             const userId = adminProf.get("user");
@@ -9379,7 +9513,17 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -11170,7 +11314,17 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -14042,7 +14196,17 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -16914,7 +17078,17 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -19786,7 +19960,17 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -22658,7 +22842,17 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -25530,7 +25724,17 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -28402,7 +28606,17 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -31273,7 +31487,17 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -35270,7 +35494,7 @@ routerAdd("GET", "/api/calendar/download", (e) => {
         }
         catch (err) {
             console.log('Error in handleCalendarFeedUrl: ' + String(err));
-            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
+            return e.json(404, { error: 'Profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
@@ -36166,7 +36390,7 @@ routerAdd("GET", "/api/calendar/feed", (e) => {
         }
         catch (err) {
             console.log('Error in handleCalendarFeedUrl: ' + String(err));
-            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
+            return e.json(404, { error: 'Profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
@@ -37062,7 +37286,7 @@ routerAdd("GET", "/api/singer/calendar-feed-url", (e) => {
         }
         catch (err) {
             console.log('Error in handleCalendarFeedUrl: ' + String(err));
-            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
+            return e.json(404, { error: 'Profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
@@ -37958,7 +38182,7 @@ routerAdd("POST", "/api/singer/calendar-feed-url/reset", (e) => {
         }
         catch (err) {
             console.log('Error in handleCalendarFeedUrl: ' + String(err));
-            return e.json(404, { error: 'Singer profile not found: ' + String(err) });
+            return e.json(404, { error: 'Profile not found: ' + String(err) });
         }
     }
     function handleCalendarFeedReset(e) {
@@ -39082,7 +39306,17 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     const rawContent = record.get('rawContent') || '';
                     const recipientId = record.get('recipientId');
                     const recipientEmail = record.get('recipientEmail');
-                    const recipientName = record.get('recipientName') || 'Singer';
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = record.get('recipientName') || performerLabel;
                     const filters = parseJsonField(record.get('filters')) || {};
                     const isSms = filters.channel === 'sms';
                     // SMS entries: send plain text, skip HTML rendering and layout wrapping.
@@ -41361,9 +41595,10 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
     "use strict";
     function renderAttendanceReportBody(data) {
         const safe = sanitizeHtmlTemplateData(data);
+        const pluralLabel = data.performerLabelPlural || 'Singers';
         const exceededLimitSection = data.exceededLimitListHtml ? `
         <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 20px 0;" />
-        <h3 style="color: #b45309; margin-top: 0;">Singers Exceeding Rehearsal Miss Limit</h3>
+        <h3 style="color: #b45309; margin-top: 0;">${pluralLabel} Exceeding Rehearsal Miss Limit</h3>
         ${data.exceededLimitListHtml}
         ` : '';
         return `
@@ -41756,6 +41991,17 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     }
                 }
             }
+            const performerLabel = (() => {
+                try {
+                    const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                    const v = r === null || r === void 0 ? void 0 : r.get('value');
+                    return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                }
+                catch (_a) {
+                    return 'Performer';
+                }
+            })();
+            const performerLabelPlural = `${performerLabel}s`;
             const body = renderAttendanceReportBody({
                 eventTitle: event.get('title'),
                 eventDate: eventDateStr,
@@ -41764,6 +42010,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                 totalCount: total,
                 mailingAddress: commSettings.mailingAddress,
                 exceededLimitListHtml: exceededLimitListHtml || undefined,
+                performerLabelPlural,
             });
             try {
                 const messageCollection = app.findCollectionByNameOrId('messages');
@@ -42180,7 +42427,17 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     const userId = profile.get('user');
                     const user = userId ? userMap[userId] : null;
                     const recipientEmail = user ? user.get('email') : '';
-                    const recipientName = (profile.get('name') || 'Singer');
+                    const performerLabel = (() => {
+                        try {
+                            const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
+                            const v = r === null || r === void 0 ? void 0 : r.get('value');
+                            return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
+                        }
+                        catch (_a) {
+                            return 'Performer';
+                        }
+                    })();
+                    const recipientName = (profile.get('name') || performerLabel);
                     if (!recipientEmail)
                         return;
                     // Perform token/link resolution
