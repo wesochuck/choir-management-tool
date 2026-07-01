@@ -1,179 +1,186 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { useDashboardCounts } from '../../hooks/useDashboardCounts';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Button } from '../../components/ui';
 
-const dashboardSections = [
-  {
-    title: 'People & membership',
-    dotClassName: 'bg-section-green',
-    links: [
-      {
-        to: '/admin/roster',
-        icon: '👥',
-        colorClass: 'bg-emerald-500/10 text-emerald-500',
-        label: 'Manage Roster',
-        desc: 'Add singers and track status',
-      },
-      {
-        to: '/directory',
-        icon: '📖',
-        colorClass: 'bg-emerald-500/10 text-emerald-500',
-        label: 'Singer Directory',
-        desc: 'View opted-in singer contact info',
-      },
-      {
-        to: '/admin/auditions',
-        icon: '🎵',
-        colorClass: 'bg-primary/10 text-primary',
-        label: 'Auditions',
-        desc: 'Review public audition requests',
-      },
-      {
-        to: '/admin/communications',
-        icon: '✉️',
-        colorClass: 'bg-slate-500/10 text-slate-500',
-        label: 'Communications',
-        desc: 'Send announcements and review history',
-      },
-      {
-        to: '/admin/polls',
-        icon: '📊',
-        colorClass: 'bg-pink-500/10 text-pink-500',
-        label: 'Engagement Polls',
-        desc: 'Review volunteer responses and counts',
-      },
-      {
-        to: '/admin/donations',
-        icon: '🎁',
-        colorClass: 'bg-pink-500/10 text-pink-500',
-        label: 'Donations',
-        desc: 'Track giving and manage donor levels',
-      },
-      {
-        to: '/admin/patrons',
-        icon: '💎',
-        colorClass: 'bg-cyan-500/10 text-cyan-500',
-        label: 'Patrons Dashboard',
-        desc: 'View donor/buyer LTV and message patrons',
-      },
-    ],
-  },
-  {
-    title: 'Events & attendance',
-    dotClassName: 'bg-section-amber',
-    links: [
-      {
-        to: '/admin/events',
-        icon: '📅',
-        colorClass: 'bg-amber-500/10 text-amber-500',
-        label: 'Manage Events',
-        desc: 'Schedule performances and rehearsals',
-      },
-      {
-        to: '/admin/tickets',
-        icon: '🎟️',
-        colorClass: 'bg-amber-500/10 text-amber-500',
-        label: 'Ticket Sales',
-        desc: 'Track sales and process refunds',
-      },
-      {
-        to: '/admin/rsvp',
-        icon: '🗓️',
-        colorClass: 'bg-amber-500/10 text-amber-500',
-        label: 'Event RSVPs',
-        desc: 'Track responses and roster balances',
-      },
-      {
-        to: '/admin/attendance',
-        icon: '✅',
-        colorClass: 'bg-emerald-500/10 text-emerald-500',
-        label: 'Take Attendance',
-        desc: 'Track check-ins for events',
-      },
-      {
-        to: '/admin/venues',
-        icon: '🏛️',
-        colorClass: 'bg-slate-500/10 text-slate-500',
-        label: 'Manage Venues',
-        desc: 'Configure venue capacities',
-      },
-      {
-        to: '/admin/seating',
-        icon: '🪑',
-        colorClass: 'bg-primary/10 text-primary',
-        label: 'Seating Charts',
-        desc: 'Design layouts and assign seats',
-      },
-    ],
-  },
-  {
-    title: 'Music & performance',
-    dotClassName: 'bg-section-cyan',
-    links: [
-      {
-        to: '/admin/library',
-        icon: '🎼',
-        colorClass: 'bg-cyan-500/10 text-cyan-500',
-        label: 'Music Library',
-        desc: 'Catalog, repertoire, and CSV import',
-      },
-      {
-        to: '/admin/setlists',
-        icon: '📋',
-        colorClass: 'bg-cyan-500/10 text-cyan-500',
-        label: 'Set Lists',
-        desc: 'Build and reorder event music',
-      },
-      {
-        to: '/admin/resources',
-        icon: '📂',
-        colorClass: 'bg-cyan-500/10 text-cyan-500',
-        label: 'Singer Resources',
-        desc: 'Upload documents and links for singers',
-      },
-    ],
-  },
-  {
-    title: 'Admin',
-    dotClassName: 'bg-section-slate',
-    links: [
-      {
-        to: '/admin/reports',
-        icon: '📈',
-        colorClass: 'bg-slate-500/10 text-slate-500',
-        label: 'Reports & Insights',
-        desc: 'Attendance trends and concert summaries',
-      },
-      {
-        to: '/admin/website',
-        icon: '🌐',
-        colorClass: 'bg-slate-500/10 text-slate-500',
-        label: 'Public Website',
-        desc: 'Landing page, hero image, and public branding',
-      },
-      {
-        to: '/admin/settings',
-        icon: '⚙️',
-        colorClass: 'bg-slate-500/10 text-slate-500',
-        label: 'System Settings',
-        desc: 'Configure global preferences',
-      },
-    ],
-  },
-];
-
 export default function AdminDashboardView() {
   const { user, logout } = useAuth();
   useDocumentTitle('Choir Admin');
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
 
   const { activeSingers, upcomingEvents, pendingAuditions, errorMessage } = useDashboardCounts();
 
   const [selectedCategory, setSelectedCategory] = useState<
     'All' | 'People' | 'Events' | 'Music' | 'Admin'
   >('All');
+
+  const dashboardSections = useMemo(
+    () => [
+      {
+        title: 'People & membership',
+        dotClassName: 'bg-section-green',
+        links: [
+          {
+            to: '/admin/roster',
+            icon: '👥',
+            colorClass: 'bg-emerald-500/10 text-emerald-500',
+            label: 'Manage Roster',
+            desc: `Add ${performerLabelPlural.toLowerCase()} and track status`,
+          },
+          {
+            to: '/directory',
+            icon: '📖',
+            colorClass: 'bg-emerald-500/10 text-emerald-500',
+            label: `${performerLabel} Directory`,
+            desc: `View opted-in ${performerLabel.toLowerCase()} contact info`,
+          },
+          {
+            to: '/admin/auditions',
+            icon: '🎵',
+            colorClass: 'bg-primary/10 text-primary',
+            label: 'Auditions',
+            desc: 'Review public audition requests',
+          },
+          {
+            to: '/admin/communications',
+            icon: '✉️',
+            colorClass: 'bg-slate-500/10 text-slate-500',
+            label: 'Communications',
+            desc: 'Send announcements and review history',
+          },
+          {
+            to: '/admin/polls',
+            icon: '📊',
+            colorClass: 'bg-pink-500/10 text-pink-500',
+            label: 'Engagement Polls',
+            desc: 'Review volunteer responses and counts',
+          },
+          {
+            to: '/admin/donations',
+            icon: '🎁',
+            colorClass: 'bg-pink-500/10 text-pink-500',
+            label: 'Donations',
+            desc: 'Track giving and manage donor levels',
+          },
+          {
+            to: '/admin/patrons',
+            icon: '💎',
+            colorClass: 'bg-cyan-500/10 text-cyan-500',
+            label: 'Patrons Dashboard',
+            desc: 'View donor/buyer LTV and message patrons',
+          },
+        ],
+      },
+      {
+        title: 'Events & attendance',
+        dotClassName: 'bg-section-amber',
+        links: [
+          {
+            to: '/admin/events',
+            icon: '📅',
+            colorClass: 'bg-amber-500/10 text-amber-500',
+            label: 'Manage Events',
+            desc: 'Schedule performances and rehearsals',
+          },
+          {
+            to: '/admin/tickets',
+            icon: '🎟️',
+            colorClass: 'bg-amber-500/10 text-amber-500',
+            label: 'Ticket Sales',
+            desc: 'Track sales and process refunds',
+          },
+          {
+            to: '/admin/rsvp',
+            icon: '🗓️',
+            colorClass: 'bg-amber-500/10 text-amber-500',
+            label: 'Event RSVPs',
+            desc: 'Track responses and roster balances',
+          },
+          {
+            to: '/admin/attendance',
+            icon: '✅',
+            colorClass: 'bg-emerald-500/10 text-emerald-500',
+            label: 'Take Attendance',
+            desc: 'Track check-ins for events',
+          },
+          {
+            to: '/admin/venues',
+            icon: '🏛️',
+            colorClass: 'bg-slate-500/10 text-slate-500',
+            label: 'Manage Venues',
+            desc: 'Configure venue capacities',
+          },
+          {
+            to: '/admin/seating',
+            icon: '🪑',
+            colorClass: 'bg-primary/10 text-primary',
+            label: 'Seating Charts',
+            desc: 'Design layouts and assign seats',
+          },
+        ],
+      },
+      {
+        title: 'Music & performance',
+        dotClassName: 'bg-section-cyan',
+        links: [
+          {
+            to: '/admin/library',
+            icon: '🎼',
+            colorClass: 'bg-cyan-500/10 text-cyan-500',
+            label: 'Music Library',
+            desc: 'Catalog, repertoire, and CSV import',
+          },
+          {
+            to: '/admin/setlists',
+            icon: '📋',
+            colorClass: 'bg-cyan-500/10 text-cyan-500',
+            label: 'Set Lists',
+            desc: 'Build and reorder event music',
+          },
+          {
+            to: '/admin/resources',
+            icon: '📂',
+            colorClass: 'bg-cyan-500/10 text-cyan-500',
+            label: `${performerLabel} Resources`,
+            desc: `Upload documents and links for ${performerLabelPlural.toLowerCase()}`,
+          },
+        ],
+      },
+      {
+        title: 'Admin',
+        dotClassName: 'bg-section-slate',
+        links: [
+          {
+            to: '/admin/reports',
+            icon: '📈',
+            colorClass: 'bg-slate-500/10 text-slate-500',
+            label: 'Reports & Insights',
+            desc: 'Attendance trends and concert summaries',
+          },
+          {
+            to: '/admin/website',
+            icon: '🌐',
+            colorClass: 'bg-slate-500/10 text-slate-500',
+            label: 'Public Website',
+            desc: 'Landing page, hero image, and public branding',
+          },
+          {
+            to: '/admin/settings',
+            icon: '⚙️',
+            colorClass: 'bg-slate-500/10 text-slate-500',
+            label: 'System Settings',
+            desc: 'Configure global preferences',
+          },
+        ],
+      },
+    ],
+    [performerLabel, performerLabelPlural]
+  );
 
   const filteredSections = useMemo(() => {
     if (selectedCategory === 'All') return dashboardSections;
@@ -182,7 +189,7 @@ export default function AdminDashboardView() {
     if (selectedCategory === 'Music') return [dashboardSections[2]];
     if (selectedCategory === 'Admin') return [dashboardSections[3]];
     return dashboardSections;
-  }, [selectedCategory]);
+  }, [selectedCategory, dashboardSections]);
 
   const getGreeting = () => {
     const hr = new Date().getHours();
@@ -209,7 +216,7 @@ export default function AdminDashboardView() {
               size="small"
               className="flex-1 sm:flex-none"
             >
-              Singer Directory
+              {performerLabel} Directory
             </Button>
             <Button
               as={Link}
@@ -242,7 +249,7 @@ export default function AdminDashboardView() {
               className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15"
             >
               <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">
-                Active Singers
+                Active {performerLabelPlural}
               </span>
               <span className="text-section-amber text-xl font-bold">
                 {activeSingers !== undefined ? activeSingers : '...'}
@@ -315,7 +322,7 @@ export default function AdminDashboardView() {
               <span className="text-lg" aria-hidden="true">
                 👥
               </span>{' '}
-              Add Singer
+              Add {performerLabel}
             </Link>
             <Link
               to="/admin/events?add=true"

@@ -1,8 +1,9 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import { PageLayout } from './components/common/PageLayout';
+import { useChoirSettings } from './hooks/useDocumentTitle';
 import { Button } from './components/ui';
+import { PageLayout } from './components/common/PageLayout';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './lib/queryKeys';
 import { settingsService } from './services/settingsService';
@@ -130,12 +131,22 @@ export function DirectoryRoute() {
   });
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const { performerLabel } = useChoirSettings();
 
   if (isLoading) return <AppLoader />;
   if (!settings?.enabled && !isAdmin) return <Navigate to="/dashboard" replace />;
   return (
-    <PageLayout title="Singer Directory" backTo="/dashboard">
+    <PageLayout title={`${performerLabel} Directory`} backTo="/dashboard">
       <DirectoryView />
+    </PageLayout>
+  );
+}
+
+function ResourcesRoute() {
+  const { performerLabel } = useChoirSettings();
+  return (
+    <PageLayout title={`${performerLabel} Resources`} backTo="/dashboard">
+      <ResourcesView />
     </PageLayout>
   );
 }
@@ -379,9 +390,7 @@ export default function App() {
               path="/admin/resources"
               element={
                 <ProtectedRoute adminOnly>
-                  <PageLayout title="Singer Resources" backTo="/dashboard">
-                    <ResourcesView />
-                  </PageLayout>
+                  <ResourcesRoute />
                 </ProtectedRoute>
               }
             />
