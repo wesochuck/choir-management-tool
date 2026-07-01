@@ -10,6 +10,8 @@ interface ChoirNameContextValue {
   setChoirName: (name: string) => void;
   timezone: string;
   setTimezone: (tz: string) => void;
+  performerLabel: string;
+  setPerformerLabel: (label: string) => void;
 }
 
 const ChoirNameContext = createContext<ChoirNameContextValue>({
@@ -17,20 +19,24 @@ const ChoirNameContext = createContext<ChoirNameContextValue>({
   setChoirName: () => {},
   timezone: 'America/New_York',
   setTimezone: () => {},
+  performerLabel: 'Performer',
+  setPerformerLabel: () => {},
 });
 
 export function ChoirNameProvider({ children }: { children: ReactNode }) {
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezoneState] = useState('America/New_York');
+  const [performerLabel, setPerformerLabel] = useState('Performer');
 
   const { data, error } = useQuery({
     queryKey: queryKeys.choirSettings.all,
     queryFn: async () => {
-      const [name, tz] = await Promise.all([
+      const [name, tz, label] = await Promise.all([
         settingsService.getChoirName(),
         settingsService.getTimezone(),
+        settingsService.getPerformerLabel(),
       ]);
-      return { name, timezone: tz };
+      return { name, timezone: tz, performerLabel: label };
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -45,6 +51,7 @@ export function ChoirNameProvider({ children }: { children: ReactNode }) {
     if (!data) return;
     setChoirName(data.name);
     setTimezoneState(data.timezone);
+    setPerformerLabel(data.performerLabel);
     setCachedTimezone(data.timezone);
   }, [data]);
 
@@ -54,7 +61,9 @@ export function ChoirNameProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ChoirNameContext.Provider value={{ choirName, setChoirName, timezone, setTimezone }}>
+    <ChoirNameContext.Provider
+      value={{ choirName, setChoirName, timezone, setTimezone, performerLabel, setPerformerLabel }}
+    >
       {children}
     </ChoirNameContext.Provider>
   );
