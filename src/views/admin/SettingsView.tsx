@@ -47,7 +47,11 @@ const inputClasses = 'max-w-lg';
 export default function SettingsView() {
   const dialog = useDialog();
   const queryClient = useQueryClient();
-  const { setChoirName: setContextChoirName, setTimezone: setContextTimezone } = useChoirSettings();
+  const {
+    setChoirName: setContextChoirName,
+    setTimezone: setContextTimezone,
+    setPerformerLabel: setContextPerformerLabel,
+  } = useChoirSettings();
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezone] = useState('America/New_York');
   const [message, setMessage] = useState('');
@@ -55,12 +59,14 @@ export default function SettingsView() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isLogoRemoved, setIsLogoRemoved] = useState(false);
   const [directoryEnabled, setDirectoryEnabled] = useState(true);
+  const [performerLabel, setPerformerLabel] = useState('Performer');
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
       await Promise.all([
         choirName ? settingsService.saveChoirName(choirName) : Promise.resolve(),
         settingsService.saveTimezone(timezone),
+        settingsService.savePerformerLabel(performerLabel),
         settingsService.saveDirectorySettings({ enabled: directoryEnabled }),
         logoFile
           ? settingsService.saveLogo(logoFile)
@@ -82,26 +88,44 @@ export default function SettingsView() {
   const settingsQuery = useQuery({
     queryKey: queryKeys.choirSettings.admin,
     queryFn: async () => {
-      const [loadedChoirName, loadedTimezone, loadedLogoUrl, loadedDirectorySettings] =
-        await Promise.all([
-          settingsService.getChoirName(),
-          settingsService.getTimezone(),
-          settingsService.getLogoUrl(),
-          settingsService.getDirectorySettings(),
-        ]);
-      return { loadedChoirName, loadedTimezone, loadedLogoUrl, loadedDirectorySettings };
+      const [
+        loadedChoirName,
+        loadedTimezone,
+        loadedLogoUrl,
+        loadedDirectorySettings,
+        loadedPerformerLabel,
+      ] = await Promise.all([
+        settingsService.getChoirName(),
+        settingsService.getTimezone(),
+        settingsService.getLogoUrl(),
+        settingsService.getDirectorySettings(),
+        settingsService.getPerformerLabel(),
+      ]);
+      return {
+        loadedChoirName,
+        loadedTimezone,
+        loadedLogoUrl,
+        loadedDirectorySettings,
+        loadedPerformerLabel,
+      };
     },
     staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
     if (!settingsQuery.data) return;
-    const { loadedChoirName, loadedTimezone, loadedLogoUrl, loadedDirectorySettings } =
-      settingsQuery.data;
+    const {
+      loadedChoirName,
+      loadedTimezone,
+      loadedLogoUrl,
+      loadedDirectorySettings,
+      loadedPerformerLabel,
+    } = settingsQuery.data;
     setChoirName(loadedChoirName);
     setTimezone(loadedTimezone);
     setLogoUrl(loadedLogoUrl);
     setDirectoryEnabled(loadedDirectorySettings?.enabled ?? true);
+    setPerformerLabel(loadedPerformerLabel ?? 'Performer');
   }, [settingsQuery.data]);
 
   const isLoading = settingsQuery.isLoading;
@@ -118,13 +142,23 @@ export default function SettingsView() {
     const directoryDirty =
       directoryEnabled !== (settingsData?.loadedDirectorySettings?.enabled ?? true);
     const logoDirty = logoFile !== null || isLogoRemoved;
-    return fieldsDirty || directoryDirty || logoDirty;
-  }, [settingsData, choirName, timezone, directoryEnabled, logoFile, isLogoRemoved]);
+    const labelDirty = performerLabel !== (settingsData?.loadedPerformerLabel ?? 'Performer');
+    return fieldsDirty || directoryDirty || logoDirty || labelDirty;
+  }, [
+    settingsData,
+    choirName,
+    timezone,
+    directoryEnabled,
+    logoFile,
+    isLogoRemoved,
+    performerLabel,
+  ]);
 
   const handleGlobalDiscard = () => {
     setChoirName(settingsData?.loadedChoirName ?? '');
     setTimezone(settingsData?.loadedTimezone ?? 'America/New_York');
     setDirectoryEnabled(settingsData?.loadedDirectorySettings?.enabled ?? true);
+    setPerformerLabel(settingsData?.loadedPerformerLabel ?? 'Performer');
     if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
     setLogoUrl(settingsData?.loadedLogoUrl ?? null);
     setLogoFile(null);
@@ -141,6 +175,7 @@ export default function SettingsView() {
 
       setContextChoirName(choirName);
       setContextTimezone(timezone);
+      setContextPerformerLabel(performerLabel);
       if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
       if (logoFile) {
         setLogoUrl(newLogoUrl);
@@ -298,6 +333,23 @@ export default function SettingsView() {
             <p className="text-text-muted text-xs">
               This timezone controls all event scheduling, display clocks, and email/SMS automatic
               reminders.
+            </p>
+          </div>
+        </AppCard>
+
+        <AppCard title="Participant Label">
+          <div className="flex flex-col gap-2">
+            <Input
+              id="performer-label"
+              type="text"
+              value={performerLabel}
+              onChange={(event) => setPerformerLabel(event.target.value)}
+              placeholder="e.g. Performer"
+              className={inputClasses}
+            />
+            <p className="text-text-muted text-xs">
+              Label used throughout the app for participants (shown as "Add Performer", "Performer
+              Dashboard", "No performers found", etc.). Default: "Performer".
             </p>
           </div>
         </AppCard>
