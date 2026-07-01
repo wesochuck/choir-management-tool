@@ -188,7 +188,7 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         },
       },
     ];
-  }, [currentSeason, duesMap, onEdit, onToggleDues]);
+  }, [currentSeason, duesMap, onEdit, onToggleDues, setActivePhoto]);
 
   return (
     <AppCard noPadding>
