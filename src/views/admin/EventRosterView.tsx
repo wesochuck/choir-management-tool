@@ -13,6 +13,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useEventRosterData } from '../../hooks/useEventRosterData';
 import { useRsvpBulkActions, type BulkRsvpAction } from './event-roster/useRsvpBulkActions';
 import { useEventRosterExport } from './event-roster/useEventRosterExport';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 
 interface EventRosterViewProps {
   eventIdProp?: string;
@@ -29,6 +31,8 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
   const queryClient = useQueryClient();
 
   const { user, updatePreferences } = useAuth();
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
 
   const {
     event,
@@ -308,7 +312,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px_auto] lg:items-center">
               <Input
                 type="text"
-                placeholder="Search active singers..."
+                placeholder={`Search active ${performerLabelPlural.toLowerCase()}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full"
@@ -344,7 +348,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'lastName' | 'voicePart')}
                 className="w-full"
-                aria-label="Sort singers"
+                aria-label={`Sort ${performerLabelPlural.toLowerCase()}`}
               >
                 <option value="lastName">Sort: Last Name</option>
                 <option value="voicePart">Sort: Voice Part + Last Name</option>
@@ -407,7 +411,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 className="w-full justify-center sm:w-auto"
                 disabled={isUpdating}
                 onClick={() => handleBulkAction('Yes')}
-                aria-label="Mark selected singers attending"
+                aria-label={`Mark selected ${performerLabelPlural.toLowerCase()} attending`}
               >
                 {getBulkButtonLabel('Yes', 'Mark Attending')}
               </Button>
@@ -419,7 +423,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 className="w-full justify-center sm:w-auto"
                 disabled={isUpdating}
                 onClick={() => handleBulkAction('No')}
-                aria-label="Mark selected singers declined"
+                aria-label={`Mark selected ${performerLabelPlural.toLowerCase()} declined`}
               >
                 {getBulkButtonLabel('No', 'Mark Declined')}
               </Button>
@@ -431,7 +435,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
                 className="col-span-2 w-full justify-center sm:col-span-1 sm:w-auto"
                 disabled={isUpdating}
                 onClick={() => handleBulkAction('Pending')}
-                aria-label="Reset RSVPs for selected singers"
+                aria-label={`Reset RSVPs for selected ${performerLabelPlural.toLowerCase()}`}
               >
                 {getBulkButtonLabel('Pending', 'Reset RSVPs')}
               </Button>
@@ -469,7 +473,7 @@ export default function EventRosterView({ eventIdProp, onClose }: EventRosterVie
           <div className="border-t-primary size-10 animate-spin rounded-full border-3 border-gray-200" />
           <div className="text-lg font-bold text-gray-800">Processing changes...</div>
           <div className="text-sm font-semibold text-gray-500">
-            {bulkProgress ? `Updating singer ${bulkProgress.current} of ${bulkProgress.total}` : ''}
+            {bulkProgress ? `Updating ${performerLabel.toLowerCase()} ${bulkProgress.current} of ${bulkProgress.total}` : ''}
           </div>
           <ProgressBar
             value={bulkProgress ? (bulkProgress.current / bulkProgress.total) * 100 : 0}

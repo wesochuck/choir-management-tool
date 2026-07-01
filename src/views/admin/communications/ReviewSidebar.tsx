@@ -9,6 +9,8 @@ import type { CommunicationSettings } from '../../../services/settingsService';
 import type { Event } from '../../../services/eventService';
 import type { CommunicationTab } from '../../../types/Communication';
 import type { WizardStep } from './types';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 
 interface ReviewSidebarProps {
   selectedRecipients: CommunicationRecipient[];
@@ -53,6 +55,8 @@ export function ReviewSidebar({
   setWizardStep,
   user,
 }: ReviewSidebarProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   return (
     <aside className="flex flex-col gap-5">
       {/* Card 1: Recipient summary */}
@@ -91,7 +95,7 @@ export function ReviewSidebar({
               {
                 label: 'Total Audience',
                 count: recipientCounts.total,
-                subtitle: 'matched singers',
+                subtitle: `matched ${performerLabelPlural.toLowerCase()}`,
                 color: 'neutral',
               },
               {
@@ -204,7 +208,7 @@ export function ReviewSidebar({
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
-            {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} Singers`}
+            {isSending ? 'Sending...' : `Send to ${selectedRecipients.length} ${performerLabelPlural}`}
           </Button>
         </div>
       </AppCard>

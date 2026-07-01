@@ -1,6 +1,8 @@
 import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import type { Profile } from '../../services/profileService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { getContrastColor } from '../../lib/colorUtils';
 import { Button, Select, Input, ColorPicker } from '../ui';
 
@@ -25,6 +27,8 @@ export function VoicePartEditor({
   setActiveTab,
   setFilter,
 }: VoicePartEditorProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const getSingerCountForPart = (label: string) => {
     if (!label) return 0;
     return allProfiles.filter((p) => p.voicePart === label).length;
@@ -60,7 +64,7 @@ export function VoicePartEditor({
                   disabled={isTied}
                   title={
                     isTied
-                      ? 'Cannot change the label of a voice part with assigned singers'
+                      ? `Cannot change the label of a voice part with assigned ${performerLabelPlural.toLowerCase()}`
                       : undefined
                   }
                 />
@@ -137,10 +141,10 @@ export function VoicePartEditor({
                       setFilter('voiceParts', [vp.label]);
                     }}
                     className="flex items-center gap-1"
-                    title={`Click to view the ${count} singer(s) in this voice part`}
+                    title={`Click to view the ${count} ${performerLabel.toLowerCase()}${count === 1 ? '' : 's'} in this voice part`}
                   >
                     <span className="font-bold">
-                      {count} singer{count === 1 ? '' : 's'}
+                      {count} {performerLabel.toLowerCase()}{count === 1 ? '' : 's'}
                     </span>
                   </Button>
                 ) : (
@@ -154,7 +158,7 @@ export function VoicePartEditor({
                     setConfigVoiceParts(configVoiceParts.filter((_, idx) => idx !== index));
                   }}
                   disabled={isTied}
-                  title={isTied ? 'Cannot delete voice part with assigned singers' : undefined}
+                  title={isTied ? `Cannot delete voice part with assigned ${performerLabelPlural.toLowerCase()}` : undefined}
                 >
                   Delete
                 </Button>

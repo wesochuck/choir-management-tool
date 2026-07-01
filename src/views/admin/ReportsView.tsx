@@ -7,6 +7,8 @@ import { useEvents } from '../../hooks/useEvents';
 import { usePiecePerformanceMap } from '../../hooks/usePiecePerformanceMap';
 import { Button, Select, DataTable, type ColumnDef } from '../../components/ui';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 
 type ReportTab = 'attendance' | 'repertoire';
 
@@ -28,6 +30,8 @@ interface RepertoireStats {
 }
 
 export default function ReportsView() {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [tab, setTab] = useState<ReportTab>('attendance');
   const [selectedPerformanceId, setSelectedPerformanceId] = useState<string>('');
 
@@ -86,7 +90,7 @@ export default function ReportsView() {
   const attendanceColumns: ColumnDef<SingerReport>[] = [
     {
       id: 'singer',
-      header: 'Singer',
+      header: performerLabel,
       accessorKey: 'name',
       enableSorting: true,
       meta: {
@@ -217,7 +221,7 @@ export default function ReportsView() {
     if (tab === 'attendance') {
       if (!concertSummary) return;
       const headers = [
-        'Singer',
+        performerLabel,
         'Voice Part',
         'Absences',
         'Presence Count',
@@ -371,7 +375,7 @@ export default function ReportsView() {
                   </div>
                 </div>
                 <div className="border-border bg-surface rounded-xl border p-6 text-center shadow-sm">
-                  <div className="text-muted mb-1 text-xs uppercase">Total Singers</div>
+                  <div className="text-muted mb-1 text-xs uppercase">Total {performerLabelPlural}</div>
                   <div className="text-display text-primary">
                     {concertSummary.singerReports.length}
                   </div>
@@ -387,9 +391,9 @@ export default function ReportsView() {
               {/* Detailed Table */}
               <div className="border-border bg-surface overflow-hidden rounded-xl border p-0 shadow-sm">
                 <div className="no-print border-border border-b p-6">
-                  <h3>Singer Attendance Detail</h3>
+                  <h3>{performerLabel} Attendance Detail</h3>
                   <p className="text-muted">
-                    Singers with 2 or more absences are highlighted in red.
+                    {performerLabelPlural} with 2 or more absences are highlighted in red.
                   </p>
                 </div>
                 <DataTable

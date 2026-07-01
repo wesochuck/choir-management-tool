@@ -1,3 +1,4 @@
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { AppCard } from '../common/AppCard';
 import { Button } from '../ui';
 import type { SelectedSeatInfo } from './types';
@@ -8,6 +9,7 @@ type SelectedSeatCardProps = {
 };
 
 export function SelectedSeatCard({ selectedSeat, onClear }: SelectedSeatCardProps) {
+  const { performerLabel } = useChoirSettings();
   return (
     <AppCard className="max-sm:block">
       <div className="flex items-center justify-between gap-4 max-sm:flex">
@@ -17,7 +19,7 @@ export function SelectedSeatCard({ selectedSeat, onClear }: SelectedSeatCardProp
           </div>
           <div className="text-text text-base font-extrabold max-sm:text-base">
             {selectedSeat.status === 'empty' && 'Empty seat'}
-            {selectedSeat.status === 'assignedUnknown' && 'Assigned singer'}
+            {selectedSeat.status === 'assignedUnknown' && `Assigned ${performerLabel.toLowerCase()}`}
             {selectedSeat.status === 'assigned' && selectedSeat.name}
             {selectedSeat.status === 'self' && 'Your seat'}
           </div>

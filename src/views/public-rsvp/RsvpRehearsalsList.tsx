@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatInTimezone } from '../../lib/timezone';
 import type { EventDetails } from './useRsvpData';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 
 interface RsvpRehearsalsListProps {
   rehearsals: EventDetails[];
@@ -8,6 +9,7 @@ interface RsvpRehearsalsListProps {
 }
 
 export function RsvpRehearsalsList({ rehearsals, timezone }: RsvpRehearsalsListProps) {
+  const { performerLabel } = useChoirSettings();
   const [showRehearsals, setShowRehearsals] = useState(false);
 
   if (rehearsals.length === 0) return null;
@@ -55,7 +57,7 @@ export function RsvpRehearsalsList({ rehearsals, timezone }: RsvpRehearsalsListP
             );
           })}
           <p className="text-text-muted m-0 mt-1 text-center text-xs">
-            Need to report a rehearsal absence? Please use your singer dashboard.
+            Need to report a rehearsal absence? Please use your {performerLabel.toLowerCase()} dashboard.
           </p>
         </div>
       )}

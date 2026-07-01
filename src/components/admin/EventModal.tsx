@@ -9,6 +9,7 @@ import { pb, formatPocketBaseError } from '../../lib/pocketbase';
 import { settingsService } from '../../services/settingsService';
 import { queryKeys } from '../../lib/queryKeys';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { utcToZonedInputValue, zonedInputValueToUtc } from '../../lib/timezone';
 import { InlineVenueCreator } from './InlineVenueCreator';
 import { EventTicketsTab } from './EventTicketsTab';
@@ -38,7 +39,8 @@ export const EventModal: React.FC<EventModalProps> = ({
 }) => {
   const dialog = useDialog();
   const navigate = useNavigate();
-  const { timezone } = useChoirSettings();
+  const { performerLabel, timezone } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [formData, setFormData] = useState<Partial<Event>>({
     title: '',
     date: utcToZonedInputValue(new Date(), timezone),
@@ -646,7 +648,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                       />
                     </div>
                     <div className="text-text-muted text-xs">
-                      This will automatically send a reminder to all active singers using the{' '}
+                      {`This will automatically send a reminder to all active ${performerLabelPlural.toLowerCase()} using the`}{' '}
                       <button
                         type="button"
                         onClick={() => navigate('/admin/communications')}

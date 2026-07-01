@@ -1,4 +1,5 @@
 import React from 'react';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 
 export type PlaceholderContext = 'standard' | 'ticketConfirmation' | 'bundleTicketConfirmation';
 
@@ -216,12 +217,16 @@ export const PlaceholderPanel: React.FC<PlaceholderPanelProps> = ({
   hasApprovedSetList = true,
   hasCallTime = true,
 }) => {
+  const { performerLabel } = useChoirSettings();
+
   const basePlaceholders =
     context === 'ticketConfirmation'
       ? TICKET_CONFIRMATION_PLACEHOLDERS
       : context === 'bundleTicketConfirmation'
         ? BUNDLE_TICKET_CONFIRMATION_PLACEHOLDERS
-        : STANDARD_PLACEHOLDERS;
+        : STANDARD_PLACEHOLDERS.map((p) =>
+            p.tag === '{singerName}' ? { ...p, label: `${performerLabel} Name` } : p
+          );
 
   const visiblePlaceholders = basePlaceholders.filter((p) => {
     if (context !== 'standard') return true;

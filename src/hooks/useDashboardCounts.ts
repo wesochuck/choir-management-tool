@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { useChoirSettings } from './useDocumentTitle';
+import { pluralizeLabel } from '../lib/labelHelpers';
 import { queryKeys } from '../lib/queryKeys';
 import { pb } from '../lib/pocketbase';
 
@@ -7,6 +9,8 @@ function toErrorMessage(err: unknown, fallback: string): string {
 }
 
 export const useDashboardCounts = () => {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const activeSingersQuery = useQuery({
     queryKey: queryKeys.dashboard.activeSingers,
     queryFn: () =>
@@ -45,7 +49,7 @@ export const useDashboardCounts = () => {
     upcomingEvents: upcomingEventsQuery.data,
     pendingAuditions: pendingAuditionsQuery.data,
     errorMessage: activeSingersQuery.error
-      ? toErrorMessage(activeSingersQuery.error, 'Failed to fetch active singers count')
+      ? toErrorMessage(activeSingersQuery.error, `Failed to fetch active ${performerLabelPlural.toLowerCase()} count`)
       : upcomingEventsQuery.error
         ? toErrorMessage(upcomingEventsQuery.error, 'Failed to fetch upcoming events count')
         : pendingAuditionsQuery.error

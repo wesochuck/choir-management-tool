@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { pb } from '../lib/pocketbase';
 import { useNavigate } from 'react-router-dom';
-import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
 import { Button, Input } from '../components/ui';
+
 
 type LoginMode = 'otp' | 'password';
 type OtpStep = 'request' | 'verify';
 
 export default function LoginView() {
   useDocumentTitle('Login');
+  const { performerLabel } = useChoirSettings();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -163,7 +165,7 @@ export default function LoginView() {
     <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-center p-4">
       <div className="border-border bg-surface w-full max-w-[min(400px,calc(100vw-32px))] rounded-xl border p-8 shadow-[0_10px_25px_-5px_rgb(0_0_0_/_5%),0_8px_16px_-6px_rgb(0_0_0_/_3%)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[rgba(109,40,217,0.2)] hover:shadow-[0_20px_30px_-10px_rgb(91_33_182_/_6%),0_10px_20px_-8px_rgb(0_0_0_/_4%)]">
         <h1 className="text-text mb-6 text-center text-3xl font-extrabold tracking-tight">
-          {isForgotMode ? 'Reset Password' : 'Singer Portal'}
+          {isForgotMode ? 'Reset Password' : `${performerLabel} Portal`}
         </h1>
 
         {!isForgotMode && otpStep === 'request' && (
@@ -201,7 +203,7 @@ export default function LoginView() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="e.g. singer@choir.org"
+                placeholder={`e.g. ${performerLabel.toLowerCase()}@choir.org`}
               />
             </div>
 
@@ -241,7 +243,7 @@ export default function LoginView() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        placeholder="singer@choir.org"
+                        placeholder={`${performerLabel.toLowerCase()}@choir.org`}
                       />
                     </div>
                     {error && <p className="text-danger-text m-0 text-xs">{error}</p>}
@@ -357,7 +359,7 @@ export default function LoginView() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="e.g. singer@choir.org"
+                    placeholder={`e.g. ${performerLabel.toLowerCase()}@choir.org`}
                   />
                 </div>
                 <div className="flex flex-col gap-1">

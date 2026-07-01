@@ -10,6 +10,8 @@ import {
   type RsvpExportSort,
 } from '../../../lib/eventRoster/exportCsv';
 import { getRsvpStatusLabel, type RsvpStatus } from '../../../lib/eventRoster/rsvpLabels';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 
 type VoicePartDef = ReturnType<typeof useEventRosterData>['voiceParts'][number];
 
@@ -42,6 +44,8 @@ export function useEventRosterExport({
   updatePreferences,
   dialog,
 }: UseEventRosterExportArgs) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const handleExportCSV = useCallback(async () => {
     if (!event) return;
 
@@ -60,7 +64,7 @@ export function useEventRosterExport({
     }
 
     const filterSummary =
-      filterParts.length > 0 ? filterParts.join(' · ') : 'No filters active — all singers included';
+      filterParts.length > 0 ? filterParts.join(' · ') : `No filters active — all ${performerLabelPlural.toLowerCase()} included`;
 
     // Keep this mutable local variable inside handleExportCSV.
     // It captures the modal dropdown value at confirm time without extra renders.
@@ -72,7 +76,7 @@ export function useEventRosterExport({
         <div className="flex flex-col gap-4">
           <div className="border-border bg-bg rounded-md border p-3">
             <div className="text-text-muted text-xs font-semibold uppercase">
-              Exporting {filteredSingers.length} singer
+              Exporting {filteredSingers.length} {performerLabel.toLowerCase()}
               {filteredSingers.length !== 1 ? 's' : ''} currently shown
             </div>
             <div className="text-text text-sm">{filterSummary}</div>
@@ -137,6 +141,8 @@ export function useEventRosterExport({
     defaultExportSort,
     updatePreferences,
     dialog,
+    performerLabel,
+    performerLabelPlural,
   ]);
 
   return { handleExportCSV };

@@ -2,6 +2,8 @@ import React from 'react';
 import type { Event } from '../../../services/eventService';
 import { Select, Button } from '../../../components/ui';
 import { formatInTimezone } from '../../../lib/timezone';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 
 interface SetListToolbarProps {
   events: Event[];
@@ -28,6 +30,8 @@ export function SetListToolbar({
   onToggleApproved,
   onGoToParent,
 }: SetListToolbarProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   return (
     <div className="border-border flex flex-col gap-4 border-b px-4 py-3">
       <div className="grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(260px,0.8fr)]">
@@ -90,7 +94,7 @@ export function SetListToolbar({
         {selectedEvent && selectedEvent.type === 'Performance' && (
           <div className="flex flex-col">
             <span className="text-text-muted mb-2 block text-sm font-bold tracking-wider uppercase">
-              Singer Visibility
+              {performerLabel} Visibility
             </span>
             <label className="border-border bg-surface text-text flex h-[44px] w-full cursor-pointer items-center gap-2.5 rounded-md border px-4 text-sm font-semibold shadow-sm transition-colors select-none hover:bg-slate-50">
               <input
@@ -99,7 +103,7 @@ export function SetListToolbar({
                 onChange={(e) => onToggleApproved(e.target.checked)}
                 className="accent-primary size-4 cursor-pointer"
               />
-              <span>Approved for Singers</span>
+              <span>Approved for {performerLabelPlural}</span>
             </label>
           </div>
         )}

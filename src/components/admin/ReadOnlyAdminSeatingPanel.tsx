@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import type { SeatingDisplayProfile, SelectedSeatInfo } from '../seating/types';
 import { SeatingPerspectiveToggle } from '../seating/SeatingPerspectiveToggle';
 import { ReadOnlySeatingGrid } from '../seating/ReadOnlySeatingGrid';
@@ -25,6 +26,8 @@ export function ReadOnlyAdminSeatingPanel({
   chartName,
   onEditAnyway,
 }: ReadOnlyAdminSeatingPanelProps) {
+  const { performerLabel } = useChoirSettings();
+
   const [perspective, setPerspective] = useState<'singer' | 'director'>(() => {
     return (localStorage.getItem('admin-seating-perspective') as 'singer' | 'director') || 'singer';
   });
@@ -37,7 +40,7 @@ export function ReadOnlyAdminSeatingPanel({
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-        Mobile seating view is read-only. Tap a seat to view singer details.
+        Mobile seating view is read-only. Tap a seat to view {performerLabel.toLowerCase()} details.
       </div>
 
       {chartName && <h3 className="text-text text-center text-base font-bold">{chartName}</h3>}

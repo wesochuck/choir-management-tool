@@ -124,14 +124,15 @@ export function resolvePreviewContent(
   recipient: CommunicationRecipient | null,
   mailingAddress: string = '123 Choir St, Harmony City, HC 12345',
   pollQuestions: Record<string, string> = {},
-  isHtml: boolean = false
+  isHtml: boolean = false,
+  performerLabel: string = 'Performer'
 ): string {
   if (!content) return '';
 
   let result = content;
 
   // Recipient Placeholders
-  const rawName = recipient?.name || 'Sample Singer';
+  const rawName = recipient?.name || `Sample ${performerLabel}`;
   const name = isHtml ? escapeHtml(rawName) : rawName;
   result = result.replace(/{singerName}/g, name);
 
@@ -250,7 +251,8 @@ export function getRenderedPreview(
   event: Event | null,
   recipient: CommunicationRecipient | null,
   mailingAddress: string,
-  pollQuestions: Record<string, string> = {}
+  pollQuestions: Record<string, string> = {},
+  performerLabel: string = 'Performer'
 ): string {
   // 1. Render Markdown first (escapes user input)
   let html = renderMarkdown(userContent);
@@ -261,5 +263,5 @@ export function getRenderedPreview(
   }
 
   // 3. Resolve placeholders last (this allows trusted HTML like buttons to be injected)
-  return resolvePreviewContent(html, event, recipient, mailingAddress, pollQuestions, true);
+  return resolvePreviewContent(html, event, recipient, mailingAddress, pollQuestions, true, performerLabel);
 }

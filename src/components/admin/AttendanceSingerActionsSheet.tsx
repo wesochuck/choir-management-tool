@@ -1,4 +1,5 @@
 import React from 'react';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { Modal, Button } from '../ui';
 import { getProfileEmail, type Profile } from '../../services/profileService';
 
@@ -20,6 +21,7 @@ export const AttendanceSingerActionsSheet: React.FC<AttendanceSingerActionsSheet
   onClose,
   onViewProfile,
 }) => {
+  const { performerLabel } = useChoirSettings();
   const email = profile ? getProfileEmail(profile) : '';
 
   return (
@@ -80,7 +82,7 @@ export const AttendanceSingerActionsSheet: React.FC<AttendanceSingerActionsSheet
 
             {!profile.phone && !email && (
               <p className="my-2 text-center text-sm text-gray-500">
-                No contact information is listed for this singer.
+                No contact information is listed for this {performerLabel.toLowerCase()}.
               </p>
             )}
 
@@ -93,7 +95,7 @@ export const AttendanceSingerActionsSheet: React.FC<AttendanceSingerActionsSheet
               }}
               className="w-full justify-center"
             >
-              View/Edit Singer Profile
+              View/Edit {performerLabel} Profile
             </Button>
           </div>
 

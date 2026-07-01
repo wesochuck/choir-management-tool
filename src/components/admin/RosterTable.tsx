@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import type { SeasonalDue } from '../../services/duesService';
 import { pb } from '../../lib/pocketbase';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { AppCard } from '../common/AppCard';
 import { getGlobalStatusDisplay } from '../../lib/statusDisplay';
 import { Button, Badge, Modal, DataTable, type ColumnDef } from '../ui';
@@ -36,6 +38,8 @@ export const RosterTable: React.FC<RosterTableProps> = ({
   onToggleDues,
   pageSize,
 }) => {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [activePhoto, setActivePhoto] = useState<{
     url: string;
     name: string;
@@ -193,16 +197,16 @@ export const RosterTable: React.FC<RosterTableProps> = ({
         data={profiles}
         isLoading={false}
         emptyState={{
-          title: 'No singers found.',
+          title: `No ${performerLabelPlural} found.`,
           icon: '🎵',
           action: onCreate ? (
             <Button onClick={onCreate} variant="primary" size="small">
-              + Add Singer
+              + Add {performerLabel}
             </Button>
           ) : undefined,
         }}
         pageSize={pageSize}
-        paginationLabel="singers"
+        paginationLabel={performerLabelPlural.toLowerCase()}
         onRowClick={(p) => onEdit(p)}
         getRowId={(p) => p.id}
       />

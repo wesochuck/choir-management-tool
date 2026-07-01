@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import { getSectionFromVoicePart, getSectionsFromVoiceParts } from '../../lib/voicePartUtils';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { VoicePartBalanceCard } from './VoicePartBalanceCard';
 
@@ -16,6 +18,8 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
   onVoicePartToggle,
 }) => {
   const { voiceParts, sections } = useVoiceParts();
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
 
   const { partCounts, sectionCounts, sectionsList } = useMemo(() => {
     const pc: Record<string, number> = {};
@@ -58,7 +62,7 @@ export const RosterSummary: React.FC<RosterSummaryProps> = ({
       badges={
         <div className="flex gap-2">
           <span className="bg-primary-light text-primary-deep inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
-            {singerTotal} Singers
+            {singerTotal} {performerLabelPlural}
           </span>
           {staffTotal > 0 && (
             <span className="inline-flex items-center rounded border border-gray-500/20 bg-gray-500/10 px-2 py-0.5 text-xs font-semibold tracking-wider text-gray-600 uppercase">

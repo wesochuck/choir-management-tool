@@ -11,7 +11,7 @@ import { Badge, Select } from '../../components/ui';
 
 export default function RsvpDashboardView() {
   const [searchParams] = useSearchParams();
-  const { timezone } = useChoirSettings();
+  const { timezone, performerLabel } = useChoirSettings();
   const { events, isLoading, error } = useEvents();
   const [selectedEventId, setSelectedEventId] = useState('');
   const hasDefaultedRef = useRef(false);
@@ -41,7 +41,7 @@ export default function RsvpDashboardView() {
     <div className="flex flex-col gap-6 py-4">
       <AdminPageHeader
         title="RSVP Management"
-        description="Select an event, review RSVP balance, and update singer responses."
+        description={`Select an event, review RSVP balance, and update ${performerLabel.toLowerCase()} responses.`}
       />
 
       <AppCard className="mb-0">

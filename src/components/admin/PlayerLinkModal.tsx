@@ -1,4 +1,6 @@
 import React from 'react';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Button, CopyButton, Modal } from '../ui';
 
 interface PlayerLinkModalProps {
@@ -14,6 +16,8 @@ export const PlayerLinkModal: React.FC<PlayerLinkModalProps> = ({
   url,
   eventTitle,
 }) => {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   return (
     <Modal
       isOpen={isOpen}
@@ -42,7 +46,7 @@ export const PlayerLinkModal: React.FC<PlayerLinkModalProps> = ({
       <div className="flex flex-col gap-2">
         <p className="text-text-muted m-0 text-sm leading-snug">
           A standalone practice link has been generated for{' '}
-          <strong className="text-text font-semibold">"{eventTitle}"</strong>. Share it with singers
+          <strong className="text-text font-semibold">"{eventTitle}"</strong>. Share it with {performerLabelPlural.toLowerCase()}
           so they can listen to the audio tracks offline.
         </p>
 

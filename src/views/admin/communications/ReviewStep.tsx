@@ -13,6 +13,8 @@ import type {
 import type { UseCommunicationDraftReturn } from './useCommunicationDraft';
 import type { UseCommunicationPreviewReturn } from './useCommunicationPreview';
 import { ReviewSidebar } from './ReviewSidebar';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 
 interface ReviewStepProps {
   draft: UseCommunicationDraftReturn;
@@ -41,6 +43,8 @@ export function ReviewStep({
   setTab,
   setEditingTemplate,
 }: ReviewStepProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   return (
     <div className="flex flex-col gap-4">
       <div className="border-border flex w-full flex-col gap-3 border-b pb-2.5 md:flex-row md:items-center md:justify-between">
@@ -98,7 +102,7 @@ export function ReviewStep({
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
-            {draft.isSending ? 'Sending...' : `Send to ${draft.selectedRecipients.length} Singers`}
+            {draft.isSending ? 'Sending...' : `Send to ${draft.selectedRecipients.length} ${performerLabelPlural}`}
           </Button>
         </div>
       </div>

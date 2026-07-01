@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useChoirSettings } from '../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../lib/labelHelpers';
 import { Button } from './ui';
 
 interface LivePreviewProps {
@@ -106,10 +108,13 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
   bodyHtml,
   smsBody,
   recipientName = 'Active Choir Members',
-  recipientEmail = 'singers@yourchoir.org',
+  recipientEmail,
   senderName = 'Choir Management',
   senderEmail = 'no-reply@choir.management',
 }) => {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
+  const resolvedRecipientEmail = recipientEmail || `${performerLabelPlural.toLowerCase()}@yourchoir.org`;
   const [activeTab, setActiveTab] = useState<'email' | 'sms'>(channel === 'SMS' ? 'sms' : 'email');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
 
@@ -172,7 +177,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
           <EmailMockup
             previewDevice={previewDevice}
             recipientName={recipientName}
-            recipientEmail={recipientEmail}
+            recipientEmail={resolvedRecipientEmail}
             senderName={senderName}
             senderEmail={senderEmail}
             subject={subject}

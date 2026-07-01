@@ -7,6 +7,8 @@ import type { CommunicationFilters } from '../../../services/communicationServic
 import type { CommunicationSettings } from '../../../services/settingsService';
 import type { Event } from '../../../services/eventService';
 import type { CommunicationTab } from '../../../types/Communication';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 
 interface PreFlightChecklistProps {
   subject: string;
@@ -35,6 +37,8 @@ export function PreFlightChecklist({
   setTab,
   setEditingTemplate,
 }: PreFlightChecklistProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
 
   return (
@@ -88,7 +92,7 @@ export function PreFlightChecklist({
 
         {filters.eventId && !hasApprovedSetList && content.toLowerCase().includes('{setlist}') && (
           <AlertBanner variant="warning" icon="⚠️" title="Set list not approved.">
-            The set list hasn't been approved for singers yet.{' '}
+            The set list hasn't been approved for {performerLabelPlural.toLowerCase()} yet.{' '}
             <Link
               to="/admin/setlists"
               className="text-primary hover:text-primary-deep cursor-pointer font-semibold underline"
@@ -118,7 +122,7 @@ export function PreFlightChecklist({
                   <line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
               }
-              title={`${selectedRecipients.filter((r) => !r.email).length} singers`}
+              title={`${selectedRecipients.filter((r) => !r.email).length} ${performerLabelPlural.toLowerCase()}`}
             >
               have no email configured and will skip this channel.
             </AlertBanner>
@@ -143,7 +147,7 @@ export function PreFlightChecklist({
                   <line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
               }
-              title={`${selectedRecipients.filter((r) => !r.phone).length} singers`}
+              title={`${selectedRecipients.filter((r) => !r.phone).length} ${performerLabelPlural.toLowerCase()}`}
             >
               have no phone configured and will skip this channel.
             </AlertBanner>

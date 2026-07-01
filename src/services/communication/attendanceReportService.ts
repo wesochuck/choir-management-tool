@@ -3,6 +3,7 @@ import type { Event } from '../eventService';
 import { profileService, type Profile } from '../profileService';
 import { rosterService, type EventRoster } from '../rosterService';
 import { settingsService } from '../settingsService';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { escapeHtml, sanitizeEmailSubject } from '../../lib/textSafety';
 import { messageRepository } from './messageRepository';
 import type { MessageRecord, CommunicationRecipient } from './types';
@@ -164,6 +165,8 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
   const event = await pb.collection('events').getOne<Event>(eventId, { expand: 'venue' });
   const commSettings = await settingsService.getCommunicationSettings();
   const rosterSettings = await settingsService.getRosterSettings();
+  const performerLabel = await settingsService.getPerformerLabel();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const maxRehearsalMisses = rosterSettings?.maxRehearsalMisses ?? 3;
   const recipients = await resolveAttendanceReportRecipients();
 
@@ -191,7 +194,7 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
   const profiles = await profileService.getProfiles();
   const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
-  const absenteeNames = absentees.map((r) => profileMap.get(r.profile)?.name || 'Unknown Singer');
+  const absenteeNames = absentees.map((r) => profileMap.get(r.profile)?.name || `Unknown ${performerLabel}`);
   const attendanceRate = total > 0 ? ((present / total) * 100).toFixed(1) : '0';
 
   // Calculate threshold warnings section (only past rehearsals)
@@ -245,7 +248,7 @@ export async function triggerAttendanceReport(eventId: string): Promise<MessageR
         if (exceededSingers.length > 0) {
           thresholdWarningsSection = `
             <div style="margin-top: 20px; padding: 15px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 6px; color: #b45309;">
-              <h4 style="margin: 0 0 10px 0; font-size: 16px; color: #b45309;">Singers Exceeding Rehearsal Miss Limit</h4>
+              <h4 style="margin: 0 0 10px 0; font-size: 16px; color: #b45309;">${performerLabelPlural} Exceeding Rehearsal Miss Limit</h4>
               <ul style="padding-left: 20px; margin: 0;">
                 ${exceededSingers.map((s) => `<li style="margin-bottom: 4px;"><strong>${escapeHtml(s.name)}</strong>: ${s.missCount} missed rehearsals (Limit: ${maxRehearsalMisses})</li>`).join('')}
               </ul>

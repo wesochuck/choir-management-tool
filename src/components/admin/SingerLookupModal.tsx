@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import type { Profile } from '../../services/profileService';
 import { profileService } from '../../services/profileService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Modal, Button, Input } from '../ui';
 
 interface SingerLookupModalProps {
@@ -18,6 +20,8 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
   onSelect,
   excludeIds,
 }) => {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [searchQuery, setSearchQuery] = useState('');
   const {
     data: profiles = [],
@@ -51,7 +55,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Lookup Singer"
+      title={`Lookup ${performerLabel}`}
       maxWidth="560px"
       footer={
         <Button type="button" onClick={onClose} variant="outline">
@@ -64,7 +68,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search singers..."
+          placeholder={`Search ${performerLabelPlural.toLowerCase()}...`}
           autoFocus
         />
 
@@ -76,7 +80,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
           <div className="flex flex-col gap-2">
             <div className="text-muted flex flex-row items-center justify-between px-1 text-xs">
               <span>
-                {filtered.length} available singer{filtered.length === 1 ? '' : 's'}
+                {filtered.length} available {performerLabel.toLowerCase()}{filtered.length === 1 ? '' : 's'}
               </span>
               <span className="text-text-muted hidden grid-cols-[minmax(0,1fr)_auto_auto] gap-3 font-semibold tracking-wider uppercase sm:grid">
                 <span>Name</span>
@@ -109,7 +113,7 @@ export const SingerLookupModal: React.FC<SingerLookupModalProps> = ({
                   </button>
                 ))}
                 {filtered.length === 0 && (
-                  <div className="text-text-muted p-6 text-center text-sm">No singers found</div>
+                  <div className="text-text-muted p-6 text-center text-sm">No {performerLabelPlural} found</div>
                 )}
               </div>
             </div>

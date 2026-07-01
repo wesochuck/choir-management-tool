@@ -5,7 +5,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { profileService, type Profile, type ProfileInput } from '../../services/profileService';
 import { donationService } from '../../services/donationService';
 import { ticketService } from '../../services/ticketService';
-import { useDocumentTitle } from '../../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useProfiles } from '../../hooks/useProfiles';
 import { formatInTimezone } from '../../lib/timezone';
 import { getFirstName, getLastName } from '../../lib/stringUtils';
@@ -28,6 +28,7 @@ interface PatronData {
 
 export default function PatronsView() {
   useDocumentTitle('Patrons');
+  const { performerLabel } = useChoirSettings();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { profiles } = useProfiles();
@@ -210,7 +211,7 @@ export default function PatronsView() {
       header: 'Type',
       cell: ({ row }) => (
         <Badge tone={row.original.isSinger ? 'rehearsal' : 'neutral'}>
-          {row.original.isSinger ? 'Singer' : 'Patron'}
+          {row.original.isSinger ? performerLabel : 'Patron'}
         </Badge>
       ),
       enableSorting: false,

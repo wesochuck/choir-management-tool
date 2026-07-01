@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Modal, Button, Select, ProgressBar } from '../ui';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService, generateRandomPassword } from '../../services/profileService';
 import {
@@ -33,6 +35,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   onSuccess,
 }) => {
   const dialog = useDialog();
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { labels: voicePartLabels } = useVoiceParts();
 
@@ -218,7 +222,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'singer_credentials.csv');
+    link.setAttribute('download', `${performerLabel.toLowerCase()}_credentials.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -302,7 +306,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   };
 
   const fieldsConfig: { key: RosterField; label: string; desc: string; required?: boolean }[] = [
-    { key: 'name', label: 'Name', desc: 'Full name of the singer', required: true },
+    { key: 'name', label: 'Name', desc: `Full name of the ${performerLabel.toLowerCase()}`, required: true },
     { key: 'email', label: 'Email', desc: 'Enables user login if provided' },
     { key: 'phone', label: 'Phone', desc: 'Contact phone number' },
     {
@@ -320,7 +324,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       onClose={step === 'IMPORTING' ? () => undefined : handleModalClose}
       title={
         step === 'UPLOAD'
-          ? 'Import Singers via CSV'
+          ? `Import ${performerLabelPlural} via CSV`
           : step === 'MAP'
             ? 'Map CSV Columns'
             : step === 'PREVIEW'
@@ -336,7 +340,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
       {step === 'UPLOAD' && (
         <div className="flex flex-col gap-4 py-5 text-center">
           <p className="text-muted m-0 text-sm">
-            Upload a CSV file containing your singer roster to bootstrap the process.
+            {`Upload a CSV file containing your ${performerLabel.toLowerCase()} roster to bootstrap the process.`}
           </p>
 
           <div
@@ -436,8 +440,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col items-center justify-between md:flex-row">
             <p className="text-muted m-0 text-sm">
-              Verify parsed singer details and resolve validation warnings or errors before
-              importing.
+              {`Verify parsed ${performerLabel.toLowerCase()} details and resolve validation warnings or errors before
+              importing.`}
             </p>
             <div className="flex gap-3">
               <span className="border-primary/20 text-primary-deep rounded-md border bg-[rgb(74_124_89_/_5%)] px-2 py-1 text-xs font-semibold">
@@ -523,7 +527,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
           <div className="flex w-full flex-col items-center gap-[6px]">
             <strong className="text-text text-lg">
-              Importing {mappedSingers.filter((s) => s.isValid).length} Singers...
+              Importing {mappedSingers.filter((s) => s.isValid).length} {performerLabelPlural}...
             </strong>
             <span className="text-muted text-sm">
               Processing row {importingIndex} of {mappedSingers.length}
@@ -556,7 +560,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             <span className="text-6xl">🎉</span>
             <h3 className="text-primary-deep m-0 text-2xl">Import Finished!</h3>
             <p className="text-muted m-0 text-sm">
-              Successfully imported <strong>{successCount}</strong> singers into the roster.
+              Successfully imported <strong>{successCount}</strong> {performerLabelPlural.toLowerCase()} into the roster.
             </p>
           </div>
 

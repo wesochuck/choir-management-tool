@@ -9,6 +9,7 @@ import { communicationService } from '../../services/communicationService';
 import { useEvents } from '../../hooks/useEvents';
 import { formatInTimezone } from '../../lib/timezone';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { useDialog } from '../../contexts/DialogContext';
 import { profileService } from '../../services/profileService';
 import type { CommunicationRecipient } from '../../services/communicationService';
@@ -21,7 +22,8 @@ export default function PollsDashboardView() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { events } = useEvents();
-  const { timezone } = useChoirSettings();
+  const { timezone, performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
 
   const deletePollMutation = useMutation({
     mutationFn: (id: string) => pollService.deletePoll(id),
@@ -324,7 +326,7 @@ export default function PollsDashboardView() {
     <div className="flex w-full flex-col gap-6">
       <AdminPageHeader
         title="Engagement Polls & Volunteering"
-        description="Review volunteer responses, coordinate singer feedback, and draft quick engagement messages."
+        description={`Review volunteer responses, coordinate ${performerLabel.toLowerCase()} feedback, and draft quick engagement messages.`}
         below={
           <div className="flex w-full flex-row items-center justify-between border-b border-slate-200 pb-px">
             <div className="flex items-center gap-3 pb-1.5">
@@ -567,7 +569,7 @@ export default function PollsDashboardView() {
               </FormField>
               <div className="flex flex-col gap-4">
                 <p className="m-0 text-xs font-medium text-slate-400">
-                  Recipients default to all singers with status Active or On Break.
+                  Recipients default to all {performerLabelPlural.toLowerCase()} with status Active or On Break.
                 </p>
                 <div className="flex flex-row justify-end gap-3 border-t border-slate-100 pt-4">
                   <Button variant="secondary" onClick={() => setIsQuickCreateOpen(false)}>

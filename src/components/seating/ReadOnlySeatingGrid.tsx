@@ -1,3 +1,4 @@
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import type { ReadOnlySeatingGridProps } from './types';
 import {
   buildSelectedSeatInfo,
@@ -18,6 +19,7 @@ export function ReadOnlySeatingGrid({
   showNamesOnSeats = false,
   onSeatSelect,
 }: ReadOnlySeatingGridProps) {
+  const { performerLabel } = useChoirSettings();
   return (
     <div className="border-border bg-surface relative flex flex-col items-center overflow-visible rounded-lg border p-4 px-3 shadow-sm sm:p-8 sm:px-6">
       <div className="mb-8 flex w-full scrollbar-thin flex-col-reverse items-stretch gap-3 overflow-x-auto overflow-y-visible py-[40px] pb-[10px]">
@@ -95,7 +97,7 @@ export function ReadOnlySeatingGrid({
                       profile
                         ? `Row ${rIdx + 1}, seat ${sIdx + 1}, ${profile.name}, ${profile.voicePart}`
                         : singerId
-                          ? `Row ${rIdx + 1}, seat ${sIdx + 1}, assigned singer`
+                          ? `Row ${rIdx + 1}, seat ${sIdx + 1}, assigned ${performerLabel.toLowerCase()}`
                           : `Row ${rIdx + 1}, seat ${sIdx + 1}, empty`
                     }
                   >
@@ -107,7 +109,7 @@ export function ReadOnlySeatingGrid({
                       </div>
                     ) : singerId ? (
                       <div className="bg-text text-surface after:border-text after:border-t-text pointer-events-none invisible absolute bottom-[130%] left-1/2 z-[100] -translate-x-1/2 translate-y-1 rounded px-[10px] py-1.5 text-xs font-semibold whitespace-nowrap opacity-0 shadow-[0_10px_15px_-3px_rgb(0_0_0_/_20%)] transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-5 after:border-solid after:border-transparent after:border-x-transparent after:border-b-transparent after:content-['']">
-                        Assigned Singer
+                        Assigned {performerLabel}
                       </div>
                     ) : null}
                   </button>

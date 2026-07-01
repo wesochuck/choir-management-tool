@@ -1,4 +1,6 @@
 import React from 'react';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { type Profile } from '../../services/profileService';
 import { type SectionDef, type VoicePartDef } from '../../services/settingsService';
 import { getUniqueDisplayNames, getLastName, getFirstName } from '../../lib/stringUtils';
@@ -39,6 +41,8 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
   sectionOrder,
 }) => {
   const dialog = useDialog();
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const formatNameLastFirst = React.useCallback((fullName: string): string => {
     const last = getLastName(fullName);
     const first = getFirstName(fullName);
@@ -224,7 +228,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
           <div className="flex flex-1 flex-col gap-0.5">
             <strong className="text-[0.9375rem] font-bold">Not enough seats configured!</strong>
             <span className="text-[0.8125rem] opacity-90">
-              You have {activeSingersForFormationCount} active singers but only {totalSeats} seats.
+              You have {activeSingersForFormationCount} active {performerLabelPlural.toLowerCase()} but only {totalSeats} seats.
               Click the <strong>+</strong> button at the end of any row to add seats.
             </span>
           </div>
@@ -625,7 +629,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                             : 'bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]'
                         }`}
                         data-action={assignments[seatKey] ? 'unassign' : 'delete'}
-                        title={assignments[seatKey] ? 'Unassign singer' : 'Delete empty seat'}
+                        title={assignments[seatKey] ? `Unassign ${performerLabel.toLowerCase()}` : 'Delete empty seat'}
                       >
                         ×
                       </button>

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Profile, ProfileInput } from '../../../services/profileService';
 import { profileService, getProfileEmail } from '../../../services/profileService';
 import { useDialog } from '../../../contexts/DialogContext';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { formatPocketBaseError } from '../../../lib/pocketbase';
 import {
   defaultProfileInput,
@@ -17,6 +18,8 @@ export function useSingerForm(
   onDelete?: (profile: Profile) => Promise<void>
 ) {
   const dialog = useDialog();
+  const { performerLabel } = useChoirSettings();
+
   const [formData, setFormData] = useState<ProfileInput>({ ...defaultProfileInput });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -56,8 +59,8 @@ export function useSingerForm(
       const confirmDiscard = await dialog.confirm({
         title: 'Unsaved Changes',
         message: initialData
-          ? "You have unsaved changes to this singer's profile. Do you want to discard them?"
-          : 'You are adding a new singer with unsaved details. Do you want to discard this singer?',
+          ? `You have unsaved changes to this ${performerLabel.toLowerCase()}'s profile. Do you want to discard them?`
+          : `You are adding a new ${performerLabel.toLowerCase()} with unsaved details. Do you want to discard this ${performerLabel.toLowerCase()}?`,
         confirmLabel: 'Discard Changes',
         cancelLabel: 'Keep Editing',
         variant: 'warning',
@@ -115,10 +118,10 @@ export function useSingerForm(
     } catch (err: unknown) {
       let customMessage = formatPocketBaseError(err);
       if (willRemoveEmail) {
-        customMessage = `Could not remove the login account. The singer profile was not changed. (${customMessage})`;
+        customMessage = `Could not remove the login account. The ${performerLabel.toLowerCase()} profile was not changed. (${customMessage})`;
       }
       await dialog.showMessage({
-        title: 'Could Not Save Singer',
+        title: `Could Not Save ${performerLabel}`,
         message: customMessage,
       });
     } finally {
@@ -129,7 +132,7 @@ export function useSingerForm(
   const handleDelete = async () => {
     if (!initialData || !onDelete) return;
     const shouldDelete = await dialog.confirm({
-      title: 'Delete Singer',
+      title: `Delete ${performerLabel}`,
       message: `Delete ${initialData.name} from the roster and remove their login?`,
       confirmLabel: 'Delete',
       variant: 'danger',
@@ -142,8 +145,8 @@ export function useSingerForm(
       onClose();
     } catch {
       await dialog.showMessage({
-        title: 'Could Not Delete Singer',
-        message: 'Error deleting singer',
+        title: `Could Not Delete ${performerLabel}`,
+        message: `Error deleting ${performerLabel.toLowerCase()}`,
         variant: 'danger',
       });
     } finally {

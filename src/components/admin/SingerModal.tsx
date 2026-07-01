@@ -5,6 +5,7 @@ import { SingerRsvpHistoryTab } from './SingerRsvpHistoryTab';
 import { SingerPatronageHistoryTab } from './SingerPatronageHistoryTab';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useAuth } from '../../contexts/AuthContext';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useSingerForm } from './singer-modal/useSingerForm';
 import { SingerProfileForm } from './singer-modal/SingerProfileForm';
 import { SingerModalFooter } from './singer-modal/SingerModalFooter';
@@ -26,6 +27,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({
 }) => {
   const { voiceParts } = useVoiceParts();
   const { user } = useAuth();
+  const { performerLabel } = useChoirSettings();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'rsvps' | 'patronage'>('profile');
 
@@ -44,7 +46,7 @@ export const SingerModal: React.FC<SingerModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={form.handleClose}
-      title={initialData ? 'Edit Singer' : 'Add Singer'}
+      title={initialData ? `Edit ${performerLabel}` : `Add ${performerLabel}`}
       maxWidth="640px"
       footer={
         <SingerModalFooter

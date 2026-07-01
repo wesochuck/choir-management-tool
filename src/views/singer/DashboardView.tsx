@@ -15,11 +15,13 @@ import { useDialog } from '../../contexts/DialogContext';
 import { resourceService } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
 import { Button, Modal } from '../../components/ui';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 
 export default function DashboardView() {
   const queryClient = useQueryClient();
   const dialog = useDialog();
   const { user, logout } = useAuth();
+  const { performerLabel } = useChoirSettings();
   const { events, myRosters, myProfile, isLoading, error, updateRSVP } = useMyEvents();
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<MessageRecord | null>(null);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -190,12 +192,12 @@ export default function DashboardView() {
 
   return (
     <PageLayout
-      title="Singer Dashboard"
+      title={`${performerLabel} Dashboard`}
       actions={
         <div className="flex flex-row gap-2">
           {showDirectoryButton && (
             <Button as={Link} to="/directory" variant="outline">
-              Singer Directory
+              {performerLabel} Directory
             </Button>
           )}
           <Button as={Link} to="/profile" variant="outline">
@@ -211,7 +213,7 @@ export default function DashboardView() {
       <PublicLogo />
       <div className="py-4">
         {nextEvent && (
-          <section className="hidden max-md:mb-6 max-md:block" aria-label="Singer quick actions">
+          <section className="hidden max-md:mb-6 max-md:block" aria-label={`${performerLabel} quick actions`}>
             <AppCard className="bg-surface/80 rounded-lg p-6 shadow-sm backdrop-blur-sm">
               <div className="flex flex-col gap-2">
                 <div className="text-text-muted text-[0.72rem] font-extrabold tracking-widest uppercase">

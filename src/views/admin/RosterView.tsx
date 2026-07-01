@@ -17,6 +17,7 @@ import { RosterSettingsTab } from '../../components/admin/RosterSettingsTab';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { Button, Select } from '../../components/ui';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
@@ -49,6 +50,7 @@ export default function RosterView() {
     refresh: refreshVoiceParts,
   } = useVoiceParts();
 
+  const { performerLabel } = useChoirSettings();
   const [activeTab, setActiveTab] = useState<'roster' | 'config'>('roster');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -210,8 +212,8 @@ export default function RosterView() {
               >
                 <span className="hidden md:inline">Import CSV</span>
               </Button>
-              <Button onClick={handleAdd} variant="primary" title="Add Singer" icon={'➕'}>
-                <span className="hidden md:inline">Add Singer</span>
+              <Button onClick={handleAdd} variant="primary" title={`Add ${performerLabel}`} icon={'➕'}>
+                <span className="hidden md:inline">Add {performerLabel}</span>
               </Button>
             </>
           )
@@ -232,7 +234,7 @@ export default function RosterView() {
                     }`}
                     onClick={() => setActiveTab(tab)}
                   >
-                    {tab === 'roster' ? 'Singer Directory' : 'Roster Settings'}
+                    {tab === 'roster' ? `${performerLabel} Directory` : 'Roster Settings'}
                   </button>
                 );
               })}

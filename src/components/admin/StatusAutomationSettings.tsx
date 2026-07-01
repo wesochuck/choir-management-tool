@@ -1,3 +1,5 @@
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { AppCard } from '../common/AppCard';
 import { Input, Divider } from '../ui';
 
@@ -22,8 +24,10 @@ export function StatusAutomationSettings({
   configMaxRehearsalMisses,
   setConfigMaxRehearsalMisses,
 }: StatusAutomationSettingsProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   return (
-    <AppCard title="Singer Status & Rehearsal Limits">
+    <AppCard title={`${performerLabel} Status & Rehearsal Limits`}>
       <div className="flex flex-col gap-4">
         <label className="flex cursor-pointer flex-row items-center gap-2">
           <input
@@ -35,7 +39,7 @@ export function StatusAutomationSettings({
           <span className="text-label">Enable Automated Status Changes</span>
         </label>
         <p className="pl-6 text-xs text-slate-500">
-          Automatically mark singers as Active/Inactive based on their attendance and RSVP history.
+          Automatically mark {performerLabelPlural.toLowerCase()} as Active/Inactive based on their attendance and RSVP history.
         </p>
 
         {configAutomationEnabled && (
@@ -53,7 +57,7 @@ export function StatusAutomationSettings({
                 className="w-24"
               />
               <p className="text-xs text-slate-500">
-                Mark a singer as Inactive after this many consecutive absences or 'No' RSVPs.
+                Mark a {performerLabel.toLowerCase()} as Inactive after this many consecutive absences or 'No' RSVPs.
               </p>
             </div>
 
@@ -67,7 +71,7 @@ export function StatusAutomationSettings({
               <span className="text-label">Enable Automated Status Recovery</span>
             </label>
             <p className="pl-6 text-xs text-slate-500">
-              Automatically mark inactive singers as "On Break" when they RSVP 'Yes' to a future
+              Automatically mark inactive {performerLabelPlural.toLowerCase()} as "On Break" when they RSVP 'Yes' to a future
               Performance.
             </p>
           </div>
@@ -89,7 +93,7 @@ export function StatusAutomationSettings({
           />
           <p className="text-xs text-slate-500">
             The maximum number of rehearsal misses (declined RSVPs or marked absences) allowed for a
-            concert cycle before warnings are shown to singers and admins.
+            concert cycle before warnings are shown to {performerLabelPlural.toLowerCase()} and admins.
           </p>
         </div>
       </div>

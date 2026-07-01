@@ -27,7 +27,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { SetListItem } from '../../services/eventService';
 
 export default function SetListView() {
-  const { timezone } = useChoirSettings();
+  const { timezone, performerLabel } = useChoirSettings();
   const { events, refresh } = useEvents();
   const [searchParams] = useSearchParams();
   const dialog = useDialog();
@@ -92,7 +92,7 @@ export default function SetListView() {
     <div className="flex flex-col gap-6">
       <AdminPageHeader
         title="Set Lists"
-        description="Manage performance set lists, timings, and singer visibility"
+        description={`Manage performance set lists, timings, and ${performerLabel.toLowerCase()} visibility`}
         actions={
           setList.selectedEvent ? (
             <>
@@ -144,9 +144,9 @@ export default function SetListView() {
                 <div className="border-warning-border bg-warning-bg/70 text-warning-text rounded-r-md border-l-4 p-3 text-sm leading-relaxed">
                   <div className="mb-1 font-semibold">⚠️ Rehearsal Mode</div>
                   <p className="m-0">
-                    This rehearsal inherits its set list and singer visibility from the parent
+                    This rehearsal inherits its set list and ${performerLabel.toLowerCase()} visibility from the parent
                     Performance: <strong>{setList.parentPerformance?.title || 'Concert'}</strong>.
-                    Direct edits here will not be visible on the Singer Dashboard.
+                    Direct edits here will not be visible on the {performerLabel} Dashboard.
                   </p>
                   {setList.parentPerformance && (
                     <Button

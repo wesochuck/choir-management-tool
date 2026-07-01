@@ -15,6 +15,8 @@ import {
   type ColumnDef,
 } from '../../components/ui';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import {
   DndContext,
   closestCenter,
@@ -36,6 +38,8 @@ const EMPTY_RESOURCES: SingerResource[] = [];
 export default function ResourcesView() {
   const queryClient = useQueryClient();
   const dialog = useDialog();
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
 
   const resourcesQuery = useQuery({
     queryKey: queryKeys.resources.list(),
@@ -353,8 +357,8 @@ export default function ResourcesView() {
   return (
     <div className="flex flex-col gap-6">
       <AdminPageHeader
-        title="Singer Resources"
-        description="Upload documents or reference URLs for active singers to view on their dashboard."
+        title={`${performerLabel} Resources`}
+        description={`Upload documents or reference URLs for active ${performerLabelPlural.toLowerCase()} to view on their dashboard.`}
         actions={
           <Button onClick={() => setIsAdding(true)} variant="primary">
             + New Resource
@@ -421,7 +425,7 @@ export default function ResourcesView() {
                 if (titleError) setTitleError(false);
               }}
               required
-              placeholder="e.g. Choir Singer Handbook"
+              placeholder={`e.g. ${performerLabel} Handbook`}
             />
           </FormField>
 

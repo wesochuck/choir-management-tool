@@ -31,7 +31,7 @@ export default function AuditionsView() {
     saveAuditionSettingsMutation,
   } = useAuditionsManager();
 
-  const { timezone } = useChoirSettings();
+  const { timezone, performerLabel } = useChoirSettings();
   const { performances } = useEvents();
 
   const handleEmailClick = (email: string, name: string, voicePart: string) => {
@@ -144,8 +144,8 @@ export default function AuditionsView() {
 
   const convertToSinger = async (audition: Audition) => {
     const shouldConvert = await dialog.confirm({
-      title: 'Convert To Singer',
-      message: `Create a singer profile for ${audition.name} and close this audition?`,
+      title: `Convert To ${performerLabel}`,
+      message: `Create a ${performerLabel.toLowerCase()} profile for ${audition.name} and close this audition?`,
       confirmLabel: 'Convert',
     });
     if (!shouldConvert) return;
@@ -159,7 +159,7 @@ export default function AuditionsView() {
         message:
           err instanceof Error
             ? err.message
-            : 'An error occurred while creating the singer profile.',
+            : `An error occurred while creating the ${performerLabel.toLowerCase()} profile.`,
         variant: 'danger',
       });
     }
@@ -326,7 +326,7 @@ export default function AuditionsView() {
           )}
           {row.original.status === 'Scheduled' && (
             <Button variant="secondary" size="small" onClick={() => convertToSinger(row.original)}>
-              Convert to Singer
+              Convert to {performerLabel}
             </Button>
           )}
           {row.original.status !== 'Closed' && (
@@ -497,7 +497,7 @@ export default function AuditionsView() {
           )}
           {audition.status === 'Scheduled' && (
             <Button variant="secondary" size="small" onClick={() => convertToSinger(audition)}>
-              Convert to Singer
+              Convert to {performerLabel}
             </Button>
           )}
           {audition.status !== 'Closed' && (

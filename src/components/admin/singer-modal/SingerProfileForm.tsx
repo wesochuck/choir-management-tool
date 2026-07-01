@@ -3,6 +3,8 @@ import { PhotoUploader } from '../../common/PhotoUploader';
 import { pb } from '../../../lib/pocketbase';
 import { Input, Select, Checkbox, Textarea } from '../../ui';
 import type { Profile, ProfileInput } from '../../../services/profileService';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 import { SingerPasswordReset } from './SingerPasswordReset';
 
 interface SingerProfileFormProps {
@@ -34,6 +36,9 @@ export function SingerProfileForm({
   isResettingPassword,
   handleSubmit,
 }: SingerProfileFormProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
+
   return (
     <form id="singer-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col items-center gap-1">
@@ -82,7 +87,7 @@ export function SingerProfileForm({
             value={formData.email || ''}
             onChange={(e) => handleEmailChange(e.target.value)}
             onBlur={validateEmailField}
-            placeholder="e.g. singer@example.com"
+            placeholder={`e.g. ${performerLabel.toLowerCase()}@example.com`}
           />
           <p className="text-muted m-0 text-xs">
             {initialData?.user
@@ -178,7 +183,7 @@ export function SingerProfileForm({
           checked={formData.showInDirectory !== false}
           onChange={(e) => setFormData({ ...formData, showInDirectory: e.target.checked })}
         >
-          Show in Singer Directory
+          Show in {performerLabel} Directory
         </Checkbox>
         {initialData && formData.role === 'admin' && (
           <>
@@ -246,7 +251,7 @@ export function SingerProfileForm({
             <div />
           ))}
         <p className="text-muted col-span-2 m-0 text-xs">
-          When enabled, logged-in singers can see this singer's name, photo, voice part, email, and
+          When enabled, logged-in {performerLabelPlural.toLowerCase()} can see this {performerLabel.toLowerCase()}'s name, photo, voice part, email, and
           phone number.
         </p>
       </div>

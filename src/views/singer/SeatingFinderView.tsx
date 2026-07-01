@@ -15,6 +15,7 @@ import { SeatingPerspectiveToggle } from '../../components/seating/SeatingPerspe
 import { ReadOnlySeatingGrid } from '../../components/seating/ReadOnlySeatingGrid';
 import { SelectedSeatCard } from '../../components/seating/SelectedSeatCard';
 import type { SeatingDisplayProfile } from '../../components/seating/types';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
 
 type SingerDisplayProfile = Pick<Profile, 'id' | 'name' | 'voicePart'> | SeatingSingerProfile;
 
@@ -47,6 +48,7 @@ export default function SeatingFinderView() {
   const isOpenSeating = venue?.isOpenSeating;
   const address = venue?.address;
 
+  const { performerLabel } = useChoirSettings();
   const dialog = useDialog();
 
   const chartsQuery = useQuery({
@@ -127,7 +129,7 @@ export default function SeatingFinderView() {
   const assignments = activeChart?.assignments || {};
 
   const noAssignmentMessage = !singerProfileId
-    ? 'No singer roster/profile link was found for your login. Check with your director to connect your account.'
+    ? `No ${performerLabel.toLowerCase()} roster/profile link was found for your login. Check with your director to connect your account.`
     : 'No seat assignment has been published for your roster entry yet. Check with your director if you expected one.';
 
   const seatLocation = singerProfileId
@@ -157,7 +159,7 @@ export default function SeatingFinderView() {
 
   const getNeighborName = (neighbor: NeighborInfo) => {
     if (neighbor.status === 'empty') return 'Empty Seat';
-    if (neighbor.status === 'assignedUnknown') return 'Assigned Singer';
+    if (neighbor.status === 'assignedUnknown') return `Assigned ${performerLabel}`;
     return neighbor.profile.name;
   };
 

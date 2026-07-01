@@ -11,6 +11,7 @@ import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { useRateLimitRetryToast } from '../../hooks/useRateLimitRetryToast';
 import { AppCard } from '../../components/common/AppCard';
 import { useAttendanceData } from './attendance/useAttendanceData';
@@ -23,7 +24,8 @@ import { AttendanceDeclinedRescue } from './attendance/AttendanceDeclinedRescue'
 export default function AttendanceView() {
   const dialog = useDialog();
   const [searchParams] = useSearchParams();
-  const { timezone } = useChoirSettings();
+  const { timezone, performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const { events } = useEvents();
   const { profiles, editProfile } = useProfiles();
 
@@ -115,11 +117,11 @@ export default function AttendanceView() {
       await setRSVP(profileId, 'Yes');
       setSelectedDeclinedProfileId('');
       dialog.showToast(
-        'The singer has been successfully set to Attending and added to the check-in list.'
+        `The ${performerLabel.toLowerCase()} has been successfully set to Attending and added to the check-in list.`
       );
     } catch (err: unknown) {
       await dialog.showMessage({
-        title: 'Error Adding Singer',
+        title: `Error Adding ${performerLabel}`,
         message: err instanceof Error ? err.message : 'Failed to update RSVP',
         variant: 'danger',
       });
@@ -185,7 +187,7 @@ export default function AttendanceView() {
             ) : Object.keys(data.grouped).length === 0 ? (
               <div className="border-border bg-surface/30 m-4 flex flex-col items-center rounded-lg border-2 border-dashed p-12 text-center shadow-xs">
                 <span className="text-4xl">🔍</span>
-                <h3 className="text-text mt-4 mb-2 text-xl font-extrabold">No Matching Singers</h3>
+                <h3 className="text-text mt-4 mb-2 text-xl font-extrabold">No Matching {performerLabelPlural}</h3>
                 <p className="text-text-muted mt-0 mb-6 max-w-sm text-sm font-medium">
                   Try adjusting your filter pills or active event choice.
                 </p>

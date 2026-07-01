@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
 import type { EventRoster } from '../../services/rosterService';
 import { pb } from '../../lib/pocketbase';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { PhotoUploader } from '../common/PhotoUploader';
 import { Badge, Button, DataTable, Dropdown, DropdownMenu, DropdownMenuItem } from '../ui';
 import type { ColumnDef } from '../ui';
@@ -38,6 +40,8 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
   selectedSingerIds,
   onSelectionChange,
 }) => {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const columns: ColumnDef<(typeof singers)[number]>[] = [
     {
       id: 'name',
@@ -253,16 +257,16 @@ export const EventRosterTable: React.FC<EventRosterTableProps> = ({
       data={singers}
       isLoading={false}
       emptyState={{
-        title: 'No singers found.',
+        title: `No ${performerLabelPlural} found.`,
         icon: '🎵',
         action: onCreate ? (
           <Button onClick={onCreate} variant="primary" size="small">
-            + Add Singers
+            + Add {performerLabelPlural}
           </Button>
         ) : undefined,
       }}
       pageSize={25}
-      paginationLabel="singers"
+      paginationLabel={performerLabelPlural.toLowerCase()}
       onRowClick={onSingerClick ? (row) => onSingerClick(row.profile) : undefined}
       getRowId={(s) => s.profile.id}
       enableSelection

@@ -1,4 +1,5 @@
 import type { Profile } from '../../../services/profileService';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { Button } from '../../ui';
 
 interface SingerModalFooterProps {
@@ -22,6 +23,8 @@ export function SingerModalFooter({
   handleSubmit,
   isSubmitting,
 }: SingerModalFooterProps) {
+  const { performerLabel } = useChoirSettings();
+
   if (activeTab !== 'profile') {
     return (
       <Button type="button" onClick={handleClose} variant="primary" className="w-full sm:w-auto">
@@ -42,7 +45,7 @@ export function SingerModalFooter({
             loading={isDeleting}
             className="w-full sm:w-auto"
           >
-            Delete Singer
+            Delete {performerLabel}
           </Button>
           <Button
             type="button"

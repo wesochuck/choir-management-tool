@@ -17,6 +17,7 @@ import { useDialog } from '../../contexts/DialogContext';
 import type { Profile, ProfileInput } from '../../services/profileService';
 import { resolveInitialEventId } from '../../lib/eventUtils';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { formatInTimezone } from '../../lib/timezone';
 import { SingerModal } from '../../components/admin/SingerModal';
 import { SingerLookupModal } from '../../components/admin/SingerLookupModal';
@@ -31,7 +32,8 @@ const getSingersListPosition = (): 'side' | 'bottom' | 'hidden' => 'bottom';
 
 export default function SeatingView() {
   const dialog = useDialog();
-  const { timezone } = useChoirSettings();
+  const { timezone, performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [searchParams] = useSearchParams();
   const { performances } = useEvents();
   const { venues, editVenue } = useVenues();
@@ -252,7 +254,7 @@ export default function SeatingView() {
   const handleClear = async () => {
     const shouldClear = await dialog.confirm({
       title: 'Clear Assignments',
-      message: 'Clear all singer assignments for this chart?',
+      message: `Clear all ${performerLabel.toLowerCase()} assignments for this chart?`,
       confirmLabel: 'Clear',
       variant: 'danger',
     });
@@ -319,7 +321,7 @@ export default function SeatingView() {
       <div className="no-print flex flex-col gap-2">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">Seating Chart</h1>
         <p className="max-w-2xl text-sm leading-relaxed text-slate-500">
-          Assign singers to seats, manage formations, and print seating layouts
+          Assign {performerLabelPlural.toLowerCase()} to seats, manage formations, and print seating layouts
         </p>
       </div>
 
@@ -676,23 +678,23 @@ export default function SeatingView() {
                       <strong>Editor Mode:</strong>{' '}
                       {singersListPosition === 'bottom' ? (
                         <span>
-                          Drag singers from the <strong>bottom shelf</strong> below, or click an{' '}
-                          <strong>empty seat</strong> to assign. Drag assigned singers to move or
+                          Drag {performerLabelPlural.toLowerCase()} from the <strong>bottom shelf</strong> below, or click an{' '}
+                          <strong>empty seat</strong> to assign. Drag assigned {performerLabelPlural.toLowerCase()} to move or
                           swap them.
                           <span className="ml-2 font-bold text-[var(--color-danger-text)]">
-                            👇 Scroll down to see unassigned singers!
+                            👇 Scroll down to see unassigned {performerLabelPlural.toLowerCase()}!
                           </span>
                         </span>
                       ) : singersListPosition === 'side' ? (
                         <span>
-                          Drag singers from the <strong>right sidebar</strong>, or click an{' '}
-                          <strong>empty seat</strong> to assign. Drag assigned singers to move or
+                          Drag {performerLabelPlural.toLowerCase()} from the <strong>right sidebar</strong>, or click an{' '}
+                          <strong>empty seat</strong> to assign. Drag assigned {performerLabelPlural.toLowerCase()} to move or
                           swap them.
                         </span>
                       ) : (
                         <span>
-                          Click an <strong>empty seat</strong> to assign. Drag assigned singers to
-                          move or swap them. (Singers list is currently hidden).
+                          Click an <strong>empty seat</strong> to assign. Drag assigned {performerLabelPlural.toLowerCase()} to
+                          move or swap them. ({performerLabelPlural} list is currently hidden).
                         </span>
                       )}
                     </div>
@@ -775,7 +777,7 @@ export default function SeatingView() {
 
                   {printMode === 'text' && unassignedCount > 0 && (
                     <div className="no-print mb-4 rounded-md border border-[var(--color-danger-text)] bg-[var(--color-danger-bg)] p-4 text-center text-sm font-semibold text-[var(--color-danger-text)] shadow-sm">
-                      ⚠️ You have {unassignedCount} unassigned singer
+                      ⚠️ You have {unassignedCount} unassigned {performerLabel.toLowerCase()}
                       {unassignedCount > 1 ? 's' : ''} left. Switch to Grid view to assign them.
                     </div>
                   )}
@@ -858,7 +860,7 @@ export default function SeatingView() {
                         (p) => !Object.values(optimisticAssignments).includes(p.id)
                       ).length === 0 && (
                         <div className="p-8 text-center">
-                          <p className="text-muted text-sm">All singers assigned!</p>
+                          <p className="text-muted text-sm">All {performerLabelPlural.toLowerCase()} assigned!</p>
                         </div>
                       )}
                     </div>

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { rosterService } from '../../../services/rosterService';
 import type { useDialog } from '../../../contexts/DialogContext';
 import { getRsvpStatusLabel, type RsvpStatus } from '../../../lib/eventRoster/rsvpLabels';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 
 interface UseRsvpBulkActionsArgs {
   eventId?: string;
@@ -12,6 +14,8 @@ interface UseRsvpBulkActionsArgs {
 export type BulkRsvpAction = 'Yes' | 'No' | 'Pending';
 
 export function useRsvpBulkActions({ eventId, refreshRosters, dialog }: UseRsvpBulkActionsArgs) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [isUpdating, setIsUpdating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
   const [bulkActionInProgress, setBulkActionInProgress] = useState<BulkRsvpAction | null>(null);
@@ -51,8 +55,8 @@ export function useRsvpBulkActions({ eventId, refreshRosters, dialog }: UseRsvpB
         title: 'Reset RSVPs?',
         message:
           profileIds.length === 1
-            ? `Reset RSVP response for this singer?`
-            : `Reset RSVP responses for ${profileIds.length} selected singers? This will remove their current RSVP status for this event.`,
+            ? `Reset RSVP response for this ${performerLabel.toLowerCase()}?`
+            : `Reset RSVP responses for ${profileIds.length} selected ${performerLabelPlural.toLowerCase()}? This will remove their current RSVP status for this event.`,
         confirmLabel: profileIds.length === 1 ? 'Reset RSVP' : 'Reset RSVPs',
         cancelLabel: 'Cancel',
         variant: 'warning',
@@ -61,7 +65,7 @@ export function useRsvpBulkActions({ eventId, refreshRosters, dialog }: UseRsvpB
     } else {
       const confirmed = await dialog.confirm({
         title: `Mark ${statusLabel}`,
-        message: `Update ${profileIds.length} selected singer${
+        message: `Update ${profileIds.length} selected ${performerLabel.toLowerCase()}${
           profileIds.length === 1 ? '' : 's'
         } to ${statusLabel}?`,
         confirmLabel: `Mark ${statusLabel}`,

@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { AppCard } from '../components/common/AppCard';
-import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
 import { Button } from '../components/ui';
 import { useRsvpData } from './public-rsvp/useRsvpData';
 import { RsvpReadOnlyView } from './public-rsvp/RsvpReadOnlyView';
@@ -10,6 +10,7 @@ import { RsvpConfirmedView } from './public-rsvp/RsvpConfirmedView';
 export default function PublicRsvpView() {
   const [searchParams] = useSearchParams();
   const rsvp = useRsvpData(searchParams);
+  const { performerLabel } = useChoirSettings();
 
   useDocumentTitle(rsvp.event?.title ? `RSVP for ${rsvp.event.title}` : 'RSVP');
 
@@ -66,7 +67,7 @@ export default function PublicRsvpView() {
               <p className="text-text-muted m-0">{rsvp.rsvpWindow.reason}</p>
               {rsvp.event.type === 'Performance' && (
                 <p className="text-text-muted m-0 mt-1 text-xs">
-                  You can still report future rehearsal absences from your singer dashboard.
+                  You can still report future rehearsal absences from your {performerLabel.toLowerCase()} dashboard.
                 </p>
               )}
             </div>

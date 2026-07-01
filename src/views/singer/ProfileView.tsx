@@ -9,11 +9,15 @@ import { AppCard } from '../../components/common/AppCard';
 import { Button, Select, Input, CopyButton } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialog } from '../../contexts/DialogContext';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 
 export default function ProfileView() {
   const queryClient = useQueryClient();
   const { user, updatePreferences } = useAuth();
   const dialog = useDialog();
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -256,7 +260,7 @@ export default function ProfileView() {
                     Receive RSVP decline notifications
                   </span>
                   <span className="text-muted text-xs">
-                    Receive automated email alerts when a singer declines a rehearsal or
+                    {`Receive automated email alerts when a ${performerLabel.toLowerCase()} declines a rehearsal or`}
                     performance.
                   </span>
                 </div>
@@ -313,9 +317,9 @@ export default function ProfileView() {
                   className="accent-primary size-[18px] shrink-0 cursor-pointer"
                 />
                 <div className="flex flex-col gap-[2px]">
-                  <span className="text-label font-semibold">Show me in the singer directory</span>
+                  <span className="text-label font-semibold">{`Show me in the ${performerLabel.toLowerCase()} directory`}</span>
                   <span className="text-muted text-xs">
-                    Other logged-in singers can see your name, photo, voice part, email, and phone
+                    {`Other logged-in ${performerLabelPlural.toLowerCase()} can see your name, photo, voice part, email, and phone`}
                     number.
                   </span>
                 </div>

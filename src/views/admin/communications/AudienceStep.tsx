@@ -10,6 +10,8 @@ import type { SectionDef } from '../../../services/settings/seatingSettings';
 import type { UseCommunicationDraftReturn } from './useCommunicationDraft';
 import { AudienceStatCards } from './AudienceStatCards';
 import { WizardActionBar } from './WizardActionBar';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 
 interface AudienceStepProps {
   draft: UseCommunicationDraftReturn;
@@ -28,6 +30,8 @@ export function AudienceStep({
   onViewRecipients,
   onContinue,
 }: AudienceStepProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const { filters, updateFilter, recipients, recipientCounts } = draft;
 
   const handleVoicePartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -168,7 +172,7 @@ export function AudienceStep({
                 {
                   label: 'Selected',
                   count: recipientCounts.total,
-                  subtitle: 'matched singers',
+                  subtitle: `matched ${performerLabelPlural.toLowerCase()}`,
                   color: 'neutral',
                 },
                 {
@@ -211,7 +215,7 @@ export function AudienceStep({
                 type="button"
                 className="text-primary hover:text-primary-deep inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold hover:underline"
                 disabled={recipients.length === 0}
-                onClick={() => onViewRecipients(recipients, 'Matched Singers')}
+                onClick={() => onViewRecipients(recipients, `Matched ${performerLabelPlural}`)}
               >
                 <svg
                   className="size-4"
@@ -231,17 +235,17 @@ export function AudienceStep({
                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                   />
                 </svg>
-                View matched singers
+                View matched {performerLabelPlural.toLowerCase()}
               </button>
             </div>
           </AppCard>
 
           {/* Matched Singers Preview Panel */}
-          <AppCard title="Singer Preview (showing first 5)">
+          <AppCard title={`${performerLabel} Preview (showing first 5)`}>
             <div className="divide-border -my-2 flex flex-col divide-y">
               {recipients.length === 0 ? (
                 <div className="text-text-muted py-4 text-center text-sm italic">
-                  No singers matched with the current filters.
+                  No {performerLabelPlural.toLowerCase()} matched with the current filters.
                 </div>
               ) : (
                 recipients.slice(0, 5).map((singer) => (
@@ -277,7 +281,7 @@ export function AudienceStep({
               )}
               {recipients.length > 5 && (
                 <div className="text-text-muted py-2 text-center text-xs italic">
-                  and {recipients.length - 5} more singers...
+                  and {recipients.length - 5} more {performerLabelPlural.toLowerCase()}...
                 </div>
               )}
             </div>

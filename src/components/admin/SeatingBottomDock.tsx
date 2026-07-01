@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { getUniqueDisplayNames } from '../../lib/stringUtils';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import { getContrastColor } from '../../lib/colorUtils';
@@ -30,6 +32,8 @@ export function SeatingBottomDock({
   isVoicePartLayout = false,
   sectionOrder,
 }: SeatingBottomDockProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const assignedIds = useMemo(() => new Set(Object.values(assignments)), [assignments]);
 
   const unassigned = useMemo(() => {
@@ -160,7 +164,7 @@ export function SeatingBottomDock({
           <div className="flex min-w-0 flex-col gap-0.5">
             <div className="flex flex-row flex-wrap items-center gap-2">
               <h3 className="text-primary-deep m-0 text-base leading-tight font-bold">
-                Unassigned Singers
+                Unassigned {performerLabelPlural}
               </h3>
               <span className="bg-surface text-primary-deep inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold shadow-xs">
                 {unassigned.length}
@@ -258,7 +262,7 @@ export function SeatingBottomDock({
           })}
           {groupsWithSingers.length === 0 && (
             <div className="text-muted border-border bg-bg flex min-h-[72px] items-center justify-center rounded-md border border-dashed text-sm font-medium">
-              All singers assigned
+              All {performerLabelPlural.toLowerCase()} assigned
             </div>
           )}
         </div>

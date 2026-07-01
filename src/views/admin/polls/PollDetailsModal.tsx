@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { Button, Badge, Modal } from '../../../components/ui';
 import { formatInTimezone } from '../../../lib/timezone';
+import { useChoirSettings } from '../../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../../lib/labelHelpers';
 import type { CommunicationRecipient } from '../../../services/communicationService';
 import type { Event } from '../../../services/eventService';
 import type { PollRecord, PollResponseRecord, PollStat, PollMessage } from './types';
@@ -77,6 +79,8 @@ export function PollDetailsModal({
   onDelete,
   onViewContactedList,
 }: PollDetailsModalProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const isArchived = useMemo(() => {
     if (!poll) return false;
     const eventExpired = poll.eventId && event ? new Date(event.date) < new Date() : false;
@@ -194,7 +198,7 @@ export function PollDetailsModal({
           <div className="rounded-xl border border-slate-100 bg-white p-3 text-sm">
             {contactedSingers.length > 0 ? (
               <span>
-                Sent to {contactedSingers.length} singer
+                Sent to {contactedSingers.length} {performerLabel.toLowerCase()}
                 {contactedSingers.length !== 1 ? 's' : ''}.
                 <button
                   type="button"
@@ -202,7 +206,7 @@ export function PollDetailsModal({
                   onClick={() =>
                     onViewContactedList({
                       recipients: contactedSingers,
-                      title: `Contacted Singers \u2014 ${poll.question}`,
+                      title: `Contacted ${performerLabelPlural} \u2014 ${poll.question}`,
                     })
                   }
                 >

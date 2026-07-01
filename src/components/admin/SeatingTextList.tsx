@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import type { Profile } from '../../services/profileService';
+import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { getLastName, getUniqueDisplayNames } from '../../lib/stringUtils';
 
 interface SeatingTextListProps {
@@ -8,6 +10,8 @@ interface SeatingTextListProps {
 }
 
 export function SeatingTextList({ rows, showVoiceParts = true }: SeatingTextListProps) {
+  const { performerLabel } = useChoirSettings();
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const allAssigned = useMemo(() => {
     const list: Profile[] = [];
     rows.forEach((row) => {
@@ -44,7 +48,7 @@ export function SeatingTextList({ rows, showVoiceParts = true }: SeatingTextList
                   return showVoiceParts ? `${displayName} (${p.voicePart})` : displayName;
                 })
                 .join(', ')
-            : 'No singers assigned';
+            : `No ${performerLabelPlural.toLowerCase()} assigned`;
 
         return (
           <div key={originalIndex} className="flex flex-col gap-1">
