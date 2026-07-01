@@ -11,6 +11,7 @@ export const queryKeys = {
     heroImage: ['appSettings', 'heroImage'] as const,
     directory: ['appSettings', 'directorySettings'] as const,
     performerLabel: ['appSettings', 'performer_label'] as const,
+    emailProvider: ['appSettings', 'email_provider'] as const,
   },
   venues: {
     all: ['venues'] as const,

@@ -114,7 +114,7 @@ onRecordAfterCreateSuccess((e) => {
                     const smsRecord = new Record(queueCollection, {
                         messageRef: record.id,
                         recipientId: recipient.id,
-                        recipientEmail: phone + '@sms.smtp2go.com',
+                        recipientEmail: phone,
                         recipientName: recipient.name || performerLabel,
                         subject: '',
                         rawContent: smsContent,
@@ -631,12 +631,91 @@ onRecordAfterCreateSuccess((e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -688,7 +767,7 @@ onRecordAfterCreateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -705,7 +784,7 @@ onRecordAfterCreateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -722,7 +801,7 @@ onRecordAfterCreateSuccess((e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -792,17 +871,26 @@ onRecordAfterCreateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -1126,17 +1214,31 @@ onRecordAfterCreateSuccess((e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -1288,7 +1390,7 @@ onRecordAfterUpdateSuccess((e) => {
                     const smsRecord = new Record(queueCollection, {
                         messageRef: record.id,
                         recipientId: recipient.id,
-                        recipientEmail: phone + '@sms.smtp2go.com',
+                        recipientEmail: phone,
                         recipientName: recipient.name || performerLabel,
                         subject: '',
                         rawContent: smsContent,
@@ -1805,12 +1907,91 @@ onRecordAfterUpdateSuccess((e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -1862,7 +2043,7 @@ onRecordAfterUpdateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -1879,7 +2060,7 @@ onRecordAfterUpdateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -1896,7 +2077,7 @@ onRecordAfterUpdateSuccess((e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -1966,17 +2147,26 @@ onRecordAfterUpdateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -2300,17 +2490,31 @@ onRecordAfterUpdateSuccess((e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -2889,12 +3093,91 @@ onRecordAfterCreateSuccess((e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -2946,7 +3229,7 @@ onRecordAfterCreateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -2963,7 +3246,7 @@ onRecordAfterCreateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -2980,7 +3263,7 @@ onRecordAfterCreateSuccess((e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -3050,17 +3333,26 @@ onRecordAfterCreateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -3384,17 +3676,31 @@ onRecordAfterCreateSuccess((e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -4122,12 +4428,91 @@ onRecordAfterUpdateSuccess((e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -4179,7 +4564,7 @@ onRecordAfterUpdateSuccess((e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -4196,7 +4581,7 @@ onRecordAfterUpdateSuccess((e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -4213,7 +4598,7 @@ onRecordAfterUpdateSuccess((e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -4283,17 +4668,26 @@ onRecordAfterUpdateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -4617,17 +5011,31 @@ onRecordAfterUpdateSuccess((e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -5751,12 +6159,91 @@ function isPocketBaseDateBefore(value, comparisonDate) {
     return !!parsed && parsed < comparisonDate;
 }
 
+// --- Utility source: email/brevoAdapter.ts ---
+"use strict";
+function dispatchEmailViaBrevo(apiKey, payload) {
+    if (!apiKey) {
+        throw new Error("Missing Brevo API Key");
+    }
+    const body = JSON.stringify({
+        sender: {
+            name: payload.senderName,
+            email: payload.senderAddress
+        },
+        to: [{
+                email: payload.recipientEmail,
+                name: payload.recipientName
+            }],
+        subject: payload.subject,
+        htmlContent: payload.htmlContent,
+        textContent: payload.textContent || undefined
+    });
+    const res = $http.send({
+        url: "https://api.brevo.com/v3/smtp/email",
+        method: "POST",
+        headers: {
+            "api-key": apiKey,
+            "content-type": "application/json",
+            "accept": "application/json"
+        },
+        body: body
+    });
+    if (res.statusCode >= 400) {
+        throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+    }
+}
+function dispatchSmsViaBrevo(apiKey, payload) {
+    if (!apiKey) {
+        throw new Error("Missing Brevo API Key");
+    }
+    // Brevo SMS sender is restricted to max 11 alphanumeric characters
+    // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+    let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+    if (!cleanSender) {
+        cleanSender = "ChoirMsg"; // Fallback sender name
+    }
+    const body = JSON.stringify({
+        sender: cleanSender,
+        recipient: payload.recipientPhone,
+        content: payload.content,
+        type: "transactional"
+    });
+    const res = $http.send({
+        url: "https://api.brevo.com/v3/transactionalSMS/send",
+        method: "POST",
+        headers: {
+            "api-key": apiKey,
+            "content-type": "application/json",
+            "accept": "application/json"
+        },
+        body: body
+    });
+    if (res.statusCode >= 400) {
+        throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+    }
+}
+
 // --- Utility source: email/queueProcessor.ts ---
 "use strict";
 function processEmailQueue(app) {
     var _a;
     const settings = app.settings();
-    if (!settings.smtp || !settings.smtp.enabled) {
+    let provider = 'smtp';
+    let brevoApiKey = '';
+    try {
+        const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+        const provConfig = parseJsonField(provRecord.get('value'));
+        if (provConfig) {
+            if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                provider = 'brevo';
+                brevoApiKey = provConfig.brevoApiKey;
+            }
+        }
+    }
+    catch (_b) {
+        // Default to smtp
+    }
+    if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
         console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
         return;
     }
@@ -5808,7 +6295,7 @@ function processEmailQueue(app) {
         if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (_b) {
+    catch (_c) {
         // use default baseUrl and mailingAddress
     }
     if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -5825,7 +6312,7 @@ function processEmailQueue(app) {
         if (val)
             choirName = val;
     }
-    catch (_c) {
+    catch (_d) {
         // use default choirName
     }
     let timezone = 'America/New_York';
@@ -5842,7 +6329,7 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (_d) {
+    catch (_e) {
         // use default timezone
     }
     let totalClaimed = 0;
@@ -5912,17 +6399,26 @@ function processEmailQueue(app) {
                 // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
                     const subject = record.get('subject') || '';
-                    // Dispatch as plain text via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        text: rawContent,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    if (provider === 'brevo') {
+                        dispatchSmsViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            recipientPhone: recipientEmail,
+                            content: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -6246,17 +6742,31 @@ function processEmailQueue(app) {
                 // Final template layout wrap
                 const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                 record.set('htmlBody', finalHtml);
-                // Dispatch natively via PocketBase SMTP Client
-                const mailerMessage = new MailerMessage({
-                    from: {
-                        address: settings.meta.senderAddress || 'no-reply@choir.management',
-                        name: settings.meta.senderName || 'Choir Management Tool',
-                    },
-                    to: [{ address: recipientEmail, name: recipientName }],
-                    subject: subject,
-                    html: finalHtml,
-                });
-                app.newMailClient().send(mailerMessage);
+                // Dispatch natively or via Brevo
+                if (provider === 'brevo') {
+                    dispatchEmailViaBrevo(brevoApiKey, {
+                        senderName: settings.meta.senderName || 'Choir Management Tool',
+                        senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                        recipientName: recipientName,
+                        recipientEmail: recipientEmail,
+                        subject: subject,
+                        htmlContent: finalHtml,
+                        textContent: rawContent,
+                    });
+                }
+                else {
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                }
                 record.set('status', 'Sent');
                 record.set('sentAt', new Date().toISOString());
                 record.set('processingRunId', null);
@@ -7967,12 +8477,91 @@ function isPocketBaseDateBefore(value, comparisonDate) {
     return !!parsed && parsed < comparisonDate;
 }
 
+// --- Utility source: email/brevoAdapter.ts ---
+"use strict";
+function dispatchEmailViaBrevo(apiKey, payload) {
+    if (!apiKey) {
+        throw new Error("Missing Brevo API Key");
+    }
+    const body = JSON.stringify({
+        sender: {
+            name: payload.senderName,
+            email: payload.senderAddress
+        },
+        to: [{
+                email: payload.recipientEmail,
+                name: payload.recipientName
+            }],
+        subject: payload.subject,
+        htmlContent: payload.htmlContent,
+        textContent: payload.textContent || undefined
+    });
+    const res = $http.send({
+        url: "https://api.brevo.com/v3/smtp/email",
+        method: "POST",
+        headers: {
+            "api-key": apiKey,
+            "content-type": "application/json",
+            "accept": "application/json"
+        },
+        body: body
+    });
+    if (res.statusCode >= 400) {
+        throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+    }
+}
+function dispatchSmsViaBrevo(apiKey, payload) {
+    if (!apiKey) {
+        throw new Error("Missing Brevo API Key");
+    }
+    // Brevo SMS sender is restricted to max 11 alphanumeric characters
+    // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+    let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+    if (!cleanSender) {
+        cleanSender = "ChoirMsg"; // Fallback sender name
+    }
+    const body = JSON.stringify({
+        sender: cleanSender,
+        recipient: payload.recipientPhone,
+        content: payload.content,
+        type: "transactional"
+    });
+    const res = $http.send({
+        url: "https://api.brevo.com/v3/transactionalSMS/send",
+        method: "POST",
+        headers: {
+            "api-key": apiKey,
+            "content-type": "application/json",
+            "accept": "application/json"
+        },
+        body: body
+    });
+    if (res.statusCode >= 400) {
+        throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+    }
+}
+
 // --- Utility source: email/queueProcessor.ts ---
 "use strict";
 function processEmailQueue(app) {
     var _a;
     const settings = app.settings();
-    if (!settings.smtp || !settings.smtp.enabled) {
+    let provider = 'smtp';
+    let brevoApiKey = '';
+    try {
+        const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+        const provConfig = parseJsonField(provRecord.get('value'));
+        if (provConfig) {
+            if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                provider = 'brevo';
+                brevoApiKey = provConfig.brevoApiKey;
+            }
+        }
+    }
+    catch (_b) {
+        // Default to smtp
+    }
+    if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
         console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
         return;
     }
@@ -8024,7 +8613,7 @@ function processEmailQueue(app) {
         if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
             mailingAddress = comms.mailingAddress;
     }
-    catch (_b) {
+    catch (_c) {
         // use default baseUrl and mailingAddress
     }
     if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -8041,7 +8630,7 @@ function processEmailQueue(app) {
         if (val)
             choirName = val;
     }
-    catch (_c) {
+    catch (_d) {
         // use default choirName
     }
     let timezone = 'America/New_York';
@@ -8058,7 +8647,7 @@ function processEmailQueue(app) {
             }
         }
     }
-    catch (_d) {
+    catch (_e) {
         // use default timezone
     }
     let totalClaimed = 0;
@@ -8128,17 +8717,26 @@ function processEmailQueue(app) {
                 // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
                     const subject = record.get('subject') || '';
-                    // Dispatch as plain text via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        text: rawContent,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    if (provider === 'brevo') {
+                        dispatchSmsViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            recipientPhone: recipientEmail,
+                            content: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch as plain text via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                            subject: subject,
+                            text: rawContent,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -8462,17 +9060,31 @@ function processEmailQueue(app) {
                 // Final template layout wrap
                 const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                 record.set('htmlBody', finalHtml);
-                // Dispatch natively via PocketBase SMTP Client
-                const mailerMessage = new MailerMessage({
-                    from: {
-                        address: settings.meta.senderAddress || 'no-reply@choir.management',
-                        name: settings.meta.senderName || 'Choir Management Tool',
-                    },
-                    to: [{ address: recipientEmail, name: recipientName }],
-                    subject: subject,
-                    html: finalHtml,
-                });
-                app.newMailClient().send(mailerMessage);
+                // Dispatch natively or via Brevo
+                if (provider === 'brevo') {
+                    dispatchEmailViaBrevo(brevoApiKey, {
+                        senderName: settings.meta.senderName || 'Choir Management Tool',
+                        senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                        recipientName: recipientName,
+                        recipientEmail: recipientEmail,
+                        subject: subject,
+                        htmlContent: finalHtml,
+                        textContent: rawContent,
+                    });
+                }
+                else {
+                    // Dispatch natively via PocketBase SMTP Client
+                    const mailerMessage = new MailerMessage({
+                        from: {
+                            address: settings.meta.senderAddress || 'no-reply@choir.management',
+                            name: settings.meta.senderName || 'Choir Management Tool',
+                        },
+                        to: [{ address: recipientEmail, name: recipientName }],
+                        subject: subject,
+                        html: finalHtml,
+                    });
+                    app.newMailClient().send(mailerMessage);
+                }
                 record.set('status', 'Sent');
                 record.set('sentAt', new Date().toISOString());
                 record.set('processingRunId', null);
@@ -9370,12 +9982,91 @@ routerAdd("POST", "/api/queue/process", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -9427,7 +10118,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -9444,7 +10135,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -9461,7 +10152,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -9531,17 +10222,26 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -9865,17 +10565,31 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -10023,17 +10737,165 @@ routerAdd("POST", "/api/admin/queue-settings/generate", (e) => {
 });
 
 routerAdd("POST", "/api/test-smtp", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
     const authRecord = e.auth;
     if (!authRecord || authRecord.get("role") !== "admin") return e.json(403, { error: "Forbidden" });
     const { email } = e.requestInfo().body;
     if (!email) return e.json(400, { error: "Missing email" });
-    const settings = $app.settings();
-    if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+
+    let provider = 'smtp';
+    let brevoApiKey = '';
+
     try {
-        const message = new MailerMessage({ from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, to: [{ address: email }], subject: "SMTP Test Successful!", html: "<p>Your SMTP is working!</p>" });
-        $app.newMailClient().send(message);
-        return e.json(200, { success: true });
-    } catch (err) { return e.json(500, { error: "SMTP failed" }); }
+        const provRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+        const provConfig = parseJsonField(provRecord.get('value'));
+        if (provConfig) {
+            if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                provider = 'brevo';
+                brevoApiKey = provConfig.brevoApiKey;
+            }
+        }
+    } catch (e) {
+        // Default to SMTP
+    }
+
+    const settings = $app.settings();
+
+    if (provider === 'brevo') {
+        try {
+            dispatchEmailViaBrevo(brevoApiKey, {
+                senderName: settings.meta.senderName || "Choir Management Tool",
+                senderAddress: settings.meta.senderAddress || "no-reply@choir.management",
+                recipientName: "Admin Test",
+                recipientEmail: email,
+                subject: "Brevo Test Successful!",
+                htmlContent: "<p>Your Brevo API Email integration is working!</p>",
+                textContent: "Your Brevo API Email integration is working!"
+            });
+            return e.json(200, { success: true });
+        } catch (err) {
+            return e.json(500, { error: "Brevo API failed: " + (err instanceof Error ? err.message : String(err)) });
+        }
+    } else {
+        if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+        try {
+            const message = new MailerMessage({ 
+                from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
+                to: [{ address: email }], 
+                subject: "SMTP Test Successful!", 
+                html: "<p>Your SMTP is working!</p>" 
+            });
+            $app.newMailClient().send(message);
+            return e.json(200, { success: true });
+        } catch (err) { 
+            return e.json(500, { error: "SMTP failed" }); 
+        }
+    }
 });
 
 routerAdd("POST", "/api/generate-player-token", (e) => {
@@ -11171,12 +12033,91 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -11228,7 +12169,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -11245,7 +12186,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -11262,7 +12203,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -11332,17 +12273,26 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -11666,17 +12616,31 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -14053,12 +15017,91 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -14110,7 +15153,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -14127,7 +15170,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -14144,7 +15187,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -14214,17 +15257,26 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -14548,17 +15600,31 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -16935,12 +18001,91 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -16992,7 +18137,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -17009,7 +18154,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -17026,7 +18171,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -17096,17 +18241,26 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -17430,17 +18584,31 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -19817,12 +20985,91 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -19874,7 +21121,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -19891,7 +21138,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -19908,7 +21155,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -19978,17 +21225,26 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -20312,17 +21568,31 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -22699,12 +23969,91 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -22756,7 +24105,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -22773,7 +24122,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -22790,7 +24139,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -22860,17 +24209,26 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -23194,17 +24552,31 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -25581,12 +26953,91 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -25638,7 +27089,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -25655,7 +27106,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -25672,7 +27123,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -25742,17 +27193,26 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -26076,17 +27536,31 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -28463,12 +29937,91 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -28520,7 +30073,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -28537,7 +30090,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -28554,7 +30107,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -28624,17 +30177,26 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -28958,17 +30520,31 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -31344,12 +32920,91 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         `.trim();
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -31401,7 +33056,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -31418,7 +33073,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -31435,7 +33090,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -31505,17 +33160,26 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -31839,17 +33503,31 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);
@@ -39163,12 +40841,91 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
         return !!parsed && parsed < comparisonDate;
     }
 
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress
+            },
+            to: [{
+                    email: payload.recipientEmail,
+                    name: payload.recipientName
+                }],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/smtp/email",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error("Missing Brevo API Key");
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = "ChoirMsg"; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: "transactional"
+        });
+        const res = $http.send({
+            url: "https://api.brevo.com/v3/transactionalSMS/send",
+            method: "POST",
+            headers: {
+                "api-key": apiKey,
+                "content-type": "application/json",
+                "accept": "application/json"
+            },
+            body: body
+        });
+        if (res.statusCode >= 400) {
+            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        }
+    }
+
     // --- Utility source: email/queueProcessor.ts ---
     "use strict";
     function processEmailQueue(app) {
         var _a;
         const settings = app.settings();
-        if (!settings.smtp || !settings.smtp.enabled) {
+        let provider = 'smtp';
+        let brevoApiKey = '';
+        try {
+            const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+            const provConfig = parseJsonField(provRecord.get('value'));
+            if (provConfig) {
+                if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                    provider = 'brevo';
+                    brevoApiKey = provConfig.brevoApiKey;
+                }
+            }
+        }
+        catch (_b) {
+            // Default to smtp
+        }
+        if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
             console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
             return;
         }
@@ -39220,7 +40977,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             if (comms === null || comms === void 0 ? void 0 : comms.mailingAddress)
                 mailingAddress = comms.mailingAddress;
         }
-        catch (_b) {
+        catch (_c) {
             // use default baseUrl and mailingAddress
         }
         if (baseUrl === 'http://localhost:5173' || !baseUrl || baseUrl.indexOf('localhost') !== -1) {
@@ -39237,7 +40994,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             if (val)
                 choirName = val;
         }
-        catch (_c) {
+        catch (_d) {
             // use default choirName
         }
         let timezone = 'America/New_York';
@@ -39254,7 +41011,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                 }
             }
         }
-        catch (_d) {
+        catch (_e) {
             // use default timezone
         }
         let totalClaimed = 0;
@@ -39324,17 +41081,26 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
-                        // Dispatch as plain text via PocketBase SMTP Client
-                        const mailerMessage = new MailerMessage({
-                            from: {
-                                address: settings.meta.senderAddress || 'no-reply@choir.management',
-                                name: settings.meta.senderName || 'Choir Management Tool',
-                            },
-                            to: [{ address: recipientEmail, name: recipientName }],
-                            subject: subject,
-                            text: rawContent,
-                        });
-                        app.newMailClient().send(mailerMessage);
+                        if (provider === 'brevo') {
+                            dispatchSmsViaBrevo(brevoApiKey, {
+                                senderName: settings.meta.senderName || 'Choir Management Tool',
+                                recipientPhone: recipientEmail,
+                                content: rawContent,
+                            });
+                        }
+                        else {
+                            // Dispatch as plain text via PocketBase SMTP Client
+                            const mailerMessage = new MailerMessage({
+                                from: {
+                                    address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                    name: settings.meta.senderName || 'Choir Management Tool',
+                                },
+                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                subject: subject,
+                                text: rawContent,
+                            });
+                            app.newMailClient().send(mailerMessage);
+                        }
                         record.set('status', 'Sent');
                         record.set('sentAt', new Date().toISOString());
                         record.set('processingRunId', null);
@@ -39658,17 +41424,31 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     // Final template layout wrap
                     const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
                     record.set('htmlBody', finalHtml);
-                    // Dispatch natively via PocketBase SMTP Client
-                    const mailerMessage = new MailerMessage({
-                        from: {
-                            address: settings.meta.senderAddress || 'no-reply@choir.management',
-                            name: settings.meta.senderName || 'Choir Management Tool',
-                        },
-                        to: [{ address: recipientEmail, name: recipientName }],
-                        subject: subject,
-                        html: finalHtml,
-                    });
-                    app.newMailClient().send(mailerMessage);
+                    // Dispatch natively or via Brevo
+                    if (provider === 'brevo') {
+                        dispatchEmailViaBrevo(brevoApiKey, {
+                            senderName: settings.meta.senderName || 'Choir Management Tool',
+                            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+                            recipientName: recipientName,
+                            recipientEmail: recipientEmail,
+                            subject: subject,
+                            htmlContent: finalHtml,
+                            textContent: rawContent,
+                        });
+                    }
+                    else {
+                        // Dispatch natively via PocketBase SMTP Client
+                        const mailerMessage = new MailerMessage({
+                            from: {
+                                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                                name: settings.meta.senderName || 'Choir Management Tool',
+                            },
+                            to: [{ address: recipientEmail, name: recipientName }],
+                            subject: subject,
+                            html: finalHtml,
+                        });
+                        app.newMailClient().send(mailerMessage);
+                    }
                     record.set('status', 'Sent');
                     record.set('sentAt', new Date().toISOString());
                     record.set('processingRunId', null);

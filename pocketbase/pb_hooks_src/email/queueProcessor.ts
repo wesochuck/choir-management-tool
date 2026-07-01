@@ -10,6 +10,7 @@ import { escapeHtml, sanitizeEmailSubject, normalizeBaseUrl, formatInTimezone } 
 import { renderMarkdown } from './emailRendering';
 import { compileMailjetHtml } from './mailjetRenderer';
 import { coercePocketBaseDate } from '../pocketbaseDate';
+import { dispatchEmailViaBrevo, dispatchSmsViaBrevo } from './brevoAdapter';
 
 declare class MailerMessage {
   constructor(config: {
@@ -31,7 +32,26 @@ declare const $security: {
  */
 export function processEmailQueue(app: PocketBaseApp): void {
   const settings = app.settings();
-  if (!settings.smtp || !settings.smtp.enabled) {
+
+  let provider = 'smtp';
+  let brevoApiKey = '';
+
+  try {
+    const provRecord = app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+    const provConfig = parseJsonField<{ provider?: string; brevoApiKey?: string }>(
+      provRecord.get('value')
+    );
+    if (provConfig) {
+      if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+        provider = 'brevo';
+        brevoApiKey = provConfig.brevoApiKey;
+      }
+    }
+  } catch {
+    // Default to smtp
+  }
+
+  if (provider === 'smtp' && (!settings.smtp || !settings.smtp.enabled)) {
     console.log('[Queue Error] SMTP settings are not enabled in PocketBase.');
     return;
   }
@@ -194,7 +214,9 @@ export function processEmailQueue(app: PocketBaseApp): void {
             const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
             const v = r?.get('value');
             return typeof v === 'string' && v.trim() ? v.trim() : 'Performer';
-          } catch { return 'Performer'; }
+          } catch {
+            return 'Performer';
+          }
         })();
         const recipientName = (record.get('recipientName') as string) || performerLabel;
         const filters = parseJsonField<Record<string, string>>(record.get('filters')) || {};
@@ -206,18 +228,27 @@ export function processEmailQueue(app: PocketBaseApp): void {
         if (isSms) {
           const subject = (record.get('subject') as string) || '';
 
-          // Dispatch as plain text via PocketBase SMTP Client
-          const mailerMessage = new MailerMessage({
-            from: {
-              address: settings.meta.senderAddress || 'no-reply@choir.management',
-              name: settings.meta.senderName || 'Choir Management Tool',
-            },
-            to: [{ address: recipientEmail, name: recipientName }],
-            subject: subject,
-            text: rawContent,
-          });
+          if (provider === 'brevo') {
+            dispatchSmsViaBrevo(brevoApiKey, {
+              senderName: settings.meta.senderName || 'Choir Management Tool',
+              recipientPhone: recipientEmail,
+              content: rawContent,
+            });
+          } else {
+            // Dispatch as plain text via PocketBase SMTP Client
+            const mailerMessage = new MailerMessage({
+              from: {
+                address: settings.meta.senderAddress || 'no-reply@choir.management',
+                name: settings.meta.senderName || 'Choir Management Tool',
+              },
+              to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+              subject: subject,
+              text: rawContent,
+            });
 
-          app.newMailClient().send(mailerMessage);
+            app.newMailClient().send(mailerMessage);
+          }
+
           record.set('status', 'Sent');
           record.set('sentAt', new Date().toISOString());
           record.set('processingRunId', null);
@@ -575,18 +606,32 @@ export function processEmailQueue(app: PocketBaseApp): void {
         const finalHtml = compileMailjetHtml(htmlBody, mailingAddress, unsubscribeUrl, choirName);
         record.set('htmlBody', finalHtml);
 
-        // Dispatch natively via PocketBase SMTP Client
-        const mailerMessage = new MailerMessage({
-          from: {
-            address: settings.meta.senderAddress || 'no-reply@choir.management',
-            name: settings.meta.senderName || 'Choir Management Tool',
-          },
-          to: [{ address: recipientEmail, name: recipientName }],
-          subject: subject,
-          html: finalHtml,
-        });
+        // Dispatch natively or via Brevo
+        if (provider === 'brevo') {
+          dispatchEmailViaBrevo(brevoApiKey, {
+            senderName: settings.meta.senderName || 'Choir Management Tool',
+            senderAddress: settings.meta.senderAddress || 'no-reply@choir.management',
+            recipientName: recipientName,
+            recipientEmail: recipientEmail,
+            subject: subject,
+            htmlContent: finalHtml,
+            textContent: rawContent,
+          });
+        } else {
+          // Dispatch natively via PocketBase SMTP Client
+          const mailerMessage = new MailerMessage({
+            from: {
+              address: settings.meta.senderAddress || 'no-reply@choir.management',
+              name: settings.meta.senderName || 'Choir Management Tool',
+            },
+            to: [{ address: recipientEmail, name: recipientName }],
+            subject: subject,
+            html: finalHtml,
+          });
 
-        app.newMailClient().send(mailerMessage);
+          app.newMailClient().send(mailerMessage);
+        }
+
         record.set('status', 'Sent');
         record.set('sentAt', new Date().toISOString());
         record.set('processingRunId', null);

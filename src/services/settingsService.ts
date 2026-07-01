@@ -116,6 +116,13 @@ import { getDirectorySettings, saveDirectorySettings } from './settings/director
 export type { DirectorySettings } from './settings/directorySettings';
 export { getDirectorySettings, saveDirectorySettings };
 
+import {
+  getEmailProviderSettings,
+  saveEmailProviderSettings,
+} from './settings/emailProviderSettings';
+export type { EmailProviderSettings } from './settings/emailProviderSettings';
+export { getEmailProviderSettings, saveEmailProviderSettings };
+
 // Backward compat namespace for existing settingsService.getXxx callers
 export const settingsService = {
   getAuditionSettings,
@@ -148,4 +155,6 @@ export const settingsService = {
   saveLogo,
   getDirectorySettings,
   saveDirectorySettings,
+  getEmailProviderSettings,
+  saveEmailProviderSettings,
 };

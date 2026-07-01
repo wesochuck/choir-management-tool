@@ -186,8 +186,8 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    60,
-    'Generated file should contain exactly 60 callback-local utility regions'
+    62,
+    'Generated file should contain exactly 62 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
@@ -226,8 +226,12 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
 
   const testSmtpRoute = extractRouteCallback(content, '/api/test-smtp');
   assert.ok(
-    !testSmtpRoute.includes('CALLBACK-LOCAL UTILITIES'),
-    'SMTP test route should not include any utility bundle because it does not call shared helpers'
+    testSmtpRoute.includes('CALLBACK-LOCAL UTILITIES'),
+    'SMTP test route should include utility bundle because it calls dispatchEmailViaBrevo'
+  );
+  assert.ok(
+    testSmtpRoute.includes('function dispatchEmailViaBrevo'),
+    'SMTP test route should contain dispatchEmailViaBrevo helper'
   );
 
   const maintenanceRoute = extractRouteCallback(content, '/api/maintenance/run');

@@ -29,7 +29,8 @@ export type UtilityBundleName =
   | 'checkoutEndpoints'
   | 'ticketScanValidation'
   | 'financialNotifications'
-  | 'maintenance';
+  | 'maintenance'
+  | 'brevoAdapter';
 
 export type UtilityBundle = {
   files: string[];
@@ -97,7 +98,12 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'mailjetRenderer',
       'hmacTokens',
       'pocketbaseDate',
+      'brevoAdapter',
     ],
+  },
+  brevoAdapter: {
+    files: ['email/brevoAdapter.ts'],
+    symbols: ['dispatchEmailViaBrevo', 'dispatchSmsViaBrevo'],
   },
   calendarEndpoint: {
     files: ['calendarEndpoint.ts'],
@@ -883,13 +889,55 @@ const authRecord = e.auth;
 if (!authRecord || authRecord.get("role") !== "admin") return e.json(403, { error: "Forbidden" });
 const { email } = e.requestInfo().body;
 if (!email) return e.json(400, { error: "Missing email" });
-const settings = $app.settings();
-if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+
+let provider = 'smtp';
+let brevoApiKey = '';
+
 try {
-    const message = new MailerMessage({ from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, to: [{ address: email }], subject: "SMTP Test Successful!", html: "<p>Your SMTP is working!</p>" });
-    $app.newMailClient().send(message);
-    return e.json(200, { success: true });
-} catch (err) { return e.json(500, { error: "SMTP failed" }); }`;
+    const provRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+    const provConfig = parseJsonField(provRecord.get('value'));
+    if (provConfig) {
+        if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+            provider = 'brevo';
+            brevoApiKey = provConfig.brevoApiKey;
+        }
+    }
+} catch (e) {
+    // Default to SMTP
+}
+
+const settings = $app.settings();
+
+if (provider === 'brevo') {
+    try {
+        dispatchEmailViaBrevo(brevoApiKey, {
+            senderName: settings.meta.senderName || "Choir Management Tool",
+            senderAddress: settings.meta.senderAddress || "no-reply@choir.management",
+            recipientName: "Admin Test",
+            recipientEmail: email,
+            subject: "Brevo Test Successful!",
+            htmlContent: "<p>Your Brevo API Email integration is working!</p>",
+            textContent: "Your Brevo API Email integration is working!"
+        });
+        return e.json(200, { success: true });
+    } catch (err) {
+        return e.json(500, { error: "Brevo API failed: " + (err instanceof Error ? err.message : String(err)) });
+    }
+} else {
+    if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+    try {
+        const message = new MailerMessage({ 
+            from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
+            to: [{ address: email }], 
+            subject: "SMTP Test Successful!", 
+            html: "<p>Your SMTP is working!</p>" 
+        });
+        $app.newMailClient().send(message);
+        return e.json(200, { success: true });
+    } catch (err) { 
+        return e.json(500, { error: "SMTP failed" }); 
+    }
+}`;
 
   const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
