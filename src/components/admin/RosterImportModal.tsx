@@ -131,7 +131,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
     const confirmed = await dialog.confirm({
       title: 'Confirm Import',
-      message: `Ready to import ${validSingers.length} singers? ${
+      message: `Ready to import ${validSingers.length} ${performerLabelPlural.toLowerCase()}? ${
         mappedSingers.length - validSingers.length > 0
           ? `${mappedSingers.length - validSingers.length} invalid rows will be skipped.`
           : ''
@@ -191,7 +191,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
         console.error(`Import failed for row ${singer.rowNumber}:`, err);
         errors.push({
           row: singer.rowNumber,
-          name: singer.data.name || 'Unknown Singer',
+          name: singer.data.name || `Unknown ${performerLabel}`,
           error: err instanceof Error ? err.message : 'Unknown database error',
         });
         setErrorsList([...errors]);
@@ -202,7 +202,7 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
 
     setCredentialsList(credentials);
     setStep('COMPLETE');
-    dialog.showToast(`Roster import finished: ${successes} singers added.`);
+    dialog.showToast(`Roster import finished: ${successes} ${performerLabelPlural.toLowerCase()} added.`);
     await onSuccess();
   };
 

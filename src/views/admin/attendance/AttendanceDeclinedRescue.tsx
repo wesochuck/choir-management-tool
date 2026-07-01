@@ -37,7 +37,7 @@ export function AttendanceDeclinedRescue({
             onChange={(e) => setSelectedDeclinedProfileId(e.target.value)}
             className="h-8 py-0 text-xs"
           >
-            <option value="">-- Select Declined Singer --</option>
+            <option value="">-- Select Declined Performer --</option>
             {declinedSingers.map((s) => (
               <option key={s.profileId} value={s.profileId}>
                 {s.name} ({s.voicePart})

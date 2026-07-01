@@ -315,7 +315,7 @@ export const SeatingGrid: React.FC<SeatingGridProps> = ({
                     if (rowHasAssignments) {
                       shouldRemove = await dialog.confirm({
                         title: 'Remove Row?',
-                        message: `Row ${rowIndex + 1} has singer assignments. Removing the row will clear these assignments. Proceed?`,
+                        message: `Row ${rowIndex + 1} has ${performerLabel.toLowerCase()} assignments. Removing the row will clear these assignments. Proceed?`,
                         confirmLabel: 'Remove Row',
                         cancelLabel: 'Cancel',
                         variant: 'danger',

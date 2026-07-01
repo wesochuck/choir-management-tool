@@ -14,7 +14,7 @@ interface Placeholder {
 const STANDARD_PLACEHOLDERS: Placeholder[] = [
   {
     tag: '{singerName}',
-    label: 'Singer Name',
+    label: 'Performer Name',
     desc: "Recipient's full name (e.g. 'John Doe')",
     category: 'Recipient',
     className: 'text-emerald-600 bg-emerald-50',

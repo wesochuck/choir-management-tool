@@ -8,6 +8,7 @@ import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useDialog } from '../../contexts/DialogContext';
 import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
+import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Button, Select, Input, CopyButton, Checkbox } from '../../components/ui';
 
 const COMMON_TIMEZONES = [
@@ -60,6 +61,7 @@ export default function SettingsView() {
   const [isLogoRemoved, setIsLogoRemoved] = useState(false);
   const [directoryEnabled, setDirectoryEnabled] = useState(true);
   const [performerLabel, setPerformerLabel] = useState('Performer');
+  const performerLabelPlural = pluralizeLabel(performerLabel);
   const [emailProvider, setEmailProvider] = useState<'smtp' | 'brevo'>('smtp');
   const [brevoApiKey, setBrevoApiKey] = useState('');
 
@@ -317,7 +319,7 @@ export default function SettingsView() {
                 )}
               </div>
               <p className="max-w-md text-xs leading-normal text-slate-500">
-                Displayed on public pages and the singer dashboard. PNG, JPG, SVG, or WebP formats
+                Displayed on public pages and the {performerLabel.toLowerCase()} dashboard. PNG, JPG, SVG, or WebP formats
                 are supported.
               </p>
             </div>
@@ -371,17 +373,17 @@ export default function SettingsView() {
           </div>
         </AppCard>
 
-        <AppCard title="Singer Directory">
+        <AppCard title={`${performerLabel} Directory`}>
           <div className="flex flex-col gap-2">
             <Checkbox
               id="enable-directory"
               checked={directoryEnabled}
               onChange={(event) => setDirectoryEnabled(event.target.checked)}
             >
-              Enable Singer Directory
+              Enable {performerLabel} Directory
             </Checkbox>
             <p className="text-text-muted text-xs">
-              Allow singers to see the directory of all active members. Admins always retain preview
+              Allow {performerLabelPlural.toLowerCase()} to see the directory of all active members. Admins always retain preview
               access.
             </p>
           </div>

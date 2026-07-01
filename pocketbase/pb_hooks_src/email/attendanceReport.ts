@@ -17,7 +17,7 @@ export interface AttendanceReportData {
  */
 export function renderAttendanceReportBody(data: AttendanceReportData): string {
     const safe = sanitizeHtmlTemplateData(data);
-    const pluralLabel = data.performerLabelPlural || 'Singers';
+    const pluralLabel = data.performerLabelPlural || 'Performers';
     const exceededLimitSection = data.exceededLimitListHtml ? `
     <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 20px 0;" />
     <h3 style="color: #b45309; margin-top: 0;">${pluralLabel} Exceeding Rehearsal Miss Limit</h3>

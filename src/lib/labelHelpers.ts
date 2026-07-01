@@ -1,4 +1,4 @@
 export function pluralizeLabel(label: string): string {
-  if (!label) return 'Singers';
+  if (!label) return 'Performers';
   return `${label}s`;
 }
