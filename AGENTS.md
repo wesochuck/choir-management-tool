@@ -303,6 +303,18 @@ This codebase uses TanStack Query v5 (`@tanstack/react-query`) for server state.
 
 - **Hook tests need `// @vitest-environment jsdom` and a `QueryClientProvider` wrapper.** Use `retry: false` on both `queries` and `mutations`. The canonical pattern is `test/useVenuesQuery.test.tsx`; the in-place pattern is `src/hooks/useEventRosterData.test.ts`.
 
+- **Settings in non-React code must fetch directly, not via hooks.** App settings (choir name, performer label, timezone, etc.) are exposed to React components via `useChoirSettings()` context. Non-React code (service modules, utility functions, async helpers) cannot use hooks. These contexts must fetch the setting directly via the async getter from `src/services/settingsService.ts` (or the domain-specific settings file). The `useChoirName` default fallback is handled by the getter itself, so an async call always returns a value:
+
+  ```ts
+  // In a React component:
+  const { performerLabel } = useChoirSettings(); // synchronous via context
+
+  // In a non-React async function:
+  const performerLabel = await settingsService.getPerformerLabel(); // direct fetch
+  ```
+
+  This pattern applies anywhere settings are consumed outside the React tree — service-layer orchestration, background tasks, and data-transform utilities.
+
 ### Decorative icons and emoji in buttons/links
 
 When a button or link includes a decorative emoji/icon plus visible label text, render the icon separately and hide it from assistive technology.
