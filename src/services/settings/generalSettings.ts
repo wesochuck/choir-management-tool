@@ -26,3 +26,14 @@ export async function getHomepageUrl(): Promise<string> {
 export async function saveHomepageUrl(url: string) {
   return await upsertSetting('homepage_url', url, true);
 }
+
+const DEFAULT_PERFORMER_LABEL = 'Performer';
+
+export async function getPerformerLabel(): Promise<string> {
+  const setting = await getSetting<string>('performer_label');
+  return setting?.value || DEFAULT_PERFORMER_LABEL;
+}
+
+export async function savePerformerLabel(label: string) {
+  return await upsertSetting('performer_label', label, true);
+}

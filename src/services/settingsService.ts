@@ -80,12 +80,23 @@ export { getHeroImageUrl, saveHeroImage, getLogoUrl, saveLogo };
 import {
   getChoirName,
   saveChoirName,
+  getPerformerLabel,
+  savePerformerLabel,
   getTimezone,
   saveTimezone,
   getHomepageUrl,
   saveHomepageUrl,
 } from './settings/generalSettings';
-export { getChoirName, saveChoirName, getTimezone, saveTimezone, getHomepageUrl, saveHomepageUrl };
+export {
+  getChoirName,
+  saveChoirName,
+  getPerformerLabel,
+  savePerformerLabel,
+  getTimezone,
+  saveTimezone,
+  getHomepageUrl,
+  saveHomepageUrl,
+};
 
 import { getPollSettings, savePollSettings } from './settings/pollSettings';
 export type { PollSettings } from './settings/pollSettings';
@@ -123,6 +134,8 @@ export const settingsService = {
   saveSeatingSettings,
   getChoirName,
   saveChoirName,
+  getPerformerLabel,
+  savePerformerLabel,
   getTimezone,
   saveTimezone,
   getHomepageUrl,
