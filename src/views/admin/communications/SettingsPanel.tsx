@@ -6,7 +6,7 @@ import type { TemplateRecord } from '../../../services/communicationService';
 import { useDialog } from '../../../contexts/DialogContext';
 import { TemplatesPanel } from './TemplatesPanel';
 
-import { Button, Input } from '../../../components/ui';
+import { Button, Input, Select } from '../../../components/ui';
 
 export interface SettingsPanelProps {
   commSettings: CommunicationSettings;
@@ -19,6 +19,10 @@ export interface SettingsPanelProps {
   setTestPhoneNumber: (value: string) => void;
   isTestingSms: boolean;
   onSendSmsTest: () => Promise<void>;
+  emailProvider: 'smtp' | 'brevo';
+  setEmailProvider: (value: 'smtp' | 'brevo') => void;
+  brevoApiKey: string;
+  setBrevoApiKey: (value: string) => void;
   isSavingConfig: boolean;
   onSaveSettings: () => Promise<void>;
 
@@ -46,6 +50,10 @@ export function SettingsPanel({
   setTestPhoneNumber,
   isTestingSms,
   onSendSmsTest,
+  emailProvider,
+  setEmailProvider,
+  brevoApiKey,
+  setBrevoApiKey,
   isSavingConfig,
   onSaveSettings,
   templates,
@@ -87,9 +95,15 @@ export function SettingsPanel({
         />
       ) : (
         <>
-          <AppCard title="Application & Footer Compliance">
+          <AppCard title="Application & Regional Settings">
             <div className="flex flex-col gap-4">
               <SettingsGrid>
+                <Field
+                  label="Default Country Code (SMS)"
+                  value={localSettings.defaultCountryCode || '1'}
+                  onChange={(v) => setLocalSettings((prev) => ({ ...prev, defaultCountryCode: v }))}
+                  placeholder="e.g. 1"
+                />
                 <Field
                   label="Physical Mailing Address"
                   value={localSettings.mailingAddress}
@@ -102,7 +116,8 @@ export function SettingsPanel({
                 />
               </SettingsGrid>
               <div className="text-muted text-xs">
-                Note: These values are used for legal compliance (footer) and link generation.
+                Note: These values are used for legal compliance (footer), link generation, and
+                outgoing SMS formatting.
               </div>
             </div>
           </AppCard>
@@ -119,6 +134,49 @@ export function SettingsPanel({
             choirName={choirName}
             senderEmail={senderEmail}
           />
+
+          <AppCard title="Email Provider">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label htmlFor="email-provider-select" className="text-text text-xs font-semibold">
+                  Select Outgoing Email Provider
+                </label>
+                <Select
+                  id="email-provider-select"
+                  value={emailProvider}
+                  onChange={(event) => setEmailProvider(event.target.value as 'smtp' | 'brevo')}
+                  className="max-w-lg"
+                >
+                  <option value="smtp">Built-in SMTP (SMTP2GO)</option>
+                  <option value="brevo">Brevo Transactional API (Email & SMS)</option>
+                </Select>
+                <p className="text-text-muted text-xs">
+                  Note: The <strong>Sender Name</strong> and <strong>Sender Address</strong> for all
+                  outgoing messages are configured in the core PocketBase Admin dashboard under{' '}
+                  <em>Settings &rarr; Mail settings</em>.
+                </p>
+              </div>
+
+              {emailProvider === 'brevo' && (
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="brevo-api-key" className="text-text text-xs font-semibold">
+                    Brevo API Key
+                  </label>
+                  <Input
+                    id="brevo-api-key"
+                    type="password"
+                    value={brevoApiKey}
+                    onChange={(event) => setBrevoApiKey(event.target.value)}
+                    placeholder="xkeysib-..."
+                    className="max-w-lg"
+                  />
+                  <p className="text-text-muted text-xs">
+                    Enter your Brevo Transactional SMS and SMTP API key.
+                  </p>
+                </div>
+              )}
+            </div>
+          </AppCard>
 
           <AppCard title="Test Outgoing Connections">
             <div className="flex flex-col gap-6">

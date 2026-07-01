@@ -228,10 +228,33 @@ export function processEmailQueue(app: PocketBaseApp): void {
         if (isSms) {
           const subject = (record.get('subject') as string) || '';
 
+          let formattedPhone = recipientEmail.replace(/\D/g, '');
+          if (formattedPhone) {
+            try {
+              const commSettingRec = app.findFirstRecordByFilter(
+                'appSettings',
+                "key = 'communications'"
+              );
+              const commSettings =
+                parseJsonField<Record<string, unknown>>(commSettingRec?.get('value')) || {};
+              const defaultCode = (commSettings.defaultCountryCode as string) || '1';
+
+              if (formattedPhone.length === 10 && defaultCode === '1') {
+                formattedPhone = defaultCode + formattedPhone;
+              } else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                formattedPhone = defaultCode + formattedPhone;
+              }
+            } catch (e) {
+              // Ignore missing setting
+            }
+          } else {
+            formattedPhone = recipientEmail;
+          }
+
           if (provider === 'brevo') {
             dispatchSmsViaBrevo(brevoApiKey, {
               senderName: settings.meta.senderName || 'Choir Management Tool',
-              recipientPhone: recipientEmail,
+              recipientPhone: formattedPhone,
               content: rawContent,
             });
           } else {
@@ -241,7 +264,7 @@ export function processEmailQueue(app: PocketBaseApp): void {
                 address: settings.meta.senderAddress || 'no-reply@choir.management',
                 name: settings.meta.senderName || 'Choir Management Tool',
               },
-              to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+              to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
               subject: subject,
               text: rawContent,
             });

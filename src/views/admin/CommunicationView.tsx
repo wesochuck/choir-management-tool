@@ -14,7 +14,11 @@ import { pb } from '../../lib/pocketbase';
 import { Button } from '../../components/ui';
 import { communicationService } from '../../services/communicationService';
 import { queryKeys } from '../../lib/queryKeys';
-import { settingsService, type CommunicationSettings } from '../../services/settingsService';
+import {
+  settingsService,
+  type CommunicationSettings,
+  type EmailProviderSettings,
+} from '../../services/settingsService';
 
 import { useCommunicationLibrary } from './communications/useCommunicationLibrary';
 import { useCommunicationDraft } from './communications/useCommunicationDraft';
@@ -64,6 +68,8 @@ export default function CommunicationView() {
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [emailProvider, setEmailProvider] = useState<'smtp' | 'brevo'>('smtp');
+  const [brevoApiKey, setBrevoApiKey] = useState('');
 
   const library = useCommunicationLibrary();
   const queryClient = useQueryClient();
@@ -73,6 +79,27 @@ export default function CommunicationView() {
       settingsService.saveCommunicationSettings(settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.communications.settings() });
+    },
+  });
+
+  const emailProviderQuery = useQuery({
+    queryKey: queryKeys.appSettings.emailProvider,
+    queryFn: () => settingsService.getEmailProviderSettings(),
+    staleTime: 5 * 60_000,
+  });
+
+  useEffect(() => {
+    if (emailProviderQuery.data) {
+      setEmailProvider(emailProviderQuery.data.provider);
+      setBrevoApiKey(emailProviderQuery.data.brevoApiKey);
+    }
+  }, [emailProviderQuery.data]);
+
+  const saveEmailProviderMutation = useMutation({
+    mutationFn: (settings: EmailProviderSettings) =>
+      settingsService.saveEmailProviderSettings(settings),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.emailProvider });
     },
   });
 
@@ -536,20 +563,22 @@ export default function CommunicationView() {
               });
             }
           }}
-          isSavingConfig={saveConfigMutation.isPending}
+          emailProvider={emailProvider}
+          setEmailProvider={setEmailProvider}
+          brevoApiKey={brevoApiKey}
+          setBrevoApiKey={setBrevoApiKey}
+          isSavingConfig={saveConfigMutation.isPending || saveEmailProviderMutation.isPending}
           onSaveSettings={async () => {
             try {
-              const currentSettings =
-                queryClient.getQueryData<CommunicationSettings>(
-                  queryKeys.communications.settings()
-                ) ?? library.commSettings;
-              await saveConfigMutation.mutateAsync(currentSettings);
-              dialog.showToast('Settings updated successfully.');
+              await saveConfigMutation.mutateAsync(library.commSettings);
+              await saveEmailProviderMutation.mutateAsync({ provider: emailProvider, brevoApiKey });
+              dialog.showToast('Communication settings saved successfully.');
             } catch (err: unknown) {
-              const message = err instanceof Error ? err.message : String(err);
+              const msg =
+                err instanceof Error ? err.message : 'Failed to save communication settings.';
               await dialog.showMessage({
                 title: 'Error',
-                message: 'Failed to save settings: ' + message,
+                message: msg,
                 variant: 'danger',
               });
             }

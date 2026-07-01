@@ -880,10 +880,30 @@ onRecordAfterCreateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -894,7 +914,7 @@ onRecordAfterCreateSuccess((e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -2165,10 +2185,30 @@ onRecordAfterUpdateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -2179,7 +2219,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -3353,10 +3393,30 @@ onRecordAfterCreateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -3367,7 +3427,7 @@ onRecordAfterCreateSuccess((e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -4690,10 +4750,30 @@ onRecordAfterUpdateSuccess((e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -4704,7 +4784,7 @@ onRecordAfterUpdateSuccess((e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -6423,10 +6503,30 @@ function processEmailQueue(app) {
                 // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
                     const subject = record.get('subject') || '';
+                    let formattedPhone = recipientEmail.replace(/\D/g, '');
+                    if (formattedPhone) {
+                        try {
+                            const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                            const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                            const defaultCode = commSettings.defaultCountryCode || '1';
+                            if (formattedPhone.length === 10 && defaultCode === '1') {
+                                formattedPhone = defaultCode + formattedPhone;
+                            }
+                            else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                formattedPhone = defaultCode + formattedPhone;
+                            }
+                        }
+                        catch (e) {
+                            // Ignore missing setting
+                        }
+                    }
+                    else {
+                        formattedPhone = recipientEmail;
+                    }
                     if (provider === 'brevo') {
                         dispatchSmsViaBrevo(brevoApiKey, {
                             senderName: settings.meta.senderName || 'Choir Management Tool',
-                            recipientPhone: recipientEmail,
+                            recipientPhone: formattedPhone,
                             content: rawContent,
                         });
                     }
@@ -6437,7 +6537,7 @@ function processEmailQueue(app) {
                                 address: settings.meta.senderAddress || 'no-reply@choir.management',
                                 name: settings.meta.senderName || 'Choir Management Tool',
                             },
-                            to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                            to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                             subject: subject,
                             text: rawContent,
                         });
@@ -8743,10 +8843,30 @@ function processEmailQueue(app) {
                 // delivers only the plain-text body to the recipient's phone.
                 if (isSms) {
                     const subject = record.get('subject') || '';
+                    let formattedPhone = recipientEmail.replace(/\D/g, '');
+                    if (formattedPhone) {
+                        try {
+                            const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                            const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                            const defaultCode = commSettings.defaultCountryCode || '1';
+                            if (formattedPhone.length === 10 && defaultCode === '1') {
+                                formattedPhone = defaultCode + formattedPhone;
+                            }
+                            else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                formattedPhone = defaultCode + formattedPhone;
+                            }
+                        }
+                        catch (e) {
+                            // Ignore missing setting
+                        }
+                    }
+                    else {
+                        formattedPhone = recipientEmail;
+                    }
                     if (provider === 'brevo') {
                         dispatchSmsViaBrevo(brevoApiKey, {
                             senderName: settings.meta.senderName || 'Choir Management Tool',
-                            recipientPhone: recipientEmail,
+                            recipientPhone: formattedPhone,
                             content: rawContent,
                         });
                     }
@@ -8757,7 +8877,7 @@ function processEmailQueue(app) {
                                 address: settings.meta.senderAddress || 'no-reply@choir.management',
                                 name: settings.meta.senderName || 'Choir Management Tool',
                             },
-                            to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                            to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                             subject: subject,
                             text: rawContent,
                         });
@@ -10250,10 +10370,30 @@ routerAdd("POST", "/api/queue/process", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -10264,7 +10404,7 @@ routerAdd("POST", "/api/queue/process", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -11057,11 +11197,30 @@ routerAdd("POST", "/api/test-sms", (e) => {
 
     const settings = $app.settings();
 
+    let formattedPhone = phone.replace(/D/g, '');
+    if (formattedPhone) {
+        try {
+            const commSettingRec = $app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+            const commSettings = parseJsonField(commSettingRec?.get('value')) || {};
+            const defaultCode = commSettings.defaultCountryCode || '1';
+            
+            if (formattedPhone.length === 10 && defaultCode === '1') {
+                formattedPhone = defaultCode + formattedPhone;
+            } else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                formattedPhone = defaultCode + formattedPhone;
+            }
+        } catch (e) {
+            // Ignore missing setting
+        }
+    } else {
+        formattedPhone = phone;
+    }
+
     if (provider === 'brevo') {
         try {
             dispatchSmsViaBrevo(brevoApiKey, {
                 senderName: settings.meta.senderName || "Choir Management Tool",
-                recipientPhone: phone,
+                recipientPhone: formattedPhone,
                 content: "Your Brevo API SMS integration is working!"
             });
             return e.json(200, { success: true });
@@ -11073,7 +11232,7 @@ routerAdd("POST", "/api/test-sms", (e) => {
         try {
             const message = new MailerMessage({ 
                 from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
-                to: [{ address: phone + '@sms.smtp2go.com' }], 
+                to: [{ address: formattedPhone + '@sms.smtp2go.com' }], 
                 subject: "", 
                 text: "Your SMTP-to-SMS integration is working!" 
             });
@@ -12462,10 +12621,30 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -12476,7 +12655,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -15448,10 +15627,30 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -15462,7 +15661,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -18434,10 +18633,30 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -18448,7 +18667,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -21420,10 +21639,30 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -21434,7 +21673,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -24406,10 +24645,30 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -24420,7 +24679,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -27392,10 +27651,30 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -27406,7 +27685,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -30378,10 +30657,30 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -30392,7 +30691,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -33363,10 +33662,30 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -33377,7 +33696,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });
@@ -41286,10 +41605,30 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     // delivers only the plain-text body to the recipient's phone.
                     if (isSms) {
                         const subject = record.get('subject') || '';
+                        let formattedPhone = recipientEmail.replace(/\D/g, '');
+                        if (formattedPhone) {
+                            try {
+                                const commSettingRec = app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+                                const commSettings = parseJsonField(commSettingRec === null || commSettingRec === void 0 ? void 0 : commSettingRec.get('value')) || {};
+                                const defaultCode = commSettings.defaultCountryCode || '1';
+                                if (formattedPhone.length === 10 && defaultCode === '1') {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                                else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+                                    formattedPhone = defaultCode + formattedPhone;
+                                }
+                            }
+                            catch (e) {
+                                // Ignore missing setting
+                            }
+                        }
+                        else {
+                            formattedPhone = recipientEmail;
+                        }
                         if (provider === 'brevo') {
                             dispatchSmsViaBrevo(brevoApiKey, {
                                 senderName: settings.meta.senderName || 'Choir Management Tool',
-                                recipientPhone: recipientEmail,
+                                recipientPhone: formattedPhone,
                                 content: rawContent,
                             });
                         }
@@ -41300,7 +41639,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                                     address: settings.meta.senderAddress || 'no-reply@choir.management',
                                     name: settings.meta.senderName || 'Choir Management Tool',
                                 },
-                                to: [{ address: recipientEmail + '@sms.smtp2go.com', name: recipientName }],
+                                to: [{ address: formattedPhone + '@sms.smtp2go.com', name: recipientName }],
                                 subject: subject,
                                 text: rawContent,
                             });

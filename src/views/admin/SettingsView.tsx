@@ -62,8 +62,6 @@ export default function SettingsView() {
   const [directoryEnabled, setDirectoryEnabled] = useState(true);
   const [performerLabel, setPerformerLabel] = useState('Performer');
   const performerLabelPlural = pluralizeLabel(performerLabel);
-  const [emailProvider, setEmailProvider] = useState<'smtp' | 'brevo'>('smtp');
-  const [brevoApiKey, setBrevoApiKey] = useState('');
 
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
@@ -72,7 +70,6 @@ export default function SettingsView() {
         settingsService.saveTimezone(timezone),
         settingsService.savePerformerLabel(performerLabel),
         settingsService.saveDirectorySettings({ enabled: directoryEnabled }),
-        settingsService.saveEmailProviderSettings({ provider: emailProvider, brevoApiKey }),
         logoFile
           ? settingsService.saveLogo(logoFile)
           : logoUrl === null
@@ -83,7 +80,6 @@ export default function SettingsView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.choirSettings.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.directory });
-      queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.emailProvider });
       setMessage('Settings saved successfully');
     },
     onError: (err: unknown) => {
@@ -100,14 +96,12 @@ export default function SettingsView() {
         loadedLogoUrl,
         loadedDirectorySettings,
         loadedPerformerLabel,
-        loadedEmailProviderSettings,
       ] = await Promise.all([
         settingsService.getChoirName(),
         settingsService.getTimezone(),
         settingsService.getLogoUrl(),
         settingsService.getDirectorySettings(),
         settingsService.getPerformerLabel(),
-        settingsService.getEmailProviderSettings(),
       ]);
       return {
         loadedChoirName,
@@ -115,7 +109,6 @@ export default function SettingsView() {
         loadedLogoUrl,
         loadedDirectorySettings,
         loadedPerformerLabel,
-        loadedEmailProviderSettings,
       };
     },
     staleTime: 5 * 60_000,
@@ -129,15 +122,12 @@ export default function SettingsView() {
       loadedLogoUrl,
       loadedDirectorySettings,
       loadedPerformerLabel,
-      loadedEmailProviderSettings,
     } = settingsQuery.data;
     setChoirName(loadedChoirName);
     setTimezone(loadedTimezone);
     setLogoUrl(loadedLogoUrl);
     setDirectoryEnabled(loadedDirectorySettings?.enabled ?? true);
     setPerformerLabel(loadedPerformerLabel ?? 'Performer');
-    setEmailProvider(loadedEmailProviderSettings?.provider ?? 'smtp');
-    setBrevoApiKey(loadedEmailProviderSettings?.brevoApiKey ?? '');
   }, [settingsQuery.data]);
 
   const isLoading = settingsQuery.isLoading;
@@ -155,10 +145,7 @@ export default function SettingsView() {
       directoryEnabled !== (settingsData?.loadedDirectorySettings?.enabled ?? true);
     const logoDirty = logoFile !== null || isLogoRemoved;
     const labelDirty = performerLabel !== (settingsData?.loadedPerformerLabel ?? 'Performer');
-    const emailProviderDirty =
-      emailProvider !== (settingsData?.loadedEmailProviderSettings?.provider ?? 'smtp') ||
-      brevoApiKey !== (settingsData?.loadedEmailProviderSettings?.brevoApiKey ?? '');
-    return fieldsDirty || directoryDirty || logoDirty || labelDirty || emailProviderDirty;
+    return fieldsDirty || directoryDirty || logoDirty || labelDirty;
   }, [
     settingsData,
     choirName,
@@ -167,8 +154,6 @@ export default function SettingsView() {
     logoFile,
     isLogoRemoved,
     performerLabel,
-    emailProvider,
-    brevoApiKey,
   ]);
 
   const handleGlobalDiscard = () => {
@@ -176,8 +161,6 @@ export default function SettingsView() {
     setTimezone(settingsData?.loadedTimezone ?? 'America/New_York');
     setDirectoryEnabled(settingsData?.loadedDirectorySettings?.enabled ?? true);
     setPerformerLabel(settingsData?.loadedPerformerLabel ?? 'Performer');
-    setEmailProvider(settingsData?.loadedEmailProviderSettings?.provider ?? 'smtp');
-    setBrevoApiKey(settingsData?.loadedEmailProviderSettings?.brevoApiKey ?? '');
     if (logoUrl?.startsWith('blob:')) URL.revokeObjectURL(logoUrl);
     setLogoUrl(settingsData?.loadedLogoUrl ?? null);
     setLogoFile(null);
@@ -386,49 +369,6 @@ export default function SettingsView() {
               Allow {performerLabelPlural.toLowerCase()} to see the directory of all active members.
               Admins always retain preview access.
             </p>
-          </div>
-        </AppCard>
-
-        <AppCard title="Email Provider">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label htmlFor="email-provider-select" className="text-text text-xs font-semibold">
-                Select Outgoing Email Provider
-              </label>
-              <Select
-                id="email-provider-select"
-                value={emailProvider}
-                onChange={(event) => setEmailProvider(event.target.value as 'smtp' | 'brevo')}
-                className="max-w-lg"
-              >
-                <option value="smtp">Built-in SMTP (SMTP2GO)</option>
-                <option value="brevo">Brevo Transactional API (Email & SMS)</option>
-              </Select>
-              <p className="text-text-muted text-xs">
-                Note: The <strong>Sender Name</strong> and <strong>Sender Address</strong> for all
-                outgoing messages are configured in the core PocketBase Admin dashboard under{' '}
-                <em>Settings &rarr; Mail settings</em>.
-              </p>
-            </div>
-
-            {emailProvider === 'brevo' && (
-              <div className="flex flex-col gap-2">
-                <label htmlFor="brevo-api-key" className="text-text text-xs font-semibold">
-                  Brevo API Key
-                </label>
-                <Input
-                  id="brevo-api-key"
-                  type="password"
-                  value={brevoApiKey}
-                  onChange={(event) => setBrevoApiKey(event.target.value)}
-                  placeholder="xkeysib-..."
-                  className={inputClasses}
-                />
-                <p className="text-text-muted text-xs">
-                  Enter your Brevo Transactional SMS and SMTP API key.
-                </p>
-              </div>
-            )}
           </div>
         </AppCard>
 

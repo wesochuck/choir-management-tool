@@ -14,6 +14,7 @@ export interface CommunicationSettings {
   reportHoursAfter: number;
   reportSubjectTemplate: string;
   reportBodyTemplate: string;
+  defaultCountryCode: string;
 }
 
 export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
@@ -67,6 +68,7 @@ export const DEFAULT_COMMUNICATION_SETTINGS: CommunicationSettings = {
     '',
     '{thresholdWarningsSection}',
   ].join('\n'),
+  defaultCountryCode: '1',
 };
 
 export async function getCommunicationSettings(): Promise<CommunicationSettings> {

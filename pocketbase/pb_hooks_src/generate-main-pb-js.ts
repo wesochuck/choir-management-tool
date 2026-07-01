@@ -961,11 +961,30 @@ try {
 
 const settings = $app.settings();
 
+let formattedPhone = phone.replace(/\D/g, '');
+if (formattedPhone) {
+    try {
+        const commSettingRec = $app.findFirstRecordByFilter('appSettings', "key = 'communications'");
+        const commSettings = parseJsonField(commSettingRec?.get('value')) || {};
+        const defaultCode = commSettings.defaultCountryCode || '1';
+        
+        if (formattedPhone.length === 10 && defaultCode === '1') {
+            formattedPhone = defaultCode + formattedPhone;
+        } else if (!formattedPhone.startsWith(defaultCode) && formattedPhone.length <= 10) {
+            formattedPhone = defaultCode + formattedPhone;
+        }
+    } catch (e) {
+        // Ignore missing setting
+    }
+} else {
+    formattedPhone = phone;
+}
+
 if (provider === 'brevo') {
     try {
         dispatchSmsViaBrevo(brevoApiKey, {
             senderName: settings.meta.senderName || "Choir Management Tool",
-            recipientPhone: phone,
+            recipientPhone: formattedPhone,
             content: "Your Brevo API SMS integration is working!"
         });
         return e.json(200, { success: true });
@@ -977,7 +996,7 @@ if (provider === 'brevo') {
     try {
         const message = new MailerMessage({ 
             from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
-            to: [{ address: phone + '@sms.smtp2go.com' }], 
+            to: [{ address: formattedPhone + '@sms.smtp2go.com' }], 
             subject: "", 
             text: "Your SMTP-to-SMS integration is working!" 
         });
