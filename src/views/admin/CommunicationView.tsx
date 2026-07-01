@@ -63,6 +63,7 @@ export default function CommunicationView() {
 
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
+  const [testPhoneNumber, setTestPhoneNumber] = useState('');
 
   const library = useCommunicationLibrary();
   const queryClient = useQueryClient();
@@ -77,6 +78,10 @@ export default function CommunicationView() {
 
   const testSmtpMutation = useMutation({
     mutationFn: (email: string) => pb.send('/api/test-smtp', { method: 'POST', body: { email } }),
+  });
+
+  const testSmsMutation = useMutation({
+    mutationFn: (phone: string) => pb.send('/api/test-sms', { method: 'POST', body: { phone } }),
   });
 
   const automated = useAutomatedCommunicationTasks({
@@ -497,6 +502,36 @@ export default function CommunicationView() {
               await dialog.showMessage({
                 title: 'SMTP Connection Failed',
                 message: `Could not send test email: ${errMsg}`,
+                variant: 'danger',
+              });
+            }
+          }}
+          testPhoneNumber={testPhoneNumber}
+          setTestPhoneNumber={setTestPhoneNumber}
+          isTestingSms={testSmsMutation.isPending}
+          onSendSmsTest={async () => {
+            if (!testPhoneNumber) {
+              await dialog.showMessage({
+                title: 'Error',
+                message: 'Please enter a destination phone number.',
+                variant: 'danger',
+              });
+              return;
+            }
+
+            try {
+              const response = await testSmsMutation.mutateAsync(testPhoneNumber);
+
+              if (response && response.success) {
+                dialog.showToast(`Test SMS successfully sent to ${testPhoneNumber}!`);
+              } else {
+                throw new Error(response?.error || 'Unknown error occurred.');
+              }
+            } catch (err: unknown) {
+              const errMsg = err instanceof Error ? err.message : String(err);
+              await dialog.showMessage({
+                title: 'SMS Connection Failed',
+                message: `Could not send test SMS: ${errMsg}`,
                 variant: 'danger',
               });
             }

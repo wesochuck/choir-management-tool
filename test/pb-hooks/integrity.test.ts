@@ -133,8 +133,8 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    31,
-    'Generated main file should contain exactly 31 route registrations'
+    32,
+    'Generated main file should contain exactly 32 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
@@ -186,8 +186,8 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    62,
-    'Generated file should contain exactly 62 callback-local utility regions'
+    64,
+    'Generated file should contain exactly 64 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));

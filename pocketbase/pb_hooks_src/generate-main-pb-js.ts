@@ -939,6 +939,56 @@ if (provider === 'brevo') {
     }
 }`;
 
+  const testSmsBody = `
+const phone = e.requestInfo().query["phone"] || (e.requestInfo().body ? e.requestInfo().body.phone : "");
+if (!phone) return e.json(400, { error: "Missing phone" });
+
+let provider = 'smtp';
+let brevoApiKey = '';
+
+try {
+    const provRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+    const provConfig = parseJsonField(provRecord.get('value'));
+    if (provConfig) {
+        if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+            provider = 'brevo';
+            brevoApiKey = provConfig.brevoApiKey;
+        }
+    }
+} catch (e) {
+    // Default to SMTP
+}
+
+const settings = $app.settings();
+
+if (provider === 'brevo') {
+    try {
+        dispatchSmsViaBrevo(brevoApiKey, {
+            senderName: settings.meta.senderName || "Choir Management Tool",
+            recipientPhone: phone,
+            content: "Your Brevo API SMS integration is working!"
+        });
+        return e.json(200, { success: true });
+    } catch (err) {
+        return e.json(500, { error: "Brevo SMS API failed: " + (err instanceof Error ? err.message : String(err)) });
+    }
+} else {
+    if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+    try {
+        const message = new MailerMessage({ 
+            from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
+            to: [{ address: phone + '@sms.smtp2go.com' }], 
+            subject: "", 
+            text: "Your SMTP-to-SMS integration is working!" 
+        });
+        $app.newMailClient().send(message);
+        return e.json(200, { success: true });
+    } catch (err) { 
+        return e.json(500, { error: "SMTP SMS failed" }); 
+    }
+}
+`;
+
   const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
 // Source: pocketbase/pb_hooks_src/
@@ -973,6 +1023,7 @@ ${renderRoute('GET', '/api/admin/queue-settings', queueSettingsBody)}
 ${renderRoute('POST', '/api/admin/queue-settings/generate', queueSettingsGenerateBody)}
 
 ${renderRoute('POST', '/api/test-smtp', testSmtpBody)}
+${renderRoute('POST', '/api/test-sms', testSmsBody)}
 
 ${renderRoute('POST', '/api/generate-player-token', 'return handleGeneratePlayerToken(e);')}
 

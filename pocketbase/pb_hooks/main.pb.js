@@ -67,27 +67,27 @@ onRecordAfterCreateSuccess((e) => {
     function shouldQueueMessage(record, oldStatus) {
         if (!record)
             return false;
-        const status = record.get("status") || "Sent";
-        if (status !== "Sent")
+        const status = record.get('status') || 'Sent';
+        if (status !== 'Sent')
             return false;
-        const type = record.get("type");
-        if (type !== "Email" && type !== "SMS" && type !== "Both")
+        const type = record.get('type');
+        if (type !== 'Email' && type !== 'SMS' && type !== 'Both')
             return false;
         // If update, check status transition to prevent duplicate enqueues
         if (oldStatus !== undefined) {
-            return oldStatus !== "Sent";
+            return oldStatus !== 'Sent';
         }
         return true;
     }
     function enqueueBulkMessage(app, record) {
-        const queueCollection = app.findCollectionByNameOrId("emailQueue");
-        const recipients = parseJsonField(record.get("recipients")) || [];
-        const subject = record.get("subject") || "";
-        const content = record.get("content") || "";
-        const filters = parseJsonField(record.get("filters")) || {};
-        const type = record.get("type");
-        const isSms = type === "SMS";
-        const isBoth = type === "Both";
+        const queueCollection = app.findCollectionByNameOrId('emailQueue');
+        const recipients = parseJsonField(record.get('recipients')) || [];
+        const subject = record.get('subject') || '';
+        const content = record.get('content') || '';
+        const filters = parseJsonField(record.get('filters')) || {};
+        const type = record.get('type');
+        const isSms = type === 'SMS';
+        const isBoth = type === 'Both';
         const performerLabel = (() => {
             try {
                 const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
@@ -98,18 +98,25 @@ onRecordAfterCreateSuccess((e) => {
                 return 'Performer';
             }
         })();
-        console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
+        console.log('[DEBUG] enqueueBulkMessage: type=' +
+            type +
+            ' recipients.length=' +
+            recipients.length +
+            ' isSms=' +
+            isSms +
+            ' isBoth=' +
+            isBoth +
+            ' rawRecipients=' +
+            JSON.stringify(record.get('recipients')).slice(0, 200));
         let smsCount = 0;
         let emailCount = 0;
-        recipients.forEach(recipient => {
+        recipients.forEach((recipient) => {
             // Create SMS queue entries for phone recipients (SMS-only or Both)
             if (isSms || isBoth) {
                 const phone = normalizePhone(recipient.phone || '');
-                console.log("[DEBUG] recipient phone=" + (recipient.phone || '') + " normalized=" + phone);
+                console.log('[DEBUG] recipient phone=' + (recipient.phone || '') + ' normalized=' + phone);
                 if (phone.length === 10) {
-                    const smsContent = content.length > 160
-                        ? content.slice(0, 159) + '…'
-                        : content;
+                    const smsContent = content.length > 160 ? content.slice(0, 159) + '…' : content;
                     const smsFilters = Object.assign(Object.assign({}, (typeof filters === 'object' && filters !== null ? filters : {})), { channel: 'sms' });
                     const smsRecord = new Record(queueCollection, {
                         messageRef: record.id,
@@ -118,9 +125,9 @@ onRecordAfterCreateSuccess((e) => {
                         recipientName: recipient.name || performerLabel,
                         subject: '',
                         rawContent: smsContent,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify(smsFilters)
+                        filters: JSON.stringify(smsFilters),
                     });
                     app.save(smsRecord);
                     smsCount++;
@@ -135,15 +142,15 @@ onRecordAfterCreateSuccess((e) => {
                     recipientName: recipient.name || performerLabel,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
-                    filters: JSON.stringify(filters)
+                    filters: JSON.stringify(filters),
                 });
                 app.save(emailRecord);
                 emailCount++;
             }
         });
-        console.log("[DEBUG] enqueueBulkMessage: created smsCount=" + smsCount + " emailCount=" + emailCount);
+        console.log('[DEBUG] enqueueBulkMessage: created smsCount=' + smsCount + ' emailCount=' + emailCount);
     }
 
     // --- Utility source: email/hookText.ts ---
@@ -635,63 +642,65 @@ onRecordAfterCreateSuccess((e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -1343,27 +1352,27 @@ onRecordAfterUpdateSuccess((e) => {
     function shouldQueueMessage(record, oldStatus) {
         if (!record)
             return false;
-        const status = record.get("status") || "Sent";
-        if (status !== "Sent")
+        const status = record.get('status') || 'Sent';
+        if (status !== 'Sent')
             return false;
-        const type = record.get("type");
-        if (type !== "Email" && type !== "SMS" && type !== "Both")
+        const type = record.get('type');
+        if (type !== 'Email' && type !== 'SMS' && type !== 'Both')
             return false;
         // If update, check status transition to prevent duplicate enqueues
         if (oldStatus !== undefined) {
-            return oldStatus !== "Sent";
+            return oldStatus !== 'Sent';
         }
         return true;
     }
     function enqueueBulkMessage(app, record) {
-        const queueCollection = app.findCollectionByNameOrId("emailQueue");
-        const recipients = parseJsonField(record.get("recipients")) || [];
-        const subject = record.get("subject") || "";
-        const content = record.get("content") || "";
-        const filters = parseJsonField(record.get("filters")) || {};
-        const type = record.get("type");
-        const isSms = type === "SMS";
-        const isBoth = type === "Both";
+        const queueCollection = app.findCollectionByNameOrId('emailQueue');
+        const recipients = parseJsonField(record.get('recipients')) || [];
+        const subject = record.get('subject') || '';
+        const content = record.get('content') || '';
+        const filters = parseJsonField(record.get('filters')) || {};
+        const type = record.get('type');
+        const isSms = type === 'SMS';
+        const isBoth = type === 'Both';
         const performerLabel = (() => {
             try {
                 const r = app.findFirstRecordByFilter('appSettings', "key = 'performer_label'");
@@ -1374,18 +1383,25 @@ onRecordAfterUpdateSuccess((e) => {
                 return 'Performer';
             }
         })();
-        console.log("[DEBUG] enqueueBulkMessage: type=" + type + " recipients.length=" + recipients.length + " isSms=" + isSms + " isBoth=" + isBoth + " rawRecipients=" + JSON.stringify(record.get("recipients")).slice(0, 200));
+        console.log('[DEBUG] enqueueBulkMessage: type=' +
+            type +
+            ' recipients.length=' +
+            recipients.length +
+            ' isSms=' +
+            isSms +
+            ' isBoth=' +
+            isBoth +
+            ' rawRecipients=' +
+            JSON.stringify(record.get('recipients')).slice(0, 200));
         let smsCount = 0;
         let emailCount = 0;
-        recipients.forEach(recipient => {
+        recipients.forEach((recipient) => {
             // Create SMS queue entries for phone recipients (SMS-only or Both)
             if (isSms || isBoth) {
                 const phone = normalizePhone(recipient.phone || '');
-                console.log("[DEBUG] recipient phone=" + (recipient.phone || '') + " normalized=" + phone);
+                console.log('[DEBUG] recipient phone=' + (recipient.phone || '') + ' normalized=' + phone);
                 if (phone.length === 10) {
-                    const smsContent = content.length > 160
-                        ? content.slice(0, 159) + '…'
-                        : content;
+                    const smsContent = content.length > 160 ? content.slice(0, 159) + '…' : content;
                     const smsFilters = Object.assign(Object.assign({}, (typeof filters === 'object' && filters !== null ? filters : {})), { channel: 'sms' });
                     const smsRecord = new Record(queueCollection, {
                         messageRef: record.id,
@@ -1394,9 +1410,9 @@ onRecordAfterUpdateSuccess((e) => {
                         recipientName: recipient.name || performerLabel,
                         subject: '',
                         rawContent: smsContent,
-                        status: "Pending",
+                        status: 'Pending',
                         attempts: 0,
-                        filters: JSON.stringify(smsFilters)
+                        filters: JSON.stringify(smsFilters),
                     });
                     app.save(smsRecord);
                     smsCount++;
@@ -1411,15 +1427,15 @@ onRecordAfterUpdateSuccess((e) => {
                     recipientName: recipient.name || performerLabel,
                     subject: subject,
                     rawContent: content,
-                    status: "Pending",
+                    status: 'Pending',
                     attempts: 0,
-                    filters: JSON.stringify(filters)
+                    filters: JSON.stringify(filters),
                 });
                 app.save(emailRecord);
                 emailCount++;
             }
         });
-        console.log("[DEBUG] enqueueBulkMessage: created smsCount=" + smsCount + " emailCount=" + emailCount);
+        console.log('[DEBUG] enqueueBulkMessage: created smsCount=' + smsCount + ' emailCount=' + emailCount);
     }
 
     // --- Utility source: email/hookText.ts ---
@@ -1911,63 +1927,65 @@ onRecordAfterUpdateSuccess((e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -3097,63 +3115,65 @@ onRecordAfterCreateSuccess((e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -4432,63 +4452,65 @@ onRecordAfterUpdateSuccess((e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -6163,63 +6185,65 @@ function isPocketBaseDateBefore(value, comparisonDate) {
 "use strict";
 function dispatchEmailViaBrevo(apiKey, payload) {
     if (!apiKey) {
-        throw new Error("Missing Brevo API Key");
+        throw new Error('Missing Brevo API Key');
     }
     const body = JSON.stringify({
         sender: {
             name: payload.senderName,
-            email: payload.senderAddress
+            email: payload.senderAddress,
         },
-        to: [{
+        to: [
+            {
                 email: payload.recipientEmail,
-                name: payload.recipientName
-            }],
+                name: payload.recipientName,
+            },
+        ],
         subject: payload.subject,
         htmlContent: payload.htmlContent,
-        textContent: payload.textContent || undefined
+        textContent: payload.textContent || undefined,
     });
     const res = $http.send({
-        url: "https://api.brevo.com/v3/smtp/email",
-        method: "POST",
+        url: 'https://api.brevo.com/v3/smtp/email',
+        method: 'POST',
         headers: {
-            "api-key": apiKey,
-            "content-type": "application/json",
-            "accept": "application/json"
+            'api-key': apiKey,
+            'content-type': 'application/json',
+            accept: 'application/json',
         },
-        body: body
+        body: body,
     });
     if (res.statusCode >= 400) {
-        throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
     }
 }
 function dispatchSmsViaBrevo(apiKey, payload) {
     if (!apiKey) {
-        throw new Error("Missing Brevo API Key");
+        throw new Error('Missing Brevo API Key');
     }
     // Brevo SMS sender is restricted to max 11 alphanumeric characters
     // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-    let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+    let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
     if (!cleanSender) {
-        cleanSender = "ChoirMsg"; // Fallback sender name
+        cleanSender = 'ChoirMsg'; // Fallback sender name
     }
     const body = JSON.stringify({
         sender: cleanSender,
         recipient: payload.recipientPhone,
         content: payload.content,
-        type: "transactional"
+        type: 'transactional',
     });
     const res = $http.send({
-        url: "https://api.brevo.com/v3/transactionalSMS/send",
-        method: "POST",
+        url: 'https://api.brevo.com/v3/transactionalSMS/send',
+        method: 'POST',
         headers: {
-            "api-key": apiKey,
-            "content-type": "application/json",
-            "accept": "application/json"
+            'api-key': apiKey,
+            'content-type': 'application/json',
+            accept: 'application/json',
         },
-        body: body
+        body: body,
     });
     if (res.statusCode >= 400) {
-        throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
     }
 }
 
@@ -8481,63 +8505,65 @@ function isPocketBaseDateBefore(value, comparisonDate) {
 "use strict";
 function dispatchEmailViaBrevo(apiKey, payload) {
     if (!apiKey) {
-        throw new Error("Missing Brevo API Key");
+        throw new Error('Missing Brevo API Key');
     }
     const body = JSON.stringify({
         sender: {
             name: payload.senderName,
-            email: payload.senderAddress
+            email: payload.senderAddress,
         },
-        to: [{
+        to: [
+            {
                 email: payload.recipientEmail,
-                name: payload.recipientName
-            }],
+                name: payload.recipientName,
+            },
+        ],
         subject: payload.subject,
         htmlContent: payload.htmlContent,
-        textContent: payload.textContent || undefined
+        textContent: payload.textContent || undefined,
     });
     const res = $http.send({
-        url: "https://api.brevo.com/v3/smtp/email",
-        method: "POST",
+        url: 'https://api.brevo.com/v3/smtp/email',
+        method: 'POST',
         headers: {
-            "api-key": apiKey,
-            "content-type": "application/json",
-            "accept": "application/json"
+            'api-key': apiKey,
+            'content-type': 'application/json',
+            accept: 'application/json',
         },
-        body: body
+        body: body,
     });
     if (res.statusCode >= 400) {
-        throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+        throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
     }
 }
 function dispatchSmsViaBrevo(apiKey, payload) {
     if (!apiKey) {
-        throw new Error("Missing Brevo API Key");
+        throw new Error('Missing Brevo API Key');
     }
     // Brevo SMS sender is restricted to max 11 alphanumeric characters
     // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-    let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+    let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
     if (!cleanSender) {
-        cleanSender = "ChoirMsg"; // Fallback sender name
+        cleanSender = 'ChoirMsg'; // Fallback sender name
     }
     const body = JSON.stringify({
         sender: cleanSender,
         recipient: payload.recipientPhone,
         content: payload.content,
-        type: "transactional"
+        type: 'transactional',
     });
     const res = $http.send({
-        url: "https://api.brevo.com/v3/transactionalSMS/send",
-        method: "POST",
+        url: 'https://api.brevo.com/v3/transactionalSMS/send',
+        method: 'POST',
         headers: {
-            "api-key": apiKey,
-            "content-type": "application/json",
-            "accept": "application/json"
+            'api-key': apiKey,
+            'content-type': 'application/json',
+            accept: 'application/json',
         },
-        body: body
+        body: body,
     });
     if (res.statusCode >= 400) {
-        throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+        throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
     }
 }
 
@@ -9986,63 +10012,65 @@ routerAdd("POST", "/api/queue/process", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -10782,63 +10810,65 @@ routerAdd("POST", "/api/test-smtp", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -10894,6 +10924,163 @@ routerAdd("POST", "/api/test-smtp", (e) => {
             return e.json(200, { success: true });
         } catch (err) { 
             return e.json(500, { error: "SMTP failed" }); 
+        }
+    }
+});
+routerAdd("POST", "/api/test-sms", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: email/brevoAdapter.ts ---
+    "use strict";
+    function dispatchEmailViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error('Missing Brevo API Key');
+        }
+        const body = JSON.stringify({
+            sender: {
+                name: payload.senderName,
+                email: payload.senderAddress,
+            },
+            to: [
+                {
+                    email: payload.recipientEmail,
+                    name: payload.recipientName,
+                },
+            ],
+            subject: payload.subject,
+            htmlContent: payload.htmlContent,
+            textContent: payload.textContent || undefined,
+        });
+        const res = $http.send({
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
+            headers: {
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
+            },
+            body: body,
+        });
+        if (res.statusCode >= 400) {
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
+        }
+    }
+    function dispatchSmsViaBrevo(apiKey, payload) {
+        if (!apiKey) {
+            throw new Error('Missing Brevo API Key');
+        }
+        // Brevo SMS sender is restricted to max 11 alphanumeric characters
+        // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
+        if (!cleanSender) {
+            cleanSender = 'ChoirMsg'; // Fallback sender name
+        }
+        const body = JSON.stringify({
+            sender: cleanSender,
+            recipient: payload.recipientPhone,
+            content: payload.content,
+            type: 'transactional',
+        });
+        const res = $http.send({
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
+            headers: {
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
+            },
+            body: body,
+        });
+        if (res.statusCode >= 400) {
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
+        }
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    const phone = e.requestInfo().query["phone"] || (e.requestInfo().body ? e.requestInfo().body.phone : "");
+    if (!phone) return e.json(400, { error: "Missing phone" });
+
+    let provider = 'smtp';
+    let brevoApiKey = '';
+
+    try {
+        const provRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_provider'");
+        const provConfig = parseJsonField(provRecord.get('value'));
+        if (provConfig) {
+            if (provConfig.provider === 'brevo' && provConfig.brevoApiKey) {
+                provider = 'brevo';
+                brevoApiKey = provConfig.brevoApiKey;
+            }
+        }
+    } catch (e) {
+        // Default to SMTP
+    }
+
+    const settings = $app.settings();
+
+    if (provider === 'brevo') {
+        try {
+            dispatchSmsViaBrevo(brevoApiKey, {
+                senderName: settings.meta.senderName || "Choir Management Tool",
+                recipientPhone: phone,
+                content: "Your Brevo API SMS integration is working!"
+            });
+            return e.json(200, { success: true });
+        } catch (err) {
+            return e.json(500, { error: "Brevo SMS API failed: " + (err instanceof Error ? err.message : String(err)) });
+        }
+    } else {
+        if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+        try {
+            const message = new MailerMessage({ 
+                from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
+                to: [{ address: phone + '@sms.smtp2go.com' }], 
+                subject: "", 
+                text: "Your SMTP-to-SMS integration is working!" 
+            });
+            $app.newMailClient().send(message);
+            return e.json(200, { success: true });
+        } catch (err) { 
+            return e.json(500, { error: "SMTP SMS failed" }); 
         }
     }
 });
@@ -12037,63 +12224,65 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -15021,63 +15210,65 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -18005,63 +18196,65 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -20989,63 +21182,65 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -23973,63 +24168,65 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -26957,63 +27154,65 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -29941,63 +30140,65 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -32924,63 +33125,65 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -40845,63 +41048,65 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
     "use strict";
     function dispatchEmailViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         const body = JSON.stringify({
             sender: {
                 name: payload.senderName,
-                email: payload.senderAddress
+                email: payload.senderAddress,
             },
-            to: [{
+            to: [
+                {
                     email: payload.recipientEmail,
-                    name: payload.recipientName
-                }],
+                    name: payload.recipientName,
+                },
+            ],
             subject: payload.subject,
             htmlContent: payload.htmlContent,
-            textContent: payload.textContent || undefined
+            textContent: payload.textContent || undefined,
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/smtp/email",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/smtp/email',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo email API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo email API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
     function dispatchSmsViaBrevo(apiKey, payload) {
         if (!apiKey) {
-            throw new Error("Missing Brevo API Key");
+            throw new Error('Missing Brevo API Key');
         }
         // Brevo SMS sender is restricted to max 11 alphanumeric characters
         // or 15 numeric digits. Let's enforce the alphanumeric format constraints.
-        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, "").substring(0, 11);
+        let cleanSender = payload.senderName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 11);
         if (!cleanSender) {
-            cleanSender = "ChoirMsg"; // Fallback sender name
+            cleanSender = 'ChoirMsg'; // Fallback sender name
         }
         const body = JSON.stringify({
             sender: cleanSender,
             recipient: payload.recipientPhone,
             content: payload.content,
-            type: "transactional"
+            type: 'transactional',
         });
         const res = $http.send({
-            url: "https://api.brevo.com/v3/transactionalSMS/send",
-            method: "POST",
+            url: 'https://api.brevo.com/v3/transactionalSMS/send',
+            method: 'POST',
             headers: {
-                "api-key": apiKey,
-                "content-type": "application/json",
-                "accept": "application/json"
+                'api-key': apiKey,
+                'content-type': 'application/json',
+                accept: 'application/json',
             },
-            body: body
+            body: body,
         });
         if (res.statusCode >= 400) {
-            throw new Error("Brevo SMS API failed with status " + res.statusCode + ": " + res.raw);
+            throw new Error('Brevo SMS API failed with status ' + res.statusCode + ': ' + res.raw);
         }
     }
 
@@ -43375,7 +43580,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
     "use strict";
     function renderAttendanceReportBody(data) {
         const safe = sanitizeHtmlTemplateData(data);
-        const pluralLabel = data.performerLabelPlural || 'Singers';
+        const pluralLabel = data.performerLabelPlural || 'Performers';
         const exceededLimitSection = data.exceededLimitListHtml ? `
         <hr style="border: 0; border-top: 1px solid #e9f0eb; margin: 20px 0;" />
         <h3 style="color: #b45309; margin-top: 0;">${pluralLabel} Exceeding Rehearsal Miss Limit</h3>

@@ -15,6 +15,10 @@ export interface SettingsPanelProps {
   setTestEmailAddress: (value: string) => void;
   isTestingSmtp: boolean;
   onSendConnectionTest: () => Promise<void>;
+  testPhoneNumber: string;
+  setTestPhoneNumber: (value: string) => void;
+  isTestingSms: boolean;
+  onSendSmsTest: () => Promise<void>;
   isSavingConfig: boolean;
   onSaveSettings: () => Promise<void>;
 
@@ -38,6 +42,10 @@ export function SettingsPanel({
   setTestEmailAddress,
   isTestingSmtp,
   onSendConnectionTest,
+  testPhoneNumber,
+  setTestPhoneNumber,
+  isTestingSms,
+  onSendSmsTest,
   isSavingConfig,
   onSaveSettings,
   templates,
@@ -112,28 +120,52 @@ export function SettingsPanel({
             senderEmail={senderEmail}
           />
 
-          <AppCard title="Test Server SMTP Connection">
-            <div className="flex flex-col gap-4">
-              <p className="text-muted text-sm">
-                Send a quick test email using the server's configured SMTP settings to verify that
-                outgoing mail delivery is working.
-              </p>
-              <div className="flex flex-wrap items-center gap-4">
-                <Input
-                  className="max-w-[300px] flex-1"
-                  type="email"
-                  value={testEmailAddress}
-                  onChange={(e) => setTestEmailAddress(e.target.value)}
-                  placeholder="e.g. test@example.com"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={onSendConnectionTest}
-                  disabled={isTestingSmtp || !testEmailAddress}
-                >
-                  {isTestingSmtp ? 'Sending Test...' : '🧪 Send Test Email'}
-                </Button>
+          <AppCard title="Test Outgoing Connections">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <p className="text-muted text-sm">
+                  Send a quick test email using the active provider settings to verify delivery.
+                </p>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Input
+                    className="max-w-[300px] flex-1"
+                    type="email"
+                    value={testEmailAddress}
+                    onChange={(e) => setTestEmailAddress(e.target.value)}
+                    placeholder="e.g. test@example.com"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onSendConnectionTest}
+                    disabled={isTestingSmtp || !testEmailAddress}
+                  >
+                    {isTestingSmtp ? 'Sending Test...' : '🧪 Send Test Email'}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <p className="text-muted text-sm">
+                  Send a quick test SMS using the active provider settings to verify delivery.
+                </p>
+                <div className="flex flex-wrap items-center gap-4">
+                  <Input
+                    className="max-w-[300px] flex-1"
+                    type="tel"
+                    value={testPhoneNumber}
+                    onChange={(e) => setTestPhoneNumber(e.target.value)}
+                    placeholder="e.g. 5551234567"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={onSendSmsTest}
+                    disabled={isTestingSms || !testPhoneNumber}
+                  >
+                    {isTestingSms ? 'Sending Test...' : '📱 Send Test SMS'}
+                  </Button>
+                </div>
               </div>
             </div>
           </AppCard>

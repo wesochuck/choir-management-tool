@@ -319,8 +319,8 @@ export default function SettingsView() {
                 )}
               </div>
               <p className="max-w-md text-xs leading-normal text-slate-500">
-                Displayed on public pages and the {performerLabel.toLowerCase()} dashboard. PNG, JPG, SVG, or WebP formats
-                are supported.
+                Displayed on public pages and the {performerLabel.toLowerCase()} dashboard. PNG,
+                JPG, SVG, or WebP formats are supported.
               </p>
             </div>
           </div>
@@ -383,8 +383,8 @@ export default function SettingsView() {
               Enable {performerLabel} Directory
             </Checkbox>
             <p className="text-text-muted text-xs">
-              Allow {performerLabelPlural.toLowerCase()} to see the directory of all active members. Admins always retain preview
-              access.
+              Allow {performerLabelPlural.toLowerCase()} to see the directory of all active members.
+              Admins always retain preview access.
             </p>
           </div>
         </AppCard>
@@ -404,6 +404,11 @@ export default function SettingsView() {
                 <option value="smtp">Built-in SMTP (SMTP2GO)</option>
                 <option value="brevo">Brevo Transactional API (Email & SMS)</option>
               </Select>
+              <p className="text-text-muted text-xs">
+                Note: The <strong>Sender Name</strong> and <strong>Sender Address</strong> for all
+                outgoing messages are configured in the core PocketBase Admin dashboard under{' '}
+                <em>Settings &rarr; Mail settings</em>.
+              </p>
             </div>
 
             {emailProvider === 'brevo' && (
