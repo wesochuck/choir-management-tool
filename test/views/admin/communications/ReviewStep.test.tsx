@@ -91,7 +91,7 @@ describe('ReviewStep', () => {
       />
     );
 
-    const sendButton = screen.getAllByRole('button', { name: /Send to 0 Singers/i })[0]!;
+    const sendButton = screen.getAllByRole('button', { name: /Send to 0 Performers/i })[0]!;
     assert.strictEqual((sendButton as HTMLButtonElement).disabled, true);
   });
 
@@ -134,7 +134,7 @@ describe('ReviewStep', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Send to 1 Singers/i })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: /Send to 1 Performers/i })[0]!);
 
     assert.strictEqual(sendMessage.mock.callCount(), 1);
   });

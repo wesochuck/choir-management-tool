@@ -108,7 +108,7 @@ test('enqueueBulkMessage creates email entries for type=Email', () => {
 
     const rec2 = savedRecords[1];
     assert.strictEqual(rec2.get('recipientEmail'), 'jane@example.com');
-    assert.strictEqual(rec2.get('recipientName'), 'Singer');
+    assert.strictEqual(rec2.get('recipientName'), 'Performer');
     assert.strictEqual(rec2.get('subject'), 'Hello {singerName}!');
 });
 
@@ -148,7 +148,7 @@ test('enqueueBulkMessage creates SMS entries for type=SMS', () => {
     const rec2 = savedRecords[1];
     assert.strictEqual(rec2.get('recipientId'), 'usr-2');
     assert.strictEqual(rec2.get('recipientEmail'), '2125558901@sms.smtp2go.com');
-    assert.strictEqual(rec2.get('recipientName'), 'Singer');
+    assert.strictEqual(rec2.get('recipientName'), 'Performer');
     assert.strictEqual(rec2.get('rawContent'), 'This is an SMS message body.');
     assert.strictEqual(rec2.get('subject'), '');
     const f2 = JSON.parse(rec2.get('filters') as string);

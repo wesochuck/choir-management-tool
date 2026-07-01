@@ -133,14 +133,14 @@ describe('AudienceStep', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /View matched singers/i }));
+    fireEvent.click(screen.getByRole('button', { name: /View matched performers/i }));
 
     assert.strictEqual(onViewRecipients.mock.callCount(), 1);
     assert.strictEqual(onViewRecipients.mock.calls[0]?.arguments[0].length, 1);
-    assert.strictEqual(onViewRecipients.mock.calls[0]?.arguments[1], 'Matched Singers');
+    assert.strictEqual(onViewRecipients.mock.calls[0]?.arguments[1], 'Matched Performers');
   });
 
-  it('disables View matched singers when no recipients', () => {
+  it('disables View matched performers when no recipients', () => {
     renderWithRouter(
       <AudienceStep
         draft={makeDraft({
@@ -155,7 +155,7 @@ describe('AudienceStep', () => {
       />
     );
 
-    const button = screen.getByRole('button', { name: /View matched singers/i });
+    const button = screen.getByRole('button', { name: /View matched performers/i });
     assert.strictEqual((button as HTMLButtonElement).disabled, true);
   });
 
@@ -230,6 +230,6 @@ describe('AudienceStep', () => {
       />
     );
 
-    assert.ok(screen.getByText(/and 3 more singers\.\.\./i));
+    assert.ok(screen.getByText(/and 3 more performers\.\.\./i));
   });
 });

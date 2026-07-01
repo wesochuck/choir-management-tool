@@ -191,7 +191,7 @@ test('singer lookup modal uses compact picker rows instead of large cards', () =
 
   assert.match(
     singerLookupModal,
-    /\{filtered\.length\}\s+available singer/,
+    /\{filtered\.length\}\s+available\s+\{performerLabel/,
     'lookup modal should show a concise result count',
   );
 

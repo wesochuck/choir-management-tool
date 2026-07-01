@@ -16,6 +16,7 @@ import { resourceService } from '../../src/services/resourceService';
 import { communicationService } from '../../src/services/communicationService';
 import { pollService } from '../../src/services/pollService';
 import { DialogProvider } from '../../src/contexts/DialogProvider';
+import { ChoirNameProvider } from '../../src/hooks/useDocumentTitle';
 
 function createWrapper() {
   const client = new QueryClient({
@@ -25,7 +26,11 @@ function createWrapper() {
     },
   });
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={client}>
+        <ChoirNameProvider>{children}</ChoirNameProvider>
+      </QueryClientProvider>
+    );
   };
 }
 
@@ -80,7 +85,7 @@ describe('DirectoryView', () => {
     );
 
     // Verify loading state is visible
-    assert.ok(container.textContent?.includes('Loading singer directory...'));
+      assert.ok(container.textContent?.includes('Loading performer directory...'));
 
     // Wait for profiles to load
     await waitFor(() => {
@@ -136,7 +141,7 @@ describe('DirectoryView', () => {
     fireEvent.change(searchInput, { target: { value: 'nonexistent-singer-name' } });
 
     await waitFor(() => {
-      assert.ok(container.textContent?.includes('No Matching Singers'));
+      assert.ok(container.textContent?.includes('No Matching Performers'));
     });
   });
 
@@ -219,7 +224,7 @@ describe('DirectoryView', () => {
     });
   });
 
-  it('shows Singer Directory button on dashboard when enabled', async () => {
+  it('shows Performer Directory button on dashboard when enabled', async () => {
     mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: true }));
     mock.method(resourceService, 'getResources', async () => []);
     mock.method(communicationService, 'getMessages', async () => []);
@@ -251,11 +256,11 @@ describe('DirectoryView', () => {
     );
 
     await waitFor(() => {
-      assert.ok(container.textContent?.includes('Singer Directory'));
+      assert.ok(container.textContent?.includes('Performer Directory'));
     });
   });
 
-  it('hides Singer Directory button on dashboard for singers when disabled', async () => {
+  it('hides Performer Directory button on dashboard for singers when disabled', async () => {
     mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: false }));
     mock.method(resourceService, 'getResources', async () => []);
     mock.method(communicationService, 'getMessages', async () => []);
@@ -291,7 +296,7 @@ describe('DirectoryView', () => {
     });
   });
 
-  it('shows Singer Directory button on dashboard for admins even when disabled', async () => {
+  it('shows Performer Directory button on dashboard for admins even when disabled', async () => {
     mock.method(settingsService, 'getDirectorySettings', async () => ({ enabled: false }));
     mock.method(resourceService, 'getResources', async () => []);
     mock.method(communicationService, 'getMessages', async () => []);
@@ -323,7 +328,7 @@ describe('DirectoryView', () => {
     );
 
     await waitFor(() => {
-      assert.ok(container.textContent?.includes('Singer Directory'));
+      assert.ok(container.textContent?.includes('Performer Directory'));
     });
   });
 });
