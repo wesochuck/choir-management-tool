@@ -67,7 +67,8 @@ export function MusicPieceModal({
       arranger,
       setArranger,
       duration,
-      setDuration,
+      handleDurationChange,
+      durationAutoFillLabel,
       copies,
       setCopies,
       catalogId,
@@ -448,9 +449,14 @@ export function MusicPieceModal({
                   <label className="text-label">Duration</label>
                   <Input
                     value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
+                    onChange={(e) => handleDurationChange(e.target.value)}
                     placeholder="e.g. 3:30"
                   />
+                  {durationAutoFillLabel && (
+                    <span className="text-text-muted text-[11px]">
+                      Auto-detected from &ldquo;{durationAutoFillLabel}&rdquo; track
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-label">Copies</label>

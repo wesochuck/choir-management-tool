@@ -8,12 +8,14 @@ import {
   type VoicePartDef,
   type SectionDef,
 } from '../../../../services/settingsService';
+import { extractAudioDuration } from '../../../../lib/audioUtils';
 
 export interface UseMusicPieceTracksParams {
   piece: MusicPiece | null;
   isOpen: boolean;
   onRefresh?: () => Promise<void>;
   onMovementsChanged?: () => Promise<void> | void;
+  onTrackDurationLoaded?: (voicePart: string, durationSeconds: number | null) => void;
 }
 
 export function useMusicPieceTracks({
@@ -21,6 +23,7 @@ export function useMusicPieceTracks({
   isOpen,
   onRefresh,
   onMovementsChanged,
+  onTrackDurationLoaded,
 }: UseMusicPieceTracksParams) {
   const dialog = useDialog();
   const queryClient = useQueryClient();
@@ -231,6 +234,9 @@ export function useMusicPieceTracks({
 
   const handleFileUpload = async (voicePart: string, file: File) => {
     setUploadingParts((prev) => ({ ...prev, [voicePart]: true }));
+    extractAudioDuration(file)
+      .then((d) => onTrackDurationLoaded?.(voicePart, d))
+      .catch(() => onTrackDurationLoaded?.(voicePart, null));
     try {
       await uploadTrackMutation.mutateAsync({ voicePart, file });
     } finally {

@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDialog } from '../../../contexts/DialogContext';
 import { useEvents } from '../../../hooks/useEvents';
 import { isValidDurationString } from '../../../lib/musicPieceUtils';
 import { parseFuzzyMonthYearInput } from '../../../lib/dateUtils';
+import { extractAudioDuration } from '../../../lib/audioUtils';
+import { computeAutoFillDecision, type DurationAutoFillState } from './hooks/durationAutoFillLogic';
 import { useMusicPieceDetails } from './hooks/useMusicPieceDetails';
 import { useMusicPieceTracks } from './hooks/useMusicPieceTracks';
 import { useMusicPiecePerformances } from './hooks/useMusicPiecePerformances';
@@ -102,6 +104,14 @@ export function useMusicPieceForm({
   const dialog = useDialog();
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-fill duration state
+  const [, setDurationAutoFillState] = useState<DurationAutoFillState>({
+    manuallyEdited: false,
+    runningMax: null,
+    tuttiLocked: false,
+  });
+  const [durationAutoFillLabel, setDurationAutoFillLabel] = useState<string | null>(null);
+
   // Active Tab state
   const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>(
     'details'
@@ -136,12 +146,81 @@ export function useMusicPieceForm({
     sectionBuckets: details.sectionBuckets,
   });
 
+  const { setDuration } = details;
+
+  const handleDurationChange = useCallback(
+    (value: string) => {
+      setDuration(value);
+      setDurationAutoFillState((s) => ({ ...s, manuallyEdited: true }));
+      setDurationAutoFillLabel(null);
+    },
+    [setDuration]
+  );
+
+  const resetDurationAutoFill = useCallback(() => {
+    setDurationAutoFillState({
+      manuallyEdited: false,
+      runningMax: null,
+      tuttiLocked: false,
+    });
+    setDurationAutoFillLabel(null);
+  }, []);
+
+  useEffect(() => {
+    resetDurationAutoFill();
+  }, [piece?.id, resetDurationAutoFill]);
+
+  const handleTrackDurationLoaded = useCallback(
+    (voicePart: string, durationSeconds: number | null) => {
+      if (durationSeconds === null) return;
+
+      setDurationAutoFillState((prevState) => {
+        // computeAutoFillDecision needs the current duration from state.
+        // Because handleTrackDurationLoaded is memoized and we use functional state updates,
+        // details.duration will be captured from the render scope.
+        const decision = computeAutoFillDecision(
+          prevState,
+          details.duration,
+          voicePart,
+          durationSeconds
+        );
+
+        if (decision) {
+          const isTutti = voicePart === 'tutti';
+          const label = isTutti ? 'Tutti' : voicePart;
+
+          setDuration(decision.newDuration);
+          setDurationAutoFillLabel(label);
+          dialog.showToast(`Duration set to ${decision.newDuration} from "${label}" track.`);
+
+          return decision.newState;
+        }
+
+        return prevState;
+      });
+    },
+    [details.duration, setDuration, dialog]
+  );
+
+  const handleTuttiFileSelected = useCallback(
+    (file: File | null) => {
+      movements.setTuttiFile(file);
+      if (file) {
+        extractAudioDuration(file)
+          .then((d) => handleTrackDurationLoaded('tutti', d))
+          .catch(() => handleTrackDurationLoaded('tutti', null));
+      }
+    },
+    [movements, handleTrackDurationLoaded]
+  );
+
   // 4. Tracks Hook
   const tracks = useMusicPieceTracks({
     piece,
     isOpen,
     onRefresh,
     onMovementsChanged: movements.refetchMovements,
+    onTrackDurationLoaded: handleTrackDurationLoaded,
   });
 
   useEffect(() => {
@@ -207,6 +286,7 @@ export function useMusicPieceForm({
     tracks.reset();
     performances.reset();
     movements.reset();
+    resetDurationAutoFill();
     setShowQuickAdd(false);
   };
 
@@ -257,6 +337,8 @@ export function useMusicPieceForm({
       setArranger: details.setArranger,
       duration: details.duration,
       setDuration: details.setDuration,
+      handleDurationChange,
+      durationAutoFillLabel,
       copies: details.copies,
       setCopies: details.setCopies,
       catalogId: details.catalogId,
@@ -323,7 +405,7 @@ export function useMusicPieceForm({
       stagingMovDuration: movements.stagingMovDuration,
       setStagingMovDuration: movements.setStagingMovDuration,
       tuttiFile: movements.tuttiFile,
-      setTuttiFile: movements.setTuttiFile,
+      setTuttiFile: handleTuttiFileSelected,
       isTuttiDraggedOver: movements.isTuttiDraggedOver,
       setIsTuttiDraggedOver: movements.setIsTuttiDraggedOver,
       handleAddStagingMovement: movements.handleAddStagingMovement,
