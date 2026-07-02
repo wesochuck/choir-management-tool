@@ -16,6 +16,7 @@ export interface UseMusicPieceTracksParams {
   onRefresh?: () => Promise<void>;
   onMovementsChanged?: () => Promise<void> | void;
   onTrackDurationLoaded?: (voicePart: string, durationSeconds: number | null) => void;
+  onTrackDeleted?: (voicePart: string) => void;
 }
 
 export function useMusicPieceTracks({
@@ -24,6 +25,7 @@ export function useMusicPieceTracks({
   onRefresh,
   onMovementsChanged,
   onTrackDurationLoaded,
+  onTrackDeleted,
 }: UseMusicPieceTracksParams) {
   const dialog = useDialog();
   const queryClient = useQueryClient();
@@ -258,6 +260,7 @@ export function useMusicPieceTracks({
     if (!confirmed) return;
 
     await deleteTrackMutation.mutateAsync({ voicePart, filename });
+    onTrackDeleted?.(voicePart);
   };
 
   const handleMovementFileUpload = async (movement: MusicPiece, voicePart: string, file: File) => {

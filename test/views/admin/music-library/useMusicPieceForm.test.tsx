@@ -5,7 +5,10 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 
 import { buildMusicPieceSavePayload } from '../../../../src/views/admin/music-library/useMusicPieceForm';
 import { useMusicPieceDetails } from '../../../../src/views/admin/music-library/hooks/useMusicPieceDetails';
-import { computeAutoFillDecision } from '../../../../src/views/admin/music-library/hooks/durationAutoFillLogic';
+import {
+  computeAutoFillDecision,
+  computeExpectedDuration,
+} from '../../../../src/views/admin/music-library/hooks/durationAutoFillLogic';
 import type { DurationAutoFillState } from '../../../../src/views/admin/music-library/hooks/durationAutoFillLogic';
 
 const mockGenres = [
@@ -193,5 +196,55 @@ describe('computeAutoFillDecision', () => {
     assert.notStrictEqual(result, null);
     assert.strictEqual(result!.newDuration, '2:40');
     assert.strictEqual(result!.newState.runningMax, 160);
+  });
+});
+
+describe('computeExpectedDuration', () => {
+  it('returns tutti duration when tutti is present and valid', () => {
+    const result = computeExpectedDuration({
+      tutti: 190,
+      Bass: 150,
+      Tenor: 160,
+    });
+    assert.strictEqual(result, 190);
+  });
+
+  it('falls through to max of others when tutti is null', () => {
+    const result = computeExpectedDuration({
+      tutti: null,
+      Bass: 150,
+      Tenor: 160,
+    });
+    assert.strictEqual(result, 160);
+  });
+
+  it('returns max when no tutti and multiple parts', () => {
+    const result = computeExpectedDuration({
+      Bass: 150,
+      Tenor: 160,
+      Soprano: 140,
+    });
+    assert.strictEqual(result, 160);
+  });
+
+  it('returns the single part when only one is present', () => {
+    const result = computeExpectedDuration({
+      Bass: 150,
+    });
+    assert.strictEqual(result, 150);
+  });
+
+  it('returns null for empty record', () => {
+    const result = computeExpectedDuration({});
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null when all values are null', () => {
+    const result = computeExpectedDuration({
+      tutti: null,
+      Bass: null,
+      Tenor: null,
+    });
+    assert.strictEqual(result, null);
   });
 });

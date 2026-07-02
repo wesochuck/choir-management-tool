@@ -52,3 +52,16 @@ export function computeAutoFillDecision(
 
   return null;
 }
+
+export function computeExpectedDuration(
+  trackDurations: Record<string, number | null>
+): number | null {
+  const entries = Object.entries(trackDurations);
+  if (entries.length === 0) return null;
+
+  if (trackDurations['tutti'] != null) return trackDurations['tutti'];
+
+  const valid = Object.values(trackDurations).filter((d): d is number => d != null);
+  if (valid.length === 0) return null;
+  return Math.max(...valid);
+}

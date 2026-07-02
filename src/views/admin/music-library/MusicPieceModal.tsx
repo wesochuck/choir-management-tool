@@ -69,6 +69,8 @@ export function MusicPieceModal({
       duration,
       handleDurationChange,
       durationAutoFillLabel,
+      durationMismatch,
+      handleAcceptMismatchDuration,
       copies,
       setCopies,
       catalogId,
@@ -455,6 +457,19 @@ export function MusicPieceModal({
                   {durationAutoFillLabel && (
                     <span className="text-text-muted text-[11px]">
                       Auto-detected from &ldquo;{durationAutoFillLabel}&rdquo; track
+                    </span>
+                  )}
+                  {durationMismatch && (
+                    <span className="text-[11px] text-amber-600">
+                      Tracks suggest {durationMismatch.suggested}.
+                      {durationMismatch.current && ` Current: ${durationMismatch.current}.`}{' '}
+                      <button
+                        type="button"
+                        className="text-primary font-bold underline"
+                        onClick={handleAcceptMismatchDuration}
+                      >
+                        Update
+                      </button>
                     </span>
                   )}
                 </div>

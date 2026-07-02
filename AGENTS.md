@@ -79,6 +79,7 @@ Use the wrapper's `mock` API:
 - `fn.mock.resetCalls();`
 - `assert.strictEqual(fn.mock.callCount(), 1);`
 - `assert.deepStrictEqual(fn.mock.calls[0].arguments, ['arg1']);`
+- For timers, use `mock.timers.enable()`, `mock.timers.tick(ms)`, and `mock.timers.reset()`. Do not wait for real time `setTimeout` in tests.
 
 Default tests run in the Node environment. The `dom` Vitest project (jsdom) includes:
 

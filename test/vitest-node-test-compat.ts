@@ -1,6 +1,25 @@
-import { test as viTest, it as viIt, describe as viDescribe, beforeEach as viBeforeEach, afterEach as viAfterEach, beforeAll as viBeforeAll, afterAll as viAfterAll, vi } from 'vitest';
+import {
+  test as viTest,
+  it as viIt,
+  describe as viDescribe,
+  beforeEach as viBeforeEach,
+  afterEach as viAfterEach,
+  beforeAll as viBeforeAll,
+  afterAll as viAfterAll,
+  vi,
+} from 'vitest';
 
-const mutatingMethods = ['push', 'pop', 'shift', 'unshift', 'splice', 'reverse', 'sort', 'copyWithin', 'fill'];
+const mutatingMethods = [
+  'push',
+  'pop',
+  'shift',
+  'unshift',
+  'splice',
+  'reverse',
+  'sort',
+  'copyWithin',
+  'fill',
+];
 
 interface NodeCompatMock {
   mock: {
@@ -56,14 +75,18 @@ function enhanceVitestMock(vitestMock: unknown): NodeCompatMock {
         return { arguments: args };
       }
       const val = Reflect.get(target, prop, receiver);
-      if (typeof val === 'function' && typeof prop === 'string' && !mutatingMethods.includes(prop)) {
-        return function(this: unknown, ...args: unknown[]) {
+      if (
+        typeof val === 'function' &&
+        typeof prop === 'string' &&
+        !mutatingMethods.includes(prop)
+      ) {
+        return function (this: unknown, ...args: unknown[]) {
           const mappedArray = target.map((v) => ({ arguments: v }));
           return (mappedArray as unknown as Record<string, Function>)[prop](...args);
         };
       }
       return val;
-    }
+    },
   });
 
   Object.defineProperty(originalMock, 'calls', {
@@ -87,7 +110,9 @@ export const mock = {
     const spy = vi.spyOn(obj, methodName as never);
     enhanceVitestMock(spy);
     if (mockImplementation) {
-      (spy as unknown as { mockImplementation: (fn: Function) => unknown }).mockImplementation(mockImplementation);
+      (spy as unknown as { mockImplementation: (fn: Function) => unknown }).mockImplementation(
+        mockImplementation
+      );
     }
     return spy;
   },
@@ -96,7 +121,12 @@ export const mock = {
   },
   reset: () => {
     vi.resetAllMocks();
-  }
+  },
+  timers: {
+    enable: () => vi.useFakeTimers(),
+    reset: () => vi.useRealTimers(),
+    tick: (ms: number) => vi.advanceTimersByTime(ms),
+  },
 };
 
 function createCompatContext(cleanups: Function[]) {
@@ -108,10 +138,12 @@ function createCompatContext(cleanups: Function[]) {
         const spy = vi.spyOn(obj, methodName as never);
         enhanceVitestMock(spy);
         if (mockImplementation) {
-          (spy as unknown as { mockImplementation: (fn: Function) => unknown }).mockImplementation(mockImplementation);
+          (spy as unknown as { mockImplementation: (fn: Function) => unknown }).mockImplementation(
+            mockImplementation
+          );
         }
         return spy;
-      }
+      },
     },
     test: async (subName: string, subFn: Function) => {
       return await subFn(t);
@@ -124,7 +156,7 @@ function createCompatContext(cleanups: Function[]) {
     },
     after: (cleanupFn: Function) => {
       cleanups.push(cleanupFn);
-    }
+    },
   };
   return t;
 }
@@ -165,7 +197,7 @@ test.todo = (name: string, fn?: Function, timeout?: number) => {
   return viTest.todo(name, wrapTestCallback(fn), timeout);
 };
 
-export const it = function(name: string, fn?: Function, timeout?: number) {
+export const it = function (name: string, fn?: Function, timeout?: number) {
   return viIt(name, wrapTestCallback(fn), timeout);
 };
 
@@ -184,7 +216,7 @@ it.todo = (name: string, fn?: Function, timeout?: number) => {
 // Map describe, beforeEach, afterEach, before, after
 export const describe = viDescribe;
 
-export const beforeEach = function(fn: Function, timeout?: number) {
+export const beforeEach = function (fn: Function, timeout?: number) {
   return viBeforeEach(async () => {
     const cleanups: Function[] = [];
     const t = createCompatContext(cleanups);
@@ -202,7 +234,7 @@ export const beforeEach = function(fn: Function, timeout?: number) {
   }, timeout);
 };
 
-export const afterEach = function(fn: Function, timeout?: number) {
+export const afterEach = function (fn: Function, timeout?: number) {
   return viAfterEach(async () => {
     const cleanups: Function[] = [];
     const t = createCompatContext(cleanups);
@@ -220,7 +252,7 @@ export const afterEach = function(fn: Function, timeout?: number) {
   }, timeout);
 };
 
-export const before = function(fn: Function, timeout?: number) {
+export const before = function (fn: Function, timeout?: number) {
   return viBeforeAll(async () => {
     const cleanups: Function[] = [];
     const t = createCompatContext(cleanups);
@@ -238,7 +270,7 @@ export const before = function(fn: Function, timeout?: number) {
   }, timeout);
 };
 
-export const after = function(fn: Function, timeout?: number) {
+export const after = function (fn: Function, timeout?: number) {
   return viAfterAll(async () => {
     const cleanups: Function[] = [];
     const t = createCompatContext(cleanups);

@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useDialog } from '../../../contexts/DialogContext';
 import { useEvents } from '../../../hooks/useEvents';
-import { isValidDurationString } from '../../../lib/musicPieceUtils';
+import {
+  isValidDurationString,
+  formatSecondsToDuration,
+  parseDurationToSeconds,
+} from '../../../lib/musicPieceUtils';
 import { parseFuzzyMonthYearInput } from '../../../lib/dateUtils';
-import { extractAudioDuration } from '../../../lib/audioUtils';
-import { computeAutoFillDecision, type DurationAutoFillState } from './hooks/durationAutoFillLogic';
+import { extractAudioDuration, extractAudioDurationFromUrl } from '../../../lib/audioUtils';
+import {
+  computeAutoFillDecision,
+  computeExpectedDuration,
+  type DurationAutoFillState,
+} from './hooks/durationAutoFillLogic';
 import { useMusicPieceDetails } from './hooks/useMusicPieceDetails';
 import { useMusicPieceTracks } from './hooks/useMusicPieceTracks';
 import { useMusicPiecePerformances } from './hooks/useMusicPiecePerformances';
 import { useMusicPieceMovements } from './hooks/useMusicPieceMovements';
+import { pb } from '../../../lib/pocketbase';
+import { mapWithConcurrency } from '../../../lib/networkSafety';
 
 import type { MusicPiece, MusicPieceInput } from '../../../services/musicLibraryService';
 import type { MusicGenreDef } from '../../../services/settingsService';
@@ -112,6 +122,14 @@ export function useMusicPieceForm({
   });
   const [durationAutoFillLabel, setDurationAutoFillLabel] = useState<string | null>(null);
 
+  // Mismatch detection state
+  const [trackDurationCache, setTrackDurationCache] = useState<Record<string, number | null>>({});
+  const [durationMismatch, setDurationMismatch] = useState<{
+    suggested: string;
+    current: string;
+  } | null>(null);
+  const lastFetchedPieceId = useRef<string | null>(null);
+
   // Active Tab state
   const [activeTab, setActiveTab] = useState<'details' | 'tracks' | 'performances' | 'movements'>(
     'details'
@@ -146,6 +164,44 @@ export function useMusicPieceForm({
     sectionBuckets: details.sectionBuckets,
   });
 
+  // Fetch track durations from server on form open
+  useEffect(() => {
+    if (!piece || !isOpen) return;
+    if (lastFetchedPieceId.current === piece.id) return;
+    lastFetchedPieceId.current = piece.id;
+
+    const mapping = piece.audioTrackMapping || {};
+    const entries = Object.entries(mapping).filter((entry): entry is [string, string] => {
+      const [, filename] = entry;
+      return !!filename;
+    });
+    if (entries.length === 0) {
+      setTrackDurationCache({});
+      return;
+    }
+
+    let cancelled = false;
+    const urls = entries.map(([voicePart, filename]) => ({
+      voicePart,
+      url: pb.files.getURL(piece, filename),
+    }));
+
+    mapWithConcurrency(
+      urls,
+      async ({ voicePart, url }) => {
+        const duration = await extractAudioDurationFromUrl(url);
+        if (!cancelled) {
+          setTrackDurationCache((prev) => ({ ...prev, [voicePart]: duration }));
+        }
+      },
+      { concurrency: 3 }
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [piece, isOpen]);
+
   const { setDuration } = details;
 
   const handleDurationChange = useCallback(
@@ -168,10 +224,42 @@ export function useMusicPieceForm({
 
   useEffect(() => {
     resetDurationAutoFill();
+    setTrackDurationCache({});
+    setDurationMismatch(null);
+    lastFetchedPieceId.current = null;
   }, [piece?.id, resetDurationAutoFill]);
+
+  // Expected duration: pure computation from cache
+  const expectedDurationSeconds = useMemo(() => {
+    return computeExpectedDuration(trackDurationCache);
+  }, [trackDurationCache]);
+
+  // Mismatch comparison: side-effectful state update
+  useEffect(() => {
+    if (expectedDurationSeconds === null) {
+      setDurationMismatch(null);
+      return;
+    }
+    const currentSeconds = parseDurationToSeconds(details.duration);
+    const currentStr = details.duration.trim();
+    const suggestedStr = formatSecondsToDuration(expectedDurationSeconds);
+
+    if (currentSeconds === expectedDurationSeconds) {
+      setDurationMismatch(null);
+      return;
+    }
+
+    setDurationMismatch({
+      suggested: suggestedStr,
+      current: currentStr,
+    });
+  }, [expectedDurationSeconds, details.duration]);
 
   const handleTrackDurationLoaded = useCallback(
     (voicePart: string, durationSeconds: number | null) => {
+      // Update cache regardless of whether auto-fill fires
+      setTrackDurationCache((prev) => ({ ...prev, [voicePart]: durationSeconds }));
+
       if (durationSeconds === null) return;
 
       setDurationAutoFillState((prevState) => {
@@ -214,6 +302,14 @@ export function useMusicPieceForm({
     [movements, handleTrackDurationLoaded]
   );
 
+  const handleTrackDeleted = useCallback((voicePart: string) => {
+    setTrackDurationCache((prev) => {
+      const next = { ...prev };
+      delete next[voicePart];
+      return next;
+    });
+  }, []);
+
   // 4. Tracks Hook
   const tracks = useMusicPieceTracks({
     piece,
@@ -221,7 +317,15 @@ export function useMusicPieceForm({
     onRefresh,
     onMovementsChanged: movements.refetchMovements,
     onTrackDurationLoaded: handleTrackDurationLoaded,
+    onTrackDeleted: handleTrackDeleted,
   });
+
+  const handleAcceptMismatchDuration = useCallback(() => {
+    if (durationMismatch) {
+      setDuration(durationMismatch.suggested);
+      setDurationMismatch(null);
+    }
+  }, [durationMismatch, setDuration]);
 
   useEffect(() => {
     if (isOpen) {
@@ -339,6 +443,8 @@ export function useMusicPieceForm({
       setDuration: details.setDuration,
       handleDurationChange,
       durationAutoFillLabel,
+      durationMismatch,
+      handleAcceptMismatchDuration,
       copies: details.copies,
       setCopies: details.setCopies,
       catalogId: details.catalogId,

@@ -1,14 +1,14 @@
 const TIMEOUT_MS = 30_000;
 
-export function extractAudioDuration(file: File): Promise<number | null> {
+export function extractAudioDurationFromUrl(url: string): Promise<number | null> {
   return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
     const audio = new Audio();
+    audio.preload = 'metadata';
 
     const cleanup = () => {
-      URL.revokeObjectURL(url);
       audio.removeEventListener('loadedmetadata', onMetadata);
       audio.removeEventListener('error', onError);
+      audio.src = '';
     };
 
     const timeout = setTimeout(() => {
@@ -38,4 +38,9 @@ export function extractAudioDuration(file: File): Promise<number | null> {
     audio.src = url;
     audio.load();
   });
+}
+
+export function extractAudioDuration(file: File): Promise<number | null> {
+  const url = URL.createObjectURL(file);
+  return extractAudioDurationFromUrl(url).finally(() => URL.revokeObjectURL(url));
 }
