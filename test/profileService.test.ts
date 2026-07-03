@@ -191,7 +191,7 @@ test('generateRandomPassword uses Web Crypto API when available', (t) => {
   let getRandomValuesCalled = false;
 
   const mockCrypto = {
-    getRandomValues: t.mock.fn((array: Uint32Array) => {
+    getRandomValues: t.mock.fn((array: Uint8Array) => {
       getRandomValuesCalled = true;
       for (let i = 0; i < array.length; i++) {
         array[i] = i; // Predictable values for testing
