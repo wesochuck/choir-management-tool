@@ -209,9 +209,10 @@ test('generateRandomPassword uses Web Crypto API when available', (t) => {
   try {
     const pwd = generateRandomPassword(5);
     assert.equal(getRandomValuesCalled, true);
-    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 1);
+    assert.ok(mockCrypto.getRandomValues.mock.callCount() >= 1);
     // Based on chars: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
     // length is 70.
+    // with rejection sampling, values 0-4 are all valid, so it takes 1 call of length 5
     // i=0 -> chars[0] = 'a'
     // i=1 -> chars[1] = 'b'
     // i=2 -> chars[2] = 'c'
