@@ -13679,6 +13679,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -13718,6 +13719,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -13734,6 +13736,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -14117,6 +14120,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -14136,6 +14140,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -14152,6 +14157,7 @@ routerAdd("POST", "/api/checkout/create-tickets-session", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -16685,6 +16691,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -16724,6 +16731,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -16740,6 +16748,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -17123,6 +17132,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -17142,6 +17152,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -17158,6 +17169,7 @@ routerAdd("POST", "/api/checkout/create-bundle-session", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -19691,6 +19703,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -19730,6 +19743,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -19746,6 +19760,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -20129,6 +20144,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -20148,6 +20164,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -20164,6 +20181,7 @@ routerAdd("POST", "/api/checkout/create-donation-session", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -22697,6 +22715,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -22736,6 +22755,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -22752,6 +22772,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -23135,6 +23156,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -23154,6 +23176,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -23170,6 +23193,7 @@ routerAdd("POST", "/api/webhook/stripe", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -25703,6 +25727,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -25742,6 +25767,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -25758,6 +25784,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -26141,6 +26168,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -26160,6 +26188,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -26176,6 +26205,7 @@ routerAdd("POST", "/api/admin/refund-ticket", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -28709,6 +28739,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -28748,6 +28779,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -28764,6 +28796,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -29147,6 +29180,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -29166,6 +29200,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -29182,6 +29217,7 @@ routerAdd("POST", "/api/admin/refund-bundle", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -31715,6 +31751,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -31754,6 +31791,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -31770,6 +31808,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -32153,6 +32192,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -32172,6 +32212,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -32188,6 +32229,7 @@ routerAdd("POST", "/api/admin/refund-donation", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -34720,6 +34762,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -34759,6 +34802,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -34775,6 +34819,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -35158,6 +35203,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -35177,6 +35223,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -35193,6 +35240,7 @@ routerAdd("POST", "/api/admin/resend-ticket-confirmation", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);
@@ -42973,6 +43021,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
         const tributeType = body.tributeType || 'none';
         const tributeName = body.tributeName || '';
         const isAnonymous = !!body.isAnonymous;
+        const marketingOptIn = !!body.marketingOptIn;
         if (!amountCents || !name || !email) {
             return e.json(400, { error: 'Missing required fields' });
         }
@@ -43012,6 +43061,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
             tributeType,
             tributeName,
             isAnonymous: String(isAnonymous),
+            marketingOptIn: String(marketingOptIn),
         };
         try {
             const session = createCheckoutSession(lineItems, metadata, email, successUrl, cancelUrl);
@@ -43028,6 +43078,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                 isAnonymous: isAnonymous,
                 status: 'pending',
                 stripeSessionId: session.id,
+                marketingOptIn: marketingOptIn,
             });
             $app.save(record);
             return e.json(200, { url: session.url, sessionId: session.id });
@@ -43411,6 +43462,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                 const tributeType = metadata.tributeType || 'none';
                 const tributeName = metadata.tributeName || '';
                 const isAnonymous = metadata.isAnonymous === 'true';
+                const marketingOptIn = metadata.marketingOptIn === 'true';
                 try {
                     record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
                         stripeSessionId,
@@ -43430,6 +43482,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                     record.set('status', 'paid');
                     record.set('stripePaymentIntentId', session.payment_intent || '');
                     record.set('expiredAt', '');
+                    record.set('marketingOptIn', marketingOptIn);
                 }
                 catch (_j) {
                     // Record not found, fallback to creation (existing logic)
@@ -43446,6 +43499,7 @@ routerAdd("GET", "/api/maintenance/run", (e) => {
                         status: 'paid',
                         stripeSessionId,
                         stripePaymentIntentId: session.payment_intent || '',
+                        marketingOptIn,
                     });
                 }
                 $app.save(record);

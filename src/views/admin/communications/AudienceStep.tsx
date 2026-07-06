@@ -1,6 +1,6 @@
 import type React from 'react';
 import { AppCard } from '../../../components/common/AppCard';
-import { Button, Select } from '../../../components/ui';
+import { Button, Select, Checkbox } from '../../../components/ui';
 import type {
   CommunicationFilters,
   CommunicationRecipient,
@@ -33,6 +33,7 @@ export function AudienceStep({
   const { performerLabel } = useChoirSettings();
   const performerLabelPlural = pluralizeLabel(performerLabel);
   const { filters, updateFilter, recipients, recipientCounts } = draft;
+  const targetAudiences = filters.targetAudiences || [];
 
   const handleVoicePartChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value as unknown as string[] | string;
@@ -59,7 +60,12 @@ export function AudienceStep({
             Select filter criteria on the left and verify reachable users on the right.
           </p>
         </div>
-        <Button variant="primary" onClick={onContinue} className="w-full sm:w-auto">
+        <Button
+          variant="primary"
+          onClick={onContinue}
+          className="w-full sm:w-auto"
+          disabled={targetAudiences.length === 0}
+        >
           Continue to Message
         </Button>
       </div>
@@ -69,91 +75,122 @@ export function AudienceStep({
         {/* Left Column: Filters */}
         <AppCard title="Audience Filters">
           <div className="flex flex-col gap-4">
-            {/* Event Context */}
+            {/* Audience Types */}
             <div className="flex flex-col gap-1.5">
               <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                Event Context
+                Audience Types
               </label>
-              <Select
-                size="small"
-                value={filters.eventId}
-                onChange={(event) => handleEventContextChange(event.target.value)}
-              >
-                <option value="">No Specific Event</option>
-                {events.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.title || event.expand?.venue?.name || ''}
-                  </option>
+              <div className="flex flex-row flex-wrap gap-3">
+                {(['Members', 'Ticket Buyers', 'Donors'] as const).map((audience) => (
+                  <Checkbox
+                    key={audience}
+                    checked={targetAudiences.includes(audience)}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                        ? [...targetAudiences, audience]
+                        : targetAudiences.filter((a) => a !== audience);
+                      updateFilter('targetAudiences', next);
+                    }}
+                  >
+                    {audience}
+                  </Checkbox>
                 ))}
-              </Select>
+              </div>
             </div>
+
+            {/* Event Context */}
+            {(targetAudiences.includes('Members') || targetAudiences.includes('Ticket Buyers')) && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                  Event Context
+                </label>
+                <Select
+                  size="small"
+                  value={filters.eventId}
+                  onChange={(event) => handleEventContextChange(event.target.value)}
+                >
+                  <option value="">No Specific Event</option>
+                  {events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.title || event.expand?.venue?.name || ''}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
 
             {/* RSVP Status */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                RSVP Status
-              </label>
-              <Select
-                size="small"
-                value={filters.rsvp}
-                onChange={(event) =>
-                  updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
-                }
-                disabled={!filters.eventId}
-              >
-                <option value="All">All Members</option>
-                <option value="Yes">Attending Only</option>
-                <option value="No">Declined Only</option>
-                <option value="Pending">No Response (Pending)</option>
-              </Select>
-              {!filters.eventId && (
-                <span className="text-text-muted text-[11px] italic">
-                  Select an event first to filter by RSVP status.
-                </span>
-              )}
-            </div>
+            {targetAudiences.includes('Members') && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                  RSVP Status
+                </label>
+                <Select
+                  size="small"
+                  value={filters.rsvp}
+                  onChange={(event) =>
+                    updateFilter('rsvp', event.target.value as CommunicationFilters['rsvp'])
+                  }
+                  disabled={!filters.eventId}
+                >
+                  <option value="All">All Members</option>
+                  <option value="Yes">Attending Only</option>
+                  <option value="No">Declined Only</option>
+                  <option value="Pending">No Response (Pending)</option>
+                </Select>
+                {!filters.eventId && (
+                  <span className="text-text-muted text-[11px] italic">
+                    Select an event first to filter by RSVP status.
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Member Status */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                Member Status
-              </label>
-              <Select
-                size="small"
-                value={filters.globalStatus}
-                onChange={(event) => updateFilter('globalStatus', event.target.value)}
-              >
-                <option value="Active">Active</option>
-                <option value="Idle">On Break</option>
-                <option value="Inactive">Inactive</option>
-                <option value="">All Statuses</option>
-              </Select>
-            </div>
+            {targetAudiences.includes('Members') && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                  Member Status
+                </label>
+                <Select
+                  size="small"
+                  value={filters.globalStatus}
+                  onChange={(event) => updateFilter('globalStatus', event.target.value)}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Idle">On Break</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="">All Statuses</option>
+                </Select>
+              </div>
+            )}
 
             {/* Voice Part / Section multi-select */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
-                Voice Part / Section
-              </label>
-              <Select
-                multiple
-                placeholder="All Voice Parts"
-                value={filters.voiceParts || []}
-                onChange={handleVoicePartChange}
-                size="small"
-              >
-                {configSections.map((sec) => (
-                  <option key={sec.code} value={sec.code}>
-                    {sec.name} (Section)
-                  </option>
-                ))}
-                {voicePartLabels.map((part) => (
-                  <option key={part} value={part}>
-                    {part}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {targetAudiences.includes('Members') && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                  Voice Part / Section
+                </label>
+                <Select
+                  multiple
+                  placeholder="All Voice Parts"
+                  value={filters.voiceParts || []}
+                  onChange={handleVoicePartChange}
+                  size="small"
+                >
+                  {configSections.map((sec) => (
+                    <option key={sec.code} value={sec.code}>
+                      {sec.name} (Section)
+                    </option>
+                  ))}
+                  {voicePartLabels.map((part) => (
+                    <option key={part} value={part}>
+                      {part}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
           </div>
         </AppCard>
 
@@ -290,7 +327,7 @@ export function AudienceStep({
       </div>
 
       <WizardActionBar className="justify-end">
-        <Button variant="primary" onClick={onContinue}>
+        <Button variant="primary" onClick={onContinue} disabled={targetAudiences.length === 0}>
           Continue to Message
         </Button>
       </WizardActionBar>

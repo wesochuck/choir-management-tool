@@ -24,6 +24,7 @@ export interface CommunicationFilters {
   voiceParts: string[]; // Supports both individual part labels and section codes
   globalStatus: string;
   profileIds?: string[]; // New field
+  targetAudiences?: ('Members' | 'Ticket Buyers' | 'Donors')[];
 }
 
 export interface MessageRecord extends RecordModel {

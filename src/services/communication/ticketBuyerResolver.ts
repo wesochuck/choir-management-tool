@@ -1,11 +1,6 @@
 import { pb } from '../../lib/pocketbase';
 import type { TicketPurchase } from '../ticketService';
-
-export interface CommunicationRecipient {
-  email: string;
-  name: string;
-  id: string;
-}
+import type { CommunicationRecipient } from './types';
 
 export async function resolveTicketBuyers(
   eventId?: string,
@@ -31,9 +26,12 @@ export async function resolveTicketBuyers(
   purchases.forEach((p) => {
     if (!unique.has(p.buyerEmail)) {
       unique.set(p.buyerEmail, {
-        email: p.buyerEmail,
-        name: p.buyerName,
         id: p.id,
+        name: p.buyerName,
+        email: p.buyerEmail,
+        phone: '',
+        voicePart: 'Ticket Buyer',
+        globalStatus: 'Paid',
       });
     }
   });

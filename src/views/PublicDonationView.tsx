@@ -5,7 +5,7 @@ import { donationService } from '../services/donationService';
 import { AppCard } from '../components/common/AppCard';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
-import { Button, Select, Input } from '../components/ui';
+import { Button, Select, Input, Checkbox } from '../components/ui';
 import { queryKeys } from '../lib/queryKeys';
 
 export default function PublicDonationView() {
@@ -48,6 +48,7 @@ export default function PublicDonationView() {
   const [tributeType, setTributeType] = useState<'none' | 'memory' | 'honor'>('none');
   const [tributeName, setTributeName] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   const createSessionMutation = useMutation({
     mutationFn: (data: {
@@ -57,6 +58,7 @@ export default function PublicDonationView() {
       tributeType: string;
       tributeName: string;
       isAnonymous: boolean;
+      marketingOptIn: boolean;
     }) => donationService.createDonationSession(data),
     onSuccess: (result) => {
       if (result.url) {
@@ -100,6 +102,7 @@ export default function PublicDonationView() {
       tributeType,
       tributeName: tributeName.trim(),
       isAnonymous,
+      marketingOptIn,
     });
   };
 
@@ -240,21 +243,23 @@ export default function PublicDonationView() {
           </div>
 
           <div className="border-border mt-1 flex flex-row items-center gap-4 rounded-lg border bg-neutral-100 p-4">
-            <input
+            <Checkbox
               id="isAnonymous"
-              type="checkbox"
-              className="accent-primary size-[18px] cursor-pointer"
               checked={isAnonymous}
               onChange={(e) => setIsAnonymous(e.target.checked)}
-            />
-            <label
-              htmlFor="isAnonymous"
-              className="flex flex-1 cursor-pointer flex-col gap-0.5 select-none"
             >
-              <span className="text-text text-sm leading-tight font-semibold">
-                I wish to remain anonymous.
-              </span>
-            </label>
+              I wish to remain anonymous.
+            </Checkbox>
+          </div>
+
+          <div className="border-border mt-1 flex flex-row items-center gap-4 rounded-lg border bg-neutral-100 p-4">
+            <Checkbox
+              id="marketingOptIn"
+              checked={marketingOptIn}
+              onChange={(e) => setMarketingOptIn(e.target.checked)}
+            >
+              Send me updates about upcoming concerts and events.
+            </Checkbox>
           </div>
 
           <div className="border-border flex w-full flex-col gap-1 rounded-xl border bg-neutral-100 p-4 shadow-sm transition-all duration-200 hover:shadow-md">

@@ -20,6 +20,7 @@ export function handleCreateDonationSession(e: PocketBaseRequestEvent): unknown 
   const tributeType = (body.tributeType as string) || 'none';
   const tributeName = (body.tributeName as string) || '';
   const isAnonymous = !!body.isAnonymous;
+  const marketingOptIn = !!body.marketingOptIn;
 
   if (!amountCents || !name || !email) {
     return e.json(400, { error: 'Missing required fields' });
@@ -63,6 +64,7 @@ export function handleCreateDonationSession(e: PocketBaseRequestEvent): unknown 
     tributeType,
     tributeName,
     isAnonymous: String(isAnonymous),
+    marketingOptIn: String(marketingOptIn),
   };
 
   try {
@@ -81,6 +83,7 @@ export function handleCreateDonationSession(e: PocketBaseRequestEvent): unknown 
       isAnonymous: isAnonymous,
       status: 'pending',
       stripeSessionId: session.id,
+      marketingOptIn: marketingOptIn,
     });
     $app.save(record);
 

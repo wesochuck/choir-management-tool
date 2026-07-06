@@ -2,7 +2,7 @@
 import { afterEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 import { AutomatedTasksPanel } from '../../../../src/views/admin/communications/AutomatedTasksPanel';
 import type { AutomatedTask } from '../../../../src/views/admin/communications/types';
@@ -29,14 +29,20 @@ const reportTask: AutomatedTask = {
 };
 
 const mockCommSettings: CommunicationSettings = {
+  emailSubject: '',
+  emailBody: '',
+  smsBody: '',
+  mailingAddress: '',
+  frontendUrl: '',
+  reminderEnabled: false,
+  reminderHoursBefore: 24,
   reminderSubjectTemplate: 'Reminder: {{EVENT_TITLE}}',
   reminderBodyTemplate: 'Dear {{SINGER_NAME}}...',
-  rsvpSubjectTemplate: '',
-  rsvpBodyTemplate: '',
-  ticketPurchaseConfirmationSubjectTemplate: '',
-  ticketPurchaseConfirmationBodyTemplate: '',
-  bundleTicketPurchaseConfirmationSubjectTemplate: '',
-  bundleTicketPurchaseConfirmationBodyTemplate: '',
+  reportEnabled: false,
+  reportHoursAfter: 12,
+  reportSubjectTemplate: '',
+  reportBodyTemplate: '',
+  defaultCountryCode: '1',
 };
 
 afterEach(() => {
@@ -57,11 +63,14 @@ describe('AutomatedTasksPanel', () => {
       />
     );
 
-    const archives = screen.getAllByText('Archive');
+    const moreButtons = screen.getAllByRole('button', { name: /More/ });
+    moreButtons.forEach((btn) => fireEvent.click(btn));
+
+    const archives = screen.getAllByText(/Archive/);
     assert.ok(archives.length > 0);
-    const recipients = screen.getAllByText('Recipients');
+    const recipients = screen.getAllByText(/Recipients/);
     assert.ok(recipients.length > 0);
-    const compose = screen.getAllByText('Compose');
+    const compose = screen.getAllByText(/Compose/);
     assert.ok(compose.length > 0);
   });
 
@@ -78,11 +87,14 @@ describe('AutomatedTasksPanel', () => {
       />
     );
 
-    const archives = screen.getAllByText('Archive');
+    const moreButtons = screen.getAllByRole('button', { name: /More/ });
+    moreButtons.forEach((btn) => fireEvent.click(btn));
+
+    const archives = screen.getAllByText(/Archive/);
     assert.ok(archives.length > 0);
-    const admins = screen.getAllByText('Admins');
+    const admins = screen.getAllByText(/Admins/);
     assert.ok(admins.length > 0);
-    const send = screen.getAllByText('Send');
+    const send = screen.getAllByText(/Send/);
     assert.ok(send.length > 0);
   });
 

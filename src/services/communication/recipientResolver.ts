@@ -3,6 +3,8 @@ import { profileService, type Profile } from '../profileService';
 import { rosterService } from '../rosterService';
 import { getVoicePartsAndSections } from '../settingsService';
 import type { CommunicationFilters, CommunicationRecipient } from './types';
+import { resolveTicketBuyers } from './ticketBuyerResolver';
+import { resolveDonors } from './donorResolver';
 
 function profileToRecipient(profile: Profile): CommunicationRecipient {
   return {
@@ -33,6 +35,58 @@ export async function resolveRecipients(
     return profiles.map(profileToRecipient);
   }
 
+  const audiences =
+    filters.targetAudiences && filters.targetAudiences.length > 0
+      ? filters.targetAudiences
+      : ['Members'];
+
+  const promises: [
+    Promise<CommunicationRecipient[]>,
+    Promise<CommunicationRecipient[]>,
+    Promise<CommunicationRecipient[]>,
+  ] = [
+    audiences.includes('Members') ? resolveMembers(filters) : Promise.resolve([]),
+    audiences.includes('Ticket Buyers')
+      ? resolveTicketBuyers(filters.eventId, !filters.eventId)
+      : Promise.resolve([]),
+    audiences.includes('Donors') ? resolveDonors(true) : Promise.resolve([]),
+  ];
+
+  const [members, ticketBuyers, donors] = await Promise.all(promises);
+
+  const merged = new Map<string, CommunicationRecipient>();
+
+  // Add members first, so they are preferred
+  members.forEach((m) => {
+    if (m.email) {
+      merged.set(m.email.trim().toLowerCase(), m);
+    }
+  });
+
+  // Add ticket buyers if not already present
+  ticketBuyers.forEach((tb) => {
+    if (tb.email) {
+      const emailKey = tb.email.trim().toLowerCase();
+      if (!merged.has(emailKey)) {
+        merged.set(emailKey, tb);
+      }
+    }
+  });
+
+  // Add donors if not already present
+  donors.forEach((d) => {
+    if (d.email) {
+      const emailKey = d.email.trim().toLowerCase();
+      if (!merged.has(emailKey)) {
+        merged.set(emailKey, d);
+      }
+    }
+  });
+
+  return Array.from(merged.values());
+}
+
+async function resolveMembers(filters: CommunicationFilters): Promise<CommunicationRecipient[]> {
   const [profiles, voiceData] = await Promise.all([
     profileService.getProfiles(),
     getVoicePartsAndSections(),

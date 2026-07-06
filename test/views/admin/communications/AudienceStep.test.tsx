@@ -30,7 +30,13 @@ function makeDraft(
   overrides: Partial<UseCommunicationDraftReturn> = {}
 ): UseCommunicationDraftReturn {
   return {
-    filters: { eventId: '', rsvp: 'All', voiceParts: [], globalStatus: 'Active' },
+    filters: {
+      eventId: '',
+      rsvp: 'All',
+      voiceParts: [],
+      globalStatus: 'Active',
+      targetAudiences: ['Members'],
+    },
     updateFilter: mock.fn(),
     recipients: [],
     recipientCounts: { total: 0, hasEmail: 0, hasPhone: 0 },
@@ -73,7 +79,13 @@ describe('AudienceStep', () => {
     renderWithRouter(
       <AudienceStep
         draft={makeDraft({
-          filters: { eventId: 'evt-1', rsvp: 'All', voiceParts: [], globalStatus: 'Active' },
+          filters: {
+            eventId: 'evt-1',
+            rsvp: 'All',
+            voiceParts: [],
+            globalStatus: 'Active',
+            targetAudiences: ['Members'],
+          },
           updateFilter,
         })}
         events={mockEvents}

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { communicationService } from '../../../../src/services/communicationService.ts';
 import { useCommunicationDraft } from '../../../../src/views/admin/communications/useCommunicationDraft.ts';
@@ -49,15 +49,14 @@ test('recipient resolution does not loop on API failure', async (t) => {
   }) as unknown as typeof communicationService.resolveRecipients;
 
   try {
-    renderHook(
-      () => useCommunicationDraft(defaultArgs()),
-      {
-        wrapper: ({ children }) =>
-          React.createElement(QueryClientProvider, { client: queryClient },
-            React.createElement(MemoryRouter, null, children),
-          ),
-      },
-    );
+    renderHook(() => useCommunicationDraft(defaultArgs()), {
+      wrapper: ({ children }) =>
+        React.createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          React.createElement(MemoryRouter, null, children)
+        ),
+    });
 
     // Allow enough time for the effect to fire, fail, and potentially re-fire
     await waitFor(() => {
@@ -65,9 +64,13 @@ test('recipient resolution does not loop on API failure', async (t) => {
     });
 
     // Wait a bit longer to confirm no second call happens
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
 
-    assert.equal(callCount, 1, 'resolveRecipients should be called exactly once, not loop on failure');
+    assert.equal(
+      callCount,
+      1,
+      'resolveRecipients should be called exactly once, not loop on failure'
+    );
   } finally {
     communicationService.resolveRecipients = originalResolve;
   }
@@ -83,16 +86,15 @@ test('recipient resolution fires again on filter change after failure', async (t
   }) as unknown as typeof communicationService.resolveRecipients;
 
   try {
-    const { rerender } = renderHook(
-      ({ tab }) => useCommunicationDraft(defaultArgs({ tab })),
-      {
-        initialProps: { tab: 'history' as const },
-        wrapper: ({ children }) =>
-          React.createElement(QueryClientProvider, { client: queryClient },
-            React.createElement(MemoryRouter, null, children),
-          ),
-      },
-    );
+    const { rerender } = renderHook(({ tab }) => useCommunicationDraft(defaultArgs({ tab })), {
+      initialProps: { tab: 'history' as 'history' | 'compose' },
+      wrapper: ({ children }) =>
+        React.createElement(
+          QueryClientProvider,
+          { client: queryClient },
+          React.createElement(MemoryRouter, null, children)
+        ),
+    });
 
     // No call expected on a non-compose tab
     assert.equal(callCount, 0);
@@ -104,7 +106,7 @@ test('recipient resolution fires again on filter change after failure', async (t
       if (callCount < 1) throw new Error('Waiting for first call');
     });
 
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
 
     assert.equal(callCount, 1);
 
@@ -119,4 +121,48 @@ test('recipient resolution fires again on filter change after failure', async (t
   } finally {
     communicationService.resolveRecipients = originalResolve;
   }
+});
+
+test('useCommunicationDraft defaults targetAudiences to [Members]', async () => {
+  const { result } = renderHook(() => useCommunicationDraft(defaultArgs()), {
+    wrapper: ({ children }) =>
+      React.createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        React.createElement(MemoryRouter, null, children)
+      ),
+  });
+
+  assert.deepEqual(result.current.filters.targetAudiences, ['Members']);
+});
+
+test('useCommunicationDraft restores targetAudiences on resume', async () => {
+  const { result } = renderHook(() => useCommunicationDraft(defaultArgs()), {
+    wrapper: ({ children }) =>
+      React.createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        React.createElement(MemoryRouter, null, children)
+      ),
+  });
+
+  const mockDraft = {
+    id: 'draft_123',
+    subject: 'Hello',
+    content: 'World',
+    type: 'Email' as const,
+    filters: {
+      targetAudiences: ['Ticket Buyers', 'Donors'],
+    },
+    recipients: [],
+    status: 'Draft' as const,
+    created: '',
+    updated: '',
+  } as unknown as import('../../../../src/services/communicationService.ts').MessageRecord;
+
+  act(() => {
+    result.current.handleResumeDraft(mockDraft);
+  });
+
+  assert.deepEqual(result.current.filters.targetAudiences, ['Ticket Buyers', 'Donors']);
 });

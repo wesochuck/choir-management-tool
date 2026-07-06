@@ -61,6 +61,7 @@ export function useCommunicationDraft({
     voiceParts: [],
     globalStatus: 'Active',
     profileIds: initialProfileIds.length > 0 ? initialProfileIds : undefined,
+    targetAudiences: ['Members'],
   });
 
   const [recipients, setRecipients] = useState<CommunicationRecipient[]>(
@@ -200,6 +201,9 @@ export function useCommunicationDraft({
         profileIds: Array.isArray(mFilters?.profileIds)
           ? (mFilters.profileIds as string[])
           : undefined,
+        targetAudiences: Array.isArray(mFilters?.targetAudiences)
+          ? (mFilters.targetAudiences as CommunicationFilters['targetAudiences'])
+          : ['Members'],
       });
 
       if (draft.recipients && draft.recipients.length > 0) {

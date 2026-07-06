@@ -20,6 +20,7 @@ export interface DonationRecord extends RecordModel {
   status: 'paid' | 'pending' | 'refunded' | 'expired';
   stripeSessionId: string;
   stripePaymentIntentId: string;
+  marketingOptIn: boolean;
   expiredAt?: string;
   created: string;
   expand?: {
@@ -99,6 +100,7 @@ export const donationService = {
     tributeType: string;
     tributeName: string;
     isAnonymous: boolean;
+    marketingOptIn: boolean;
   }): Promise<{ url: string; sessionId: string }> {
     return await pb.send<{ url: string; sessionId: string }>(
       '/api/checkout/create-donation-session',

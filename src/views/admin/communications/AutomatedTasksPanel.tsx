@@ -2,7 +2,15 @@ import { useState } from 'react';
 import { type CommunicationSettings } from '../../../services/settingsService';
 import { renderCommunicationTemplate } from '../../../lib/messageTemplates';
 import type { AutomatedTask } from './types';
-import { Button, DataTable, type ColumnDef } from '../../../components/ui';
+import {
+  Button,
+  DataTable,
+  type ColumnDef,
+  Dropdown,
+  DropdownMenu,
+  DropdownMenuItem,
+  Icon,
+} from '../../../components/ui';
 
 interface AutomatedTasksPanelProps {
   upcomingTasks: AutomatedTask[];
@@ -125,30 +133,36 @@ export function AutomatedTasksPanel({
       header: 'Actions',
       cell: ({ row }) => (
         <div
-          className="flex max-w-[360px] flex-wrap justify-end gap-2"
+          className="flex flex-nowrap items-center justify-end gap-2"
           onClick={(e) => e.stopPropagation()}
         >
-          <Button
-            variant="outline"
-            size="small"
-            disabled={isSending || isArchiving === row.original.id}
-            onClick={() => handleArchive(row.original)}
+          <Dropdown
+            trigger={
+              <Button
+                variant="outline"
+                size="small"
+                disabled={isSending || isArchiving === row.original.id}
+              >
+                More <Icon name="chevron-down" className="ml-1 text-[10px]" />
+              </Button>
+            }
           >
-            {isArchiving === row.original.id ? 'Archiving…' : 'Archive'}
-          </Button>
-          <Button
-            variant="outline"
-            size="small"
-            disabled={isSending || isArchiving === row.original.id}
-            onClick={() => onViewTaskRecipients(row.original)}
-          >
-            <span className="hidden xl:inline">
-              {row.original.type === 'Report' ? 'View Admins' : 'Recipients'}
-            </span>
-            <span className="xl:hidden">
-              {row.original.type === 'Report' ? 'Admins' : 'Recipients'}
-            </span>
-          </Button>
+            <DropdownMenu>
+              <DropdownMenuItem
+                disabled={isSending || isArchiving === row.original.id}
+                onClick={() => onViewTaskRecipients(row.original)}
+              >
+                {row.original.type === 'Report' ? 'View Admins' : 'View Recipients'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isSending || isArchiving === row.original.id}
+                onClick={() => handleArchive(row.original)}
+                className="text-danger"
+              >
+                {isArchiving === row.original.id ? 'Archiving…' : 'Archive'}
+              </DropdownMenuItem>
+            </DropdownMenu>
+          </Dropdown>
           <Button
             variant="primary"
             size="small"

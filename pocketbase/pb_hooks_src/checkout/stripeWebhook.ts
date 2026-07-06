@@ -544,6 +544,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
       const tributeType = metadata.tributeType || 'none';
       const tributeName = metadata.tributeName || '';
       const isAnonymous = metadata.isAnonymous === 'true';
+      const marketingOptIn = metadata.marketingOptIn === 'true';
 
       try {
         record = $app.findFirstRecordByFilter('donations', 'stripeSessionId = {:stripeSessionId}', {
@@ -566,6 +567,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
         record.set('status', 'paid');
         record.set('stripePaymentIntentId', session.payment_intent || '');
         record.set('expiredAt', '');
+        record.set('marketingOptIn', marketingOptIn);
       } catch {
         // Record not found, fallback to creation (existing logic)
         const profile = getOrCreatePatronProfile(donorEmail, donorName);
@@ -581,6 +583,7 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
           status: 'paid',
           stripeSessionId,
           stripePaymentIntentId: session.payment_intent || '',
+          marketingOptIn,
         });
       }
 
