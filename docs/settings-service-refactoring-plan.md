@@ -17,7 +17,7 @@ src/services/settings/
   types.ts                       ~interfaces only — re-exports from domain files for backward compat
   auditionSettings.ts            ~15 lines   — AuditionSettings, DEFAULT, get/save
   communicationSettings.ts       ~65 lines   — CommunicationSettings, DEFAULT, get/save (includes frontendUrl resolution)
-  communicationConfig.ts         ~20 lines   — CommunicationConfig, DEFAULT, get/save (SMTP/Twilio)
+  communicationConfig.ts         ~20 lines   — CommunicationConfig, DEFAULT, get/save (SMTP)
   rosterSettings.ts              ~20 lines   — RosterSettings, DEFAULT, get/save
   musicLibrarySettings.ts        ~20 lines   — MusicLibrarySettings, MusicGenreDef, DEFAULT, get/save
   seatingSettings.ts             ~90 lines   — SectionDef, VoicePartDef, VoicePartSettings, FormationStrategyType,

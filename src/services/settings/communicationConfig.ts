@@ -8,12 +8,6 @@ export interface CommunicationConfig {
     pass: string;
     from: string;
   };
-  twilio: {
-    sid: string;
-    token: string;
-    from: string;
-    enabled: boolean;
-  };
 }
 
 export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
@@ -23,12 +17,6 @@ export const DEFAULT_COMMUNICATION_CONFIG: CommunicationConfig = {
     user: '',
     pass: '',
     from: '',
-  },
-  twilio: {
-    sid: '',
-    token: '',
-    from: '',
-    enabled: false,
   },
 };
 

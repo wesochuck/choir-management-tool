@@ -48,10 +48,6 @@ An audio track (typically MP3) attached to a piece in the Music Library. Used by
 
 A curated sequence of music pieces and intermissions scheduled to be performed or rehearsed at a specific event. It displays song titles, composers, durations, running timestamps, and linked practice audio, and can be approved by administrators to be visible to singers on their dashboard.
 
-## Twilio SMS Integration
-
-A configurable outbound messaging service that allows administrators to input Twilio credentials (Account SID, Auth Token, and From Number) to securely route bulk text message alerts and reminders directly through the server, replacing or bypassing local device-based SMS client handoffs.
-
 ## Multi-Work Piece
 
 A sheet music catalog record representing a compound musical work consisting of multiple distinct sections or movements (e.g. masses, cantatas, or oratorios).
@@ -178,7 +174,7 @@ A code entered by a buyer at checkout to apply a percentage or fixed discount to
 
 ## System Configuration
 
-Organization-wide, infrastructure-level settings reserved for the central `SettingsView`. Examples: `choirName`, SMTP server, Twilio integration, payment gateways, global auth providers. Stored as key-value entries in the `appSettings` PocketBase collection. Any new entry requires a corresponding forward migration.
+Organization-wide, infrastructure-level settings reserved for the central `SettingsView`. Examples: `choirName`, SMTP server, payment gateways, global auth providers. Stored as key-value entries in the `appSettings` PocketBase collection. Any new entry requires a corresponding forward migration.
 
 ## Feature Configuration
 
