@@ -85,7 +85,6 @@ export function TemplatesPanel({
                 <div className="flex flex-[0_0_150px] flex-col gap-1">
                   <label className="text-label">Channel</label>
                   <Select
-                    size="small"
                     value={editingTemplate.type || 'Email'}
                     onChange={(e) =>
                       setEditingTemplate({
