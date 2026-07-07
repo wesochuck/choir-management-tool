@@ -229,6 +229,36 @@ test('generateRandomPassword uses Web Crypto API when available', (t) => {
   }
 });
 
+test('generateRandomPassword rejects out-of-range random values to avoid modulo bias', (t) => {
+  const originalCrypto = globalThis.crypto;
+  const values = [4294967295, 0, 1, 2];
+
+  const mockCrypto = {
+    getRandomValues: t.mock.fn((array: Uint32Array) => {
+      array[0] = values.shift()!;
+      return array;
+    }),
+  };
+
+  Object.defineProperty(globalThis, 'crypto', {
+    value: mockCrypto,
+    configurable: true,
+    writable: true,
+  });
+
+  try {
+    const pwd = generateRandomPassword(3);
+    assert.equal(pwd, 'abc');
+    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 4);
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: originalCrypto,
+      configurable: true,
+      writable: true,
+    });
+  }
+});
+
 test('generateRandomPassword throws an error when Web Crypto API is unavailable', () => {
   const originalCrypto = globalThis.crypto;
 
