@@ -666,6 +666,7 @@ export default function MusicLibraryView() {
                 setSortField(field);
                 setSortDirection(direction);
               }}
+              perfMap={perfMap}
             />
           </AppCard>
         </div>
