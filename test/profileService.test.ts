@@ -189,13 +189,15 @@ test('generateRandomPassword only contains valid characters', () => {
 test('generateRandomPassword uses Web Crypto API when available', (t) => {
   const originalCrypto = globalThis.crypto;
   let getRandomValuesCalled = false;
+  let callCount = 0;
 
   const mockCrypto = {
     getRandomValues: t.mock.fn((array: Uint32Array) => {
       getRandomValuesCalled = true;
       for (let i = 0; i < array.length; i++) {
-        array[i] = i; // Predictable values for testing
+        array[i] = callCount; // Predictable values for testing
       }
+      callCount++;
       return array;
     }),
   };
@@ -209,7 +211,7 @@ test('generateRandomPassword uses Web Crypto API when available', (t) => {
   try {
     const pwd = generateRandomPassword(5);
     assert.equal(getRandomValuesCalled, true);
-    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 1);
+    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 5);
     // Based on chars: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
     // length is 70.
     // i=0 -> chars[0] = 'a'
