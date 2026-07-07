@@ -189,13 +189,15 @@ test('generateRandomPassword only contains valid characters', () => {
 test('generateRandomPassword uses Web Crypto API when available', (t) => {
   const originalCrypto = globalThis.crypto;
   let getRandomValuesCalled = false;
+  let callCount = 0;
 
   const mockCrypto = {
     getRandomValues: t.mock.fn((array: Uint32Array) => {
       getRandomValuesCalled = true;
       for (let i = 0; i < array.length; i++) {
-        array[i] = i; // Predictable values for testing
+        array[i] = callCount; // Predictable values for testing
       }
+      callCount++;
       return array;
     }),
   };
@@ -209,7 +211,7 @@ test('generateRandomPassword uses Web Crypto API when available', (t) => {
   try {
     const pwd = generateRandomPassword(5);
     assert.equal(getRandomValuesCalled, true);
-    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 1);
+    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 5);
     // Based on chars: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
     // length is 70.
     // i=0 -> chars[0] = 'a'
@@ -218,6 +220,36 @@ test('generateRandomPassword uses Web Crypto API when available', (t) => {
     // i=3 -> chars[3] = 'd'
     // i=4 -> chars[4] = 'e'
     assert.equal(pwd, 'abcde');
+  } finally {
+    Object.defineProperty(globalThis, 'crypto', {
+      value: originalCrypto,
+      configurable: true,
+      writable: true,
+    });
+  }
+});
+
+test('generateRandomPassword rejects out-of-range random values to avoid modulo bias', (t) => {
+  const originalCrypto = globalThis.crypto;
+  const values = [4294967295, 0, 1, 2];
+
+  const mockCrypto = {
+    getRandomValues: t.mock.fn((array: Uint32Array) => {
+      array[0] = values.shift()!;
+      return array;
+    }),
+  };
+
+  Object.defineProperty(globalThis, 'crypto', {
+    value: mockCrypto,
+    configurable: true,
+    writable: true,
+  });
+
+  try {
+    const pwd = generateRandomPassword(3);
+    assert.equal(pwd, 'abc');
+    assert.equal(mockCrypto.getRandomValues.mock.callCount(), 4);
   } finally {
     Object.defineProperty(globalThis, 'crypto', {
       value: originalCrypto,
