@@ -71,18 +71,20 @@ export default function DonationFilters({
       <div className="flex gap-2">
         <div className="flex-1">
           <FormField label="Sort By">
-            <Select value={sortBy} onChange={(e) => onSortChange(e.target.value)}>
-              <option value="date">Date (Newest First)</option>
-              <option value="amount">Amount (Highest First)</option>
-              <option value="name">Donor Name</option>
-            </Select>
+            <div className="py-[3px]">
+              <Select value={sortBy} onChange={(e) => onSortChange(e.target.value)}>
+                <option value="date">Date (Newest First)</option>
+                <option value="amount">Amount (Highest First)</option>
+                <option value="name">Donor Name</option>
+              </Select>
+            </div>
           </FormField>
         </div>
         {hasActiveFilters && (
           <Button
             variant="outline"
             onClick={onClearFilters}
-            className="h-10 shrink-0 self-end"
+            className="mb-[3px] shrink-0 self-end"
             title="Reset filters"
             icon="🔄"
           />
