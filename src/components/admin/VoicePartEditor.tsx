@@ -4,7 +4,7 @@ import type { Profile } from '../../services/profileService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../../lib/labelHelpers';
 import { getContrastColor } from '../../lib/colorUtils';
-import { Button, Select, Input, ColorPicker } from '../ui';
+import { Button, Select, Input, ColorPicker, Checkbox } from '../ui';
 
 interface VoicePartEditorProps {
   configVoiceParts: VoicePartDef[];
@@ -39,7 +39,8 @@ export function VoicePartEditor({
       <div className="flex flex-col gap-4">
         <p className="mb-2 text-xs text-slate-500">
           Configure the custom voice parts for the choir (e.g. S1, Soprano 1) and link them to a
-          Section Bucket.
+          Section Bucket. Check "Learning Track Only" to exclude a voice part from general
+          operational rosters (e.g., for Soloists).
         </p>
 
         <div className="flex flex-col gap-3">
@@ -51,7 +52,7 @@ export function VoicePartEditor({
             return (
               <div
                 key={index}
-                className="grid w-full grid-cols-[90px_1fr_150px_130px_100px_80px] items-center gap-4"
+                className="grid w-full grid-cols-[90px_1fr_150px_130px_100px_100px_80px] items-center gap-4"
               >
                 <Input
                   value={vp.label}
@@ -131,6 +132,17 @@ export function VoicePartEditor({
                   />
                 </div>
 
+                <Checkbox
+                  checked={vp.trackOnly || false}
+                  onChange={(e) => {
+                    const newParts = [...configVoiceParts];
+                    newParts[index] = { ...newParts[index], trackOnly: e.target.checked };
+                    setConfigVoiceParts(newParts);
+                  }}
+                >
+                  Learning Track Only
+                </Checkbox>
+
                 {vp.label ? (
                   <Button
                     type="button"
@@ -144,7 +156,8 @@ export function VoicePartEditor({
                     title={`Click to view the ${count} ${performerLabel.toLowerCase()}${count === 1 ? '' : 's'} in this voice part`}
                   >
                     <span className="font-bold">
-                      {count} {performerLabel.toLowerCase()}{count === 1 ? '' : 's'}
+                      {count} {performerLabel.toLowerCase()}
+                      {count === 1 ? '' : 's'}
                     </span>
                   </Button>
                 ) : (
@@ -158,7 +171,11 @@ export function VoicePartEditor({
                     setConfigVoiceParts(configVoiceParts.filter((_, idx) => idx !== index));
                   }}
                   disabled={isTied}
-                  title={isTied ? `Cannot delete voice part with assigned ${performerLabelPlural.toLowerCase()}` : undefined}
+                  title={
+                    isTied
+                      ? `Cannot delete voice part with assigned ${performerLabelPlural.toLowerCase()}`
+                      : undefined
+                  }
                 >
                   Delete
                 </Button>

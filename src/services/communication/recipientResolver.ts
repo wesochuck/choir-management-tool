@@ -87,10 +87,14 @@ export async function resolveRecipients(
 }
 
 async function resolveMembers(filters: CommunicationFilters): Promise<CommunicationRecipient[]> {
-  const [profiles, voiceData] = await Promise.all([
+  const [profiles, rawVoiceData] = await Promise.all([
     profileService.getProfiles(),
     getVoicePartsAndSections(),
   ]);
+  const voiceData = {
+    sections: rawVoiceData.sections,
+    voiceParts: rawVoiceData.voiceParts.filter((vp) => !vp.trackOnly),
+  };
 
   let allowedProfileIds: Set<string> | null = null;
 
@@ -134,8 +138,13 @@ async function resolveMembers(filters: CommunicationFilters): Promise<Communicat
     });
   }
 
+  // Exclude profiles whose voice part is marked as "Learning Track Only" from receiving general communications
+  const excludedParts = new Set(
+    rawVoiceData.voiceParts.filter((vp) => vp.trackOnly).map((vp) => vp.label)
+  );
+
   return profiles
-    .filter((profile: Profile) => !!profile.voicePart)
+    .filter((profile: Profile) => !!profile.voicePart && !excludedParts.has(profile.voicePart))
     .filter((profile: Profile) => !allowedProfileIds || allowedProfileIds.has(profile.id))
     .filter((profile: Profile) => !targetParts || targetParts.has(profile.voicePart))
     .filter(

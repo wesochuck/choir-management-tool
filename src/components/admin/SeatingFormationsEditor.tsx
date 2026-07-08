@@ -410,7 +410,7 @@ export function SeatingFormationsEditor({ onSaveSuccess }: SeatingFormationsEdit
   useEffect(() => {
     if (voicePartsQuery.data) {
       setAllSections(voicePartsQuery.data.sections);
-      setAllVoiceParts(voicePartsQuery.data.voiceParts);
+      setAllVoiceParts(voicePartsQuery.data.voiceParts.filter((vp) => !vp.trackOnly));
     }
   }, [voicePartsQuery.data]);
 

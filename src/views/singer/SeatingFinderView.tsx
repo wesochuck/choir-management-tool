@@ -65,7 +65,10 @@ export default function SeatingFinderView() {
   const vpSettings = vpSettingsQuery.data;
 
   const sections = vpSettings?.sections ?? [];
-  const voiceParts = vpSettings?.voiceParts ?? [];
+  const voiceParts = useMemo(
+    () => (vpSettings?.voiceParts ?? []).filter((vp) => !vp.trackOnly),
+    [vpSettings]
+  );
 
   const charts = useMemo(() => chartsQuery.data ?? [], [chartsQuery.data]);
   const [activeChartId, setActiveChartId] = useState<string>('');

@@ -79,7 +79,10 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         profiles,
         roster,
         settings: sSettings,
-        voiceParts: vpSettings,
+        voiceParts: {
+          sections: vpSettings.sections,
+          voiceParts: vpSettings.voiceParts.filter((vp) => !vp.trackOnly),
+        },
         charts: loadedCharts,
       };
     },
@@ -111,11 +114,13 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- activeChartId intentionally omitted so user selection is not overridden
   }, [charts]);
 
-  // Active profiles derived from roster filter
-  const activeProfiles = useMemo(
-    () => filterProfilesByRsvpYes(allProfiles, dataQuery.data?.roster ?? []),
-    [allProfiles, dataQuery.data?.roster]
-  );
+  // Active profiles derived from roster filter. Excludes profiles assigned strictly to "Learning Track Only" voice parts (so they don't occupy seats).
+  const activeProfiles = useMemo(() => {
+    const rsvpYes = filterProfilesByRsvpYes(allProfiles, dataQuery.data?.roster ?? []);
+    if (!voicePartSettings) return rsvpYes;
+    const allowedLabels = new Set(voicePartSettings.voiceParts.map((vp) => vp.label));
+    return rsvpYes.filter((p) => !p.voicePart || allowedLabels.has(p.voicePart));
+  }, [allProfiles, dataQuery.data?.roster, voicePartSettings]);
 
   // ── Chart state (server data + optimistic local state) ──
   const activeChart = useMemo(
