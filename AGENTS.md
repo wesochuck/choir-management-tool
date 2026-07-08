@@ -113,6 +113,12 @@ describe('MyComponent', () => {
 
 Symptom of skipping this: the file's first two tests pass, then the worker dies with "Worker exited unexpectedly" or hangs past the timeout, because rendered DOM accumulates across tests. `renderHook` (no DOM) does not need this. The pattern is used in `test/CommunicationTabs.test.tsx`, `src/components/ui/Button/Button.test.ts`, and most `src/components/ui/**` and `test/views/**` component tests.
 
+**Integration Testing Lessons Learned:**
+
+- **Mocking for Stability:** JSDOM tests for container views frequently hang or fail due to complex child components (especially Modals, Autocomplete inputs with `useEffect`, or components using React portals and global event listeners). Always mock out heavy child components when testing container views to isolate the parent-level state and render cycle.
+- **Responsive Layout Queries:** Because the application uses responsive design (e.g., rendering a desktop `<DataTable>` alongside mobile card layouts), elements often exist in duplicate within the DOM. Prefer `screen.getAllByText(...)` or similar `getAllBy*` queries when asserting on text that may appear in both desktop and mobile views simultaneously.
+- **React Query Async Rendering:** `react-query` often requires a deliberate yield to the event loop after `render` to allow data fetching to resolve and DOM updates to commit. When asserting on elements dependent on async data, use a small delay (e.g., `await new Promise((resolve) => setTimeout(resolve, 150))`) before assertions.
+
 ### Styling and dialogs
 
 Use Tailwind utility classes for layout, spacing, colors, sizing, typography, and micro-adjustments. Do not add standalone component CSS unless Tailwind cannot express the requirement, such as complex animations or print styles.
