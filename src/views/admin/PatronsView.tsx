@@ -393,24 +393,26 @@ export default function PatronsView() {
                 </FormField>
               </div>
             </div>
-            <div className="flex items-end gap-2">
+            <div className="flex gap-2">
               <div className="flex-1">
                 <FormField label="Sort By">
-                  <Select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
-                  >
-                    <option value="ltv">Lifetime Value</option>
-                    <option value="name">Name</option>
-                    <option value="lastDate">Last Transaction</option>
-                  </Select>
+                  <div className="py-[3px]">
+                    <Select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'ltv' | 'name' | 'lastDate')}
+                    >
+                      <option value="ltv">Lifetime Value</option>
+                      <option value="name">Name</option>
+                      <option value="lastDate">Last Transaction</option>
+                    </Select>
+                  </div>
                 </FormField>
               </div>
               {(searchQuery || startDate || endDate) && (
                 <Button
                   variant="outline"
                   onClick={handleClearFilters}
-                  className="h-10 shrink-0"
+                  className="mb-[3px] shrink-0 self-end"
                   title="Reset filters"
                   icon="🔄"
                 />

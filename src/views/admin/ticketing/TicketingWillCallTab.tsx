@@ -566,24 +566,26 @@ export default function TicketingWillCallTab() {
             </div>
             <div className="md:col-span-1">
               <FormField label="Sort By">
-                <Select
-                  value={sortBy}
-                  onChange={(e) =>
-                    setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')
-                  }
-                >
-                  <option value="lastName">Last Name</option>
-                  <option value="firstName">First Name</option>
-                  <option value="saleDate">Sale Date</option>
-                </Select>
+                <div className="py-[3px]">
+                  <Select
+                    value={sortBy}
+                    onChange={(e) =>
+                      setSortBy(e.target.value as 'lastName' | 'firstName' | 'saleDate')
+                    }
+                  >
+                    <option value="lastName">Last Name</option>
+                    <option value="firstName">First Name</option>
+                    <option value="saleDate">Sale Date</option>
+                  </Select>
+                </div>
               </FormField>
             </div>
             {searchQuery && (
-              <div className="flex items-end gap-2 md:col-span-1">
+              <div className="flex gap-2 md:col-span-1">
                 <Button
                   variant="outline"
                   onClick={() => setSearchQuery('')}
-                  className="flex h-10 items-center justify-center"
+                  className="mb-[3px] flex shrink-0 items-center justify-center self-end"
                   title="Reset search"
                 >
                   <svg

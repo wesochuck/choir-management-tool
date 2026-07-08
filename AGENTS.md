@@ -144,6 +144,8 @@ Dashboard and list empty states must include a call-to-action button. Creation a
 
 For new lazy-loaded route modules, use `lazyWithReload(...)` from `src/App.tsx`.
 
+When aligning `<Input>` and `<Select>` components horizontally, be aware that `<Input>` includes an invisible `py-[3px]` padding wrapper (6px total height difference) to accommodate focus rings. To align a `<Select>` perfectly with an `<Input>` inside a flex container, wrap the `<Select>` in `<div className="py-[3px]">`.
+
 ## 5. Shoelace and Web Components
 
 Do not import raw Shoelace components directly. Use wrappers from `src/components/ui/`.
