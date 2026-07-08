@@ -92,10 +92,14 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
         }
       }
 
-      // Filter out profiles who are assigned strictly to "Learning Track Only" voice parts (so they don't appear in operational rosters)
-      const allowedVoicePartLabels = new Set(
-        settings.voiceParts.filter((vp) => !vp.trackOnly).map((vp) => vp.label)
+      // Filter out profiles who are assigned strictly to "Learning Track Only" sections (so they don't appear in operational rosters)
+      const trackOnlySections = new Set(
+        settings.sections.filter((s) => s.trackOnly).map((s) => s.code)
       );
+      const activeVoiceParts = settings.voiceParts.filter(
+        (vp) => !trackOnlySections.has(vp.sectionCode)
+      );
+      const allowedVoicePartLabels = new Set(activeVoiceParts.map((vp) => vp.label));
       const filteredProfiles = profiles.filter(
         (p) => !p.voicePart || allowedVoicePartLabels.has(p.voicePart)
       );
@@ -104,7 +108,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
         event: evt,
         activeProfiles: filteredProfiles,
         eventRoster: rosters,
-        voiceParts: settings.voiceParts.filter((vp) => !vp.trackOnly),
+        voiceParts: activeVoiceParts,
         sections: settings.sections,
         defaultSort: rosterSettings?.defaultRsvpSort ?? 'lastName',
         maxRehearsalMisses: rosterSettings?.maxRehearsalMisses ?? 3,

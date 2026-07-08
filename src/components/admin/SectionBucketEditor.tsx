@@ -1,7 +1,7 @@
 import { AppCard } from '../common/AppCard';
 import type { SectionDef, VoicePartDef } from '../../services/settingsService';
 import { isColorTooClose, getContrastColor } from '../../lib/colorUtils';
-import { Button, Input, ColorPicker } from '../ui';
+import { Button, Input, ColorPicker, Checkbox } from '../ui';
 
 interface SectionBucketEditorProps {
   configSections: SectionDef[];
@@ -23,7 +23,8 @@ export function SectionBucketEditor({
       <div className="flex flex-col gap-4">
         <p className="mb-2 text-xs text-slate-500">
           Configure the section buckets for your choir (e.g. S, Sopranos) and their visual identity
-          on the seating chart.
+          on the seating chart. Check "Learning Track Only" to exclude a section (and all its voice
+          parts) from operational rosters (e.g., Soloists).
         </p>
 
         <div className="flex flex-col gap-3">
@@ -39,7 +40,7 @@ export function SectionBucketEditor({
             return (
               <div
                 key={index}
-                className="grid w-full grid-cols-[80px_1fr_180px_85px] items-center gap-4"
+                className="grid w-full grid-cols-[80px_1fr_180px_160px_85px] items-center gap-4"
               >
                 <Input
                   value={sec.code}
@@ -110,6 +111,17 @@ export function SectionBucketEditor({
                     </span>
                   )}
                 </div>
+
+                <Checkbox
+                  checked={sec.trackOnly || false}
+                  onChange={(e) => {
+                    const newSecs = [...configSections];
+                    newSecs[index] = { ...newSecs[index], trackOnly: e.target.checked };
+                    setConfigSections(newSecs);
+                  }}
+                >
+                  Learning Track Only
+                </Checkbox>
 
                 <Button
                   type="button"

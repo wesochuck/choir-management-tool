@@ -81,7 +81,10 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         settings: sSettings,
         voiceParts: {
           sections: vpSettings.sections,
-          voiceParts: vpSettings.voiceParts.filter((vp) => !vp.trackOnly),
+          voiceParts: vpSettings.voiceParts.filter((vp) => {
+            const sec = vpSettings.sections.find((s) => s.code === vp.sectionCode);
+            return !sec?.trackOnly;
+          }),
         },
         charts: loadedCharts,
       };

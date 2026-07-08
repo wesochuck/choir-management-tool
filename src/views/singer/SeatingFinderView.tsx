@@ -64,11 +64,11 @@ export default function SeatingFinderView() {
 
   const vpSettings = vpSettingsQuery.data;
 
-  const sections = vpSettings?.sections ?? [];
-  const voiceParts = useMemo(
-    () => (vpSettings?.voiceParts ?? []).filter((vp) => !vp.trackOnly),
-    [vpSettings]
-  );
+  const sections = useMemo(() => vpSettings?.sections ?? [], [vpSettings?.sections]);
+  const voiceParts = useMemo(() => {
+    const trackOnlySections = new Set(sections.filter((s) => s.trackOnly).map((s) => s.code));
+    return (vpSettings?.voiceParts ?? []).filter((vp) => !trackOnlySections.has(vp.sectionCode));
+  }, [vpSettings, sections]);
 
   const charts = useMemo(() => chartsQuery.data ?? [], [chartsQuery.data]);
   const [activeChartId, setActiveChartId] = useState<string>('');

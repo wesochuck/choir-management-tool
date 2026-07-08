@@ -91,9 +91,13 @@ async function resolveMembers(filters: CommunicationFilters): Promise<Communicat
     profileService.getProfiles(),
     getVoicePartsAndSections(),
   ]);
+  const trackOnlySections = new Set(
+    rawVoiceData.sections.filter((s) => s.trackOnly).map((s) => s.code)
+  );
+
   const voiceData = {
     sections: rawVoiceData.sections,
-    voiceParts: rawVoiceData.voiceParts.filter((vp) => !vp.trackOnly),
+    voiceParts: rawVoiceData.voiceParts.filter((vp) => !trackOnlySections.has(vp.sectionCode)),
   };
 
   let allowedProfileIds: Set<string> | null = null;
@@ -138,9 +142,11 @@ async function resolveMembers(filters: CommunicationFilters): Promise<Communicat
     });
   }
 
-  // Exclude profiles whose voice part is marked as "Learning Track Only" from receiving general communications
+  // Exclude profiles whose voice part belongs to a "Learning Track Only" section from receiving general communications
   const excludedParts = new Set(
-    rawVoiceData.voiceParts.filter((vp) => vp.trackOnly).map((vp) => vp.label)
+    rawVoiceData.voiceParts
+      .filter((vp) => trackOnlySections.has(vp.sectionCode))
+      .map((vp) => vp.label)
   );
 
   return profiles

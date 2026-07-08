@@ -7,6 +7,8 @@ export interface SectionDef {
   color?: string;
   colorBg?: string;
   colorText?: string;
+  // If true, this section is strictly used to tag learning tracks (e.g. Soloists) and its voice parts are hidden from general operational lists
+  trackOnly?: boolean;
 }
 
 export interface VoicePartDef {
@@ -16,8 +18,6 @@ export interface VoicePartDef {
   color?: string;
   colorBg?: string;
   colorText?: string;
-  // If true, this voice part is strictly used to tag learning tracks (e.g. Soloists) and is hidden from general operational lists (rosters, seating, communications)
-  trackOnly?: boolean;
 }
 
 export interface VoicePartSettings {

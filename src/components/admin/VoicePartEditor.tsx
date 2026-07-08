@@ -4,7 +4,7 @@ import type { Profile } from '../../services/profileService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../../lib/labelHelpers';
 import { getContrastColor } from '../../lib/colorUtils';
-import { Button, Select, Input, ColorPicker, Checkbox } from '../ui';
+import { Button, Select, Input, ColorPicker } from '../ui';
 
 interface VoicePartEditorProps {
   configVoiceParts: VoicePartDef[];
@@ -39,8 +39,7 @@ export function VoicePartEditor({
       <div className="flex flex-col gap-4">
         <p className="mb-2 text-xs text-slate-500">
           Configure the custom voice parts for the choir (e.g. S1, Soprano 1) and link them to a
-          Section Bucket. Check "Learning Track Only" to exclude a voice part from general
-          operational rosters (e.g., for Soloists).
+          Section Bucket.
         </p>
 
         <div className="flex flex-col gap-3">
@@ -52,7 +51,7 @@ export function VoicePartEditor({
             return (
               <div
                 key={index}
-                className="grid w-full grid-cols-[90px_1fr_150px_130px_100px_100px_80px] items-center gap-4"
+                className="grid w-full grid-cols-[90px_1fr_150px_130px_100px_80px] items-center gap-4"
               >
                 <Input
                   value={vp.label}
@@ -131,17 +130,6 @@ export function VoicePartEditor({
                     className="w-20 font-mono text-xs"
                   />
                 </div>
-
-                <Checkbox
-                  checked={vp.trackOnly || false}
-                  onChange={(e) => {
-                    const newParts = [...configVoiceParts];
-                    newParts[index] = { ...newParts[index], trackOnly: e.target.checked };
-                    setConfigVoiceParts(newParts);
-                  }}
-                >
-                  Learning Track Only
-                </Checkbox>
 
                 {vp.label ? (
                   <Button
