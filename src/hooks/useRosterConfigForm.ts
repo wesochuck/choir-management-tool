@@ -254,6 +254,16 @@ export function useRosterConfigForm({
     try {
       await configSaveMutation.mutateAsync();
       setConfigMessage('Configuration saved successfully.');
+      setInitialConfigState({
+        defaultStatus: configDefaultStatus,
+        currentSeason: configSeason,
+        statusAutomationEnabled: configAutomationEnabled,
+        statusAutomationMissThreshold: configAutomationMissThreshold,
+        statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
+        maxRehearsalMisses: configMaxRehearsalMisses,
+        sections: JSON.parse(JSON.stringify(configSections)),
+        voiceParts: JSON.parse(JSON.stringify(configVoiceParts)),
+      });
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       setConfigMessage(`Error saving configuration: ${errMsg}`);

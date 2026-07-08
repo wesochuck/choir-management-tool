@@ -565,7 +565,7 @@ export default function MusicLibraryView() {
           <AdminPageTabs
             ariaLabel="Music library sections"
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={(tab) => setActiveTab(tab as 'catalog' | 'config')}
             tabs={[
               { value: 'catalog', label: 'Music Catalog' },
               { value: 'config', label: 'Library Settings' },
