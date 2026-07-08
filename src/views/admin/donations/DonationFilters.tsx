@@ -68,7 +68,7 @@ export default function DonationFilters({
           </FormField>
         </div>
       </div>
-      <div className="flex items-end gap-2">
+      <div className="flex gap-2">
         <div className="flex-1">
           <FormField label="Sort By">
             <Select value={sortBy} onChange={(e) => onSortChange(e.target.value)}>
@@ -82,7 +82,7 @@ export default function DonationFilters({
           <Button
             variant="outline"
             onClick={onClearFilters}
-            className="h-10 shrink-0"
+            className="h-10 shrink-0 self-end"
             title="Reset filters"
             icon="🔄"
           />
