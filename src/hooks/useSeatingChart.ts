@@ -80,7 +80,7 @@ export const useSeatingChart = (performanceId: string, venue: Venue | null) => {
         roster,
         settings: sSettings,
         voiceParts: {
-          sections: vpSettings.sections,
+          sections: vpSettings.sections.filter((s) => !s.trackOnly),
           voiceParts: vpSettings.voiceParts.filter((vp) => {
             const sec = vpSettings.sections.find((s) => s.code === vp.sectionCode);
             return !sec?.trackOnly;

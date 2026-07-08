@@ -11,14 +11,22 @@ export function useVoiceParts(options?: { includeAll?: boolean }) {
   });
 
   const allVoiceParts = useMemo(() => query.data?.voiceParts ?? [], [query.data?.voiceParts]);
-  const sections: SectionDef[] = useMemo(() => query.data?.sections ?? [], [query.data?.sections]);
+  const allSections: SectionDef[] = useMemo(
+    () => query.data?.sections ?? [],
+    [query.data?.sections]
+  );
+
+  const sections = useMemo(() => {
+    if (options?.includeAll) return allSections;
+    return allSections.filter((s) => !s.trackOnly);
+  }, [allSections, options?.includeAll]);
 
   // By default, exclude voice parts whose associated section is "Learning Track Only" (e.g. Soloists) from operational lists
   const voiceParts = useMemo(() => {
     if (options?.includeAll) return allVoiceParts;
-    const trackOnlySections = new Set(sections.filter((s) => s.trackOnly).map((s) => s.code));
+    const trackOnlySections = new Set(allSections.filter((s) => s.trackOnly).map((s) => s.code));
     return allVoiceParts.filter((vp) => !trackOnlySections.has(vp.sectionCode));
-  }, [allVoiceParts, sections, options?.includeAll]);
+  }, [allVoiceParts, allSections, options?.includeAll]);
 
   const labels = useMemo(() => voiceParts.map((vp) => vp.label), [voiceParts]);
 

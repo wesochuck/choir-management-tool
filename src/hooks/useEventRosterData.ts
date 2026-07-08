@@ -99,6 +99,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
       const activeVoiceParts = settings.voiceParts.filter(
         (vp) => !trackOnlySections.has(vp.sectionCode)
       );
+      const activeSections = settings.sections.filter((s) => !s.trackOnly);
       const allowedVoicePartLabels = new Set(activeVoiceParts.map((vp) => vp.label));
       const filteredProfiles = profiles.filter(
         (p) => !p.voicePart || allowedVoicePartLabels.has(p.voicePart)
@@ -109,7 +110,7 @@ export function useEventRosterData({ eventId, isInline }: UseEventRosterDataOpti
         activeProfiles: filteredProfiles,
         eventRoster: rosters,
         voiceParts: activeVoiceParts,
-        sections: settings.sections,
+        sections: activeSections,
         defaultSort: rosterSettings?.defaultRsvpSort ?? 'lastName',
         maxRehearsalMisses: rosterSettings?.maxRehearsalMisses ?? 3,
         pastRehearsals,
