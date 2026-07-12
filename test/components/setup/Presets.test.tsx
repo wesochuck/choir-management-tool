@@ -112,10 +112,11 @@ describe('Organization & Roster Presets Steps', () => {
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     assert.strictEqual(saveVoicePartsMock.mock.callCount(), 1);
-    const configPassed = saveVoicePartsMock.mock.calls[0].arguments[0];
-    assert.ok(configPassed.sections.some((s: any) => s.code === 'S'));
-    assert.ok(configPassed.sections.some((s: any) => s.code === 'A'));
-    assert.ok(!configPassed.sections.some((s: any) => s.code === 'T')); // SSAA has no Tenors
+    const voicePartsPassed = saveVoicePartsMock.mock.calls[0].arguments[0] as any[];
+    const sectionsPassed = saveVoicePartsMock.mock.calls[0].arguments[1] as any[];
+    assert.ok(sectionsPassed.some((s: any) => s.code === 'S'));
+    assert.ok(sectionsPassed.some((s: any) => s.code === 'A'));
+    assert.ok(!sectionsPassed.some((s: any) => s.code === 'T')); // SSAA has no Tenors
 
     assert.strictEqual(progressMock.mock.callCount(), 1);
   });

@@ -99,7 +99,10 @@ export const RosterStructureStep: React.FC<RosterStructureStepProps> = ({
 
     try {
       const preset = PRESETS[selected];
-      await settingsService.saveVoicePartsAndSections(preset.config);
+      await settingsService.saveVoicePartsAndSections(
+        preset.config.voiceParts,
+        preset.config.sections
+      );
 
       // Save progress
       await setupService.saveProgress([

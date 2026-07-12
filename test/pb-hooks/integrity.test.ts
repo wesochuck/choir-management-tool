@@ -192,8 +192,8 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    76,
-    'Generated file should contain exactly 76 callback-local utility regions'
+    116,
+    'Generated file should contain exactly 116 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
