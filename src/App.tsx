@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from './lib/queryKeys';
 import { settingsService } from './services/settingsService';
 import { SetupGate } from './components/setup/SetupGate';
+import { ModuleRoute } from './components/common/ModuleRoute';
 
 function lazyWithReload<T extends React.ComponentType<Record<string, never>>>(
   importer: () => Promise<{ default: T }>
@@ -82,6 +83,7 @@ const DonationsView = lazyWithReload(() => import('./views/admin/DonationsView')
 const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
 const TicketScanView = lazyWithReload(() => import('./views/admin/TicketScanView'));
 const SetupView = lazyWithReload(() => import('./views/setup/SetupView'));
+const ModuleSettingsView = lazyWithReload(() => import('./views/admin/ModuleSettingsView'));
 
 const AppLoader = () => (
   <div className="bg-bg flex h-screen w-screen flex-col items-center justify-center gap-4">
@@ -202,20 +204,118 @@ export default function App() {
               <Route path="/setup" element={<SetupView />} />
               <Route path="/login" element={<LoginView />} />
               <Route path="/reset-password" element={<ResetPasswordView />} />
-              <Route path="/auditions" element={<PublicAuditionView />} />
-              <Route path="/rsvp" element={<PublicRsvpView />} />
-              <Route path="/poll" element={<PublicPollView />} />
-              <Route path="/unsubscribe" element={<PublicUnsubscribeView />} />
-              <Route path="/player" element={<PublicPlayerView />} />
-              <Route path="/tickets" element={<PublicTicketListView />} />
-              <Route path="/tickets/order/success" element={<PublicTicketSuccessView />} />
-              <Route path="/tickets/bundle/:bundleId" element={<PublicBundlePurchaseView />} />
-              <Route path="/tickets/:eventId" element={<PublicTicketPurchaseView />} />
-              <Route path="/donate" element={<PublicDonationView />} />
-              <Route path="/donate/success" element={<PublicDonationSuccessView />} />
-              <Route path="/" element={<PublicLandingView />} />
-              <Route path="/history" element={<PublicHistoryView />} />
-              <Route path="/performances" element={<PublicPastPerformancesView />} />
+              <Route
+                path="/auditions"
+                element={
+                  <ModuleRoute module="auditions">
+                    <PublicAuditionView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/rsvp"
+                element={
+                  <ModuleRoute module="rsvps">
+                    <PublicRsvpView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/poll"
+                element={
+                  <ModuleRoute module="polls">
+                    <PublicPollView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/unsubscribe"
+                element={
+                  <ModuleRoute module="rsvps">
+                    <PublicUnsubscribeView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/player"
+                element={
+                  <ModuleRoute module="musicLibrary">
+                    <PublicPlayerView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/tickets"
+                element={
+                  <ModuleRoute module="ticketSales">
+                    <PublicTicketListView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/tickets/order/success"
+                element={
+                  <ModuleRoute module="ticketSales">
+                    <PublicTicketSuccessView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/tickets/bundle/:bundleId"
+                element={
+                  <ModuleRoute module="ticketSales">
+                    <PublicBundlePurchaseView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/tickets/:eventId"
+                element={
+                  <ModuleRoute module="ticketSales">
+                    <PublicTicketPurchaseView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/donate"
+                element={
+                  <ModuleRoute module="donations">
+                    <PublicDonationView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/donate/success"
+                element={
+                  <ModuleRoute module="donations">
+                    <PublicDonationSuccessView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <ModuleRoute module="publicWebsite">
+                    <PublicLandingView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/history"
+                element={
+                  <ModuleRoute module="publicWebsite">
+                    <PublicHistoryView />
+                  </ModuleRoute>
+                }
+              />
+              <Route
+                path="/performances"
+                element={
+                  <ModuleRoute module="publicWebsite">
+                    <PublicPastPerformancesView />
+                  </ModuleRoute>
+                }
+              />
               <Route
                 path="/dashboard"
                 element={
@@ -229,9 +329,11 @@ export default function App() {
                 path="/admin/roster"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Roster Management" backTo="/dashboard">
-                      <RosterView />
-                    </PageLayout>
+                    <ModuleRoute module="roster">
+                      <PageLayout title="Roster Management" backTo="/dashboard">
+                        <RosterView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -240,9 +342,11 @@ export default function App() {
                 path="/admin/events"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Event Management" backTo="/dashboard">
-                      <EventsView />
-                    </PageLayout>
+                    <ModuleRoute module="events">
+                      <PageLayout title="Event Management" backTo="/dashboard">
+                        <EventsView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -251,9 +355,11 @@ export default function App() {
                 path="/admin/events/:eventId/roster"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Event Roster" backTo="/admin/events">
-                      <EventRosterView />
-                    </PageLayout>
+                    <ModuleRoute module="events">
+                      <PageLayout title="Event Roster" backTo="/admin/events">
+                        <EventRosterView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -262,9 +368,11 @@ export default function App() {
                 path="/admin/setlists"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Set Lists" backTo="/dashboard">
-                      <SetListView />
-                    </PageLayout>
+                    <ModuleRoute module="setLists">
+                      <PageLayout title="Set Lists" backTo="/dashboard">
+                        <SetListView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -273,9 +381,11 @@ export default function App() {
                 path="/admin/venues"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Venue Templates" backTo="/dashboard">
-                      <VenuesView />
-                    </PageLayout>
+                    <ModuleRoute module="events">
+                      <PageLayout title="Venue Templates" backTo="/dashboard">
+                        <VenuesView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -284,9 +394,11 @@ export default function App() {
                 path="/admin/seating"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Seating Charts" backTo="/dashboard" maxWidth="1400px">
-                      <SeatingView />
-                    </PageLayout>
+                    <ModuleRoute module="seating">
+                      <PageLayout title="Seating Charts" backTo="/dashboard" maxWidth="1400px">
+                        <SeatingView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -295,9 +407,11 @@ export default function App() {
                 path="/admin/attendance"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Attendance Check-in" backTo="/dashboard">
-                      <AttendanceView />
-                    </PageLayout>
+                    <ModuleRoute module="attendance">
+                      <PageLayout title="Attendance Check-in" backTo="/dashboard">
+                        <AttendanceView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -306,9 +420,11 @@ export default function App() {
                 path="/admin/rsvp"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Event RSVPs" backTo="/dashboard">
-                      <RsvpDashboardView />
-                    </PageLayout>
+                    <ModuleRoute module="rsvps">
+                      <PageLayout title="Event RSVPs" backTo="/dashboard">
+                        <RsvpDashboardView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -317,9 +433,11 @@ export default function App() {
                 path="/admin/polls"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Engagement Polls" backTo="/dashboard">
-                      <PollsDashboardView />
-                    </PageLayout>
+                    <ModuleRoute module="polls">
+                      <PageLayout title="Engagement Polls" backTo="/dashboard">
+                        <PollsDashboardView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -328,9 +446,11 @@ export default function App() {
                 path="/admin/auditions"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Auditions" backTo="/dashboard">
-                      <AuditionsView />
-                    </PageLayout>
+                    <ModuleRoute module="auditions">
+                      <PageLayout title="Auditions" backTo="/dashboard">
+                        <AuditionsView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -339,9 +459,11 @@ export default function App() {
                 path="/admin/reports"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Reports & Insights" backTo="/dashboard">
-                      <ReportsView />
-                    </PageLayout>
+                    <ModuleRoute module="reports">
+                      <PageLayout title="Reports & Insights" backTo="/dashboard">
+                        <ReportsView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -350,9 +472,11 @@ export default function App() {
                 path="/admin/library"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Music Library" backTo="/dashboard">
-                      <MusicLibraryView />
-                    </PageLayout>
+                    <ModuleRoute module="musicLibrary">
+                      <PageLayout title="Music Library" backTo="/dashboard">
+                        <MusicLibraryView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -361,9 +485,11 @@ export default function App() {
                 path="/admin/website"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Public Website" backTo="/dashboard">
-                      <PublicWebsiteView />
-                    </PageLayout>
+                    <ModuleRoute module="publicWebsite">
+                      <PageLayout title="Public Website" backTo="/dashboard">
+                        <PublicWebsiteView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -380,12 +506,23 @@ export default function App() {
               />
 
               <Route
+                path="/admin/settings/modules"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <ModuleSettingsView />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
                 path="/admin/communications"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Communications" backTo="/dashboard">
-                      <CommunicationView />
-                    </PageLayout>
+                    <ModuleRoute module="communications">
+                      <PageLayout title="Communications" backTo="/dashboard">
+                        <CommunicationView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -394,7 +531,9 @@ export default function App() {
                 path="/admin/resources"
                 element={
                   <ProtectedRoute adminOnly>
-                    <ResourcesRoute />
+                    <ModuleRoute module="resources">
+                      <ResourcesRoute />
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -403,9 +542,11 @@ export default function App() {
                 path="/admin/tickets"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Ticketing" backTo="/dashboard">
-                      <AdminTicketingView />
-                    </PageLayout>
+                    <ModuleRoute module="ticketSales">
+                      <PageLayout title="Ticketing" backTo="/dashboard">
+                        <AdminTicketingView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -414,9 +555,11 @@ export default function App() {
                 path="/admin/tickets/scan"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Ticket Scanner" backTo="/admin/tickets">
-                      <TicketScanView />
-                    </PageLayout>
+                    <ModuleRoute module="ticketSales">
+                      <PageLayout title="Ticket Scanner" backTo="/admin/tickets">
+                        <TicketScanView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -425,9 +568,11 @@ export default function App() {
                 path="/admin/donations"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Donations" backTo="/dashboard">
-                      <DonationsView />
-                    </PageLayout>
+                    <ModuleRoute module="donations">
+                      <PageLayout title="Donations" backTo="/dashboard">
+                        <DonationsView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -436,9 +581,11 @@ export default function App() {
                 path="/admin/patrons"
                 element={
                   <ProtectedRoute adminOnly>
-                    <PageLayout title="Patrons" backTo="/dashboard">
-                      <PatronsView />
-                    </PageLayout>
+                    <ModuleRoute module="patrons">
+                      <PageLayout title="Patrons" backTo="/dashboard">
+                        <PatronsView />
+                      </PageLayout>
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -447,7 +594,9 @@ export default function App() {
                 path="/seating/:eventId"
                 element={
                   <ProtectedRoute>
-                    <SeatingFinderView />
+                    <ModuleRoute module="seating">
+                      <SeatingFinderView />
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />
@@ -463,7 +612,9 @@ export default function App() {
                 path="/directory"
                 element={
                   <ProtectedRoute>
-                    <DirectoryRoute />
+                    <ModuleRoute module="directory">
+                      <DirectoryRoute />
+                    </ModuleRoute>
                   </ProtectedRoute>
                 }
               />

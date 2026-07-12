@@ -5,6 +5,7 @@ import { AdminIdentityStep } from './steps/AdminIdentityStep';
 import { AdminRecoveryStep } from './steps/AdminRecoveryStep';
 import { OrganizationBasicsStep } from './steps/OrganizationBasicsStep';
 import { RosterStructureStep } from './steps/RosterStructureStep';
+import { ModuleSelectionStep } from './steps/ModuleSelectionStep';
 import { SetupNavigation } from '../../components/setup/SetupNavigation';
 import { useDialog } from '../../contexts/DialogContext';
 import { setupService } from '../../services/setupService';
@@ -189,15 +190,11 @@ const SetupView: React.FC = () => {
                   )}
 
                   {activeStepIdx === 2 && (
-                    <div className="space-y-4 py-6 text-center">
-                      <h2 className="text-xl font-semibold text-slate-200">
-                        Step 3: Module Selection
-                      </h2>
-                      <p className="text-sm text-slate-400">
-                        Placeholder for Module Selection wizard step. We will configure this in the
-                        next step.
-                      </p>
-                    </div>
+                    <ModuleSelectionStep
+                      refreshStatus={refreshStatus}
+                      onSuccess={refreshStatus}
+                      initialEnabled={Array.from(enabledModules)}
+                    />
                   )}
 
                   {activeStepIdx === 3 && (
