@@ -10,6 +10,7 @@ import { ReviewStep } from './steps/ReviewStep';
 import { FeatureConfigurationStep } from './steps/FeatureConfigurationStep';
 import { PocketHostStep } from './steps/PocketHostStep';
 import { IntegrationVerificationStep } from './steps/IntegrationVerificationStep';
+import { InitialDataStep } from './steps/InitialDataStep';
 import { SETUP_SECTIONS } from './setupSections';
 import { SetupNavigation } from '../../components/setup/SetupNavigation';
 import { useDialog } from '../../contexts/DialogContext';
@@ -80,6 +81,11 @@ const SetupView: React.FC = () => {
 
   steps.push({ id: 'pockethost', label: 'Secrets', section: 'pockethost-config' });
   steps.push({ id: 'verification', label: 'Verification', section: 'integration-verification' });
+
+  const showInitialData = enabledModules.has('roster') || enabledModules.has('musicLibrary');
+  if (showInitialData) {
+    steps.push({ id: 'data', label: 'Initial Data', section: 'initial-data' });
+  }
 
   steps.push({ id: 'review', label: 'Review', section: 'review' });
 
@@ -266,6 +272,25 @@ const SetupView: React.FC = () => {
                             if (hasConfigurableFeatures) completed.push('feature-configuration');
                             completed.push('pockethost-config');
                             completed.push('integration-verification');
+                            await setupService.saveProgress(completed);
+                            await refreshStatus();
+                          }}
+                        />
+                      )}
+
+                      {steps[activeStepIdx].section === 'initial-data' && (
+                        <InitialDataStep
+                          onSuccess={async () => {
+                            const completed = [
+                              'admin-account',
+                              'organization-basics',
+                              'module-selection',
+                            ];
+                            if (rosterEnabled) completed.push('roster-structure');
+                            if (hasConfigurableFeatures) completed.push('feature-configuration');
+                            completed.push('pockethost-config');
+                            completed.push('integration-verification');
+                            completed.push('initial-data');
                             await setupService.saveProgress(completed);
                             await refreshStatus();
                           }}

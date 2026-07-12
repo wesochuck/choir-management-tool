@@ -14,6 +14,7 @@ import {
   type RosterField,
 } from '../../lib/rosterImportUtils';
 import { useVoiceParts } from '../../hooks/useVoiceParts';
+import { mapWithConcurrency, retryOn429 } from '../../lib/networkSafety';
 
 interface RosterImportModalProps {
   isOpen: boolean;
@@ -148,61 +149,63 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
     setErrorsList([]);
     setCredentialsList([]);
 
-    // Run import sequentially to show live progress and handle partial success robustly
     let successes = 0;
     const errors: typeof errorsList = [];
     const credentials: typeof credentialsList = [];
+    let processedCount = 0;
 
-    // @allow-sequential-await - Import runs sequentially to show live progress and handle partial success robustly.
-    for (let i = 0; i < mappedSingers.length; i++) {
-      const singer = mappedSingers[i];
-      if (!singer.isValid) continue;
-
-      setImportingIndex(i + 1);
-
-      try {
-        const payload: Parameters<typeof profileService.createProfile>[0] = {
-          name: singer.data.name,
-          phone: singer.data.phone,
-          voicePart: singer.data.voicePart || undefined,
-          globalStatus: singer.data.globalStatus,
-          notes: singer.data.notes,
-        };
-
-        let generatedPassword: string | undefined = undefined;
-        if (singer.data.email) {
-          generatedPassword = generateRandomPassword();
-          payload.email = singer.data.email;
-          payload.password = generatedPassword;
-        }
-
-        await profileService.createProfile(payload);
-        successes++;
-        setSuccessCount(successes);
-
-        if (singer.data.email) {
-          credentials.push({
+    await mapWithConcurrency(
+      validSingers,
+      async (singer) => {
+        try {
+          const payload: Parameters<typeof profileService.createProfile>[0] = {
             name: singer.data.name,
-            email: singer.data.email,
-            password: generatedPassword,
-          });
-        }
-      } catch (err: unknown) {
-        console.error(`Import failed for row ${singer.rowNumber}:`, err);
-        errors.push({
-          row: singer.rowNumber,
-          name: singer.data.name || `Unknown ${performerLabel}`,
-          error: err instanceof Error ? err.message : 'Unknown database error',
-        });
-        setErrorsList([...errors]);
-      }
+            phone: singer.data.phone,
+            voicePart: singer.data.voicePart || undefined,
+            globalStatus: singer.data.globalStatus,
+            notes: singer.data.notes,
+          };
 
-      setImportProgress(Math.round(((i + 1) / mappedSingers.length) * 100));
-    }
+          let generatedPassword: string | undefined = undefined;
+          if (singer.data.email) {
+            generatedPassword = generateRandomPassword();
+            payload.email = singer.data.email;
+            payload.password = generatedPassword;
+          }
+
+          await retryOn429(() => profileService.createProfile(payload));
+          successes++;
+          setSuccessCount(successes);
+
+          if (singer.data.email) {
+            credentials.push({
+              name: singer.data.name,
+              email: singer.data.email,
+              password: generatedPassword,
+            });
+          }
+        } catch (err: unknown) {
+          console.error(`Import failed for row ${singer.rowNumber}:`, err);
+          errors.push({
+            row: singer.rowNumber,
+            name: singer.data.name || `Unknown ${performerLabel}`,
+            error: err instanceof Error ? err.message : 'Unknown database error',
+          });
+          setErrorsList([...errors]);
+        } finally {
+          processedCount++;
+          setImportingIndex(processedCount);
+          setImportProgress(Math.round((processedCount / validSingers.length) * 100));
+        }
+      },
+      { concurrency: 3 }
+    );
 
     setCredentialsList(credentials);
     setStep('COMPLETE');
-    dialog.showToast(`Roster import finished: ${successes} ${performerLabelPlural.toLowerCase()} added.`);
+    dialog.showToast(
+      `Roster import finished: ${successes} ${performerLabelPlural.toLowerCase()} added.`
+    );
     await onSuccess();
   };
 
@@ -306,7 +309,12 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
   };
 
   const fieldsConfig: { key: RosterField; label: string; desc: string; required?: boolean }[] = [
-    { key: 'name', label: 'Name', desc: `Full name of the ${performerLabel.toLowerCase()}`, required: true },
+    {
+      key: 'name',
+      label: 'Name',
+      desc: `Full name of the ${performerLabel.toLowerCase()}`,
+      required: true,
+    },
     { key: 'email', label: 'Email', desc: 'Enables user login if provided' },
     { key: 'phone', label: 'Phone', desc: 'Contact phone number' },
     {
@@ -560,7 +568,8 @@ export const RosterImportModal: React.FC<RosterImportModalProps> = ({
             <span className="text-6xl">🎉</span>
             <h3 className="text-primary-deep m-0 text-2xl">Import Finished!</h3>
             <p className="text-muted m-0 text-sm">
-              Successfully imported <strong>{successCount}</strong> {performerLabelPlural.toLowerCase()} into the roster.
+              Successfully imported <strong>{successCount}</strong>{' '}
+              {performerLabelPlural.toLowerCase()} into the roster.
             </p>
           </div>
 
