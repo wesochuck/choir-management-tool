@@ -1,5 +1,28 @@
 # Glossary
 
+## First-Run Setup
+
+The initialization journey that a PocketHost owner completes before an installation is opened for normal use. It establishes the first Application Administrator, organization settings, enabled Modules, and launch readiness.
+
+## Application Administrator
+
+An administrative user of the ensemble-management application with a linked profile. This identity is distinct from the PocketBase superuser used to manage the deployment infrastructure.
+
+## Module
+
+A product capability that an organization may enable or disable without deleting its existing data. A disabled Module is intentionally unused rather than incomplete.
+
+## Readiness Item
+
+A measurable setup task associated with System Configuration or a Module. It is complete, incomplete, or not applicable when its owning Module is disabled.
+
+### Example Dialogue
+
+> **Owner:** We do not sell tickets, so Ticket Sales should not keep First-Run Setup incomplete.  
+> **Developer:** Disable that Module. Its Readiness Items become not applicable, its data remains intact, and you can enable it later from System Settings.  
+> **Owner:** I still need to configure email for Communications.  
+> **Developer:** Leave Communications enabled; its verification stays as an incomplete Readiness Item after launch.
+
 ## Voice Part Definition
 
 A classification of a singer's vocal range and role within the choir (e.g., Soprano 1, Bass 2). Admins can customize the list of voice parts in settings, defining a short label (e.g., "S1"), a descriptive full name (e.g., "Soprano 1"), and optionally a custom color for visual identity on seating charts.
