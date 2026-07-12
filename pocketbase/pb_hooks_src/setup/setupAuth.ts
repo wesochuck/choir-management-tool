@@ -27,7 +27,7 @@ export function isBackendModuleEnabled(app: any, moduleId: string): boolean {
 
 export function guardBackendModule(e: any, moduleId: string): any {
   if (!isBackendModuleEnabled($app, moduleId)) {
-    return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+    return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
   }
   return null;
 }

@@ -149,7 +149,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -510,7 +510,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -871,7 +871,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -1232,7 +1232,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -1593,7 +1593,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -1954,7 +1954,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -2315,7 +2315,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -2676,7 +2676,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -3037,7 +3037,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -3398,7 +3398,7 @@ onRecordBeforeCreateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -3759,7 +3759,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -4120,7 +4120,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -4481,7 +4481,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -4842,7 +4842,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -5203,7 +5203,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -5564,7 +5564,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -5925,7 +5925,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -6286,7 +6286,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -6647,7 +6647,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -7008,7 +7008,7 @@ onRecordBeforeUpdateRequest((e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -12634,7 +12634,7 @@ routerAdd("GET", "/api/setup/status", (e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -12992,7 +12992,7 @@ routerAdd("POST", "/api/setup/claim", (e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -13350,7 +13350,7 @@ routerAdd("POST", "/api/setup/progress", (e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -13708,7 +13708,7 @@ routerAdd("POST", "/api/setup/complete", (e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -14066,7 +14066,7 @@ routerAdd("POST", "/api/setup/recover-admin", (e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
@@ -14424,7 +14424,7 @@ routerAdd("GET", "/api/setup/health", (e) => {
     }
     function guardBackendModule(e, moduleId) {
         if (!isBackendModuleEnabled($app, moduleId)) {
-            return e.json(403, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+            return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
         }
         return null;
     }
