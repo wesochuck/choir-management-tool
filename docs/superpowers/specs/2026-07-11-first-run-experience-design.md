@@ -91,6 +91,11 @@ After initialization:
   or not-found response and must enforce the same module state.
 - Hiding a dashboard tile is never considered sufficient module enforcement.
 
+Disabled-module backend responses use HTTP 404 for both public and authenticated callers. The
+application's PocketBase interceptor deliberately treats every 401/403 as a stale or invalid session
+and clears authentication, so those status codes remain reserved for genuine authentication and
+authorization failures.
+
 ## Account Bootstrap and Recovery
 
 ### Initial claim

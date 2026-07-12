@@ -21,6 +21,19 @@
 - Never edit a historical migration. Use only the new forward migration introduced in Task 1.
 - Do not use `any`, `as any`, `// @ts-ignore`, or `// eslint-disable`.
 - Preserve raw PocketBase errors.
+- Verify every PocketBase server API against the bundled 0.36.9 declarations or an existing hook
+  before using it; do not infer APIs from the JS SDK.
+- Never put email on `profiles`; create/update the related `users` record and use
+  `getProfileEmail(profile)` on the frontend.
+- Treat a profile as a performer only when `voicePart` is non-empty. Keep administrative-only
+  profiles out of roster, RSVP, attendance, seating, and performer communication flows.
+- Render stored `Idle` status as “On Break”; never change the enum or CSV value.
+- Use shared query keys, depend on whole mutation objects, return invalidation promises, and avoid
+  syncing refetched query data over editable local state.
+- Use Tailwind and existing UI wrappers. Every modal has a visible Cancel/Close action; destructive
+  dependency changes use a danger-styled `useDialog()` confirmation.
+- Use `DataTable` for any tabular readiness or import-preview surface.
+- Use `chunkArray`, `mapWithConcurrency`, and `retryOn429` for non-trivial network batches.
 - Commit after every task.
 
 ## File and Responsibility Map
@@ -175,7 +188,9 @@ migrate((app) => {
 }, (app) => {
   for (const key of ['setup_state', 'module_state']) {
     try {
-      app.delete(app.findFirstRecordByFilter('appSettings', `key = '${key}'`));
+      app.delete(
+        app.findFirstRecordByFilter('appSettings', 'key = {:key}', { key })
+      );
     } catch {
       // rollback is idempotent
     }
@@ -302,11 +317,16 @@ Expected: FAIL because the endpoint handlers are missing.
 
 - [ ] **Step 3: Implement authorization and handlers**
 
-Use `e.auth?.collection().name === '_superusers'` for superuser checks and
-`e.auth?.get('role') === 'admin'` for application administrators. Claim must validate a normalized
-email, password/password confirmation, owner name, and performing-member intent. Create the user and
-profile inside a rollback boundary; if profile creation fails, delete the newly created user and
-rethrow the raw error.
+Before implementation, inspect `pocketbase/pb_data/types.d.ts` and an existing generated hook to
+confirm the PocketBase 0.36.9 auth-record collection-name API. Add a handler test for the confirmed
+shape. Also verify `src/lib/pocketbase.ts` still contains the `afterSend` stale-token interceptor;
+restore and test it before continuing if it is missing. Use the verified server API for superuser
+checks and `e.auth?.get('role') === 'admin'` for
+application administrators. Claim must validate a normalized email, password/password confirmation,
+owner name, and performing-member intent. Create the email only on the `users` record. Create the
+linked profile without an `email` property and with `receiveAttendanceReports: true`; if the owner
+is administrative-only, persist an empty `voicePart`. Keep user/profile creation inside a rollback
+boundary; if profile creation fails, delete the newly created user and rethrow the raw error.
 
 Register:
 
@@ -648,9 +668,10 @@ view.
 
 Add `requireModule(app, moduleId)` to the setup bundle. Insert it at the beginning of public and
 admin custom endpoints owned by ticketing, donations, auditions, polls, RSVP, player, seating, and
-communications. The guard reads the persisted state defensively and returns 404 for disabled public
-features or 403 for disabled privileged operations. Existing installations remain enabled by the
-migration.
+communications. The guard reads the persisted state defensively and returns 404 for every disabled
+module operation. Do not use 401/403 for module state: the global stale-token interceptor clears auth
+on those statuses. Reserve 401/403 for genuine authentication/authorization failures. Existing
+installations remain enabled by the migration.
 
 - [ ] **Step 6: Regenerate hooks and run checks**
 
@@ -775,10 +796,12 @@ rtk git commit -m "feat: compose module setup sections"
 - Create: `src/lib/setupSecrets.ts`
 - Create: `src/views/setup/steps/PocketHostStep.tsx`
 - Create: `src/views/setup/steps/IntegrationVerificationStep.tsx`
+- Modify: `src/services/settings/emailProviderSettings.ts`
 - Modify: `pocketbase/pb_hooks_src/setup/setupEndpoints.ts`
 - Modify: `pocketbase/pb_hooks_src/generate-main-pb-js.ts`
 - Test: `test/setupSecrets.test.ts`
 - Test: `test/components/setup/PocketHostStep.test.tsx`
+- Modify: `test/services/settingsService.test.ts`
 - Modify: `test/pb-hooks/setupEndpoints.test.ts`
 
 - [ ] **Step 1: Write failing secret and verification tests**
@@ -803,7 +826,9 @@ copy buttons, PocketHost variable names, restart instructions, and regeneration 
 Reuse the existing SMTP test route for email and extend authenticated setup health to validate
 Stripe server credentials without returning them. Persist only verification evidence such as
 provider, mode, checked timestamp, and success boolean in private `appSettings`; never persist a
-generated environment secret.
+generated environment secret. Update email-provider persistence so SMTP passwords and Brevo API
+keys are stored only in non-public settings; no public getter or setup-status response may return
+them.
 
 - [ ] **Step 5: Regenerate hooks and run checks**
 
@@ -816,7 +841,7 @@ Expected: PASS.
 - [ ] **Step 6: Commit**
 
 ```bash
-rtk git add src/lib/setupSecrets.ts src/views/setup/steps/PocketHostStep.tsx src/views/setup/steps/IntegrationVerificationStep.tsx pocketbase/pb_hooks_src/setup/setupEndpoints.ts pocketbase/pb_hooks_src/generate-main-pb-js.ts pocketbase/pb_hooks/main.pb.js test/setupSecrets.test.ts test/components/setup/PocketHostStep.test.tsx test/pb-hooks/setupEndpoints.test.ts
+rtk git add src/lib/setupSecrets.ts src/views/setup/steps/PocketHostStep.tsx src/views/setup/steps/IntegrationVerificationStep.tsx src/services/settings/emailProviderSettings.ts pocketbase/pb_hooks_src/setup/setupEndpoints.ts pocketbase/pb_hooks_src/generate-main-pb-js.ts pocketbase/pb_hooks/main.pb.js test/setupSecrets.test.ts test/components/setup/PocketHostStep.test.tsx test/services/settingsService.test.ts test/pb-hooks/setupEndpoints.test.ts
 rtk git commit -m "feat: verify PocketHost integrations"
 ```
 
@@ -898,7 +923,7 @@ than leaving contradictory instructions about browser-created superusers.
 
 ```bash
 rtk npm run check:pb-hooks
-rtk npm run lint
+rtk node_modules/.bin/eslint --fix --no-warn-ignored --max-warnings 0
 rtk npm test
 rtk npm run build
 rtk npm audit --audit-level=high
