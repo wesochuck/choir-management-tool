@@ -6,12 +6,25 @@ import { pluralizeLabel } from '../../lib/labelHelpers';
 import { useDashboardCounts } from '../../hooks/useDashboardCounts';
 import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { Button } from '../../components/ui';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
+import { setupService } from '../../services/setupService';
+import { evaluateReadiness } from '../../lib/readiness';
+import { SetupDashboardCard } from '../../components/setup/SetupDashboardCard';
+import { useSetup } from '../../contexts/SetupContext';
+import { getModuleForRoute } from '../../lib/modules';
 
 export default function AdminDashboardView() {
   const { user, logout } = useAuth();
   useDocumentTitle('Choir Admin');
   const { performerLabel } = useChoirSettings();
   const performerLabelPlural = pluralizeLabel(performerLabel);
+  const { enabledModules } = useSetup();
+
+  const readinessData = useQuery({
+    queryKey: queryKeys.readiness.all,
+    queryFn: () => setupService.getReadinessSnapshot(),
+  }).data;
 
   const { activeSingers, upcomingEvents, pendingAuditions, errorMessage } = useDashboardCounts();
 
@@ -182,14 +195,38 @@ export default function AdminDashboardView() {
     [performerLabel, performerLabelPlural]
   );
 
+  const filteredDashboardSections = useMemo(() => {
+    return dashboardSections
+      .map((section) => ({
+        ...section,
+        links: section.links.filter((link) => {
+          const mod = getModuleForRoute(link.to);
+          return !mod || enabledModules.has(mod);
+        }),
+      }))
+      .filter((section) => section.links.length > 0);
+  }, [dashboardSections, enabledModules]);
+
   const filteredSections = useMemo(() => {
-    if (selectedCategory === 'All') return dashboardSections;
-    if (selectedCategory === 'People') return [dashboardSections[0]];
-    if (selectedCategory === 'Events') return [dashboardSections[1]];
-    if (selectedCategory === 'Music') return [dashboardSections[2]];
-    if (selectedCategory === 'Admin') return [dashboardSections[3]];
-    return dashboardSections;
-  }, [selectedCategory, dashboardSections]);
+    if (selectedCategory === 'All') return filteredDashboardSections;
+    if (selectedCategory === 'People') {
+      const match = filteredDashboardSections.find((s) => s.title === 'People & membership');
+      return match ? [match] : [];
+    }
+    if (selectedCategory === 'Events') {
+      const match = filteredDashboardSections.find((s) => s.title === 'Events & attendance');
+      return match ? [match] : [];
+    }
+    if (selectedCategory === 'Music') {
+      const match = filteredDashboardSections.find((s) => s.title === 'Music & performance');
+      return match ? [match] : [];
+    }
+    if (selectedCategory === 'Admin') {
+      const match = filteredDashboardSections.find((s) => s.title === 'Admin');
+      return match ? [match] : [];
+    }
+    return filteredDashboardSections;
+  }, [selectedCategory, filteredDashboardSections]);
 
   const getGreeting = () => {
     const hr = new Date().getHours();
@@ -244,39 +281,45 @@ export default function AdminDashboardView() {
           </div>
 
           <div className="flex flex-wrap gap-4">
-            <Link
-              to="/admin/roster"
-              className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15"
-            >
-              <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">
-                Active {performerLabelPlural}
-              </span>
-              <span className="text-section-amber text-xl font-bold">
-                {activeSingers !== undefined ? activeSingers : '...'}
-              </span>
-            </Link>
-            <Link
-              to="/admin/events"
-              className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15"
-            >
-              <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">
-                Upcoming Events
-              </span>
-              <span className="text-section-amber text-xl font-bold">
-                {upcomingEvents !== undefined ? upcomingEvents : '...'}
-              </span>
-            </Link>
-            <Link
-              to="/admin/auditions"
-              className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15"
-            >
-              <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">
-                Pending Auditions
-              </span>
-              <span className="text-section-amber text-xl font-bold">
-                {pendingAuditions !== undefined ? pendingAuditions : '...'}
-              </span>
-            </Link>
+            {enabledModules.has('roster') && (
+              <Link
+                to="/admin/roster"
+                className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15"
+              >
+                <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">
+                  Active {performerLabelPlural}
+                </span>
+                <span className="text-section-amber text-xl font-bold">
+                  {activeSingers !== undefined ? activeSingers : '...'}
+                </span>
+              </Link>
+            )}
+            {enabledModules.has('events') && (
+              <Link
+                to="/admin/events"
+                className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15"
+              >
+                <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">
+                  Upcoming Events
+                </span>
+                <span className="text-section-amber text-xl font-bold">
+                  {upcomingEvents !== undefined ? upcomingEvents : '...'}
+                </span>
+              </Link>
+            )}
+            {enabledModules.has('auditions') && (
+              <Link
+                to="/admin/auditions"
+                className="flex h-11 cursor-pointer items-center gap-4 rounded-full border border-white/20 bg-white/10 px-6 no-underline backdrop-blur transition-all duration-200 hover:border-white/30 hover:bg-white/15"
+              >
+                <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">
+                  Pending Auditions
+                </span>
+                <span className="text-section-amber text-xl font-bold">
+                  {pendingAuditions !== undefined ? pendingAuditions : '...'}
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -289,6 +332,12 @@ export default function AdminDashboardView() {
         </div>
       )}
 
+      {readinessData && (
+        <div className="mx-auto mb-6 w-full max-w-[1200px] px-6">
+          <SetupDashboardCard items={evaluateReadiness(readinessData).items} />
+        </div>
+      )}
+
       {/* Main Content Area */}
       <main className="mx-auto w-full max-w-[1200px] px-6">
         {/* Quick Action Bar */}
@@ -297,51 +346,61 @@ export default function AdminDashboardView() {
         </div>
         <section className="bg-surface mb-8 rounded-xl border border-gray-200 p-4 shadow-sm">
           <div className="flex flex-wrap gap-2">
-            <Link
-              to="/admin/attendance"
-              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
-            >
-              <span className="text-lg" aria-hidden="true">
-                ✅
-              </span>{' '}
-              Take Attendance
-            </Link>
-            <Link
-              to="/admin/communications"
-              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
-            >
-              <span className="text-lg" aria-hidden="true">
-                ✉️
-              </span>{' '}
-              Send Announcement
-            </Link>
-            <Link
-              to="/admin/roster?add=true"
-              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
-            >
-              <span className="text-lg" aria-hidden="true">
-                👥
-              </span>{' '}
-              Add {performerLabel}
-            </Link>
-            <Link
-              to="/admin/events?add=true"
-              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
-            >
-              <span className="text-lg" aria-hidden="true">
-                📅
-              </span>{' '}
-              New Event
-            </Link>
-            <Link
-              to="/admin/library"
-              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
-            >
-              <span className="text-lg" aria-hidden="true">
-                🎼
-              </span>{' '}
-              Add Music
-            </Link>
+            {enabledModules.has('attendance') && (
+              <Link
+                to="/admin/attendance"
+                className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+              >
+                <span className="text-lg" aria-hidden="true">
+                  ✅
+                </span>{' '}
+                Take Attendance
+              </Link>
+            )}
+            {enabledModules.has('communications') && (
+              <Link
+                to="/admin/communications"
+                className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+              >
+                <span className="text-lg" aria-hidden="true">
+                  ✉️
+                </span>{' '}
+                Send Announcement
+              </Link>
+            )}
+            {enabledModules.has('roster') && (
+              <Link
+                to="/admin/roster?add=true"
+                className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+              >
+                <span className="text-lg" aria-hidden="true">
+                  👥
+                </span>{' '}
+                Add {performerLabel}
+              </Link>
+            )}
+            {enabledModules.has('events') && (
+              <Link
+                to="/admin/events?add=true"
+                className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+              >
+                <span className="text-lg" aria-hidden="true">
+                  📅
+                </span>{' '}
+                New Event
+              </Link>
+            )}
+            {enabledModules.has('musicLibrary') && (
+              <Link
+                to="/admin/library"
+                className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-11 cursor-pointer items-center gap-2 rounded-full border border-gray-200 px-6 text-sm font-semibold text-gray-800 no-underline transition-all duration-200 hover:-translate-y-px active:translate-y-0"
+              >
+                <span className="text-lg" aria-hidden="true">
+                  🎼
+                </span>{' '}
+                Add Music
+              </Link>
+            )}
           </div>
         </section>
 
