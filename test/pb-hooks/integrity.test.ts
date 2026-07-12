@@ -133,8 +133,8 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    32,
-    'Generated main file should contain exactly 32 route registrations'
+    38,
+    'Generated main file should contain exactly 38 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
@@ -162,6 +162,12 @@ test('Generated main.pb.js integrity', () => {
     ['POST', '/api/singer/resolve-placeholders'],
     ['POST', '/api/singer/rsvp'],
     ['POST', '/api/admin/resend-ticket-confirmation'],
+    ['GET', '/api/setup/status'],
+    ['POST', '/api/setup/claim'],
+    ['POST', '/api/setup/progress'],
+    ['POST', '/api/setup/complete'],
+    ['POST', '/api/setup/recover-admin'],
+    ['GET', '/api/setup/health'],
   ] as const;
 
   for (const [method, routePath] of requiredRoutes) {
@@ -186,8 +192,8 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    64,
-    'Generated file should contain exactly 64 callback-local utility regions'
+    76,
+    'Generated file should contain exactly 76 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));

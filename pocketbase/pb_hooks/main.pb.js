@@ -5277,6 +5277,2029 @@ onRecordAfterUpdateSuccess((e) => {
 
 // --- CUSTOM ENDPOINTS ---
 
+routerAdd("GET", "/api/setup/status", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: setup/setupTypes.ts ---
+    "use strict";
+
+    // --- Utility source: setup/setupState.ts ---
+    "use strict";
+    function getSetupState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+            const value = parseJsonField(record.get('value'));
+            if (value)
+                return value;
+        }
+        catch (_a) {
+            // ignore
+        }
+        return {
+            version: 1,
+            initialized: false,
+            completedSections: [],
+        };
+    }
+    function saveSetupState(app, state) {
+        const collection = app.findCollectionByNameOrId('appSettings');
+        let record;
+        try {
+            record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+        }
+        catch (_a) {
+            record = new Record(collection, {
+                key: 'setup_state',
+                isPublic: false,
+            });
+        }
+        record.set('value', JSON.stringify(state));
+        app.save(record);
+    }
+    function resolveSetupStatus(app) {
+        let adminCount = 0;
+        try {
+            const admins = app.findRecordsByFilter('users', "role = 'admin'", '', 100, 0);
+            adminCount = admins ? admins.length : 0;
+        }
+        catch (_a) {
+            adminCount = 0;
+        }
+        const state = getSetupState(app);
+        if (state.initialized) {
+            if (adminCount === 0) {
+                return {
+                    state: 'recovery_required',
+                    initialized: true,
+                };
+            }
+            return {
+                state: 'initialized',
+                initialized: true,
+            };
+        }
+        if (adminCount === 0) {
+            return {
+                state: 'unclaimed',
+                initialized: false,
+            };
+        }
+        return {
+            state: 'in_progress',
+            initialized: false,
+        };
+    }
+
+    // --- Utility source: setup/setupAuth.ts ---
+    "use strict";
+    function isSetupSuperuser(e) {
+        return !!(e.auth && e.auth.collectionName === '_superusers');
+    }
+    function isSetupAdmin(e) {
+        return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+    }
+
+    // --- Utility source: setup/setupEndpoints.ts ---
+    "use strict";
+    function handleSetupStatus(e) {
+        return e.json(200, resolveSetupStatus($app));
+    }
+    function handleSetupClaim(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        const isPerformer = !!body.isPerformer;
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        // Idempotency check: see if admin user with this email already exists
+        try {
+            const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
+            if (existing && existing.get('role') === 'admin') {
+                return e.json(200, { success: true });
+            }
+        }
+        catch (_a) {
+            // does not exist, safe to proceed
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed') {
+            return e.json(400, { error: 'Application is already claimed' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            // Save setup state progress
+            const state = getSetupState($app);
+            state.initialized = false;
+            state.ownerIsPerformer = isPerformer;
+            if (state.completedSections.indexOf('admin-account') === -1) {
+                state.completedSections.push('admin-account');
+            }
+            saveSetupState($app, state);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_b) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupProgress(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        const body = e.requestInfo().body || {};
+        const completedSections = body.completedSections;
+        if (!Array.isArray(completedSections)) {
+            return e.json(400, { error: 'completedSections must be an array of strings' });
+        }
+        const state = getSetupState($app);
+        state.completedSections = completedSections;
+        if (body.ownerIsPerformer !== undefined) {
+            state.ownerIsPerformer = !!body.ownerIsPerformer;
+        }
+        if (body.ownerVoicePartSet !== undefined) {
+            state.ownerVoicePartSet = !!body.ownerVoicePartSet;
+        }
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleSetupComplete(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        let rosterEnabled = false;
+        try {
+            const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+            const parsed = parseJsonField(record.get('value'));
+            if (parsed && Array.isArray(parsed.enabled)) {
+                rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
+            }
+        }
+        catch (_a) {
+            // Default to roster enabled if no setting exists yet
+            rosterEnabled = true;
+        }
+        const state = getSetupState($app);
+        const required = ['admin-account', 'organization-basics', 'module-selection'];
+        if (rosterEnabled) {
+            required.push('roster-structure');
+        }
+        const missing = required.filter(sec => state.completedSections.indexOf(sec) === -1);
+        if (missing.length > 0) {
+            return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+        }
+        state.initialized = true;
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleAdminRecovery(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'recovery_required') {
+            return e.json(400, { error: 'Admin recovery is not required' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_a) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupHealth(e) {
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const appUrl = $os.getenv('APP_URL') || '';
+        const hmacSecret = $os.getenv('HMAC_SECRET') || '';
+        const maintenanceSecret = $os.getenv('MAINTENANCE_SECRET') || '';
+        const stripeSecretKey = $os.getenv('STRIPE_SECRET_KEY') || '';
+        const stripeWebhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || '';
+        const environment = {
+            appUrl: !!appUrl,
+            hmacSecret: !!hmacSecret,
+            maintenanceSecret: !!maintenanceSecret,
+            stripeSecretKey: !!stripeSecretKey,
+            stripeWebhookSecret: !!stripeWebhookSecret,
+        };
+        let stripeMode = 'unknown';
+        if (stripeSecretKey) {
+            if (stripeSecretKey.indexOf('sk_test') === 0) {
+                stripeMode = 'test';
+            }
+            else if (stripeSecretKey.indexOf('sk_live') === 0) {
+                stripeMode = 'live';
+            }
+        }
+        return e.json(200, {
+            environment,
+            stripeMode,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleSetupStatus(e);
+});
+routerAdd("POST", "/api/setup/claim", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: setup/setupTypes.ts ---
+    "use strict";
+
+    // --- Utility source: setup/setupState.ts ---
+    "use strict";
+    function getSetupState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+            const value = parseJsonField(record.get('value'));
+            if (value)
+                return value;
+        }
+        catch (_a) {
+            // ignore
+        }
+        return {
+            version: 1,
+            initialized: false,
+            completedSections: [],
+        };
+    }
+    function saveSetupState(app, state) {
+        const collection = app.findCollectionByNameOrId('appSettings');
+        let record;
+        try {
+            record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+        }
+        catch (_a) {
+            record = new Record(collection, {
+                key: 'setup_state',
+                isPublic: false,
+            });
+        }
+        record.set('value', JSON.stringify(state));
+        app.save(record);
+    }
+    function resolveSetupStatus(app) {
+        let adminCount = 0;
+        try {
+            const admins = app.findRecordsByFilter('users', "role = 'admin'", '', 100, 0);
+            adminCount = admins ? admins.length : 0;
+        }
+        catch (_a) {
+            adminCount = 0;
+        }
+        const state = getSetupState(app);
+        if (state.initialized) {
+            if (adminCount === 0) {
+                return {
+                    state: 'recovery_required',
+                    initialized: true,
+                };
+            }
+            return {
+                state: 'initialized',
+                initialized: true,
+            };
+        }
+        if (adminCount === 0) {
+            return {
+                state: 'unclaimed',
+                initialized: false,
+            };
+        }
+        return {
+            state: 'in_progress',
+            initialized: false,
+        };
+    }
+
+    // --- Utility source: setup/setupAuth.ts ---
+    "use strict";
+    function isSetupSuperuser(e) {
+        return !!(e.auth && e.auth.collectionName === '_superusers');
+    }
+    function isSetupAdmin(e) {
+        return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+    }
+
+    // --- Utility source: setup/setupEndpoints.ts ---
+    "use strict";
+    function handleSetupStatus(e) {
+        return e.json(200, resolveSetupStatus($app));
+    }
+    function handleSetupClaim(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        const isPerformer = !!body.isPerformer;
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        // Idempotency check: see if admin user with this email already exists
+        try {
+            const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
+            if (existing && existing.get('role') === 'admin') {
+                return e.json(200, { success: true });
+            }
+        }
+        catch (_a) {
+            // does not exist, safe to proceed
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed') {
+            return e.json(400, { error: 'Application is already claimed' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            // Save setup state progress
+            const state = getSetupState($app);
+            state.initialized = false;
+            state.ownerIsPerformer = isPerformer;
+            if (state.completedSections.indexOf('admin-account') === -1) {
+                state.completedSections.push('admin-account');
+            }
+            saveSetupState($app, state);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_b) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupProgress(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        const body = e.requestInfo().body || {};
+        const completedSections = body.completedSections;
+        if (!Array.isArray(completedSections)) {
+            return e.json(400, { error: 'completedSections must be an array of strings' });
+        }
+        const state = getSetupState($app);
+        state.completedSections = completedSections;
+        if (body.ownerIsPerformer !== undefined) {
+            state.ownerIsPerformer = !!body.ownerIsPerformer;
+        }
+        if (body.ownerVoicePartSet !== undefined) {
+            state.ownerVoicePartSet = !!body.ownerVoicePartSet;
+        }
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleSetupComplete(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        let rosterEnabled = false;
+        try {
+            const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+            const parsed = parseJsonField(record.get('value'));
+            if (parsed && Array.isArray(parsed.enabled)) {
+                rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
+            }
+        }
+        catch (_a) {
+            // Default to roster enabled if no setting exists yet
+            rosterEnabled = true;
+        }
+        const state = getSetupState($app);
+        const required = ['admin-account', 'organization-basics', 'module-selection'];
+        if (rosterEnabled) {
+            required.push('roster-structure');
+        }
+        const missing = required.filter(sec => state.completedSections.indexOf(sec) === -1);
+        if (missing.length > 0) {
+            return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+        }
+        state.initialized = true;
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleAdminRecovery(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'recovery_required') {
+            return e.json(400, { error: 'Admin recovery is not required' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_a) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupHealth(e) {
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const appUrl = $os.getenv('APP_URL') || '';
+        const hmacSecret = $os.getenv('HMAC_SECRET') || '';
+        const maintenanceSecret = $os.getenv('MAINTENANCE_SECRET') || '';
+        const stripeSecretKey = $os.getenv('STRIPE_SECRET_KEY') || '';
+        const stripeWebhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || '';
+        const environment = {
+            appUrl: !!appUrl,
+            hmacSecret: !!hmacSecret,
+            maintenanceSecret: !!maintenanceSecret,
+            stripeSecretKey: !!stripeSecretKey,
+            stripeWebhookSecret: !!stripeWebhookSecret,
+        };
+        let stripeMode = 'unknown';
+        if (stripeSecretKey) {
+            if (stripeSecretKey.indexOf('sk_test') === 0) {
+                stripeMode = 'test';
+            }
+            else if (stripeSecretKey.indexOf('sk_live') === 0) {
+                stripeMode = 'live';
+            }
+        }
+        return e.json(200, {
+            environment,
+            stripeMode,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleSetupClaim(e);
+});
+routerAdd("POST", "/api/setup/progress", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: setup/setupTypes.ts ---
+    "use strict";
+
+    // --- Utility source: setup/setupState.ts ---
+    "use strict";
+    function getSetupState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+            const value = parseJsonField(record.get('value'));
+            if (value)
+                return value;
+        }
+        catch (_a) {
+            // ignore
+        }
+        return {
+            version: 1,
+            initialized: false,
+            completedSections: [],
+        };
+    }
+    function saveSetupState(app, state) {
+        const collection = app.findCollectionByNameOrId('appSettings');
+        let record;
+        try {
+            record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+        }
+        catch (_a) {
+            record = new Record(collection, {
+                key: 'setup_state',
+                isPublic: false,
+            });
+        }
+        record.set('value', JSON.stringify(state));
+        app.save(record);
+    }
+    function resolveSetupStatus(app) {
+        let adminCount = 0;
+        try {
+            const admins = app.findRecordsByFilter('users', "role = 'admin'", '', 100, 0);
+            adminCount = admins ? admins.length : 0;
+        }
+        catch (_a) {
+            adminCount = 0;
+        }
+        const state = getSetupState(app);
+        if (state.initialized) {
+            if (adminCount === 0) {
+                return {
+                    state: 'recovery_required',
+                    initialized: true,
+                };
+            }
+            return {
+                state: 'initialized',
+                initialized: true,
+            };
+        }
+        if (adminCount === 0) {
+            return {
+                state: 'unclaimed',
+                initialized: false,
+            };
+        }
+        return {
+            state: 'in_progress',
+            initialized: false,
+        };
+    }
+
+    // --- Utility source: setup/setupAuth.ts ---
+    "use strict";
+    function isSetupSuperuser(e) {
+        return !!(e.auth && e.auth.collectionName === '_superusers');
+    }
+    function isSetupAdmin(e) {
+        return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+    }
+
+    // --- Utility source: setup/setupEndpoints.ts ---
+    "use strict";
+    function handleSetupStatus(e) {
+        return e.json(200, resolveSetupStatus($app));
+    }
+    function handleSetupClaim(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        const isPerformer = !!body.isPerformer;
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        // Idempotency check: see if admin user with this email already exists
+        try {
+            const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
+            if (existing && existing.get('role') === 'admin') {
+                return e.json(200, { success: true });
+            }
+        }
+        catch (_a) {
+            // does not exist, safe to proceed
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed') {
+            return e.json(400, { error: 'Application is already claimed' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            // Save setup state progress
+            const state = getSetupState($app);
+            state.initialized = false;
+            state.ownerIsPerformer = isPerformer;
+            if (state.completedSections.indexOf('admin-account') === -1) {
+                state.completedSections.push('admin-account');
+            }
+            saveSetupState($app, state);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_b) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupProgress(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        const body = e.requestInfo().body || {};
+        const completedSections = body.completedSections;
+        if (!Array.isArray(completedSections)) {
+            return e.json(400, { error: 'completedSections must be an array of strings' });
+        }
+        const state = getSetupState($app);
+        state.completedSections = completedSections;
+        if (body.ownerIsPerformer !== undefined) {
+            state.ownerIsPerformer = !!body.ownerIsPerformer;
+        }
+        if (body.ownerVoicePartSet !== undefined) {
+            state.ownerVoicePartSet = !!body.ownerVoicePartSet;
+        }
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleSetupComplete(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        let rosterEnabled = false;
+        try {
+            const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+            const parsed = parseJsonField(record.get('value'));
+            if (parsed && Array.isArray(parsed.enabled)) {
+                rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
+            }
+        }
+        catch (_a) {
+            // Default to roster enabled if no setting exists yet
+            rosterEnabled = true;
+        }
+        const state = getSetupState($app);
+        const required = ['admin-account', 'organization-basics', 'module-selection'];
+        if (rosterEnabled) {
+            required.push('roster-structure');
+        }
+        const missing = required.filter(sec => state.completedSections.indexOf(sec) === -1);
+        if (missing.length > 0) {
+            return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+        }
+        state.initialized = true;
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleAdminRecovery(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'recovery_required') {
+            return e.json(400, { error: 'Admin recovery is not required' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_a) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupHealth(e) {
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const appUrl = $os.getenv('APP_URL') || '';
+        const hmacSecret = $os.getenv('HMAC_SECRET') || '';
+        const maintenanceSecret = $os.getenv('MAINTENANCE_SECRET') || '';
+        const stripeSecretKey = $os.getenv('STRIPE_SECRET_KEY') || '';
+        const stripeWebhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || '';
+        const environment = {
+            appUrl: !!appUrl,
+            hmacSecret: !!hmacSecret,
+            maintenanceSecret: !!maintenanceSecret,
+            stripeSecretKey: !!stripeSecretKey,
+            stripeWebhookSecret: !!stripeWebhookSecret,
+        };
+        let stripeMode = 'unknown';
+        if (stripeSecretKey) {
+            if (stripeSecretKey.indexOf('sk_test') === 0) {
+                stripeMode = 'test';
+            }
+            else if (stripeSecretKey.indexOf('sk_live') === 0) {
+                stripeMode = 'live';
+            }
+        }
+        return e.json(200, {
+            environment,
+            stripeMode,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleSetupProgress(e);
+});
+routerAdd("POST", "/api/setup/complete", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: setup/setupTypes.ts ---
+    "use strict";
+
+    // --- Utility source: setup/setupState.ts ---
+    "use strict";
+    function getSetupState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+            const value = parseJsonField(record.get('value'));
+            if (value)
+                return value;
+        }
+        catch (_a) {
+            // ignore
+        }
+        return {
+            version: 1,
+            initialized: false,
+            completedSections: [],
+        };
+    }
+    function saveSetupState(app, state) {
+        const collection = app.findCollectionByNameOrId('appSettings');
+        let record;
+        try {
+            record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+        }
+        catch (_a) {
+            record = new Record(collection, {
+                key: 'setup_state',
+                isPublic: false,
+            });
+        }
+        record.set('value', JSON.stringify(state));
+        app.save(record);
+    }
+    function resolveSetupStatus(app) {
+        let adminCount = 0;
+        try {
+            const admins = app.findRecordsByFilter('users', "role = 'admin'", '', 100, 0);
+            adminCount = admins ? admins.length : 0;
+        }
+        catch (_a) {
+            adminCount = 0;
+        }
+        const state = getSetupState(app);
+        if (state.initialized) {
+            if (adminCount === 0) {
+                return {
+                    state: 'recovery_required',
+                    initialized: true,
+                };
+            }
+            return {
+                state: 'initialized',
+                initialized: true,
+            };
+        }
+        if (adminCount === 0) {
+            return {
+                state: 'unclaimed',
+                initialized: false,
+            };
+        }
+        return {
+            state: 'in_progress',
+            initialized: false,
+        };
+    }
+
+    // --- Utility source: setup/setupAuth.ts ---
+    "use strict";
+    function isSetupSuperuser(e) {
+        return !!(e.auth && e.auth.collectionName === '_superusers');
+    }
+    function isSetupAdmin(e) {
+        return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+    }
+
+    // --- Utility source: setup/setupEndpoints.ts ---
+    "use strict";
+    function handleSetupStatus(e) {
+        return e.json(200, resolveSetupStatus($app));
+    }
+    function handleSetupClaim(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        const isPerformer = !!body.isPerformer;
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        // Idempotency check: see if admin user with this email already exists
+        try {
+            const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
+            if (existing && existing.get('role') === 'admin') {
+                return e.json(200, { success: true });
+            }
+        }
+        catch (_a) {
+            // does not exist, safe to proceed
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed') {
+            return e.json(400, { error: 'Application is already claimed' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            // Save setup state progress
+            const state = getSetupState($app);
+            state.initialized = false;
+            state.ownerIsPerformer = isPerformer;
+            if (state.completedSections.indexOf('admin-account') === -1) {
+                state.completedSections.push('admin-account');
+            }
+            saveSetupState($app, state);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_b) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupProgress(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        const body = e.requestInfo().body || {};
+        const completedSections = body.completedSections;
+        if (!Array.isArray(completedSections)) {
+            return e.json(400, { error: 'completedSections must be an array of strings' });
+        }
+        const state = getSetupState($app);
+        state.completedSections = completedSections;
+        if (body.ownerIsPerformer !== undefined) {
+            state.ownerIsPerformer = !!body.ownerIsPerformer;
+        }
+        if (body.ownerVoicePartSet !== undefined) {
+            state.ownerVoicePartSet = !!body.ownerVoicePartSet;
+        }
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleSetupComplete(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        let rosterEnabled = false;
+        try {
+            const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+            const parsed = parseJsonField(record.get('value'));
+            if (parsed && Array.isArray(parsed.enabled)) {
+                rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
+            }
+        }
+        catch (_a) {
+            // Default to roster enabled if no setting exists yet
+            rosterEnabled = true;
+        }
+        const state = getSetupState($app);
+        const required = ['admin-account', 'organization-basics', 'module-selection'];
+        if (rosterEnabled) {
+            required.push('roster-structure');
+        }
+        const missing = required.filter(sec => state.completedSections.indexOf(sec) === -1);
+        if (missing.length > 0) {
+            return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+        }
+        state.initialized = true;
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleAdminRecovery(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'recovery_required') {
+            return e.json(400, { error: 'Admin recovery is not required' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_a) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupHealth(e) {
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const appUrl = $os.getenv('APP_URL') || '';
+        const hmacSecret = $os.getenv('HMAC_SECRET') || '';
+        const maintenanceSecret = $os.getenv('MAINTENANCE_SECRET') || '';
+        const stripeSecretKey = $os.getenv('STRIPE_SECRET_KEY') || '';
+        const stripeWebhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || '';
+        const environment = {
+            appUrl: !!appUrl,
+            hmacSecret: !!hmacSecret,
+            maintenanceSecret: !!maintenanceSecret,
+            stripeSecretKey: !!stripeSecretKey,
+            stripeWebhookSecret: !!stripeWebhookSecret,
+        };
+        let stripeMode = 'unknown';
+        if (stripeSecretKey) {
+            if (stripeSecretKey.indexOf('sk_test') === 0) {
+                stripeMode = 'test';
+            }
+            else if (stripeSecretKey.indexOf('sk_live') === 0) {
+                stripeMode = 'live';
+            }
+        }
+        return e.json(200, {
+            environment,
+            stripeMode,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleSetupComplete(e);
+});
+routerAdd("POST", "/api/setup/recover-admin", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: setup/setupTypes.ts ---
+    "use strict";
+
+    // --- Utility source: setup/setupState.ts ---
+    "use strict";
+    function getSetupState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+            const value = parseJsonField(record.get('value'));
+            if (value)
+                return value;
+        }
+        catch (_a) {
+            // ignore
+        }
+        return {
+            version: 1,
+            initialized: false,
+            completedSections: [],
+        };
+    }
+    function saveSetupState(app, state) {
+        const collection = app.findCollectionByNameOrId('appSettings');
+        let record;
+        try {
+            record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+        }
+        catch (_a) {
+            record = new Record(collection, {
+                key: 'setup_state',
+                isPublic: false,
+            });
+        }
+        record.set('value', JSON.stringify(state));
+        app.save(record);
+    }
+    function resolveSetupStatus(app) {
+        let adminCount = 0;
+        try {
+            const admins = app.findRecordsByFilter('users', "role = 'admin'", '', 100, 0);
+            adminCount = admins ? admins.length : 0;
+        }
+        catch (_a) {
+            adminCount = 0;
+        }
+        const state = getSetupState(app);
+        if (state.initialized) {
+            if (adminCount === 0) {
+                return {
+                    state: 'recovery_required',
+                    initialized: true,
+                };
+            }
+            return {
+                state: 'initialized',
+                initialized: true,
+            };
+        }
+        if (adminCount === 0) {
+            return {
+                state: 'unclaimed',
+                initialized: false,
+            };
+        }
+        return {
+            state: 'in_progress',
+            initialized: false,
+        };
+    }
+
+    // --- Utility source: setup/setupAuth.ts ---
+    "use strict";
+    function isSetupSuperuser(e) {
+        return !!(e.auth && e.auth.collectionName === '_superusers');
+    }
+    function isSetupAdmin(e) {
+        return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+    }
+
+    // --- Utility source: setup/setupEndpoints.ts ---
+    "use strict";
+    function handleSetupStatus(e) {
+        return e.json(200, resolveSetupStatus($app));
+    }
+    function handleSetupClaim(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        const isPerformer = !!body.isPerformer;
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        // Idempotency check: see if admin user with this email already exists
+        try {
+            const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
+            if (existing && existing.get('role') === 'admin') {
+                return e.json(200, { success: true });
+            }
+        }
+        catch (_a) {
+            // does not exist, safe to proceed
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed') {
+            return e.json(400, { error: 'Application is already claimed' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            // Save setup state progress
+            const state = getSetupState($app);
+            state.initialized = false;
+            state.ownerIsPerformer = isPerformer;
+            if (state.completedSections.indexOf('admin-account') === -1) {
+                state.completedSections.push('admin-account');
+            }
+            saveSetupState($app, state);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_b) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupProgress(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        const body = e.requestInfo().body || {};
+        const completedSections = body.completedSections;
+        if (!Array.isArray(completedSections)) {
+            return e.json(400, { error: 'completedSections must be an array of strings' });
+        }
+        const state = getSetupState($app);
+        state.completedSections = completedSections;
+        if (body.ownerIsPerformer !== undefined) {
+            state.ownerIsPerformer = !!body.ownerIsPerformer;
+        }
+        if (body.ownerVoicePartSet !== undefined) {
+            state.ownerVoicePartSet = !!body.ownerVoicePartSet;
+        }
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleSetupComplete(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        let rosterEnabled = false;
+        try {
+            const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+            const parsed = parseJsonField(record.get('value'));
+            if (parsed && Array.isArray(parsed.enabled)) {
+                rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
+            }
+        }
+        catch (_a) {
+            // Default to roster enabled if no setting exists yet
+            rosterEnabled = true;
+        }
+        const state = getSetupState($app);
+        const required = ['admin-account', 'organization-basics', 'module-selection'];
+        if (rosterEnabled) {
+            required.push('roster-structure');
+        }
+        const missing = required.filter(sec => state.completedSections.indexOf(sec) === -1);
+        if (missing.length > 0) {
+            return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+        }
+        state.initialized = true;
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleAdminRecovery(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'recovery_required') {
+            return e.json(400, { error: 'Admin recovery is not required' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_a) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupHealth(e) {
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const appUrl = $os.getenv('APP_URL') || '';
+        const hmacSecret = $os.getenv('HMAC_SECRET') || '';
+        const maintenanceSecret = $os.getenv('MAINTENANCE_SECRET') || '';
+        const stripeSecretKey = $os.getenv('STRIPE_SECRET_KEY') || '';
+        const stripeWebhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || '';
+        const environment = {
+            appUrl: !!appUrl,
+            hmacSecret: !!hmacSecret,
+            maintenanceSecret: !!maintenanceSecret,
+            stripeSecretKey: !!stripeSecretKey,
+            stripeWebhookSecret: !!stripeWebhookSecret,
+        };
+        let stripeMode = 'unknown';
+        if (stripeSecretKey) {
+            if (stripeSecretKey.indexOf('sk_test') === 0) {
+                stripeMode = 'test';
+            }
+            else if (stripeSecretKey.indexOf('sk_live') === 0) {
+                stripeMode = 'live';
+            }
+        }
+        return e.json(200, {
+            environment,
+            stripeMode,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleAdminRecovery(e);
+});
+routerAdd("GET", "/api/setup/health", (e) => {
+    // --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---
+    // --- Utility source: email/hookJson.ts ---
+    "use strict";
+    const decodeGoBytes = (val) => {
+        if (!val)
+            return "";
+        if (typeof val === 'string')
+            return val;
+        if (typeof val === 'object') {
+            if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'number') {
+                try {
+                    let str = "";
+                    for (let i = 0; i < val.length; i++) {
+                        str += String.fromCharCode(val[i]);
+                    }
+                    return str;
+                }
+                catch (_a) {
+                    // Ignore decoding errors
+                }
+            }
+            return val;
+        }
+        return String(val);
+    };
+    function parseJsonField(val) {
+        if (!val)
+            return null;
+        const decoded = decodeGoBytes(val);
+        if (!decoded)
+            return null;
+        if (typeof decoded === 'object')
+            return decoded;
+        try {
+            return JSON.parse(decoded);
+        }
+        catch (_a) {
+            return null;
+        }
+    }
+
+    // --- Utility source: setup/setupTypes.ts ---
+    "use strict";
+
+    // --- Utility source: setup/setupState.ts ---
+    "use strict";
+    function getSetupState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+            const value = parseJsonField(record.get('value'));
+            if (value)
+                return value;
+        }
+        catch (_a) {
+            // ignore
+        }
+        return {
+            version: 1,
+            initialized: false,
+            completedSections: [],
+        };
+    }
+    function saveSetupState(app, state) {
+        const collection = app.findCollectionByNameOrId('appSettings');
+        let record;
+        try {
+            record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+        }
+        catch (_a) {
+            record = new Record(collection, {
+                key: 'setup_state',
+                isPublic: false,
+            });
+        }
+        record.set('value', JSON.stringify(state));
+        app.save(record);
+    }
+    function resolveSetupStatus(app) {
+        let adminCount = 0;
+        try {
+            const admins = app.findRecordsByFilter('users', "role = 'admin'", '', 100, 0);
+            adminCount = admins ? admins.length : 0;
+        }
+        catch (_a) {
+            adminCount = 0;
+        }
+        const state = getSetupState(app);
+        if (state.initialized) {
+            if (adminCount === 0) {
+                return {
+                    state: 'recovery_required',
+                    initialized: true,
+                };
+            }
+            return {
+                state: 'initialized',
+                initialized: true,
+            };
+        }
+        if (adminCount === 0) {
+            return {
+                state: 'unclaimed',
+                initialized: false,
+            };
+        }
+        return {
+            state: 'in_progress',
+            initialized: false,
+        };
+    }
+
+    // --- Utility source: setup/setupAuth.ts ---
+    "use strict";
+    function isSetupSuperuser(e) {
+        return !!(e.auth && e.auth.collectionName === '_superusers');
+    }
+    function isSetupAdmin(e) {
+        return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+    }
+
+    // --- Utility source: setup/setupEndpoints.ts ---
+    "use strict";
+    function handleSetupStatus(e) {
+        return e.json(200, resolveSetupStatus($app));
+    }
+    function handleSetupClaim(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        const isPerformer = !!body.isPerformer;
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        // Idempotency check: see if admin user with this email already exists
+        try {
+            const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
+            if (existing && existing.get('role') === 'admin') {
+                return e.json(200, { success: true });
+            }
+        }
+        catch (_a) {
+            // does not exist, safe to proceed
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed') {
+            return e.json(400, { error: 'Application is already claimed' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            // Save setup state progress
+            const state = getSetupState($app);
+            state.initialized = false;
+            state.ownerIsPerformer = isPerformer;
+            if (state.completedSections.indexOf('admin-account') === -1) {
+                state.completedSections.push('admin-account');
+            }
+            saveSetupState($app, state);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_b) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupProgress(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        const body = e.requestInfo().body || {};
+        const completedSections = body.completedSections;
+        if (!Array.isArray(completedSections)) {
+            return e.json(400, { error: 'completedSections must be an array of strings' });
+        }
+        const state = getSetupState($app);
+        state.completedSections = completedSections;
+        if (body.ownerIsPerformer !== undefined) {
+            state.ownerIsPerformer = !!body.ownerIsPerformer;
+        }
+        if (body.ownerVoicePartSet !== undefined) {
+            state.ownerVoicePartSet = !!body.ownerVoicePartSet;
+        }
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleSetupComplete(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        let rosterEnabled = false;
+        try {
+            const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+            const parsed = parseJsonField(record.get('value'));
+            if (parsed && Array.isArray(parsed.enabled)) {
+                rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
+            }
+        }
+        catch (_a) {
+            // Default to roster enabled if no setting exists yet
+            rosterEnabled = true;
+        }
+        const state = getSetupState($app);
+        const required = ['admin-account', 'organization-basics', 'module-selection'];
+        if (rosterEnabled) {
+            required.push('roster-structure');
+        }
+        const missing = required.filter(sec => state.completedSections.indexOf(sec) === -1);
+        if (missing.length > 0) {
+            return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+        }
+        state.initialized = true;
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleAdminRecovery(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'recovery_required') {
+            return e.json(400, { error: 'Admin recovery is not required' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_a) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupHealth(e) {
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const appUrl = $os.getenv('APP_URL') || '';
+        const hmacSecret = $os.getenv('HMAC_SECRET') || '';
+        const maintenanceSecret = $os.getenv('MAINTENANCE_SECRET') || '';
+        const stripeSecretKey = $os.getenv('STRIPE_SECRET_KEY') || '';
+        const stripeWebhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || '';
+        const environment = {
+            appUrl: !!appUrl,
+            hmacSecret: !!hmacSecret,
+            maintenanceSecret: !!maintenanceSecret,
+            stripeSecretKey: !!stripeSecretKey,
+            stripeWebhookSecret: !!stripeWebhookSecret,
+        };
+        let stripeMode = 'unknown';
+        if (stripeSecretKey) {
+            if (stripeSecretKey.indexOf('sk_test') === 0) {
+                stripeMode = 'test';
+            }
+            else if (stripeSecretKey.indexOf('sk_live') === 0) {
+                stripeMode = 'live';
+            }
+        }
+        return e.json(200, {
+            environment,
+            stripeMode,
+        });
+    }
+    // --- END CALLBACK-LOCAL UTILITIES ---
+
+    return handleSetupHealth(e);
+});
+
 "use strict";
 function verifyEventRecipientToken(token) {
     const parts = parseSignedToken(token, ['e', 'p', 's']);
@@ -10789,6 +12812,298 @@ routerAdd("POST", "/api/queue/process", (e) => {
         if (totalClaimed >= EMAIL_QUEUE_BATCH_SIZE * EMAIL_QUEUE_MAX_BATCHES_PER_INVOCATION) {
             console.log('[Email Queue] Max batches reached; additional pending records will continue in the next invocation.');
         }
+    }
+
+    // --- Utility source: setup/setupTypes.ts ---
+    "use strict";
+
+    // --- Utility source: setup/setupState.ts ---
+    "use strict";
+    function getSetupState(app) {
+        try {
+            const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+            const value = parseJsonField(record.get('value'));
+            if (value)
+                return value;
+        }
+        catch (_a) {
+            // ignore
+        }
+        return {
+            version: 1,
+            initialized: false,
+            completedSections: [],
+        };
+    }
+    function saveSetupState(app, state) {
+        const collection = app.findCollectionByNameOrId('appSettings');
+        let record;
+        try {
+            record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
+        }
+        catch (_a) {
+            record = new Record(collection, {
+                key: 'setup_state',
+                isPublic: false,
+            });
+        }
+        record.set('value', JSON.stringify(state));
+        app.save(record);
+    }
+    function resolveSetupStatus(app) {
+        let adminCount = 0;
+        try {
+            const admins = app.findRecordsByFilter('users', "role = 'admin'", '', 100, 0);
+            adminCount = admins ? admins.length : 0;
+        }
+        catch (_a) {
+            adminCount = 0;
+        }
+        const state = getSetupState(app);
+        if (state.initialized) {
+            if (adminCount === 0) {
+                return {
+                    state: 'recovery_required',
+                    initialized: true,
+                };
+            }
+            return {
+                state: 'initialized',
+                initialized: true,
+            };
+        }
+        if (adminCount === 0) {
+            return {
+                state: 'unclaimed',
+                initialized: false,
+            };
+        }
+        return {
+            state: 'in_progress',
+            initialized: false,
+        };
+    }
+
+    // --- Utility source: setup/setupAuth.ts ---
+    "use strict";
+    function isSetupSuperuser(e) {
+        return !!(e.auth && e.auth.collectionName === '_superusers');
+    }
+    function isSetupAdmin(e) {
+        return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+    }
+
+    // --- Utility source: setup/setupEndpoints.ts ---
+    "use strict";
+    function handleSetupStatus(e) {
+        return e.json(200, resolveSetupStatus($app));
+    }
+    function handleSetupClaim(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        const isPerformer = !!body.isPerformer;
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        // Idempotency check: see if admin user with this email already exists
+        try {
+            const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
+            if (existing && existing.get('role') === 'admin') {
+                return e.json(200, { success: true });
+            }
+        }
+        catch (_a) {
+            // does not exist, safe to proceed
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed') {
+            return e.json(400, { error: 'Application is already claimed' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            // Save setup state progress
+            const state = getSetupState($app);
+            state.initialized = false;
+            state.ownerIsPerformer = isPerformer;
+            if (state.completedSections.indexOf('admin-account') === -1) {
+                state.completedSections.push('admin-account');
+            }
+            saveSetupState($app, state);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_b) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupProgress(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        const body = e.requestInfo().body || {};
+        const completedSections = body.completedSections;
+        if (!Array.isArray(completedSections)) {
+            return e.json(400, { error: 'completedSections must be an array of strings' });
+        }
+        const state = getSetupState($app);
+        state.completedSections = completedSections;
+        if (body.ownerIsPerformer !== undefined) {
+            state.ownerIsPerformer = !!body.ownerIsPerformer;
+        }
+        if (body.ownerVoicePartSet !== undefined) {
+            state.ownerVoicePartSet = !!body.ownerVoicePartSet;
+        }
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleSetupComplete(e) {
+        if (!isSetupAdmin(e)) {
+            return e.json(403, { error: 'Forbidden: Administrators only' });
+        }
+        let rosterEnabled = false;
+        try {
+            const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+            const parsed = parseJsonField(record.get('value'));
+            if (parsed && Array.isArray(parsed.enabled)) {
+                rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
+            }
+        }
+        catch (_a) {
+            // Default to roster enabled if no setting exists yet
+            rosterEnabled = true;
+        }
+        const state = getSetupState($app);
+        const required = ['admin-account', 'organization-basics', 'module-selection'];
+        if (rosterEnabled) {
+            required.push('roster-structure');
+        }
+        const missing = required.filter(sec => state.completedSections.indexOf(sec) === -1);
+        if (missing.length > 0) {
+            return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+        }
+        state.initialized = true;
+        saveSetupState($app, state);
+        return e.json(200, { success: true });
+    }
+    function handleAdminRecovery(e) {
+        if (!isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden: Superusers only' });
+        }
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'recovery_required') {
+            return e.json(400, { error: 'Admin recovery is not required' });
+        }
+        const body = e.requestInfo().body || {};
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+        const passwordConfirm = body.passwordConfirm || '';
+        const name = (body.name || '').trim();
+        if (!email || !password || !passwordConfirm || !name) {
+            return e.json(400, { error: 'Missing required fields' });
+        }
+        if (password !== passwordConfirm) {
+            return e.json(400, { error: 'Passwords do not match' });
+        }
+        let userRec = null;
+        try {
+            const usersColl = $app.findCollectionByNameOrId('users');
+            userRec = new Record(usersColl, {
+                email,
+                emailVisibility: true,
+                verified: true,
+                password,
+                passwordConfirm,
+                role: 'admin',
+            });
+            $app.save(userRec);
+            const profilesColl = $app.findCollectionByNameOrId('profiles');
+            const profileRec = new Record(profilesColl, {
+                user: userRec.id,
+                name,
+                globalStatus: 'Active (Current)',
+                voicePart: '',
+                receiveAttendanceReports: true,
+            });
+            $app.save(profileRec);
+            return e.json(200, { success: true });
+        }
+        catch (err) {
+            if (userRec) {
+                try {
+                    $app.delete(userRec);
+                }
+                catch (_a) {
+                    // ignore
+                }
+            }
+            return e.json(400, { error: err.message || String(err) });
+        }
+    }
+    function handleSetupHealth(e) {
+        const status = resolveSetupStatus($app);
+        if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
+            return e.json(403, { error: 'Forbidden' });
+        }
+        const appUrl = $os.getenv('APP_URL') || '';
+        const hmacSecret = $os.getenv('HMAC_SECRET') || '';
+        const maintenanceSecret = $os.getenv('MAINTENANCE_SECRET') || '';
+        const stripeSecretKey = $os.getenv('STRIPE_SECRET_KEY') || '';
+        const stripeWebhookSecret = $os.getenv('STRIPE_WEBHOOK_SECRET') || '';
+        const environment = {
+            appUrl: !!appUrl,
+            hmacSecret: !!hmacSecret,
+            maintenanceSecret: !!maintenanceSecret,
+            stripeSecretKey: !!stripeSecretKey,
+            stripeWebhookSecret: !!stripeWebhookSecret,
+        };
+        let stripeMode = 'unknown';
+        if (stripeSecretKey) {
+            if (stripeSecretKey.indexOf('sk_test') === 0) {
+                stripeMode = 'test';
+            }
+            else if (stripeSecretKey.indexOf('sk_live') === 0) {
+                stripeMode = 'live';
+            }
+        }
+        return e.json(200, {
+            environment,
+            stripeMode,
+        });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
 

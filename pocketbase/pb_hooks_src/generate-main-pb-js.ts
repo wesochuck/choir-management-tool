@@ -30,7 +30,8 @@ export type UtilityBundleName =
   | 'ticketScanValidation'
   | 'financialNotifications'
   | 'maintenance'
-  | 'brevoAdapter';
+  | 'brevoAdapter'
+  | 'setup';
 
 export type UtilityBundle = {
   files: string[];
@@ -253,6 +254,28 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'emailRendering',
       'hookPlaceholders',
     ],
+  },
+  setup: {
+    files: [
+      'setup/setupTypes.ts',
+      'setup/setupState.ts',
+      'setup/setupAuth.ts',
+      'setup/setupEndpoints.ts',
+    ],
+    symbols: [
+      'resolveSetupStatus',
+      'getSetupState',
+      'saveSetupState',
+      'isSuperuser',
+      'isAdmin',
+      'handleSetupStatus',
+      'handleSetupClaim',
+      'handleSetupProgress',
+      'handleSetupComplete',
+      'handleAdminRecovery',
+      'handleSetupHealth',
+    ],
+    dependsOn: ['hookJson'],
   },
 };
 
@@ -1032,6 +1055,13 @@ ${renderRecordHook('onRecordAfterCreateSuccess', 'auditions', auditionCreateHook
 ${renderRecordHook('onRecordAfterUpdateSuccess', 'auditions', auditionUpdateHookBody)}
 
 // --- CUSTOM ENDPOINTS ---
+
+${renderRoute('GET', '/api/setup/status', 'return handleSetupStatus(e);')}
+${renderRoute('POST', '/api/setup/claim', 'return handleSetupClaim(e);')}
+${renderRoute('POST', '/api/setup/progress', 'return handleSetupProgress(e);')}
+${renderRoute('POST', '/api/setup/complete', 'return handleSetupComplete(e);')}
+${renderRoute('POST', '/api/setup/recover-admin', 'return handleAdminRecovery(e);')}
+${renderRoute('GET', '/api/setup/health', 'return handleSetupHealth(e);')}
 
 ${buildRsvpRoutes()}
 
