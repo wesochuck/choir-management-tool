@@ -1,6 +1,8 @@
 import { parseJsonField } from '../email/hookJson';
 import type { PersistedSetupState, PublicSetupStatus } from './setupTypes';
 
+declare const Record: any;
+
 export function getSetupState(app: any): PersistedSetupState {
   try {
     const record = app.findFirstRecordByFilter('appSettings', "key = 'setup_state'");
@@ -47,11 +49,17 @@ export function resolveSetupStatus(app: any): PublicSetupStatus {
       return {
         state: 'recovery_required',
         initialized: true,
+        completedSections: state.completedSections,
+        ownerIsPerformer: state.ownerIsPerformer,
+        ownerVoicePartSet: state.ownerVoicePartSet,
       };
     }
     return {
       state: 'initialized',
       initialized: true,
+      completedSections: state.completedSections,
+      ownerIsPerformer: state.ownerIsPerformer,
+      ownerVoicePartSet: state.ownerVoicePartSet,
     };
   }
 
@@ -59,11 +67,17 @@ export function resolveSetupStatus(app: any): PublicSetupStatus {
     return {
       state: 'unclaimed',
       initialized: false,
+      completedSections: state.completedSections,
+      ownerIsPerformer: state.ownerIsPerformer,
+      ownerVoicePartSet: state.ownerVoicePartSet,
     };
   }
 
   return {
     state: 'in_progress',
     initialized: false,
+    completedSections: state.completedSections,
+    ownerIsPerformer: state.ownerIsPerformer,
+    ownerVoicePartSet: state.ownerVoicePartSet,
   };
 }

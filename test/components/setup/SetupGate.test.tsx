@@ -51,6 +51,9 @@ describe('SetupGate', () => {
     mock.method(setupService, 'getStatus', async () => ({
       state: 'unclaimed',
       initialized: false,
+      completedSections: [],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     }));
     mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
 
@@ -78,6 +81,9 @@ describe('SetupGate', () => {
     mock.method(setupService, 'getStatus', async () => ({
       state: 'initialized',
       initialized: true,
+      completedSections: ['legacy-install'],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     }));
     mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
 

@@ -5,6 +5,9 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SetupProvider } from '../src/contexts/SetupContext';
+import { AuthProvider } from '../src/contexts/AuthContext';
+import { ChoirNameProvider } from '../src/hooks/useDocumentTitle';
+import { DialogProvider } from '../src/contexts/DialogProvider';
 import App from '../src/App';
 import { setupService } from '../src/services/setupService';
 import * as moduleService from '../src/services/moduleService';
@@ -33,6 +36,9 @@ describe('App setup routing seal', () => {
     mock.method(setupService, 'getStatus', async () => ({
       state: 'in_progress',
       initialized: false,
+      completedSections: [],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     }));
     mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
 
@@ -50,7 +56,13 @@ describe('App setup routing seal', () => {
     render(
       <QueryClientProvider client={createQueryClient()}>
         <SetupProvider>
-          <App />
+          <AuthProvider>
+            <ChoirNameProvider>
+              <DialogProvider>
+                <App />
+              </DialogProvider>
+            </ChoirNameProvider>
+          </AuthProvider>
         </SetupProvider>
       </QueryClientProvider>
     );
@@ -64,6 +76,9 @@ describe('App setup routing seal', () => {
     mock.method(setupService, 'getStatus', async () => ({
       state: 'initialized',
       initialized: true,
+      completedSections: ['legacy-install'],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     }));
     mock.method(moduleService, 'getModuleState', async () => ({
       version: 1,
@@ -84,7 +99,13 @@ describe('App setup routing seal', () => {
     render(
       <QueryClientProvider client={createQueryClient()}>
         <SetupProvider>
-          <App />
+          <AuthProvider>
+            <ChoirNameProvider>
+              <DialogProvider>
+                <App />
+              </DialogProvider>
+            </ChoirNameProvider>
+          </AuthProvider>
         </SetupProvider>
       </QueryClientProvider>
     );

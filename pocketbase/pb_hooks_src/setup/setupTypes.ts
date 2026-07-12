@@ -4,9 +4,14 @@ export interface PersistedSetupState {
   version: 1;
   initialized: boolean;
   completedSections: string[];
+  ownerIsPerformer?: boolean;
+  ownerVoicePartSet?: boolean;
 }
 
 export interface PublicSetupStatus {
   state: SetupStatusName;
   initialized: boolean;
+  completedSections: string[];
+  ownerIsPerformer?: boolean;
+  ownerVoicePartSet?: boolean;
 }

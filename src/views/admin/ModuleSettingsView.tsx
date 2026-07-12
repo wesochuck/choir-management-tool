@@ -1,4 +1,3 @@
-import React from 'react';
 import { useSetup } from '../../contexts/SetupContext';
 import { ModuleSelectionStep } from '../setup/steps/ModuleSelectionStep';
 import { PageLayout } from '../../components/common/PageLayout';

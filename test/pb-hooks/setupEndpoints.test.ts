@@ -30,7 +30,7 @@ class MockRecord {
   }
 }
 
-globalThis.Record = MockRecord as any;
+(globalThis as any).Record = MockRecord;
 
 import {
   handleSetupStatus,
@@ -50,7 +50,7 @@ const mockOs = {
     return envMap[key] || '';
   },
 };
-globalThis.$os = mockOs as any;
+(globalThis as any).$os = mockOs;
 
 let dbSettingsRecord: any = null;
 let dbUsers: any[] = [];
@@ -108,7 +108,7 @@ const mockApp = {
   },
 };
 
-globalThis.$app = mockApp as any;
+(globalThis as any).$app = mockApp;
 
 function makeEvent(opts: {
   auth?: { collectionName: string; role?: string; id?: string };
@@ -161,6 +161,9 @@ describe('setupEndpoints', () => {
       assert.deepStrictEqual(result.body, {
         state: 'unclaimed',
         initialized: false,
+        completedSections: [],
+        ownerIsPerformer: undefined,
+        ownerVoicePartSet: undefined,
       });
     });
   });

@@ -105,22 +105,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -466,22 +478,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -827,22 +851,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -1188,22 +1224,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -1549,22 +1597,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -1910,22 +1970,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -2271,22 +2343,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -2632,22 +2716,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -2993,22 +3089,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -3354,22 +3462,34 @@ onRecordBeforeCreateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -3715,22 +3835,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -4076,22 +4208,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -4437,22 +4581,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -4798,22 +4954,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -5159,22 +5327,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -5520,22 +5700,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -5881,22 +6073,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -6242,22 +6446,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -6603,22 +6819,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -6964,22 +7192,34 @@ onRecordBeforeUpdateRequest((e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -12590,22 +12830,34 @@ routerAdd("GET", "/api/setup/status", (e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -12948,22 +13200,34 @@ routerAdd("POST", "/api/setup/claim", (e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -13306,22 +13570,34 @@ routerAdd("POST", "/api/setup/progress", (e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -13664,22 +13940,34 @@ routerAdd("POST", "/api/setup/complete", (e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -14022,22 +14310,34 @@ routerAdd("POST", "/api/setup/recover-admin", (e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 
@@ -14380,22 +14680,34 @@ routerAdd("GET", "/api/setup/health", (e) => {
                 return {
                     state: 'recovery_required',
                     initialized: true,
+                    completedSections: state.completedSections,
+                    ownerIsPerformer: state.ownerIsPerformer,
+                    ownerVoicePartSet: state.ownerVoicePartSet,
                 };
             }
             return {
                 state: 'initialized',
                 initialized: true,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         if (adminCount === 0) {
             return {
                 state: 'unclaimed',
                 initialized: false,
+                completedSections: state.completedSections,
+                ownerIsPerformer: state.ownerIsPerformer,
+                ownerVoicePartSet: state.ownerVoicePartSet,
             };
         }
         return {
             state: 'in_progress',
             initialized: false,
+            completedSections: state.completedSections,
+            ownerIsPerformer: state.ownerIsPerformer,
+            ownerVoicePartSet: state.ownerVoicePartSet,
         };
     }
 

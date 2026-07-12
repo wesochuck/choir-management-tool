@@ -30,7 +30,7 @@ class MockRecord {
   }
 }
 
-globalThis.Record = MockRecord as any;
+(globalThis as any).Record = MockRecord;
 
 import {
   resolveSetupStatus,
@@ -94,6 +94,9 @@ describe('setupState', () => {
     assert.deepStrictEqual(resolveSetupStatus(app), {
       state: 'unclaimed',
       initialized: false,
+      completedSections: [],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     });
   });
 
@@ -102,6 +105,9 @@ describe('setupState', () => {
     assert.deepStrictEqual(resolveSetupStatus(app), {
       state: 'in_progress',
       initialized: false,
+      completedSections: [],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     });
   });
 
@@ -110,6 +116,9 @@ describe('setupState', () => {
     assert.deepStrictEqual(resolveSetupStatus(app), {
       state: 'initialized',
       initialized: true,
+      completedSections: ['legacy-install'],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     });
   });
 
@@ -118,6 +127,9 @@ describe('setupState', () => {
     assert.deepStrictEqual(resolveSetupStatus(app), {
       state: 'recovery_required',
       initialized: true,
+      completedSections: ['legacy-install'],
+      ownerIsPerformer: undefined,
+      ownerVoicePartSet: undefined,
     });
   });
 
