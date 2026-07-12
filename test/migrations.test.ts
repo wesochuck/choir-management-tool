@@ -65,6 +65,8 @@ function readMigration(filename: string): string {
   );
 }
 
+import { MODULE_IDS } from '../src/lib/modules';
+
 test('first-run migration backfills existing installs without changing schemas', () => {
   const migration = readMigration('1783814400_add_setup_and_modules.js');
   assert.match(migration, /key:\s*['"]setup_state['"]/);
@@ -72,4 +74,9 @@ test('first-run migration backfills existing installs without changing schemas',
   assert.match(migration, /role = ['"]admin['"]/);
   assert.match(migration, /initialized:\s*hasAdmin/);
   assert.doesNotMatch(migration, /save\(collection\)|new Collection/);
+
+  for (const id of MODULE_IDS) {
+    const regex = new RegExp(`['"]${id}['"]`);
+    assert.match(migration, regex, `Migration should enable module ${id}`);
+  }
 });
