@@ -266,8 +266,10 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'resolveSetupStatus',
       'getSetupState',
       'saveSetupState',
-      'isSuperuser',
-      'isAdmin',
+      'isSetupSuperuser',
+      'isSetupAdmin',
+      'isBackendModuleEnabled',
+      'guardBackendModule',
       'handleSetupStatus',
       'handleSetupClaim',
       'handleSetupProgress',
@@ -1031,6 +1033,43 @@ if (provider === 'brevo') {
 }
 `;
 
+  const collectionModuleGuards: Record<string, string> = {
+    eventRosters: 'rsvps',
+    donations: 'donations',
+    ticketPurchases: 'ticketSales',
+    ticketBundles: 'ticketSales',
+    musicPieces: 'musicLibrary',
+    resources: 'resources',
+    auditions: 'auditions',
+    polls: 'polls',
+    messages: 'communications',
+    seatingProfiles: 'seating',
+  };
+
+  const beforeCreateHooks = Object.entries(collectionModuleGuards)
+    .map(([collection, module]) => {
+      const body = `
+if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
+    throw new BadRequestError("Forbidden: Module ${module} is disabled");
+}`;
+      return renderRecordHook('onRecordBeforeCreateRequest', collection, body, {
+        forceBundles: ['setup'],
+      });
+    })
+    .join('\n\n');
+
+  const beforeUpdateHooks = Object.entries(collectionModuleGuards)
+    .map(([collection, module]) => {
+      const body = `
+if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
+    throw new BadRequestError("Forbidden: Module ${module} is disabled");
+}`;
+      return renderRecordHook('onRecordBeforeUpdateRequest', collection, body, {
+        forceBundles: ['setup'],
+      });
+    })
+    .join('\n\n');
+
   const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
 // Source: pocketbase/pb_hooks_src/
@@ -1045,6 +1084,10 @@ if (typeof process === 'undefined') {
 }
 
 // --- RECORD HOOKS ---
+
+${beforeCreateHooks}
+
+${beforeUpdateHooks}
 
 ${renderRecordHook('onRecordAfterCreateSuccess', 'messages', createHookBody)}
 

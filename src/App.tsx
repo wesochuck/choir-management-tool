@@ -84,6 +84,7 @@ const PatronsView = lazyWithReload(() => import('./views/admin/PatronsView'));
 const TicketScanView = lazyWithReload(() => import('./views/admin/TicketScanView'));
 const SetupView = lazyWithReload(() => import('./views/setup/SetupView'));
 const ModuleSettingsView = lazyWithReload(() => import('./views/admin/ModuleSettingsView'));
+const SetupChecklistView = lazyWithReload(() => import('./views/admin/SetupChecklistView'));
 
 const AppLoader = () => (
   <div className="bg-bg flex h-screen w-screen flex-col items-center justify-center gap-4">
@@ -510,6 +511,15 @@ export default function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <ModuleSettingsView />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin/settings/setup-checklist"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <SetupChecklistView />
                   </ProtectedRoute>
                 }
               />

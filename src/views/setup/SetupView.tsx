@@ -6,6 +6,7 @@ import { AdminRecoveryStep } from './steps/AdminRecoveryStep';
 import { OrganizationBasicsStep } from './steps/OrganizationBasicsStep';
 import { RosterStructureStep } from './steps/RosterStructureStep';
 import { ModuleSelectionStep } from './steps/ModuleSelectionStep';
+import { ReviewStep } from './steps/ReviewStep';
 import { SetupNavigation } from '../../components/setup/SetupNavigation';
 import { useDialog } from '../../contexts/DialogContext';
 import { setupService } from '../../services/setupService';
@@ -67,6 +68,8 @@ const SetupView: React.FC = () => {
   if (rosterEnabled) {
     steps.push({ id: 'roster', label: 'Roster Structure', section: 'roster-structure' });
   }
+
+  steps.push({ id: 'review', label: 'Review', section: 'review' });
 
   const completed = status.completedSections || [];
 
@@ -197,8 +200,13 @@ const SetupView: React.FC = () => {
                     />
                   )}
 
-                  {activeStepIdx === 3 && (
+                  {activeStepIdx === 3 && rosterEnabled && (
                     <RosterStructureStep refreshStatus={refreshStatus} onSuccess={refreshStatus} />
+                  )}
+
+                  {((activeStepIdx === 3 && !rosterEnabled) ||
+                    (activeStepIdx === 4 && rosterEnabled)) && (
+                    <ReviewStep refreshStatus={refreshStatus} onSuccess={refreshStatus} />
                   )}
                 </>
               )}
