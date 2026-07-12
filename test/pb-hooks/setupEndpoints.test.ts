@@ -9,6 +9,10 @@ interface MockRecordInfo {
   get(field: string): unknown;
 }
 
+interface MockHttp {
+  send(): { statusCode: number; headers: Record<string, string>; raw: string };
+}
+
 let mockRecordInstances: MockRecordInfo[] = [];
 
 class MockRecord {
@@ -30,7 +34,7 @@ class MockRecord {
   }
 }
 
-(globalThis as any).Record = MockRecord;
+(globalThis as unknown as { Record: typeof MockRecord }).Record = MockRecord;
 
 import {
   handleSetupStatus,
@@ -50,13 +54,15 @@ const mockOs = {
     return envMap[key] || '';
   },
 };
-(globalThis as any).$os = mockOs;
+(globalThis as unknown as { $os: typeof mockOs }).$os = mockOs;
 
-let dbSettingsRecord: any = null;
-let dbUsers: any[] = [];
-let dbProfiles: any[] = [];
-let savedRecords: any[] = [];
-let deletedRecords: any[] = [];
+let dbSettingsRecord: MockRecord | null = null;
+let dbUsers: MockRecord[] = [];
+let dbProfiles: MockRecord[] = [];
+let dbChoirNameRecord: MockRecord | null = null;
+let dbVoicePartsRecord: MockRecord | null = null;
+let savedRecords: MockRecord[] = [];
+let deletedRecords: MockRecord[] = [];
 
 const mockApp = {
   runInTransaction(callback: () => void) {
@@ -65,7 +71,7 @@ const mockApp = {
   findCollectionByNameOrId(name: string) {
     return { name };
   },
-  findFirstRecordByFilter(coll: string, filter: string, params?: any) {
+  findFirstRecordByFilter(coll: string, filter: string, params: Record<string, unknown> = {}) {
     if (coll === 'appSettings' && filter.includes('setup_state')) {
       if (!dbSettingsRecord) throw new Error('not found');
       return dbSettingsRecord;
@@ -78,6 +84,19 @@ const mockApp = {
           value: JSON.stringify({ enabled: ['roster', 'events'] }),
         }
       );
+    }
+    if (coll === 'appSettings' && filter.includes('choir_name')) {
+      if (!dbChoirNameRecord) throw new Error('not found');
+      return dbChoirNameRecord;
+    }
+    if (coll === 'appSettings' && filter.includes('voiceParts')) {
+      if (!dbVoicePartsRecord) throw new Error('not found');
+      return dbVoicePartsRecord;
+    }
+    if (coll === 'profiles' && filter.includes('user = {:userId}')) {
+      const found = dbProfiles.find((profile) => profile.get('user') === params.userId);
+      if (!found) throw new Error('not found');
+      return found;
     }
     if (coll === 'users' && filter.includes('email = {:email}')) {
       const email = params.email;
@@ -93,14 +112,14 @@ const mockApp = {
     }
     return [];
   },
-  save(rec: any) {
+  save(rec: MockRecord) {
     savedRecords.push(rec);
     if (rec.get('key') === 'setup_state') {
       dbSettingsRecord = rec;
     }
     return true;
   },
-  delete(rec: any) {
+  delete(rec: MockRecord) {
     deletedRecords.push(rec);
     if (rec.get('key') === 'setup_state') {
       dbSettingsRecord = null;
@@ -111,13 +130,13 @@ const mockApp = {
   },
 };
 
-(globalThis as any).$app = mockApp;
+(globalThis as unknown as { $app: typeof mockApp }).$app = mockApp;
 
 function makeEvent(opts: {
   auth?: { collectionName: string; role?: string; id?: string };
-  body?: any;
-  query?: any;
-  headers?: any;
+  body?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  headers?: Record<string, string>;
 }) {
   const requestInfoValue = {
     body: opts.body || {},
@@ -139,7 +158,7 @@ function makeEvent(opts: {
     requestInfo() {
       return requestInfoValue;
     },
-    json(status: number, body: any) {
+    json(status: number, body: unknown) {
       return { status, body };
     },
   };
@@ -152,6 +171,8 @@ describe('setupEndpoints', () => {
     dbSettingsRecord = null;
     dbUsers = [];
     dbProfiles = [];
+    dbChoirNameRecord = null;
+    dbVoicePartsRecord = null;
     savedRecords = [];
     deletedRecords = [];
     mockRecordInstances = [];
@@ -202,7 +223,7 @@ describe('setupEndpoints', () => {
       });
 
       // Mock save to push newly created Record to dbUsers/dbProfiles
-      mock.method(mockApp, 'save', (rec: any) => {
+      mock.method(mockApp, 'save', (rec: MockRecord) => {
         savedRecords.push(rec);
         if (rec.get('email')) {
           dbUsers.push(rec);
@@ -289,6 +310,32 @@ describe('setupEndpoints', () => {
   });
 
   describe('handleSetupComplete', () => {
+    it('rejects fabricated section completion without persisted configuration', () => {
+      dbSettingsRecord = new MockRecord(
+        { name: 'appSettings' },
+        {
+          key: 'setup_state',
+          value: JSON.stringify({
+            version: 1,
+            initialized: false,
+            completedSections: [
+              'admin-account',
+              'organization-basics',
+              'module-selection',
+              'roster-structure',
+            ],
+          }),
+        }
+      );
+
+      const result = handleSetupComplete(
+        makeEvent({ auth: { collectionName: 'users', role: 'admin', id: 'usr-123' } })
+      );
+
+      assert.strictEqual(result.status, 400);
+      assert.match(result.body.error, /organization/i);
+    });
+
     it('rejects if required sections are missing', () => {
       dbSettingsRecord = new MockRecord(
         { name: 'appSettings' },
@@ -326,11 +373,108 @@ describe('setupEndpoints', () => {
         }
       );
 
-      const e = makeEvent({ auth: { collectionName: 'users', role: 'admin' } });
+      dbChoirNameRecord = new MockRecord(
+        { name: 'appSettings' },
+        { key: 'choir_name', value: JSON.stringify('Community Choir') }
+      );
+      dbVoicePartsRecord = new MockRecord(
+        { name: 'appSettings' },
+        {
+          key: 'voiceParts',
+          value: JSON.stringify({
+            sections: [{ code: 'S', name: 'Sopranos' }],
+            voiceParts: [{ label: 'S1', fullName: 'Soprano 1', sectionCode: 'S' }],
+          }),
+        }
+      );
+
+      const e = makeEvent({ auth: { collectionName: 'users', role: 'admin', id: 'usr-123' } });
       const result = handleSetupComplete(e);
       assert.strictEqual(result.status, 200);
       const state = getSetupState(mockApp);
       assert.strictEqual(state.initialized, true);
+    });
+
+    it('rejects a roster containing only track-only sections', () => {
+      dbSettingsRecord = new MockRecord(
+        { name: 'appSettings' },
+        {
+          key: 'setup_state',
+          value: JSON.stringify({
+            version: 1,
+            initialized: false,
+            completedSections: [
+              'admin-account',
+              'organization-basics',
+              'module-selection',
+              'roster-structure',
+            ],
+          }),
+        }
+      );
+      dbChoirNameRecord = new MockRecord(
+        { name: 'appSettings' },
+        { key: 'choir_name', value: JSON.stringify('Community Choir') }
+      );
+      dbVoicePartsRecord = new MockRecord(
+        { name: 'appSettings' },
+        {
+          key: 'voiceParts',
+          value: JSON.stringify({
+            sections: [{ code: 'TRACK', name: 'Tracks', trackOnly: true }],
+            voiceParts: [{ label: 'Guide', sectionCode: 'TRACK' }],
+          }),
+        }
+      );
+
+      const result = handleSetupComplete(
+        makeEvent({ auth: { collectionName: 'users', role: 'admin', id: 'usr-123' } })
+      );
+
+      assert.strictEqual(result.status, 400);
+      assert.match(result.body.error, /roster structure/i);
+    });
+
+    it('rejects an owner part that is not in the performing roster', () => {
+      dbSettingsRecord = new MockRecord(
+        { name: 'appSettings' },
+        {
+          key: 'setup_state',
+          value: JSON.stringify({
+            version: 1,
+            initialized: false,
+            completedSections: [
+              'admin-account',
+              'organization-basics',
+              'module-selection',
+              'roster-structure',
+            ],
+            ownerIsPerformer: true,
+          }),
+        }
+      );
+      dbChoirNameRecord = new MockRecord(
+        { name: 'appSettings' },
+        { key: 'choir_name', value: JSON.stringify('Community Choir') }
+      );
+      dbVoicePartsRecord = new MockRecord(
+        { name: 'appSettings' },
+        {
+          key: 'voiceParts',
+          value: JSON.stringify({
+            sections: [{ code: 'S', name: 'Sopranos', trackOnly: false }],
+            voiceParts: [{ label: 'S1', sectionCode: 'S' }],
+          }),
+        }
+      );
+      dbProfiles.push(new MockRecord({ name: 'profiles' }, { user: 'usr-123', voicePart: 'A1' }));
+
+      const result = handleSetupComplete(
+        makeEvent({ auth: { collectionName: 'users', role: 'admin', id: 'usr-123' } })
+      );
+
+      assert.strictEqual(result.status, 400);
+      assert.match(result.body.error, /owner performer part/i);
     });
   });
 
@@ -373,7 +517,7 @@ describe('setupEndpoints', () => {
       );
       dbUsers = [];
 
-      mock.method(mockApp, 'save', (rec: any) => {
+      mock.method(mockApp, 'save', (rec: MockRecord) => {
         savedRecords.push(rec);
         if (rec.get('email')) {
           dbUsers.push(rec);
@@ -428,8 +572,9 @@ describe('setupEndpoints', () => {
         STRIPE_SECRET_KEY: 'sk_test_123',
       };
 
-      const originalHttp = (globalThis as any).$http;
-      (globalThis as any).$http = {
+      const testGlobal = globalThis as unknown as { $http?: MockHttp };
+      const originalHttp = testGlobal.$http;
+      testGlobal.$http = {
         send: () => ({ statusCode: 200, headers: {}, raw: '{}' }),
       };
 
@@ -444,7 +589,7 @@ describe('setupEndpoints', () => {
         assert.strictEqual(result.body.stripeValid, true);
         assert.strictEqual(result.body.appUrlMismatch, false);
       } finally {
-        (globalThis as any).$http = originalHttp;
+        testGlobal.$http = originalHttp;
       }
     });
 
@@ -454,8 +599,9 @@ describe('setupEndpoints', () => {
         STRIPE_SECRET_KEY: 'sk_test_123',
       };
 
-      const originalHttp = (globalThis as any).$http;
-      (globalThis as any).$http = {
+      const testGlobal = globalThis as unknown as { $http?: MockHttp };
+      const originalHttp = testGlobal.$http;
+      testGlobal.$http = {
         send: () => ({ statusCode: 401, headers: {}, raw: '{}' }),
       };
 
@@ -470,7 +616,7 @@ describe('setupEndpoints', () => {
         assert.strictEqual(result.body.stripeValid, false);
         assert.strictEqual(result.body.appUrlMismatch, true);
       } finally {
-        (globalThis as any).$http = originalHttp;
+        testGlobal.$http = originalHttp;
       }
     });
   });

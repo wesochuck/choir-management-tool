@@ -13,12 +13,10 @@ import { setupService } from '../src/services/setupService';
 import * as moduleService from '../src/services/moduleService';
 import { pb } from '../src/lib/pocketbase';
 
-const originalAuthStore = pb.authStore;
-
 afterEach(() => {
   document.body.innerHTML = '';
   mock.restoreAll();
-  pb.authStore = originalAuthStore;
+  pb.authStore.clear();
   window.history.pushState({}, '', '/');
 });
 
@@ -42,14 +40,7 @@ describe('App setup routing seal', () => {
     }));
     mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
 
-    (pb as any).authStore = {
-      model: null,
-      isValid: false,
-      token: '',
-      clear: mock.fn(),
-      save: mock.fn(),
-      onChange: mock.fn(() => () => {}),
-    };
+    pb.authStore.clear();
 
     window.history.pushState({}, '', '/dashboard');
 
@@ -85,14 +76,7 @@ describe('App setup routing seal', () => {
       enabled: ['publicWebsite'],
     }));
 
-    (pb as any).authStore = {
-      model: null,
-      isValid: false,
-      token: '',
-      clear: mock.fn(),
-      save: mock.fn(),
-      onChange: mock.fn(() => () => {}),
-    };
+    pb.authStore.clear();
 
     window.history.pushState({}, '', '/login');
 

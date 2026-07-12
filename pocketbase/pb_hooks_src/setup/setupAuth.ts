@@ -33,8 +33,7 @@ export function isBackendModuleEnabled(app: PocketBaseApp, moduleId: string): bo
       return parsed.enabled.indexOf(moduleId) !== -1;
     }
   } catch {
-    // Default to true if settings don't exist yet (during first run or migration)
-    return true;
+    return false;
   }
   return false;
 }

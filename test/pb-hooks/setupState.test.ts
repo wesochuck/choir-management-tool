@@ -30,7 +30,7 @@ class MockRecord {
   }
 }
 
-(globalThis as any).Record = MockRecord;
+(globalThis as unknown as { Record: typeof MockRecord }).Record = MockRecord;
 
 import {
   resolveSetupStatus,
@@ -45,7 +45,7 @@ function fakeSetupApp(opts: {
 }) {
   const collection = { name: 'appSettings' };
 
-  let settingRecord: any = null;
+  let settingRecord: MockRecord | null = null;
   if (opts.hasSettingRecord !== false) {
     settingRecord = new MockRecord(collection, {
       key: 'setup_state',
@@ -57,7 +57,7 @@ function fakeSetupApp(opts: {
     });
   }
 
-  const savedRecords: any[] = [];
+  const savedRecords: MockRecord[] = [];
 
   const app = {
     findFirstRecordByFilter: mock.fn((coll: string, filter: string) => {
@@ -78,7 +78,7 @@ function fakeSetupApp(opts: {
       return [];
     }),
     findCollectionByNameOrId: mock.fn(() => collection),
-    save: mock.fn((rec: any) => {
+    save: mock.fn((rec: MockRecord) => {
       savedRecords.push(rec);
       settingRecord = rec;
       return true;

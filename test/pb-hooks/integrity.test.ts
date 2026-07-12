@@ -103,6 +103,30 @@ function extractRecordHookCallback(
 test('Generated main.pb.js integrity', () => {
   const content = readGeneratedMain();
 
+  for (const unsupportedHook of [
+    'onRecordBeforeCreateRequest',
+    'onRecordBeforeUpdateRequest',
+    'onRecordBeforeDeleteRequest',
+    'onRecordBeforeViewRequest',
+    'onRecordBeforeListRequest',
+  ]) {
+    assert.ok(!content.includes(`${unsupportedHook}((`), `Should not register ${unsupportedHook}`);
+  }
+  for (const supportedHook of [
+    'onRecordCreateRequest',
+    'onRecordUpdateRequest',
+    'onRecordDeleteRequest',
+    'onRecordViewRequest',
+    'onRecordsListRequest',
+  ]) {
+    assert.ok(content.includes(`${supportedHook}((`), `Should register ${supportedHook}`);
+  }
+  assert.strictEqual(
+    countOccurrences(content, '}, "profiles");'),
+    0,
+    'Administrative profile access must not be guarded by the optional roster module'
+  );
+
   assert.ok(
     content.startsWith('// PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)'),
     'Should contain generated output marker'
@@ -192,8 +216,8 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    276,
-    'Generated file should contain exactly 276 callback-local utility regions'
+    266,
+    'Generated file should contain exactly 266 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));

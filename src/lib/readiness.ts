@@ -69,7 +69,7 @@ export const READINESS_ITEMS: ReadinessItem[] = [
     label: 'Configure Stripe keys for ticketing & donations',
     moduleId: 'ticketSales',
     destination: '/admin/settings',
-    requiredForLaunch: true,
+    requiredForLaunch: false,
     evaluate: (s) => s.stripeConfigured,
   },
   {

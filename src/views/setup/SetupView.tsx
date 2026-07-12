@@ -23,6 +23,10 @@ const SetupView: React.FC = () => {
   const { status, enabledModules, refreshAll: refreshStatus } = useSetup();
   const navigate = useNavigate();
   const [suCredentials, setSuCredentials] = useState<{ email: string; pass: string } | null>(null);
+  const [selectedStep, setSelectedStep] = useState<{
+    section: string;
+    completedSignature: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const dialog = useDialog();
 
@@ -94,16 +98,23 @@ const SetupView: React.FC = () => {
   const completed = status.completedSections || [];
 
   // Find first uncompleted step
-  let activeStepIdx = 0;
+  let firstIncompleteStepIdx = 0;
   for (let i = 0; i < steps.length; i++) {
     if (!completed.includes(steps[i].section)) {
-      activeStepIdx = i;
+      firstIncompleteStepIdx = i;
       break;
     }
   }
 
   // Check if all steps are completed
   const allCompleted = steps.every((s) => completed.includes(s.section));
+  const completedSignature = completed.join('|');
+  const selectedStepIdx = steps.findIndex((step) => step.section === selectedStep?.section);
+  const selectedStepIsCurrent = selectedStep?.completedSignature === completedSignature;
+  const activeStepIdx =
+    selectedStepIsCurrent && selectedStepIdx >= 0 && selectedStepIdx <= firstIncompleteStepIdx
+      ? selectedStepIdx
+      : firstIncompleteStepIdx;
 
   const handleCompleteSetup = async () => {
     setLoading(true);
@@ -141,7 +152,13 @@ const SetupView: React.FC = () => {
         <div className="relative mt-8 flex items-center justify-between">
           {steps.map((step, idx) => (
             <React.Fragment key={step.id}>
-              <div className="z-10 flex flex-col items-center">
+              <button
+                type="button"
+                className="z-10 flex flex-col items-center disabled:cursor-not-allowed"
+                disabled={status.state !== 'in_progress' || idx > firstIncompleteStepIdx}
+                onClick={() => setSelectedStep({ section: step.section, completedSignature })}
+                aria-current={idx === activeStepIdx && !allCompleted ? 'step' : undefined}
+              >
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all ${
                     idx <= activeStepIdx || allCompleted
@@ -158,7 +175,7 @@ const SetupView: React.FC = () => {
                 >
                   {step.label}
                 </span>
-              </div>
+              </button>
               {idx < steps.length - 1 && (
                 <div
                   className={`h-0.5 flex-1 transition-all ${

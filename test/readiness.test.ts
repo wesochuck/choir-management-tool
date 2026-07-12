@@ -57,4 +57,19 @@ describe('Readiness Registry', () => {
     assert.strictEqual(stripeItem?.applicable, true);
     assert.strictEqual(stripeItem?.completed, true);
   });
+
+  it('does not block launch when ticket sales is enabled without Stripe verification', () => {
+    const snapshot: ReadinessSnapshot = {
+      ...baseSnapshot,
+      enabledModules: new Set(['roster', 'ticketSales']),
+      stripeConfigured: false,
+    };
+
+    const result = evaluateReadiness(snapshot);
+    const stripeItem = result.items.find((item) => item.id === 'stripe-configured');
+    assert.strictEqual(stripeItem?.applicable, true);
+    assert.strictEqual(stripeItem?.completed, false);
+    assert.strictEqual(stripeItem?.requiredForLaunch, false);
+    assert.strictEqual(result.readyForLaunch, true);
+  });
 });

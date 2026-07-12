@@ -1079,16 +1079,15 @@ if (provider === 'brevo') {
     attendance: 'attendance',
     setLists: 'setLists',
     patrons: 'patrons',
-    profiles: 'roster',
     seasons: 'roster',
   };
 
   const beforeRequestHookNames = [
-    'onRecordBeforeCreateRequest',
-    'onRecordBeforeUpdateRequest',
-    'onRecordBeforeDeleteRequest',
-    'onRecordBeforeViewRequest',
-    'onRecordBeforeListRequest',
+    'onRecordCreateRequest',
+    'onRecordUpdateRequest',
+    'onRecordDeleteRequest',
+    'onRecordViewRequest',
+    'onRecordsListRequest',
   ];
 
   const beforeRequestHooks = beforeRequestHookNames

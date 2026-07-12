@@ -21,6 +21,7 @@ export default function ModuleSettingsView() {
             refreshStatus={refreshAll}
             onSuccess={refreshAll}
             initialEnabled={Array.from(enabledModules)}
+            persistSetupProgress={false}
           />
         </div>
       </div>

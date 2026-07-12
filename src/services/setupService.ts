@@ -100,7 +100,7 @@ export const setupService = {
         settingsService.getAuditionSettings().catch(() => null),
         pb
           .collection('profiles')
-          .getList(1, 1)
+          .getList(1, 1, { filter: 'voicePart != ""' })
           .catch(() => ({ totalItems: 0 })),
       ]);
 

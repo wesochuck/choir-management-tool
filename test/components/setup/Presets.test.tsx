@@ -2,7 +2,7 @@
 import { afterEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { cleanup, render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DialogProvider } from '../../../src/contexts/DialogProvider';
 import { SetupProvider } from '../../../src/contexts/SetupContext';
@@ -10,9 +10,12 @@ import { OrganizationBasicsStep } from '../../../src/views/setup/steps/Organizat
 import { RosterStructureStep } from '../../../src/views/setup/steps/RosterStructureStep';
 import { settingsService } from '../../../src/services/settingsService';
 import { setupService } from '../../../src/services/setupService';
+import { pb } from '../../../src/lib/pocketbase';
+import type { SectionDef, VoicePartDef } from '../../../src/services/settingsService';
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  cleanup();
+  pb.authStore.clear();
   mock.restoreAll();
 });
 
@@ -131,15 +134,54 @@ describe('Organization & Roster Presets Steps', () => {
     });
 
     assert.strictEqual(saveVoicePartsMock.mock.callCount(), 1);
-    const voicePartsPassed = saveVoicePartsMock.mock.calls[0].arguments[0] as any[];
-    const sectionsPassed = saveVoicePartsMock.mock.calls[0].arguments[1] as any[];
-    assert.ok(sectionsPassed.some((s: any) => s.code === 'WW'));
-    assert.ok(sectionsPassed.some((s: any) => s.code === 'BR'));
-    assert.ok(!sectionsPassed.some((s: any) => s.code === 'S')); // Band has no Sopranos
+    const voicePartsPassed = saveVoicePartsMock.mock.calls[0].arguments[0] as VoicePartDef[];
+    const sectionsPassed = saveVoicePartsMock.mock.calls[0].arguments[1] as SectionDef[];
+    assert.ok(voicePartsPassed.length > 0);
+    assert.ok(sectionsPassed.some((section) => section.code === 'WW'));
+    assert.ok(sectionsPassed.some((section) => section.code === 'BR'));
+    assert.ok(!sectionsPassed.some((section) => section.code === 'S')); // Band has no Sopranos
 
     assert.strictEqual(savePerformerLabelMock.mock.callCount(), 1);
     assert.strictEqual(savePerformerLabelMock.mock.calls[0].arguments[0], 'Musician');
 
     assert.strictEqual(progressMock.mock.callCount(), 1);
+  });
+
+  it('does not complete performer setup when the owner profile is missing', async () => {
+    pb.authStore.save(
+      'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjQxMDI0NDQ4MDB9.signature',
+      { id: 'owner-user' }
+    );
+    mock.method(settingsService, 'saveVoicePartsAndSections', async () => {});
+    mock.method(settingsService, 'savePerformerLabel', async () => {});
+    const profiles = pb.collection('profiles');
+    mock.method(profiles, 'getList', async () => ({ items: [], totalItems: 0 }));
+    const progressMock = mock.method(setupService, 'saveProgress', async () => ({ success: true }));
+    const onSuccess = mock.fn();
+
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <SetupProvider>
+          <DialogProvider>
+            <RosterStructureStep
+              onSuccess={onSuccess}
+              refreshStatus={async () => {}}
+              ownerIsPerformer
+            />
+          </DialogProvider>
+        </SetupProvider>
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByDisplayValue('-- Select a Part --'), {
+      target: { value: 'S1' },
+    });
+    const form = screen.getByText(/Save & Continue/i).closest('form');
+    assert.ok(form);
+    fireEvent.submit(form);
+
+    await waitFor(() => assert.ok(screen.getByText(/owner profile could not be found/i)));
+    assert.strictEqual(progressMock.mock.callCount(), 0);
+    assert.strictEqual(onSuccess.mock.callCount(), 0);
   });
 });

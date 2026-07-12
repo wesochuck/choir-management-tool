@@ -86,23 +86,28 @@ export const RosterStructureStep: React.FC<RosterStructureStepProps> = ({
       await settingsService.savePerformerLabel(performerLabel);
 
       // 3. If owner is performer, find profile and save voicePart
-      if (ownerIsPerformer && pb.authStore.model) {
+      if (ownerIsPerformer) {
+        const ownerUserId = pb.authStore.model?.id;
+        if (!ownerUserId) {
+          throw new Error('The owner account is not available. Please sign in again.');
+        }
         const profileList = await pb.collection('profiles').getList(1, 1, {
-          filter: pb.filter('user = {:userId}', { userId: pb.authStore.model.id }),
+          filter: pb.filter('user = {:userId}', { userId: ownerUserId }),
         });
         const ownerProfile = profileList.items[0];
-        if (ownerProfile) {
-          await pb.collection('profiles').update(ownerProfile.id, {
-            voicePart: ownerVoicePart,
-          });
+        if (!ownerProfile) {
+          throw new Error('The owner profile could not be found. Please sign in again.');
         }
+        await pb.collection('profiles').update(ownerProfile.id, {
+          voicePart: ownerVoicePart,
+        });
       }
 
       // 4. Save progress
       await setupService.saveProgress(
         ['admin-account', 'organization-basics', 'module-selection', 'roster-structure'],
         ownerIsPerformer,
-        true // ownerVoicePartSet is true
+        ownerIsPerformer
       );
 
       await refreshStatus();

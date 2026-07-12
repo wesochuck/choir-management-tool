@@ -18,15 +18,17 @@ interface ModuleSelectionStepProps {
   onSuccess: () => void;
   refreshStatus: () => Promise<void>;
   initialEnabled?: ModuleId[];
+  persistSetupProgress?: boolean;
 }
 
 export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
   onSuccess,
   refreshStatus,
   initialEnabled,
+  persistSetupProgress = true,
 }) => {
   const [enabled, setEnabled] = useState<Set<ModuleId>>(() => {
-    if (initialEnabled && initialEnabled.length > 0) {
+    if (initialEnabled !== undefined) {
       return new Set<ModuleId>(initialEnabled);
     }
     return new Set<ModuleId>(RECOMMENDED_MODULES);
@@ -73,7 +75,13 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
       const enabledArray = Array.from(enabled);
       await saveModuleState(enabledArray);
 
-      await setupService.saveProgress(['admin-account', 'organization-basics', 'module-selection']);
+      if (persistSetupProgress) {
+        await setupService.saveProgress([
+          'admin-account',
+          'organization-basics',
+          'module-selection',
+        ]);
+      }
 
       await refreshStatus();
       onSuccess();

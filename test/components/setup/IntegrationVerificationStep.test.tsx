@@ -26,6 +26,49 @@ const createQueryClient = () =>
   });
 
 describe('IntegrationVerificationStep', () => {
+  it('allows continuation when optional Stripe verification is incomplete', async () => {
+    mock.method(pb, 'send', async (url: string) => {
+      if (url === '/api/setup/health') {
+        return {
+          environment: {
+            appUrl: true,
+            hmacSecret: true,
+            maintenanceSecret: true,
+            stripeSecretKey: false,
+            stripeWebhookSecret: false,
+          },
+          stripeMode: 'unknown',
+          stripeValid: null,
+          appUrlMismatch: false,
+          emailValid: true,
+        };
+      }
+      throw new Error('Not found');
+    });
+    mock.method(setupService, 'getStatus', async () => ({
+      state: 'in_progress',
+      initialized: false,
+      completedSections: [],
+    }));
+    mock.method(moduleService, 'getModuleState', async () => ({
+      version: 1,
+      enabled: ['ticketSales'],
+    }));
+
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <DialogProvider>
+          <SetupProvider>
+            <IntegrationVerificationStep onSuccess={() => undefined} />
+          </SetupProvider>
+        </DialogProvider>
+      </QueryClientProvider>
+    );
+
+    const continueButton = await screen.findByText('Save & Continue');
+    assert.strictEqual((continueButton as HTMLButtonElement).disabled, false);
+  });
+
   it('renders checklists and handles email functional tests', async () => {
     // Mock pb.send for health and test-smtp
     const healthMock = mock.fn(async (url: string) => {
@@ -90,7 +133,7 @@ describe('IntegrationVerificationStep', () => {
     fireEvent.click(sendTestBtn);
 
     await waitFor(() => {
-      const smtpCall = sendSpy.mock.calls.find((c: any) => c.arguments[0] === '/api/test-smtp');
+      const smtpCall = sendSpy.mock.calls.find((call) => call.arguments[0] === '/api/test-smtp');
       assert.ok(smtpCall);
       assert.deepStrictEqual(smtpCall.arguments[1], {
         method: 'POST',

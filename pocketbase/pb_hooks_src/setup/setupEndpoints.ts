@@ -3,6 +3,7 @@ import { resolveSetupStatus, getSetupState, saveSetupState } from './setupState'
 import { parseJsonField } from '../email/hookJson';
 
 interface PocketBaseAuth {
+  id?: string;
   collectionName: string;
   get(key: string): unknown;
 }
@@ -213,6 +214,7 @@ export function handleSetupComplete(e: PocketBaseRequestEvent): unknown {
 
   const state = getSetupState($app);
   const required = ['admin-account', 'organization-basics', 'module-selection'];
+  let performingPartLabels: string[] = [];
   if (rosterEnabled) {
     required.push('roster-structure');
   }
@@ -220,6 +222,84 @@ export function handleSetupComplete(e: PocketBaseRequestEvent): unknown {
   const missing = required.filter((sec) => state.completedSections.indexOf(sec) === -1);
   if (missing.length > 0) {
     return e.json(400, { error: 'Missing required setup sections: ' + missing.join(', ') });
+  }
+
+  try {
+    const organizationRecord = $app.findFirstRecordByFilter(
+      'appSettings',
+      "key = 'choir_name'"
+    );
+    const organizationName = parseJsonField<string>(organizationRecord.get('value'));
+    if (typeof organizationName !== 'string' || organizationName.trim() === '') {
+      return e.json(400, { error: 'Organization name is not configured' });
+    }
+  } catch {
+    return e.json(400, { error: 'Organization name is not configured' });
+  }
+
+  if (rosterEnabled) {
+    try {
+      const rosterRecord = $app.findFirstRecordByFilter(
+        'appSettings',
+        "key = 'voiceParts'"
+      );
+      const roster = parseJsonField<{
+        sections?: Array<{ code?: unknown; trackOnly?: unknown }>;
+        voiceParts?: Array<{ label?: unknown; sectionCode?: unknown }>;
+      }>(rosterRecord.get('value'));
+      if (
+        !roster ||
+        !Array.isArray(roster.sections) ||
+        roster.sections.length === 0 ||
+        !Array.isArray(roster.voiceParts) ||
+        roster.voiceParts.length === 0
+      ) {
+        return e.json(400, { error: 'Roster structure is not configured' });
+      }
+      const performingSectionCodes = roster.sections
+        .filter(
+          (section) =>
+            section.trackOnly !== true &&
+            typeof section.code === 'string' &&
+            section.code.trim() !== ''
+        )
+        .map((section) => String(section.code));
+      performingPartLabels = roster.voiceParts
+        .filter(
+          (part) =>
+            typeof part.label === 'string' &&
+            part.label.trim() !== '' &&
+            typeof part.sectionCode === 'string' &&
+            performingSectionCodes.indexOf(part.sectionCode) !== -1
+        )
+        .map((part) => String(part.label));
+      if (performingPartLabels.length === 0) {
+        return e.json(400, { error: 'Roster structure is not configured' });
+      }
+    } catch {
+      return e.json(400, { error: 'Roster structure is not configured' });
+    }
+  }
+
+  if (state.ownerIsPerformer) {
+    const userId = e.auth?.id || '';
+    try {
+      const ownerProfile = $app.findFirstRecordByFilter(
+        'profiles',
+        'user = {:userId}',
+        { userId }
+      );
+      const voicePart = ownerProfile.get('voicePart');
+      if (
+        typeof voicePart !== 'string' ||
+        voicePart.trim() === '' ||
+        performingPartLabels.indexOf(voicePart) === -1
+      ) {
+        return e.json(400, { error: 'Owner performer part is not configured' });
+      }
+    } catch {
+      return e.json(400, { error: 'Owner performer part is not configured' });
+    }
   }
 
   state.initialized = true;

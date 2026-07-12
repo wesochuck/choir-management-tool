@@ -5,25 +5,32 @@ import assert from 'node:assert/strict';
 // Mock Record global
 class MockRecord {
   data: Record<string, unknown>;
-  constructor(collection: any, data?: Record<string, unknown>) {
+  constructor(collection: unknown, data?: Record<string, unknown>) {
+    void collection;
     this.data = data || {};
   }
   get(key: string) {
     return this.data[key];
   }
-  set(key: string, val: any) {
+  set(key: string, val: unknown) {
     this.data[key] = val;
   }
 }
-(globalThis as any).Record = MockRecord;
+(globalThis as unknown as { Record: typeof MockRecord }).Record = MockRecord;
 
 import { resolveSetupStatus } from '../pocketbase/pb_hooks_src/setup/setupState';
 
-let dbUsers: any[] = [];
-let dbSettingsRecord: any = null;
+interface AdminRecord {
+  id: string;
+  data: { email: string; role: string };
+  get(key: string): string;
+}
+
+let dbUsers: AdminRecord[] = [];
+let dbSettingsRecord: MockRecord | null = null;
 
 const mockApp = {
-  findFirstRecordByFilter(collection: string, filter: string): any {
+  findFirstRecordByFilter(collection: string, filter: string): MockRecord {
     if (
       collection === 'appSettings' &&
       filter.includes("key = 'setup_state'") &&
@@ -34,7 +41,7 @@ const mockApp = {
     throw new Error('Not found');
   },
 
-  findRecordsByFilter(collection: string, filter: string): any[] {
+  findRecordsByFilter(collection: string, filter: string): AdminRecord[] {
     if (collection === 'users') {
       return dbUsers;
     }
@@ -42,7 +49,7 @@ const mockApp = {
   },
 };
 
-(globalThis as any).$app = mockApp;
+(globalThis as unknown as { $app: typeof mockApp }).$app = mockApp;
 
 describe('Setup Upgrade Compatibility Test', () => {
   beforeEach(() => {
