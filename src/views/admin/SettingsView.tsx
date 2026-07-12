@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
@@ -221,6 +222,23 @@ export default function SettingsView() {
       )}
 
       <div className="flex flex-col gap-6">
+        <AppCard title="First-Run & Modules">
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              to="/admin/settings/setup-checklist"
+              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 text-sm font-semibold text-gray-800 no-underline transition-all duration-200"
+            >
+              📋 Setup Checklist
+            </Link>
+            <Link
+              to="/admin/settings/modules"
+              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 text-sm font-semibold text-gray-800 no-underline transition-all duration-200"
+            >
+              ⚙️ Enable/Disable Modules
+            </Link>
+          </div>
+        </AppCard>
+
         <AppCard title="Choir Name">
           <div className="flex flex-col gap-2">
             <Input

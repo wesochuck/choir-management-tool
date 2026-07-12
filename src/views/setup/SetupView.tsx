@@ -7,6 +7,8 @@ import { OrganizationBasicsStep } from './steps/OrganizationBasicsStep';
 import { RosterStructureStep } from './steps/RosterStructureStep';
 import { ModuleSelectionStep } from './steps/ModuleSelectionStep';
 import { ReviewStep } from './steps/ReviewStep';
+import { FeatureConfigurationStep } from './steps/FeatureConfigurationStep';
+import { SETUP_SECTIONS } from './setupSections';
 import { SetupNavigation } from '../../components/setup/SetupNavigation';
 import { useDialog } from '../../contexts/DialogContext';
 import { setupService } from '../../services/setupService';
@@ -67,6 +69,11 @@ const SetupView: React.FC = () => {
 
   if (rosterEnabled) {
     steps.push({ id: 'roster', label: 'Roster Structure', section: 'roster-structure' });
+  }
+
+  const hasConfigurableFeatures = SETUP_SECTIONS.some((sec) => enabledModules.has(sec.moduleId));
+  if (hasConfigurableFeatures) {
+    steps.push({ id: 'features', label: 'Configure Features', section: 'feature-configuration' });
   }
 
   steps.push({ id: 'review', label: 'Review', section: 'review' });
@@ -185,28 +192,50 @@ const SetupView: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {activeStepIdx === 1 && (
-                    <OrganizationBasicsStep
-                      refreshStatus={refreshStatus}
-                      onSuccess={refreshStatus}
-                    />
-                  )}
+                  {activeStepIdx < steps.length && (
+                    <>
+                      {steps[activeStepIdx].section === 'organization-basics' && (
+                        <OrganizationBasicsStep
+                          refreshStatus={refreshStatus}
+                          onSuccess={refreshStatus}
+                        />
+                      )}
 
-                  {activeStepIdx === 2 && (
-                    <ModuleSelectionStep
-                      refreshStatus={refreshStatus}
-                      onSuccess={refreshStatus}
-                      initialEnabled={Array.from(enabledModules)}
-                    />
-                  )}
+                      {steps[activeStepIdx].section === 'module-selection' && (
+                        <ModuleSelectionStep
+                          refreshStatus={refreshStatus}
+                          onSuccess={refreshStatus}
+                          initialEnabled={Array.from(enabledModules)}
+                        />
+                      )}
 
-                  {activeStepIdx === 3 && rosterEnabled && (
-                    <RosterStructureStep refreshStatus={refreshStatus} onSuccess={refreshStatus} />
-                  )}
+                      {steps[activeStepIdx].section === 'roster-structure' && (
+                        <RosterStructureStep
+                          refreshStatus={refreshStatus}
+                          onSuccess={refreshStatus}
+                        />
+                      )}
 
-                  {((activeStepIdx === 3 && !rosterEnabled) ||
-                    (activeStepIdx === 4 && rosterEnabled)) && (
-                    <ReviewStep refreshStatus={refreshStatus} onSuccess={refreshStatus} />
+                      {steps[activeStepIdx].section === 'feature-configuration' && (
+                        <FeatureConfigurationStep
+                          onSuccess={async () => {
+                            const completed = [
+                              'admin-account',
+                              'organization-basics',
+                              'module-selection',
+                            ];
+                            if (rosterEnabled) completed.push('roster-structure');
+                            completed.push('feature-configuration');
+                            await setupService.saveProgress(completed);
+                            await refreshStatus();
+                          }}
+                        />
+                      )}
+
+                      {steps[activeStepIdx].section === 'review' && (
+                        <ReviewStep refreshStatus={refreshStatus} onSuccess={refreshStatus} />
+                      )}
+                    </>
                   )}
                 </>
               )}
