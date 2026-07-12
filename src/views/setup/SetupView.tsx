@@ -8,6 +8,8 @@ import { RosterStructureStep } from './steps/RosterStructureStep';
 import { ModuleSelectionStep } from './steps/ModuleSelectionStep';
 import { ReviewStep } from './steps/ReviewStep';
 import { FeatureConfigurationStep } from './steps/FeatureConfigurationStep';
+import { PocketHostStep } from './steps/PocketHostStep';
+import { IntegrationVerificationStep } from './steps/IntegrationVerificationStep';
 import { SETUP_SECTIONS } from './setupSections';
 import { SetupNavigation } from '../../components/setup/SetupNavigation';
 import { useDialog } from '../../contexts/DialogContext';
@@ -75,6 +77,9 @@ const SetupView: React.FC = () => {
   if (hasConfigurableFeatures) {
     steps.push({ id: 'features', label: 'Configure Features', section: 'feature-configuration' });
   }
+
+  steps.push({ id: 'pockethost', label: 'Secrets', section: 'pockethost-config' });
+  steps.push({ id: 'verification', label: 'Verification', section: 'integration-verification' });
 
   steps.push({ id: 'review', label: 'Review', section: 'review' });
 
@@ -226,6 +231,41 @@ const SetupView: React.FC = () => {
                             ];
                             if (rosterEnabled) completed.push('roster-structure');
                             completed.push('feature-configuration');
+                            await setupService.saveProgress(completed);
+                            await refreshStatus();
+                          }}
+                        />
+                      )}
+
+                      {steps[activeStepIdx].section === 'pockethost-config' && (
+                        <PocketHostStep
+                          onSuccess={async () => {
+                            const completed = [
+                              'admin-account',
+                              'organization-basics',
+                              'module-selection',
+                            ];
+                            if (rosterEnabled) completed.push('roster-structure');
+                            if (hasConfigurableFeatures) completed.push('feature-configuration');
+                            completed.push('pockethost-config');
+                            await setupService.saveProgress(completed);
+                            await refreshStatus();
+                          }}
+                        />
+                      )}
+
+                      {steps[activeStepIdx].section === 'integration-verification' && (
+                        <IntegrationVerificationStep
+                          onSuccess={async () => {
+                            const completed = [
+                              'admin-account',
+                              'organization-basics',
+                              'module-selection',
+                            ];
+                            if (rosterEnabled) completed.push('roster-structure');
+                            if (hasConfigurableFeatures) completed.push('feature-configuration');
+                            completed.push('pockethost-config');
+                            completed.push('integration-verification');
                             await setupService.saveProgress(completed);
                             await refreshStatus();
                           }}

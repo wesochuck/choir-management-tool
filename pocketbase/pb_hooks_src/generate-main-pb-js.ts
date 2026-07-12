@@ -933,6 +933,26 @@ try {
 
 const settings = $app.settings();
 
+const saveEmailVerification = function(success, prov) {
+    try {
+        let evidenceRecord = null;
+        try {
+            evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+        } catch (e) {
+            const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+            evidenceRecord = new Record(appSettingsColl, { key: 'email_verification' });
+        }
+        evidenceRecord.set('value', JSON.stringify({
+            provider: prov,
+            checkedAt: new Date().toISOString(),
+            success: success,
+        }));
+        $app.save(evidenceRecord);
+    } catch (e) {
+        // ignore
+    }
+};
+
 if (provider === 'brevo') {
     try {
         dispatchEmailViaBrevo(brevoApiKey, {
@@ -944,12 +964,17 @@ if (provider === 'brevo') {
             htmlContent: "<p>Your Brevo API Email integration is working!</p>",
             textContent: "Your Brevo API Email integration is working!"
         });
+        saveEmailVerification(true, 'brevo');
         return e.json(200, { success: true });
     } catch (err) {
+        saveEmailVerification(false, 'brevo');
         return e.json(500, { error: "Brevo API failed: " + (err instanceof Error ? err.message : String(err)) });
     }
 } else {
-    if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+    if (!settings.smtp.enabled) {
+        saveEmailVerification(false, 'smtp');
+        return e.json(400, { error: "SMTP disabled" });
+    }
     try {
         const message = new MailerMessage({ 
             from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
@@ -958,8 +983,10 @@ if (provider === 'brevo') {
             html: "<p>Your SMTP is working!</p>" 
         });
         $app.newMailClient().send(message);
+        saveEmailVerification(true, 'smtp');
         return e.json(200, { success: true });
     } catch (err) { 
+        saveEmailVerification(false, 'smtp');
         return e.json(500, { error: "SMTP failed" }); 
     }
 }`;

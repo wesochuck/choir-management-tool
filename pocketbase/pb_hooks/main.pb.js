@@ -348,6 +348,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -373,9 +374,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -721,6 +793,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -746,9 +819,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -1094,6 +1238,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -1119,9 +1264,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -1467,6 +1683,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -1492,9 +1709,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -1840,6 +2128,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -1865,9 +2154,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -2213,6 +2573,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -2238,9 +2599,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -2586,6 +3018,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -2611,9 +3044,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -2959,6 +3463,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -2984,9 +3489,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -3332,6 +3908,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -3357,9 +3934,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -3705,6 +4353,7 @@ onRecordBeforeCreateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -3730,9 +4379,80 @@ onRecordBeforeCreateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -4078,6 +4798,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -4103,9 +4824,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -4451,6 +5243,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -4476,9 +5269,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -4824,6 +5688,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -4849,9 +5714,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -5197,6 +6133,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -5222,9 +6159,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -5570,6 +6578,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -5595,9 +6604,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -5943,6 +7023,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -5968,9 +7049,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -6316,6 +7468,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -6341,9 +7494,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -6689,6 +7913,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -6714,9 +7939,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -7062,6 +8358,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -7087,9 +8384,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -7435,6 +8803,7 @@ onRecordBeforeUpdateRequest((e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -7460,9 +8829,80 @@ onRecordBeforeUpdateRequest((e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -13073,6 +14513,7 @@ routerAdd("GET", "/api/setup/status", (e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -13098,9 +14539,80 @@ routerAdd("GET", "/api/setup/status", (e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -13443,6 +14955,7 @@ routerAdd("POST", "/api/setup/claim", (e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -13468,9 +14981,80 @@ routerAdd("POST", "/api/setup/claim", (e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -13813,6 +15397,7 @@ routerAdd("POST", "/api/setup/progress", (e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -13838,9 +15423,80 @@ routerAdd("POST", "/api/setup/progress", (e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -14183,6 +15839,7 @@ routerAdd("POST", "/api/setup/complete", (e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -14208,9 +15865,80 @@ routerAdd("POST", "/api/setup/complete", (e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -14553,6 +16281,7 @@ routerAdd("POST", "/api/setup/recover-admin", (e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -14578,9 +16307,80 @@ routerAdd("POST", "/api/setup/recover-admin", (e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -14923,6 +16723,7 @@ routerAdd("GET", "/api/setup/health", (e) => {
         }
     }
     function handleSetupHealth(e) {
+        var _a;
         const status = resolveSetupStatus($app);
         if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
             return e.json(403, { error: 'Forbidden' });
@@ -14948,9 +16749,80 @@ routerAdd("GET", "/api/setup/health", (e) => {
                 stripeMode = 'live';
             }
         }
+        let stripeValid = false;
+        if (stripeSecretKey) {
+            try {
+                const res = $http.send({
+                    url: "https://api.stripe.com/v1/balance",
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + stripeSecretKey
+                    }
+                });
+                stripeValid = res.statusCode === 200;
+            }
+            catch (err) {
+                stripeValid = false;
+            }
+            try {
+                let evidenceRecord = null;
+                try {
+                    evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+                }
+                catch (err) {
+                    const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                    evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+                }
+                evidenceRecord.set('value', JSON.stringify({
+                    provider: 'stripe',
+                    mode: stripeMode,
+                    checkedAt: new Date().toISOString(),
+                    success: stripeValid,
+                }));
+                $app.save(evidenceRecord);
+            }
+            catch (err) {
+                // Don't fail the health check if we fail to save verification evidence
+            }
+        }
+        let appUrlMismatch = false;
+        if (appUrl) {
+            const requestHost = ((_a = e.requestInfo().headers) === null || _a === void 0 ? void 0 : _a['host']) || '';
+            if (requestHost) {
+                let appUrlHost = appUrl;
+                try {
+                    if (appUrl.indexOf('://') !== -1) {
+                        appUrlHost = appUrl.split('://')[1].split('/')[0];
+                    }
+                    else {
+                        appUrlHost = appUrl.split('/')[0];
+                    }
+                }
+                catch (err) {
+                    // ignore
+                }
+                const cleanAppUrlHost = appUrlHost.split(':')[0];
+                const cleanRequestHost = requestHost.split(':')[0];
+                if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+                    appUrlMismatch = true;
+                }
+            }
+        }
+        let emailValid = false;
+        try {
+            const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            const parsed = JSON.parse(emailRecord.get('value'));
+            emailValid = !!parsed.success;
+        }
+        catch (err) {
+            emailValid = false;
+        }
         return e.json(200, {
             environment,
             stripeMode,
+            stripeValid: stripeSecretKey ? stripeValid : null,
+            appUrlMismatch,
+            emailValid,
         });
     }
     // --- END CALLBACK-LOCAL UTILITIES ---
@@ -20717,6 +22589,26 @@ routerAdd("POST", "/api/test-smtp", (e) => {
 
     const settings = $app.settings();
 
+    const saveEmailVerification = function(success, prov) {
+        try {
+            let evidenceRecord = null;
+            try {
+                evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+            } catch (e) {
+                const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+                evidenceRecord = new Record(appSettingsColl, { key: 'email_verification' });
+            }
+            evidenceRecord.set('value', JSON.stringify({
+                provider: prov,
+                checkedAt: new Date().toISOString(),
+                success: success,
+            }));
+            $app.save(evidenceRecord);
+        } catch (e) {
+            // ignore
+        }
+    };
+
     if (provider === 'brevo') {
         try {
             dispatchEmailViaBrevo(brevoApiKey, {
@@ -20728,12 +22620,17 @@ routerAdd("POST", "/api/test-smtp", (e) => {
                 htmlContent: "<p>Your Brevo API Email integration is working!</p>",
                 textContent: "Your Brevo API Email integration is working!"
             });
+            saveEmailVerification(true, 'brevo');
             return e.json(200, { success: true });
         } catch (err) {
+            saveEmailVerification(false, 'brevo');
             return e.json(500, { error: "Brevo API failed: " + (err instanceof Error ? err.message : String(err)) });
         }
     } else {
-        if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+        if (!settings.smtp.enabled) {
+            saveEmailVerification(false, 'smtp');
+            return e.json(400, { error: "SMTP disabled" });
+        }
         try {
             const message = new MailerMessage({ 
                 from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
@@ -20742,8 +22639,10 @@ routerAdd("POST", "/api/test-smtp", (e) => {
                 html: "<p>Your SMTP is working!</p>" 
             });
             $app.newMailClient().send(message);
+            saveEmailVerification(true, 'smtp');
             return e.json(200, { success: true });
         } catch (err) { 
+            saveEmailVerification(false, 'smtp');
             return e.json(500, { error: "SMTP failed" }); 
         }
     }

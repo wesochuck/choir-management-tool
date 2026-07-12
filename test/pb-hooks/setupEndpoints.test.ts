@@ -114,11 +114,12 @@ function makeEvent(opts: {
   auth?: { collectionName: string; role?: string; id?: string };
   body?: any;
   query?: any;
+  headers?: any;
 }) {
   const requestInfoValue = {
     body: opts.body || {},
     query: opts.query || {},
-    headers: {},
+    headers: opts.headers || {},
   };
 
   const event = {
@@ -406,6 +407,56 @@ describe('setupEndpoints', () => {
       });
       assert.strictEqual(result.body.stripeMode, 'test');
       assert.ok(!JSON.stringify(result.body).includes('super-secret-hmac-key'));
+    });
+
+    it('returns stripeValid true and appUrlMismatch false if credentials are valid and URL matches', () => {
+      envMap = {
+        APP_URL: 'http://localhost:5173',
+        STRIPE_SECRET_KEY: 'sk_test_123',
+      };
+
+      const originalHttp = (globalThis as any).$http;
+      (globalThis as any).$http = {
+        send: () => ({ statusCode: 200, headers: {}, raw: '{}' }),
+      };
+
+      try {
+        const e = makeEvent({
+          headers: { host: 'localhost:5173' },
+        });
+
+        const result = handleSetupHealth(e);
+        assert.strictEqual(result.status, 200);
+        assert.strictEqual(result.body.stripeValid, true);
+        assert.strictEqual(result.body.appUrlMismatch, false);
+      } finally {
+        (globalThis as any).$http = originalHttp;
+      }
+    });
+
+    it('returns appUrlMismatch true if APP_URL host does not match request host', () => {
+      envMap = {
+        APP_URL: 'https://prod.choir.management',
+        STRIPE_SECRET_KEY: 'sk_test_123',
+      };
+
+      const originalHttp = (globalThis as any).$http;
+      (globalThis as any).$http = {
+        send: () => ({ statusCode: 401, headers: {}, raw: '{}' }),
+      };
+
+      try {
+        const e = makeEvent({
+          headers: { host: 'localhost:5173' },
+        });
+
+        const result = handleSetupHealth(e);
+        assert.strictEqual(result.status, 200);
+        assert.strictEqual(result.body.stripeValid, false);
+        assert.strictEqual(result.body.appUrlMismatch, true);
+      } finally {
+        (globalThis as any).$http = originalHttp;
+      }
     });
   });
 });

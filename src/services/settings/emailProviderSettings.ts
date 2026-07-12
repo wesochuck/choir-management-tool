@@ -16,5 +16,5 @@ export async function getEmailProviderSettings(): Promise<EmailProviderSettings>
 }
 
 export async function saveEmailProviderSettings(settings: EmailProviderSettings) {
-  return await upsertSetting('email_provider', settings, true);
+  return await upsertSetting('email_provider', settings, false);
 }

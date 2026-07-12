@@ -4,6 +4,7 @@ import { parseJsonField } from '../email/hookJson';
 
 declare const $app: any;
 declare const Record: any;
+declare const $http: any;
 declare const $os: {
   getenv(key: string): string;
 };
@@ -241,8 +242,81 @@ export function handleSetupHealth(e: any): any {
     }
   }
 
+  let stripeValid = false;
+  if (stripeSecretKey) {
+    try {
+      const res = $http.send({
+        url: 'https://api.stripe.com/v1/balance',
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer ' + stripeSecretKey,
+        },
+      });
+      stripeValid = res.statusCode === 200;
+    } catch (err) {
+      stripeValid = false;
+    }
+
+    try {
+      let evidenceRecord: any = null;
+      try {
+        evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
+      } catch (err) {
+        const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+        evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
+      }
+      evidenceRecord.set(
+        'value',
+        JSON.stringify({
+          provider: 'stripe',
+          mode: stripeMode,
+          checkedAt: new Date().toISOString(),
+          success: stripeValid,
+        })
+      );
+      $app.save(evidenceRecord);
+    } catch (err) {
+      // Don't fail the health check if we fail to save verification evidence
+    }
+  }
+
+  let appUrlMismatch = false;
+  if (appUrl) {
+    const requestHost = e.requestInfo().headers?.['host'] || '';
+    if (requestHost) {
+      let appUrlHost = appUrl;
+      try {
+        if (appUrl.indexOf('://') !== -1) {
+          appUrlHost = appUrl.split('://')[1].split('/')[0];
+        } else {
+          appUrlHost = appUrl.split('/')[0];
+        }
+      } catch (err) {
+        // ignore
+      }
+
+      const cleanAppUrlHost = appUrlHost.split(':')[0];
+      const cleanRequestHost = requestHost.split(':')[0];
+      if (cleanAppUrlHost && cleanRequestHost && cleanAppUrlHost !== cleanRequestHost) {
+        appUrlMismatch = true;
+      }
+    }
+  }
+
+  let emailValid = false;
+  try {
+    const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+    const parsed = JSON.parse(emailRecord.get('value'));
+    emailValid = !!parsed.success;
+  } catch (err) {
+    emailValid = false;
+  }
+
   return e.json(200, {
     environment,
     stripeMode,
+    stripeValid: stripeSecretKey ? stripeValid : null,
+    appUrlMismatch,
+    emailValid,
   });
 }
