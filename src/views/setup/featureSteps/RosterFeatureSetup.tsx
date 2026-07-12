@@ -33,6 +33,8 @@ export default function RosterFeatureSetup({ onSuccess }: RosterFeatureSetupProp
   const saveMutation = useMutation({
     mutationFn: async () => {
       await settingsService.saveRosterSettings({
+        defaultSort: 'lastName',
+        defaultRsvpSort: 'lastName',
         ...currentSettings,
         defaultStatus,
         statusAutomationEnabled: automationEnabled,

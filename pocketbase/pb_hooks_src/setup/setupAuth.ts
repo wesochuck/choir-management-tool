@@ -1,20 +1,34 @@
 import { parseJsonField } from '../email/hookJson';
 
-declare const $app: any;
+interface PocketBaseAuth {
+  collectionName: string;
+  get(key: string): unknown;
+}
 
-export function isSetupSuperuser(e: any): boolean {
+interface PocketBaseRequestEvent {
+  auth?: PocketBaseAuth;
+  json(status: number, data: unknown): unknown;
+}
+
+interface PocketBaseApp {
+  findFirstRecordByFilter(collection: string, filter: string): { get(key: string): unknown };
+}
+
+declare const $app: PocketBaseApp;
+
+export function isSetupSuperuser(e: PocketBaseRequestEvent): boolean {
   return !!(e.auth && e.auth.collectionName === '_superusers');
 }
 
-export function isSetupAdmin(e: any): boolean {
+export function isSetupAdmin(e: PocketBaseRequestEvent): boolean {
   return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
 }
 
-export function isBackendModuleEnabled(app: any, moduleId: string): boolean {
+export function isBackendModuleEnabled(app: PocketBaseApp, moduleId: string): boolean {
   try {
     const record = app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
     const val = record.get('value');
-    const parsed = parseJsonField<any>(val);
+    const parsed = parseJsonField<{ enabled?: string[] }>(val);
     if (parsed && Array.isArray(parsed.enabled)) {
       return parsed.enabled.indexOf(moduleId) !== -1;
     }
@@ -25,9 +39,9 @@ export function isBackendModuleEnabled(app: any, moduleId: string): boolean {
   return false;
 }
 
-export function guardBackendModule(e: any, moduleId: string): any {
+export function guardBackendModule(e: PocketBaseRequestEvent, moduleId: string): unknown {
   if (!isBackendModuleEnabled($app, moduleId)) {
-    return e.json(400, { error: 'Forbidden: Module ' + moduleId + ' is disabled' });
+    return e.json(404, { error: 'Not Found: Module ' + moduleId + ' is disabled' });
   }
   return null;
 }

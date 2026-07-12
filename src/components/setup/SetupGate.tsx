@@ -22,9 +22,10 @@ export const SetupGate: React.FC<{ children: React.ReactNode }> = ({ children })
   }
 
   const isSetupRoute = location.pathname === '/setup';
+  const isLoginRoute = location.pathname === '/login';
 
   if (!status || status.state !== 'initialized') {
-    if (isSetupRoute) {
+    if (isSetupRoute || (status?.state === 'in_progress' && isLoginRoute)) {
       return <>{children}</>;
     }
     return <Navigate to="/setup" replace />;

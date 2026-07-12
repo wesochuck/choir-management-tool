@@ -61,7 +61,7 @@ export const READINESS_ITEMS: ReadinessItem[] = [
     label: 'Verify Mailjet/comms credentials',
     moduleId: 'communications',
     destination: '/admin/settings',
-    requiredForLaunch: true,
+    requiredForLaunch: false,
     evaluate: (s) => s.emailVerified,
   },
   {
@@ -69,7 +69,7 @@ export const READINESS_ITEMS: ReadinessItem[] = [
     label: 'Configure Stripe keys for ticketing & donations',
     moduleId: 'ticketSales',
     destination: '/admin/settings',
-    requiredForLaunch: false,
+    requiredForLaunch: true,
     evaluate: (s) => s.stripeConfigured,
   },
   {

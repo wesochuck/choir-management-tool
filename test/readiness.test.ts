@@ -29,14 +29,14 @@ describe('Readiness Registry', () => {
   it('blocks readyForLaunch when a required item is incomplete', () => {
     const incompleteSnapshot: ReadinessSnapshot = {
       ...baseSnapshot,
-      emailVerified: false,
+      hasAdmin: false,
     };
     const res = evaluateReadiness(incompleteSnapshot);
     assert.strictEqual(res.readyForLaunch, false);
 
-    const emailItem = res.items.find((i) => i.id === 'email-verified');
-    assert.strictEqual(emailItem?.applicable, true);
-    assert.strictEqual(emailItem?.completed, false);
+    const adminItem = res.items.find((i) => i.id === 'admin-claimed');
+    assert.strictEqual(adminItem?.applicable, true);
+    assert.strictEqual(adminItem?.completed, false);
   });
 
   it('marks disabled-module tasks as not applicable', () => {

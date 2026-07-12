@@ -2,27 +2,97 @@ import { isSetupSuperuser, isSetupAdmin } from './setupAuth';
 import { resolveSetupStatus, getSetupState, saveSetupState } from './setupState';
 import { parseJsonField } from '../email/hookJson';
 
-declare const $app: any;
-declare const Record: any;
-declare const $http: any;
-declare const $os: {
-  getenv(key: string): string;
-};
-
-export function handleSetupStatus(e: any): any {
-  return e.json(200, resolveSetupStatus($app));
+interface PocketBaseAuth {
+  collectionName: string;
+  get(key: string): unknown;
 }
 
-export function handleSetupClaim(e: any): any {
+interface PocketBaseRequestInfo {
+  host?: string;
+  body: Record<string, unknown>;
+  headers?: Record<string, string>;
+}
+
+interface PocketBaseRequestEvent {
+  auth?: PocketBaseAuth;
+  json(status: number, data: unknown): unknown;
+  requestInfo(): PocketBaseRequestInfo;
+}
+
+interface PocketBaseRecord {
+  id: string;
+  get(key: string): unknown;
+  set(key: string, value: unknown): void;
+}
+
+interface PocketBaseCollection {
+  name: string;
+}
+
+interface PocketBaseApp {
+  findFirstRecordByFilter(
+    collection: string,
+    filter: string,
+    params?: Record<string, unknown>
+  ): PocketBaseRecord;
+  findCollectionByNameOrId(name: string): PocketBaseCollection;
+  findRecordsByFilter(
+    collection: string,
+    filter: string,
+    sort: string,
+    limit: number,
+    offset: number
+  ): PocketBaseRecord[];
+  save(record: PocketBaseRecord): void;
+  delete(record: PocketBaseRecord): void;
+  runInTransaction(callback: () => void): void;
+}
+
+interface PocketBaseHttp {
+  send(options: { url: string; method: string; headers?: Record<string, string> }): {
+    statusCode: number;
+  };
+}
+
+interface PocketBaseOs {
+  getenv(key: string): string;
+}
+
+declare const $app: PocketBaseApp;
+declare const Record: new (
+  collection: PocketBaseCollection,
+  data?: Record<string, unknown>
+) => PocketBaseRecord;
+declare const $http: PocketBaseHttp;
+declare const $os: PocketBaseOs;
+
+export function handleSetupStatus(e: PocketBaseRequestEvent): unknown {
+  const status = resolveSetupStatus($app);
+
+  // If authenticated as admin or superuser, return full details
+  if (isSetupAdmin(e) || isSetupSuperuser(e)) {
+    return e.json(200, status);
+  }
+
+  // Otherwise return only state and initialized
+  return e.json(200, {
+    state: status.state,
+    initialized: status.initialized,
+  });
+}
+
+export function handleSetupClaim(e: PocketBaseRequestEvent): unknown {
   if (!isSetupSuperuser(e)) {
     return e.json(403, { error: 'Forbidden: Superusers only' });
   }
 
   const body = e.requestInfo().body || {};
-  const email = (body.email || '').trim().toLowerCase();
-  const password = body.password || '';
-  const passwordConfirm = body.passwordConfirm || '';
-  const name = (body.name || '').trim();
+  const email = String(body.email || '')
+    .trim()
+    .toLowerCase();
+  const password = String(body.password || '');
+  const passwordConfirm = String(body.passwordConfirm || '');
+  const name = String(body.name || '').trim();
   const isPerformer = !!body.isPerformer;
 
   if (!email || !password || !passwordConfirm || !name) {
@@ -48,40 +118,43 @@ export function handleSetupClaim(e: any): any {
     return e.json(400, { error: 'Application is already claimed' });
   }
 
-  let userRec: any = null;
+  let userRec: PocketBaseRecord | null = null;
   try {
-    const usersColl = $app.findCollectionByNameOrId('users');
-    userRec = new Record(usersColl, {
-      email,
-      emailVisibility: true,
-      verified: true,
-      password,
-      passwordConfirm,
-      role: 'admin',
-    });
-    $app.save(userRec);
+    $app.runInTransaction(() => {
+      const usersColl = $app.findCollectionByNameOrId('users');
+      userRec = new Record(usersColl, {
+        email,
+        emailVisibility: true,
+        verified: true,
+        password,
+        passwordConfirm,
+        role: 'admin',
+      });
+      $app.save(userRec);
 
-    const profilesColl = $app.findCollectionByNameOrId('profiles');
-    const profileRec = new Record(profilesColl, {
-      user: userRec.id,
-      name,
-      globalStatus: 'Active (Current)',
-      voicePart: '',
-      receiveAttendanceReports: true,
-    });
-    $app.save(profileRec);
+      const profilesColl = $app.findCollectionByNameOrId('profiles');
+      const profileRec = new Record(profilesColl, {
+        user: userRec.id,
+        name,
+        globalStatus: 'Active (Current)',
+        voicePart: '',
+        receiveAttendanceReports: true,
+      });
+      $app.save(profileRec);
 
-    // Save setup state progress
-    const state = getSetupState($app);
-    state.initialized = false;
-    state.ownerIsPerformer = isPerformer;
-    if (state.completedSections.indexOf('admin-account') === -1) {
-      state.completedSections.push('admin-account');
-    }
-    saveSetupState($app, state);
+      // Save setup state progress
+      const state = getSetupState($app);
+      state.initialized = false;
+      state.ownerIsPerformer = isPerformer;
+      state.ownerVoicePartSet = false;
+      if (state.completedSections.indexOf('admin-account') === -1) {
+        state.completedSections.push('admin-account');
+      }
+      saveSetupState($app, state);
+    });
 
     return e.json(200, { success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (userRec) {
       try {
         $app.delete(userRec);
@@ -89,11 +162,12 @@ export function handleSetupClaim(e: any): any {
         // ignore
       }
     }
-    return e.json(400, { error: err.message || String(err) });
+    // Propagate raw PocketBase API error
+    throw err;
   }
 }
 
-export function handleSetupProgress(e: any): any {
+export function handleSetupProgress(e: PocketBaseRequestEvent): unknown {
   if (!isSetupAdmin(e)) {
     return e.json(403, { error: 'Forbidden: Administrators only' });
   }
@@ -106,7 +180,8 @@ export function handleSetupProgress(e: any): any {
   }
 
   const state = getSetupState($app);
-  state.completedSections = completedSections;
+  // Verify completed sections are mapped as strings
+  state.completedSections = completedSections.map(String);
 
   if (body.ownerIsPerformer !== undefined) {
     state.ownerIsPerformer = !!body.ownerIsPerformer;
@@ -119,7 +194,7 @@ export function handleSetupProgress(e: any): any {
   return e.json(200, { success: true });
 }
 
-export function handleSetupComplete(e: any): any {
+export function handleSetupComplete(e: PocketBaseRequestEvent): unknown {
   if (!isSetupAdmin(e)) {
     return e.json(403, { error: 'Forbidden: Administrators only' });
   }
@@ -127,7 +202,7 @@ export function handleSetupComplete(e: any): any {
   let rosterEnabled = false;
   try {
     const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
-    const parsed = parseJsonField<any>(record.get('value'));
+    const parsed = parseJsonField<{ enabled?: string[] }>(record.get('value'));
     if (parsed && Array.isArray(parsed.enabled)) {
       rosterEnabled = parsed.enabled.indexOf('roster') !== -1;
     }
@@ -153,7 +228,7 @@ export function handleSetupComplete(e: any): any {
   return e.json(200, { success: true });
 }
 
-export function handleAdminRecovery(e: any): any {
+export function handleAdminRecovery(e: PocketBaseRequestEvent): unknown {
   if (!isSetupSuperuser(e)) {
     return e.json(403, { error: 'Forbidden: Superusers only' });
   }
@@ -164,10 +239,12 @@ export function handleAdminRecovery(e: any): any {
   }
 
   const body = e.requestInfo().body || {};
-  const email = (body.email || '').trim().toLowerCase();
-  const password = body.password || '';
-  const passwordConfirm = body.passwordConfirm || '';
-  const name = (body.name || '').trim();
+  const email = String(body.email || '')
+    .trim()
+    .toLowerCase();
+  const password = String(body.password || '');
+  const passwordConfirm = String(body.passwordConfirm || '');
+  const name = String(body.name || '').trim();
 
   if (!email || !password || !passwordConfirm || !name) {
     return e.json(400, { error: 'Missing required fields' });
@@ -177,31 +254,33 @@ export function handleAdminRecovery(e: any): any {
     return e.json(400, { error: 'Passwords do not match' });
   }
 
-  let userRec: any = null;
+  let userRec: PocketBaseRecord | null = null;
   try {
-    const usersColl = $app.findCollectionByNameOrId('users');
-    userRec = new Record(usersColl, {
-      email,
-      emailVisibility: true,
-      verified: true,
-      password,
-      passwordConfirm,
-      role: 'admin',
-    });
-    $app.save(userRec);
+    $app.runInTransaction(() => {
+      const usersColl = $app.findCollectionByNameOrId('users');
+      userRec = new Record(usersColl, {
+        email,
+        emailVisibility: true,
+        verified: true,
+        password,
+        passwordConfirm,
+        role: 'admin',
+      });
+      $app.save(userRec);
 
-    const profilesColl = $app.findCollectionByNameOrId('profiles');
-    const profileRec = new Record(profilesColl, {
-      user: userRec.id,
-      name,
-      globalStatus: 'Active (Current)',
-      voicePart: '',
-      receiveAttendanceReports: true,
+      const profilesColl = $app.findCollectionByNameOrId('profiles');
+      const profileRec = new Record(profilesColl, {
+        user: userRec.id,
+        name,
+        globalStatus: 'Active (Current)',
+        voicePart: '',
+        receiveAttendanceReports: true,
+      });
+      $app.save(profileRec);
     });
-    $app.save(profileRec);
 
     return e.json(200, { success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (userRec) {
       try {
         $app.delete(userRec);
@@ -209,14 +288,21 @@ export function handleAdminRecovery(e: any): any {
         // ignore
       }
     }
-    return e.json(400, { error: err.message || String(err) });
+    // Propagate raw PocketBase API error
+    throw err;
   }
 }
 
-export function handleSetupHealth(e: any): any {
+export function handleSetupHealth(e: PocketBaseRequestEvent): unknown {
   const status = resolveSetupStatus($app);
-  if (status.state !== 'unclaimed' && !isSetupAdmin(e) && !isSetupSuperuser(e)) {
-    return e.json(403, { error: 'Forbidden' });
+  if (status.state === 'unclaimed') {
+    if (!isSetupSuperuser(e)) {
+      return e.json(403, { error: 'Forbidden: Superusers only' });
+    }
+  } else {
+    if (!isSetupAdmin(e) && !isSetupSuperuser(e)) {
+      return e.json(403, { error: 'Forbidden: Administrators only' });
+    }
   }
 
   const appUrl = $os.getenv('APP_URL') || '';
@@ -253,15 +339,15 @@ export function handleSetupHealth(e: any): any {
         },
       });
       stripeValid = res.statusCode === 200;
-    } catch (err) {
+    } catch {
       stripeValid = false;
     }
 
     try {
-      let evidenceRecord: any = null;
+      let evidenceRecord: PocketBaseRecord;
       try {
         evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_verification'");
-      } catch (err) {
+      } catch {
         const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
         evidenceRecord = new Record(appSettingsColl, { key: 'stripe_verification' });
       }
@@ -275,7 +361,7 @@ export function handleSetupHealth(e: any): any {
         })
       );
       $app.save(evidenceRecord);
-    } catch (err) {
+    } catch {
       // Don't fail the health check if we fail to save verification evidence
     }
   }
@@ -291,7 +377,7 @@ export function handleSetupHealth(e: any): any {
         } else {
           appUrlHost = appUrl.split('/')[0];
         }
-      } catch (err) {
+      } catch {
         // ignore
       }
 
@@ -306,9 +392,9 @@ export function handleSetupHealth(e: any): any {
   let emailValid = false;
   try {
     const emailRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
-    const parsed = JSON.parse(emailRecord.get('value'));
+    const parsed = JSON.parse(String(emailRecord.get('value')));
     emailValid = !!parsed.success;
-  } catch (err) {
+  } catch {
     emailValid = false;
   }
 

@@ -29,6 +29,9 @@ export interface SetupHealthResult {
     stripeWebhookSecret: boolean;
   };
   stripeMode: string;
+  stripeValid: boolean | null;
+  appUrlMismatch: boolean;
+  emailValid: boolean;
 }
 
 export const setupService = {
@@ -72,50 +75,40 @@ export const setupService = {
   },
 
   async getReadinessSnapshot(): Promise<ReadinessSnapshot> {
-    const [
-      choirName,
-      seating,
-      modules,
-      health,
-      commsConfig,
-      landingSettings,
-      auditionSettings,
-      profilesList,
-    ] = await Promise.all([
-      settingsService.getChoirName().catch(() => ''),
-      settingsService.getVoicePartsAndSections().catch(() => ({ voiceParts: [], sections: [] })),
-      getModuleState().catch(() => ({ enabled: [] })),
-      setupService.getHealth().catch(() => ({
-        environment: {
-          appUrl: false,
-          hmacSecret: false,
-          maintenanceSecret: false,
-          stripeSecretKey: false,
-          stripeWebhookSecret: false,
-        },
-        stripeMode: '',
-      })),
-      settingsService.getCommunicationConfig().catch(() => ({
-        smtp: { host: '', port: 587, user: '', pass: '', from: '' },
-      })),
-      settingsService.getLandingSettings().catch(() => null),
-      settingsService.getAuditionSettings().catch(() => null),
-      pb
-        .collection('profiles')
-        .getList(1, 1)
-        .catch(() => ({ totalItems: 0 })),
-    ]);
+    const [choirName, seating, modules, health, , landingSettings, auditionSettings, profilesList] =
+      await Promise.all([
+        settingsService.getChoirName().catch(() => ''),
+        settingsService.getVoicePartsAndSections().catch(() => ({ voiceParts: [], sections: [] })),
+        getModuleState().catch(() => ({ enabled: [] })),
+        setupService.getHealth().catch(() => ({
+          environment: {
+            appUrl: false,
+            hmacSecret: false,
+            maintenanceSecret: false,
+            stripeSecretKey: false,
+            stripeWebhookSecret: false,
+          },
+          stripeMode: '',
+          stripeValid: null,
+          appUrlMismatch: false,
+          emailValid: false,
+        })),
+        settingsService.getCommunicationConfig().catch(() => ({
+          smtp: { host: '', port: 587, user: '', pass: '', from: '' },
+        })),
+        settingsService.getLandingSettings().catch(() => null),
+        settingsService.getAuditionSettings().catch(() => null),
+        pb
+          .collection('profiles')
+          .getList(1, 1)
+          .catch(() => ({ totalItems: 0 })),
+      ]);
 
     const enabledModules = new Set<ModuleId>((modules?.enabled || []) as ModuleId[]);
     const hasVoiceParts = seating.voiceParts.length > 0;
     const hasSections = seating.sections.length > 0;
 
-    const emailVerified = !!(
-      commsConfig.smtp.host &&
-      commsConfig.smtp.user &&
-      commsConfig.smtp.pass &&
-      commsConfig.smtp.from
-    );
+    const emailVerified = !!health.emailValid;
 
     const stripeConfigured = !!health.environment.stripeSecretKey;
     const websiteConfigured = !!(landingSettings && landingSettings.heroHeadline);

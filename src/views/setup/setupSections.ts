@@ -39,7 +39,7 @@ export const SETUP_SECTIONS: SetupSectionDef[] = [
   {
     id: 'engagement-setup',
     title: 'Engagement & Directory',
-    moduleId: 'memberResources',
+    moduleId: 'resources',
     component: EngagementFeatureSetup,
   },
   {

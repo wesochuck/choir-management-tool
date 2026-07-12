@@ -23,7 +23,7 @@ export const AdminIdentityStep: React.FC<AdminIdentityStepProps> = ({
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState(initialPassword);
   const [passwordConfirm, setPasswordConfirm] = useState(initialPassword);
-  const [isPerformer, setIsPerformer] = useState(true);
+  const [isPerformer, setIsPerformer] = useState(false);
   const [loading, setLoading] = useState(false);
   const dialog = useDialog();
 

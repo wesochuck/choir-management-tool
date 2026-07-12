@@ -1,9 +1,10 @@
 import React from 'react';
 import { useSetup } from '../../contexts/SetupContext';
 import { Button } from '../ui';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import type { ModuleId } from '../../lib/modules';
 import { MODULE_DEFINITIONS } from '../../lib/modules';
+import { pb } from '../../lib/pocketbase';
 
 interface ModuleRouteProps {
   module: ModuleId;
@@ -18,6 +19,18 @@ export const ModuleRoute: React.FC<ModuleRouteProps> = ({ module, children }) =>
 
   if (isEnabled) {
     return <>{children}</>;
+  }
+
+  const user = pb.authStore.model;
+  const isAuthenticated = pb.authStore.isValid && !!user;
+  const isAdmin = isAuthenticated && user.role === 'admin';
+
+  if (isAdmin) {
+    return <Navigate to="/admin/settings/modules" replace />;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   const def = MODULE_DEFINITIONS[module];

@@ -55,12 +55,15 @@ describe('Organization & Roster Presets Steps', () => {
       fireEvent.change(urlInput, { target: { value: 'https://testchoir.org' } });
     });
 
-    const submitBtn = screen.getByText(/Save & Continue/i);
+    const form = screen.getByText(/Save & Continue/i).closest('form');
+    assert.ok(form);
     act(() => {
-      submitBtn.click();
+      fireEvent.submit(form);
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
 
     assert.strictEqual(saveNameMock.mock.callCount(), 1);
     assert.strictEqual(saveNameMock.mock.calls[0].arguments[0], 'Test Choir');
@@ -77,6 +80,11 @@ describe('Organization & Roster Presets Steps', () => {
       'saveVoicePartsAndSections',
       async () => {}
     );
+    const savePerformerLabelMock = mock.method(
+      settingsService,
+      'savePerformerLabel',
+      async () => {}
+    );
     const progressMock = mock.method(setupService, 'saveProgress', async () => ({ success: true }));
 
     const onSuccess = mock.fn();
@@ -86,37 +94,51 @@ describe('Organization & Roster Presets Steps', () => {
       <QueryClientProvider client={createQueryClient()}>
         <SetupProvider>
           <DialogProvider>
-            <RosterStructureStep onSuccess={onSuccess} refreshStatus={refreshStatus} />
+            <RosterStructureStep
+              onSuccess={onSuccess}
+              refreshStatus={refreshStatus}
+              ownerIsPerformer={false}
+            />
           </DialogProvider>
         </SetupProvider>
       </QueryClientProvider>
     );
 
     // Renders presets cards
-    assert.ok(screen.getByText(/SATB/i));
-    assert.ok(screen.getByText(/SSAA/i));
-    assert.ok(screen.getByText(/TTBB/i));
+    assert.ok(screen.getByText(/Choir \/ Vocal Ensemble/i));
+    assert.ok(screen.getByText(/Band \/ Instrumental Ensemble/i));
+    assert.ok(screen.getByText(/Other \/ Custom Ensemble/i));
 
-    // Choose SSAA and submit
-    const ssaaCard = screen.getByText(/SSAA/i).closest('button');
-    assert.ok(ssaaCard);
+    // Choose Band and submit
+    const bandCard = screen.getByText(/Band \/ Instrumental Ensemble/i).closest('button');
+    assert.ok(bandCard);
     act(() => {
-      ssaaCard.click();
+      bandCard.click();
     });
 
-    const submitBtn = screen.getByText(/Save & Continue/i);
-    act(() => {
-      submitBtn.click();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
     });
 
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    const form = screen.getByText(/Save & Continue/i).closest('form');
+    assert.ok(form);
+    act(() => {
+      fireEvent.submit(form);
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
 
     assert.strictEqual(saveVoicePartsMock.mock.callCount(), 1);
     const voicePartsPassed = saveVoicePartsMock.mock.calls[0].arguments[0] as any[];
     const sectionsPassed = saveVoicePartsMock.mock.calls[0].arguments[1] as any[];
-    assert.ok(sectionsPassed.some((s: any) => s.code === 'S'));
-    assert.ok(sectionsPassed.some((s: any) => s.code === 'A'));
-    assert.ok(!sectionsPassed.some((s: any) => s.code === 'T')); // SSAA has no Tenors
+    assert.ok(sectionsPassed.some((s: any) => s.code === 'WW'));
+    assert.ok(sectionsPassed.some((s: any) => s.code === 'BR'));
+    assert.ok(!sectionsPassed.some((s: any) => s.code === 'S')); // Band has no Sopranos
+
+    assert.strictEqual(savePerformerLabelMock.mock.callCount(), 1);
+    assert.strictEqual(savePerformerLabelMock.mock.calls[0].arguments[0], 'Musician');
 
     assert.strictEqual(progressMock.mock.callCount(), 1);
   });

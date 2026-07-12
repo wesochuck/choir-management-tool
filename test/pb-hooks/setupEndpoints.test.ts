@@ -59,6 +59,9 @@ let savedRecords: any[] = [];
 let deletedRecords: any[] = [];
 
 const mockApp = {
+  runInTransaction(callback: () => void) {
+    callback();
+  },
   findCollectionByNameOrId(name: string) {
     return { name };
   },
@@ -155,8 +158,18 @@ describe('setupEndpoints', () => {
   });
 
   describe('handleSetupStatus', () => {
-    it('returns public status fields', () => {
+    it('returns basic status fields for unauthenticated requests', () => {
       const e = makeEvent({});
+      const result = handleSetupStatus(e);
+      assert.strictEqual(result.status, 200);
+      assert.deepStrictEqual(result.body, {
+        state: 'unclaimed',
+        initialized: false,
+      });
+    });
+
+    it('returns complete status fields for authenticated admin requests', () => {
+      const e = makeEvent({ auth: { collectionName: 'users', role: 'admin' } });
       const result = handleSetupStatus(e);
       assert.strictEqual(result.status, 200);
       assert.deepStrictEqual(result.body, {
@@ -395,7 +408,7 @@ describe('setupEndpoints', () => {
         STRIPE_SECRET_KEY: 'sk_test_123',
       };
 
-      const e = makeEvent({});
+      const e = makeEvent({ auth: { collectionName: '_superusers' } });
       const result = handleSetupHealth(e);
       assert.strictEqual(result.status, 200);
       assert.deepStrictEqual(result.body.environment, {
@@ -422,6 +435,7 @@ describe('setupEndpoints', () => {
 
       try {
         const e = makeEvent({
+          auth: { collectionName: '_superusers' },
           headers: { host: 'localhost:5173' },
         });
 
@@ -447,6 +461,7 @@ describe('setupEndpoints', () => {
 
       try {
         const e = makeEvent({
+          auth: { collectionName: '_superusers' },
           headers: { host: 'localhost:5173' },
         });
 

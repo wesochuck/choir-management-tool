@@ -1065,35 +1065,45 @@ if (provider === 'brevo') {
     donations: 'donations',
     ticketPurchases: 'ticketSales',
     ticketBundles: 'ticketSales',
+    tickets: 'ticketSales',
     musicPieces: 'musicLibrary',
     resources: 'resources',
     auditions: 'auditions',
     polls: 'polls',
+    pollVotes: 'polls',
     messages: 'communications',
     seatingProfiles: 'seating',
+    seatingCharts: 'seating',
+    events: 'events',
+    venues: 'events',
+    attendance: 'attendance',
+    setLists: 'setLists',
+    patrons: 'patrons',
+    profiles: 'roster',
+    seasons: 'roster',
   };
 
-  const beforeCreateHooks = Object.entries(collectionModuleGuards)
-    .map(([collection, module]) => {
-      const body = `
-if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
-    throw new BadRequestError("Forbidden: Module ${module} is disabled");
-}`;
-      return renderRecordHook('onRecordBeforeCreateRequest', collection, body, {
-        forceBundles: ['setup'],
-      });
-    })
-    .join('\n\n');
+  const beforeRequestHookNames = [
+    'onRecordBeforeCreateRequest',
+    'onRecordBeforeUpdateRequest',
+    'onRecordBeforeDeleteRequest',
+    'onRecordBeforeViewRequest',
+    'onRecordBeforeListRequest',
+  ];
 
-  const beforeUpdateHooks = Object.entries(collectionModuleGuards)
-    .map(([collection, module]) => {
-      const body = `
+  const beforeRequestHooks = beforeRequestHookNames
+    .map((hookName) => {
+      return Object.entries(collectionModuleGuards)
+        .map(([collection, module]) => {
+          const body = `
 if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
-    throw new BadRequestError("Forbidden: Module ${module} is disabled");
+    throw new NotFoundError("Forbidden: Module ${module} is disabled");
 }`;
-      return renderRecordHook('onRecordBeforeUpdateRequest', collection, body, {
-        forceBundles: ['setup'],
-      });
+          return renderRecordHook(hookName, collection, body, {
+            forceBundles: ['setup'],
+          });
+        })
+        .join('\n\n');
     })
     .join('\n\n');
 
@@ -1112,9 +1122,7 @@ if (typeof process === 'undefined') {
 
 // --- RECORD HOOKS ---
 
-${beforeCreateHooks}
-
-${beforeUpdateHooks}
+${beforeRequestHooks}
 
 ${renderRecordHook('onRecordAfterCreateSuccess', 'messages', createHookBody)}
 
@@ -1125,6 +1133,50 @@ ${renderRecordHook('onRecordAfterCreateSuccess', 'auditions', auditionCreateHook
 ${renderRecordHook('onRecordAfterUpdateSuccess', 'auditions', auditionUpdateHookBody)}
 
 // --- CUSTOM ENDPOINTS ---
+
+routerUse((e) => {
+    const path = e.request.url.path;
+    const routeModuleGuards = {
+        '/api/generate-rsvp-tokens': 'rsvps',
+        '/api/rsvp-details': 'rsvps',
+        '/api/quick-rsvp': 'rsvps',
+        '/api/unsubscribe': 'rsvps',
+        '/api/admin/bulk-update-rsvps': 'rsvps',
+        '/api/singer/resolve-placeholders': 'rsvps',
+        '/api/singer/rsvp': 'rsvps',
+        '/api/admin/bulk-upsert-attendance': 'attendance',
+        '/api/generate-poll-tokens': 'polls',
+        '/api/poll-details': 'polls',
+        '/api/submit-poll-response': 'polls',
+        '/api/generate-player-token': 'musicLibrary',
+        '/api/player-playlist': 'musicLibrary',
+        '/api/singer/player-playlist': 'musicLibrary',
+        '/api/calendar/download': 'events',
+        '/api/calendar/feed': 'events',
+        '/api/singer/calendar-feed-url': 'events',
+        '/api/singer/calendar-feed-url/reset': 'events',
+        '/api/singer/seating-profiles': 'seating',
+        '/api/checkout/create-tickets-session': 'ticketSales',
+        '/api/checkout/create-bundle-session': 'ticketSales',
+        '/api/admin/refund-ticket': 'ticketSales',
+        '/api/admin/refund-bundle': 'ticketSales',
+        '/api/admin/resend-ticket-confirmation': 'ticketSales',
+        '/api/tickets/validate': 'ticketSales',
+        '/api/tickets/scan-context': 'ticketSales',
+        '/api/checkout/create-donation-session': 'donations',
+        '/api/admin/refund-donation': 'donations'
+    };
+
+    for (const route in routeModuleGuards) {
+        if (path === route || path.indexOf(route + '/') === 0) {
+            const module = routeModuleGuards[route];
+            if (!isBackendModuleEnabled($app, module)) {
+                throw new NotFoundError("Forbidden: Module " + module + " is disabled");
+            }
+        }
+    }
+    return e.next();
+});
 
 ${renderRoute('GET', '/api/setup/status', 'return handleSetupStatus(e);')}
 ${renderRoute('POST', '/api/setup/claim', 'return handleSetupClaim(e);')}

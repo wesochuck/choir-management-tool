@@ -159,4 +159,6 @@ export const settingsService = {
   saveDirectorySettings,
   getEmailProviderSettings,
   saveEmailProviderSettings,
+  getTicketConfirmationPageSettings,
+  saveTicketConfirmationPageSettings,
 };

@@ -15,11 +15,13 @@ import { SETUP_SECTIONS } from './setupSections';
 import { SetupNavigation } from '../../components/setup/SetupNavigation';
 import { useDialog } from '../../contexts/DialogContext';
 import { setupService } from '../../services/setupService';
-import { formatPocketBaseError } from '../../lib/pocketbase';
-import { Navigate } from 'react-router-dom';
+import { formatPocketBaseError, pb } from '../../lib/pocketbase';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { Button } from '../../components/ui';
 
 const SetupView: React.FC = () => {
-  const { status, enabledModules, refreshStatus } = useSetup();
+  const { status, enabledModules, refreshAll: refreshStatus } = useSetup();
+  const navigate = useNavigate();
   const [suCredentials, setSuCredentials] = useState<{ email: string; pass: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const dialog = useDialog();
@@ -183,7 +185,29 @@ const SetupView: React.FC = () => {
             />
           )}
 
-          {status.state === 'in_progress' && (
+          {status.state === 'in_progress' && !pb.authStore.isValid && (
+            <div className="space-y-6 py-6 text-center">
+              <span className="text-4xl" role="img" aria-label="key">
+                🔑
+              </span>
+              <h2 className="text-2xl font-bold text-slate-100">Setup In Progress</h2>
+              <p className="mx-auto max-w-md text-sm text-slate-400">
+                An administrator account has already been created for this installation. Please sign
+                in to resume setup.
+              </p>
+              <div className="mx-auto max-w-xs pt-4">
+                <Button
+                  variant="primary"
+                  onClick={() => navigate('/login')}
+                  className="w-full justify-center"
+                >
+                  <span>Go to Sign In</span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {status.state === 'in_progress' && pb.authStore.isValid && (
             <>
               {allCompleted ? (
                 <div className="space-y-6 py-6 text-center">
@@ -224,6 +248,7 @@ const SetupView: React.FC = () => {
                         <RosterStructureStep
                           refreshStatus={refreshStatus}
                           onSuccess={refreshStatus}
+                          ownerIsPerformer={!!status.ownerIsPerformer}
                         />
                       )}
 

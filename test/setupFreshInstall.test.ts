@@ -128,6 +128,7 @@ describe('Setup Fresh Install Smoke Test', () => {
     assert.strictEqual(statusRes1.status, 200);
     assert.strictEqual(statusRes1.data.state, 'unclaimed');
     assert.strictEqual(statusRes1.data.initialized, false);
+    assert.strictEqual(statusRes1.data.completedSections, undefined);
 
     // 2. Claim setup
     const claimRes: any = handleSetupClaim(
@@ -147,7 +148,7 @@ describe('Setup Fresh Install Smoke Test', () => {
     assert.strictEqual(dbUsers[0].data.email, 'admin@choir.org');
 
     // 3. Status check should now show in_progress and completedSections=['admin-account']
-    const statusRes2: any = handleSetupStatus(mockEvent(null));
+    const statusRes2: any = handleSetupStatus(mockEvent(adminAuth));
     assert.strictEqual(statusRes2.status, 200);
     assert.strictEqual(statusRes2.data.state, 'in_progress');
     assert.deepStrictEqual(statusRes2.data.completedSections, ['admin-account']);
@@ -167,7 +168,7 @@ describe('Setup Fresh Install Smoke Test', () => {
     assert.strictEqual(progressRes.data.success, true);
 
     // Verify status has updated
-    const statusRes3: any = handleSetupStatus(mockEvent(null));
+    const statusRes3: any = handleSetupStatus(mockEvent(adminAuth));
     assert.deepStrictEqual(statusRes3.data.completedSections, [
       'admin-account',
       'organization-basics',
