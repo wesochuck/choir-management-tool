@@ -3,11 +3,19 @@ import { useSetup } from '../../contexts/SetupContext';
 import { OwnerSignInStep } from './steps/OwnerSignInStep';
 import { AdminIdentityStep } from './steps/AdminIdentityStep';
 import { AdminRecoveryStep } from './steps/AdminRecoveryStep';
+import { OrganizationBasicsStep } from './steps/OrganizationBasicsStep';
+import { RosterStructureStep } from './steps/RosterStructureStep';
+import { SetupNavigation } from '../../components/setup/SetupNavigation';
+import { useDialog } from '../../contexts/DialogContext';
+import { setupService } from '../../services/setupService';
+import { formatPocketBaseError } from '../../lib/pocketbase';
 import { Navigate } from 'react-router-dom';
 
 const SetupView: React.FC = () => {
-  const { status, refreshStatus } = useSetup();
+  const { status, enabledModules, refreshStatus } = useSetup();
   const [suCredentials, setSuCredentials] = useState<{ email: string; pass: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const dialog = useDialog();
 
   if (!status) {
     return (
@@ -46,26 +54,48 @@ const SetupView: React.FC = () => {
     );
   }
 
-  // Stepper Header
+  const rosterEnabled = enabledModules.has('roster');
+
+  // Stepper Header definitions
   const steps = [
-    { id: 'account', label: 'Owner Account' },
-    { id: 'basics', label: 'Organization' },
-    { id: 'modules', label: 'Modules' },
-    { id: 'roster', label: 'Roster Structure' },
+    { id: 'account', label: 'Owner Account', section: 'admin-account' },
+    { id: 'basics', label: 'Organization', section: 'organization-basics' },
+    { id: 'modules', label: 'Modules', section: 'module-selection' },
   ];
 
-  // Determine current active step index
+  if (rosterEnabled) {
+    steps.push({ id: 'roster', label: 'Roster Structure', section: 'roster-structure' });
+  }
+
+  const completed = status.completedSections || [];
+
+  // Find first uncompleted step
   let activeStepIdx = 0;
-  if (status.state === 'in_progress') {
-    const completed = status.completedSections || [];
-    if (!completed.includes('organization-basics')) {
-      activeStepIdx = 1;
-    } else if (!completed.includes('module-selection')) {
-      activeStepIdx = 2;
-    } else {
-      activeStepIdx = 3;
+  for (let i = 0; i < steps.length; i++) {
+    if (!completed.includes(steps[i].section)) {
+      activeStepIdx = i;
+      break;
     }
   }
+
+  // Check if all steps are completed
+  const allCompleted = steps.every((s) => completed.includes(s.section));
+
+  const handleCompleteSetup = async () => {
+    setLoading(true);
+    try {
+      await setupService.complete();
+      await refreshStatus();
+    } catch (err: unknown) {
+      void dialog.showMessage({
+        title: 'Initialization Failed',
+        message: formatPocketBaseError(err),
+        variant: 'danger',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 py-12 font-sans text-white">
@@ -90,16 +120,16 @@ const SetupView: React.FC = () => {
               <div className="z-10 flex flex-col items-center">
                 <div
                   className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all ${
-                    idx <= activeStepIdx
+                    idx <= activeStepIdx || allCompleted
                       ? 'border-teal-500 bg-teal-500/20 text-teal-400'
                       : 'border-slate-800 bg-slate-900 text-slate-500'
                   }`}
                 >
-                  {idx < activeStepIdx ? '✓' : idx + 1}
+                  {completed.includes(step.section) ? '✓' : idx + 1}
                 </div>
                 <span
                   className={`mt-2 text-xs font-medium transition-colors ${
-                    idx === activeStepIdx ? 'text-teal-400' : 'text-slate-500'
+                    idx === activeStepIdx && !allCompleted ? 'text-teal-400' : 'text-slate-500'
                   }`}
                 >
                   {step.label}
@@ -108,7 +138,7 @@ const SetupView: React.FC = () => {
               {idx < steps.length - 1 && (
                 <div
                   className={`h-0.5 flex-1 transition-all ${
-                    idx < activeStepIdx ? 'bg-teal-500' : 'bg-slate-800'
+                    completed.includes(steps[idx].section) ? 'bg-teal-500' : 'bg-slate-800'
                   }`}
                 />
               )}
@@ -132,15 +162,50 @@ const SetupView: React.FC = () => {
           )}
 
           {status.state === 'in_progress' && (
-            <div className="space-y-4 py-6 text-center">
-              <h2 className="text-xl font-semibold text-slate-200">
-                Step {activeStepIdx + 1}: {steps[activeStepIdx].label}
-              </h2>
-              <p className="text-sm text-slate-400">
-                Placeholder for {steps[activeStepIdx].label} wizard step. We will configure this in
-                the next steps.
-              </p>
-            </div>
+            <>
+              {allCompleted ? (
+                <div className="space-y-6 py-6 text-center">
+                  <span className="text-4xl" role="img" aria-label="sparkles">
+                    ✨
+                  </span>
+                  <h2 className="text-2xl font-bold text-slate-100">Setup Complete!</h2>
+                  <p className="mx-auto max-w-md text-sm text-slate-400">
+                    Your choir management application is ready. Click the button below to initialize
+                    and launch your dashboard.
+                  </p>
+                  <SetupNavigation
+                    nextLabel="Launch Application"
+                    onNext={handleCompleteSetup}
+                    loading={loading}
+                  />
+                </div>
+              ) : (
+                <>
+                  {activeStepIdx === 1 && (
+                    <OrganizationBasicsStep
+                      refreshStatus={refreshStatus}
+                      onSuccess={refreshStatus}
+                    />
+                  )}
+
+                  {activeStepIdx === 2 && (
+                    <div className="space-y-4 py-6 text-center">
+                      <h2 className="text-xl font-semibold text-slate-200">
+                        Step 3: Module Selection
+                      </h2>
+                      <p className="text-sm text-slate-400">
+                        Placeholder for Module Selection wizard step. We will configure this in the
+                        next step.
+                      </p>
+                    </div>
+                  )}
+
+                  {activeStepIdx === 3 && (
+                    <RosterStructureStep refreshStatus={refreshStatus} onSuccess={refreshStatus} />
+                  )}
+                </>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -139,6 +139,8 @@ export const settingsService = {
   saveMusicLibrarySettings,
   getSeatingSettings,
   saveSeatingSettings,
+  getVoicePartsAndSections,
+  saveVoicePartsAndSections,
   getChoirName,
   saveChoirName,
   getPerformerLabel,
