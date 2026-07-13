@@ -504,6 +504,10 @@ export default function CommunicationView() {
         <DraftsPanel
           drafts={library.drafts}
           onResumeDraft={draft.handleResumeDraft}
+          onStartNew={() => {
+            setTab('compose');
+            setWizardStep('TARGETS');
+          }}
           onDeleteDraft={async (draftRecord) => {
             if (
               await dialog.confirm({
