@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import EasyMDE from 'easymde';
 import { Button, Modal } from '../../../components/ui';
 import { PollSelectionModal } from '../../../components/admin/PollSelectionModal';

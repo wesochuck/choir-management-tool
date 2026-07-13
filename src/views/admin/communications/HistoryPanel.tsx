@@ -53,36 +53,31 @@ export function HistoryPanel({
     setStatusFilter('all');
   }, [historyPage]);
 
-  const handleRetryFailed = async (message: MessageRecord) => {
-    const summary = delivery.summaries[message.id];
-    const failedCount = summary?.total.failed ?? 0;
+  const handleRetryFailed = async (message: MessageRecord, explicitFailedCount?: number) => {
+    const count = explicitFailedCount ?? delivery.summaries[message.id]?.total.failed ?? 0;
     const confirmed = await dialog.confirm({
       title: 'Retry Failed Deliveries?',
-      message: `Retry ${failedCount} failed ${failedCount === 1 ? 'delivery' : 'deliveries'} for "${message.subject || 'SMS message'}"? Successful deliveries will not be resent.`,
+      message: `Retry ${count} failed ${count === 1 ? 'delivery' : 'deliveries'} for "${message.subject || 'SMS message'}"? Successful deliveries will not be resent.`,
       confirmLabel: 'Retry failed deliveries',
       cancelLabel: 'Cancel',
       variant: 'danger',
     });
     if (!confirmed) return;
-    const result = await delivery.retryFailed(message.id);
-    dialog.showToast(
-      `${result.retriedCount} failed ${result.retriedCount === 1 ? 'delivery' : 'deliveries'} queued for retry.`
-    );
-  };
-
-  const handleModalRetryFailed = async (message: MessageRecord, failedCount: number) => {
-    const confirmed = await dialog.confirm({
-      title: 'Retry Failed Deliveries?',
-      message: `Retry ${failedCount} failed ${failedCount === 1 ? 'delivery' : 'deliveries'} for "${message.subject || 'SMS message'}"? Successful deliveries will not be resent.`,
-      confirmLabel: 'Retry failed deliveries',
-      cancelLabel: 'Cancel',
-      variant: 'danger',
-    });
-    if (!confirmed) return;
-    const result = await delivery.retryFailed(message.id);
-    dialog.showToast(
-      `${result.retriedCount} failed ${result.retriedCount === 1 ? 'delivery' : 'deliveries'} queued for retry.`
-    );
+    try {
+      const result = await delivery.retryFailed(message.id);
+      dialog.showToast(
+        `${result.retriedCount} failed ${result.retriedCount === 1 ? 'delivery' : 'deliveries'} queued for retry.`
+      );
+    } catch (err: unknown) {
+      await dialog.showMessage({
+        title: 'Retry Failed',
+        message:
+          typeof err === 'object' && err !== null && 'message' in err
+            ? String((err as { message: unknown }).message)
+            : 'An unexpected error occurred while retrying deliveries.',
+        variant: 'danger',
+      });
+    }
   };
 
   return (
@@ -116,7 +111,7 @@ export function HistoryPanel({
         isRetrying={delivery.isRetrying}
         onClose={() => setSelectedMessage(null)}
         onCopyDraft={onCopyDraft}
-        onRetryFailed={handleModalRetryFailed}
+        onRetryFailed={handleRetryFailed}
       />
     </div>
   );
