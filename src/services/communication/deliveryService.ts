@@ -1,4 +1,5 @@
 import { pb } from '../../lib/pocketbase';
+import { retryOn429 } from '../../lib/networkSafety';
 import type { DeliverySummaryResponse, RetryFailedResponse } from './types';
 
 /**
@@ -6,10 +7,12 @@ import type { DeliverySummaryResponse, RetryFailedResponse } from './types';
  * The server hard-caps input at 10 IDs and 10,000 queue rows per message.
  */
 export async function getDeliverySummaries(messageIds: string[]): Promise<DeliverySummaryResponse> {
-  return pb.send<DeliverySummaryResponse>('/api/admin/communications/delivery-summary', {
-    method: 'POST',
-    body: { messageIds },
-  });
+  return retryOn429(() =>
+    pb.send<DeliverySummaryResponse>('/api/admin/communications/delivery-summary', {
+      method: 'POST',
+      body: { messageIds },
+    })
+  );
 }
 
 /**
@@ -17,8 +20,10 @@ export async function getDeliverySummaries(messageIds: string[]): Promise<Delive
  * Successful rows are never touched.
  */
 export async function retryFailedDeliveries(messageId: string): Promise<RetryFailedResponse> {
-  return pb.send<RetryFailedResponse>('/api/admin/communications/retry-failed', {
-    method: 'POST',
-    body: { messageId },
-  });
+  return retryOn429(() =>
+    pb.send<RetryFailedResponse>('/api/admin/communications/retry-failed', {
+      method: 'POST',
+      body: { messageId },
+    })
+  );
 }
