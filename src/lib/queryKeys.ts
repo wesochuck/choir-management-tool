@@ -205,6 +205,9 @@ export const queryKeys = {
     automatedTasks: () => [...queryKeys.communications.all, 'automatedTasks'] as const,
     resolvedRecipients: (filters: unknown) =>
       [...queryKeys.communications.all, 'resolvedRecipients', filters] as const,
+    delivery: () => [...queryKeys.communications.all, 'delivery'] as const,
+    deliverySummaries: (messageIds: string[]) =>
+      [...queryKeys.communications.all, 'delivery', 'summaries', messageIds] as const,
   },
   setup: {
     status: ['setup', 'status'] as const,

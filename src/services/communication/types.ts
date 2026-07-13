@@ -65,3 +65,59 @@ export interface SendMessageResult {
 export interface SentTaskStatusOptions {
   onRetry?: Retry429Options['onRetry'];
 }
+
+// ---------------------------------------------------------------------------
+// Delivery visibility contracts (Phase 3)
+// ---------------------------------------------------------------------------
+
+export type DeliveryState =
+  | 'queued'
+  | 'sending'
+  | 'sent'
+  | 'partial'
+  | 'failed'
+  | 'tracking-unavailable';
+
+export type FailureCategory =
+  | 'authentication'
+  | 'rate-limit'
+  | 'invalid-destination'
+  | 'provider-rejected'
+  | 'timeout'
+  | 'unknown';
+
+export interface DeliveryCounts {
+  total: number;
+  pending: number;
+  processing: number;
+  sent: number;
+  failed: number;
+}
+
+export interface DeliveryFailureDetail {
+  maskedDestination: string;
+  channel: 'email' | 'sms';
+  attempts: number;
+  category: FailureCategory;
+  lastSeen: string;
+}
+
+export interface DeliverySummary {
+  messageId: string;
+  state: DeliveryState;
+  total: DeliveryCounts;
+  email: DeliveryCounts;
+  sms: DeliveryCounts;
+  failures: DeliveryFailureDetail[];
+  hasMoreFailures: boolean;
+  lastActivity: string | null;
+  truncated: boolean;
+}
+
+export interface DeliverySummaryResponse {
+  summaries: Record<string, DeliverySummary>;
+}
+
+export interface RetryFailedResponse {
+  retriedCount: number;
+}

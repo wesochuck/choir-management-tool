@@ -1,12 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   type MessageRecord,
   type CommunicationRecipient,
+  type DeliverySummary,
 } from '../../services/communicationService';
 import { type Event } from '../../services/eventService';
 import { type CommunicationSettings } from '../../services/settingsService';
 import { resolvePreviewContent } from '../../lib/communicationUtils';
 import { Button, Select, Input, DataTable, type ColumnDef } from '../ui';
+import {
+  resolveDeliveryDisplayState,
+  formatDeliveryProgress,
+  type DeliveryStatusFilter,
+} from '../../views/admin/communications/deliveryPresentation';
+import { DeliveryStatusBadge } from '../../views/admin/communications/DeliveryStatusBadge';
 
 export type SourceFilter = 'all' | 'manual' | 'automated';
 
@@ -19,8 +26,13 @@ interface MessageHistoryProps {
   onHistorySearchChange: (query: string) => void;
   sourceFilter: SourceFilter;
   onSourceFilterChange: (filter: SourceFilter) => void;
+  statusFilter: DeliveryStatusFilter;
+  onStatusFilterChange: (filter: DeliveryStatusFilter) => void;
+  summaries: Record<string, DeliverySummary>;
+  isSummariesLoading: boolean;
   onViewDetails: (message: MessageRecord) => void;
   onCopyDraft: (message: MessageRecord) => void;
+  onRetryFailed: (message: MessageRecord) => void;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
   onNewMessage: () => void;
   events: Event[];
@@ -36,8 +48,13 @@ export function MessageHistory({
   onHistorySearchChange,
   sourceFilter,
   onSourceFilterChange,
+  statusFilter,
+  onStatusFilterChange,
+  summaries,
+  isSummariesLoading,
   onViewDetails,
   onCopyDraft,
+  onRetryFailed,
   onViewRecipients,
   onNewMessage,
   events,
@@ -59,16 +76,6 @@ export function MessageHistory({
     setSearchTerm(historySearchQuery);
   }, [historySearchQuery]);
 
-  const filteredHistory =
-    sourceFilter === 'all'
-      ? history
-      : history.filter((message) => {
-          const mFilters = message.filters as Record<string, unknown>;
-          const mType = mFilters?.type as string | undefined;
-          const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
-          return sourceFilter === 'automated' ? isAutomated : !isAutomated;
-        });
-
   const getMessageMeta = (message: MessageRecord) => {
     const mFilters = message.filters as Record<string, unknown>;
     const mType = mFilters?.type as string | undefined;
@@ -87,6 +94,29 @@ export function MessageHistory({
       commSettings.mailingAddress
     );
   };
+
+  // Source filter
+  const sourceFilteredHistory = useMemo(
+    () =>
+      sourceFilter === 'all'
+        ? history
+        : history.filter((message) => {
+            const mFilters = message.filters as Record<string, unknown>;
+            const mType = mFilters?.type as string | undefined;
+            const isAutomated = mType?.startsWith('Automated') || mType === 'Attendance Report';
+            return sourceFilter === 'automated' ? isAutomated : !isAutomated;
+          }),
+    [history, sourceFilter]
+  );
+
+  // Page-local delivery status filter (operates on what's already loaded)
+  const filteredHistory = useMemo(() => {
+    if (statusFilter === 'all') return sourceFilteredHistory;
+    return sourceFilteredHistory.filter((message) => {
+      const displayState = resolveDeliveryDisplayState(message, summaries[message.id]);
+      return displayState === statusFilter;
+    });
+  }, [sourceFilteredHistory, statusFilter, summaries]);
 
   const columns: ColumnDef<MessageRecord>[] = [
     {
@@ -191,19 +221,25 @@ export function MessageHistory({
       },
     },
     {
-      id: 'status',
-      header: 'Status',
+      id: 'delivery',
+      header: 'Delivery',
       enableSorting: false,
-      cell: ({ row }) =>
-        row.original.status === 'Archived' ? (
-          <span className="inline-flex w-[70px] items-center justify-center rounded bg-slate-400 px-1.5 py-0.5 text-xs font-semibold tracking-wider text-white uppercase">
-            Archived
-          </span>
-        ) : (
-          <span className="bg-success-bg text-success-text inline-flex w-[70px] items-center justify-center rounded px-1.5 py-0.5 text-xs font-semibold tracking-wider uppercase">
-            Sent
-          </span>
-        ),
+      cell: ({ row }) => {
+        const summary = summaries[row.original.id];
+        const displayState = resolveDeliveryDisplayState(row.original, summary);
+        if (isSummariesLoading && !summary && row.original.status !== 'Archived') {
+          return <span className="text-text-muted text-xs">Checking…</span>;
+        }
+        const progress = summary ? formatDeliveryProgress(summary) : undefined;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <DeliveryStatusBadge state={displayState} progress={progress} />
+            {progress && displayState !== 'tracking-unavailable' && displayState !== 'archived' && (
+              <span className="text-text-muted text-[11px]">{progress}</span>
+            )}
+          </div>
+        );
+      },
       meta: {
         cardSection: 0,
         cardSide: 'right',
@@ -213,18 +249,36 @@ export function MessageHistory({
       id: 'actions',
       header: 'Actions',
       enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          <Button
-            type="button"
-            variant="secondary"
-            size="small"
-            onClick={() => onCopyDraft(row.original)}
-          >
-            Copy to Draft
-          </Button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const summary = summaries[row.original.id];
+        const canRetry =
+          summary &&
+          summary.total.failed > 0 &&
+          !summary.truncated &&
+          row.original.status !== 'Archived';
+        return (
+          <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="small"
+              onClick={() => onCopyDraft(row.original)}
+            >
+              Copy to Draft
+            </Button>
+            {canRetry && (
+              <Button
+                type="button"
+                variant="danger"
+                size="small"
+                onClick={() => onRetryFailed(row.original)}
+              >
+                Retry Failed
+              </Button>
+            )}
+          </div>
+        );
+      },
       meta: {
         align: 'right',
         cardSection: 1,
@@ -233,11 +287,56 @@ export function MessageHistory({
     },
   ];
 
+  const renderMobileCard = (message: MessageRecord) => {
+    const { isAutomated } = getMessageMeta(message);
+    const resolvedSubject = getResolvedSubject(message);
+    const summary = summaries[message.id];
+    const displayState = resolveDeliveryDisplayState(message, summary);
+    const progress = summary ? formatDeliveryProgress(summary) : undefined;
+
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-text truncate text-sm font-semibold">{resolvedSubject}</span>
+            <div className="flex flex-wrap gap-1">
+              <span className="bg-primary-light text-primary-deep inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase">
+                {message.type}
+              </span>
+              {isAutomated && (
+                <span className="bg-danger-bg text-danger-text inline-flex w-fit items-center rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase">
+                  Automated
+                </span>
+              )}
+            </div>
+          </div>
+          <DeliveryStatusBadge state={displayState} progress={progress} />
+        </div>
+
+        <div className="text-text-muted flex flex-col gap-0.5 text-xs">
+          {progress && displayState !== 'tracking-unavailable' && displayState !== 'archived' && (
+            <span>{progress}</span>
+          )}
+          <span>{new Date(message.created).toLocaleString()}</span>
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full justify-center"
+          onClick={() => onViewDetails(message)}
+        >
+          Message details
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {hasUnderlyingHistory && (
-        <div className="mb-1 flex items-center gap-2">
-          <div className="relative flex-[3]">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <div className="relative min-w-[180px] flex-[3]">
             <Input
               aria-label="Search message history"
               type="text"
@@ -269,6 +368,21 @@ export function MessageHistory({
             <option value="all">All Sources</option>
             <option value="manual">Manual</option>
             <option value="automated">Automated</option>
+          </Select>
+          <Select
+            aria-label="Delivery status"
+            value={statusFilter}
+            onChange={(e) => onStatusFilterChange(e.target.value as DeliveryStatusFilter)}
+            className="max-w-[160px]"
+          >
+            <option value="all">All Statuses</option>
+            <option value="queued">Queued</option>
+            <option value="sending">Sending</option>
+            <option value="sent">Sent</option>
+            <option value="partial">Partial</option>
+            <option value="failed">Failed</option>
+            <option value="archived">Archived</option>
+            <option value="tracking-unavailable">Untracked</option>
           </Select>
         </div>
       )}
@@ -314,6 +428,7 @@ export function MessageHistory({
         onPaginationChange={(state) => onPageChange(state.pageIndex + 1)}
         onRowClick={(row) => onViewDetails(row)}
         getRowId={(message) => message.id}
+        renderMobileCard={renderMobileCard}
       />
     </div>
   );

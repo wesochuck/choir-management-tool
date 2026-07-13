@@ -24,6 +24,7 @@ import {
   resolveAttendanceReportRecipients,
   triggerAttendanceReport,
 } from './communication/attendanceReportService';
+import { getDeliverySummaries, retryFailedDeliveries } from './communication/deliveryService';
 
 export type { CommunicationConfig } from './settingsService';
 
@@ -37,6 +38,13 @@ export type {
   TemplateRecord,
   SendMessageResult,
   SentTaskStatusOptions,
+  DeliveryState,
+  FailureCategory,
+  DeliveryCounts,
+  DeliveryFailureDetail,
+  DeliverySummary,
+  DeliverySummaryResponse,
+  RetryFailedResponse,
 } from './communication/types';
 
 export { renderManualAttendanceReportSubject, renderManualAttendanceReportTemplate };
@@ -50,6 +58,8 @@ import type {
   TemplateRecord,
   SentTaskStatusOptions,
   AutomatedTaskStatusMap,
+  DeliverySummaryResponse,
+  RetryFailedResponse,
 } from './communication/types';
 
 export const communicationService = {
@@ -90,6 +100,8 @@ export const communicationService = {
   },
   sendBulkMessage,
   triggerAttendanceReport,
+  getDeliverySummaries,
+  retryFailedDeliveries,
   defaultConfig: DEFAULT_COMMUNICATION_CONFIG,
   statuses: ['Active', 'Idle', 'Inactive'],
 } satisfies {
@@ -135,6 +147,8 @@ export const communicationService = {
   archiveMessage: (data: SendMessageInput) => Promise<MessageRecord>;
   sendBulkMessage: (data: SendMessageInput, draftId?: string) => Promise<SendMessageResult>;
   triggerAttendanceReport: (eventId: string) => Promise<MessageRecord>;
+  getDeliverySummaries: (messageIds: string[]) => Promise<DeliverySummaryResponse>;
+  retryFailedDeliveries: (messageId: string) => Promise<RetryFailedResponse>;
   defaultConfig: CommunicationConfig;
   statuses: string[];
 };

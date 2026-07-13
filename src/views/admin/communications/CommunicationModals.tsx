@@ -3,17 +3,13 @@ import EasyMDE from 'easymde';
 import { Button, Modal } from '../../../components/ui';
 import { PollSelectionModal } from '../../../components/admin/PollSelectionModal';
 import type {
-  MessageRecord,
   CommunicationRecipient,
   TemplateRecord,
 } from '../../../services/communicationService';
 import type { Event } from '../../../services/eventService';
 import type { CommunicationSettings } from '../../../services/settingsService';
-import { resolvePreviewContent } from '../../../lib/communicationUtils';
 
 interface CommunicationModalsProps {
-  selectedMessage: MessageRecord | null;
-  setSelectedMessage: (msg: MessageRecord | null) => void;
   recipientPreviewList: {
     isOpen: boolean;
     recipients: CommunicationRecipient[];
@@ -42,8 +38,6 @@ interface CommunicationModalsProps {
 }
 
 export function CommunicationModals({
-  selectedMessage,
-  setSelectedMessage,
   recipientPreviewList,
   setRecipientPreviewList,
   isPollModalOpen,
@@ -51,65 +45,11 @@ export function CommunicationModals({
   setPollQuestions,
   setContent,
   editorRef,
-  events,
-  commSettings,
   editingTemplate,
   setEditingTemplate,
 }: CommunicationModalsProps) {
   return (
     <>
-      <Modal
-        isOpen={!!selectedMessage}
-        onClose={() => setSelectedMessage(null)}
-        title="Message Details"
-        maxWidth="600px"
-        footer={
-          <Button variant="secondary" onClick={() => setSelectedMessage(null)}>
-            Cancel
-          </Button>
-        }
-      >
-        {selectedMessage && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <label className="text-label text-muted">Subject</label>
-              <strong>
-                {(() => {
-                  const mFilters = selectedMessage.filters as Record<string, unknown>;
-                  const eventId = mFilters?.eventId as string | undefined;
-                  const linkedEvent = events.find((e) => e.id === eventId) || null;
-                  return resolvePreviewContent(
-                    selectedMessage.subject || '(SMS)',
-                    linkedEvent,
-                    null,
-                    commSettings.mailingAddress
-                  );
-                })()}
-              </strong>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-label text-muted">Sent To</label>
-              <span>
-                {selectedMessage.status === 'Archived'
-                  ? 'No recipients because this message was archived before dispatch.'
-                  : `${selectedMessage.recipients.length} recipients`}
-              </span>
-            </div>
-            {selectedMessage.status === 'Archived' && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                <strong>Archived:</strong> This automated message was archived without sending.
-              </div>
-            )}
-            <div className="flex flex-col gap-1">
-              <label className="text-label text-muted">Content</label>
-              <div className="border-border bg-bg max-h-60 overflow-y-auto rounded-lg border p-4">
-                {selectedMessage.content}
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
-
       <Modal
         isOpen={recipientPreviewList.isOpen}
         onClose={() => setRecipientPreviewList({ ...recipientPreviewList, isOpen: false })}
@@ -159,9 +99,7 @@ export function CommunicationModals({
           if (editor) {
             editor.codemirror.replaceSelection(tag);
             editor.codemirror.focus();
-            // onChange handler in MarkdownEditor will trigger setContent/setEditingTemplate
           } else {
-            // Fallback
             if (editingTemplate && setEditingTemplate) {
               setEditingTemplate({
                 ...editingTemplate,

@@ -56,8 +56,6 @@ export default function CommunicationView() {
   const editorRef = useRef<EasyMDE | null>(null);
   const didResumeRef = useRef(false);
 
-  const [selectedMessage, setSelectedMessage] = useState<MessageRecord | null>(null);
-
   const [recipientPreviewList, setRecipientPreviewList] = useState<{
     isOpen: boolean;
     recipients: CommunicationRecipient[];
@@ -531,7 +529,6 @@ export default function CommunicationView() {
           onHistorySearchChange={library.setHistorySearchQuery}
           events={events}
           commSettings={library.commSettings}
-          onViewDetails={setSelectedMessage}
           onCopyDraft={handleCopyMessageAsDraft}
           onViewRecipients={handleViewRecipients}
           onNewMessage={startNewMessage}
@@ -575,8 +572,6 @@ export default function CommunicationView() {
       )}
 
       <CommunicationModals
-        selectedMessage={selectedMessage}
-        setSelectedMessage={setSelectedMessage}
         recipientPreviewList={recipientPreviewList}
         setRecipientPreviewList={setRecipientPreviewList}
         isPollModalOpen={isPollModalOpen}

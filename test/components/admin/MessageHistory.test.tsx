@@ -3,6 +3,10 @@ import { afterEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MessageHistory } from '../../../src/components/admin/MessageHistory';
+import type {
+  DeliverySummary,
+  DeliveryStatusFilter,
+} from '../../../src/services/communicationService';
 
 afterEach(() => {
   cleanup();
@@ -17,8 +21,13 @@ const defaultProps = {
   onHistorySearchChange: mock.fn(),
   sourceFilter: 'all' as const,
   onSourceFilterChange: mock.fn(),
+  statusFilter: 'all' as DeliveryStatusFilter,
+  onStatusFilterChange: mock.fn(),
+  summaries: {} as Record<string, DeliverySummary>,
+  isSummariesLoading: false,
   onViewDetails: mock.fn(),
   onCopyDraft: mock.fn(),
+  onRetryFailed: mock.fn(),
   onViewRecipients: mock.fn(),
   onNewMessage: mock.fn(),
   events: [],
