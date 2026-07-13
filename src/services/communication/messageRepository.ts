@@ -21,6 +21,10 @@ async function getMessagesPaginated(
   });
 }
 
+async function getDraft(id: string) {
+  return await pb.collection('messages').getOne<MessageRecord>(id);
+}
+
 async function getDrafts() {
   return await pb.collection('messages').getFullList<MessageRecord>({
     sort: '-created',
@@ -85,6 +89,7 @@ async function archiveMessage(data: SendMessageInput) {
 export const messageRepository = {
   getMessages,
   getMessagesPaginated,
+  getDraft,
   getDrafts,
   saveDraft,
   deleteDraft,

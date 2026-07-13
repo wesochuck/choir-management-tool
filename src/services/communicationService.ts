@@ -12,10 +12,7 @@ import { DEFAULT_COMMUNICATION_CONFIG, type CommunicationConfig } from './settin
 
 import { messageRepository } from './communication/messageRepository';
 import { resolveRecipients } from './communication/recipientResolver';
-import {
-  getAutomatedTaskStatuses,
-  wasMessageSent,
-} from './communication/sentTaskStatusService';
+import { getAutomatedTaskStatuses, wasMessageSent } from './communication/sentTaskStatusService';
 import {
   resolveRsvpPlaceholders,
   resolvePollPlaceholders,
@@ -110,6 +107,7 @@ export const communicationService = {
     eventId?: string;
     type?: 'Reminder' | 'Report' | 'RSVP Request' | 'Ticket Buyer Reminder';
   }) => Promise<boolean>;
+  getDraft: (id: string) => Promise<MessageRecord>;
   getDrafts: () => Promise<MessageRecord[]>;
   saveDraft: (data: SendMessageInput, id?: string) => Promise<MessageRecord>;
   deleteDraft: (id: string) => Promise<unknown>;
