@@ -51,7 +51,7 @@ export const ReadinessChecklist: React.FC<ReadinessChecklistProps> = ({ items })
           </div>
           <div>
             {item.completed ? (
-              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="bg-success-bg text-success-text rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
                 Ready
               </span>
             ) : (
