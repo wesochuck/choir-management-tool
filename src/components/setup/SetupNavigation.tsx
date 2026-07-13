@@ -21,7 +21,7 @@ export const SetupNavigation: React.FC<SetupNavigationProps> = ({
   loading = false,
 }) => {
   return (
-    <div className="mt-8 flex items-center justify-between border-t border-slate-800 pt-6">
+    <div className="border-border mt-8 flex items-center justify-between border-t pt-6">
       <div>
         {onBack && (
           <Button

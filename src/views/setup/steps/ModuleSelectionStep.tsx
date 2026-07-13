@@ -107,12 +107,12 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <p className="text-sm text-slate-400">
+        <p className="text-text-muted text-sm">
           Select the features you want to enable for your choir. Recommended modules are
           preselected.
         </p>
 
-        <div className="grid max-h-[400px] grid-cols-1 gap-4 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/20 p-4 pr-2 sm:grid-cols-2">
+        <div className="border-border bg-surface-muted grid max-h-[400px] grid-cols-1 gap-4 overflow-y-auto rounded-xl border p-4 pr-2 sm:grid-cols-2">
           {MODULE_IDS.map((id) => {
             const def = MODULE_DEFINITIONS[id];
             const isRecommended = RECOMMENDED_MODULES.includes(id);
@@ -121,10 +121,10 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
             return (
               <div
                 key={id}
-                className={`flex items-start gap-3 rounded-xl border p-4 transition-all ${
+                className={`flex items-start gap-3 rounded-xl border p-4 transition-all duration-200 ${
                   isChecked
-                    ? 'border-teal-500/50 bg-teal-500/5'
-                    : 'border-slate-800 bg-slate-900/30'
+                    ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-800/40 dark:bg-emerald-950/10'
+                    : 'border-border bg-surface'
                 }`}
               >
                 <div className="pt-0.5">
@@ -134,15 +134,15 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-200">
+                  <span className="text-text flex items-center gap-1.5 text-sm font-semibold">
                     {def.label}
                     {isRecommended && (
-                      <span className="rounded-full bg-teal-500/20 px-1.5 py-0.5 text-[10px] font-medium text-teal-300">
+                      <span className="bg-success-bg text-success-text rounded-full px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">
                         Recommended
                       </span>
                     )}
                   </span>
-                  <span className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <span className="text-text-muted mt-1 text-xs leading-relaxed">
                     {def.description}
                   </span>
                 </div>
