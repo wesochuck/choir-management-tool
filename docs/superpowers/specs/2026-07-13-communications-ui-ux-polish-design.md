@@ -318,6 +318,9 @@ invalidated and displays Queued or Sending.
 - Provider failures are sanitized before leaving the server.
 - Credentials, signed tokens, complete recipient contact details, and provider secrets are never
   logged.
+- Existing queue debug statements that serialize `rawRecipients`, normalized phone numbers, or
+  per-recipient destinations are removed; operational logging is limited to message IDs and
+  aggregate channel counts.
 - Signed-token construction and parsing are unchanged.
 - Hook work is made only in `pocketbase/pb_hooks_src/`; `main.pb.js` is regenerated rather than
   edited.
