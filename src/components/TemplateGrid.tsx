@@ -19,25 +19,9 @@ const iconMap = {
 
 interface TemplateGridProps {
   templates: MessageTemplate[];
-  selectedTemplateId: string | null;
+  selectedTemplateId: string;
   onSelect: (template: MessageTemplate) => void;
 }
-
-const getCategoryForTemplate = (
-  title: string
-): 'auditions' | 'payments' | 'tickets' | 'general' => {
-  const titleLower = title.toLowerCase();
-  if (titleLower.includes('audition')) return 'auditions';
-  if (
-    titleLower.includes('donation') ||
-    titleLower.includes('due') ||
-    titleLower.includes('payment') ||
-    titleLower.includes('receipt')
-  )
-    return 'payments';
-  if (titleLower.includes('ticket')) return 'tickets';
-  return 'general';
-};
 
 export const TemplateGrid: React.FC<TemplateGridProps> = ({
   templates,
@@ -46,48 +30,88 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const blankTemplate = templates.find((t) => t.category === 'blank') || {
+  const blankTemplate: MessageTemplate = {
     id: 'blank',
     title: 'Blank Message',
     description: 'Start with a completely empty canvas.',
-    category: 'blank' as const,
-    channel: 'email' as const,
-    origin: 'system' as const,
+    category: 'general',
+    channel: 'email',
+    origin: 'system',
     subjectLine: '',
     content: '',
   };
 
-  const regularTemplates = templates.filter((t) => t.category !== 'blank');
-  const BlankIcon = iconMap.blank;
+  const systemTemplates = templates
+    .filter((t) => t.origin === 'system' && t.category !== 'blank' && t.id !== 'blank')
+    .sort((a, b) => a.title.localeCompare(b.title));
 
-  const filteredTemplates = regularTemplates.filter((template) => {
+  const customTemplates = templates
+    .filter((t) => t.origin === 'custom')
+    .sort((a, b) => {
+      const timeA = a.updated ? new Date(a.updated).getTime() : 0;
+      const timeB = b.updated ? new Date(b.updated).getTime() : 0;
+      return timeB - timeA;
+    });
+
+  const filterFn = (t: MessageTemplate) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      template.title.toLowerCase().includes(query) ||
-      (template.description || '').toLowerCase().includes(query) ||
-      (template.subjectLine || '').toLowerCase().includes(query)
+      t.title.toLowerCase().includes(query) ||
+      (t.description || '').toLowerCase().includes(query) ||
+      (t.subjectLine || '').toLowerCase().includes(query)
     );
-  });
-
-  const showBlank =
-    !searchQuery ||
-    'blank message'.includes(searchQuery.toLowerCase()) ||
-    'scratch'.includes(searchQuery.toLowerCase());
-
-  const grouped = {
-    general: filteredTemplates.filter((t) => getCategoryForTemplate(t.title) === 'general'),
-    auditions: filteredTemplates.filter((t) => getCategoryForTemplate(t.title) === 'auditions'),
-    payments: filteredTemplates.filter((t) => getCategoryForTemplate(t.title) === 'payments'),
-    tickets: filteredTemplates.filter((t) => getCategoryForTemplate(t.title) === 'tickets'),
   };
 
-  const categories = [
-    { id: 'general', title: 'General & Basics' },
-    { id: 'auditions', title: 'Auditions' },
-    { id: 'payments', title: 'Payments & Donations' },
-    { id: 'tickets', title: 'Tickets' },
-  ] as const;
+  const filteredSystem = systemTemplates.filter(filterFn);
+  const filteredCustom = customTemplates.filter(filterFn);
+  const showBlank = !searchQuery || 'blank message'.includes(searchQuery.toLowerCase());
+
+  const renderTemplateCard = (template: MessageTemplate) => {
+    const isBlank = template.id === 'blank';
+    const IconComponent = isBlank ? FileTextIcon : iconMap[template.category] || MailIcon;
+    const isSelected = template.id === selectedTemplateId;
+
+    return (
+      <button
+        key={template.id}
+        type="button"
+        role="radio"
+        aria-checked={isSelected}
+        onClick={() => onSelect(template)}
+        className={`flex min-h-[120px] w-full cursor-pointer flex-col rounded-lg border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+          isSelected
+            ? 'border-primary bg-primary-light/30 ring-primary/20 ring-2'
+            : 'border-border bg-bg hover:border-primary'
+        }`}
+      >
+        <div
+          className={`mb-2.5 flex items-center justify-between ${
+            isSelected ? 'text-primary-deep' : 'text-primary'
+          }`}
+        >
+          <IconComponent />
+          <span
+            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
+              isSelected ? 'bg-primary/20 text-primary-deep' : 'bg-primary-light text-primary-deep'
+            }`}
+          >
+            {isBlank ? 'blank' : template.channel}
+          </span>
+        </div>
+        <h4 className="text-text m-0 mb-1 text-sm font-semibold">{template.title}</h4>
+        <p className="text-text-muted m-0 text-xs leading-relaxed">{template.description}</p>
+        {isSelected && (
+          <span className="text-text-muted mt-2 block text-xs sm:hidden">
+            {template.subjectLine || template.description}
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  const recentCustom = filteredCustom.slice(0, 3);
+  const remainingCustom = filteredCustom.slice(3);
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -126,79 +150,76 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
         )}
       </Input>
 
-      {/* Grouped Lists */}
-      {categories.map((cat) => {
-        const catTemplates =
-          cat.id === 'general'
-            ? showBlank
-              ? [blankTemplate, ...grouped.general]
-              : grouped.general
-            : grouped[cat.id];
-
-        if (catTemplates.length === 0) return null;
-
-        return (
-          <div key={cat.id} className="flex flex-col gap-2">
+      <div role="radiogroup" aria-label="Message templates" className="flex flex-col gap-6">
+        {/* Blank option */}
+        {showBlank && (
+          <div className="flex flex-col gap-2">
             <h5 className="text-text-muted mt-2 text-xs font-bold tracking-wider uppercase">
-              {cat.title}
+              Blank Slate
             </h5>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-              {catTemplates.map((template) => {
-                const isBlank = template.id === 'blank';
-                const IconComponent = isBlank ? BlankIcon : iconMap[template.category] || MailIcon;
-                const isSelected = template.id === selectedTemplateId;
-
-                return (
-                  <div
-                    key={template.id}
-                    className={`flex min-h-[120px] cursor-pointer flex-col rounded-lg border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-                      isSelected
-                        ? 'border-primary bg-primary-light/30 ring-primary/20 ring-2'
-                        : 'border-border bg-bg hover:border-primary'
-                    }`}
-                    onClick={() => onSelect(template)}
-                  >
-                    <div
-                      className={`mb-2.5 flex items-center justify-between ${isSelected ? 'text-primary-deep' : 'text-primary'}`}
-                    >
-                      <IconComponent />
-                      <span
-                        className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
-                          isSelected
-                            ? 'bg-primary/20 text-primary-deep'
-                            : 'bg-primary-light text-primary-deep'
-                        }`}
-                      >
-                        {isBlank ? 'blank' : template.channel}
-                      </span>
-                    </div>
-                    <h4 className="text-text m-0 mb-1 text-sm font-semibold">{template.title}</h4>
-                    <p className="text-text-muted m-0 text-xs leading-relaxed">
-                      {template.description}
-                    </p>
-                  </div>
-                );
-              })}
+              {renderTemplateCard(blankTemplate)}
             </div>
           </div>
-        );
-      })}
+        )}
 
-      {Object.values(grouped).every((arr) => arr.length === 0) && !showBlank && (
-        <div className="text-text-muted flex flex-col items-center justify-center py-8 text-center">
-          <svg
-            className="mb-2 size-8 opacity-50"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <p className="text-sm">No templates match "{searchQuery}"</p>
-        </div>
-      )}
+        {/* System templates */}
+        {filteredSystem.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <h5 className="text-text-muted mt-2 text-xs font-bold tracking-wider uppercase">
+              Recommended System Templates
+            </h5>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {filteredSystem.map(renderTemplateCard)}
+            </div>
+          </div>
+        )}
+
+        {/* Custom templates */}
+        {(recentCustom.length > 0 || remainingCustom.length > 0) && (
+          <div className="flex flex-col gap-2">
+            <h5 className="text-text-muted mt-2 text-xs font-bold tracking-wider uppercase">
+              Custom Templates
+            </h5>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+              {recentCustom.map(renderTemplateCard)}
+            </div>
+
+            {remainingCustom.length > 0 && (
+              <details className="group mt-2">
+                <summary className="text-primary hover:text-primary-deep flex cursor-pointer list-none items-center gap-1 text-sm font-semibold select-none [&::-webkit-details-marker]:hidden">
+                  <span
+                    className="transition-transform duration-200 group-open:rotate-90"
+                    aria-hidden="true"
+                  >
+                    ▶
+                  </span>
+                  More templates ({remainingCustom.length})
+                </summary>
+                <div className="mt-3 grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2 md:grid-cols-3">
+                  {remainingCustom.map(renderTemplateCard)}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+
+        {!showBlank && filteredSystem.length === 0 && filteredCustom.length === 0 && (
+          <div className="text-text-muted flex flex-col items-center justify-center py-8 text-center">
+            <svg
+              className="mb-2 size-8 opacity-50"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <p className="text-sm">No templates match "{searchQuery}"</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

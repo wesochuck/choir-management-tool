@@ -25,5 +25,6 @@ export const mapToMessageTemplate = (tpl: TemplateRecord): MessageTemplate => {
     origin: tpl.isSystemTemplate ? 'system' : 'custom',
     subjectLine: tpl.subject,
     content: tpl.content,
+    updated: tpl.updated,
   };
 };

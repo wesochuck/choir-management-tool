@@ -3,45 +3,55 @@ import { Button } from '../../../components/ui';
 import { TemplateGrid } from '../../../components/TemplateGrid';
 import type { TemplateRecord } from '../../../services/communicationService';
 import { mapToMessageTemplate } from './templateMapping';
+import { WizardStepHeading } from './WizardStepHeading';
+import { WizardActionBar } from './WizardActionBar';
 
 interface TemplateStepProps {
   templates: TemplateRecord[];
   templateSelection: {
-    selectedTemplateId: string | null;
-    setSelectedTemplateId: (id: string | null) => void;
-    handleUseTemplate: (id: string) => void;
+    selectedTemplateId: string;
+    setSelectedTemplateId: (id: string) => void;
+    handleUseTemplate: () => void;
   };
   onBack: () => void;
 }
 
 export function TemplateStep({ templates, templateSelection, onBack }: TemplateStepProps) {
-  const { selectedTemplateId, handleUseTemplate } = templateSelection;
+  const { selectedTemplateId, setSelectedTemplateId, handleUseTemplate } = templateSelection;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col">
-        <div>
-          <h2 className="text-text text-lg font-semibold">
-            Step 2: Choose how to start your message
-          </h2>
-          <p className="text-text-muted text-sm">
-            Select a template below or start with a blank message.
-          </p>
-        </div>
-        <Button variant="outline" onClick={onBack}>
-          ← Back to Audience
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6 pb-20 lg:pb-0">
+      <WizardStepHeading
+        step="TEMPLATE"
+        number={2}
+        title="Choose how to start your message"
+        description="Select a template below or start with a blank message."
+      />
 
       <AppCard title="Templates & Quick Starts">
         <div className="flex flex-col gap-4">
           <TemplateGrid
             templates={templates.map(mapToMessageTemplate)}
             selectedTemplateId={selectedTemplateId}
-            onSelect={(tpl) => handleUseTemplate(tpl.id)}
+            onSelect={(tpl) => setSelectedTemplateId(tpl.id)}
           />
         </div>
       </AppCard>
+
+      <WizardActionBar>
+        <Button
+          variant="outline"
+          onClick={onBack}
+          aria-label="Back to Audience"
+          className="size-11 px-0 sm:w-auto sm:px-6"
+        >
+          <span aria-hidden="true">←</span>
+          <span className="hidden sm:inline">Back</span>
+        </Button>
+        <Button variant="primary" onClick={handleUseTemplate}>
+          {selectedTemplateId === 'blank' ? 'Use blank message' : 'Use template'}
+        </Button>
+      </WizardActionBar>
     </div>
   );
 }
