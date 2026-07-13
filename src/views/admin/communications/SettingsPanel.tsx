@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import type React from 'react';
 import { AppCard } from '../../../components/common/AppCard';
 import { Button, Input, Select } from '../../../components/ui';
 import { formatPocketBaseError } from '../../../lib/pocketbase';
@@ -277,7 +276,7 @@ export function SettingsPanel({
         </div>
       </AppCard>
 
-      {(isDirty || isSaving || saveError) && (
+      {(isDirty || isSaving || !!saveError) && (
         <div className="border-border bg-surface sticky bottom-0 z-40 -mx-3 flex items-center justify-between gap-3 border-t px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_8px_rgba(0,0,0,0.08)] sm:-mx-6">
           <span className="text-text-muted text-sm" aria-live="polite">
             {isSaving
