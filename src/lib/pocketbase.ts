@@ -9,10 +9,18 @@ const defaultPbUrl =
 
 export const pb = new PocketBase(String(env?.VITE_PB_URL || defaultPbUrl));
 
+export function shouldClearExpiredAuthToken(token: string, isValid: boolean): boolean {
+  return token.length > 0 && !isValid;
+}
+
 // Disable auto-cancellation globally to prevent aborted requests from React Strict Mode double-mounting
 pb.autoCancellation(false);
 
 pb.beforeSend = (url, options) => {
+  if (shouldClearExpiredAuthToken(pb.authStore.token, pb.authStore.isValid)) {
+    pb.authStore.clear();
+  }
+
   // Strip out skipTotal parameter if present to support older PocketBase server versions
   const cleanUrl = url
     .replace(/[&?]skipTotal=[^&]+/g, '')
