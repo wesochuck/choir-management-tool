@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Checkbox } from '../../../components/ui';
 import { SetupNavigation } from '../../../components/setup/SetupNavigation';
 import { useDialog } from '../../../contexts/DialogContext';
@@ -36,6 +36,14 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
 
   const [loading, setLoading] = useState(false);
   const dialog = useDialog();
+
+  const sortedModuleIds = useMemo(() => {
+    return [...MODULE_IDS].sort((a, b) => {
+      const labelA = MODULE_DEFINITIONS[a].label.toLowerCase();
+      const labelB = MODULE_DEFINITIONS[b].label.toLowerCase();
+      return labelA.localeCompare(labelB);
+    });
+  }, []);
 
   const handleToggle = (id: ModuleId, checked: boolean) => {
     if (!checked && requiredModules.includes(id)) {
@@ -113,7 +121,7 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
         </p>
 
         <div className="border-border bg-surface-muted grid grid-cols-1 gap-4 rounded-xl border p-4 sm:grid-cols-2">
-          {MODULE_IDS.map((id) => {
+          {sortedModuleIds.map((id) => {
             const def = MODULE_DEFINITIONS[id];
             const isRecommended = RECOMMENDED_MODULES.includes(id);
             const isChecked = enabled.has(id);
