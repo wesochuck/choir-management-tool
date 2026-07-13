@@ -3,6 +3,7 @@ import { pb } from '../lib/pocketbase';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
 import { Button, Input } from '../components/ui';
+import { getPostLoginPath } from '../lib/loginRedirect';
 
 
 type LoginMode = 'otp' | 'password';
@@ -76,7 +77,7 @@ export default function LoginView() {
 
     try {
       await pb.collection('users').authWithPassword(email.trim().toLowerCase(), password);
-      navigate('/');
+      navigate(getPostLoginPath());
     } catch {
       setError('Invalid email or password');
     } finally {
@@ -153,7 +154,7 @@ export default function LoginView() {
 
     try {
       await pb.collection('users').authWithOTP(otpId, otpCode.trim());
-      navigate('/');
+      navigate(getPostLoginPath());
     } catch {
       setError('Invalid or expired login code. Please check and try again.');
     } finally {
