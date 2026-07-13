@@ -81,13 +81,13 @@ describe('ComposeMessageStep', () => {
       />
     );
 
-    const backButtons = screen.getAllByRole('button', { name: /Back to Template Selection/i });
-    fireEvent.click(backButtons[0]!);
+    const backButton = screen.getByRole('button', { name: /Back/i });
+    fireEvent.click(backButton);
 
     assert.strictEqual(onBack.mock.callCount(), 1);
   });
 
-  it('calls onContinue when Next is clicked', () => {
+  it('calls onContinue when Review Message is clicked', () => {
     const onContinue = mock.fn();
     renderWithRouter(
       <ComposeMessageStep
@@ -100,7 +100,7 @@ describe('ComposeMessageStep', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Next: Review & Send/i })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /Review Message/i }));
 
     assert.strictEqual(onContinue.mock.callCount(), 1);
   });
@@ -118,7 +118,7 @@ describe('ComposeMessageStep', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Save Draft/i })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /Save Draft/i }));
 
     assert.strictEqual(handleSaveDraft.mock.callCount(), 1);
   });
@@ -135,9 +135,9 @@ describe('ComposeMessageStep', () => {
       />
     );
 
-    const saveButtons = screen.getAllByRole('button', { name: /Saving\.\.\./i });
-    assert.ok(saveButtons.length > 0);
-    saveButtons.forEach((btn) => assert.strictEqual((btn as HTMLButtonElement).disabled, true));
+    const saveButton = screen.getByRole('button', { name: /Saving\.\.\./i });
+    assert.ok(saveButton);
+    assert.strictEqual((saveButton as HTMLButtonElement).disabled, true);
   });
 
   it('shows the setlist warning when content has {setlist} and event is unapproved', () => {

@@ -12,9 +12,13 @@ import type {
 } from '../../../services/communicationService';
 import type { UseCommunicationDraftReturn } from './useCommunicationDraft';
 import type { UseCommunicationPreviewReturn } from './useCommunicationPreview';
-import { ReviewSidebar } from './ReviewSidebar';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../../../lib/labelHelpers';
+import { RecipientSummaryCard } from './RecipientSummaryCard';
+import { PreFlightChecklist } from './PreFlightChecklist';
+import { WizardStepHeading } from './WizardStepHeading';
+import { WizardActionBar } from './WizardActionBar';
+import { summarizeRecipientReach } from './recipientReach';
 
 interface ReviewStepProps {
   draft: UseCommunicationDraftReturn;
@@ -45,93 +49,35 @@ export function ReviewStep({
 }: ReviewStepProps) {
   const { performerLabel } = useChoirSettings();
   const performerLabelPlural = pluralizeLabel(performerLabel);
+
+  const reach = summarizeRecipientReach(draft.selectedRecipients, draft.messageType);
+  const sendLabelChannel = draft.messageType === 'Both' ? 'Both' : draft.messageType;
+  const performerText = reach.reachablePeople === 1 ? performerLabel : performerLabelPlural;
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="border-border flex w-full flex-col gap-3 border-b pb-2.5 md:flex-row md:items-center md:justify-between">
-        <Button variant="outline" onClick={onBack} className="w-full md:w-auto">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mr-1 inline-flex size-4"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Back
-        </Button>
-        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-          <Button
-            variant="secondary"
-            onClick={draft.handleSendTest}
-            disabled={draft.isSendingTest || draft.isSending}
-            title={`Send email test to ${user?.email || 'your email'}`}
-            className="w-full sm:w-auto"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-4"
-            >
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-            </svg>
-            {draft.isSendingTest ? 'Sending test...' : 'Send Test to Me'}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={draft.sendMessage}
-            disabled={draft.isSending || draft.selectedRecipients.length === 0}
-            className="w-full sm:w-auto"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-4"
-            >
-              <line x1="22" y1="2" x2="11" y2="13" />
-              <polygon points="22 2 15 22 11 13 2 9 22 2" />
-            </svg>
-            {draft.isSending ? 'Sending...' : `Send to ${draft.selectedRecipients.length} ${performerLabelPlural}`}
-          </Button>
-        </div>
-      </div>
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
-        <div className="flex flex-col lg:order-2">
-          <ReviewSidebar
+    <div className="flex flex-col gap-6 pb-20 lg:pb-0">
+      <WizardStepHeading
+        step="REVIEW"
+        number={4}
+        title="Review & Send"
+        description="Verify your message format, checklist, and audience before sending."
+      />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+        {/* Card 1: Recipient summary */}
+        <div data-review-section="recipients" className="order-1 lg:col-start-2 lg:row-start-1">
+          <RecipientSummaryCard
             selectedRecipients={draft.selectedRecipients}
             recipientCounts={draft.recipientCounts}
             onViewRecipients={onViewRecipients}
-            subject={draft.subject}
-            content={draft.content}
-            messageType={draft.messageType}
-            filters={draft.filters}
-            selectedEvent={selectedEvent}
-            commSettings={commSettings}
-            setTab={setTab}
-            setEditingTemplate={setEditingTemplate}
-            isSendingTest={draft.isSendingTest}
-            isSending={draft.isSending}
-            handleSendTest={draft.handleSendTest}
-            sendMessage={draft.sendMessage}
-            setWizardStep={(step) => {
-              if (step === 'COMPOSE') onBack();
-            }}
-            user={user}
           />
         </div>
 
-        <div className="flex flex-col lg:order-1">
+        {/* Card 2: Live preview */}
+        <div
+          data-review-section="preview"
+          className="order-2 lg:col-start-1 lg:row-span-2 lg:row-start-1"
+        >
           <AppCard noPadding>
             <div className="p-4">
               <LivePreview
@@ -147,7 +93,53 @@ export function ReviewStep({
             </div>
           </AppCard>
         </div>
+
+        {/* Card 3: Pre-flight checklist */}
+        <div data-review-section="checklist" className="order-3 lg:col-start-2 lg:row-start-2">
+          <PreFlightChecklist
+            subject={draft.subject}
+            content={draft.content}
+            messageType={draft.messageType}
+            selectedRecipients={draft.selectedRecipients}
+            filters={draft.filters}
+            selectedEvent={selectedEvent}
+            commSettings={commSettings}
+            setTab={setTab}
+            setEditingTemplate={setEditingTemplate}
+          />
+        </div>
       </div>
+
+      <WizardActionBar>
+        <Button
+          variant="outline"
+          onClick={onBack}
+          aria-label="Back to Message"
+          className="size-11 px-0 sm:w-auto sm:px-6"
+        >
+          <span aria-hidden="true">←</span>
+          <span className="hidden sm:inline">Back</span>
+        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={draft.handleSendTest}
+            disabled={draft.isSendingTest || draft.isSending}
+            title={`Send email test to ${user?.email || 'your email'}`}
+          >
+            {draft.isSendingTest ? 'Sending test...' : 'Send Test to Me'}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={draft.sendMessage}
+            disabled={draft.isSending || reach.reachablePeople === 0}
+          >
+            {draft.isSending
+              ? 'Sending...'
+              : `Send ${sendLabelChannel} to ${reach.reachablePeople} ${performerText}`}
+          </Button>
+        </div>
+      </WizardActionBar>
     </div>
   );
 }

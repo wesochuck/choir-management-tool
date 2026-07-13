@@ -8,6 +8,7 @@ import type { Event } from '../../../services/eventService';
 import type { UseCommunicationDraftReturn } from './useCommunicationDraft';
 import { SetlistWarning } from './SetlistWarning';
 import { WizardActionBar } from './WizardActionBar';
+import { WizardStepHeading } from './WizardStepHeading';
 
 interface ComposeMessageStepProps {
   draft: UseCommunicationDraftReturn;
@@ -29,25 +30,14 @@ export function ComposeMessageStep({
   const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="border-border flex w-full flex-col gap-3 border-b pb-2.5 md:flex-row md:items-center md:justify-between">
-        <Button variant="outline" onClick={onBack} className="w-full md:w-auto">
-          ← Back to Template Selection
-        </Button>
-        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
-          <Button
-            variant="secondary"
-            onClick={draft.handleSaveDraft}
-            disabled={draft.isSavingDraft}
-            className="w-full sm:w-auto"
-          >
-            {draft.isSavingDraft ? 'Saving...' : 'Save Draft'}
-          </Button>
-          <Button variant="primary" onClick={onContinue} className="w-full sm:w-auto">
-            Next: Review & Send →
-          </Button>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6 pb-20 lg:pb-0">
+      <WizardStepHeading
+        step="COMPOSE"
+        number={3}
+        title="Compose Your Message"
+        description="Write your message subject and body. Markdown and placeholders are supported."
+      />
+
       <div className="flex flex-col items-stretch gap-6 lg:grid lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-4">
           <AppCard title="Composer">
@@ -64,20 +54,25 @@ export function ComposeMessageStep({
           </AppCard>
 
           <WizardActionBar>
-            <Button variant="outline" onClick={onBack} className="w-full sm:w-auto">
-              ← Back to Template Selection
+            <Button
+              variant="outline"
+              onClick={onBack}
+              aria-label="Back to Templates"
+              className="size-11 px-0 sm:w-auto sm:px-6"
+            >
+              <span aria-hidden="true">←</span>
+              <span className="hidden sm:inline">Back</span>
             </Button>
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <div className="flex gap-2">
               <Button
                 variant="secondary"
                 onClick={draft.handleSaveDraft}
                 disabled={draft.isSavingDraft}
-                className="w-full sm:w-auto"
               >
                 {draft.isSavingDraft ? 'Saving...' : 'Save Draft'}
               </Button>
-              <Button variant="primary" onClick={onContinue} className="w-full sm:w-auto">
-                Next: Review & Send →
+              <Button variant="primary" onClick={onContinue}>
+                Review Message
               </Button>
             </div>
           </WizardActionBar>

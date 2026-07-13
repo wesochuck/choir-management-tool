@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useChoirSettings } from '../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../lib/labelHelpers';
 import { Button } from './ui';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 interface LivePreviewProps {
   channel: 'Email' | 'SMS' | 'Both';
@@ -114,9 +115,14 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
 }) => {
   const { performerLabel } = useChoirSettings();
   const performerLabelPlural = pluralizeLabel(performerLabel);
-  const resolvedRecipientEmail = recipientEmail || `${performerLabelPlural.toLowerCase()}@yourchoir.org`;
+  const resolvedRecipientEmail =
+    recipientEmail || `${performerLabelPlural.toLowerCase()}@yourchoir.org`;
   const [activeTab, setActiveTab] = useState<'email' | 'sms'>(channel === 'SMS' ? 'sms' : 'email');
-  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+
+  const isPhone = useMediaQuery('(max-width: 767px)');
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>(() =>
+    isPhone ? 'mobile' : 'desktop'
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -154,7 +160,8 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
                 className="h-[30px]"
                 onClick={() => setPreviewDevice('desktop')}
               >
-                🖥️ Desktop
+                <span aria-hidden="true">🖥️</span>
+                <span>Desktop</span>
               </Button>
               <Button
                 type="button"
@@ -163,7 +170,8 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
                 className="h-[30px]"
                 onClick={() => setPreviewDevice('mobile')}
               >
-                📱 Mobile
+                <span aria-hidden="true">📱</span>
+                <span>Mobile</span>
               </Button>
             </div>
           )}

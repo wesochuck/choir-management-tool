@@ -109,7 +109,7 @@ describe('ReviewStep', () => {
       />
     );
 
-    const sendButton = screen.getAllByRole('button', { name: /Send to 0 Performers/i })[0]!;
+    const sendButton = screen.getByRole('button', { name: /Send Email to 0 Performers/i });
     assert.strictEqual((sendButton as HTMLButtonElement).disabled, true);
   });
 
@@ -130,7 +130,7 @@ describe('ReviewStep', () => {
       />
     );
 
-    const sendButton = screen.getAllByRole('button', { name: /Sending\.\.\./i })[0]!;
+    const sendButton = screen.getByRole('button', { name: /Sending\.\.\./i });
     assert.strictEqual((sendButton as HTMLButtonElement).disabled, true);
   });
 
@@ -152,7 +152,7 @@ describe('ReviewStep', () => {
       />
     );
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Send to 1 Performers/i })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /Send Email to 1 Performer/i }));
 
     assert.strictEqual(sendMessage.mock.callCount(), 1);
   });
@@ -175,9 +175,8 @@ describe('ReviewStep', () => {
       />
     );
 
-    const testButtons = screen.getAllByRole('button', { name: /Send Test to Me/i });
-    assert.ok(testButtons.length > 0);
-    fireEvent.click(testButtons[0]!);
+    const testButton = screen.getByRole('button', { name: /Send Test to Me/i });
+    fireEvent.click(testButton);
 
     assert.strictEqual(handleSendTest.mock.callCount(), 1);
   });
@@ -199,9 +198,8 @@ describe('ReviewStep', () => {
       />
     );
 
-    const testButtons = screen.getAllByRole('button', { name: /Sending test\.\.\./i });
-    assert.ok(testButtons.length > 0);
-    testButtons.forEach((btn) => assert.strictEqual((btn as HTMLButtonElement).disabled, true));
+    const testButton = screen.getByRole('button', { name: /Sending test\.\.\./i });
+    assert.strictEqual((testButton as HTMLButtonElement).disabled, true);
   });
 
   it('calls onBack when the Back button is clicked', () => {
@@ -222,8 +220,8 @@ describe('ReviewStep', () => {
       />
     );
 
-    const backButtons = screen.getAllByRole('button', { name: /Back/i });
-    fireEvent.click(backButtons[0]!);
+    const backButton = screen.getByRole('button', { name: /Back/i });
+    fireEvent.click(backButton);
 
     assert.strictEqual(onBack.mock.callCount(), 1);
   });
