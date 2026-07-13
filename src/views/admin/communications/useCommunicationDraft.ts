@@ -22,6 +22,7 @@ import {
   getReachableRecipients,
   summarizeRecipientReach,
 } from './recipientReach';
+import { useDraftAutosave } from './useDraftAutosave';
 
 interface UseCommunicationDraftArgs {
   routeState: CommunicationRouteState | null;
@@ -93,14 +94,7 @@ export function useCommunicationDraft({
     routeState?.initialPollQuestions ?? {}
   );
 
-  const saveDraftMutation = useMutation({
-    mutationFn: ({ data, id }: { data: SendMessageInput; id?: string }) =>
-      communicationService.saveDraft(data, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.communications.history() });
-    },
-  });
+  const [activeDraftUpdated, setActiveDraftUpdated] = useState<string | null>(null);
 
   const sendMessageMutation = useMutation({
     mutationFn: ({ data, draftId }: { data: SendMessageInput; draftId?: string }) =>
@@ -171,68 +165,89 @@ export function useCommunicationDraft({
     [lockInitialRecipients]
   );
 
-  const handleSaveDraft = async () => {
-    try {
-      const input = {
-        subject,
-        content,
-        type: messageType,
-        recipients: selectedRecipients,
-        filters: filters as unknown as Record<string, unknown>,
-      };
-      const record = await saveDraftMutation.mutateAsync({
-        data: input,
-        id: activeDraftId || undefined,
-      });
+  const draftSnapshot = useMemo<SendMessageInput>(
+    () => ({
+      subject,
+      content,
+      type: messageType,
+      recipients: selectedRecipients,
+      filters: filters as unknown as Record<string, unknown>,
+    }),
+    [subject, content, messageType, selectedRecipients, filters]
+  );
+
+  const hydrateDraftRecord = useCallback((draft: MessageRecord) => {
+    setSubject(draft.subject);
+    setContent(draft.content);
+    setMessageType(draft.type);
+    setRecipients(draft.recipients);
+    setSelectedIds(new Set(draft.recipients.map((recipient) => recipient.id)));
+
+    const mFilters = draft.filters as Record<string, unknown>;
+    const vpArray: string[] = Array.isArray(mFilters?.voiceParts)
+      ? (mFilters.voiceParts as string[])
+      : mFilters?.voicePart
+        ? [mFilters.voicePart as string]
+        : [];
+
+    setFilters({
+      eventId: (mFilters?.eventId as string) || '',
+      rsvp: (mFilters?.rsvp as CommunicationFilters['rsvp']) || 'All',
+      voiceParts: vpArray,
+      globalStatus: (mFilters?.globalStatus as string) || 'Active',
+      profileIds: Array.isArray(mFilters?.profileIds)
+        ? (mFilters.profileIds as string[])
+        : undefined,
+      targetAudiences: Array.isArray(mFilters?.targetAudiences)
+        ? (mFilters.targetAudiences as CommunicationFilters['targetAudiences'])
+        : ['Members'],
+    });
+  }, []);
+
+  const handleAutosaveSaved = useCallback(
+    (record: MessageRecord) => {
       setActiveDraftId(record.id);
-      dialog.showToast('Your message has been saved as a draft.');
-    } catch (err: unknown) {
-      await dialog.showMessage({
-        title: 'Draft Not Saved',
-        message: formatPocketBaseError(err),
-        variant: 'danger',
-      });
-    }
-  };
+      setActiveDraftUpdated(record.updated);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.communications.drafts() });
+    },
+    [queryClient]
+  );
+
+  const autosave = useDraftAutosave({
+    snapshot: draftSnapshot,
+    activeDraftId,
+    activeDraftUpdated,
+    persist: (snapshot, id) => communicationService.saveDraft(snapshot, id),
+    fetchLatest: (id) => communicationService.getDraft(id),
+    onSaved: handleAutosaveSaved,
+    onReload: hydrateDraftRecord,
+  });
+
+  const {
+    markHydrated,
+    status: draftSaveStatus,
+    error: draftSaveError,
+    saveNow: saveDraftNow,
+    retry: retryDraftSave,
+    reloadLatest: reloadLatestDraft,
+    saveAsCopy: saveDraftAsCopy,
+  } = autosave;
 
   const handleResumeDraft = useCallback(
     (draft: MessageRecord, options?: { asCopy?: boolean }) => {
-      setActiveDraftId(options?.asCopy ? null : draft.id);
-      setSubject(draft.subject);
-      setContent(draft.content);
-      setMessageType(draft.type);
-
-      const mFilters = draft.filters as Record<string, unknown>;
-      const vpArray: string[] = Array.isArray(mFilters?.voiceParts)
-        ? (mFilters.voiceParts as string[])
-        : mFilters?.voicePart
-          ? [mFilters.voicePart as string]
-          : [];
-
-      setFilters({
-        eventId: (mFilters?.eventId as string) || '',
-        rsvp: (mFilters?.rsvp as CommunicationFilters['rsvp']) || 'All',
-        voiceParts: vpArray,
-        globalStatus: (mFilters?.globalStatus as string) || 'Active',
-        // NEW: restore profileIds when resuming a draft
-        profileIds: Array.isArray(mFilters?.profileIds)
-          ? (mFilters.profileIds as string[])
-          : undefined,
-        targetAudiences: Array.isArray(mFilters?.targetAudiences)
-          ? (mFilters.targetAudiences as CommunicationFilters['targetAudiences'])
-          : ['Members'],
-      });
-
-      if (draft.recipients && draft.recipients.length > 0) {
-        setRecipients(draft.recipients);
-        setSelectedIds(new Set(draft.recipients.map((r) => r.id)));
-        setLockInitialRecipients(true);
+      if (options?.asCopy) {
+        hydrateDraftRecord(draft);
+        setActiveDraftId(null);
+        setActiveDraftUpdated(null);
+      } else {
+        markHydrated(draft);
+        hydrateDraftRecord(draft);
       }
 
       setWizardStep('COMPOSE');
       setTab('compose');
     },
-    [setTab, setWizardStep]
+    [setTab, setWizardStep, hydrateDraftRecord, markHydrated]
   );
 
   const handleSendTest = async () => {
@@ -341,6 +356,7 @@ export function useCommunicationDraft({
         setHistoryPage(1);
       }
       setActiveDraftId(null);
+      setActiveDraftUpdated(null);
 
       dialog.showToast('Message sent successfully!');
       setWizardStep('TARGETS');
@@ -378,8 +394,12 @@ export function useCommunicationDraft({
     warnings,
     isSending: sendMessageMutation.isPending,
     isSendingTest: sendTestMutation.isPending,
-    isSavingDraft: saveDraftMutation.isPending,
-    handleSaveDraft,
+    draftSaveStatus,
+    draftSaveError,
+    saveDraftNow,
+    retryDraftSave,
+    reloadLatestDraft,
+    saveDraftAsCopy,
     handleResumeDraft,
     handleSendTest,
     sendMessage,

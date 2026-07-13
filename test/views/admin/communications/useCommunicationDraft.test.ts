@@ -306,40 +306,44 @@ test('same-filter recipient refetch preserves manual selection', async (t) => {
   assert.deepEqual([...result.current.selectedIds], ['first']);
 });
 
-test('draft save displays PocketBase validation details without flattening the error', async (t) => {
-  const showMessage = t.mock.fn(async () => {});
-  const dialog = { ...makeDialog(), showMessage } as DialogApi;
-  t.mock.method(communicationService, 'saveDraft', async () => {
-    throw {
-      response: {
-        data: {
-          content: { code: 'validation_required', message: 'Missing.' },
-        },
+test('draft save via saveDraftNow updates status and propagates error on failure', async (t) => {
+  const pocketBaseError = {
+    response: {
+      data: {
+        content: { code: 'validation_required', message: 'Missing.' },
       },
-    };
+    },
+  };
+  t.mock.method(communicationService, 'saveDraft', async () => {
+    throw pocketBaseError;
+  });
+  t.mock.method(communicationService, 'getDraft', async () => {
+    return {} as MessageRecord;
   });
 
   const saveQueryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  const { result } = renderHook(
-    () => useCommunicationDraft(defaultArgs({ dialog, tab: 'history' })),
-    {
-      wrapper: ({ children }) =>
-        React.createElement(
-          QueryClientProvider,
-          { client: saveQueryClient },
-          React.createElement(MemoryRouter, null, children)
-        ),
-    }
-  );
-
-  await act(async () => {
-    await result.current.handleSaveDraft();
+  const { result } = renderHook(() => useCommunicationDraft(defaultArgs({ tab: 'history' })), {
+    wrapper: ({ children }) =>
+      React.createElement(
+        QueryClientProvider,
+        { client: saveQueryClient },
+        React.createElement(MemoryRouter, null, children)
+      ),
   });
 
-  assert.equal(showMessage.mock.callCount(), 1);
-  assert.equal(showMessage.mock.calls[0]?.arguments[0].message, 'Content is required.');
+  // Set some subject to trigger dirty state
+  act(() => {
+    result.current.setSubject('Unsaved changes');
+  });
+
+  await act(async () => {
+    await result.current.saveDraftNow();
+  });
+
+  assert.equal(result.current.draftSaveStatus, 'error');
+  assert.equal(result.current.draftSaveError, pocketBaseError);
 });
 
 test('test send displays PocketBase validation details without flattening the error', async (t) => {

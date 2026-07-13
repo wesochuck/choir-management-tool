@@ -47,8 +47,12 @@ function makeDraft(
     messageType: 'Email',
     setMessageType: mock.fn(),
     warnings: [],
-    handleSaveDraft: mock.fn(async () => {}),
-    isSavingDraft: false,
+    draftSaveStatus: 'saved',
+    draftSaveError: null,
+    saveDraftNow: mock.fn(async () => {}),
+    retryDraftSave: mock.fn(async () => {}),
+    reloadLatestDraft: mock.fn(),
+    saveDraftAsCopy: mock.fn(async () => {}),
     isSending: false,
     isSendingTest: false,
     selectedRecipients: [],
@@ -101,9 +105,9 @@ describe('ComposeMessageStep', () => {
     );
 
     const placeholders = screen.getByRole('heading', { name: 'Placeholders' });
-    const saveDraft = screen.getByRole('button', { name: 'Save Draft' });
+    const reviewBtn = screen.getByRole('button', { name: 'Review Message' });
     assert.ok(
-      placeholders.compareDocumentPosition(saveDraft) & Node.DOCUMENT_POSITION_FOLLOWING,
+      placeholders.compareDocumentPosition(reviewBtn) & Node.DOCUMENT_POSITION_FOLLOWING,
       'the action bar should follow the placeholder panel in DOM order'
     );
   });
@@ -127,11 +131,12 @@ describe('ComposeMessageStep', () => {
     assert.strictEqual(onBack.mock.callCount(), 1);
   });
 
-  it('calls onContinue when Review Message is clicked', () => {
+  it('calls onContinue after flushing saveDraftNow when Review Message is clicked', async () => {
+    const saveDraftNow = mock.fn(async () => {});
     const onContinue = mock.fn();
     renderWithRouter(
       <ComposeMessageStep
-        draft={makeDraft()}
+        draft={makeDraft({ saveDraftNow })}
         editorRef={makeEditorRef()}
         onInsertPlaceholder={mock.fn()}
         selectedEvent={null}
@@ -140,16 +145,16 @@ describe('ComposeMessageStep', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Review Message/i }));
+    await fireEvent.click(screen.getByRole('button', { name: /Review Message/i }));
 
+    assert.strictEqual(saveDraftNow.mock.callCount(), 1);
     assert.strictEqual(onContinue.mock.callCount(), 1);
   });
 
-  it('calls draft.handleSaveDraft when Save Draft is clicked', () => {
-    const handleSaveDraft = mock.fn(async () => {});
+  it('renders DraftSaveStatus with current save status', () => {
     renderWithRouter(
       <ComposeMessageStep
-        draft={makeDraft({ handleSaveDraft })}
+        draft={makeDraft({ draftSaveStatus: 'saving' })}
         editorRef={makeEditorRef()}
         onInsertPlaceholder={mock.fn()}
         selectedEvent={null}
@@ -158,26 +163,7 @@ describe('ComposeMessageStep', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Draft/i }));
-
-    assert.strictEqual(handleSaveDraft.mock.callCount(), 1);
-  });
-
-  it('disables Save Draft while isSavingDraft is true', () => {
-    renderWithRouter(
-      <ComposeMessageStep
-        draft={makeDraft({ isSavingDraft: true })}
-        editorRef={makeEditorRef()}
-        onInsertPlaceholder={mock.fn()}
-        selectedEvent={null}
-        onBack={mock.fn()}
-        onContinue={mock.fn()}
-      />
-    );
-
-    const saveButton = screen.getByRole('button', { name: /Saving\.\.\./i });
-    assert.ok(saveButton);
-    assert.strictEqual((saveButton as HTMLButtonElement).disabled, true);
+    assert.ok(screen.getByText('Saving…'));
   });
 
   it('shows the setlist warning when content has {setlist} and event is unapproved', () => {

@@ -9,6 +9,7 @@ import type { UseCommunicationDraftReturn } from './useCommunicationDraft';
 import { SetlistWarning } from './SetlistWarning';
 import { WizardActionBar } from './WizardActionBar';
 import { WizardStepHeading } from './WizardStepHeading';
+import { DraftSaveStatus } from './DraftSaveStatus';
 
 interface ComposeMessageStepProps {
   draft: UseCommunicationDraftReturn;
@@ -28,6 +29,11 @@ export function ComposeMessageStep({
   onContinue,
 }: ComposeMessageStepProps) {
   const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
+
+  const handleReview = async () => {
+    await draft.saveDraftNow();
+    onContinue();
+  };
 
   return (
     <div className="flex flex-col gap-6 pb-20 lg:pb-0">
@@ -72,18 +78,21 @@ export function ComposeMessageStep({
           <span aria-hidden="true">←</span>
           <span className="hidden sm:inline">Back</span>
         </Button>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={draft.handleSaveDraft}
-            disabled={draft.isSavingDraft}
-          >
-            {draft.isSavingDraft ? 'Saving...' : 'Save Draft'}
-          </Button>
-          <Button variant="primary" onClick={onContinue}>
-            Review Message
-          </Button>
+
+        <div className="flex-1 px-2 sm:px-4">
+          <DraftSaveStatus
+            status={draft.draftSaveStatus}
+            error={draft.draftSaveError}
+            onSaveNow={draft.saveDraftNow}
+            onRetry={draft.retryDraftSave}
+            onReloadLatest={draft.reloadLatestDraft}
+            onSaveAsCopy={draft.saveDraftAsCopy}
+          />
         </div>
+
+        <Button variant="primary" onClick={handleReview}>
+          Review Message
+        </Button>
       </WizardActionBar>
     </div>
   );
