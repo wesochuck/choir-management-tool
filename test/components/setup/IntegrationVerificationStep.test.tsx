@@ -50,7 +50,7 @@ describe('IntegrationVerificationStep', () => {
       initialized: false,
       completedSections: [],
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
       version: 1,
       enabled: ['ticketSales'],
     }));
@@ -100,7 +100,7 @@ describe('IntegrationVerificationStep', () => {
       initialized: false,
       completedSections: [],
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
       version: 1,
       enabled: ['roster'],
     }));

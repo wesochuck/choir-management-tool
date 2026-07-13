@@ -33,7 +33,7 @@ describe('SetupView', () => {
       state: 'unclaimed',
       initialized: false,
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
+    mock.method(moduleService, 'getPublicModuleState', async () => ({ version: 1, enabled: [] }));
 
     render(
       <QueryClientProvider client={createQueryClient()}>
@@ -57,7 +57,7 @@ describe('SetupView', () => {
       state: 'recovery_required',
       initialized: false,
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
+    mock.method(moduleService, 'getPublicModuleState', async () => ({ version: 1, enabled: [] }));
 
     render(
       <QueryClientProvider client={createQueryClient()}>
@@ -76,16 +76,17 @@ describe('SetupView', () => {
   });
 
   it('lets an admin revisit a completed setup section', async () => {
-    pb.authStore.save(
-      'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjQxMDI0NDQ4MDB9.signature',
-      { id: 'owner-user' }
-    );
+    pb.authStore.save('eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjQxMDI0NDQ4MDB9.signature', {
+      id: 'owner-user',
+      collectionName: 'users',
+      role: 'admin',
+    });
     mock.method(setupService, 'getStatus', async () => ({
       state: 'in_progress',
       initialized: false,
       completedSections: ['admin-account', 'organization-basics'],
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
       version: 1,
       enabled: ['roster', 'events', 'venues', 'musicLibrary', 'setLists'],
     }));

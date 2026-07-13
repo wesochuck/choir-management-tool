@@ -43,6 +43,7 @@ import {
   handleSetupComplete,
   handleAdminRecovery,
   handleSetupHealth,
+  handlePublicModuleState,
 } from '../../pocketbase/pb_hooks_src/setup/setupEndpoints';
 
 import { getSetupState } from '../../pocketbase/pb_hooks_src/setup/setupState';
@@ -65,8 +66,8 @@ let savedRecords: MockRecord[] = [];
 let deletedRecords: MockRecord[] = [];
 
 const mockApp = {
-  runInTransaction(callback: () => void) {
-    callback();
+  runInTransaction(callback: (txApp: typeof mockApp) => void) {
+    callback(mockApp);
   },
   findCollectionByNameOrId(name: string) {
     return { name };
@@ -200,6 +201,15 @@ describe('setupEndpoints', () => {
         ownerIsPerformer: undefined,
         ownerVoicePartSet: undefined,
       });
+    });
+  });
+
+  it('returns enabled module identifiers without requiring authentication', () => {
+    const result = handlePublicModuleState(makeEvent({}));
+    assert.strictEqual(result.status, 200);
+    assert.deepStrictEqual(result.body, {
+      version: 1,
+      enabled: ['roster', 'events'],
     });
   });
 
@@ -476,6 +486,34 @@ describe('setupEndpoints', () => {
       assert.strictEqual(result.status, 400);
       assert.match(result.body.error, /owner performer part/i);
     });
+  });
+
+  it('preserves later completed sections when an earlier step is revisited', () => {
+    dbSettingsRecord = new MockRecord(
+      { name: 'appSettings' },
+      {
+        key: 'setup_state',
+        value: JSON.stringify({
+          version: 1,
+          initialized: false,
+          completedSections: ['admin-account', 'organization-basics', 'module-selection'],
+        }),
+      }
+    );
+
+    const result = handleSetupProgress(
+      makeEvent({
+        auth: { collectionName: 'users', role: 'admin' },
+        body: { completedSections: ['admin-account', 'organization-basics'] },
+      })
+    );
+
+    assert.strictEqual(result.status, 200);
+    assert.deepStrictEqual(getSetupState(mockApp).completedSections, [
+      'admin-account',
+      'organization-basics',
+      'module-selection',
+    ]);
   });
 
   describe('handleAdminRecovery', () => {

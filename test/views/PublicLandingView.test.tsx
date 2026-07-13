@@ -8,13 +8,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { settingsService } from '../../src/services/settingsService';
 import { eventService } from '../../src/services/eventService';
+import { SetupProvider } from '../../src/contexts/SetupContext';
+import * as moduleService from '../../src/services/moduleService';
 
 function createWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={client}>
+        <SetupProvider>{children}</SetupProvider>
+      </QueryClientProvider>
+    );
   };
 }
 
@@ -33,6 +39,10 @@ describe('PublicLandingView', () => {
     mock.method(settingsService, 'getTimezone', async () => 'America/New_York');
     mock.method(eventService, 'getRecentPerformances', async () => []);
     mock.method(eventService, 'getPublicEvents', async () => []);
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
+      version: 1,
+      enabled: ['ticketSales', 'donations', 'auditions', 'publicWebsite'],
+    }));
 
     const mod = await import('../../src/views/PublicLandingView');
     PublicLandingView = mod.default;
@@ -124,6 +134,10 @@ describe('PublicLandingView', () => {
         expand: { venue: undefined },
       },
     ]);
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
+      version: 1,
+      enabled: ['ticketSales', 'donations', 'auditions', 'publicWebsite'],
+    }));
 
     const mod = await import('../../src/views/PublicLandingView');
     const View = mod.default;

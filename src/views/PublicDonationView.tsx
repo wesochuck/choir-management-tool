@@ -7,10 +7,13 @@ import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrappe
 import { useDocumentTitle, useChoirName } from '../hooks/useDocumentTitle';
 import { Button, Select, Input, Checkbox } from '../components/ui';
 import { queryKeys } from '../lib/queryKeys';
+import { useSetup } from '../contexts/SetupContext';
 
 export default function PublicDonationView() {
   useDocumentTitle('Support Our Music');
   const { choirName } = useChoirName();
+  const { enabledModules } = useSetup();
+  const ticketsEnabled = enabledModules.has('ticketSales');
 
   const [error, setError] = useState('');
 
@@ -120,9 +123,11 @@ export default function PublicDonationView() {
     <PublicBrandingWrapper>
       <AppCard className="w-full max-w-[720px]">
         <div className="flex flex-col gap-2">
-          <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">
-            ← Back to Concerts
-          </Button>
+          {ticketsEnabled && (
+            <Button as={Link} to="/tickets" variant="outline" size="small" className="self-start">
+              ← Back to Concerts
+            </Button>
+          )}
           <div className="flex flex-col gap-0.5">
             {choirName && (
               <span className="text-text-muted text-xs font-bold tracking-wider uppercase">

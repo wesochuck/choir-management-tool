@@ -5,6 +5,9 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import type { ModuleId } from '../../lib/modules';
 import { MODULE_DEFINITIONS } from '../../lib/modules';
 import { pb } from '../../lib/pocketbase';
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '../../lib/queryKeys';
+import { settingsService } from '../../services/settingsService';
 
 interface ModuleRouteProps {
   module: ModuleId;
@@ -16,14 +19,21 @@ export const ModuleRoute: React.FC<ModuleRouteProps> = ({ module, children }) =>
   const navigate = useNavigate();
 
   const isEnabled = enabledModules.has(module);
+  const user = pb.authStore.model;
+  const isAuthenticated = pb.authStore.isValid && !!user;
+  const isAdmin = isAuthenticated && user.role === 'admin';
+
+  const homepageQuery = useQuery({
+    queryKey: queryKeys.appSettings.all,
+    queryFn: () => settingsService.getHomepageUrl(),
+    enabled: !isEnabled && !isAuthenticated,
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
 
   if (isEnabled) {
     return <>{children}</>;
   }
-
-  const user = pb.authStore.model;
-  const isAuthenticated = pb.authStore.isValid && !!user;
-  const isAdmin = isAuthenticated && user.role === 'admin';
 
   if (isAdmin) {
     return <Navigate to="/admin/settings/modules" replace />;
@@ -34,6 +44,22 @@ export const ModuleRoute: React.FC<ModuleRouteProps> = ({ module, children }) =>
   }
 
   const def = MODULE_DEFINITIONS[module];
+  const configuredHomepage = homepageQuery.data?.trim() ?? '';
+  let homepageUrl = '';
+  if (configuredHomepage) {
+    try {
+      const target = new URL(configuredHomepage, window.location.origin);
+      const isWebUrl = target.protocol === 'http:' || target.protocol === 'https:';
+      const isSameOriginRoot = target.origin === window.location.origin && target.pathname === '/';
+      const isCurrentRoute =
+        target.origin === window.location.origin && target.pathname === window.location.pathname;
+      if (isWebUrl && !isSameOriginRoot && !isCurrentRoute) {
+        homepageUrl = target.href;
+      }
+    } catch {
+      // Ignore malformed configuration and leave only the reliable Go Back action.
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 text-center font-sans text-white">
@@ -53,9 +79,11 @@ export const ModuleRoute: React.FC<ModuleRouteProps> = ({ module, children }) =>
           <Button variant="primary" onClick={() => navigate(-1)} className="w-full justify-center">
             <span>Go Back</span>
           </Button>
-          <Button variant="ghost" onClick={() => navigate('/')} className="w-full justify-center">
-            <span>Return Home</span>
-          </Button>
+          {homepageUrl && (
+            <Button as="a" href={homepageUrl} variant="ghost" className="w-full justify-center">
+              <span>Return Home</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

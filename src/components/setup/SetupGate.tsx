@@ -23,9 +23,13 @@ export const SetupGate: React.FC<{ children: React.ReactNode }> = ({ children })
 
   const isSetupRoute = location.pathname === '/setup';
   const isLoginRoute = location.pathname === '/login';
+  const isResetPasswordRoute = location.pathname === '/reset-password';
 
   if (!status || status.state !== 'initialized') {
-    if (isSetupRoute || (status?.state === 'in_progress' && isLoginRoute)) {
+    if (
+      isSetupRoute ||
+      (status?.state === 'in_progress' && (isLoginRoute || isResetPasswordRoute))
+    ) {
       return <>{children}</>;
     }
     return <Navigate to="/setup" replace />;

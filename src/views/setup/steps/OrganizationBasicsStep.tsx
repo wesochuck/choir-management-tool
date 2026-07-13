@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FormField, Input, Select } from '../../../components/ui';
 import { SetupNavigation } from '../../../components/setup/SetupNavigation';
 import { useDialog } from '../../../contexts/DialogContext';
@@ -27,12 +27,38 @@ export const OrganizationBasicsStep: React.FC<OrganizationBasicsStepProps> = ({
   refreshStatus,
 }) => {
   const [choirName, setChoirName] = useState('');
-  const [timezone, setTimezone] = useState(
-    Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York'
-  );
+  const [timezone, setTimezone] = useState('');
   const [homepageUrl, setHomepageUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const dialog = useDialog();
+
+  useEffect(() => {
+    let active = true;
+    void Promise.all([
+      settingsService.getChoirName(),
+      settingsService.getTimezone(),
+      settingsService.getHomepageUrl(),
+    ])
+      .then(([name, savedTimezone, homepageUrl]) => {
+        if (!active) return;
+        setChoirName(name);
+        setTimezone(savedTimezone);
+        setHomepageUrl(homepageUrl);
+      })
+      .catch(() => {
+        if (active) {
+          setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/New_York');
+        }
+      })
+      .finally(() => {
+        if (active) setSettingsLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,8 +136,8 @@ export const OrganizationBasicsStep: React.FC<OrganizationBasicsStepProps> = ({
 
       <SetupNavigation
         nextLabel="Save & Continue"
-        nextDisabled={!choirName.trim()}
-        loading={loading}
+        nextDisabled={!settingsLoaded || !choirName.trim()}
+        loading={loading || !settingsLoaded}
       />
     </form>
   );

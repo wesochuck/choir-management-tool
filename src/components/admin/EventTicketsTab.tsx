@@ -5,6 +5,7 @@ import { ticketService } from '../../services/ticketService';
 import { queryKeys } from '../../lib/queryKeys';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { Input, Textarea, Button } from '../ui';
+import { useSetup } from '../../contexts/SetupContext';
 
 export interface EventTicketsTabProps {
   isOpen: boolean;
@@ -38,6 +39,8 @@ export const EventTicketsTab: React.FC<EventTicketsTabProps> = ({
   setIsGraphicRemoved,
 }) => {
   const { timezone } = useChoirSettings();
+  const { enabledModules } = useSetup();
+  const ticketSalesEnabled = enabledModules.has('ticketSales');
 
   const { data: hasPurchases = false } = useQuery({
     queryKey: [...queryKeys.tickets.all, 'hasPurchases', initialData?.id],
@@ -45,7 +48,7 @@ export const EventTicketsTab: React.FC<EventTicketsTabProps> = ({
       if (!initialData?.id) return false;
       return ticketService.hasPaidPurchasesForEvent(initialData.id);
     },
-    enabled: isOpen && !!initialData?.id,
+    enabled: ticketSalesEnabled && isOpen && !!initialData?.id,
   });
 
   const dayOfLiveText = useMemo(() => {
@@ -99,7 +102,7 @@ export const EventTicketsTab: React.FC<EventTicketsTabProps> = ({
         <span className="text-text text-sm font-bold">Enable Online Ticket Sales</span>
       </label>
 
-      {formData.isTicketingEnabled && (
+      {ticketSalesEnabled && formData.isTicketingEnabled && (
         <div className="border-primary bg-primary/10 mt-2 rounded-lg border-l-4 p-4 shadow-sm">
           <div className="text-text-muted flex flex-col gap-2 text-sm">
             <div>
@@ -130,7 +133,7 @@ export const EventTicketsTab: React.FC<EventTicketsTabProps> = ({
         </div>
       )}
 
-      {hasPurchases && !formData.isTicketingEnabled && (
+      {ticketSalesEnabled && hasPurchases && !formData.isTicketingEnabled && (
         <div className="border-warning-border bg-warning-bg mt-2 rounded-lg border p-4 shadow-sm">
           <strong className="text-warning-text text-sm font-bold">⚠️ Existing Ticket Sales</strong>
           <p className="text-warning-text/90 m-0 mt-2 text-sm leading-relaxed font-medium">

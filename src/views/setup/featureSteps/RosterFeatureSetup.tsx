@@ -3,6 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { settingsService } from '../../../services/settingsService';
 import { Button } from '../../../components/ui';
+import { useDialog } from '../../../contexts/DialogContext';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
 
 interface RosterFeatureSetupProps {
   onSuccess: () => void;
@@ -17,6 +19,7 @@ export default function RosterFeatureSetup({ onSuccess }: RosterFeatureSetupProp
   const [defaultStatus, setDefaultStatus] = useState('Active');
   const [automationEnabled, setAutomationEnabled] = useState(true);
   const [maxRehearsalMisses, setMaxRehearsalMisses] = useState(3);
+  const dialog = useDialog();
 
   useEffect(() => {
     if (currentSettings) {
@@ -43,6 +46,13 @@ export default function RosterFeatureSetup({ onSuccess }: RosterFeatureSetupProp
     },
     onSuccess: () => {
       onSuccess();
+    },
+    onError: (error: unknown) => {
+      void dialog.showMessage({
+        title: 'Roster Settings Failed',
+        message: formatPocketBaseError(error),
+        variant: 'danger',
+      });
     },
   });
 

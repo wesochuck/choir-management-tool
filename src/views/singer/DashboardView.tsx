@@ -16,12 +16,20 @@ import { resourceService } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
 import { Button, Modal } from '../../components/ui';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
+import { useSetup } from '../../contexts/SetupContext';
 
 export default function DashboardView() {
   const queryClient = useQueryClient();
   const dialog = useDialog();
   const { user, logout } = useAuth();
   const { performerLabel } = useChoirSettings();
+  const { enabledModules } = useSetup();
+  const pollsEnabled = enabledModules.has('polls');
+  const communicationsEnabled = enabledModules.has('communications');
+  const resourcesEnabled = enabledModules.has('resources');
+  const musicLibraryEnabled = enabledModules.has('musicLibrary');
+  const seatingEnabled = enabledModules.has('seating');
+  const rosterEnabled = enabledModules.has('roster');
   const { events, myRosters, myProfile, isLoading, error, updateRSVP } = useMyEvents();
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<MessageRecord | null>(null);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -30,7 +38,7 @@ export default function DashboardView() {
   const pollsQuery = useQuery({
     queryKey: queryKeys.polls.active,
     queryFn: () => pollService.getActivePollsForSinger(myProfile!.id),
-    enabled: !!myProfile?.id,
+    enabled: pollsEnabled && !!myProfile?.id,
   });
 
   const activePolls = useMemo(() => {
@@ -65,19 +73,21 @@ export default function DashboardView() {
       );
       return resolved;
     },
-    enabled: !!myProfile?.id,
+    enabled: communicationsEnabled && !!myProfile?.id,
   });
   const announcements = announcementsQuery.data ?? [];
 
   const resourcesQuery = useQuery({
     queryKey: queryKeys.resources.list(),
     queryFn: () => resourceService.getResources(),
+    enabled: resourcesEnabled,
   });
   const resources = resourcesQuery.data ?? [];
 
   const rosterSettingsQuery = useQuery({
     queryKey: queryKeys.appSettings.roster,
     queryFn: () => settingsService.getRosterSettings(),
+    enabled: rosterEnabled,
   });
   const maxRehearsalMisses = rosterSettingsQuery.data?.maxRehearsalMisses ?? 3;
 
@@ -87,7 +97,8 @@ export default function DashboardView() {
     staleTime: 5 * 60_000,
   });
   const showDirectoryButton =
-    directorySettingsQuery.data?.enabled !== false || user?.role === 'admin';
+    enabledModules.has('directory') &&
+    (directorySettingsQuery.data?.enabled !== false || user?.role === 'admin');
 
   useEffect(() => {
     setCurrentTime(Date.now());
@@ -213,7 +224,10 @@ export default function DashboardView() {
       <PublicLogo />
       <div className="py-4">
         {nextEvent && (
-          <section className="hidden max-md:mb-6 max-md:block" aria-label={`${performerLabel} quick actions`}>
+          <section
+            className="hidden max-md:mb-6 max-md:block"
+            aria-label={`${performerLabel} quick actions`}
+          >
             <AppCard className="bg-surface/80 rounded-lg p-6 shadow-sm backdrop-blur-sm">
               <div className="flex flex-col gap-2">
                 <div className="text-text-muted text-[0.72rem] font-extrabold tracking-widest uppercase">
@@ -228,11 +242,13 @@ export default function DashboardView() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Button as={Link} to={`/player?eventId=${nextEvent.id}`} variant="primary">
-                    🎵 Practice
-                  </Button>
+                  {musicLibraryEnabled && (
+                    <Button as={Link} to={`/player?eventId=${nextEvent.id}`} variant="primary">
+                      🎵 Practice
+                    </Button>
+                  )}
 
-                  {nextEvent?.type === 'Performance' && (
+                  {seatingEnabled && nextEvent?.type === 'Performance' && (
                     <Button as={Link} to={`/seating/${nextEvent.id}`} variant="secondary">
                       🪑 Seating
                     </Button>
@@ -313,6 +329,8 @@ export default function DashboardView() {
                   allEvents={events}
                   myRosters={myRosters}
                   maxRehearsalMisses={maxRehearsalMisses}
+                  musicLibraryEnabled={musicLibraryEnabled}
+                  seatingEnabled={seatingEnabled}
                 />
               ))}
             </div>
@@ -330,6 +348,8 @@ export default function DashboardView() {
                     allEvents={events}
                     myRosters={myRosters}
                     maxRehearsalMisses={maxRehearsalMisses}
+                    musicLibraryEnabled={musicLibraryEnabled}
+                    seatingEnabled={seatingEnabled}
                   />
                 ))}
               </div>
@@ -382,78 +402,82 @@ export default function DashboardView() {
             )}
 
             {/* Recent Announcements Widget */}
-            <AppCard
-              className="bg-surface/80 rounded-lg p-6 shadow-sm backdrop-blur-sm"
-              title="✉️ Bulletins"
-            >
-              {announcementsQuery.isLoading ? (
-                <div className="text-muted p-4 text-center">Loading bulletins...</div>
-              ) : announcements.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  {announcements.map((ann) => (
-                    <div
-                      key={ann.id}
-                      className="border-border border-l-primary bg-surface hover:bg-primary-light cursor-pointer rounded-r-md border-y border-r border-l-[3px] p-4 transition-all duration-200 hover:translate-x-[3px]"
-                      onClick={() => setSelectedAnnouncement(ann)}
-                    >
-                      <div className="mb-1 flex items-center justify-between">
-                        <span className="text-text max-w-[180px] truncate text-sm font-bold">
-                          {ann.subject || 'Choir Update'}
-                        </span>
-                        <span className="text-text-muted text-xs">
-                          {getFormattedDate(ann.created)}
-                        </span>
-                      </div>
+            {communicationsEnabled && (
+              <AppCard
+                className="bg-surface/80 rounded-lg p-6 shadow-sm backdrop-blur-sm"
+                title="✉️ Bulletins"
+              >
+                {announcementsQuery.isLoading ? (
+                  <div className="text-muted p-4 text-center">Loading bulletins...</div>
+                ) : announcements.length > 0 ? (
+                  <div className="flex flex-col gap-4">
+                    {announcements.map((ann) => (
                       <div
-                        className="text-text-muted line-clamp-2 text-xs"
-                        dangerouslySetInnerHTML={{
-                          __html:
-                            sanitizeHtml(ann.content)
-                              .replace(/<[^>]*>/g, '')
-                              .slice(0, 100) + '...',
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted p-4 text-center">No recent updates.</div>
-              )}
-            </AppCard>
+                        key={ann.id}
+                        className="border-border border-l-primary bg-surface hover:bg-primary-light cursor-pointer rounded-r-md border-y border-r border-l-[3px] p-4 transition-all duration-200 hover:translate-x-[3px]"
+                        onClick={() => setSelectedAnnouncement(ann)}
+                      >
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="text-text max-w-[180px] truncate text-sm font-bold">
+                            {ann.subject || 'Choir Update'}
+                          </span>
+                          <span className="text-text-muted text-xs">
+                            {getFormattedDate(ann.created)}
+                          </span>
+                        </div>
+                        <div
+                          className="text-text-muted line-clamp-2 text-xs"
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              sanitizeHtml(ann.content)
+                                .replace(/<[^>]*>/g, '')
+                                .slice(0, 100) + '...',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-muted p-4 text-center">No recent updates.</div>
+                )}
+              </AppCard>
+            )}
 
             {/* Resources Widget */}
-            <AppCard
-              className="bg-surface/80 rounded-lg p-6 shadow-sm backdrop-blur-sm"
-              title="📂 Resources"
-            >
-              {resourcesQuery.isLoading ? (
-                <div className="text-muted p-4 text-center">Loading resources...</div>
-              ) : resources.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                  {resources.map((res) => {
-                    const href =
-                      res.url ||
-                      (res.file ? resourceService.getResourceFileUrl(res, res.file) : '#');
-                    return (
-                      <a
-                        key={res.id}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="border-border text-text hover:border-primary hover:bg-primary-light hover:text-primary-deep flex items-center gap-2 rounded-md border bg-[rgba(74,124,89,0.02)] p-[10px_12px] text-sm font-semibold no-underline transition-all duration-200 hover:translate-x-[2px]"
-                      >
-                        <span className="text-xl" aria-hidden="true">
-                          {res.url ? '🔗' : '📄'}
-                        </span>{' '}
-                        {res.title}
-                      </a>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-muted p-4 text-center">No resources available.</div>
-              )}
-            </AppCard>
+            {resourcesEnabled && (
+              <AppCard
+                className="bg-surface/80 rounded-lg p-6 shadow-sm backdrop-blur-sm"
+                title="📂 Resources"
+              >
+                {resourcesQuery.isLoading ? (
+                  <div className="text-muted p-4 text-center">Loading resources...</div>
+                ) : resources.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {resources.map((res) => {
+                      const href =
+                        res.url ||
+                        (res.file ? resourceService.getResourceFileUrl(res, res.file) : '#');
+                      return (
+                        <a
+                          key={res.id}
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="border-border text-text hover:border-primary hover:bg-primary-light hover:text-primary-deep flex items-center gap-2 rounded-md border bg-[rgba(74,124,89,0.02)] p-[10px_12px] text-sm font-semibold no-underline transition-all duration-200 hover:translate-x-[2px]"
+                        >
+                          <span className="text-xl" aria-hidden="true">
+                            {res.url ? '🔗' : '📄'}
+                          </span>{' '}
+                          {res.title}
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-muted p-4 text-center">No resources available.</div>
+                )}
+              </AppCard>
+            )}
           </div>
         </div>
       </div>

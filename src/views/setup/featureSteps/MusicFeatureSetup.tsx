@@ -3,6 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { settingsService } from '../../../services/settingsService';
 import { Button } from '../../../components/ui';
+import { useDialog } from '../../../contexts/DialogContext';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
 
 interface MusicFeatureSetupProps {
   onSuccess: () => void;
@@ -16,6 +18,7 @@ export default function MusicFeatureSetup({ onSuccess }: MusicFeatureSetupProps)
 
   const [genresText, setGenresText] = useState('Choral, Classical, Holiday, Pop');
   const [lookupUrl, setLookupUrl] = useState('');
+  const dialog = useDialog();
 
   useEffect(() => {
     if (currentSettings) {
@@ -46,6 +49,13 @@ export default function MusicFeatureSetup({ onSuccess }: MusicFeatureSetupProps)
     },
     onSuccess: () => {
       onSuccess();
+    },
+    onError: (error: unknown) => {
+      void dialog.showMessage({
+        title: 'Music Settings Failed',
+        message: formatPocketBaseError(error),
+        variant: 'danger',
+      });
     },
   });
 

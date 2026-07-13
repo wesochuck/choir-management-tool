@@ -246,15 +246,17 @@ export default function AdminDashboardView() {
             <h2 className="m-0 text-xl font-bold text-gray-800">Choir Admin</h2>
           </div>
           <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-4">
-            <Button
-              as={Link}
-              to="/directory"
-              variant="outline"
-              size="small"
-              className="flex-1 sm:flex-none"
-            >
-              {performerLabel} Directory
-            </Button>
+            {enabledModules.has('directory') && (
+              <Button
+                as={Link}
+                to="/directory"
+                variant="outline"
+                size="small"
+                className="flex-1 sm:flex-none"
+              >
+                {performerLabel} Directory
+              </Button>
+            )}
             <Button
               as={Link}
               to="/profile"

@@ -46,7 +46,7 @@ interface PocketBaseApp {
   ): PocketBaseRecord[];
   save(record: PocketBaseRecord): void;
   delete(record: PocketBaseRecord): void;
-  runInTransaction(callback: () => void): void;
+  runInTransaction(callback: (txApp: PocketBaseApp) => void): void;
 }
 
 interface PocketBaseHttp {
@@ -82,6 +82,20 @@ export function handleSetupStatus(e: PocketBaseRequestEvent): unknown {
   });
 }
 
+export function handlePublicModuleState(e: PocketBaseRequestEvent): unknown {
+  try {
+    const record = $app.findFirstRecordByFilter('appSettings', "key = 'module_state'");
+    const parsed = parseJsonField<{ version?: unknown; enabled?: unknown }>(record.get('value'));
+    const enabled = Array.isArray(parsed?.enabled)
+      ? parsed.enabled.filter((moduleId): moduleId is string => typeof moduleId === 'string')
+      : [];
+    const version = typeof parsed?.version === 'number' ? parsed.version : 1;
+    return e.json(200, { version, enabled });
+  } catch {
+    return e.json(200, { version: 1, enabled: [] });
+  }
+}
+
 export function handleSetupClaim(e: PocketBaseRequestEvent): unknown {
   if (!isSetupSuperuser(e)) {
     return e.json(403, { error: 'Forbidden: Superusers only' });
@@ -104,14 +118,50 @@ export function handleSetupClaim(e: PocketBaseRequestEvent): unknown {
     return e.json(400, { error: 'Passwords do not match' });
   }
 
-  // Idempotency check: see if admin user with this email already exists
+  // Idempotency check: repair a partially-created admin/profile pair if a prior claim
+  // was interrupted before its transaction completed.
+  let existingAdmin: PocketBaseRecord | null = null;
   try {
     const existing = $app.findFirstRecordByFilter('users', 'email = {:email}', { email });
     if (existing && existing.get('role') === 'admin') {
-      return e.json(200, { success: true });
+      existingAdmin = existing;
     }
   } catch {
     // does not exist, safe to proceed
+  }
+
+  if (existingAdmin) {
+    const existingState = getSetupState($app);
+    if (existingState.initialized) {
+      return e.json(200, { success: true });
+    }
+    $app.runInTransaction((txApp) => {
+      try {
+        txApp.findFirstRecordByFilter('profiles', 'user = {:userId}', {
+          userId: existingAdmin.id,
+        });
+      } catch {
+        const profilesColl = txApp.findCollectionByNameOrId('profiles');
+        txApp.save(
+          new Record(profilesColl, {
+            user: existingAdmin.id,
+            name,
+            globalStatus: 'Active (Current)',
+            voicePart: '',
+            receiveAttendanceReports: true,
+          })
+        );
+      }
+      const state = getSetupState(txApp);
+      state.initialized = false;
+      state.ownerIsPerformer = isPerformer;
+      state.ownerVoicePartSet = false;
+      if (!state.completedSections.includes('admin-account')) {
+        state.completedSections.push('admin-account');
+      }
+      saveSetupState(txApp, state);
+    });
+    return e.json(200, { success: true });
   }
 
   const status = resolveSetupStatus($app);
@@ -120,9 +170,15 @@ export function handleSetupClaim(e: PocketBaseRequestEvent): unknown {
   }
 
   let userRec: PocketBaseRecord | null = null;
+  let claimWasAlreadyTaken = false;
   try {
-    $app.runInTransaction(() => {
-      const usersColl = $app.findCollectionByNameOrId('users');
+    $app.runInTransaction((txApp) => {
+      const transactionalStatus = resolveSetupStatus(txApp);
+      if (transactionalStatus.state !== 'unclaimed') {
+        claimWasAlreadyTaken = true;
+        return;
+      }
+      const usersColl = txApp.findCollectionByNameOrId('users');
       userRec = new Record(usersColl, {
         email,
         emailVisibility: true,
@@ -131,9 +187,9 @@ export function handleSetupClaim(e: PocketBaseRequestEvent): unknown {
         passwordConfirm,
         role: 'admin',
       });
-      $app.save(userRec);
+      txApp.save(userRec);
 
-      const profilesColl = $app.findCollectionByNameOrId('profiles');
+      const profilesColl = txApp.findCollectionByNameOrId('profiles');
       const profileRec = new Record(profilesColl, {
         user: userRec.id,
         name,
@@ -141,19 +197,22 @@ export function handleSetupClaim(e: PocketBaseRequestEvent): unknown {
         voicePart: '',
         receiveAttendanceReports: true,
       });
-      $app.save(profileRec);
+      txApp.save(profileRec);
 
       // Save setup state progress
-      const state = getSetupState($app);
+      const state = getSetupState(txApp);
       state.initialized = false;
       state.ownerIsPerformer = isPerformer;
       state.ownerVoicePartSet = false;
       if (state.completedSections.indexOf('admin-account') === -1) {
         state.completedSections.push('admin-account');
       }
-      saveSetupState($app, state);
+      saveSetupState(txApp, state);
     });
 
+    if (claimWasAlreadyTaken) {
+      return e.json(400, { error: 'Application is already claimed' });
+    }
     return e.json(200, { success: true });
   } catch (err: unknown) {
     if (userRec) {
@@ -181,8 +240,9 @@ export function handleSetupProgress(e: PocketBaseRequestEvent): unknown {
   }
 
   const state = getSetupState($app);
-  // Verify completed sections are mapped as strings
-  state.completedSections = completedSections.map(String);
+  // Completion is monotonic: revisiting an earlier step must not erase later work.
+  const requestedSections = completedSections.map(String);
+  state.completedSections = Array.from(new Set([...state.completedSections, ...requestedSections]));
 
   if (body.ownerIsPerformer !== undefined) {
     state.ownerIsPerformer = !!body.ownerIsPerformer;
@@ -225,10 +285,7 @@ export function handleSetupComplete(e: PocketBaseRequestEvent): unknown {
   }
 
   try {
-    const organizationRecord = $app.findFirstRecordByFilter(
-      'appSettings',
-      "key = 'choir_name'"
-    );
+    const organizationRecord = $app.findFirstRecordByFilter('appSettings', "key = 'choir_name'");
     const organizationName = parseJsonField<string>(organizationRecord.get('value'));
     if (typeof organizationName !== 'string' || organizationName.trim() === '') {
       return e.json(400, { error: 'Organization name is not configured' });
@@ -239,10 +296,7 @@ export function handleSetupComplete(e: PocketBaseRequestEvent): unknown {
 
   if (rosterEnabled) {
     try {
-      const rosterRecord = $app.findFirstRecordByFilter(
-        'appSettings',
-        "key = 'voiceParts'"
-      );
+      const rosterRecord = $app.findFirstRecordByFilter('appSettings', "key = 'voiceParts'");
       const roster = parseJsonField<{
         sections?: Array<{ code?: unknown; trackOnly?: unknown }>;
         voiceParts?: Array<{ label?: unknown; sectionCode?: unknown }>;
@@ -281,14 +335,14 @@ export function handleSetupComplete(e: PocketBaseRequestEvent): unknown {
     }
   }
 
+  if (state.ownerIsPerformer && !rosterEnabled) {
+    return e.json(400, { error: 'Roster must be enabled for a performing owner' });
+  }
+
   if (state.ownerIsPerformer) {
     const userId = e.auth?.id || '';
     try {
-      const ownerProfile = $app.findFirstRecordByFilter(
-        'profiles',
-        'user = {:userId}',
-        { userId }
-      );
+      const ownerProfile = $app.findFirstRecordByFilter('profiles', 'user = {:userId}', { userId });
       const voicePart = ownerProfile.get('voicePart');
       if (
         typeof voicePart !== 'string' ||
@@ -335,9 +389,14 @@ export function handleAdminRecovery(e: PocketBaseRequestEvent): unknown {
   }
 
   let userRec: PocketBaseRecord | null = null;
+  let recoveryWasAlreadyHandled = false;
   try {
-    $app.runInTransaction(() => {
-      const usersColl = $app.findCollectionByNameOrId('users');
+    $app.runInTransaction((txApp) => {
+      if (resolveSetupStatus(txApp).state !== 'recovery_required') {
+        recoveryWasAlreadyHandled = true;
+        return;
+      }
+      const usersColl = txApp.findCollectionByNameOrId('users');
       userRec = new Record(usersColl, {
         email,
         emailVisibility: true,
@@ -346,9 +405,9 @@ export function handleAdminRecovery(e: PocketBaseRequestEvent): unknown {
         passwordConfirm,
         role: 'admin',
       });
-      $app.save(userRec);
+      txApp.save(userRec);
 
-      const profilesColl = $app.findCollectionByNameOrId('profiles');
+      const profilesColl = txApp.findCollectionByNameOrId('profiles');
       const profileRec = new Record(profilesColl, {
         user: userRec.id,
         name,
@@ -356,9 +415,12 @@ export function handleAdminRecovery(e: PocketBaseRequestEvent): unknown {
         voicePart: '',
         receiveAttendanceReports: true,
       });
-      $app.save(profileRec);
+      txApp.save(profileRec);
     });
 
+    if (recoveryWasAlreadyHandled) {
+      return e.json(400, { error: 'Admin recovery is not required' });
+    }
     return e.json(200, { success: true });
   } catch (err: unknown) {
     if (userRec) {

@@ -17,6 +17,8 @@ interface EventCardProps {
   allEvents?: Event[];
   myRosters?: Record<string, EventRoster>;
   maxRehearsalMisses?: number;
+  musicLibraryEnabled?: boolean;
+  seatingEnabled?: boolean;
 }
 
 export const EventCard: React.FC<EventCardProps> = ({
@@ -26,6 +28,8 @@ export const EventCard: React.FC<EventCardProps> = ({
   allEvents = [],
   myRosters = {},
   maxRehearsalMisses = 3,
+  musicLibraryEnabled = true,
+  seatingEnabled = true,
 }) => {
   const { timezone } = useChoirSettings();
   const navigate = useNavigate();
@@ -114,18 +118,21 @@ export const EventCard: React.FC<EventCardProps> = ({
               <span aria-hidden="true">📅</span>
               <span>Add</span>
             </Button>
-            {previewData.visible && previewData.setList && previewData.setList.length > 0 && (
-              <Button
-                onClick={handleOpenPlayer}
-                variant="primary"
-                size="small"
-                className="max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs"
-              >
-                <span aria-hidden="true">🎧</span>
-                <span>Practice</span>
-              </Button>
-            )}
-            {isPerformance && rsvp !== 'No' && (
+            {musicLibraryEnabled &&
+              previewData.visible &&
+              previewData.setList &&
+              previewData.setList.length > 0 && (
+                <Button
+                  onClick={handleOpenPlayer}
+                  variant="primary"
+                  size="small"
+                  className="max-sm:w-full max-sm:justify-center max-sm:px-1 max-sm:py-1.5 max-sm:text-xs"
+                >
+                  <span aria-hidden="true">🎧</span>
+                  <span>Practice</span>
+                </Button>
+              )}
+            {seatingEnabled && isPerformance && rsvp !== 'No' && (
               <Button
                 as={Link}
                 to={`/seating/${event.id}`}

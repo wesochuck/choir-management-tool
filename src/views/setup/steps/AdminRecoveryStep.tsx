@@ -61,8 +61,9 @@ export const AdminRecoveryStep: React.FC<AdminRecoveryStepProps> = ({
 
     setLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       await setupService.recoverAdmin({
-        email,
+        email: normalizedEmail,
         password,
         passwordConfirm,
         name,
@@ -70,7 +71,7 @@ export const AdminRecoveryStep: React.FC<AdminRecoveryStepProps> = ({
 
       pb.authStore.clear();
 
-      await pb.collection('users').authWithPassword(email, password);
+      await pb.collection('users').authWithPassword(normalizedEmail, password);
 
       await refreshStatus();
 

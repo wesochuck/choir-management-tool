@@ -68,6 +68,10 @@ const SetupView: React.FC = () => {
   }
 
   const rosterEnabled = enabledModules.has('roster');
+  const isApplicationAdminSession =
+    pb.authStore.isValid &&
+    pb.authStore.model?.collectionName === 'users' &&
+    pb.authStore.model?.role === 'admin';
 
   // Stepper Header definitions
   const steps = [
@@ -202,7 +206,7 @@ const SetupView: React.FC = () => {
             />
           )}
 
-          {status.state === 'in_progress' && !pb.authStore.isValid && (
+          {status.state === 'in_progress' && !isApplicationAdminSession && (
             <div className="space-y-6 py-6 text-center">
               <span className="text-4xl" role="img" aria-label="key">
                 🔑
@@ -224,7 +228,7 @@ const SetupView: React.FC = () => {
             </div>
           )}
 
-          {status.state === 'in_progress' && pb.authStore.isValid && (
+          {status.state === 'in_progress' && isApplicationAdminSession && (
             <>
               {allCompleted ? (
                 <div className="space-y-6 py-6 text-center">
@@ -257,7 +261,12 @@ const SetupView: React.FC = () => {
                         <ModuleSelectionStep
                           refreshStatus={refreshStatus}
                           onSuccess={refreshStatus}
-                          initialEnabled={Array.from(enabledModules)}
+                          initialEnabled={
+                            enabledModules.size > 0 || completed.includes('module-selection')
+                              ? Array.from(enabledModules)
+                              : undefined
+                          }
+                          requiredModules={status.ownerIsPerformer ? ['roster'] : []}
                         />
                       )}
 

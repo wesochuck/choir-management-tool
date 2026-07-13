@@ -32,7 +32,7 @@ describe('InitialDataStep', () => {
       initialized: false,
       completedSections: [],
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
       version: 1,
       enabled: ['roster', 'musicLibrary'],
     }));

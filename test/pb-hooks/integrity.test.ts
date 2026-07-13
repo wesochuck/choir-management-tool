@@ -134,6 +134,17 @@ test('Generated main.pb.js integrity', () => {
   assert.ok(!content.includes('cronAdd('), 'Should contain zero cron registrations');
   assert.ok(content.includes('onRecordAfterCreateSuccess'), 'Should contain create hook');
   assert.ok(content.includes('onRecordAfterUpdateSuccess'), 'Should contain update hook');
+  const routerMiddlewareIndex = content.indexOf('routerUse(');
+  assert.notStrictEqual(routerMiddlewareIndex, -1, 'Should contain router middleware');
+  assert.notStrictEqual(
+    content.indexOf('function isBackendModuleEnabled('),
+    -1,
+    'Should define the module guard helper globally'
+  );
+  assert.ok(
+    content.indexOf('function isBackendModuleEnabled(') < routerMiddlewareIndex,
+    'The router middleware must see the global module guard helper'
+  );
   assert.ok(
     countRouteRegistrations(content, 'POST', '/api/queue/process') === 1,
     'Should contain queue process route'
@@ -157,8 +168,8 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    38,
-    'Generated main file should contain exactly 38 route registrations'
+    39,
+    'Generated main file should contain exactly 39 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
@@ -203,7 +214,7 @@ test('Generated main.pb.js integrity', () => {
   }
 });
 
-test('Generated main.pb.js uses callback-local bundles without top-level shared utilities', () => {
+test('Generated main.pb.js keeps endpoint bundles local and module guards global', () => {
   const content = readGeneratedMain();
 
   assert.ok(
@@ -216,14 +227,18 @@ test('Generated main.pb.js uses callback-local bundles without top-level shared 
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    266,
-    'Generated file should contain exactly 266 callback-local utility regions'
+    278,
+    'Generated file should contain exactly 278 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
   assert.ok(
-    !filePrelude.includes('function '),
-    'Generated file prelude should not contain top-level helper functions'
+    filePrelude.includes('function isBackendModuleEnabled('),
+    'Generated file prelude should contain the global module guard helper'
+  );
+  assert.ok(
+    !filePrelude.includes('function processEmailQueue'),
+    'Generated file prelude should not contain unrelated endpoint helpers'
   );
 
   const queueRoute = extractRouteCallback(content, '/api/queue/process');

@@ -19,6 +19,7 @@ interface ModuleSelectionStepProps {
   refreshStatus: () => Promise<void>;
   initialEnabled?: ModuleId[];
   persistSetupProgress?: boolean;
+  requiredModules?: ModuleId[];
 }
 
 export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
@@ -26,18 +27,25 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
   refreshStatus,
   initialEnabled,
   persistSetupProgress = true,
+  requiredModules = [],
 }) => {
   const [enabled, setEnabled] = useState<Set<ModuleId>>(() => {
-    if (initialEnabled !== undefined) {
-      return new Set<ModuleId>(initialEnabled);
-    }
-    return new Set<ModuleId>(RECOMMENDED_MODULES);
+    const initial = initialEnabled !== undefined ? initialEnabled : [...RECOMMENDED_MODULES];
+    return new Set<ModuleId>([...initial, ...requiredModules]);
   });
 
   const [loading, setLoading] = useState(false);
   const dialog = useDialog();
 
   const handleToggle = (id: ModuleId, checked: boolean) => {
+    if (!checked && requiredModules.includes(id)) {
+      void dialog.showMessage({
+        title: 'Roster Required',
+        message: 'Roster must remain enabled while the owner is a performing member.',
+        variant: 'warning',
+      });
+      return;
+    }
     if (checked) {
       const next = enableModule(enabled, id);
       setEnabled(next);

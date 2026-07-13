@@ -3,6 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { settingsService, type CommunicationSettings } from '../../../services/settingsService';
 import { Button } from '../../../components/ui';
+import { useDialog } from '../../../contexts/DialogContext';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
 
 interface EventsFeatureSetupProps {
   onSuccess: () => void;
@@ -17,6 +19,7 @@ export default function EventsFeatureSetup({ onSuccess }: EventsFeatureSetupProp
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderHoursBefore, setReminderHoursBefore] = useState(24);
   const [reportEnabled, setReportEnabled] = useState(false);
+  const dialog = useDialog();
 
   useEffect(() => {
     if (currentSettings) {
@@ -43,6 +46,13 @@ export default function EventsFeatureSetup({ onSuccess }: EventsFeatureSetupProp
     },
     onSuccess: () => {
       onSuccess();
+    },
+    onError: (error: unknown) => {
+      void dialog.showMessage({
+        title: 'Event Settings Failed',
+        message: formatPocketBaseError(error),
+        variant: 'danger',
+      });
     },
   });
 

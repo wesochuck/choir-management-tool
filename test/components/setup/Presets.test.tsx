@@ -77,6 +77,28 @@ describe('Organization & Roster Presets Steps', () => {
     ]);
   });
 
+  it('loads existing organization values when revisiting the step', async () => {
+    mock.method(settingsService, 'getChoirName', async () => 'Existing Choir');
+    mock.method(settingsService, 'getTimezone', async () => 'Europe/London');
+    mock.method(settingsService, 'getHomepageUrl', async () => 'https://existing.example');
+
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <SetupProvider>
+          <DialogProvider>
+            <OrganizationBasicsStep onSuccess={() => {}} refreshStatus={async () => {}} />
+          </DialogProvider>
+        </SetupProvider>
+      </QueryClientProvider>
+    );
+
+    assert.strictEqual(
+      (await screen.findByDisplayValue('Existing Choir')).getAttribute('value'),
+      'Existing Choir'
+    );
+    assert.ok(await screen.findByDisplayValue('https://existing.example'));
+  });
+
   it('RosterStructureStep renders options and submits selected preset', async () => {
     const saveVoicePartsMock = mock.method(
       settingsService,

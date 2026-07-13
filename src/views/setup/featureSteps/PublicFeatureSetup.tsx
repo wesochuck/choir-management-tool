@@ -3,6 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { settingsService, type LandingPageSettings } from '../../../services/settingsService';
 import { Button } from '../../../components/ui';
+import { useDialog } from '../../../contexts/DialogContext';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
 
 interface PublicFeatureSetupProps {
   onSuccess: () => void;
@@ -17,6 +19,7 @@ export default function PublicFeatureSetup({ onSuccess }: PublicFeatureSetupProp
   const [heroHeadline, setHeroHeadline] = useState('');
   const [heroSubtitle, setHeroSubtitle] = useState('');
   const [aboutUsText, setAboutUsText] = useState('');
+  const dialog = useDialog();
 
   useEffect(() => {
     if (currentSettings) {
@@ -37,6 +40,13 @@ export default function PublicFeatureSetup({ onSuccess }: PublicFeatureSetupProp
     },
     onSuccess: () => {
       onSuccess();
+    },
+    onError: (error: unknown) => {
+      void dialog.showMessage({
+        title: 'Website Settings Failed',
+        message: formatPocketBaseError(error),
+        variant: 'danger',
+      });
     },
   });
 

@@ -11,6 +11,7 @@ import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Button, Select, Input, CopyButton, Checkbox } from '../../components/ui';
+import { useSetup } from '../../contexts/SetupContext';
 
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -49,6 +50,7 @@ const inputClasses = 'max-w-lg';
 export default function SettingsView() {
   const dialog = useDialog();
   const queryClient = useQueryClient();
+  const { enabledModules } = useSetup();
   const {
     setChoirName: setContextChoirName,
     setTimezone: setContextTimezone,
@@ -207,11 +209,16 @@ export default function SettingsView() {
         <h1 className="text-text text-4xl font-bold tracking-tight">System Settings</h1>
         <p className="text-text-muted mt-2 text-sm">
           Configure global metadata, timezone options, organization logos, and email queue webhooks.
-          Public-facing website settings live under{' '}
-          <a href="/admin/website" className="text-primary hover:text-primary-deep underline">
-            Public Website
-          </a>
-          .
+          {enabledModules.has('publicWebsite') && (
+            <>
+              {' '}
+              Public-facing website settings live under{' '}
+              <a href="/admin/website" className="text-primary hover:text-primary-deep underline">
+                Public Website
+              </a>
+              .
+            </>
+          )}
         </p>
       </div>
 

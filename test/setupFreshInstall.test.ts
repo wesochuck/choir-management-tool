@@ -94,8 +94,8 @@ const mockApp = {
     }
   },
 
-  runInTransaction(callback: () => void): void {
-    callback();
+  runInTransaction(callback: (txApp: typeof mockApp) => void): void {
+    callback(mockApp);
   },
 };
 
@@ -104,6 +104,11 @@ const mockApp = {
 interface TestResponse {
   status: number;
   data: Record<string, unknown>;
+}
+
+interface MockAuth {
+  collectionName: string;
+  get?: (key: string) => unknown;
 }
 
 describe('Setup Fresh Install Smoke Test', () => {
@@ -124,11 +129,11 @@ describe('Setup Fresh Install Smoke Test', () => {
       body: body || {},
     });
 
-    const superuserAuth = {
+    const superuserAuth: MockAuth = {
       collectionName: '_superusers',
     };
 
-    const adminAuth = {
+    const adminAuth: MockAuth = {
       collectionName: 'users',
       get: (key: string) => {
         if (key === 'role') return 'admin';
@@ -136,10 +141,10 @@ describe('Setup Fresh Install Smoke Test', () => {
       },
     };
 
-    const mockEvent = (auth: Record<string, unknown> | null, body?: Record<string, unknown>) => ({
+    const mockEvent = (auth: MockAuth | null, body?: Record<string, unknown>) => ({
       json: (status: number, data: Record<string, unknown>) => ({ status, data }),
       requestInfo: () => mockRequestInfo(body),
-      auth: (auth as any) || undefined,
+      auth: auth ?? undefined,
     });
 
     // 1. Initial status check (should be unclaimed)

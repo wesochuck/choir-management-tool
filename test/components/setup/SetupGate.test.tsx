@@ -27,7 +27,7 @@ const createQueryClient = () =>
 describe('SetupGate', () => {
   it('renders loader while fetching status', async () => {
     mock.method(setupService, 'getStatus', () => new Promise(() => {})); // never resolves
-    mock.method(moduleService, 'getModuleState', () =>
+    mock.method(moduleService, 'getPublicModuleState', () =>
       Promise.resolve({ version: 1, enabled: [] })
     );
 
@@ -55,7 +55,7 @@ describe('SetupGate', () => {
       ownerIsPerformer: undefined,
       ownerVoicePartSet: undefined,
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
+    mock.method(moduleService, 'getPublicModuleState', async () => ({ version: 1, enabled: [] }));
 
     render(
       <QueryClientProvider client={createQueryClient()}>
@@ -84,7 +84,7 @@ describe('SetupGate', () => {
       ownerIsPerformer: undefined,
       ownerVoicePartSet: undefined,
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
+    mock.method(moduleService, 'getPublicModuleState', async () => ({ version: 1, enabled: [] }));
 
     render(
       <QueryClientProvider client={createQueryClient()}>

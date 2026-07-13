@@ -7,9 +7,12 @@ import { Spinner } from '../components/ui/Spinner/Spinner';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { PublicBrandingWrapper } from '../components/common/PublicBrandingWrapper';
 import { queryKeys } from '../lib/queryKeys';
+import { useSetup } from '../contexts/SetupContext';
 
 export default function PublicDonationSuccessView() {
   useDocumentTitle('Donation Confirmation');
+  const { enabledModules } = useSetup();
+  const ticketsEnabled = enabledModules.has('ticketSales');
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get('session_id') || '';
 
@@ -82,9 +85,11 @@ export default function PublicDonationSuccessView() {
           </div>
         )}
 
-        <Button as={Link} to="/tickets" variant="primary" className="w-full no-underline">
-          Back to Concerts
-        </Button>
+        {ticketsEnabled && (
+          <Button as={Link} to="/tickets" variant="primary" className="w-full no-underline">
+            Back to Concerts
+          </Button>
+        )}
       </AppCard>
     </PublicBrandingWrapper>
   );

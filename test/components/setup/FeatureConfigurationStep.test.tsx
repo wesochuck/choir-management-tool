@@ -9,6 +9,7 @@ import { FeatureConfigurationStep } from '../../../src/views/setup/steps/Feature
 import { settingsService } from '../../../src/services/settingsService';
 import { setupService } from '../../../src/services/setupService';
 import * as moduleService from '../../../src/services/moduleService';
+import { DialogProvider } from '../../../src/contexts/DialogProvider';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -47,7 +48,7 @@ describe('FeatureConfigurationStep', () => {
       initialized: false,
       completedSections: [],
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
       version: 1,
       enabled: ['roster', 'events'],
     }));
@@ -56,9 +57,11 @@ describe('FeatureConfigurationStep', () => {
 
     render(
       <QueryClientProvider client={createQueryClient()}>
-        <SetupProvider>
-          <FeatureConfigurationStep onSuccess={onSuccessSpy} />
-        </SetupProvider>
+        <DialogProvider>
+          <SetupProvider>
+            <FeatureConfigurationStep onSuccess={onSuccessSpy} />
+          </SetupProvider>
+        </DialogProvider>
       </QueryClientProvider>
     );
 

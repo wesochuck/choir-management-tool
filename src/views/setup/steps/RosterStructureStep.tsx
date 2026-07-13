@@ -28,16 +28,62 @@ export const RosterStructureStep: React.FC<RosterStructureStepProps> = ({
   const [voiceParts, setVoiceParts] = useState<VoicePartDef[]>(() => PRESETS.choir.voiceParts);
   const [ownerVoicePart, setOwnerVoicePart] = useState('');
   const [loading, setLoading] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const dialog = useDialog();
 
-  // Load preset defaults on first render or when preset type changes
+  // Load the persisted roster when revisiting setup. Preset buttons below remain the explicit
+  // way to replace it with a new starter structure.
   useEffect(() => {
-    const selected = PRESETS[presetKey];
+    let active = true;
+    const profilePromise = pb.authStore.model
+      ? pb
+          .collection('profiles')
+          .getList(1, 1, {
+            filter: pb.filter('user = {:userId}', { userId: pb.authStore.model.id }),
+          })
+          .catch(() => ({ items: [] }))
+      : Promise.resolve({ items: [] });
+
+    void Promise.all([
+      settingsService.getVoicePartsAndSections(),
+      settingsService.getPerformerLabel(),
+      profilePromise,
+    ])
+      .then(([persisted, label, profiles]) => {
+        if (!active) return;
+        setSections(persisted.sections);
+        setVoiceParts(persisted.voiceParts);
+        setPerformerLabel(label);
+        const persistedProfile = profiles.items[0];
+        if (ownerIsPerformer && persistedProfile?.voicePart) {
+          setOwnerVoicePart(persistedProfile.voicePart);
+        }
+        const presetMatch = (Object.keys(PRESETS) as Array<keyof typeof PRESETS>).find((key) => {
+          const preset = PRESETS[key];
+          return (
+            JSON.stringify(preset.sections) === JSON.stringify(persisted.sections) &&
+            JSON.stringify(preset.voiceParts) === JSON.stringify(persisted.voiceParts)
+          );
+        });
+        setPresetKey(presetMatch || 'other');
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setSettingsLoaded(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ownerIsPerformer]);
+
+  const selectPreset = (key: keyof typeof PRESETS) => {
+    const selected = PRESETS[key];
+    setPresetKey(key);
     setPerformerLabel(selected.performerLabel);
     setSections(selected.sections.map((s) => ({ ...s, trackOnly: false })));
     setVoiceParts(selected.voiceParts);
     setOwnerVoicePart('');
-  }, [presetKey]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +184,7 @@ export const RosterStructureStep: React.FC<RosterStructureStepProps> = ({
               <button
                 key={key}
                 type="button"
-                onClick={() => setPresetKey(key)}
+                onClick={() => selectPreset(key)}
                 className={`flex cursor-pointer flex-col rounded-xl border-2 p-4 text-left transition-all ${
                   isSelected
                     ? 'border-teal-500 bg-teal-500/10 shadow-lg shadow-teal-500/5'
@@ -232,7 +278,11 @@ export const RosterStructureStep: React.FC<RosterStructureStepProps> = ({
         </div>
       )}
 
-      <SetupNavigation nextLabel="Save & Continue" loading={loading} />
+      <SetupNavigation
+        nextLabel="Save & Continue"
+        loading={loading || !settingsLoaded}
+        nextDisabled={!settingsLoaded}
+      />
     </form>
   );
 };

@@ -42,8 +42,9 @@ export const AdminIdentityStep: React.FC<AdminIdentityStepProps> = ({
 
     setLoading(true);
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       await setupService.claim({
-        email,
+        email: normalizedEmail,
         password,
         passwordConfirm,
         name,
@@ -52,7 +53,7 @@ export const AdminIdentityStep: React.FC<AdminIdentityStepProps> = ({
 
       pb.authStore.clear();
 
-      await pb.collection('users').authWithPassword(email, password);
+      await pb.collection('users').authWithPassword(normalizedEmail, password);
 
       await refreshStatus();
 

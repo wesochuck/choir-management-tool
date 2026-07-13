@@ -3,6 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryKeys } from '../../../lib/queryKeys';
 import { settingsService } from '../../../services/settingsService';
 import { Button } from '../../../components/ui';
+import { useDialog } from '../../../contexts/DialogContext';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
 
 interface EngagementFeatureSetupProps {
   onSuccess: () => void;
@@ -21,6 +23,7 @@ export default function EngagementFeatureSetup({ onSuccess }: EngagementFeatureS
 
   const [directoryEnabled, setDirectoryEnabled] = useState(true);
   const [autoArchiveDays, setAutoArchiveDays] = useState(3);
+  const dialog = useDialog();
 
   useEffect(() => {
     if (directorySettings) {
@@ -47,6 +50,13 @@ export default function EngagementFeatureSetup({ onSuccess }: EngagementFeatureS
     },
     onSuccess: () => {
       onSuccess();
+    },
+    onError: (error: unknown) => {
+      void dialog.showMessage({
+        title: 'Engagement Settings Failed',
+        message: formatPocketBaseError(error),
+        variant: 'danger',
+      });
     },
   });
 

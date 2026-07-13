@@ -38,7 +38,7 @@ describe('App setup routing seal', () => {
       ownerIsPerformer: undefined,
       ownerVoicePartSet: undefined,
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({ version: 1, enabled: [] }));
+    mock.method(moduleService, 'getPublicModuleState', async () => ({ version: 1, enabled: [] }));
 
     pb.authStore.clear();
 
@@ -71,7 +71,7 @@ describe('App setup routing seal', () => {
       ownerIsPerformer: undefined,
       ownerVoicePartSet: undefined,
     }));
-    mock.method(moduleService, 'getModuleState', async () => ({
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
       version: 1,
       enabled: ['publicWebsite'],
     }));

@@ -56,4 +56,42 @@ describe('ModuleSelectionStep', () => {
     await waitFor(() => assert.strictEqual(saveModules.mock.callCount(), 1));
     assert.deepStrictEqual(saveModules.mock.calls[0].arguments[0], []);
   });
+
+  it('does not allow a performer owner to disable the roster module', async () => {
+    const saveModules = mock.method(moduleService, 'saveModuleState', async () => undefined);
+
+    render(
+      <DialogProvider>
+        <ModuleSelectionStep
+          initialEnabled={['roster']}
+          requiredModules={['roster']}
+          persistSetupProgress={false}
+          refreshStatus={async () => undefined}
+          onSuccess={() => undefined}
+        />
+      </DialogProvider>
+    );
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    fireEvent.click(checkboxes[0]);
+    assert.strictEqual((checkboxes[0] as HTMLInputElement).checked, true);
+    assert.strictEqual(saveModules.mock.callCount(), 0);
+  });
+
+  it('adds required modules when resuming with an incomplete module state', () => {
+    render(
+      <DialogProvider>
+        <ModuleSelectionStep
+          initialEnabled={['events']}
+          requiredModules={['roster']}
+          persistSetupProgress={false}
+          refreshStatus={async () => undefined}
+          onSuccess={() => undefined}
+        />
+      </DialogProvider>
+    );
+
+    const labels = screen.getAllByRole('checkbox') as HTMLInputElement[];
+    assert.ok(labels.some((checkbox) => checkbox.checked));
+  });
 });

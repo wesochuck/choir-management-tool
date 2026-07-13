@@ -32,12 +32,15 @@ import { HistoryPanel } from './communications/HistoryPanel';
 import { SettingsPanel } from './communications/SettingsPanel';
 import { CommunicationModals } from './communications/CommunicationModals';
 import type { AutomatedTask, CommunicationRouteState, WizardStep } from './communications/types';
+import { useSetup } from '../../contexts/SetupContext';
 
 export default function CommunicationView() {
   const dialog = useDialog();
   const location = useLocation();
   const { events } = useEvents();
   const { user } = useAuth();
+  const { enabledModules } = useSetup();
+  const pollsEnabled = enabledModules.has('polls');
 
   const routeState = location.state as CommunicationRouteState | null;
 
@@ -392,7 +395,7 @@ export default function CommunicationView() {
           }
           below={
             <>
-              {routeState?.returnToPolls && (
+              {routeState?.returnToPolls && pollsEnabled && (
                 <Link to="/admin/polls" className="text-muted text-sm underline">
                   Back to Polls
                 </Link>

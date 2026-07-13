@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useChoirName } from '../../hooks/useDocumentTitle';
 import PublicLogo from './PublicLogo';
 import { Button } from '../ui/Button/Button';
+import { useSetup } from '../../contexts/SetupContext';
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -15,9 +16,11 @@ interface PublicLayoutProps {
 
 export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   const { user } = useAuth();
+  const { enabledModules } = useSetup();
   const { choirName } = useChoirName();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const publicWebsiteEnabled = enabledModules.has('publicWebsite');
 
   const { data: landingSettings } = useQuery({
     queryKey: queryKeys.publicLanding.settings,
@@ -46,10 +49,17 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
     >
       <header className="no-print bg-bg border-border sticky top-0 z-40 border-b shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-          <Link to="/" className="flex items-center gap-3 no-underline">
-            <PublicLogo variant="header" />
-            <span className="text-text text-lg font-semibold">{choirName || 'Choir'}</span>
-          </Link>
+          {publicWebsiteEnabled ? (
+            <Link to="/" className="flex items-center gap-3 no-underline">
+              <PublicLogo variant="header" />
+              <span className="text-text text-lg font-semibold">{choirName || 'Choir'}</span>
+            </Link>
+          ) : (
+            <div className="flex items-center gap-3">
+              <PublicLogo variant="header" />
+              <span className="text-text text-lg font-semibold">{choirName || 'Choir'}</span>
+            </div>
+          )}
 
           <button
             type="button"
@@ -83,21 +93,31 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
           </button>
 
           <nav className="hidden items-center gap-4 md:flex">
-            <Link to="/tickets" className={getLinkClass('/tickets')}>
-              Tickets
-            </Link>
-            <Link to="/donate" className={getLinkClass('/donate')}>
-              Donate
-            </Link>
-            <Link to="/auditions" className={getLinkClass('/auditions')}>
-              Auditions
-            </Link>
-            <Link to="/performances" className={getLinkClass('/performances')}>
-              Performances
-            </Link>
-            <Link to="/history" className={getLinkClass('/history')}>
-              History
-            </Link>
+            {enabledModules.has('ticketSales') && (
+              <Link to="/tickets" className={getLinkClass('/tickets')}>
+                Tickets
+              </Link>
+            )}
+            {enabledModules.has('donations') && (
+              <Link to="/donate" className={getLinkClass('/donate')}>
+                Donate
+              </Link>
+            )}
+            {enabledModules.has('auditions') && (
+              <Link to="/auditions" className={getLinkClass('/auditions')}>
+                Auditions
+              </Link>
+            )}
+            {publicWebsiteEnabled && (
+              <>
+                <Link to="/performances" className={getLinkClass('/performances')}>
+                  Performances
+                </Link>
+                <Link to="/history" className={getLinkClass('/history')}>
+                  History
+                </Link>
+              </>
+            )}
             {user ? (
               <Link to="/dashboard">
                 <Button variant="secondary" size="small">
@@ -116,41 +136,51 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
 
         {mobileNavOpen && (
           <div className="border-border bg-bg flex flex-col gap-1 border-t px-6 py-3 md:hidden">
-            <Link
-              to="/tickets"
-              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/tickets' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
-              onClick={() => setMobileNavOpen(false)}
-            >
-              Tickets
-            </Link>
-            <Link
-              to="/donate"
-              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/donate' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
-              onClick={() => setMobileNavOpen(false)}
-            >
-              Donate
-            </Link>
-            <Link
-              to="/auditions"
-              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/auditions' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
-              onClick={() => setMobileNavOpen(false)}
-            >
-              Auditions
-            </Link>
-            <Link
-              to="/performances"
-              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/performances' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
-              onClick={() => setMobileNavOpen(false)}
-            >
-              Performances
-            </Link>
-            <Link
-              to="/history"
-              className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/history' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
-              onClick={() => setMobileNavOpen(false)}
-            >
-              History
-            </Link>
+            {enabledModules.has('ticketSales') && (
+              <Link
+                to="/tickets"
+                className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/tickets' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+                onClick={() => setMobileNavOpen(false)}
+              >
+                Tickets
+              </Link>
+            )}
+            {enabledModules.has('donations') && (
+              <Link
+                to="/donate"
+                className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/donate' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+                onClick={() => setMobileNavOpen(false)}
+              >
+                Donate
+              </Link>
+            )}
+            {enabledModules.has('auditions') && (
+              <Link
+                to="/auditions"
+                className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/auditions' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+                onClick={() => setMobileNavOpen(false)}
+              >
+                Auditions
+              </Link>
+            )}
+            {publicWebsiteEnabled && (
+              <>
+                <Link
+                  to="/performances"
+                  className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/performances' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  Performances
+                </Link>
+                <Link
+                  to="/history"
+                  className={`block rounded-md px-3 py-2 text-sm font-medium transition-colors ${location.pathname === '/history' ? 'bg-primary-light text-primary-deep' : 'text-text-muted hover:bg-primary-light/50 hover:text-text'}`}
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  History
+                </Link>
+              </>
+            )}
             <div className="border-border/50 border-t pt-2">
               {user ? (
                 <Link to="/dashboard" onClick={() => setMobileNavOpen(false)}>

@@ -271,6 +271,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'isBackendModuleEnabled',
       'guardBackendModule',
       'handleSetupStatus',
+      'handlePublicModuleState',
       'handleSetupClaim',
       'handleSetupProgress',
       'handleSetupComplete',
@@ -1080,6 +1081,7 @@ if (provider === 'brevo') {
     setLists: 'setLists',
     patrons: 'patrons',
     seasons: 'roster',
+    seasonalDues: 'roster',
   };
 
   const beforeRequestHookNames = [
@@ -1106,6 +1108,11 @@ if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
     })
     .join('\n\n');
 
+  const globalModuleGuardUtilities = [
+    getTranspiledFile('email/hookJson.ts'),
+    getTranspiledFile('setup/setupAuth.ts'),
+  ].join('\n\n');
+
   const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
 // Source: pocketbase/pb_hooks_src/
@@ -1118,6 +1125,9 @@ if (typeof process === 'undefined') {
         })
     };
 }
+
+// --- GLOBAL UTILITIES FOR ROUTER MODULE GUARDS ---
+${globalModuleGuardUtilities}
 
 // --- RECORD HOOKS ---
 
@@ -1163,8 +1173,19 @@ routerUse((e) => {
         '/api/tickets/validate': 'ticketSales',
         '/api/tickets/scan-context': 'ticketSales',
         '/api/checkout/create-donation-session': 'donations',
-        '/api/admin/refund-donation': 'donations'
+        '/api/admin/refund-donation': 'donations',
+        '/api/queue/process': 'communications',
+        '/api/admin/queue-settings': 'communications',
+        '/api/admin/queue-settings/generate': 'communications',
+        '/api/test-smtp': 'communications',
+        '/api/test-sms': 'communications'
     };
+
+    if (path === '/api/webhook/stripe' &&
+        !isBackendModuleEnabled($app, 'ticketSales') &&
+        !isBackendModuleEnabled($app, 'donations')) {
+        throw new NotFoundError("Forbidden: Payment modules are disabled");
+    }
 
     for (const route in routeModuleGuards) {
         if (path === route || path.indexOf(route + '/') === 0) {
@@ -1178,6 +1199,7 @@ routerUse((e) => {
 });
 
 ${renderRoute('GET', '/api/setup/status', 'return handleSetupStatus(e);')}
+${renderRoute('GET', '/api/modules/state', 'return handlePublicModuleState(e);')}
 ${renderRoute('POST', '/api/setup/claim', 'return handleSetupClaim(e);')}
 ${renderRoute('POST', '/api/setup/progress', 'return handleSetupProgress(e);')}
 ${renderRoute('POST', '/api/setup/complete', 'return handleSetupComplete(e);')}
