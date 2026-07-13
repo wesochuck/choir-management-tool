@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppCard } from '../../components/common/AppCard';
@@ -18,13 +18,15 @@ import {
   settingsService,
   type CommunicationSettings,
   type EmailProviderSettings,
+  DEFAULT_EMAIL_PROVIDER_SETTINGS,
 } from '../../services/settingsService';
+import { parseConfigBaseline } from './communications/communicationSettingsForm';
+import type { CommunicationConfig } from './communications/communicationSettingsForm';
 
 import { useCommunicationLibrary } from './communications/useCommunicationLibrary';
 import { useCommunicationDraft } from './communications/useCommunicationDraft';
 import { useCommunicationPreview } from './communications/useCommunicationPreview';
 import { useAutomatedCommunicationTasks } from './communications/useAutomatedCommunicationTasks';
-import { useCommunicationProviderSettings } from './communications/useCommunicationProviderSettings';
 
 import { ComposePanel } from './communications/ComposePanel';
 import { AutomatedTasksPanel } from './communications/AutomatedTasksPanel';
@@ -90,9 +92,6 @@ export default function CommunicationView() {
     staleTime: 5 * 60_000,
   });
 
-  const { emailProvider, setEmailProvider, brevoApiKey, setBrevoApiKey } =
-    useCommunicationProviderSettings(emailProviderQuery.data);
-
   const saveEmailProviderMutation = useMutation({
     mutationFn: (settings: EmailProviderSettings) =>
       settingsService.saveEmailProviderSettings(settings),
@@ -100,6 +99,45 @@ export default function CommunicationView() {
       queryClient.invalidateQueries({ queryKey: queryKeys.appSettings.emailProvider });
     },
   });
+
+  const configBaseline = useMemo(() => {
+    return parseConfigBaseline(
+      library.commSettings,
+      emailProviderQuery.data || DEFAULT_EMAIL_PROVIDER_SETTINGS,
+      testEmailAddress,
+      testPhoneNumber
+    );
+  }, [library.commSettings, emailProviderQuery.data, testEmailAddress, testPhoneNumber]);
+
+  const saveSettings = async (newConfig: CommunicationConfig) => {
+    try {
+      setTestEmailAddress(newConfig.testEmail);
+      setTestPhoneNumber(newConfig.testPhone);
+
+      const commPayload: CommunicationSettings = {
+        ...library.commSettings,
+        mailingAddress: newConfig.physicalAddress,
+        frontendUrl: newConfig.baseUrl,
+        defaultCountryCode: newConfig.defaultSmsCountryCode,
+      };
+      await saveConfigMutation.mutateAsync(commPayload);
+
+      const providerPayload: EmailProviderSettings = {
+        provider: newConfig.emailProvider,
+        brevoApiKey: newConfig.brevoApiKey,
+      };
+      await saveEmailProviderMutation.mutateAsync(providerPayload);
+
+      dialog.showToast('Communication settings saved successfully.');
+    } catch (err: unknown) {
+      await dialog.showMessage({
+        title: 'Settings Not Saved',
+        message: formatPocketBaseError(err),
+        variant: 'danger',
+      });
+      throw err;
+    }
+  };
 
   const testSmtpMutation = useMutation({
     mutationFn: (email: string) => pb.send('/api/test-smtp', { method: 'POST', body: { email } }),
@@ -514,84 +552,20 @@ export default function CommunicationView() {
 
       {tab === 'settings' && (
         <SettingsPanel
-          commSettings={library.commSettings}
-          setCommSettings={library.setCommSettings}
-          testEmailAddress={testEmailAddress}
-          setTestEmailAddress={setTestEmailAddress}
-          isTestingSmtp={testSmtpMutation.isPending}
-          onSendConnectionTest={async () => {
-            if (!testEmailAddress) {
-              await dialog.showMessage({
-                title: 'Error',
-                message: 'Please enter a destination email address.',
-                variant: 'danger',
-              });
-              return;
-            }
-
-            try {
-              const response = await testSmtpMutation.mutateAsync(testEmailAddress);
-
-              if (response && response.success) {
-                dialog.showToast(`Test email successfully sent to ${testEmailAddress}!`);
-              } else {
-                throw new Error(response?.error || 'Unknown error occurred.');
-              }
-            } catch (err: unknown) {
-              await dialog.showMessage({
-                title: 'SMTP Connection Failed',
-                message: formatPocketBaseError(err),
-                variant: 'danger',
-              });
+          config={configBaseline}
+          isSaving={saveConfigMutation.isPending || saveEmailProviderMutation.isPending}
+          saveError={saveConfigMutation.error || saveEmailProviderMutation.error}
+          onSave={saveSettings}
+          onSendTestEmail={async (email) => {
+            const response = await testSmtpMutation.mutateAsync(email);
+            if (!response || !response.success) {
+              throw new Error(response?.error || 'Unknown error occurred.');
             }
           }}
-          testPhoneNumber={testPhoneNumber}
-          setTestPhoneNumber={setTestPhoneNumber}
-          isTestingSms={testSmsMutation.isPending}
-          onSendSmsTest={async () => {
-            if (!testPhoneNumber) {
-              await dialog.showMessage({
-                title: 'Error',
-                message: 'Please enter a destination phone number.',
-                variant: 'danger',
-              });
-              return;
-            }
-
-            try {
-              const response = await testSmsMutation.mutateAsync(testPhoneNumber);
-
-              if (response && response.success) {
-                dialog.showToast(`Test SMS successfully sent to ${testPhoneNumber}!`);
-              } else {
-                throw new Error(response?.error || 'Unknown error occurred.');
-              }
-            } catch (err: unknown) {
-              await dialog.showMessage({
-                title: 'SMS Connection Failed',
-                message: formatPocketBaseError(err),
-                variant: 'danger',
-              });
-            }
-          }}
-          emailProvider={emailProvider}
-          setEmailProvider={setEmailProvider}
-          brevoApiKey={brevoApiKey}
-          setBrevoApiKey={setBrevoApiKey}
-          isSavingConfig={saveConfigMutation.isPending || saveEmailProviderMutation.isPending}
-          onSaveSettings={async (settings) => {
-            try {
-              await saveConfigMutation.mutateAsync(settings);
-              await saveEmailProviderMutation.mutateAsync({ provider: emailProvider, brevoApiKey });
-              dialog.showToast('Communication settings saved successfully.');
-              return true;
-            } catch (err: unknown) {
-              await dialog.showMessage({
-                title: 'Settings Not Saved',
-                message: formatPocketBaseError(err),
-                variant: 'danger',
-              });
-              return false;
+          onSendTestSms={async (phone) => {
+            const response = await testSmsMutation.mutateAsync(phone);
+            if (!response || !response.success) {
+              throw new Error(response?.error || 'Unknown error occurred.');
             }
           }}
         />

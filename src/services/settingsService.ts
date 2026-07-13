@@ -117,11 +117,12 @@ export type { DirectorySettings } from './settings/directorySettings';
 export { getDirectorySettings, saveDirectorySettings };
 
 import {
+  DEFAULT_EMAIL_PROVIDER_SETTINGS,
   getEmailProviderSettings,
   saveEmailProviderSettings,
 } from './settings/emailProviderSettings';
 export type { EmailProviderSettings } from './settings/emailProviderSettings';
-export { getEmailProviderSettings, saveEmailProviderSettings };
+export { DEFAULT_EMAIL_PROVIDER_SETTINGS, getEmailProviderSettings, saveEmailProviderSettings };
 
 // Backward compat namespace for existing settingsService.getXxx callers
 export const settingsService = {

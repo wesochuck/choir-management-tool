@@ -1,120 +1,171 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type React from 'react';
 import { AppCard } from '../../../components/common/AppCard';
-import type { CommunicationSettings } from '../../../services/settingsService';
-
 import { Button, Input, Select } from '../../../components/ui';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
+import { isConfigEqual, type CommunicationConfig } from './communicationSettingsForm';
 
 export interface SettingsPanelProps {
-  commSettings: CommunicationSettings;
-  setCommSettings: React.Dispatch<React.SetStateAction<CommunicationSettings>>;
-  testEmailAddress: string;
-  setTestEmailAddress: (value: string) => void;
-  isTestingSmtp: boolean;
-  onSendConnectionTest: () => Promise<void>;
-  testPhoneNumber: string;
-  setTestPhoneNumber: (value: string) => void;
-  isTestingSms: boolean;
-  onSendSmsTest: () => Promise<void>;
-  emailProvider: 'smtp' | 'brevo';
-  setEmailProvider: (value: 'smtp' | 'brevo') => void;
-  brevoApiKey: string;
-  setBrevoApiKey: (value: string) => void;
-  isSavingConfig: boolean;
-  onSaveSettings: (settings: CommunicationSettings) => Promise<boolean>;
+  config: CommunicationConfig;
+  isSaving: boolean;
+  saveError: unknown;
+  onSave: (config: CommunicationConfig) => Promise<void>;
+  onSendTestEmail: (email: string) => Promise<void>;
+  onSendTestSms: (phone: string) => Promise<void>;
 }
 
 export function SettingsPanel({
-  commSettings,
-  setCommSettings,
-  testEmailAddress,
-  setTestEmailAddress,
-  isTestingSmtp,
-  onSendConnectionTest,
-  testPhoneNumber,
-  setTestPhoneNumber,
-  isTestingSms,
-  onSendSmsTest,
-  emailProvider,
-  setEmailProvider,
-  brevoApiKey,
-  setBrevoApiKey,
-  isSavingConfig,
-  onSaveSettings,
+  config,
+  isSaving,
+  saveError,
+  onSave,
+  onSendTestEmail,
+  onSendTestSms,
 }: SettingsPanelProps) {
-  const [localSettings, setLocalSettings] = useState<CommunicationSettings>(commSettings);
+  const [localConfig, setLocalConfig] = useState<CommunicationConfig>(config);
+
+  useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
+
+  const isDirty = useMemo(() => {
+    return !isConfigEqual(localConfig, config);
+  }, [localConfig, config]);
+
+  const handleCancel = () => {
+    setLocalConfig(config);
+  };
 
   const handleSave = async () => {
-    const didSave = await onSaveSettings(localSettings);
-    if (didSave) setCommSettings(localSettings);
+    await onSave(localConfig);
+  };
+
+  // Connection test states
+  const [smtpStatus, setSmtpStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [smtpError, setSmtpError] = useState<string | null>(null);
+
+  const [smsStatus, setSmsStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [smsError, setSmsError] = useState<string | null>(null);
+
+  const handleSendTestEmail = async () => {
+    if (!localConfig.testEmail) return;
+    setSmtpStatus('sending');
+    setSmtpError(null);
+    try {
+      await onSendTestEmail(localConfig.testEmail);
+      setSmtpStatus('success');
+    } catch (err: unknown) {
+      setSmtpStatus('error');
+      setSmtpError(err instanceof Error ? err.message : formatPocketBaseError(err));
+    }
+  };
+
+  const handleSendTestSms = async () => {
+    if (!localConfig.testPhone) return;
+    setSmsStatus('sending');
+    setSmsError(null);
+    try {
+      await onSendTestSms(localConfig.testPhone);
+      setSmsStatus('success');
+    } catch (err: unknown) {
+      setSmsStatus('error');
+      setSmsError(err instanceof Error ? err.message : formatPocketBaseError(err));
+    }
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <AppCard title="Application & Regional Settings">
+    <div className="flex flex-col gap-6">
+      <AppCard title="General & Compliance">
         <div className="flex flex-col gap-4">
-          <SettingsGrid>
-            <Field
-              id="default-country-code"
-              label="Default Country Code (SMS)"
-              value={localSettings.defaultCountryCode || '1'}
-              onChange={(v) => setLocalSettings((prev) => ({ ...prev, defaultCountryCode: v }))}
-              placeholder="e.g. 1"
-            />
-            <Field
-              id="physical-mailing-address"
-              label="Physical Mailing Address"
-              value={localSettings.mailingAddress}
-              onChange={(v) => setLocalSettings((prev) => ({ ...prev, mailingAddress: v }))}
-            />
-            <Field
-              id="application-base-url"
-              label="Application Base URL"
-              value={localSettings.frontendUrl}
-              onChange={(v) => setLocalSettings((prev) => ({ ...prev, frontendUrl: v }))}
-            />
-          </SettingsGrid>
-          <div className="text-muted text-xs">
-            Note: These values are used for legal compliance (footer), link generation, and outgoing
-            SMS formatting.
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="communications-mailing-address" className="text-label">
+                Physical mailing address
+              </label>
+              <Input
+                id="communications-mailing-address"
+                value={localConfig.physicalAddress}
+                onChange={(e) =>
+                  setLocalConfig((prev) => ({ ...prev, physicalAddress: e.target.value }))
+                }
+                placeholder="123 Choir St, Harmony City"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="communications-base-url" className="text-label">
+                Application base URL
+              </label>
+              <Input
+                id="communications-base-url"
+                value={localConfig.baseUrl}
+                onChange={(e) => setLocalConfig((prev) => ({ ...prev, baseUrl: e.target.value }))}
+                placeholder="https://choir.example.com"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="communications-country-code" className="text-label">
+                Default SMS country code
+              </label>
+              <Input
+                id="communications-country-code"
+                value={localConfig.defaultSmsCountryCode}
+                onChange={(e) =>
+                  setLocalConfig((prev) => ({ ...prev, defaultSmsCountryCode: e.target.value }))
+                }
+                placeholder="US"
+              />
+            </div>
           </div>
+          <p className="text-text-muted text-xs">
+            Note: These values are used for CAN-SPAM legal compliance footers, link generation, and
+            outgoing SMS formatting.
+          </p>
         </div>
       </AppCard>
 
-      <AppCard title="Email Provider">
+      <AppCard title="Delivery Provider">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="email-provider-select" className="text-text text-xs font-semibold">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="communications-email-provider" className="text-label">
               Select Outgoing Email Provider
             </label>
-            <Select
-              id="email-provider-select"
-              value={emailProvider}
-              onChange={(event) => setEmailProvider(event.target.value as 'smtp' | 'brevo')}
-              className="max-w-lg"
-            >
-              <option value="smtp">Built-in SMTP (SMTP2GO)</option>
-              <option value="brevo">Brevo Transactional API (Email & SMS)</option>
-            </Select>
+            <div className="max-w-md py-[3px]">
+              <Select
+                id="communications-email-provider"
+                value={localConfig.emailProvider}
+                onChange={(e) =>
+                  setLocalConfig((prev) => ({
+                    ...prev,
+                    emailProvider: e.target.value as 'smtp' | 'brevo',
+                  }))
+                }
+              >
+                <option value="smtp">Built-in SMTP (SMTP2GO)</option>
+                <option value="brevo">Brevo Transactional API (Email & SMS)</option>
+              </Select>
+            </div>
             <p className="text-text-muted text-xs">
-              Note: The <strong>Sender Name</strong> and <strong>Sender Address</strong> for all
-              outgoing messages are configured in the core PocketBase Admin dashboard under{' '}
-              <em>Settings &rarr; Mail settings</em>.
+              Note: The Sender Name and Sender Address for all outgoing messages are configured in
+              the core PocketBase Admin dashboard under Settings → Mail settings.
             </p>
           </div>
 
-          {emailProvider === 'brevo' && (
-            <div className="flex flex-col gap-2">
-              <label htmlFor="brevo-api-key" className="text-text text-xs font-semibold">
+          {localConfig.emailProvider === 'brevo' && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="communications-brevo-key" className="text-label">
                 Brevo API Key
               </label>
               <Input
-                id="brevo-api-key"
+                id="communications-brevo-key"
                 type="password"
-                value={brevoApiKey}
-                onChange={(event) => setBrevoApiKey(event.target.value)}
+                value={localConfig.brevoApiKey}
+                onChange={(e) =>
+                  setLocalConfig((prev) => ({ ...prev, brevoApiKey: e.target.value }))
+                }
                 placeholder="xkeysib-..."
-                className="max-w-lg"
+                className="max-w-md"
               />
               <p className="text-text-muted text-xs">
                 Enter your Brevo Transactional SMS and SMTP API key.
@@ -124,120 +175,127 @@ export function SettingsPanel({
         </div>
       </AppCard>
 
-      <AppCard title="Test Outgoing Connections">
+      <AppCard title="Connection Tests">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <p className="text-muted text-sm">
+            <p className="text-text-muted text-sm">
               Send a quick test email using the active provider settings to verify delivery.
             </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <label htmlFor="test-email-address" className="text-label w-full">
-                Test Email Address
-              </label>
-              <Input
-                id="test-email-address"
-                className="max-w-[300px] flex-1"
-                type="email"
-                value={testEmailAddress}
-                onChange={(e) => setTestEmailAddress(e.target.value)}
-                placeholder="e.g. test@example.com"
-              />
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex max-w-[400px] min-w-[280px] flex-1 flex-col gap-1">
+                <label htmlFor="communications-test-email" className="text-label">
+                  Test email address
+                </label>
+                <Input
+                  id="communications-test-email"
+                  type="email"
+                  value={localConfig.testEmail}
+                  onChange={(e) =>
+                    setLocalConfig((prev) => ({ ...prev, testEmail: e.target.value }))
+                  }
+                  placeholder="e.g. test@example.com"
+                />
+              </div>
               <Button
                 type="button"
                 variant="secondary"
-                onClick={onSendConnectionTest}
-                disabled={isTestingSmtp || !testEmailAddress}
+                onClick={handleSendTestEmail}
+                disabled={smtpStatus === 'sending' || !localConfig.testEmail}
               >
-                {isTestingSmtp ? (
+                {smtpStatus === 'sending' ? (
                   'Sending Test...'
                 ) : (
                   <>
-                    <span aria-hidden="true">🧪</span>
+                    <span aria-hidden="true" className="mr-1.5">
+                      🧪
+                    </span>
                     <span>Send Test Email</span>
                   </>
                 )}
               </Button>
             </div>
+            {smtpStatus === 'success' && (
+              <p className="text-xs font-semibold text-emerald-600" aria-live="polite">
+                ✓ Test email sent successfully! Check your inbox.
+              </p>
+            )}
+            {smtpStatus === 'error' && smtpError && (
+              <p className="text-xs font-semibold text-rose-600" aria-live="polite">
+                ⚠️ SMTP Connection Failed: {smtpError}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-muted text-sm">
+            <p className="text-text-muted text-sm">
               Send a quick test SMS using the active provider settings to verify delivery.
             </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <label htmlFor="test-phone-number" className="text-label w-full">
-                Test Phone Number
-              </label>
-              <Input
-                id="test-phone-number"
-                className="max-w-[300px] flex-1"
-                type="tel"
-                value={testPhoneNumber}
-                onChange={(e) => setTestPhoneNumber(e.target.value)}
-                placeholder="e.g. 5551234567"
-              />
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="flex max-w-[400px] min-w-[280px] flex-1 flex-col gap-1">
+                <label htmlFor="communications-test-phone" className="text-label">
+                  Test phone number
+                </label>
+                <Input
+                  id="communications-test-phone"
+                  type="tel"
+                  value={localConfig.testPhone}
+                  onChange={(e) =>
+                    setLocalConfig((prev) => ({ ...prev, testPhone: e.target.value }))
+                  }
+                  placeholder="e.g. +15551234567"
+                />
+              </div>
               <Button
                 type="button"
                 variant="secondary"
-                onClick={onSendSmsTest}
-                disabled={isTestingSms || !testPhoneNumber}
+                onClick={handleSendTestSms}
+                disabled={smsStatus === 'sending' || !localConfig.testPhone}
               >
-                {isTestingSms ? (
+                {smsStatus === 'sending' ? (
                   'Sending Test...'
                 ) : (
                   <>
-                    <span aria-hidden="true">📱</span>
+                    <span aria-hidden="true" className="mr-1.5">
+                      📱
+                    </span>
                     <span>Send Test SMS</span>
                   </>
                 )}
               </Button>
             </div>
+            {smsStatus === 'success' && (
+              <p className="text-xs font-semibold text-emerald-600" aria-live="polite">
+                ✓ Test SMS sent successfully!
+              </p>
+            )}
+            {smsStatus === 'error' && smsError && (
+              <p className="text-xs font-semibold text-rose-600" aria-live="polite">
+                ⚠️ SMS Connection Failed: {smsError}
+              </p>
+            )}
           </div>
         </div>
       </AppCard>
 
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={handleSave} disabled={isSavingConfig}>
-          {isSavingConfig ? 'Saving...' : 'Save Settings'}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function SettingsGrid({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-4">{children}</div>
-  );
-}
-
-function Field({
-  id,
-  label,
-  value,
-  onChange,
-  type = 'text',
-  placeholder,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (val: string) => void;
-  type?: string;
-  placeholder?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-label">
-        {label}
-      </label>
-      <Input
-        id={id}
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-      />
+      {(isDirty || isSaving || saveError) && (
+        <div className="border-border bg-surface sticky bottom-0 z-40 -mx-3 flex items-center justify-between gap-3 border-t px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_8px_rgba(0,0,0,0.08)] sm:-mx-6">
+          <span className="text-text-muted text-sm" aria-live="polite">
+            {isSaving
+              ? 'Saving settings…'
+              : saveError
+                ? formatPocketBaseError(saveError)
+                : 'Unsaved changes'}
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+              Cancel changes
+            </Button>
+            <Button variant="primary" onClick={handleSave} disabled={isSaving || !isDirty}>
+              Save settings
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
