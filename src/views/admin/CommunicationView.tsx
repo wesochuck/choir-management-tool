@@ -30,6 +30,7 @@ import { AutomatedTasksPanel } from './communications/AutomatedTasksPanel';
 import { DraftsPanel } from './communications/DraftsPanel';
 import { HistoryPanel } from './communications/HistoryPanel';
 import { SettingsPanel } from './communications/SettingsPanel';
+import { TemplatesPanel } from './communications/TemplatesPanel';
 import { CommunicationModals } from './communications/CommunicationModals';
 import type { AutomatedTask, CommunicationRouteState, WizardStep } from './communications/types';
 import { useSetup } from '../../contexts/SetupContext';
@@ -388,8 +389,7 @@ export default function CommunicationView() {
                 }}
                 className="w-full whitespace-nowrap sm:w-auto"
               >
-                <span aria-hidden="true">+</span>
-                <span>New Message</span>
+                + New Message
               </Button>
             ) : undefined
           }
@@ -502,6 +502,21 @@ export default function CommunicationView() {
         />
       )}
 
+      {tab === 'templates' && (
+        <TemplatesPanel
+          templates={library.templates}
+          setTemplates={library.setTemplates}
+          editingTemplate={library.editingTemplate}
+          setEditingTemplate={library.setEditingTemplate}
+          dialog={dialog}
+          previewHtml={preview.previewHtml}
+          onInsertPlaceholder={insertPlaceholder}
+          editorRef={editorRef}
+          choirName={library.choirName}
+          senderEmail={library.commConfig.smtp.from || 'no-reply@choir.management'}
+        />
+      )}
+
       {tab === 'settings' && (
         <SettingsPanel
           commSettings={library.commSettings}
@@ -586,16 +601,6 @@ export default function CommunicationView() {
               });
             }
           }}
-          templates={library.templates}
-          setTemplates={library.setTemplates}
-          editingTemplate={library.editingTemplate}
-          setEditingTemplate={library.setEditingTemplate}
-          previewHtml={preview.previewHtml}
-          onInsertPlaceholder={insertPlaceholder}
-          editorRef={editorRef}
-          dialog={dialog}
-          choirName={library.choirName}
-          senderEmail={library.commConfig.smtp.from || 'no-reply@choir.management'}
         />
       )}
 

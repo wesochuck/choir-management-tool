@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type React from 'react';
 import type EasyMDE from 'easymde';
 import { useEvents } from '../../../hooks/useEvents';
@@ -15,6 +16,7 @@ import type { WizardStep } from './types';
 import type { UseCommunicationDraftReturn } from './useCommunicationDraft';
 import type { UseCommunicationPreviewReturn } from './useCommunicationPreview';
 import { useTemplateSelection } from './useTemplateSelection';
+import { useWizardStepNavigation } from './useWizardStepNavigation';
 import { AudienceStep } from './AudienceStep';
 import { TemplateStep } from './TemplateStep';
 import { ComposeMessageStep } from './ComposeMessageStep';
@@ -55,6 +57,9 @@ export function ComposePanel({
 }: ComposePanelProps) {
   const { events } = useEvents();
   const { labels: voicePartLabels, sections: configSections } = useVoiceParts();
+  const wizardRef = useRef<HTMLDivElement>(null);
+
+  useWizardStepNavigation(wizardStep, wizardRef);
 
   const templateSelection = useTemplateSelection({
     templates,
@@ -67,7 +72,7 @@ export function ComposePanel({
   const selectedEvent = preview.selectedEvent;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={wizardRef} className="flex flex-col gap-4">
       <WizardStepper
         steps={[
           { number: 1, id: 'TARGETS', label: 'Audience', isValid: true },

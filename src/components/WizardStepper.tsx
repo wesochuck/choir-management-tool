@@ -21,15 +21,15 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
   const activeStep = steps.find((s) => s.number === currentStep);
 
   return (
-    <div className="flex w-full flex-col py-1 pb-2">
-      <div className="flex w-full items-center gap-0" aria-label="Message creation progress">
+    <nav className="flex w-full flex-col py-1 pb-2" aria-label="Message creation progress">
+      <ol className="flex w-full items-center gap-0">
         {steps.map((step, index) => {
           const isCompleted = step.number < currentStep;
           const isActive = step.number === currentStep;
           const isDisabled = !isCompleted && !isActive && !step.isValid;
 
           return (
-            <div
+            <li
               key={step.id}
               className="flex flex-1 items-center justify-center last:flex-initial md:justify-start"
             >
@@ -37,7 +37,8 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
                 type="button"
                 disabled={isDisabled}
                 aria-label={`Step ${step.number}: ${step.label}${isActive ? ' (current step)' : ''}${isCompleted ? ' (completed)' : ''}`}
-                className={`inline-flex cursor-pointer items-center gap-2 border-0 bg-transparent px-1 py-1.5 whitespace-nowrap md:px-2 ${
+                aria-current={isActive ? 'step' : undefined}
+                className={`inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-2 border-0 bg-transparent px-1 py-1.5 whitespace-nowrap md:px-2 ${
                   isActive ? 'text-primary-deep font-semibold' : 'text-text-muted'
                 }`}
                 onClick={() => onStepClick(step.number)}
@@ -67,15 +68,15 @@ export const WizardStepper: React.FC<WizardStepperProps> = ({
               {index < steps.length - 1 && (
                 <span className="bg-border mx-1 h-px flex-1 md:mx-2" aria-hidden="true" />
               )}
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ol>
       {activeStep && (
         <div className="text-primary-deep mt-2 text-center text-xs font-bold tracking-wider uppercase md:hidden">
           Step {activeStep.number}: {activeStep.label}
         </div>
       )}
-    </div>
+    </nav>
   );
 };

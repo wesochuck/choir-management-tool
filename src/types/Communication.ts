@@ -1,4 +1,22 @@
-export type CommunicationTab = 'compose' | 'automated' | 'drafts' | 'history' | 'settings';
+export type CommunicationTab =
+  | 'compose'
+  | 'drafts'
+  | 'history'
+  | 'templates'
+  | 'automated'
+  | 'settings';
+
+export const COMMUNICATION_SECTIONS: ReadonlyArray<{
+  value: CommunicationTab;
+  label: string;
+}> = [
+  { value: 'compose', label: 'Compose' },
+  { value: 'drafts', label: 'Drafts' },
+  { value: 'history', label: 'History' },
+  { value: 'templates', label: 'Templates' },
+  { value: 'automated', label: 'Upcoming Sends' },
+  { value: 'settings', label: 'Settings' },
+];
 
 export interface MessageTemplate {
   id: string;
@@ -9,4 +27,5 @@ export interface MessageTemplate {
   origin: 'system' | 'custom';
   subjectLine?: string;
   content?: string;
+  updated?: string;
 }

@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
 import type { CommunicationSettings } from '../../../services/settingsService';
-import type { TemplateRecord } from '../../../services/communicationService';
-import { useDialog } from '../../../contexts/DialogContext';
-import { TemplatesPanel } from './TemplatesPanel';
 
 import { Button, Input, Select } from '../../../components/ui';
 
@@ -25,18 +21,6 @@ export interface SettingsPanelProps {
   setBrevoApiKey: (value: string) => void;
   isSavingConfig: boolean;
   onSaveSettings: () => Promise<void>;
-
-  // Templates related props
-  templates: TemplateRecord[];
-  setTemplates: React.Dispatch<React.SetStateAction<TemplateRecord[]>>;
-  editingTemplate: Partial<TemplateRecord> | null;
-  setEditingTemplate: React.Dispatch<React.SetStateAction<Partial<TemplateRecord> | null>>;
-  previewHtml: string;
-  onInsertPlaceholder: (tag: string) => void;
-  editorRef: React.MutableRefObject<EasyMDE | null>;
-  dialog: ReturnType<typeof useDialog>;
-  choirName: string;
-  senderEmail: string;
 }
 
 export function SettingsPanel({
@@ -56,16 +40,6 @@ export function SettingsPanel({
   setBrevoApiKey,
   isSavingConfig,
   onSaveSettings,
-  templates,
-  setTemplates,
-  editingTemplate,
-  setEditingTemplate,
-  previewHtml,
-  onInsertPlaceholder,
-  editorRef,
-  dialog,
-  choirName,
-  senderEmail,
 }: SettingsPanelProps) {
   const [localSettings, setLocalSettings] = useState<CommunicationSettings>(commSettings);
 
@@ -80,161 +54,131 @@ export function SettingsPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      {editingTemplate ? (
-        <TemplatesPanel
-          templates={templates}
-          setTemplates={setTemplates}
-          editingTemplate={editingTemplate}
-          setEditingTemplate={setEditingTemplate}
-          dialog={dialog}
-          previewHtml={previewHtml}
-          onInsertPlaceholder={onInsertPlaceholder}
-          editorRef={editorRef}
-          choirName={choirName}
-          senderEmail={senderEmail}
-        />
-      ) : (
-        <>
-          <AppCard title="Application & Regional Settings">
-            <div className="flex flex-col gap-4">
-              <SettingsGrid>
-                <Field
-                  label="Default Country Code (SMS)"
-                  value={localSettings.defaultCountryCode || '1'}
-                  onChange={(v) => setLocalSettings((prev) => ({ ...prev, defaultCountryCode: v }))}
-                  placeholder="e.g. 1"
-                />
-                <Field
-                  label="Physical Mailing Address"
-                  value={localSettings.mailingAddress}
-                  onChange={(v) => setLocalSettings((prev) => ({ ...prev, mailingAddress: v }))}
-                />
-                <Field
-                  label="Application Base URL"
-                  value={localSettings.frontendUrl}
-                  onChange={(v) => setLocalSettings((prev) => ({ ...prev, frontendUrl: v }))}
-                />
-              </SettingsGrid>
-              <div className="text-muted text-xs">
-                Note: These values are used for legal compliance (footer), link generation, and
-                outgoing SMS formatting.
-              </div>
-            </div>
-          </AppCard>
-
-          <TemplatesPanel
-            templates={templates}
-            setTemplates={setTemplates}
-            editingTemplate={editingTemplate}
-            setEditingTemplate={setEditingTemplate}
-            dialog={dialog}
-            previewHtml={previewHtml}
-            onInsertPlaceholder={onInsertPlaceholder}
-            editorRef={editorRef}
-            choirName={choirName}
-            senderEmail={senderEmail}
-          />
-
-          <AppCard title="Email Provider">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="email-provider-select" className="text-text text-xs font-semibold">
-                  Select Outgoing Email Provider
-                </label>
-                <Select
-                  id="email-provider-select"
-                  value={emailProvider}
-                  onChange={(event) => setEmailProvider(event.target.value as 'smtp' | 'brevo')}
-                  className="max-w-lg"
-                >
-                  <option value="smtp">Built-in SMTP (SMTP2GO)</option>
-                  <option value="brevo">Brevo Transactional API (Email & SMS)</option>
-                </Select>
-                <p className="text-text-muted text-xs">
-                  Note: The <strong>Sender Name</strong> and <strong>Sender Address</strong> for all
-                  outgoing messages are configured in the core PocketBase Admin dashboard under{' '}
-                  <em>Settings &rarr; Mail settings</em>.
-                </p>
-              </div>
-
-              {emailProvider === 'brevo' && (
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="brevo-api-key" className="text-text text-xs font-semibold">
-                    Brevo API Key
-                  </label>
-                  <Input
-                    id="brevo-api-key"
-                    type="password"
-                    value={brevoApiKey}
-                    onChange={(event) => setBrevoApiKey(event.target.value)}
-                    placeholder="xkeysib-..."
-                    className="max-w-lg"
-                  />
-                  <p className="text-text-muted text-xs">
-                    Enter your Brevo Transactional SMS and SMTP API key.
-                  </p>
-                </div>
-              )}
-            </div>
-          </AppCard>
-
-          <AppCard title="Test Outgoing Connections">
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <p className="text-muted text-sm">
-                  Send a quick test email using the active provider settings to verify delivery.
-                </p>
-                <div className="flex flex-wrap items-center gap-4">
-                  <Input
-                    className="max-w-[300px] flex-1"
-                    type="email"
-                    value={testEmailAddress}
-                    onChange={(e) => setTestEmailAddress(e.target.value)}
-                    placeholder="e.g. test@example.com"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={onSendConnectionTest}
-                    disabled={isTestingSmtp || !testEmailAddress}
-                  >
-                    {isTestingSmtp ? 'Sending Test...' : '🧪 Send Test Email'}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <p className="text-muted text-sm">
-                  Send a quick test SMS using the active provider settings to verify delivery.
-                </p>
-                <div className="flex flex-wrap items-center gap-4">
-                  <Input
-                    className="max-w-[300px] flex-1"
-                    type="tel"
-                    value={testPhoneNumber}
-                    onChange={(e) => setTestPhoneNumber(e.target.value)}
-                    placeholder="e.g. 5551234567"
-                  />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={onSendSmsTest}
-                    disabled={isTestingSms || !testPhoneNumber}
-                  >
-                    {isTestingSms ? 'Sending Test...' : '📱 Send Test SMS'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </AppCard>
-
-          <div className="flex justify-end">
-            <Button variant="primary" onClick={handleSave} disabled={isSavingConfig}>
-              {isSavingConfig ? 'Saving...' : 'Save Settings'}
-            </Button>
+      <AppCard title="Application & Regional Settings">
+        <div className="flex flex-col gap-4">
+          <SettingsGrid>
+            <Field
+              label="Default Country Code (SMS)"
+              value={localSettings.defaultCountryCode || '1'}
+              onChange={(v) => setLocalSettings((prev) => ({ ...prev, defaultCountryCode: v }))}
+              placeholder="e.g. 1"
+            />
+            <Field
+              label="Physical Mailing Address"
+              value={localSettings.mailingAddress}
+              onChange={(v) => setLocalSettings((prev) => ({ ...prev, mailingAddress: v }))}
+            />
+            <Field
+              label="Application Base URL"
+              value={localSettings.frontendUrl}
+              onChange={(v) => setLocalSettings((prev) => ({ ...prev, frontendUrl: v }))}
+            />
+          </SettingsGrid>
+          <div className="text-muted text-xs">
+            Note: These values are used for legal compliance (footer), link generation, and outgoing
+            SMS formatting.
           </div>
-        </>
-      )}
+        </div>
+      </AppCard>
+
+      <AppCard title="Email Provider">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email-provider-select" className="text-text text-xs font-semibold">
+              Select Outgoing Email Provider
+            </label>
+            <Select
+              id="email-provider-select"
+              value={emailProvider}
+              onChange={(event) => setEmailProvider(event.target.value as 'smtp' | 'brevo')}
+              className="max-w-lg"
+            >
+              <option value="smtp">Built-in SMTP (SMTP2GO)</option>
+              <option value="brevo">Brevo Transactional API (Email & SMS)</option>
+            </Select>
+            <p className="text-text-muted text-xs">
+              Note: The <strong>Sender Name</strong> and <strong>Sender Address</strong> for all
+              outgoing messages are configured in the core PocketBase Admin dashboard under{' '}
+              <em>Settings &rarr; Mail settings</em>.
+            </p>
+          </div>
+
+          {emailProvider === 'brevo' && (
+            <div className="flex flex-col gap-2">
+              <label htmlFor="brevo-api-key" className="text-text text-xs font-semibold">
+                Brevo API Key
+              </label>
+              <Input
+                id="brevo-api-key"
+                type="password"
+                value={brevoApiKey}
+                onChange={(event) => setBrevoApiKey(event.target.value)}
+                placeholder="xkeysib-..."
+                className="max-w-lg"
+              />
+              <p className="text-text-muted text-xs">
+                Enter your Brevo Transactional SMS and SMTP API key.
+              </p>
+            </div>
+          )}
+        </div>
+      </AppCard>
+
+      <AppCard title="Test Outgoing Connections">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <p className="text-muted text-sm">
+              Send a quick test email using the active provider settings to verify delivery.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Input
+                className="max-w-[300px] flex-1"
+                type="email"
+                value={testEmailAddress}
+                onChange={(e) => setTestEmailAddress(e.target.value)}
+                placeholder="e.g. test@example.com"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onSendConnectionTest}
+                disabled={isTestingSmtp || !testEmailAddress}
+              >
+                {isTestingSmtp ? 'Sending Test...' : '🧪 Send Test Email'}
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <p className="text-muted text-sm">
+              Send a quick test SMS using the active provider settings to verify delivery.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <Input
+                className="max-w-[300px] flex-1"
+                type="tel"
+                value={testPhoneNumber}
+                onChange={(e) => setTestPhoneNumber(e.target.value)}
+                placeholder="e.g. 5551234567"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={onSendSmsTest}
+                disabled={isTestingSms || !testPhoneNumber}
+              >
+                {isTestingSms ? 'Sending Test...' : '📱 Send Test SMS'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AppCard>
+
+      <div className="flex justify-end">
+        <Button variant="primary" onClick={handleSave} disabled={isSavingConfig}>
+          {isSavingConfig ? 'Saving...' : 'Save Settings'}
+        </Button>
+      </div>
     </div>
   );
 }

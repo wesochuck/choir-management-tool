@@ -12,6 +12,8 @@ import { AudienceStatCards } from './AudienceStatCards';
 import { WizardActionBar } from './WizardActionBar';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../../../lib/labelHelpers';
+import { WizardStepHeading } from './WizardStepHeading';
+import { summarizeRecipientReach } from './recipientReach';
 
 interface AudienceStepProps {
   draft: UseCommunicationDraftReturn;
@@ -49,26 +51,13 @@ export function AudienceStep({
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Top Actions */}
-      <div className="border-border flex w-full items-center justify-between gap-3 border-b pb-3 max-md:flex-col max-md:items-stretch">
-        <div>
-          <h2 className="text-text text-base font-semibold sm:text-lg">
-            Step 1: Define Your Audience
-          </h2>
-          <p className="text-text-muted text-xs">
-            Select filter criteria on the left and verify reachable users on the right.
-          </p>
-        </div>
-        <Button
-          variant="primary"
-          onClick={onContinue}
-          className="w-full sm:w-auto"
-          disabled={targetAudiences.length === 0}
-        >
-          Continue to Message
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6 pb-20 lg:pb-0">
+      <WizardStepHeading
+        step="TARGETS"
+        number={1}
+        title="Define Your Audience"
+        description="Select filter criteria on the left and verify reachable users on the right."
+      />
 
       {/* Two Column Grid */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[380px_1fr]">
@@ -76,10 +65,10 @@ export function AudienceStep({
         <AppCard title="Audience Filters">
           <div className="flex flex-col gap-4">
             {/* Audience Types */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+            <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+              <legend className="text-text-muted mb-1 text-xs font-semibold tracking-wider uppercase">
                 Audience Types
-              </label>
+              </legend>
               <div className="flex flex-row flex-wrap gap-3">
                 {(['Members', 'Ticket Buyers', 'Donors'] as const).map((audience) => (
                   <Checkbox
@@ -96,15 +85,19 @@ export function AudienceStep({
                   </Checkbox>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             {/* Event Context */}
             {(targetAudiences.includes('Members') || targetAudiences.includes('Ticket Buyers')) && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                <label
+                  htmlFor="audience-event-context"
+                  className="text-text-muted text-xs font-semibold tracking-wider uppercase"
+                >
                   Event Context
                 </label>
                 <Select
+                  id="audience-event-context"
                   size="small"
                   value={filters.eventId}
                   onChange={(event) => handleEventContextChange(event.target.value)}
@@ -122,10 +115,14 @@ export function AudienceStep({
             {/* RSVP Status */}
             {targetAudiences.includes('Members') && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                <label
+                  htmlFor="audience-rsvp-status"
+                  className="text-text-muted text-xs font-semibold tracking-wider uppercase"
+                >
                   RSVP Status
                 </label>
                 <Select
+                  id="audience-rsvp-status"
                   size="small"
                   value={filters.rsvp}
                   onChange={(event) =>
@@ -149,10 +146,14 @@ export function AudienceStep({
             {/* Member Status */}
             {targetAudiences.includes('Members') && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                <label
+                  htmlFor="audience-member-status"
+                  className="text-text-muted text-xs font-semibold tracking-wider uppercase"
+                >
                   Member Status
                 </label>
                 <Select
+                  id="audience-member-status"
                   size="small"
                   value={filters.globalStatus}
                   onChange={(event) => updateFilter('globalStatus', event.target.value)}
@@ -168,10 +169,14 @@ export function AudienceStep({
             {/* Voice Part / Section multi-select */}
             {targetAudiences.includes('Members') && (
               <div className="flex flex-col gap-1.5">
-                <label className="text-text-muted text-xs font-semibold tracking-wider uppercase">
+                <label
+                  htmlFor="audience-voice-parts"
+                  className="text-text-muted text-xs font-semibold tracking-wider uppercase"
+                >
                   Voice Part / Section
                 </label>
                 <Select
+                  id="audience-voice-parts"
                   multiple
                   placeholder="All Voice Parts"
                   value={filters.voiceParts || []}
@@ -235,6 +240,7 @@ export function AudienceStep({
                   stroke="currentColor"
                   strokeWidth="2.5"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -246,89 +252,117 @@ export function AudienceStep({
               </div>
             )}
 
-            <div className="border-border flex items-center justify-between border-t pt-4">
-              <span className="text-text-muted text-xs">Need to audit the exact names?</span>
-              <button
-                type="button"
-                className="text-primary hover:text-primary-deep inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold hover:underline"
-                disabled={recipients.length === 0}
-                onClick={() => onViewRecipients(recipients, `Matched ${performerLabelPlural}`)}
-              >
-                <svg
-                  className="size-4"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
+            <div className="border-border flex flex-col gap-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-text-muted text-xs">Need to audit the exact names?</span>
+                <button
+                  type="button"
+                  className="text-primary hover:text-primary-deep inline-flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-sm font-semibold hover:underline"
+                  disabled={recipients.length === 0}
+                  onClick={() => onViewRecipients(recipients, `Matched ${performerLabelPlural}`)}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-                View matched {performerLabelPlural.toLowerCase()}
-              </button>
+                  <svg
+                    className="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  View matched {performerLabelPlural.toLowerCase()}
+                </button>
+              </div>
+
+              {(() => {
+                const reach = summarizeRecipientReach(draft.selectedRecipients, draft.messageType);
+                const channelLabel =
+                  draft.messageType === 'SMS' ? 'SMS' : draft.messageType.toLowerCase();
+                return (
+                  <div className="flex flex-col gap-2 border-t pt-3">
+                    <p className="text-text-muted m-0 text-sm" aria-live="polite">
+                      {`${reach.reachablePeople} reachable by ${channelLabel}${reach.excludedPeople > 0 ? ` · ${reach.excludedPeople} excluded` : ''}`}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={draft.selectedRecipients.length === 0}
+                      onClick={() =>
+                        onViewRecipients(draft.selectedRecipients, 'Recipients selected for send')
+                      }
+                    >
+                      Review recipients
+                    </Button>
+                  </div>
+                );
+              })()}
             </div>
           </AppCard>
 
-          {/* Matched Singers Preview Panel */}
-          <AppCard title={`${performerLabel} Preview (showing first 5)`}>
-            <div className="divide-border -my-2 flex flex-col divide-y">
-              {recipients.length === 0 ? (
-                <div className="text-text-muted py-4 text-center text-sm italic">
-                  No {performerLabelPlural.toLowerCase()} matched with the current filters.
-                </div>
-              ) : (
-                recipients.slice(0, 5).map((singer) => (
-                  <div key={singer.id} className="flex items-center justify-between py-2 text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-text font-medium">{singer.name}</span>
-                      <span className="text-text-muted text-xs">
-                        {singer.voicePart || 'No Voice Part'}
-                      </span>
-                    </div>
-                    <div className="flex gap-1.5">
-                      {singer.email ? (
-                        <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                          Email
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
-                          No Email
-                        </span>
-                      )}
-                      {singer.phone ? (
-                        <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                          SMS
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
-                          No SMS
-                        </span>
-                      )}
-                    </div>
+          {/* Matched Singers Preview Panel - hidden on mobile */}
+          <div className="hidden lg:block">
+            <AppCard title={`${performerLabel} Preview (showing first 5)`}>
+              <div className="divide-border -my-2 flex flex-col divide-y">
+                {recipients.length === 0 ? (
+                  <div className="text-text-muted py-4 text-center text-sm italic">
+                    No {performerLabelPlural.toLowerCase()} matched with the current filters.
                   </div>
-                ))
-              )}
-              {recipients.length > 5 && (
-                <div className="text-text-muted py-2 text-center text-xs italic">
-                  and {recipients.length - 5} more {performerLabelPlural.toLowerCase()}...
-                </div>
-              )}
-            </div>
-          </AppCard>
+                ) : (
+                  recipients.slice(0, 5).map((singer) => (
+                    <div key={singer.id} className="flex items-center justify-between py-2 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-text font-medium">{singer.name}</span>
+                        <span className="text-text-muted text-xs">
+                          {singer.voicePart || 'No Voice Part'}
+                        </span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {singer.email ? (
+                          <span className="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                            Email
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                            No Email
+                          </span>
+                        )}
+                        {singer.phone ? (
+                          <span className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                            SMS
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                            No SMS
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {recipients.length > 5 && (
+                  <div className="text-text-muted py-2 text-center text-xs italic">
+                    and {recipients.length - 5} more {performerLabelPlural.toLowerCase()}...
+                  </div>
+                )}
+              </div>
+            </AppCard>
+          </div>
         </div>
       </div>
 
       <WizardActionBar className="justify-end">
         <Button variant="primary" onClick={onContinue} disabled={targetAudiences.length === 0}>
-          Continue to Message
+          Continue to Templates
         </Button>
       </WizardActionBar>
     </div>

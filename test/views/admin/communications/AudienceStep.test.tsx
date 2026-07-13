@@ -39,6 +39,8 @@ function makeDraft(
     },
     updateFilter: mock.fn(),
     recipients: [],
+    selectedRecipients: [],
+    messageType: 'Email',
     recipientCounts: { total: 0, hasEmail: 0, hasPhone: 0 },
     ...overrides,
   } as unknown as UseCommunicationDraftReturn;
@@ -71,7 +73,7 @@ describe('AudienceStep', () => {
       />
     );
 
-    assert.ok(screen.getByText('Step 1: Define Your Audience'));
+    assert.ok(screen.getByRole('heading', { name: /Step 1: Define Your Audience/i }));
   });
 
   it('calls updateFilter when RSVP changes', () => {
@@ -129,7 +131,7 @@ describe('AudienceStep', () => {
     assert.strictEqual((rsvpSelect as HTMLSelectElement).disabled, true);
   });
 
-  it('calls onViewRecipients when View matched singers is clicked', () => {
+  it('calls onViewRecipients when View matched performers is clicked', () => {
     const onViewRecipients = mock.fn();
     renderWithRouter(
       <AudienceStep
@@ -220,8 +222,8 @@ describe('AudienceStep', () => {
       />
     );
 
-    const continueButtons = screen.getAllByRole('button', { name: /Continue to Message/i });
-    fireEvent.click(continueButtons[0]!);
+    const button = screen.getByRole('button', { name: /Continue to Templates/i });
+    fireEvent.click(button);
 
     assert.strictEqual(onContinue.mock.callCount(), 1);
   });
@@ -243,5 +245,27 @@ describe('AudienceStep', () => {
     );
 
     assert.ok(screen.getByText(/and 3 more performers\.\.\./i));
+  });
+
+  it('shows compact reach and exclusion information', () => {
+    renderWithRouter(
+      <AudienceStep
+        draft={makeDraft({
+          messageType: 'Email',
+          recipients: [makeRecipient('email'), makeRecipient('missing', { email: '' })],
+          selectedRecipients: [makeRecipient('email'), makeRecipient('missing', { email: '' })],
+          recipientCounts: { total: 2, hasEmail: 1, hasPhone: 0 },
+        })}
+        events={mockEvents}
+        voicePartLabels={['Soprano']}
+        configSections={mockSections}
+        onViewRecipients={mock.fn()}
+        onContinue={mock.fn()}
+      />
+    );
+
+    assert.ok(screen.getByText(/1 reachable by email/i));
+    assert.ok(screen.getByText(/1 excluded/i));
+    assert.ok(screen.getByRole('button', { name: 'Review recipients' }));
   });
 });
