@@ -1,4 +1,3 @@
-import type React from 'react';
 import { AppCard } from '../../../components/common/AppCard';
 import { Button } from '../../../components/ui';
 import { AudienceStatCards } from './AudienceStatCards';

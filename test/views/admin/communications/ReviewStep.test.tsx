@@ -2,7 +2,7 @@
 import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -15,7 +15,10 @@ import type { CommunicationRecipient } from '../../../../src/services/communicat
 import { SetupProvider } from '../../../../src/contexts/SetupContext';
 import * as moduleService from '../../../../src/services/moduleService';
 
-function makeRecipient(id: string): CommunicationRecipient {
+function makeRecipient(
+  id: string,
+  overrides: Partial<CommunicationRecipient> = {}
+): CommunicationRecipient {
   return {
     id,
     name: `Singer ${id}`,
@@ -23,6 +26,7 @@ function makeRecipient(id: string): CommunicationRecipient {
     phone: '',
     voicePart: 'Soprano',
     globalStatus: 'Active',
+    ...overrides,
   };
 }
 
@@ -86,7 +90,10 @@ function renderWithRouter(ui: React.ReactElement) {
   );
 }
 
-afterEach(() => mock.restoreAll());
+afterEach(() => {
+  cleanup();
+  mock.restoreAll();
+});
 
 describe('ReviewStep', () => {
   it('disables Send when there are zero selected recipients', () => {
@@ -181,6 +188,30 @@ describe('ReviewStep', () => {
     assert.strictEqual(handleSendTest.mock.callCount(), 1);
   });
 
+  it('uses compact mobile labels while preserving full accessible action names', () => {
+    renderWithRouter(
+      <ReviewStep
+        draft={makeDraft()}
+        preview={makePreview()}
+        commSettings={mockCommSettings}
+        selectedEvent={null}
+        user={null}
+        choirName="Test Choir"
+        senderEmail="test@choir.com"
+        onBack={mock.fn()}
+        onViewRecipients={mock.fn()}
+        setTab={mock.fn()}
+        setEditingTemplate={mock.fn()}
+      />
+    );
+
+    const testButton = screen.getByRole('button', { name: 'Send Test to Me' });
+    const sendButton = screen.getByRole('button', { name: /Send Email to 1 Performer/i });
+
+    assert.equal(testButton.querySelector('.sm\\:hidden')?.textContent, 'Test');
+    assert.equal(sendButton.querySelector('.sm\\:hidden')?.textContent, 'Send 1');
+  });
+
   it('disables Send Test while isSendingTest is true', () => {
     renderWithRouter(
       <ReviewStep
@@ -224,5 +255,61 @@ describe('ReviewStep', () => {
     fireEvent.click(backButton);
 
     assert.strictEqual(onBack.mock.callCount(), 1);
+  });
+
+  it('reports only recipients unreachable by every selected channel as excluded', () => {
+    const selectedRecipients = [
+      makeRecipient('both', { phone: '5551234567' }),
+      makeRecipient('email-only'),
+      makeRecipient('neither', { email: '', phone: '' }),
+    ];
+
+    renderWithRouter(
+      <ReviewStep
+        draft={makeDraft({
+          messageType: 'Both',
+          selectedRecipients,
+          recipientCounts: { total: 3, hasEmail: 2, hasPhone: 1 },
+        })}
+        preview={makePreview()}
+        commSettings={mockCommSettings}
+        selectedEvent={null}
+        user={null}
+        choirName="Test Choir"
+        senderEmail="test@choir.com"
+        onBack={mock.fn()}
+        onViewRecipients={mock.fn()}
+        setTab={mock.fn()}
+        setEditingTemplate={mock.fn()}
+      />
+    );
+
+    assert.ok(screen.getByText(/1 performer will be excluded/i));
+    assert.strictEqual(screen.queryByText(/2 performers will be excluded/i), null);
+  });
+
+  it('orders recipients, preview, and checklist for the mobile reading flow', () => {
+    renderWithRouter(
+      <ReviewStep
+        draft={makeDraft()}
+        preview={makePreview()}
+        commSettings={mockCommSettings}
+        selectedEvent={null}
+        user={null}
+        choirName="Test Choir"
+        senderEmail="test@choir.com"
+        onBack={mock.fn()}
+        onViewRecipients={mock.fn()}
+        setTab={mock.fn()}
+        setEditingTemplate={mock.fn()}
+      />
+    );
+
+    const summary = document.querySelector<HTMLElement>('[data-review-section="recipients"]');
+    const preview = document.querySelector<HTMLElement>('[data-review-section="preview"]');
+    const checklist = document.querySelector<HTMLElement>('[data-review-section="checklist"]');
+    assert.ok(summary && preview && checklist);
+    assert.ok(summary.compareDocumentPosition(preview) & Node.DOCUMENT_POSITION_FOLLOWING);
+    assert.ok(preview.compareDocumentPosition(checklist) & Node.DOCUMENT_POSITION_FOLLOWING);
   });
 });

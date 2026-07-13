@@ -29,5 +29,8 @@ describe('LivePreview', () => {
     // Assert mobile is selected (bg-primary-light variant in test mode) and desktop is outline
     assert.ok(mobileBtn.className.includes('bg-primary-light'));
     assert.ok(desktopBtn.className.includes('border-border'));
+    assert.equal(mobileBtn.getAttribute('aria-pressed'), 'true');
+    assert.equal(desktopBtn.getAttribute('aria-pressed'), 'false');
+    assert.equal(mobileBtn.querySelector('[aria-hidden="true"]')?.textContent, '📱');
   });
 });

@@ -10,6 +10,7 @@ import type { CommunicationTab } from '../../../types/Communication';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../../../lib/labelHelpers';
 import { useSetup } from '../../../contexts/SetupContext';
+import { summarizeRecipientReach } from './recipientReach';
 
 interface PreFlightChecklistProps {
   subject: string;
@@ -43,6 +44,9 @@ export function PreFlightChecklist({
   const setListsEnabled = enabledModules.has('setLists');
   const performerLabelPlural = pluralizeLabel(performerLabel);
   const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
+  const reach = summarizeRecipientReach(selectedRecipients, messageType);
+  const excludedPerformerLabel =
+    reach.excludedPeople === 1 ? performerLabel.toLowerCase() : performerLabelPlural.toLowerCase();
 
   return (
     <AppCard title="Pre-Flight Checklist">
@@ -112,55 +116,17 @@ export function PreFlightChecklist({
           </AlertBanner>
         )}
 
-        {selectedRecipients.some((r) => !r.email) &&
-          (messageType === 'Email' || messageType === 'Both') && (
-            <AlertBanner
-              variant="info"
-              icon={
-                <svg
-                  className="mt-0.5 size-4 flex-shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              }
-              title={`${selectedRecipients.filter((r) => !r.email).length} ${performerLabelPlural.toLowerCase()}`}
-            >
-              have no email configured and will skip this channel.
-            </AlertBanner>
-          )}
-
-        {selectedRecipients.some((r) => !r.phone) &&
-          (messageType === 'SMS' || messageType === 'Both') && (
-            <AlertBanner
-              variant="info"
-              icon={
-                <svg
-                  className="mt-0.5 size-4 flex-shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-              }
-              title={`${selectedRecipients.filter((r) => !r.phone).length} ${performerLabelPlural.toLowerCase()}`}
-            >
-              have no phone configured and will skip this channel.
-            </AlertBanner>
-          )}
+        {reach.excludedPeople > 0 && (
+          <AlertBanner
+            variant="info"
+            icon="ℹ️"
+            title={`${reach.excludedPeople} ${excludedPerformerLabel} will be excluded.`}
+          >
+            {messageType === 'Both'
+              ? 'Neither email nor SMS is available.'
+              : `${messageType} is unavailable for the selected channel.`}
+          </AlertBanner>
+        )}
 
         {commSettings.mailingAddress.includes('123 Choir St') &&
           (messageType === 'Email' || messageType === 'Both') && (
@@ -185,6 +151,7 @@ export function PreFlightChecklist({
           icon={
             <svg
               className="mt-0.5 size-4 flex-shrink-0"
+              aria-hidden="true"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

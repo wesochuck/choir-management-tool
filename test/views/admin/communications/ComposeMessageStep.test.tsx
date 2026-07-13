@@ -2,7 +2,7 @@
 import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type EasyMDE from 'easymde';
@@ -30,7 +30,10 @@ function renderWithRouter(ui: React.ReactElement) {
   );
 }
 
-afterEach(() => mock.restoreAll());
+afterEach(() => {
+  cleanup();
+  mock.restoreAll();
+});
 
 function makeDraft(
   overrides: Partial<UseCommunicationDraftReturn> = {}
@@ -68,6 +71,43 @@ function makeEditorRef() {
 }
 
 describe('ComposeMessageStep', () => {
+  it('associates composer labels with their controls', () => {
+    renderWithRouter(
+      <ComposeMessageStep
+        draft={makeDraft()}
+        editorRef={makeEditorRef()}
+        onInsertPlaceholder={mock.fn()}
+        selectedEvent={null}
+        onBack={mock.fn()}
+        onContinue={mock.fn()}
+      />
+    );
+
+    assert.ok(screen.getByLabelText('Subject'));
+    assert.ok(screen.getByLabelText('Channel'));
+    assert.ok(screen.getByLabelText('Message Body (Markdown Supported)'));
+  });
+
+  it('renders the action bar after all compose content', () => {
+    renderWithRouter(
+      <ComposeMessageStep
+        draft={makeDraft()}
+        editorRef={makeEditorRef()}
+        onInsertPlaceholder={mock.fn()}
+        selectedEvent={null}
+        onBack={mock.fn()}
+        onContinue={mock.fn()}
+      />
+    );
+
+    const placeholders = screen.getByRole('heading', { name: 'Placeholders' });
+    const saveDraft = screen.getByRole('button', { name: 'Save Draft' });
+    assert.ok(
+      placeholders.compareDocumentPosition(saveDraft) & Node.DOCUMENT_POSITION_FOLLOWING,
+      'the action bar should follow the placeholder panel in DOM order'
+    );
+  });
+
   it('calls onBack when the back button is clicked', () => {
     const onBack = mock.fn();
     renderWithRouter(

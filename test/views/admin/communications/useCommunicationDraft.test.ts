@@ -1,17 +1,31 @@
+// @vitest-environment jsdom
 import test from 'node:test';
+import { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { cleanup, renderHook, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { communicationService } from '../../../../src/services/communicationService.ts';
+import {
+  communicationService,
+  type CommunicationRecipient,
+  type MessageRecord,
+  type SendMessageInput,
+} from '../../../../src/services/communicationService.ts';
 import { useCommunicationDraft } from '../../../../src/views/admin/communications/useCommunicationDraft.ts';
+import { queryKeys } from '../../../../src/lib/queryKeys.ts';
+
+type DialogApi = ReturnType<
+  (typeof import('../../../../src/contexts/DialogContext.tsx'))['useDialog']
+>;
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 });
 
 const noop = () => {};
+
+afterEach(() => cleanup());
 
 function makeDialog() {
   return {
@@ -63,8 +77,9 @@ test('recipient resolution does not loop on API failure', async (t) => {
       if (callCount < 1) throw new Error('Waiting for first call');
     });
 
-    // Wait a bit longer to confirm no second call happens
-    await new Promise((r) => setTimeout(r, 200));
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     assert.equal(
       callCount,
@@ -106,7 +121,9 @@ test('recipient resolution fires again on filter change after failure', async (t
       if (callCount < 1) throw new Error('Waiting for first call');
     });
 
-    await new Promise((r) => setTimeout(r, 200));
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     assert.equal(callCount, 1);
 
@@ -165,4 +182,205 @@ test('useCommunicationDraft restores targetAudiences on resume', async () => {
   });
 
   assert.deepEqual(result.current.filters.targetAudiences, ['Ticket Buyers', 'Donors']);
+});
+
+test('sendMessage confirms actual reach and excludes unreachable recipients', async (t) => {
+  const reachable: CommunicationRecipient = {
+    id: 'reachable',
+    name: 'Reachable Singer',
+    email: 'reachable@example.com',
+    phone: '',
+    voicePart: 'Alto',
+    globalStatus: 'Active',
+  };
+  const unreachable: CommunicationRecipient = {
+    id: 'unreachable',
+    name: 'Unreachable Singer',
+    email: '',
+    phone: '',
+    voicePart: 'Tenor',
+    globalStatus: 'Active',
+  };
+  let confirmOptions: Parameters<DialogApi['confirm']>[0] | null = null;
+  let sendInput: SendMessageInput | null = null;
+  const dialog = {
+    ...makeDialog(),
+    confirm: async (options: Parameters<DialogApi['confirm']>[0]) => {
+      confirmOptions = options;
+      return true;
+    },
+  } as DialogApi;
+
+  t.mock.method(communicationService, 'sendBulkMessage', async (input) => {
+    sendInput = input;
+    return {
+      message: { id: 'sent-message' } as unknown as MessageRecord,
+      mailtoUrl: '',
+    };
+  });
+
+  const sendQueryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const { result } = renderHook(
+    () => useCommunicationDraft(defaultArgs({ dialog, tab: 'history' })),
+    {
+      wrapper: ({ children }) =>
+        React.createElement(
+          QueryClientProvider,
+          { client: sendQueryClient },
+          React.createElement(MemoryRouter, null, children)
+        ),
+    }
+  );
+
+  act(() => {
+    result.current.setSubject('Test subject');
+    result.current.setMessageType('Email');
+    result.current.setRecipients([reachable, unreachable]);
+    result.current.setSelectedIds(new Set(['reachable', 'unreachable']));
+  });
+
+  await act(async () => {
+    await result.current.sendMessage();
+  });
+
+  assert.ok(confirmOptions);
+  assert.match(String(confirmOptions.message), /Send “Test subject” by email to 1 recipient/);
+  assert.match(String(confirmOptions.message), /1 selected recipient will be excluded/);
+  assert.ok(sendInput);
+  assert.deepEqual(
+    sendInput.recipients.map((recipient) => recipient.id),
+    ['reachable']
+  );
+});
+
+test('same-filter recipient refetch preserves manual selection', async (t) => {
+  const first: CommunicationRecipient = {
+    id: 'first',
+    name: 'First Singer',
+    email: 'first@example.com',
+    phone: '',
+    voicePart: 'Alto',
+    globalStatus: 'Active',
+  };
+  const second: CommunicationRecipient = {
+    id: 'second',
+    name: 'Second Singer',
+    email: 'second@example.com',
+    phone: '',
+    voicePart: 'Tenor',
+    globalStatus: 'Active',
+  };
+  let response = [first, second];
+  let resolveCount = 0;
+  t.mock.method(communicationService, 'resolveRecipients', async () => {
+    resolveCount += 1;
+    return response;
+  });
+
+  const refetchQueryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const { result } = renderHook(() => useCommunicationDraft(defaultArgs()), {
+    wrapper: ({ children }) =>
+      React.createElement(
+        QueryClientProvider,
+        { client: refetchQueryClient },
+        React.createElement(MemoryRouter, null, children)
+      ),
+  });
+
+  await waitFor(() => assert.equal(result.current.recipients.length, 2));
+  act(() => result.current.setSelectedIds(new Set(['first'])));
+
+  response = [{ ...first, name: 'First Singer Updated' }, second];
+  await act(async () => {
+    await refetchQueryClient.invalidateQueries({
+      queryKey: queryKeys.communications.resolvedRecipients(result.current.filters),
+    });
+  });
+
+  await waitFor(() => assert.equal(resolveCount, 2));
+  await waitFor(() => assert.equal(result.current.recipients[0]?.name, 'First Singer Updated'));
+  assert.deepEqual([...result.current.selectedIds], ['first']);
+});
+
+test('draft save displays PocketBase validation details without flattening the error', async (t) => {
+  const showMessage = t.mock.fn(async () => {});
+  const dialog = { ...makeDialog(), showMessage } as DialogApi;
+  t.mock.method(communicationService, 'saveDraft', async () => {
+    throw {
+      response: {
+        data: {
+          content: { code: 'validation_required', message: 'Missing.' },
+        },
+      },
+    };
+  });
+
+  const saveQueryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const { result } = renderHook(
+    () => useCommunicationDraft(defaultArgs({ dialog, tab: 'history' })),
+    {
+      wrapper: ({ children }) =>
+        React.createElement(
+          QueryClientProvider,
+          { client: saveQueryClient },
+          React.createElement(MemoryRouter, null, children)
+        ),
+    }
+  );
+
+  await act(async () => {
+    await result.current.handleSaveDraft();
+  });
+
+  assert.equal(showMessage.mock.callCount(), 1);
+  assert.equal(showMessage.mock.calls[0]?.arguments[0].message, 'Content is required.');
+});
+
+test('test send displays PocketBase validation details without flattening the error', async (t) => {
+  const showMessage = t.mock.fn(async () => {});
+  const dialog = { ...makeDialog(), showMessage } as DialogApi;
+  t.mock.method(communicationService, 'sendBulkMessage', async () => {
+    throw {
+      response: {
+        data: {
+          recipients: { code: 'validation_required', message: 'Missing.' },
+        },
+      },
+    };
+  });
+
+  const testQueryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const { result } = renderHook(
+    () =>
+      useCommunicationDraft(
+        defaultArgs({
+          dialog,
+          tab: 'history',
+          user: { id: 'admin', email: 'admin@example.com' },
+        })
+      ),
+    {
+      wrapper: ({ children }) =>
+        React.createElement(
+          QueryClientProvider,
+          { client: testQueryClient },
+          React.createElement(MemoryRouter, null, children)
+        ),
+    }
+  );
+
+  await act(async () => {
+    await result.current.handleSendTest();
+  });
+
+  assert.equal(showMessage.mock.callCount(), 1);
+  assert.equal(showMessage.mock.calls[0]?.arguments[0].message, 'Recipients is required.');
 });

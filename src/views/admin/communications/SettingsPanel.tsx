@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
+import type React from 'react';
 import { AppCard } from '../../../components/common/AppCard';
 import type { CommunicationSettings } from '../../../services/settingsService';
 
@@ -20,7 +21,7 @@ export interface SettingsPanelProps {
   brevoApiKey: string;
   setBrevoApiKey: (value: string) => void;
   isSavingConfig: boolean;
-  onSaveSettings: () => Promise<void>;
+  onSaveSettings: (settings: CommunicationSettings) => Promise<boolean>;
 }
 
 export function SettingsPanel({
@@ -43,13 +44,9 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const [localSettings, setLocalSettings] = useState<CommunicationSettings>(commSettings);
 
-  useEffect(() => {
-    setLocalSettings(commSettings);
-  }, [commSettings]);
-
   const handleSave = async () => {
-    setCommSettings(localSettings);
-    await onSaveSettings();
+    const didSave = await onSaveSettings(localSettings);
+    if (didSave) setCommSettings(localSettings);
   };
 
   return (
@@ -58,17 +55,20 @@ export function SettingsPanel({
         <div className="flex flex-col gap-4">
           <SettingsGrid>
             <Field
+              id="default-country-code"
               label="Default Country Code (SMS)"
               value={localSettings.defaultCountryCode || '1'}
               onChange={(v) => setLocalSettings((prev) => ({ ...prev, defaultCountryCode: v }))}
               placeholder="e.g. 1"
             />
             <Field
+              id="physical-mailing-address"
               label="Physical Mailing Address"
               value={localSettings.mailingAddress}
               onChange={(v) => setLocalSettings((prev) => ({ ...prev, mailingAddress: v }))}
             />
             <Field
+              id="application-base-url"
               label="Application Base URL"
               value={localSettings.frontendUrl}
               onChange={(v) => setLocalSettings((prev) => ({ ...prev, frontendUrl: v }))}
@@ -131,7 +131,11 @@ export function SettingsPanel({
               Send a quick test email using the active provider settings to verify delivery.
             </p>
             <div className="flex flex-wrap items-center gap-4">
+              <label htmlFor="test-email-address" className="text-label w-full">
+                Test Email Address
+              </label>
               <Input
+                id="test-email-address"
                 className="max-w-[300px] flex-1"
                 type="email"
                 value={testEmailAddress}
@@ -144,7 +148,14 @@ export function SettingsPanel({
                 onClick={onSendConnectionTest}
                 disabled={isTestingSmtp || !testEmailAddress}
               >
-                {isTestingSmtp ? 'Sending Test...' : '🧪 Send Test Email'}
+                {isTestingSmtp ? (
+                  'Sending Test...'
+                ) : (
+                  <>
+                    <span aria-hidden="true">🧪</span>
+                    <span>Send Test Email</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -154,7 +165,11 @@ export function SettingsPanel({
               Send a quick test SMS using the active provider settings to verify delivery.
             </p>
             <div className="flex flex-wrap items-center gap-4">
+              <label htmlFor="test-phone-number" className="text-label w-full">
+                Test Phone Number
+              </label>
               <Input
+                id="test-phone-number"
                 className="max-w-[300px] flex-1"
                 type="tel"
                 value={testPhoneNumber}
@@ -167,7 +182,14 @@ export function SettingsPanel({
                 onClick={onSendSmsTest}
                 disabled={isTestingSms || !testPhoneNumber}
               >
-                {isTestingSms ? 'Sending Test...' : '📱 Send Test SMS'}
+                {isTestingSms ? (
+                  'Sending Test...'
+                ) : (
+                  <>
+                    <span aria-hidden="true">📱</span>
+                    <span>Send Test SMS</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -190,12 +212,14 @@ function SettingsGrid({ children }: { children: React.ReactNode }) {
 }
 
 function Field({
+  id,
   label,
   value,
   onChange,
   type = 'text',
   placeholder,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (val: string) => void;
@@ -204,8 +228,11 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-label">{label}</label>
+      <label htmlFor={id} className="text-label">
+        {label}
+      </label>
       <Input
+        id={id}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}

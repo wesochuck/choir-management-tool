@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { describe, it, mock } from 'node:test';
+import { afterEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 import { AudienceStep } from '../../../../src/views/admin/communications/AudienceStep';
@@ -60,7 +60,36 @@ function renderWithRouter(ui: React.ReactElement) {
   return render(<MemoryRouter>{ui}</MemoryRouter>);
 }
 
+afterEach(() => cleanup());
+
 describe('AudienceStep', () => {
+  it('associates audience labels and groups with their controls', () => {
+    renderWithRouter(
+      <AudienceStep
+        draft={makeDraft({
+          filters: {
+            eventId: 'evt-1',
+            rsvp: 'All',
+            voiceParts: [],
+            globalStatus: 'Active',
+            targetAudiences: ['Members'],
+          },
+        })}
+        events={mockEvents}
+        voicePartLabels={['Soprano']}
+        configSections={mockSections}
+        onViewRecipients={mock.fn()}
+        onContinue={mock.fn()}
+      />
+    );
+
+    assert.ok(screen.getByRole('group', { name: 'Audience Types' }));
+    assert.ok(screen.getByLabelText('Event Context'));
+    assert.ok(screen.getByLabelText('RSVP Status'));
+    assert.ok(screen.getByLabelText('Member Status'));
+    assert.ok(screen.getByLabelText('Voice Part / Section'));
+  });
+
   it('renders the audience filter UI', () => {
     renderWithRouter(
       <AudienceStep

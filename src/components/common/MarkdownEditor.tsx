@@ -1,8 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import type React from 'react';
 import EasyMDE from 'easymde';
 import 'easymde/dist/easymde.min.css';
 
 interface MarkdownEditorProps {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   instanceRef?: React.MutableRefObject<EasyMDE | null>;
@@ -12,6 +14,7 @@ interface MarkdownEditorProps {
 }
 
 export function MarkdownEditor({
+  id,
   value,
   onChange,
   instanceRef,
@@ -122,6 +125,7 @@ export function MarkdownEditor({
     return (
       <div className={className}>
         <textarea
+          id={id}
           ref={textareaRef}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -136,7 +140,7 @@ export function MarkdownEditor({
 
   return (
     <div className={className}>
-      <textarea ref={textareaRef} className="hidden" />
+      <textarea id={id} ref={textareaRef} className="hidden" />
     </div>
   );
 }

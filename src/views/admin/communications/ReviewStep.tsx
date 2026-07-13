@@ -53,6 +53,9 @@ export function ReviewStep({
   const reach = summarizeRecipientReach(draft.selectedRecipients, draft.messageType);
   const sendLabelChannel = draft.messageType === 'Both' ? 'Both' : draft.messageType;
   const performerText = reach.reachablePeople === 1 ? performerLabel : performerLabelPlural;
+  const sendActionLabel = draft.isSending
+    ? 'Sending...'
+    : `Send ${sendLabelChannel} to ${reach.reachablePeople} ${performerText}`;
 
   return (
     <div className="flex flex-col gap-6 pb-20 lg:pb-0">
@@ -120,23 +123,31 @@ export function ReviewStep({
           <span aria-hidden="true">←</span>
           <span className="hidden sm:inline">Back</span>
         </Button>
-        <div className="flex gap-2">
+        <div className="flex min-w-0 gap-1.5 sm:gap-2">
           <Button
             variant="secondary"
             onClick={draft.handleSendTest}
             disabled={draft.isSendingTest || draft.isSending}
             title={`Send email test to ${user?.email || 'your email'}`}
+            aria-label={draft.isSendingTest ? 'Sending test...' : 'Send Test to Me'}
+            className="px-3 sm:px-4"
           >
-            {draft.isSendingTest ? 'Sending test...' : 'Send Test to Me'}
+            <span className="sm:hidden">{draft.isSendingTest ? 'Sending...' : 'Test'}</span>
+            <span className="hidden sm:inline">
+              {draft.isSendingTest ? 'Sending test...' : 'Send Test to Me'}
+            </span>
           </Button>
           <Button
             variant="primary"
             onClick={draft.sendMessage}
             disabled={draft.isSending || reach.reachablePeople === 0}
+            aria-label={sendActionLabel}
+            className="px-3 sm:px-4"
           >
-            {draft.isSending
-              ? 'Sending...'
-              : `Send ${sendLabelChannel} to ${reach.reachablePeople} ${performerText}`}
+            <span className="sm:hidden">
+              {draft.isSending ? 'Sending...' : `Send ${reach.reachablePeople}`}
+            </span>
+            <span className="hidden sm:inline">{sendActionLabel}</span>
           </Button>
         </div>
       </WizardActionBar>

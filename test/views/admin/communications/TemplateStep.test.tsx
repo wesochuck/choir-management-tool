@@ -24,8 +24,10 @@ function makeTemplateSelection(
     handleUseTemplate: () => void;
   }> = {}
 ) {
-  const setSelectedTemplateId = overrides.setSelectedTemplateId ?? mock.fn();
-  const handleUseTemplate = overrides.handleUseTemplate ?? mock.fn();
+  const setSelectedTemplateId = (overrides.setSelectedTemplateId ?? mock.fn()) as (
+    id: string
+  ) => void;
+  const handleUseTemplate = (overrides.handleUseTemplate ?? mock.fn()) as () => void;
   return {
     selectedTemplateId: overrides.selectedTemplateId ?? 'blank',
     setSelectedTemplateId,

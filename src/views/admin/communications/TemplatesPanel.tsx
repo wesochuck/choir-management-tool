@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import EasyMDE from 'easymde';
 import { AppCard } from '../../../components/common/AppCard';
@@ -14,6 +15,7 @@ import {
 } from '../../../services/communicationService';
 import { queryKeys } from '../../../lib/queryKeys';
 import { resolvePreviewContent } from '../../../lib/communicationUtils';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
 import { useDialog } from '../../../contexts/DialogContext';
 import { Button, Select, Input, DataTable, type ColumnDef } from '../../../components/ui';
 
@@ -72,8 +74,11 @@ export function TemplatesPanel({
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap gap-4">
                 <div className="flex flex-1 flex-col gap-1">
-                  <label className="text-label">Template Title</label>
+                  <label htmlFor="template-title" className="text-label">
+                    Template Title
+                  </label>
                   <Input
+                    id="template-title"
                     value={editingTemplate.title || ''}
                     onChange={(e) =>
                       setEditingTemplate({ ...editingTemplate, title: e.target.value })
@@ -83,8 +88,11 @@ export function TemplatesPanel({
                   />
                 </div>
                 <div className="flex flex-[0_0_150px] flex-col gap-1">
-                  <label className="text-label">Channel</label>
+                  <label htmlFor="template-channel" className="text-label">
+                    Channel
+                  </label>
                   <Select
+                    id="template-channel"
                     value={editingTemplate.type || 'Email'}
                     onChange={(e) =>
                       setEditingTemplate({
@@ -102,8 +110,11 @@ export function TemplatesPanel({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-label">Subject</label>
+                <label htmlFor="template-subject" className="text-label">
+                  Subject
+                </label>
                 <Input
+                  id="template-subject"
                   value={editingTemplate.subject || ''}
                   onChange={(e) =>
                     setEditingTemplate({ ...editingTemplate, subject: e.target.value })
@@ -115,8 +126,11 @@ export function TemplatesPanel({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-label">Template Body (Markdown Supported)</label>
+                <label htmlFor="template-body" className="text-label">
+                  Template Body (Markdown Supported)
+                </label>
                 <MarkdownEditor
+                  id="template-body"
                   instanceRef={editorRef}
                   value={editingTemplate.content || ''}
                   onChange={(val) => setEditingTemplate({ ...editingTemplate, content: val })}
@@ -134,20 +148,24 @@ export function TemplatesPanel({
                 <Button
                   type="button"
                   variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
+                  aria-pressed={previewDevice === 'desktop'}
                   size="small"
                   className="h-[30px]"
                   onClick={() => setPreviewDevice('desktop')}
                 >
-                  🖥️ Desktop
+                  <span aria-hidden="true">🖥️</span>
+                  <span>Desktop</span>
                 </Button>
                 <Button
                   type="button"
                   variant={previewDevice === 'mobile' ? 'secondary' : 'outline'}
+                  aria-pressed={previewDevice === 'mobile'}
                   size="small"
                   className="h-[30px]"
                   onClick={() => setPreviewDevice('mobile')}
                 >
-                  📱 Mobile
+                  <span aria-hidden="true">📱</span>
+                  <span>Mobile</span>
                 </Button>
               </div>
             }
@@ -207,10 +225,9 @@ export function TemplatesPanel({
                   setEditingTemplate(null);
                   dialog.showToast('Template saved successfully.');
                 } catch (err: unknown) {
-                  const msg = err instanceof Error ? err.message : String(err);
                   await dialog.showMessage({
-                    title: 'Error',
-                    message: 'Failed to save template: ' + msg,
+                    title: 'Template Not Saved',
+                    message: formatPocketBaseError(err),
                     variant: 'danger',
                   });
                 }
@@ -346,10 +363,9 @@ export function TemplatesPanel({
                                 queryKey: queryKeys.communications.templates(),
                               });
                             } catch (e: unknown) {
-                              const msg = e instanceof Error ? e.message : String(e);
                               await dialog.showMessage({
-                                title: 'Error',
-                                message: 'Failed to delete template: ' + msg,
+                                title: 'Template Not Deleted',
+                                message: formatPocketBaseError(e),
                                 variant: 'danger',
                               });
                             }
@@ -384,6 +400,7 @@ export function TemplatesPanel({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 className="text-text-muted"
+                aria-hidden="true"
               >
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />

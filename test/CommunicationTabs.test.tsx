@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent, act } from '@testing-library/react';
 
 import { CommunicationTabs } from '../src/components/CommunicationTabs';
 
 afterEach(() => {
-  document.body.innerHTML = '';
+  cleanup();
 });
 
 describe('CommunicationTabs', () => {

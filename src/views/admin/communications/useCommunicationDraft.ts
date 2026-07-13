@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { queryKeys } from '../../../lib/queryKeys';
@@ -16,6 +16,12 @@ import type { CommunicationTab } from '../../../types/Communication';
 import type { WizardStep, CommunicationRouteState } from './types';
 import { useDialog } from '../../../contexts/DialogContext';
 import { checkValidation } from '../../../utils/communicationValidation';
+import { formatPocketBaseError } from '../../../lib/pocketbase';
+import {
+  buildSendConfirmation,
+  getReachableRecipients,
+  summarizeRecipientReach,
+} from './recipientReach';
 
 interface UseCommunicationDraftArgs {
   routeState: CommunicationRouteState | null;
@@ -126,6 +132,9 @@ export function useCommunicationDraft({
     return checkValidation(content, subject, messageType, filters.eventId);
   }, [content, subject, messageType, filters.eventId]);
 
+  const recipientSelectionKey = useMemo(() => JSON.stringify(filters), [filters]);
+  const initializedSelectionKeyRef = useRef<string | null>(null);
+
   const resolvedRecipientsQuery = useQuery({
     queryKey: queryKeys.communications.resolvedRecipients(filters),
     queryFn: () => communicationService.resolveRecipients(filters),
@@ -141,9 +150,18 @@ export function useCommunicationDraft({
   useEffect(() => {
     if (resolvedRecipientsQuery.data) {
       setRecipients(resolvedRecipientsQuery.data);
-      setSelectedIds(new Set(resolvedRecipientsQuery.data.map((r) => r.id)));
+      if (initializedSelectionKeyRef.current !== recipientSelectionKey) {
+        initializedSelectionKeyRef.current = recipientSelectionKey;
+        setSelectedIds(new Set(resolvedRecipientsQuery.data.map((recipient) => recipient.id)));
+      } else {
+        const availableIds = new Set(resolvedRecipientsQuery.data.map((recipient) => recipient.id));
+        setSelectedIds(
+          (previous) =>
+            new Set([...previous].filter((recipientId) => availableIds.has(recipientId)))
+        );
+      }
     }
-  }, [resolvedRecipientsQuery.data]);
+  }, [recipientSelectionKey, resolvedRecipientsQuery.data]);
 
   const updateFilter = useCallback(
     <K extends keyof CommunicationFilters>(key: K, value: CommunicationFilters[K]) => {
@@ -169,10 +187,9 @@ export function useCommunicationDraft({
       setActiveDraftId(record.id);
       dialog.showToast('Your message has been saved as a draft.');
     } catch (err: unknown) {
-      console.error(err);
       await dialog.showMessage({
-        title: 'Error',
-        message: 'Failed to save draft.',
+        title: 'Draft Not Saved',
+        message: formatPocketBaseError(err),
         variant: 'danger',
       });
     }
@@ -264,10 +281,9 @@ export function useCommunicationDraft({
       await sendTestMutation.mutateAsync(input);
       dialog.showToast(`A test email has been sent to ${user.email}.`);
     } catch (err: unknown) {
-      console.error(err);
       await dialog.showMessage({
-        title: 'Error',
-        message: 'Failed to send test message.',
+        title: 'Test Message Not Sent',
+        message: formatPocketBaseError(err),
         variant: 'danger',
       });
     }
@@ -282,10 +298,24 @@ export function useCommunicationDraft({
       return;
     }
 
+    const reach = summarizeRecipientReach(selectedRecipients, messageType);
+    const reachableRecipients = getReachableRecipients(selectedRecipients, messageType);
+
+    if (reachableRecipients.length === 0) {
+      await dialog.showMessage({
+        title: 'No Reachable Recipients',
+        message: 'None of the selected recipients can receive the selected channel.',
+        variant: 'warning',
+      });
+      return;
+    }
+
     const confirmSend = await dialog.confirm({
       title: 'Confirm Send',
-      message: `Send this message to ${selectedRecipients.length} recipients?`,
-      confirmLabel: 'Send Now',
+      message: buildSendConfirmation(subject, messageType, reach),
+      confirmLabel:
+        messageType === 'SMS' ? 'Send SMS' : messageType === 'Email' ? 'Send Email' : 'Send Both',
+      cancelLabel: 'Cancel',
     });
     if (!confirmSend) return;
 
@@ -294,7 +324,7 @@ export function useCommunicationDraft({
         subject,
         content,
         type: messageType,
-        recipients: selectedRecipients,
+        recipients: reachableRecipients,
         filters: filters as unknown as Record<string, unknown>,
       };
       await sendMessageMutation.mutateAsync({ data: input, draftId: activeDraftId || undefined });
@@ -315,10 +345,9 @@ export function useCommunicationDraft({
       dialog.showToast('Message sent successfully!');
       setWizardStep('TARGETS');
     } catch (err: unknown) {
-      console.error(err);
       await dialog.showMessage({
-        title: 'Error',
-        message: 'Failed to send message.',
+        title: 'Message Not Sent',
+        message: formatPocketBaseError(err),
         variant: 'danger',
       });
     }

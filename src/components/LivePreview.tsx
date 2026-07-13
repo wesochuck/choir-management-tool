@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type React from 'react';
 import { useChoirSettings } from '../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../lib/labelHelpers';
 import { Button } from './ui';
@@ -134,6 +135,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
               <Button
                 type="button"
                 variant={activeTab === 'email' ? 'secondary' : 'outline'}
+                aria-pressed={activeTab === 'email'}
                 size="small"
                 className="h-[30px]"
                 onClick={() => setActiveTab('email')}
@@ -143,6 +145,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
               <Button
                 type="button"
                 variant={activeTab === 'sms' ? 'secondary' : 'outline'}
+                aria-pressed={activeTab === 'sms'}
                 size="small"
                 className="h-[30px]"
                 onClick={() => setActiveTab('sms')}
@@ -156,6 +159,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
               <Button
                 type="button"
                 variant={previewDevice === 'desktop' ? 'secondary' : 'outline'}
+                aria-pressed={previewDevice === 'desktop'}
                 size="small"
                 className="h-[30px]"
                 onClick={() => setPreviewDevice('desktop')}
@@ -166,6 +170,7 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
               <Button
                 type="button"
                 variant={previewDevice === 'mobile' ? 'secondary' : 'outline'}
+                aria-pressed={previewDevice === 'mobile'}
                 size="small"
                 className="h-[30px]"
                 onClick={() => setPreviewDevice('mobile')}

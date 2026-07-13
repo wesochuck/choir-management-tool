@@ -10,7 +10,7 @@ import { CommunicationTabs } from '../../components/CommunicationTabs';
 import { AdminPageHeader } from '../../components/admin/AdminPageHeader';
 import type { CommunicationTab } from '../../types/Communication';
 import type { CommunicationRecipient, MessageRecord } from '../../services/communicationService';
-import { pb } from '../../lib/pocketbase';
+import { formatPocketBaseError, pb } from '../../lib/pocketbase';
 import { Button } from '../../components/ui';
 import { communicationService } from '../../services/communicationService';
 import { queryKeys } from '../../lib/queryKeys';
@@ -24,6 +24,7 @@ import { useCommunicationLibrary } from './communications/useCommunicationLibrar
 import { useCommunicationDraft } from './communications/useCommunicationDraft';
 import { useCommunicationPreview } from './communications/useCommunicationPreview';
 import { useAutomatedCommunicationTasks } from './communications/useAutomatedCommunicationTasks';
+import { useCommunicationProviderSettings } from './communications/useCommunicationProviderSettings';
 
 import { ComposePanel } from './communications/ComposePanel';
 import { AutomatedTasksPanel } from './communications/AutomatedTasksPanel';
@@ -72,9 +73,6 @@ export default function CommunicationView() {
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || '');
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
-  const [emailProvider, setEmailProvider] = useState<'smtp' | 'brevo'>('smtp');
-  const [brevoApiKey, setBrevoApiKey] = useState('');
-
   const library = useCommunicationLibrary();
   const queryClient = useQueryClient();
 
@@ -92,12 +90,8 @@ export default function CommunicationView() {
     staleTime: 5 * 60_000,
   });
 
-  useEffect(() => {
-    if (emailProviderQuery.data) {
-      setEmailProvider(emailProviderQuery.data.provider);
-      setBrevoApiKey(emailProviderQuery.data.brevoApiKey);
-    }
-  }, [emailProviderQuery.data]);
+  const { emailProvider, setEmailProvider, brevoApiKey, setBrevoApiKey } =
+    useCommunicationProviderSettings(emailProviderQuery.data);
 
   const saveEmailProviderMutation = useMutation({
     mutationFn: (settings: EmailProviderSettings) =>
@@ -225,10 +219,9 @@ export default function CommunicationView() {
         helperText: undefined,
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
       await dialog.showMessage({
         title: 'Could Not Load Recipients',
-        message,
+        message: formatPocketBaseError(err),
         variant: 'danger',
       });
     }
@@ -294,11 +287,9 @@ export default function CommunicationView() {
 
       dialog.showToast('Automated message archived without sending.');
     } catch (err: unknown) {
-      console.error('Failed to archive automated message', err);
-      const message = err instanceof Error ? err.message : String(err);
       await dialog.showMessage({
-        title: 'Error',
-        message: 'Failed to archive message: ' + message,
+        title: 'Message Not Archived',
+        message: formatPocketBaseError(err),
         variant: 'danger',
       });
     }
@@ -389,7 +380,8 @@ export default function CommunicationView() {
                 }}
                 className="w-full whitespace-nowrap sm:w-auto"
               >
-                + New Message
+                <span aria-hidden="true">+</span>
+                <span>New Message</span>
               </Button>
             ) : undefined
           }
@@ -455,8 +447,11 @@ export default function CommunicationView() {
                   library.setHistoryPage(1);
                 }
               } catch (err: unknown) {
-                const msg = err instanceof Error ? err.message : String(err);
-                await dialog.showMessage({ title: 'Error', message: msg, variant: 'danger' });
+                await dialog.showMessage({
+                  title: 'Report Not Sent',
+                  message: formatPocketBaseError(err),
+                  variant: 'danger',
+                });
               }
             }
           }}
@@ -543,10 +538,9 @@ export default function CommunicationView() {
                 throw new Error(response?.error || 'Unknown error occurred.');
               }
             } catch (err: unknown) {
-              const errMsg = err instanceof Error ? err.message : String(err);
               await dialog.showMessage({
                 title: 'SMTP Connection Failed',
-                message: `Could not send test email: ${errMsg}`,
+                message: formatPocketBaseError(err),
                 variant: 'danger',
               });
             }
@@ -573,10 +567,9 @@ export default function CommunicationView() {
                 throw new Error(response?.error || 'Unknown error occurred.');
               }
             } catch (err: unknown) {
-              const errMsg = err instanceof Error ? err.message : String(err);
               await dialog.showMessage({
                 title: 'SMS Connection Failed',
-                message: `Could not send test SMS: ${errMsg}`,
+                message: formatPocketBaseError(err),
                 variant: 'danger',
               });
             }
@@ -586,19 +579,19 @@ export default function CommunicationView() {
           brevoApiKey={brevoApiKey}
           setBrevoApiKey={setBrevoApiKey}
           isSavingConfig={saveConfigMutation.isPending || saveEmailProviderMutation.isPending}
-          onSaveSettings={async () => {
+          onSaveSettings={async (settings) => {
             try {
-              await saveConfigMutation.mutateAsync(library.commSettings);
+              await saveConfigMutation.mutateAsync(settings);
               await saveEmailProviderMutation.mutateAsync({ provider: emailProvider, brevoApiKey });
               dialog.showToast('Communication settings saved successfully.');
+              return true;
             } catch (err: unknown) {
-              const msg =
-                err instanceof Error ? err.message : 'Failed to save communication settings.';
               await dialog.showMessage({
-                title: 'Error',
-                message: msg,
+                title: 'Settings Not Saved',
+                message: formatPocketBaseError(err),
                 variant: 'danger',
               });
+              return false;
             }
           }}
         />

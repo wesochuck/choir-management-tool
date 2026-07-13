@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { MarkdownEditor } from './common/MarkdownEditor';
 import { Select, Input, FormField } from './ui';
 import EasyMDE from 'easymde';
@@ -33,8 +33,13 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-row flex-wrap items-start gap-4">
         <div className="max-w-md min-w-[280px] flex-1">
-          <FormField label="Subject" error={subjectWarning?.message}>
+          <FormField
+            label="Subject"
+            htmlFor="communication-subject"
+            error={subjectWarning?.message}
+          >
             <Input
+              id="communication-subject"
               value={subject}
               onChange={(e) => onSubjectChange(e.target.value)}
               disabled={messageType === 'SMS'}
@@ -45,8 +50,9 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           </FormField>
         </div>
         <div className="w-44">
-          <FormField label="Channel">
+          <FormField label="Channel" htmlFor="communication-channel">
             <Select
+              id="communication-channel"
               value={messageType}
               onChange={(e) => onMessageTypeChange(e.target.value as 'Email' | 'SMS' | 'Both')}
             >
@@ -57,8 +63,9 @@ export const ComposeStep: React.FC<ComposeStepProps> = ({
           </FormField>
         </div>
       </div>
-      <FormField label="Message Body (Markdown Supported)">
+      <FormField label="Message Body (Markdown Supported)" htmlFor="communication-body">
         <MarkdownEditor
+          id="communication-body"
           instanceRef={editorRef}
           className={bodyWarning ? 'border-amber-200' : ''}
           value={content}

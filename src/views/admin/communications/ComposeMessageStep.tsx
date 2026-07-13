@@ -52,30 +52,6 @@ export function ComposeMessageStep({
               warnings={draft.warnings}
             />
           </AppCard>
-
-          <WizardActionBar>
-            <Button
-              variant="outline"
-              onClick={onBack}
-              aria-label="Back to Templates"
-              className="size-11 px-0 sm:w-auto sm:px-6"
-            >
-              <span aria-hidden="true">←</span>
-              <span className="hidden sm:inline">Back</span>
-            </Button>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                onClick={draft.handleSaveDraft}
-                disabled={draft.isSavingDraft}
-              >
-                {draft.isSavingDraft ? 'Saving...' : 'Save Draft'}
-              </Button>
-              <Button variant="primary" onClick={onContinue}>
-                Review Message
-              </Button>
-            </div>
-          </WizardActionBar>
         </div>
         <PlaceholderPanel
           onInsert={onInsertPlaceholder}
@@ -85,6 +61,30 @@ export function ComposeMessageStep({
         />
         <SetlistWarning selectedEvent={selectedEvent} content={draft.content} />
       </div>
+
+      <WizardActionBar>
+        <Button
+          variant="outline"
+          onClick={onBack}
+          aria-label="Back to Templates"
+          className="size-11 px-0 sm:w-auto sm:px-6"
+        >
+          <span aria-hidden="true">←</span>
+          <span className="hidden sm:inline">Back</span>
+        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={draft.handleSaveDraft}
+            disabled={draft.isSavingDraft}
+          >
+            {draft.isSavingDraft ? 'Saving...' : 'Save Draft'}
+          </Button>
+          <Button variant="primary" onClick={onContinue}>
+            Review Message
+          </Button>
+        </div>
+      </WizardActionBar>
     </div>
   );
 }

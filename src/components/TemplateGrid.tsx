@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import type React from 'react';
 import type { MessageTemplate } from '../types/Communication';
-import { Input } from './ui';
+import { Button, Input } from './ui';
 
 const CalendarIcon = () => <span aria-hidden="true">📅</span>;
 const DollarSignIcon = () => <span aria-hidden="true">💵</span>;
@@ -73,40 +74,52 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
     const isSelected = template.id === selectedTemplateId;
 
     return (
-      <button
-        key={template.id}
-        type="button"
-        role="radio"
-        aria-checked={isSelected}
-        onClick={() => onSelect(template)}
-        className={`flex min-h-[120px] w-full cursor-pointer flex-col rounded-lg border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-          isSelected
-            ? 'border-primary bg-primary-light/30 ring-primary/20 ring-2'
-            : 'border-border bg-bg hover:border-primary'
-        }`}
-      >
-        <div
-          className={`mb-2.5 flex items-center justify-between ${
-            isSelected ? 'text-primary-deep' : 'text-primary'
+      <label key={template.id} className="relative block h-full cursor-pointer">
+        <input
+          type="radio"
+          name="message-template"
+          value={template.id}
+          checked={isSelected}
+          onChange={() => onSelect(template)}
+          onClick={() => {
+            if (isSelected) onSelect(template);
+          }}
+          className="absolute top-4 left-4 z-10 size-4 cursor-pointer"
+        />
+        <span
+          className={`flex min-h-[120px] w-full flex-col rounded-lg border p-4 pl-10 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+            isSelected
+              ? 'border-primary bg-primary-light/30 ring-primary/20 ring-2'
+              : 'border-border bg-bg hover:border-primary'
           }`}
         >
-          <IconComponent />
           <span
-            className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
-              isSelected ? 'bg-primary/20 text-primary-deep' : 'bg-primary-light text-primary-deep'
+            className={`mb-2.5 flex items-center justify-between ${
+              isSelected ? 'text-primary-deep' : 'text-primary'
             }`}
           >
-            {isBlank ? 'blank' : template.channel}
+            <IconComponent />
+            <span
+              className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
+                isSelected
+                  ? 'bg-primary/20 text-primary-deep'
+                  : 'bg-primary-light text-primary-deep'
+              }`}
+            >
+              {isBlank ? 'blank' : template.channel}
+            </span>
           </span>
-        </div>
-        <h4 className="text-text m-0 mb-1 text-sm font-semibold">{template.title}</h4>
-        <p className="text-text-muted m-0 text-xs leading-relaxed">{template.description}</p>
-        {isSelected && (
-          <span className="text-text-muted mt-2 block text-xs sm:hidden">
-            {template.subjectLine || template.description}
+          <span className="text-text m-0 mb-1 text-sm font-semibold">{template.title}</span>
+          <span className="text-text-muted m-0 text-xs leading-relaxed">
+            {template.description}
           </span>
-        )}
-      </button>
+          {isSelected && (
+            <span className="text-text-muted mt-2 block text-xs sm:hidden">
+              {template.subjectLine || template.description}
+            </span>
+          )}
+        </span>
+      </label>
     );
   };
 
@@ -118,6 +131,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
       {/* Search Input */}
       <Input
         type="text"
+        aria-label="Search templates"
         placeholder="Search templates..."
         value={searchQuery}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
@@ -126,6 +140,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
         <span slot="prefix" className="text-text-muted flex items-center">
           <svg
             className="size-4"
+            aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -208,6 +223,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
           <div className="text-text-muted flex flex-col items-center justify-center py-8 text-center">
             <svg
               className="mb-2 size-8 opacity-50"
+              aria-hidden="true"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
@@ -217,6 +233,15 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             <p className="text-sm">No templates match "{searchQuery}"</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="small"
+              className="mt-3"
+              onClick={() => setSearchQuery('')}
+            >
+              Show all templates
+            </Button>
           </div>
         )}
       </div>
