@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { AppCard } from '../../components/common/AppCard';
@@ -10,6 +11,7 @@ import { calculateSettingsDirty } from '../../lib/settings/dirtyCheck';
 import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Button, Select, Input, CopyButton, Checkbox } from '../../components/ui';
+import { useSetup } from '../../contexts/SetupContext';
 
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -48,6 +50,7 @@ const inputClasses = 'max-w-lg';
 export default function SettingsView() {
   const dialog = useDialog();
   const queryClient = useQueryClient();
+  const { enabledModules } = useSetup();
   const {
     setChoirName: setContextChoirName,
     setTimezone: setContextTimezone,
@@ -206,11 +209,16 @@ export default function SettingsView() {
         <h1 className="text-text text-4xl font-bold tracking-tight">System Settings</h1>
         <p className="text-text-muted mt-2 text-sm">
           Configure global metadata, timezone options, organization logos, and email queue webhooks.
-          Public-facing website settings live under{' '}
-          <a href="/admin/website" className="text-primary hover:text-primary-deep underline">
-            Public Website
-          </a>
-          .
+          {enabledModules.has('publicWebsite') && (
+            <>
+              {' '}
+              Public-facing website settings live under{' '}
+              <a href="/admin/website" className="text-primary hover:text-primary-deep underline">
+                Public Website
+              </a>
+              .
+            </>
+          )}
         </p>
       </div>
 
@@ -221,6 +229,23 @@ export default function SettingsView() {
       )}
 
       <div className="flex flex-col gap-6">
+        <AppCard title="First-Run & Modules">
+          <div className="flex flex-wrap items-center gap-4">
+            <Link
+              to="/admin/settings/setup-checklist"
+              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 text-sm font-semibold text-gray-800 no-underline transition-all duration-200"
+            >
+              📋 Setup Checklist
+            </Link>
+            <Link
+              to="/admin/settings/modules"
+              className="bg-bg hover:border-primary hover:bg-primary-light hover:text-primary-deep inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 text-sm font-semibold text-gray-800 no-underline transition-all duration-200"
+            >
+              ⚙️ Enable/Disable Modules
+            </Link>
+          </div>
+        </AppCard>
+
         <AppCard title="Choir Name">
           <div className="flex flex-col gap-2">
             <Input

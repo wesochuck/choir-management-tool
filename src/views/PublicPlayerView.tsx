@@ -232,7 +232,7 @@ export default function PublicPlayerView() {
         <div>
           {showDashboardBackLink && (
             <Link
-              to="/"
+              to="/dashboard"
               className="text-primary hover:text-primary-deep mb-4 inline-flex items-center gap-1 text-sm font-semibold hover:underline"
             >
               ← Dashboard

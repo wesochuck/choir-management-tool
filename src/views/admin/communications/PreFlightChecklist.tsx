@@ -9,6 +9,7 @@ import type { Event } from '../../../services/eventService';
 import type { CommunicationTab } from '../../../types/Communication';
 import { useChoirSettings } from '../../../hooks/useDocumentTitle';
 import { pluralizeLabel } from '../../../lib/labelHelpers';
+import { useSetup } from '../../../contexts/SetupContext';
 
 interface PreFlightChecklistProps {
   subject: string;
@@ -38,6 +39,8 @@ export function PreFlightChecklist({
   setEditingTemplate,
 }: PreFlightChecklistProps) {
   const { performerLabel } = useChoirSettings();
+  const { enabledModules } = useSetup();
+  const setListsEnabled = enabledModules.has('setLists');
   const performerLabelPlural = pluralizeLabel(performerLabel);
   const hasApprovedSetList = selectedEvent ? selectedEvent.setListApproved !== false : false;
 
@@ -93,13 +96,19 @@ export function PreFlightChecklist({
         {filters.eventId && !hasApprovedSetList && content.toLowerCase().includes('{setlist}') && (
           <AlertBanner variant="warning" icon="⚠️" title="Set list not approved.">
             The set list hasn't been approved for {performerLabelPlural.toLowerCase()} yet.{' '}
-            <Link
-              to="/admin/setlists"
-              className="text-primary hover:text-primary-deep cursor-pointer font-semibold underline"
-            >
-              Open Set List Builder
-            </Link>{' '}
-            to approve it before sending.
+            {setListsEnabled ? (
+              <>
+                <Link
+                  to="/admin/setlists"
+                  className="text-primary hover:text-primary-deep cursor-pointer font-semibold underline"
+                >
+                  Open Set List Builder
+                </Link>{' '}
+                to approve it before sending.
+              </>
+            ) : (
+              'Set Lists is currently disabled; enable it before approving the set list.'
+            )}
           </AlertBanner>
         )}
 

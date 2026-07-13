@@ -85,6 +85,23 @@ endpoint to force the wake-up.
 
 Never log `HMAC_SECRET` or a full signed token. AGENTS.md §6 enforces this.
 
+## First-Run Experience & Setup
+
+On fresh installations, the application runs a guided first-run wizard to claims the instance, configure essential parameters, and verify third-party integrations:
+
+1. **Owner Claim**: The first person to visit the site creates the owner admin account. Only superusers (authorized through PocketBase `_superusers` collection) can initiate the setup wizard.
+2. **Environment Configuration**: Administrators must set the following environment variables in their PocketHost dashboard:
+   - `HMAC_SECRET`: For signed URL token verification.
+   - `MAINTENANCE_SECRET`: For background cron worker authentication.
+   - `APP_URL`: The public-facing origin URL of the app.
+3. **Integration Verification**:
+   - Outgoing SMTP: Functional email test required to ensure email notifications and player RSVP invites can be delivered.
+   - Stripe Payments (if Ticket Sales module enabled): Validates Stripe credentials.
+4. **Initial Data Import (Optional)**: Provides downloadable CSV templates for bulk importing roster performers and library music pieces with network-rate safety checks.
+5. **Final Review**: Confirms the configuration and seals the setup, unlocking standard application routes.
+
+If troubleshooting is needed or the admin account is lost during setup, run the Recovery flow by requesting a password reset email or executing the recovery logic.
+
 ## Rollback
 
 ```bash

@@ -1,18 +1,36 @@
 // @vitest-environment jsdom
-import { describe, it, mock } from 'node:test';
+import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type EasyMDE from 'easymde';
 
 import { ComposeMessageStep } from '../../../../src/views/admin/communications/ComposeMessageStep';
 import type { UseCommunicationDraftReturn } from '../../../../src/views/admin/communications/useCommunicationDraft';
 import type { Event } from '../../../../src/services/eventService';
+import { SetupProvider } from '../../../../src/contexts/SetupContext';
+import * as moduleService from '../../../../src/services/moduleService';
 
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  mock.method(moduleService, 'getPublicModuleState', async () => ({
+    version: 1,
+    enabled: ['setLists'],
+  }));
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <SetupProvider>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </SetupProvider>
+    </QueryClientProvider>
+  );
 }
+
+afterEach(() => mock.restoreAll());
 
 function makeDraft(
   overrides: Partial<UseCommunicationDraftReturn> = {}

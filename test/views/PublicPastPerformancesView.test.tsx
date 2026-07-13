@@ -8,13 +8,19 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { eventService } from '../../src/services/eventService';
 import { settingsService } from '../../src/services/settingsService';
+import { SetupProvider } from '../../src/contexts/SetupContext';
+import * as moduleService from '../../src/services/moduleService';
 
 function createWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={client}>
+        <SetupProvider>{children}</SetupProvider>
+      </QueryClientProvider>
+    );
   };
 }
 
@@ -61,6 +67,10 @@ describe('PublicPastPerformancesView', () => {
       ],
       totalPages: 1,
       totalItems: 2,
+    }));
+    mock.method(moduleService, 'getPublicModuleState', async () => ({
+      version: 1,
+      enabled: ['ticketSales', 'donations', 'auditions'],
     }));
 
     const mod = await import('../../src/views/PublicPastPerformancesView');

@@ -17,8 +17,14 @@ import { communicationService } from '../../src/services/communicationService';
 import { pollService } from '../../src/services/pollService';
 import { DialogProvider } from '../../src/contexts/DialogProvider';
 import { ChoirNameProvider } from '../../src/hooks/useDocumentTitle';
+import { SetupProvider } from '../../src/contexts/SetupContext';
+import * as moduleService from '../../src/services/moduleService';
 
 function createWrapper() {
+  mock.method(moduleService, 'getPublicModuleState', async () => ({
+    version: 1,
+    enabled: ['directory'],
+  }));
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -28,7 +34,9 @@ function createWrapper() {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={client}>
-        <ChoirNameProvider>{children}</ChoirNameProvider>
+        <SetupProvider>
+          <ChoirNameProvider>{children}</ChoirNameProvider>
+        </SetupProvider>
       </QueryClientProvider>
     );
   };
@@ -85,7 +93,7 @@ describe('DirectoryView', () => {
     );
 
     // Verify loading state is visible
-      assert.ok(container.textContent?.includes('Loading performer directory...'));
+    assert.ok(container.textContent?.includes('Loading performer directory...'));
 
     // Wait for profiles to load
     await waitFor(() => {
@@ -155,7 +163,9 @@ describe('DirectoryView', () => {
     };
 
     const { container } = render(
-      <AuthContext.Provider value={authValue as any}>
+      <AuthContext.Provider
+        value={authValue as unknown as React.ComponentProps<typeof AuthContext.Provider>['value']}
+      >
         <MemoryRouter initialEntries={['/directory']}>
           <Routes>
             <Route path="/directory" element={<DirectoryRoute />} />
@@ -181,7 +191,9 @@ describe('DirectoryView', () => {
     };
 
     const { container } = render(
-      <AuthContext.Provider value={authValue as any}>
+      <AuthContext.Provider
+        value={authValue as unknown as React.ComponentProps<typeof AuthContext.Provider>['value']}
+      >
         <MemoryRouter initialEntries={['/directory']}>
           <Routes>
             <Route path="/directory" element={<DirectoryRoute />} />
@@ -208,7 +220,9 @@ describe('DirectoryView', () => {
     };
 
     const { container } = render(
-      <AuthContext.Provider value={authValue as any}>
+      <AuthContext.Provider
+        value={authValue as unknown as React.ComponentProps<typeof AuthContext.Provider>['value']}
+      >
         <MemoryRouter initialEntries={['/directory']}>
           <Routes>
             <Route path="/directory" element={<DirectoryRoute />} />
@@ -245,7 +259,9 @@ describe('DirectoryView', () => {
     };
 
     const { container } = render(
-      <AuthContext.Provider value={authValue as any}>
+      <AuthContext.Provider
+        value={authValue as unknown as React.ComponentProps<typeof AuthContext.Provider>['value']}
+      >
         <DialogProvider>
           <MemoryRouter>
             <DashboardView />
@@ -281,7 +297,9 @@ describe('DirectoryView', () => {
     };
 
     const { container } = render(
-      <AuthContext.Provider value={authValue as any}>
+      <AuthContext.Provider
+        value={authValue as unknown as React.ComponentProps<typeof AuthContext.Provider>['value']}
+      >
         <DialogProvider>
           <MemoryRouter>
             <DashboardView />
@@ -317,7 +335,9 @@ describe('DirectoryView', () => {
     };
 
     const { container } = render(
-      <AuthContext.Provider value={authValue as any}>
+      <AuthContext.Provider
+        value={authValue as unknown as React.ComponentProps<typeof AuthContext.Provider>['value']}
+      >
         <DialogProvider>
           <MemoryRouter>
             <DashboardView />

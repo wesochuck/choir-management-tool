@@ -206,4 +206,13 @@ export const queryKeys = {
     resolvedRecipients: (filters: unknown) =>
       [...queryKeys.communications.all, 'resolvedRecipients', filters] as const,
   },
+  setup: {
+    status: ['setup', 'status'] as const,
+  },
+  modules: {
+    state: ['modules', 'state'] as const,
+  },
+  readiness: {
+    all: ['readiness'] as const,
+  },
 } as const;

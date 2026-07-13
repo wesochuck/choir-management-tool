@@ -3,6 +3,7 @@ import { Modal, Button, Select, ProgressBar } from '../ui';
 import { useDialog } from '../../contexts/DialogContext';
 import { musicLibraryService } from '../../services/musicLibraryService';
 import { parseCSV, type CSVData } from '../../lib/rosterImportUtils';
+import { chunkArray, mapWithConcurrency, retryOn429 } from '../../lib/networkSafety';
 import {
   suggestMusicFieldMapping,
   validateAndMapMusicPieces,
@@ -140,43 +141,46 @@ export const MusicImportModal: React.FC<MusicImportModalProps> = ({
     let successes = 0;
     const errors: typeof errorsList = [];
     const BATCH_CHUNK_SIZE = 50;
+    let processedCount = 0;
 
-    // @allow-sequential-await - Chunked loop is intentional to limit batch request rate and update UI.
-    for (let i = 0; i < validPieces.length; i += BATCH_CHUNK_SIZE) {
-      const chunkPieces = validPieces.slice(i, i + BATCH_CHUNK_SIZE);
-      const payloads = chunkPieces.map((piece) => ({
-        title: piece.data.title,
-        composer: piece.data.composer || undefined,
-        arranger: piece.data.arranger || undefined,
-        purchaseDate: piece.data.purchaseDate || undefined,
-        copies: piece.data.copies || undefined,
-        catalogId: piece.data.catalogId || undefined,
-        duration: piece.data.duration || undefined,
-        notes: piece.data.notes || undefined,
-      }));
+    const chunks = chunkArray(validPieces, BATCH_CHUNK_SIZE);
 
-      try {
-        await musicLibraryService.bulkCreate(payloads);
-        successes += payloads.length;
-        setSuccessCount(successes);
-      } catch (err: unknown) {
-        console.error(`Bulk import failed for chunk starting at index ${i}:`, err);
-        // If a batch fails, we record the error for the first piece in the chunk to notify the user.
-        // The entire chunk fails because PocketBase batches are transactional.
-        const firstFailedPiece = chunkPieces[0];
-        errors.push({
-          row: firstFailedPiece.rowNumber,
-          title: `Batch starting with "${firstFailedPiece.data.title || 'Unknown'}"`,
-          error: err instanceof Error ? err.message : 'Unknown database error during bulk creation',
-        });
-        setErrorsList([...errors]);
-      }
+    await mapWithConcurrency(
+      chunks,
+      async (chunkPieces, chunkIdx) => {
+        const payloads = chunkPieces.map((piece) => ({
+          title: piece.data.title,
+          composer: piece.data.composer || undefined,
+          arranger: piece.data.arranger || undefined,
+          purchaseDate: piece.data.purchaseDate || undefined,
+          copies: piece.data.copies || undefined,
+          catalogId: piece.data.catalogId || undefined,
+          duration: piece.data.duration || undefined,
+          notes: piece.data.notes || undefined,
+        }));
 
-      setImportingIndex(Math.min(i + BATCH_CHUNK_SIZE, validPieces.length));
-      setImportProgress(
-        Math.round((Math.min(i + BATCH_CHUNK_SIZE, validPieces.length) / validPieces.length) * 100)
-      );
-    }
+        try {
+          await retryOn429(() => musicLibraryService.bulkCreate(payloads));
+          successes += payloads.length;
+          setSuccessCount(successes);
+        } catch (err: unknown) {
+          console.error(`Bulk import failed for chunk index ${chunkIdx}:`, err);
+          const firstFailedPiece = chunkPieces[0];
+          errors.push({
+            row: firstFailedPiece.rowNumber,
+            title: `Batch starting with "${firstFailedPiece.data.title || 'Unknown'}"`,
+            error:
+              err instanceof Error ? err.message : 'Unknown database error during bulk creation',
+          });
+          setErrorsList([...errors]);
+        } finally {
+          processedCount += chunkPieces.length;
+          setImportingIndex(processedCount);
+          setImportProgress(Math.round((processedCount / validPieces.length) * 100));
+        }
+      },
+      { concurrency: 2 }
+    );
 
     setStep('COMPLETE');
     dialog.showToast(`Music library import finished: ${successes} items added.`);

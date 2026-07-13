@@ -12,9 +12,12 @@ import { PublicLayout } from '../components/common/PublicLayout';
 import { queryKeys } from '../lib/queryKeys';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { usePublicEvents } from '../hooks/usePublicEvents';
+import { useSetup } from '../contexts/SetupContext';
 
 function PublicLandingView() {
   useDocumentTitle('');
+  const { enabledModules } = useSetup();
+  const ticketSalesEnabled = enabledModules.has('ticketSales');
   const landingSettingsQuery = useQuery({
     queryKey: queryKeys.publicLanding.settings,
     queryFn: () => settingsService.getLandingSettings(),
@@ -128,14 +131,16 @@ function PublicLandingView() {
                     })}
                   </p>
                   {venueName && <p className="text-text-muted m-0">{venueName}</p>}
-                  <Button
-                    as={Link}
-                    to={`/tickets/${highlightedTicketedEvent.id}`}
-                    variant="primary"
-                    className="min-w-[200px] px-8 py-3 text-center text-lg no-underline"
-                  >
-                    Buy Tickets
-                  </Button>
+                  {ticketSalesEnabled && (
+                    <Button
+                      as={Link}
+                      to={`/tickets/${highlightedTicketedEvent.id}`}
+                      variant="primary"
+                      className="min-w-[200px] px-8 py-3 text-center text-lg no-underline"
+                    >
+                      Buy Tickets
+                    </Button>
+                  )}
                 </>
               );
             })()}

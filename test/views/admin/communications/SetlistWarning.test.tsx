@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
-import { describe, it } from 'node:test';
+import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { SetlistWarning } from '../../../../src/views/admin/communications/SetlistWarning';
 import type { Event } from '../../../../src/services/eventService';
+import { SetupProvider } from '../../../../src/contexts/SetupContext';
+import * as moduleService from '../../../../src/services/moduleService';
 
 function makeEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -18,10 +21,25 @@ function makeEvent(overrides: Partial<Event> = {}): Event {
 }
 
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  mock.method(moduleService, 'getPublicModuleState', async () => ({
+    version: 1,
+    enabled: ['setLists'],
+  }));
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <SetupProvider>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </SetupProvider>
+    </QueryClientProvider>
+  );
 }
 
 describe('SetlistWarning', () => {
+  afterEach(() => mock.restoreAll());
+
   it('renders nothing when no event is selected', () => {
     const { container } = renderWithRouter(
       <SetlistWarning selectedEvent={null} content="hi {setlist}" />

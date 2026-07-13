@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, mock } from 'node:test';
+import { describe, it, mock, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ReviewStep } from '../../../../src/views/admin/communications/ReviewStep';
 import type { UseCommunicationDraftReturn } from '../../../../src/views/admin/communications/useCommunicationDraft';
@@ -11,6 +12,8 @@ import type { UseCommunicationPreviewReturn } from '../../../../src/views/admin/
 import type { Event } from '../../../../src/services/eventService';
 import type { CommunicationSettings } from '../../../../src/services/settingsService';
 import type { CommunicationRecipient } from '../../../../src/services/communicationService';
+import { SetupProvider } from '../../../../src/contexts/SetupContext';
+import * as moduleService from '../../../../src/services/moduleService';
 
 function makeRecipient(id: string): CommunicationRecipient {
   return {
@@ -67,8 +70,23 @@ const mockCommSettings: CommunicationSettings = {
 } as unknown as CommunicationSettings;
 
 function renderWithRouter(ui: React.ReactElement) {
-  return render(<MemoryRouter>{ui}</MemoryRouter>);
+  mock.method(moduleService, 'getPublicModuleState', async () => ({
+    version: 1,
+    enabled: ['setLists'],
+  }));
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <SetupProvider>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </SetupProvider>
+    </QueryClientProvider>
+  );
 }
+
+afterEach(() => mock.restoreAll());
 
 describe('ReviewStep', () => {
   it('disables Send when there are zero selected recipients', () => {

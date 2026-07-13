@@ -66,4 +66,10 @@ describe('queryKeys', () => {
     assert.deepEqual(queryKeys.ticketing.timezone(), ['ticketing', 'timezone']);
     assert.deepEqual(queryKeys.ticketing.logoUrl, ['ticketing', 'logoUrl']);
   });
+
+  it('uses stable tuple keys for setup, modules, and readiness', () => {
+    assert.deepEqual(queryKeys.setup.status, ['setup', 'status']);
+    assert.deepEqual(queryKeys.modules.state, ['modules', 'state']);
+    assert.deepEqual(queryKeys.readiness.all, ['readiness']);
+  });
 });

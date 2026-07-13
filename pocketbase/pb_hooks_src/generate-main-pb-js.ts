@@ -30,7 +30,8 @@ export type UtilityBundleName =
   | 'ticketScanValidation'
   | 'financialNotifications'
   | 'maintenance'
-  | 'brevoAdapter';
+  | 'brevoAdapter'
+  | 'setup';
 
 export type UtilityBundle = {
   files: string[];
@@ -253,6 +254,31 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'emailRendering',
       'hookPlaceholders',
     ],
+  },
+  setup: {
+    files: [
+      'setup/setupTypes.ts',
+      'setup/setupState.ts',
+      'setup/setupAuth.ts',
+      'setup/setupEndpoints.ts',
+    ],
+    symbols: [
+      'resolveSetupStatus',
+      'getSetupState',
+      'saveSetupState',
+      'isSetupSuperuser',
+      'isSetupAdmin',
+      'isBackendModuleEnabled',
+      'guardBackendModule',
+      'handleSetupStatus',
+      'handlePublicModuleState',
+      'handleSetupClaim',
+      'handleSetupProgress',
+      'handleSetupComplete',
+      'handleAdminRecovery',
+      'handleSetupHealth',
+    ],
+    dependsOn: ['hookJson'],
   },
 };
 
@@ -908,6 +934,26 @@ try {
 
 const settings = $app.settings();
 
+const saveEmailVerification = function(success, prov) {
+    try {
+        let evidenceRecord = null;
+        try {
+            evidenceRecord = $app.findFirstRecordByFilter('appSettings', "key = 'email_verification'");
+        } catch (e) {
+            const appSettingsColl = $app.findCollectionByNameOrId('appSettings');
+            evidenceRecord = new Record(appSettingsColl, { key: 'email_verification' });
+        }
+        evidenceRecord.set('value', JSON.stringify({
+            provider: prov,
+            checkedAt: new Date().toISOString(),
+            success: success,
+        }));
+        $app.save(evidenceRecord);
+    } catch (e) {
+        // ignore
+    }
+};
+
 if (provider === 'brevo') {
     try {
         dispatchEmailViaBrevo(brevoApiKey, {
@@ -919,12 +965,17 @@ if (provider === 'brevo') {
             htmlContent: "<p>Your Brevo API Email integration is working!</p>",
             textContent: "Your Brevo API Email integration is working!"
         });
+        saveEmailVerification(true, 'brevo');
         return e.json(200, { success: true });
     } catch (err) {
+        saveEmailVerification(false, 'brevo');
         return e.json(500, { error: "Brevo API failed: " + (err instanceof Error ? err.message : String(err)) });
     }
 } else {
-    if (!settings.smtp.enabled) return e.json(400, { error: "SMTP disabled" });
+    if (!settings.smtp.enabled) {
+        saveEmailVerification(false, 'smtp');
+        return e.json(400, { error: "SMTP disabled" });
+    }
     try {
         const message = new MailerMessage({ 
             from: { address: settings.meta.senderAddress || "no-reply@choir.management", name: "Choir Management Tool" }, 
@@ -933,8 +984,10 @@ if (provider === 'brevo') {
             html: "<p>Your SMTP is working!</p>" 
         });
         $app.newMailClient().send(message);
+        saveEmailVerification(true, 'smtp');
         return e.json(200, { success: true });
     } catch (err) { 
+        saveEmailVerification(false, 'smtp');
         return e.json(500, { error: "SMTP failed" }); 
     }
 }`;
@@ -1008,6 +1061,58 @@ if (provider === 'brevo') {
 }
 `;
 
+  const collectionModuleGuards: Record<string, string> = {
+    eventRosters: 'rsvps',
+    donations: 'donations',
+    ticketPurchases: 'ticketSales',
+    ticketBundles: 'ticketSales',
+    tickets: 'ticketSales',
+    musicPieces: 'musicLibrary',
+    resources: 'resources',
+    auditions: 'auditions',
+    polls: 'polls',
+    pollVotes: 'polls',
+    messages: 'communications',
+    seatingProfiles: 'seating',
+    seatingCharts: 'seating',
+    events: 'events',
+    venues: 'events',
+    attendance: 'attendance',
+    setLists: 'setLists',
+    patrons: 'patrons',
+    seasons: 'roster',
+    seasonalDues: 'roster',
+  };
+
+  const beforeRequestHookNames = [
+    'onRecordCreateRequest',
+    'onRecordUpdateRequest',
+    'onRecordDeleteRequest',
+    'onRecordViewRequest',
+    'onRecordsListRequest',
+  ];
+
+  const beforeRequestHooks = beforeRequestHookNames
+    .map((hookName) => {
+      return Object.entries(collectionModuleGuards)
+        .map(([collection, module]) => {
+          const body = `
+if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
+    throw new NotFoundError("Forbidden: Module ${module} is disabled");
+}`;
+          return renderRecordHook(hookName, collection, body, {
+            forceBundles: ['setup'],
+          });
+        })
+        .join('\n\n');
+    })
+    .join('\n\n');
+
+  const globalModuleGuardUtilities = [
+    getTranspiledFile('email/hookJson.ts'),
+    getTranspiledFile('setup/setupAuth.ts'),
+  ].join('\n\n');
+
   const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
 // Source: pocketbase/pb_hooks_src/
@@ -1021,7 +1126,12 @@ if (typeof process === 'undefined') {
     };
 }
 
+// --- GLOBAL UTILITIES FOR ROUTER MODULE GUARDS ---
+${globalModuleGuardUtilities}
+
 // --- RECORD HOOKS ---
+
+${beforeRequestHooks}
 
 ${renderRecordHook('onRecordAfterCreateSuccess', 'messages', createHookBody)}
 
@@ -1032,6 +1142,69 @@ ${renderRecordHook('onRecordAfterCreateSuccess', 'auditions', auditionCreateHook
 ${renderRecordHook('onRecordAfterUpdateSuccess', 'auditions', auditionUpdateHookBody)}
 
 // --- CUSTOM ENDPOINTS ---
+
+routerUse((e) => {
+    const path = e.request.url.path;
+    const routeModuleGuards = {
+        '/api/generate-rsvp-tokens': 'rsvps',
+        '/api/rsvp-details': 'rsvps',
+        '/api/quick-rsvp': 'rsvps',
+        '/api/unsubscribe': 'rsvps',
+        '/api/admin/bulk-update-rsvps': 'rsvps',
+        '/api/singer/resolve-placeholders': 'rsvps',
+        '/api/singer/rsvp': 'rsvps',
+        '/api/admin/bulk-upsert-attendance': 'attendance',
+        '/api/generate-poll-tokens': 'polls',
+        '/api/poll-details': 'polls',
+        '/api/submit-poll-response': 'polls',
+        '/api/generate-player-token': 'musicLibrary',
+        '/api/player-playlist': 'musicLibrary',
+        '/api/singer/player-playlist': 'musicLibrary',
+        '/api/calendar/download': 'events',
+        '/api/calendar/feed': 'events',
+        '/api/singer/calendar-feed-url': 'events',
+        '/api/singer/calendar-feed-url/reset': 'events',
+        '/api/singer/seating-profiles': 'seating',
+        '/api/checkout/create-tickets-session': 'ticketSales',
+        '/api/checkout/create-bundle-session': 'ticketSales',
+        '/api/admin/refund-ticket': 'ticketSales',
+        '/api/admin/refund-bundle': 'ticketSales',
+        '/api/admin/resend-ticket-confirmation': 'ticketSales',
+        '/api/tickets/validate': 'ticketSales',
+        '/api/tickets/scan-context': 'ticketSales',
+        '/api/checkout/create-donation-session': 'donations',
+        '/api/admin/refund-donation': 'donations',
+        '/api/queue/process': 'communications',
+        '/api/admin/queue-settings': 'communications',
+        '/api/admin/queue-settings/generate': 'communications',
+        '/api/test-smtp': 'communications',
+        '/api/test-sms': 'communications'
+    };
+
+    if (path === '/api/webhook/stripe' &&
+        !isBackendModuleEnabled($app, 'ticketSales') &&
+        !isBackendModuleEnabled($app, 'donations')) {
+        throw new NotFoundError("Forbidden: Payment modules are disabled");
+    }
+
+    for (const route in routeModuleGuards) {
+        if (path === route || path.indexOf(route + '/') === 0) {
+            const module = routeModuleGuards[route];
+            if (!isBackendModuleEnabled($app, module)) {
+                throw new NotFoundError("Forbidden: Module " + module + " is disabled");
+            }
+        }
+    }
+    return e.next();
+});
+
+${renderRoute('GET', '/api/setup/status', 'return handleSetupStatus(e);')}
+${renderRoute('GET', '/api/modules/state', 'return handlePublicModuleState(e);')}
+${renderRoute('POST', '/api/setup/claim', 'return handleSetupClaim(e);')}
+${renderRoute('POST', '/api/setup/progress', 'return handleSetupProgress(e);')}
+${renderRoute('POST', '/api/setup/complete', 'return handleSetupComplete(e);')}
+${renderRoute('POST', '/api/setup/recover-admin', 'return handleAdminRecovery(e);')}
+${renderRoute('GET', '/api/setup/health', 'return handleSetupHealth(e);')}
 
 ${buildRsvpRoutes()}
 

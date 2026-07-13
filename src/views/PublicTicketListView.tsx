@@ -15,10 +15,13 @@ import { formatInTimezone } from '../lib/timezone';
 import { useDocumentTitle, useChoirSettings } from '../hooks/useDocumentTitle';
 import { queryKeys } from '../lib/queryKeys';
 import { usePublicEvents } from '../hooks/usePublicEvents';
+import { useSetup } from '../contexts/SetupContext';
 
 export default function PublicTicketListView() {
   useDocumentTitle('Ticket Sales');
   const { choirName, timezone } = useChoirSettings();
+  const { enabledModules } = useSetup();
+  const donationsEnabled = enabledModules.has('donations');
 
   const { events, isLoading: eventsLoading } = usePublicEvents();
 
@@ -30,11 +33,15 @@ export default function PublicTicketListView() {
   const donationSettingsQuery = useQuery({
     queryKey: queryKeys.donations.settings,
     queryFn: () => donationService.getDonationSettings(),
+    enabled: donationsEnabled,
   });
 
   const bundles = bundlesQuery.data ?? [];
   const donationSettings: DonationSettings | null = donationSettingsQuery.data ?? null;
-  const isLoading = eventsLoading || bundlesQuery.isLoading || donationSettingsQuery.isLoading;
+  const isLoading =
+    eventsLoading ||
+    bundlesQuery.isLoading ||
+    (donationsEnabled && donationSettingsQuery.isLoading);
 
   if (isLoading) {
     return (
@@ -154,21 +161,23 @@ export default function PublicTicketListView() {
           </div>
         )}
 
-        <div className="border-border mt-8 w-full rounded-lg border-t-2 border-dashed bg-neutral-100 p-4 pt-6">
-          <div className="flex flex-col gap-0.5 text-center">
-            <h2 className="text-primary-deep m-0">
-              {donationSettings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}
-            </h2>
-            <p className="text-body mx-auto max-w-[480px]">
-              {donationSettings?.description ?? DEFAULT_DONATION_SETTINGS.description}
-            </p>
+        {donationsEnabled && (
+          <div className="border-border mt-8 w-full rounded-lg border-t-2 border-dashed bg-neutral-100 p-4 pt-6">
+            <div className="flex flex-col gap-0.5 text-center">
+              <h2 className="text-primary-deep m-0">
+                {donationSettings?.buttonText ?? DEFAULT_DONATION_SETTINGS.buttonText}
+              </h2>
+              <p className="text-body mx-auto max-w-[480px]">
+                {donationSettings?.description ?? DEFAULT_DONATION_SETTINGS.description}
+              </p>
+            </div>
+            <div className="mt-4 flex flex-row justify-center">
+              <Button as={Link} to="/donate" variant="primary" className="min-w-[200px]">
+                Make a Donation
+              </Button>
+            </div>
           </div>
-          <div className="mt-4 flex flex-row justify-center">
-            <Button as={Link} to="/donate" variant="primary" className="min-w-[200px]">
-              Make a Donation
-            </Button>
-          </div>
-        </div>
+        )}
       </AppCard>
     </PublicBrandingWrapper>
   );
