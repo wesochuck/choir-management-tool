@@ -16,6 +16,7 @@ interface HistoryPanelProps {
   onViewDetails: (message: MessageRecord) => void;
   onCopyDraft: (message: MessageRecord) => void;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
+  onNewMessage: () => void;
 }
 
 export function HistoryPanel({
@@ -30,6 +31,7 @@ export function HistoryPanel({
   onViewDetails,
   onCopyDraft,
   onViewRecipients,
+  onNewMessage,
 }: HistoryPanelProps) {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
 
@@ -47,6 +49,7 @@ export function HistoryPanel({
         onViewDetails={onViewDetails}
         onCopyDraft={onCopyDraft}
         onViewRecipients={onViewRecipients}
+        onNewMessage={onNewMessage}
         events={events}
         commSettings={commSettings}
       />

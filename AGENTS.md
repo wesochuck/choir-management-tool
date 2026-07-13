@@ -435,3 +435,12 @@ On Break
 ```
 
 Do not change the database enum, API payloads, or CSV import value.
+
+## 12. Plan Execution & Validation
+
+### File Responsibility Map Validation
+
+When executing an implementation plan (e.g. `docs/superpowers/plans/...`), you must strictly validate your progress against the **File Responsibility Map** listed at the top of the plan before declaring a phase complete.
+
+- Verify every single file listed under "Create" or "Modify" has been handled.
+- Do not stop executing tasks just because the primary visual components appear complete; ensure all secondary files, contextual empty states, and related tests explicitly assigned in the map have been fully implemented.

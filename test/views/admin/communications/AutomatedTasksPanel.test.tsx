@@ -60,6 +60,7 @@ describe('AutomatedTasksPanel', () => {
         onViewTaskRecipients={mock.fn()}
         commSettings={mockCommSettings}
         isSending={false}
+        onNewMessage={mock.fn()}
       />
     );
 
@@ -84,6 +85,7 @@ describe('AutomatedTasksPanel', () => {
         onViewTaskRecipients={mock.fn()}
         commSettings={mockCommSettings}
         isSending={false}
+        onNewMessage={mock.fn()}
       />
     );
 
@@ -108,6 +110,7 @@ describe('AutomatedTasksPanel', () => {
         onViewTaskRecipients={mock.fn()}
         commSettings={mockCommSettings}
         isSending={false}
+        onNewMessage={mock.fn()}
       />
     );
 
@@ -134,6 +137,7 @@ describe('AutomatedTasksPanel', () => {
         onViewTaskRecipients={mock.fn()}
         commSettings={mockCommSettings}
         isSending={false}
+        onNewMessage={mock.fn()}
       />
     );
 
@@ -142,5 +146,26 @@ describe('AutomatedTasksPanel', () => {
     assert.ok(eventDateTh);
     assert.ok(eventDateTh.className.includes('hidden'));
     assert.ok(eventDateTh.className.includes('xl:table-cell'));
+  });
+
+  it('renders the empty state CTA when there are no upcoming tasks', () => {
+    const onNewMessage = mock.fn();
+    render(
+      <AutomatedTasksPanel
+        upcomingTasks={[]}
+        onDraftTaskMessage={mock.fn()}
+        onTriggerReport={mock.fn()}
+        onArchiveTask={mock.fn()}
+        onViewTaskRecipients={mock.fn()}
+        commSettings={mockCommSettings}
+        isSending={false}
+        onNewMessage={onNewMessage}
+      />
+    );
+
+    const cta = screen.getByRole('button', { name: '+ New Message' });
+    assert.ok(cta);
+    fireEvent.click(cta);
+    assert.strictEqual(onNewMessage.mock.callCount(), 1);
   });
 });

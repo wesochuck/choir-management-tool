@@ -408,6 +408,23 @@ export function TemplatesPanel({
                 <line x1="16" y1="17" x2="8" y2="17" />
               </svg>
             ),
+            action: (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() =>
+                  setEditingTemplate({
+                    title: '',
+                    subject: '',
+                    content: '',
+                    type: 'Email',
+                    isSystemTemplate: false,
+                  })
+                }
+              >
+                + Add Custom Template
+              </Button>
+            ),
           }}
           hidePagination
         />

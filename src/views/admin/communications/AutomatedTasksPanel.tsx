@@ -20,6 +20,7 @@ interface AutomatedTasksPanelProps {
   onViewTaskRecipients: (task: AutomatedTask) => Promise<void>;
   commSettings: CommunicationSettings;
   isSending: boolean;
+  onNewMessage: () => void;
 }
 
 export function AutomatedTasksPanel({
@@ -30,6 +31,7 @@ export function AutomatedTasksPanel({
   onViewTaskRecipients,
   commSettings,
   isSending,
+  onNewMessage,
 }: AutomatedTasksPanelProps) {
   const [isArchiving, setIsArchiving] = useState<string | null>(null);
 
@@ -212,13 +214,13 @@ export function AutomatedTasksPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      <h3 className="text-text text-lg font-semibold">Scheduled Messages</h3>
+      <h3 className="text-text text-lg font-semibold">Upcoming Sends</h3>
       <DataTable
         columns={columns}
         data={upcomingTasks}
         isLoading={false}
         emptyState={{
-          title: 'No scheduled messages found.',
+          title: 'No upcoming sends found.',
           icon: (
             <svg
               width="40"
@@ -233,6 +235,11 @@ export function AutomatedTasksPanel({
             >
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
+          ),
+          action: (
+            <Button type="button" variant="primary" onClick={onNewMessage}>
+              + New Message
+            </Button>
           ),
         }}
         hidePagination

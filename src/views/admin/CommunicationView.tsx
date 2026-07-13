@@ -180,6 +180,11 @@ export default function CommunicationView() {
 
   const { handleResumeDraft } = draft;
 
+  const startNewMessage = () => {
+    setTab('compose');
+    setWizardStep('TARGETS');
+  };
+
   useEffect(() => {
     if (library.isLoading || didResumeRef.current || !routeState?.openDraftId) return;
 
@@ -410,12 +415,7 @@ export default function CommunicationView() {
               <Button
                 type="button"
                 variant="primary"
-                onClick={() => {
-                  setTab('compose');
-                  if (wizardStep === 'REVIEW') {
-                    setWizardStep('TARGETS');
-                  }
-                }}
+                onClick={startNewMessage}
                 className="w-full whitespace-nowrap sm:w-auto"
               >
                 <span aria-hidden="true">+</span>
@@ -497,6 +497,7 @@ export default function CommunicationView() {
           onViewTaskRecipients={handleViewAutomatedTaskRecipients}
           commSettings={library.commSettings}
           isSending={draft.isSending}
+          onNewMessage={startNewMessage}
         />
       )}
 
@@ -504,10 +505,7 @@ export default function CommunicationView() {
         <DraftsPanel
           drafts={library.drafts}
           onResumeDraft={draft.handleResumeDraft}
-          onStartNew={() => {
-            setTab('compose');
-            setWizardStep('TARGETS');
-          }}
+          onStartNew={startNewMessage}
           onDeleteDraft={async (draftRecord) => {
             if (
               await dialog.confirm({
@@ -536,6 +534,7 @@ export default function CommunicationView() {
           onViewDetails={setSelectedMessage}
           onCopyDraft={handleCopyMessageAsDraft}
           onViewRecipients={handleViewRecipients}
+          onNewMessage={startNewMessage}
         />
       )}
 

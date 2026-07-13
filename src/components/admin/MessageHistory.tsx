@@ -22,6 +22,7 @@ interface MessageHistoryProps {
   onViewDetails: (message: MessageRecord) => void;
   onCopyDraft: (message: MessageRecord) => void;
   onViewRecipients: (recipients: CommunicationRecipient[], title: string) => void;
+  onNewMessage: () => void;
   events: Event[];
   commSettings: CommunicationSettings;
 }
@@ -38,10 +39,12 @@ export function MessageHistory({
   onViewDetails,
   onCopyDraft,
   onViewRecipients,
+  onNewMessage,
   events,
   commSettings,
 }: MessageHistoryProps) {
   const [searchTerm, setSearchTerm] = useState(historySearchQuery);
+  const hasUnderlyingHistory = history.length > 0 || Boolean(historySearchQuery.trim());
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -232,39 +235,43 @@ export function MessageHistory({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="mb-1 flex items-center gap-2">
-        <div className="relative flex-[3]">
-          <Input
-            type="text"
-            placeholder="Search message history (subject, content, type)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={searchTerm ? 'pr-8' : 'pr-3'}
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              className="text-text-muted absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer border-0 bg-transparent text-xl leading-none"
-              onClick={() => {
-                setSearchTerm('');
-                onHistorySearchChange('');
-              }}
-              title="Clear search"
-            >
-              ×
-            </button>
-          )}
+      {hasUnderlyingHistory && (
+        <div className="mb-1 flex items-center gap-2">
+          <div className="relative flex-[3]">
+            <Input
+              aria-label="Search message history"
+              type="text"
+              placeholder="Search message history (subject, content, type)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={searchTerm ? 'pr-8' : 'pr-3'}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                aria-label="Clear history search"
+                className="text-text-muted absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer border-0 bg-transparent text-xl leading-none"
+                onClick={() => {
+                  setSearchTerm('');
+                  onHistorySearchChange('');
+                }}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            )}
+          </div>
+          <Select
+            aria-label="Message source"
+            value={sourceFilter}
+            onChange={(e) => onSourceFilterChange(e.target.value as SourceFilter)}
+            className="max-w-[130px]"
+          >
+            <option value="all">All Sources</option>
+            <option value="manual">Manual</option>
+            <option value="automated">Automated</option>
+          </Select>
         </div>
-        <Select
-          value={sourceFilter}
-          onChange={(e) => onSourceFilterChange(e.target.value as SourceFilter)}
-          className="max-w-[130px]"
-        >
-          <option value="all">All Sources</option>
-          <option value="manual">Manual</option>
-          <option value="automated">Automated</option>
-        </Select>
-      </div>
+      )}
 
       <DataTable
         columns={columns}
@@ -274,7 +281,29 @@ export function MessageHistory({
           title: historySearchQuery
             ? `No messages found matching "${historySearchQuery}".`
             : 'No messages logged yet.',
-          icon: '📬',
+          icon: (
+            <svg
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-text-muted mx-auto mb-3 opacity-60"
+            >
+              <rect width="20" height="16" x="2" y="4" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+          ),
+          action: (
+            <Button type="button" variant="primary" onClick={onNewMessage}>
+              + New Message
+            </Button>
+          ),
         }}
         manualPagination
         pagination={{
