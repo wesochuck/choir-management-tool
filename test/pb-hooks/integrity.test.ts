@@ -177,8 +177,8 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    39,
-    'Generated main file should contain exactly 39 route registrations'
+    41,
+    'Generated main file should contain exactly 41 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
@@ -212,6 +212,8 @@ test('Generated main.pb.js integrity', () => {
     ['POST', '/api/setup/complete'],
     ['POST', '/api/setup/recover-admin'],
     ['GET', '/api/setup/health'],
+    ['POST', '/api/admin/communications/delivery-summary'],
+    ['POST', '/api/admin/communications/retry-failed'],
   ] as const;
 
   for (const [method, routePath] of requiredRoutes) {
@@ -263,8 +265,8 @@ test('Generated main.pb.js keeps endpoint bundles local and module guards global
   );
   assert.strictEqual(
     countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    278,
-    'Generated file should contain exactly 278 callback-local utility regions'
+    282,
+    'Generated file should contain exactly 282 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
@@ -359,6 +361,47 @@ test('Generated main.pb.js keeps endpoint bundles local and module guards global
   assert.ok(
     maintenanceRoute.includes('function releaseTaskLock'),
     'Maintenance route should contain releaseTaskLock'
+  );
+
+  const deliverySummaryRoute = extractRouteCallback(
+    content,
+    '/api/admin/communications/delivery-summary'
+  );
+  assert.ok(
+    deliverySummaryRoute.includes('function handleCommunicationDeliverySummary'),
+    'Delivery summary route should contain its handler'
+  );
+  assert.ok(
+    deliverySummaryRoute.includes('function parseJsonField'),
+    'Delivery summary route should contain JSON parsing dependency'
+  );
+  assert.ok(
+    !deliverySummaryRoute.includes('function processEmailQueue'),
+    'Delivery summary route should not contain unrelated queue processor utilities'
+  );
+
+  const retryFailedRoute = extractRouteCallback(content, '/api/admin/communications/retry-failed');
+  assert.ok(
+    retryFailedRoute.includes('function handleRetryFailedDeliveries'),
+    'Retry failed route should contain its handler'
+  );
+  assert.ok(
+    !retryFailedRoute.includes('function processEmailQueue'),
+    'Retry failed route should not contain unrelated queue processor utilities'
+  );
+
+  // Verify messageHookRules source does not contain recipient-bearing debug logs
+  const messageHookRulesSource = fs.readFileSync(
+    path.join(process.cwd(), 'pocketbase/pb_hooks_src/email/messageHookRules.ts'),
+    'utf8'
+  );
+  assert.ok(
+    !messageHookRulesSource.includes('rawRecipients='),
+    'messageHookRules.ts must not contain recipient-bearing debug logs (rawRecipients=)'
+  );
+  assert.ok(
+    !messageHookRulesSource.includes('recipient phone='),
+    'messageHookRules.ts must not contain recipient-bearing debug logs (recipient phone=)'
   );
 
   const createMessagesHook = extractRecordHookCallback(

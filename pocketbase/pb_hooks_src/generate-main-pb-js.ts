@@ -31,7 +31,8 @@ export type UtilityBundleName =
   | 'financialNotifications'
   | 'maintenance'
   | 'brevoAdapter'
-  | 'setup';
+  | 'setup'
+  | 'communicationDelivery';
 
 export type UtilityBundle = {
   files: string[];
@@ -280,6 +281,11 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     ],
     dependsOn: ['hookJson'],
   },
+  communicationDelivery: {
+    files: ['email/communicationDelivery.ts'],
+    symbols: ['handleCommunicationDeliverySummary', 'handleRetryFailedDeliveries'],
+    dependsOn: ['hookJson'],
+  },
 };
 
 const transpileCache = new Map<string, string>();
@@ -471,12 +477,7 @@ function renderRecordRequestHook(
   body: string,
   options: CallbackOptions = {}
 ): string {
-  return renderRecordHook(
-    hookName,
-    collection,
-    `${body.trim()}\n\nreturn e.next();`,
-    options
-  );
+  return renderRecordHook(hookName, collection, `${body.trim()}\n\nreturn e.next();`, options);
 }
 
 function renderRoute(
@@ -1192,7 +1193,9 @@ routerUse((e) => {
         '/api/admin/queue-settings': 'communications',
         '/api/admin/queue-settings/generate': 'communications',
         '/api/test-smtp': 'communications',
-        '/api/test-sms': 'communications'
+        '/api/test-sms': 'communications',
+        '/api/admin/communications/delivery-summary': 'communications',
+        '/api/admin/communications/retry-failed': 'communications'
     };
 
     if (path === '/api/webhook/stripe' &&
@@ -1277,6 +1280,10 @@ const summary = runMaintenance($app);
 return e.json(200, { success: true, summary });
 `
 )}
+
+${renderRoute('POST', '/api/admin/communications/delivery-summary', 'return handleCommunicationDeliverySummary(e);')}
+
+${renderRoute('POST', '/api/admin/communications/retry-failed', 'return handleRetryFailedDeliveries(e);')}
 `.trim();
 
   fs.writeFileSync(OUTPUT_FILE, `${mainPbJs}\n`);
