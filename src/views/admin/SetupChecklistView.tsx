@@ -7,6 +7,7 @@ import { PageLayout } from '../../components/common/PageLayout';
 import { Button } from '../../components/ui';
 import { useSetup } from '../../contexts/SetupContext';
 import { useDialog } from '../../contexts/DialogContext';
+import { AppCard } from '../../components/common/AppCard';
 
 export default function SetupChecklistView() {
   const { status, refreshAll } = useSetup();
@@ -38,7 +39,7 @@ export default function SetupChecklistView() {
   if (isLoading || !snapshot) {
     return (
       <PageLayout title="Setup Checklist" backTo="/admin/settings">
-        <div className="text-sm text-slate-400">Loading readiness checklist...</div>
+        <div className="text-text-muted text-sm">Loading readiness checklist...</div>
       </PageLayout>
     );
   }
@@ -50,21 +51,21 @@ export default function SetupChecklistView() {
     <PageLayout title="Setup Checklist" backTo="/admin/settings">
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-slate-200">Organization Launch Readiness</h2>
-          <p className="mt-1 text-sm text-slate-400">
+          <h2 className="text-text text-xl font-bold">Organization Launch Readiness</h2>
+          <p className="text-text-muted mt-1 text-sm">
             Review the checklist below to verify if your choir is configured and ready for public
             launch.
           </p>
         </div>
 
-        <div className="space-y-6 rounded-2xl border border-slate-800 bg-slate-900/30 p-6 shadow-2xl backdrop-blur-xl">
+        <AppCard className="space-y-6">
           <ReadinessChecklist items={items} />
 
           {!isCompleted && (
-            <div className="flex flex-col gap-4 border-t border-slate-800 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-border flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="text-sm font-semibold text-slate-300">Finalize Installation</h4>
-                <p className="mt-1 text-xs text-slate-400">
+                <h4 className="text-text text-sm font-semibold">Finalize Installation</h4>
+                <p className="text-text-muted mt-1 text-xs">
                   Once all required configurations are complete, you can launch the organization.
                 </p>
               </div>
@@ -80,13 +81,13 @@ export default function SetupChecklistView() {
           )}
 
           {isCompleted && (
-            <div className="border-t border-slate-800 pt-6 text-center">
-              <span className="inline-block rounded-full bg-teal-500/20 px-3 py-1.5 text-xs font-medium text-teal-300">
+            <div className="border-border border-t pt-6 text-center">
+              <span className="bg-success-bg text-success-text inline-block rounded-full px-3 py-1.5 text-xs font-semibold tracking-wider uppercase">
                 ✓ Setup Completed & Launched
               </span>
             </div>
           )}
-        </div>
+        </AppCard>
       </div>
     </PageLayout>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { ReadinessResult } from '../../lib/readiness';
+import { Button } from '../ui';
 
 interface ReadinessChecklistProps {
   items: ReadinessResult[];
@@ -14,10 +15,10 @@ export const ReadinessChecklist: React.FC<ReadinessChecklistProps> = ({ items })
       {applicableItems.map((item) => (
         <div
           key={item.id}
-          className={`flex items-center justify-between rounded-xl border p-4 transition-all ${
+          className={`flex items-center justify-between rounded-xl border p-4 transition-all duration-200 ${
             item.completed
-              ? 'border-teal-500/20 bg-teal-500/5'
-              : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+              ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-800/40 dark:bg-emerald-950/10'
+              : 'border-border bg-surface hover:border-primary/50'
           }`}
         >
           <div className="flex items-center gap-3">
@@ -28,30 +29,41 @@ export const ReadinessChecklist: React.FC<ReadinessChecklistProps> = ({ items })
               <Link
                 to={item.destination}
                 className={`text-sm font-semibold hover:underline ${
-                  item.completed ? 'text-slate-300' : 'text-teal-400 hover:text-teal-300'
+                  item.completed
+                    ? 'text-text/80 hover:text-primary-deep'
+                    : 'text-primary hover:text-primary-deep'
                 }`}
               >
                 {item.label}
               </Link>
-              <span className="mt-0.5 text-[10px] font-semibold tracking-wider text-slate-500 uppercase">
+              <span className="mt-0.5 text-[9px] font-bold tracking-wider uppercase">
                 {item.requiredForLaunch ? (
-                  <span className="text-rose-400">Required</span>
+                  <span className="text-danger-text bg-danger-bg/50 rounded px-1.5 py-0.5">
+                    Required
+                  </span>
                 ) : (
-                  <span className="text-slate-400">Optional</span>
+                  <span className="text-text-muted bg-surface-muted border-border rounded border px-1.5 py-0.5">
+                    Optional
+                  </span>
                 )}
               </span>
             </div>
           </div>
           <div>
             {item.completed ? (
-              <span className="text-xs font-medium text-teal-400">Ready</span>
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                Ready
+              </span>
             ) : (
-              <Link
+              <Button
+                as={Link}
                 to={item.destination}
-                className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-slate-700"
+                variant="primary"
+                size="small"
+                className="no-underline"
               >
                 Configure
-              </Link>
+              </Button>
             )}
           </div>
         </div>
