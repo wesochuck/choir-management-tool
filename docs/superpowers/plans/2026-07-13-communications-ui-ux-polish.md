@@ -69,6 +69,10 @@
 
 ## Repository-wide safety gates
 
+- [ ] **React Imports:** Always use `import type React from 'react'` instead of value imports.
+- [ ] **PocketBase Errors:** Use `formatPocketBaseError(err)` in UI dialogues. Do not use `err instanceof Error ? err.message : String(err)`.
+- [ ] **Accessibility:** Ensure all form controls are natively semantic (e.g. use `id`/`htmlFor` bindings and native `<input type="radio">`).
+- [ ] **Responsiveness:** Ensure responsive classes (e.g., `sm:hidden`) are applied where requested.
 - [ ] Every shell command is prefixed with `rtk`.
 - [ ] No `any`, `as any`, `// @ts-ignore`, or new ESLint suppression is introduced.
 - [ ] No raw Shoelace component import is introduced; wrappers continue to use `safeSlProps`.

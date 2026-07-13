@@ -46,6 +46,15 @@
 - `src/views/admin/communications/CommunicationModals.tsx` — remove the old message-details modal.
 - `test/components/admin/MessageHistory.test.tsx` — queue states, page filter, and mobile details action.
 
+## Critical AGENTS.md Compliance Checklist
+
+Before starting implementation, mentally verify and incorporate the following rules (based on previous oversights):
+- [ ] **React Imports:** Always use `import type React from 'react'` instead of value imports.
+- [ ] **PocketBase Errors:** Use `formatPocketBaseError(err)` in UI dialogues. Do not use `err instanceof Error ? err.message : String(err)`.
+- [ ] **Accessibility:** Ensure all form controls are natively semantic. Add `id` and `htmlFor` for `<label>`s. Use native `<input type="radio">` inside labels rather than div/button ARIA hacks.
+- [ ] **Responsiveness:** Ensure responsive classes (e.g., `sm:hidden`, `hidden sm:inline`) are applied precisely as required.
+- [ ] **File Responsibility Map:** Verify *every single detail* from the File Responsibility Map before declaring a task complete.
+
 ## Task 1: Define queue aggregation and privacy helpers
 
 **Files:**
