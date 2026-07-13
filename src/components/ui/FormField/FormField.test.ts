@@ -28,7 +28,7 @@ test('FormField renders error message', () => {
     React.createElement(
       FormField,
       { label: 'Name', error: 'This field is required' },
-      React.createElement('input')
+      React.createElement(Input)
     )
   );
   const alert = container.querySelector('[role="alert"]');

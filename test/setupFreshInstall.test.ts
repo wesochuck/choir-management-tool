@@ -63,10 +63,13 @@ const mockApp = {
         return dbChoirNameRecord;
       }
       if (filter.includes("key = 'module_state'")) {
-        return new MockRecord({ name: 'appSettings' }, {
-          key: 'module_state',
-          value: JSON.stringify({ enabled: [] }),
-        });
+        return new MockRecord(
+          { name: 'appSettings' },
+          {
+            key: 'module_state',
+            value: JSON.stringify({ enabled: [] }),
+          }
+        );
       }
     }
     throw new Error('Not found');
@@ -136,7 +139,7 @@ describe('Setup Fresh Install Smoke Test', () => {
     const mockEvent = (auth: Record<string, unknown> | null, body?: Record<string, unknown>) => ({
       json: (status: number, data: Record<string, unknown>) => ({ status, data }),
       requestInfo: () => mockRequestInfo(body),
-      auth,
+      auth: (auth as any) || undefined,
     });
 
     // 1. Initial status check (should be unclaimed)
@@ -192,10 +195,13 @@ describe('Setup Fresh Install Smoke Test', () => {
       'roster-structure',
     ]);
 
-    dbChoirNameRecord = new MockRecord({ name: 'appSettings' }, {
-      key: 'choir_name',
-      value: JSON.stringify('Community Choir'),
-    });
+    dbChoirNameRecord = new MockRecord(
+      { name: 'appSettings' },
+      {
+        key: 'choir_name',
+        value: JSON.stringify('Community Choir'),
+      }
+    );
 
     // 5. Complete setup
     const completeRes = handleSetupComplete(mockEvent(adminAuth)) as TestResponse;

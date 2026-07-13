@@ -101,8 +101,7 @@ describe('SetupGate', () => {
       </QueryClientProvider>
     );
 
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    assert.ok(screen.queryByText('Dashboard Content'));
+    await screen.findByText('Dashboard Content');
     assert.equal(screen.queryByText('Setup Page'), null);
   });
 });

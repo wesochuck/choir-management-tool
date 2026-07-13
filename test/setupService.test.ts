@@ -33,10 +33,10 @@ describe('setupService', () => {
       pb,
       'send',
       async (path: string, options: { method?: string; body?: unknown }) => {
-      assert.strictEqual(path, '/api/setup/claim');
-      assert.strictEqual(options.method, 'POST');
-      assert.deepStrictEqual(options.body, payload);
-      return { success: true };
+        assert.strictEqual(path, '/api/setup/claim');
+        assert.strictEqual(options.method, 'POST');
+        assert.deepStrictEqual(options.body, payload);
+        return { success: true };
       }
     );
 
@@ -50,14 +50,14 @@ describe('setupService', () => {
       pb,
       'send',
       async (path: string, options: { method?: string; body?: unknown }) => {
-      assert.strictEqual(path, '/api/setup/progress');
-      assert.strictEqual(options.method, 'POST');
-      assert.deepStrictEqual(options.body, {
-        completedSections: ['admin-account'],
-        ownerIsPerformer: true,
-        ownerVoicePartSet: false,
-      });
-      return { success: true };
+        assert.strictEqual(path, '/api/setup/progress');
+        assert.strictEqual(options.method, 'POST');
+        assert.deepStrictEqual(options.body, {
+          completedSections: ['admin-account'],
+          ownerIsPerformer: true,
+          ownerVoicePartSet: false,
+        });
+        return { success: true };
       }
     );
 
@@ -90,10 +90,10 @@ describe('setupService', () => {
       pb,
       'send',
       async (path: string, options: { method?: string; body?: unknown }) => {
-      assert.strictEqual(path, '/api/setup/recover-admin');
-      assert.strictEqual(options.method, 'POST');
-      assert.deepStrictEqual(options.body, payload);
-      return { success: true };
+        assert.strictEqual(path, '/api/setup/recover-admin');
+        assert.strictEqual(options.method, 'POST');
+        assert.deepStrictEqual(options.body, payload);
+        return { success: true };
       }
     );
 
@@ -124,6 +124,14 @@ describe('setupService', () => {
   });
 
   it('counts only profiles with a performing part as singers', async () => {
+    const mockSend = mock.method(pb, 'send', async () => {
+      return {
+        environment: {
+          stripeSecretKey: false,
+        },
+      };
+    });
+
     const profiles = pb.collection('profiles');
     const getList = mock.method(profiles, 'getList', async () => ({ totalItems: 0, items: [] }));
 

@@ -148,10 +148,9 @@ describe('Organization & Roster Presets Steps', () => {
   });
 
   it('does not complete performer setup when the owner profile is missing', async () => {
-    pb.authStore.save(
-      'eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjQxMDI0NDQ4MDB9.signature',
-      { id: 'owner-user' }
-    );
+    pb.authStore.save('eyJhbGciOiJIUzI1NiJ9.eyJleHAiOjQxMDI0NDQ4MDB9.signature', {
+      id: 'owner-user',
+    } as unknown as import('pocketbase').RecordModel);
     mock.method(settingsService, 'saveVoicePartsAndSections', async () => {});
     mock.method(settingsService, 'savePerformerLabel', async () => {});
     const profiles = pb.collection('profiles');
