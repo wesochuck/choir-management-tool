@@ -1,4 +1,5 @@
 import PocketBase from 'pocketbase';
+import type { SendOptions } from 'pocketbase';
 import { shouldRedirectAuthErrorToLogin } from './authRedirect';
 
 type ViteEnv = Record<string, string | boolean | undefined> & { PROD?: boolean };
@@ -13,12 +14,21 @@ export function shouldClearExpiredAuthToken(token: string, isValid: boolean): bo
   return token.length > 0 && !isValid;
 }
 
+export function removeAuthorizationHeader(options: SendOptions): SendOptions {
+  const headers = Object.fromEntries(
+    Object.entries(options.headers ?? {}).filter(([name]) => name.toLowerCase() !== 'authorization')
+  );
+  return { ...options, headers };
+}
+
 // Disable auto-cancellation globally to prevent aborted requests from React Strict Mode double-mounting
 pb.autoCancellation(false);
 
 pb.beforeSend = (url, options) => {
+  let requestOptions = options;
   if (shouldClearExpiredAuthToken(pb.authStore.token, pb.authStore.isValid)) {
     pb.authStore.clear();
+    requestOptions = removeAuthorizationHeader(options);
   }
 
   // Strip out skipTotal parameter if present to support older PocketBase server versions
@@ -26,7 +36,7 @@ pb.beforeSend = (url, options) => {
     .replace(/[&?]skipTotal=[^&]+/g, '')
     .replace(/\?&/g, '?')
     .replace(/\?$/g, '');
-  return { url: cleanUrl, options };
+  return { url: cleanUrl, options: requestOptions };
 };
 
 pb.authStore.onChange(() => undefined, true);
