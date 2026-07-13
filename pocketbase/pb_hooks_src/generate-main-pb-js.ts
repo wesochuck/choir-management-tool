@@ -465,6 +465,20 @@ function renderRecordHook(
   return `${hookName}((e) => {\n${indent(withUtilities(body, options), 4)}\n}, ${JSON.stringify(collection)});`;
 }
 
+function renderRecordRequestHook(
+  hookName: string,
+  collection: string,
+  body: string,
+  options: CallbackOptions = {}
+): string {
+  return renderRecordHook(
+    hookName,
+    collection,
+    `${body.trim()}\n\nreturn e.next();`,
+    options
+  );
+}
+
 function renderRoute(
   method: string,
   routePath: string,
@@ -1100,7 +1114,7 @@ if (provider === 'brevo') {
 if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
     throw new NotFoundError("Forbidden: Module ${module} is disabled");
 }`;
-          return renderRecordHook(hookName, collection, body, {
+          return renderRecordRequestHook(hookName, collection, body, {
             forceBundles: ['setup'],
           });
         })

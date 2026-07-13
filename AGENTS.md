@@ -242,6 +242,8 @@ rtk npm run generate:pb-hooks
 rtk npm run check:pb-hooks
 ```
 
+Every PocketBase record request hook must explicitly continue its allowed path with `return e.next()`. Falling through a request hook can terminate the request with status `0` and make existing records appear missing. Generated request hooks require generic integrity coverage for this continuation.
+
 For advisory hooks, wrap the full callback body in `try/catch`. Logging must be defensive.
 
 Use `originalCopy()` with fallback:

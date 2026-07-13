@@ -100,6 +100,15 @@ function extractRecordHookCallback(
   );
 }
 
+function extractRecordHookRegistrations(content: string, hookName: string): string[] {
+  const registrationPattern = new RegExp(
+    `${escapeRegExp(hookName)}\\(\\(e\\) => \\{[\\s\\S]*?\\n\\}, "[^"]+"\\);`,
+    'g'
+  );
+
+  return [...content.matchAll(registrationPattern)].map((match) => match[0]);
+}
+
 test('Generated main.pb.js integrity', () => {
   const content = readGeneratedMain();
 
@@ -211,6 +220,33 @@ test('Generated main.pb.js integrity', () => {
       1,
       `Generated main file should contain exactly one registration for ${method} ${routePath}`
     );
+  }
+});
+
+test('Generated module-guard request hooks continue allowed requests', () => {
+  const content = readGeneratedMain();
+
+  for (const hookName of [
+    'onRecordCreateRequest',
+    'onRecordUpdateRequest',
+    'onRecordDeleteRequest',
+    'onRecordViewRequest',
+    'onRecordsListRequest',
+  ]) {
+    const guardedRegistrations = extractRecordHookRegistrations(content, hookName).filter(
+      (registration) => registration.includes('isBackendModuleEnabled($app,')
+    );
+
+    assert.ok(
+      guardedRegistrations.length > 0,
+      `Expected ${hookName} to include module-guarded registrations`
+    );
+    for (const registration of guardedRegistrations) {
+      assert.ok(
+        registration.includes('return e.next();'),
+        `${hookName} module guard must continue the allowed request with return e.next()`
+      );
+    }
   }
 });
 

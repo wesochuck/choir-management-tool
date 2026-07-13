@@ -9,6 +9,7 @@ lerna-debug.log*
 
 # data
 pocketbase/pb_data/*
+pb_backup*
 
 node_modules
 dist
