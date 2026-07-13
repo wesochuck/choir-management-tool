@@ -1,7 +1,8 @@
 import { parseJsonField } from '../email/hookJson';
 
 interface PocketBaseAuth {
-  collectionName: string;
+  collectionName?: string;
+  collection?: () => { name: string };
   get(key: string): unknown;
 }
 
@@ -16,12 +17,30 @@ interface PocketBaseApp {
 
 declare const $app: PocketBaseApp;
 
+function getAuthCollectionName(auth: PocketBaseAuth): string {
+  if (typeof auth.collection === 'function') {
+    try {
+      const collection = auth.collection();
+      if (collection && typeof collection.name === 'string') {
+        return collection.name;
+      }
+    } catch {
+      // Fall back to the SDK-style collectionName property below.
+    }
+  }
+  return typeof auth.collectionName === 'string' ? auth.collectionName : '';
+}
+
 export function isSetupSuperuser(e: PocketBaseRequestEvent): boolean {
-  return !!(e.auth && e.auth.collectionName === '_superusers');
+  return !!(e.auth && getAuthCollectionName(e.auth) === '_superusers');
 }
 
 export function isSetupAdmin(e: PocketBaseRequestEvent): boolean {
-  return !!(e.auth && e.auth.collectionName === 'users' && e.auth.get('role') === 'admin');
+  return !!(
+    e.auth &&
+    getAuthCollectionName(e.auth) === 'users' &&
+    e.auth.get('role') === 'admin'
+  );
 }
 
 export function isBackendModuleEnabled(app: PocketBaseApp, moduleId: string): boolean {
