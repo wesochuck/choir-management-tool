@@ -112,7 +112,7 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
           preselected.
         </p>
 
-        <div className="border-border bg-surface-muted grid max-h-[400px] grid-cols-1 gap-4 overflow-y-auto rounded-xl border p-4 pr-2 sm:grid-cols-2">
+        <div className="border-border bg-surface-muted grid grid-cols-1 gap-4 rounded-xl border p-4 sm:grid-cols-2">
           {MODULE_IDS.map((id) => {
             const def = MODULE_DEFINITIONS[id];
             const isRecommended = RECOMMENDED_MODULES.includes(id);
