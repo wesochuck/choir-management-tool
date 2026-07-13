@@ -132,6 +132,31 @@ export function useDraftAutosave({
     saveNowRef.current = saveNow;
   }, [saveNow]);
 
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState !== 'visible') return;
+      const id = activeIdRef.current;
+      const knownUpdated = lastUpdatedRef.current;
+      if (!id || !knownUpdated || inFlightRef.current) return;
+
+      try {
+        const latest = await fetchLatestRef.current(id);
+        const isNewer = new Date(latest.updated).getTime() > new Date(knownUpdated).getTime();
+        const changed = fingerprintDraft(recordSnapshot(latest)) !== savedFingerprintRef.current;
+        if (isNewer && changed) {
+          conflictRef.current = latest;
+          setConflictDraft(latest);
+          setStatus('conflict');
+        }
+      } catch {
+        // A failed background comparison does not replace autosave's real save state.
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
   const debounceMs = delayMs ?? 1500;
 
   useEffect(() => {
@@ -154,10 +179,20 @@ export function useDraftAutosave({
 
     setStatus('dirty');
     const timeoutId = window.setTimeout(() => {
-      void saveNow();
+      void saveNowRef.current();
     }, debounceMs);
     return () => window.clearTimeout(timeoutId);
-  }, [debounceMs, drainVersion, saveNow, snapshot, status]);
+  }, [debounceMs, drainVersion, snapshot, status]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!['dirty', 'saving', 'error', 'conflict'].includes(status)) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [status]);
 
   const markHydrated = useCallback((draft: MessageRecord) => {
     activeIdRef.current = draft.id;
@@ -173,15 +208,49 @@ export function useDraftAutosave({
 
   const retry = useCallback(async () => {
     setError(null);
-    await saveNow();
-  }, [saveNow]);
+    await saveNowRef.current();
+  }, []);
+
+  const reloadLatest = useCallback(() => {
+    const latest = conflictRef.current;
+    if (!latest) return;
+    onReloadRef.current(latest);
+    markHydrated(latest);
+  }, [markHydrated]);
+
+  const saveAsCopy = useCallback(async (): Promise<void> => {
+    setStatus('saving');
+    setError(null);
+    try {
+      const snapshotToSave = snapshotRef.current;
+      const saved = await persistRef.current(snapshotToSave, undefined);
+      activeIdRef.current = saved.id;
+      lastUpdatedRef.current = saved.updated;
+      const fp = fingerprintDraft(snapshotToSave);
+      savedFingerprintRef.current = fp;
+      lastAttemptedFingerprintRef.current = fp;
+      conflictRef.current = null;
+      setConflictDraft(null);
+      onSavedRef.current(saved);
+      setStatus('saved');
+    } catch (caught: unknown) {
+      setError(caught);
+      setStatus('error');
+    }
+  }, []);
+
+  const triggerSaveNow = useCallback(async () => {
+    await saveNowRef.current();
+  }, []);
 
   return {
     status,
     error,
     conflictDraft,
-    saveNow,
+    saveNow: triggerSaveNow,
     retry,
     markHydrated,
+    reloadLatest,
+    saveAsCopy,
   };
 }

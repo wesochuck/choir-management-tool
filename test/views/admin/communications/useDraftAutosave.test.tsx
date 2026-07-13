@@ -168,4 +168,127 @@ describe('useDraftAutosave', () => {
     assert.equal(result.current.status, 'saved');
     assert.equal(result.current.error, null);
   });
+
+  it('handles background conflicts on visibility change', async () => {
+    mock.timers.enable();
+    const originalVisibilityState = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+
+    try {
+      const initialRecord = record('draft-1', 'initial', '2026-07-13T11:00:00Z');
+      const latestRecord = record('draft-1', 'newer-on-server', '2026-07-13T12:00:00Z');
+
+      const persist = mock.fn();
+      const fetchLatest = mock.fn(async () => latestRecord);
+      const onSaved = mock.fn();
+      let currentSnapshot = input('initial');
+      const onReload = mock.fn((latest) => {
+        currentSnapshot = {
+          subject: latest.subject,
+          content: latest.content,
+          type: latest.type,
+          recipients: latest.recipients,
+          filters: latest.filters,
+        };
+      });
+
+      const { result, rerender } = renderHook(() =>
+        useDraftAutosave({
+          snapshot: currentSnapshot,
+          activeDraftId: 'draft-1',
+          activeDraftUpdated: '2026-07-13T11:00:00Z',
+          persist,
+          fetchLatest,
+          onSaved,
+          onReload,
+        })
+      );
+
+      // Hydrate first
+      act(() => result.current.markHydrated(initialRecord));
+      assert.equal(result.current.status, 'saved');
+
+      // Dispatch visibilitychange
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+
+      assert.equal(fetchLatest.mock.callCount(), 1);
+      assert.equal(result.current.status, 'conflict');
+      assert.equal(result.current.conflictDraft, latestRecord);
+
+      // Reload latest
+      act(() => {
+        result.current.reloadLatest();
+      });
+      rerender();
+      assert.equal(onReload.mock.callCount(), 1);
+      assert.deepEqual(onReload.mock.calls[0].arguments[0], latestRecord);
+      assert.equal(result.current.status, 'saved'); // markHydrated should reset status
+
+      // Recreate conflict
+      act(() => result.current.markHydrated(initialRecord));
+      await act(async () => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      assert.equal(result.current.status, 'conflict');
+
+      // Save as copy
+      const copiedRecord = record('draft-2', 'copied', '2026-07-13T12:05:00Z');
+      persist.mock.mockImplementation(async () => copiedRecord);
+
+      await act(async () => {
+        await result.current.saveAsCopy();
+      });
+
+      assert.equal(persist.mock.callCount(), 1);
+      // Persist should have been called with undefined ID (since it's a new copy)
+      assert.equal(persist.mock.calls[0].arguments[1], undefined);
+      assert.equal(result.current.status, 'saved');
+      assert.equal(result.current.conflictDraft, null);
+    } finally {
+      if (originalVisibilityState) {
+        Object.defineProperty(document, 'visibilityState', originalVisibilityState);
+      } else {
+        Object.defineProperty(document, 'visibilityState', { value: 'visible' });
+      }
+    }
+  });
+
+  it('prevents page unload when in unsafe states', async () => {
+    const { result, rerender } = renderHook(
+      ({ snapshot }) =>
+        useDraftAutosave({
+          snapshot,
+          activeDraftId: 'draft-1',
+          activeDraftUpdated: '2026-07-13T11:00:00Z',
+          persist: mock.fn(),
+          fetchLatest: mock.fn(),
+          onSaved: mock.fn(),
+          onReload: mock.fn(),
+        }),
+      { initialProps: { snapshot: input('saved') } }
+    );
+
+    // Hydrate to saved (safe) state
+    act(() => result.current.markHydrated(record('draft-1', 'saved', '2026-07-13T11:00:00Z')));
+
+    // Dispatch beforeunload (should be safe)
+    let event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    assert.equal(event.defaultPrevented, false);
+
+    // Make dirty (unsafe)
+    rerender({ snapshot: input('changed') });
+    assert.equal(result.current.status, 'dirty');
+
+    // Dispatch beforeunload (should prevent)
+    event = new Event('beforeunload', { cancelable: true });
+    // In jsdom/browsers, event.preventDefault() sets defaultPrevented to true
+    window.dispatchEvent(event);
+    assert.equal(event.defaultPrevented, true);
+  });
 });
