@@ -22,6 +22,8 @@ const allowlist = new Set([
   'rsvpDetails.ts',
   // rsvpValidation.ts: contains parsePocketBaseDate() — its own date safety helper (precedes the shared one)
   'rsvpValidation.ts',
+  // communicationDelivery: compares updated timestamps string-wise or converts to string in summary details
+  'communicationDelivery.ts',
   // ticketScan/ticketValidation.ts: uses String(event.get('date') || '') which is safe for Goja
   'ticketValidation.ts',
 ]);

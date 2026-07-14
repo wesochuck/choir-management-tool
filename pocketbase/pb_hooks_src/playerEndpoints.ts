@@ -41,7 +41,7 @@ export function handleGeneratePlayerToken(e: PocketBaseRequestEvent): void {
     return e.json(403, { error: 'Forbidden: Admins only' });
   }
 
-  const data = e.requestInfo().body;
+  const data = e.requestInfo().body || {};
   const eventId = data.eventId;
 
   if (!eventId) {

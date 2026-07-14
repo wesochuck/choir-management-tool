@@ -320,7 +320,8 @@ export function handleRetryFailedDeliveries(e: PocketBaseRequestEvent): unknown 
     return e.json(403, { error: 'Forbidden: Admins only' });
   }
 
-  const rawMessageId = e.requestInfo().body.messageId;
+  const data = e.requestInfo().body || {};
+  const rawMessageId = data.messageId;
   const messageId = typeof rawMessageId === 'string' ? rawMessageId : '';
   if (!/^[A-Za-z0-9_-]{1,40}$/.test(messageId)) {
     return e.json(400, { error: 'Invalid messageId' });
