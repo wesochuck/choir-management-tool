@@ -212,6 +212,109 @@ export function AutomatedTasksPanel({
     },
   ];
 
+  const renderMobileCard = (task: AutomatedTask) => {
+    return (
+      <div className="flex flex-col gap-3 py-1">
+        {/* Header: Type and Status */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span
+            className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${typeColors[task.type] || 'bg-gray-100 text-gray-700'}`}
+          >
+            {task.type}
+          </span>
+          <span
+            className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${statusColors[task.status] || 'bg-gray-100 text-gray-700'}`}
+          >
+            {task.status}
+          </span>
+        </div>
+
+        {/* Title / Event Name */}
+        <div className="text-base font-semibold break-words text-slate-900">
+          {task.event.title || task.event.type}
+        </div>
+
+        {/* Dates */}
+        <div className="grid grid-cols-1 gap-1 border-t border-slate-100/60 pt-2 text-xs">
+          <div className="flex justify-between gap-2">
+            <span className="font-medium text-slate-400">Scheduled</span>
+            <span className="text-slate-700">{task.scheduledTime.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span className="font-medium text-slate-400">Event Date</span>
+            <span className="text-slate-700">{new Date(task.event.date).toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div
+          className="flex justify-end gap-2 border-t border-slate-100/60 pt-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Dropdown
+            trigger={
+              <Button
+                variant="outline"
+                size="small"
+                disabled={isSending || isArchiving === task.id}
+              >
+                More <Icon name="chevron-down" className="ml-1 text-[10px]" />
+              </Button>
+            }
+          >
+            <DropdownMenu>
+              <DropdownMenuItem
+                disabled={isSending || isArchiving === task.id}
+                onClick={() => onViewTaskRecipients(task)}
+              >
+                {task.type === 'Report' ? 'View Admins' : 'View Recipients'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={isSending || isArchiving === task.id}
+                onClick={() => handleArchive(task)}
+                className="text-danger"
+              >
+                {isArchiving === task.id ? 'Archiving…' : 'Archive'}
+              </DropdownMenuItem>
+            </DropdownMenu>
+          </Dropdown>
+          <Button
+            variant="primary"
+            size="small"
+            disabled={isSending || isArchiving === task.id}
+            onClick={async () => {
+              if (task.type === 'Report') {
+                await onTriggerReport(task);
+              } else {
+                const values = {
+                  eventTitle: task.event.title || task.event.type,
+                  eventType: task.event.type,
+                  eventDate: new Date(task.event.date).toLocaleString(),
+                  eventLocation: task.event.expand?.venue?.name || 'TBD',
+                  eventDetails: task.event.details || '',
+                  singerName: '{singerName}',
+                  rsvpLinks: '{{RSVP_LINKS}}',
+                  playerLink: '{{PLAYER_LINK}}',
+                };
+                const subjectText = renderCommunicationTemplate(
+                  commSettings.reminderSubjectTemplate,
+                  values
+                );
+                const bodyText = renderCommunicationTemplate(
+                  commSettings.reminderBodyTemplate,
+                  values
+                );
+                onDraftTaskMessage(subjectText, bodyText, task);
+              }
+            }}
+          >
+            {task.type === 'Report' ? 'Send' : 'Compose'}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-text text-lg font-semibold">Upcoming Sends</h3>
@@ -219,6 +322,7 @@ export function AutomatedTasksPanel({
         columns={columns}
         data={upcomingTasks}
         isLoading={false}
+        renderMobileCard={renderMobileCard}
         emptyState={{
           title: 'No upcoming sends found.',
           icon: (

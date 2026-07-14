@@ -55,13 +55,13 @@ const partialSummary: DeliverySummary = {
 
 describe('MessageDetailsModal', () => {
   it('renders details, failures, and handles retry confirmation', async () => {
-    let capturedOptions: ConfirmOptions | null = null;
+    const captured: { options: ConfirmOptions | null } = { options: null };
     let confirmResult = false;
     const retryCalls: string[] = [];
 
     const mockOnRetryFailed = async (msg: MessageRecord, failedCount: number) => {
       // mimic dialog confirm
-      capturedOptions = {
+      captured.options = {
         title: 'Retry Failed Deliveries?',
         message: `Retry ${failedCount} failed deliveries for "${msg.subject}"? Successful deliveries will not be resent.`,
         confirmLabel: 'Retry failed deliveries',
@@ -104,10 +104,13 @@ describe('MessageDetailsModal', () => {
     confirmResult = false;
     fireEvent.click(retryBtn);
 
-    assert.ok(capturedOptions);
-    assert.equal(capturedOptions.variant, 'danger');
-    assert.equal(capturedOptions.confirmLabel, 'Retry failed deliveries');
-    assert.match(String(capturedOptions.message), /Successful deliveries will not be resent/);
+    const options = captured.options;
+    if (!options) {
+      throw new Error('captured.options is null');
+    }
+    assert.equal(options.variant, 'danger');
+    assert.equal(options.confirmLabel, 'Retry failed deliveries');
+    assert.match(String(options.message), /Successful deliveries will not be resent/);
     assert.equal(retryCalls.length, 0);
 
     // 2. Confirm true

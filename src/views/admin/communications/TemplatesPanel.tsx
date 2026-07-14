@@ -245,6 +245,93 @@ export function TemplatesPanel({
     );
   }
 
+  const renderMobileCard = (template: TemplateRecord) => {
+    return (
+      <div className="flex flex-col gap-3 py-1">
+        {/* Header: Title and Type badge */}
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="font-semibold break-words text-slate-900">{template.title}</span>
+            {template.isSystemTemplate && (
+              <span className="bg-danger-bg text-danger-text inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase opacity-80">
+                System
+              </span>
+            )}
+          </div>
+          <span className="bg-primary-light text-primary-deep inline-flex w-fit shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+            {template.type}
+          </span>
+        </div>
+
+        {/* Subject */}
+        {template.subject && (
+          <div className="flex flex-col gap-0.5 border-t border-slate-100/60 pt-2 text-xs text-slate-500">
+            <span className="text-[10px] font-medium tracking-wider text-slate-400 uppercase">
+              Subject
+            </span>
+            <span className="break-words text-slate-700">{template.subject}</span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div
+          className="flex justify-end gap-1.5 border-t border-slate-100/60 pt-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="small"
+            onClick={() => setEditingTemplate(template)}
+          >
+            Edit
+          </Button>
+          {onUseTemplate && (
+            <Button
+              type="button"
+              variant="outline"
+              size="small"
+              onClick={() => onUseTemplate(template)}
+            >
+              Use
+            </Button>
+          )}
+          {!template.isSystemTemplate && (
+            <Button
+              type="button"
+              variant="outline"
+              size="small"
+              onClick={async () => {
+                if (
+                  await dialog.confirm({
+                    title: 'Delete Template',
+                    message: `Are you sure you want to delete the template "${template.title}"?`,
+                    variant: 'danger',
+                  })
+                ) {
+                  try {
+                    await communicationService.deleteTemplate(template.id!);
+                    queryClient.invalidateQueries({
+                      queryKey: queryKeys.communications.templates(),
+                    });
+                  } catch (e: unknown) {
+                    await dialog.showMessage({
+                      title: 'Template Not Deleted',
+                      message: formatPocketBaseError(e),
+                      variant: 'danger',
+                    });
+                  }
+                }
+              }}
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <AppCard
       title="Message Templates"
@@ -387,6 +474,7 @@ export function TemplatesPanel({
           }
           data={templates}
           isLoading={false}
+          renderMobileCard={renderMobileCard}
           emptyState={{
             title: 'No templates found.',
             icon: (
