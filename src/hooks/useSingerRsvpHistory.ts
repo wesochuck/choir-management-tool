@@ -45,7 +45,7 @@ export function useSingerRsvpHistory({ isOpen, singerId, isActive }: UseSingerRs
         return next;
       });
     },
-    onError: (_err, { eventId }) => {
+    onError: (_, { eventId }) => {
       setRsvpSaveErrors((prev) => ({ ...prev, [eventId]: 'Failed to save' }));
     },
     onSettled: () => {
