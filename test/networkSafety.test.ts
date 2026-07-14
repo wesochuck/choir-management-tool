@@ -14,6 +14,35 @@ test('getHttpStatus reads common error shapes', () => {
   assert.equal(getHttpStatus({}), null);
 });
 
+test('getHttpStatus handles edge cases and invalid shapes', () => {
+  // Primitives and falsy values
+  assert.equal(getHttpStatus(null), null);
+  assert.equal(getHttpStatus(undefined), null);
+  assert.equal(getHttpStatus('error string'), null);
+  assert.equal(getHttpStatus(123), null);
+  assert.equal(getHttpStatus(true), null);
+  assert.equal(getHttpStatus([]), null);
+
+  // Invalid direct status values
+  assert.equal(getHttpStatus({ status: '404' }), null);
+  assert.equal(getHttpStatus({ status: null }), null);
+  assert.equal(getHttpStatus({ status: undefined }), null);
+  assert.equal(getHttpStatus({ status: {} }), null);
+  assert.equal(getHttpStatus({ status: NaN }), null);
+  assert.equal(getHttpStatus({ status: Infinity }), null);
+  assert.equal(getHttpStatus({ status: -Infinity }), null);
+
+  // Invalid nested status values
+  assert.equal(getHttpStatus({ data: 'string' }), null);
+  assert.equal(getHttpStatus({ data: null }), null);
+  assert.equal(getHttpStatus({ data: { status: '404' } }), null);
+  assert.equal(getHttpStatus({ response: null }), null);
+  assert.equal(getHttpStatus({ response: { status: NaN } }), null);
+
+  // Arrays
+  assert.equal(getHttpStatus([404]), null);
+});
+
 test('isRateLimitError detects 429 status and message fallback', () => {
   assert.equal(isRateLimitError({ status: 429 }), true);
   assert.equal(isRateLimitError(new Error('rate limit exceeded')), true);
