@@ -59,7 +59,7 @@ export const useMyEvents = () => {
       });
       return { previous };
     },
-    onError: (_err, _vars, context) => {
+    onError: (_, __, context) => {
       if (context?.previous) {
         queryClient.setQueryData(queryKeys.myEvents.list(), context.previous);
       }
