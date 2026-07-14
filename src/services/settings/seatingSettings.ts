@@ -92,16 +92,16 @@ export async function getSeatingSettings(): Promise<SeatingSettings> {
   const setting = await getSetting<SeatingSettings>('seating_config');
   const value = setting?.value;
   const voiceSettings = await getVoicePartsAndSections();
-  const activeCodes = voiceSettings.sections.map((s) => s.code.toUpperCase());
-  const activeParts = voiceSettings.voiceParts.map((vp) => vp.label.toUpperCase());
+  const activeCodes = new Set(voiceSettings.sections.map((s) => s.code.toUpperCase()));
+  const activeParts = new Set(voiceSettings.voiceParts.map((vp) => vp.label.toUpperCase()));
 
   const baseFormations = value?.formations || DEFAULT_SEATING_SETTINGS.formations;
 
   const sanitizedFormations = baseFormations.map((form) => {
     const isVoice = !!form.isVoicePartLayout;
-    const filterList = isVoice ? activeParts : activeCodes;
+    const filterSet = isVoice ? activeParts : activeCodes;
     const order = (form.sectionOrder || []).filter((code) =>
-      filterList.includes(code.toUpperCase())
+      filterSet.has(code.toUpperCase())
     );
     return { ...form, sectionOrder: order, isVoicePartLayout: isVoice };
   });
