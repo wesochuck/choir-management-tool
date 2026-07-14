@@ -404,8 +404,14 @@ export const rosterService = {
 
   async getRostersForEvents(eventIds: string[], options: RosterRequestOptions = {}) {
     if (eventIds.length === 0) return [];
-    const filterStr = eventIds.map((_, i) => `event = {:eventId${i}}`).join(' || ');
-    const params = Object.fromEntries(eventIds.map((id, i) => [`eventId${i}`, id]));
+    const { filterStr, params } = eventIds.reduce(
+      (acc, id, i) => {
+        acc.filterStr += (i === 0 ? '' : ' || ') + `event = {:eventId${i}}`;
+        acc.params[`eventId${i}`] = id;
+        return acc;
+      },
+      { filterStr: '', params: {} as Record<string, string> }
+    );
     return await retryOn429(
       () =>
         pb.collection('eventRosters').getFullList<EventRoster>({
