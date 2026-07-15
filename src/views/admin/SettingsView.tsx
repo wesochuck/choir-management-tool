@@ -13,6 +13,20 @@ import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Button, Select, Input, CopyButton, Checkbox } from '../../components/ui';
 import { useSetup } from '../../contexts/SetupContext';
 
+interface HealthData {
+  environment: {
+    appUrl: boolean;
+    hmacSecret: boolean;
+    maintenanceSecret: boolean;
+    stripeSecretKey: boolean;
+    stripeWebhookSecret: boolean;
+  };
+  stripeMode: string;
+  stripeValid: boolean | null;
+  appUrlMismatch: boolean;
+  emailValid: boolean;
+}
+
 const COMMON_TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
   { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
@@ -398,6 +412,7 @@ export default function SettingsView() {
         </AppCard>
 
         <QueueWebhookSettings setMessage={setMessage} />
+        <EnvironmentVerificationSettings />
       </div>
 
       <FloatingSaveBar
@@ -505,6 +520,102 @@ function QueueWebhookSettings({ setMessage }: { setMessage: (msg: string) => voi
           </div>
           <Button type="button" onClick={handleGenerate} variant="secondary" size="small">
             {token ? 'Regenerate Token' : 'Generate Token'}
+          </Button>
+        </div>
+      </div>
+    </AppCard>
+  );
+}
+
+function EnvironmentVerificationSettings() {
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
+    queryKey: ['setup', 'health'],
+    queryFn: async () => {
+      const res = await pb.send('/api/setup/health', { method: 'GET' });
+      return res as HealthData;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  if (isLoading) {
+    return <div className="text-text-muted text-xs">Loading environment status...</div>;
+  }
+
+  if (isError || !data) {
+    return (
+      <AppCard title="Environment Variables">
+        <div className="flex flex-col gap-2">
+          <p className="text-danger-text text-sm">Failed to load environment status.</p>
+          <Button type="button" onClick={() => refetch()} variant="secondary" size="small">
+            Retry
+          </Button>
+        </div>
+      </AppCard>
+    );
+  }
+
+  const { environment, stripeMode } = data;
+
+  const vars = [
+    { key: 'APP_URL', present: environment.appUrl, label: 'Application URL' },
+    { key: 'HMAC_SECRET', present: environment.hmacSecret, label: 'Cryptographic Secret' },
+    {
+      key: 'MAINTENANCE_SECRET',
+      present: environment.maintenanceSecret,
+      label: 'Maintenance Secret',
+    },
+    {
+      key: 'STRIPE_SECRET_KEY',
+      present: environment.stripeSecretKey,
+      label: `Stripe Secret (${stripeMode} mode)`,
+    },
+    {
+      key: 'STRIPE_WEBHOOK_SECRET',
+      present: environment.stripeWebhookSecret,
+      label: 'Stripe Webhook Secret',
+    },
+  ];
+
+  return (
+    <AppCard title="Environment Variables">
+      <div className="flex flex-col gap-4">
+        <p className="text-text-muted text-xs">
+          Verifies that required server-side environment variables are loaded by the system. Values
+          are kept secure and are not displayed.
+        </p>
+
+        <hr className="my-4 border-slate-100" />
+        <div className="divide-y divide-slate-100">
+          {vars.map((v) => (
+            <div key={v.key} className="flex items-center justify-between py-2 text-sm">
+              <div className="flex flex-col">
+                <span className="text-text font-semibold">{v.key}</span>
+                <span className="text-text-muted text-xs">{v.label}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {v.present ? (
+                  <span className="text-success-text flex items-center gap-1 font-medium">
+                    <span aria-hidden="true">✅</span> Configured
+                  </span>
+                ) : (
+                  <span className="text-danger-text flex items-center gap-1 font-medium">
+                    <span aria-hidden="true">❌</span> Missing
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            variant="secondary"
+            size="small"
+          >
+            {isRefetching ? 'Refreshing...' : 'Refresh Status'}
           </Button>
         </div>
       </div>
