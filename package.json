@@ -11,6 +11,7 @@
     "format": "prettier --write .",
     "generate:pb-hooks": "node pocketbase/pb_hooks_src/generate-main-pb-js.ts",
     "check:pb-hooks": "npm run generate:pb-hooks && vitest run test/pb-hooks/integrity.test.ts",
+    "check:pb-hooks:runtime": "npm run generate:pb-hooks && node scripts/check-pb-hooks-runtime.mjs",
     "check:pocketbase-date-safety": "node scripts/check-pocketbase-date-safety.mjs",
     "knip": "knip",
     "test": "vitest run",

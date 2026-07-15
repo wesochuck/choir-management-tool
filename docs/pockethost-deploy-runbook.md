@@ -116,9 +116,20 @@ instead of editing the historical migration.
 
 ## Local development
 
-Tests do not require a running PocketBase server (AGENTS.md §4). Hook
-behavior is unit-tested with mocked `$app`, `$security`, `$os` globals. See
-`test/pb-hooks/hmacTokens.test.ts` for the pattern.
+Most tests do not require a running PocketBase server. Hook behavior is
+unit-tested with mocked `$app`, `$security`, `$os` globals. The focused
+`check:pb-hooks:runtime` safeguard is the exception: it starts PocketBase
+0.36.9 against a temporary data directory and shuts it down after one
+guarded-route probe.
+
+Use that runtime probe as an explicit diagnostic when changing callback
+generation or investigating a PocketHost-only scope failure:
+
+```bash
+rtk env POCKETBASE_BIN=/path/to/pocketbase npm run check:pb-hooks:runtime
+```
+
+It is intentionally not part of the deployment workflow.
 
 If you do start a local PocketBase, do **not** commit any state changes
 from it. Use unit tests and mocks for hook coverage.

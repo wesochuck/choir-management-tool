@@ -31,6 +31,7 @@ export type UtilityBundleName =
   | 'financialNotifications'
   | 'maintenance'
   | 'brevoAdapter'
+  | 'moduleGuard'
   | 'setup'
   | 'communicationDelivery';
 
@@ -269,8 +270,6 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'saveSetupState',
       'isSetupSuperuser',
       'isSetupAdmin',
-      'isBackendModuleEnabled',
-      'guardBackendModule',
       'handleSetupStatus',
       'handlePublicModuleState',
       'handleSetupClaim',
@@ -279,6 +278,11 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'handleAdminRecovery',
       'handleSetupHealth',
     ],
+    dependsOn: ['hookJson'],
+  },
+  moduleGuard: {
+    files: ['setup/setupAuth.ts'],
+    symbols: ['isBackendModuleEnabled', 'guardBackendModule'],
     dependsOn: ['hookJson'],
   },
   communicationDelivery: {
@@ -490,6 +494,13 @@ function renderRoute(
   const isAsync = fullBody.includes('await ');
   const asyncPrefix = isAsync ? 'async ' : '';
   return `routerAdd(${JSON.stringify(method)}, ${JSON.stringify(routePath)}, ${asyncPrefix}(e) => {\n${indent(fullBody, 4)}\n});`;
+}
+
+function renderRouterMiddleware(body: string, options: CallbackOptions = {}): string {
+  const fullBody = withUtilities(body, options);
+  const isAsync = fullBody.includes('await ');
+  const asyncPrefix = isAsync ? 'async ' : '';
+  return `routerUse(${asyncPrefix}(e) => {\n${indent(fullBody, 4)}\n});`;
 }
 
 function indent(text: string, spaces: number): string {
@@ -1123,10 +1134,61 @@ if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
     })
     .join('\n\n');
 
-  const globalModuleGuardUtilities = [
-    getTranspiledFile('email/hookJson.ts'),
-    getTranspiledFile('setup/setupAuth.ts'),
-  ].join('\n\n');
+  const moduleGuardMiddlewareBody = `
+const path = e.request.url.path;
+const routeModuleGuards = {
+    '/api/generate-rsvp-tokens': 'rsvps',
+    '/api/rsvp-details': 'rsvps',
+    '/api/quick-rsvp': 'rsvps',
+    '/api/unsubscribe': 'rsvps',
+    '/api/admin/bulk-update-rsvps': 'rsvps',
+    '/api/singer/resolve-placeholders': 'rsvps',
+    '/api/singer/rsvp': 'rsvps',
+    '/api/admin/bulk-upsert-attendance': 'attendance',
+    '/api/generate-poll-tokens': 'polls',
+    '/api/poll-details': 'polls',
+    '/api/submit-poll-response': 'polls',
+    '/api/generate-player-token': 'musicLibrary',
+    '/api/player-playlist': 'musicLibrary',
+    '/api/singer/player-playlist': 'musicLibrary',
+    '/api/calendar/download': 'events',
+    '/api/calendar/feed': 'events',
+    '/api/singer/calendar-feed-url': 'events',
+    '/api/singer/calendar-feed-url/reset': 'events',
+    '/api/singer/seating-profiles': 'seating',
+    '/api/checkout/create-tickets-session': 'ticketSales',
+    '/api/checkout/create-bundle-session': 'ticketSales',
+    '/api/admin/refund-ticket': 'ticketSales',
+    '/api/admin/refund-bundle': 'ticketSales',
+    '/api/admin/resend-ticket-confirmation': 'ticketSales',
+    '/api/tickets/validate': 'ticketSales',
+    '/api/tickets/scan-context': 'ticketSales',
+    '/api/checkout/create-donation-session': 'donations',
+    '/api/admin/refund-donation': 'donations',
+    '/api/queue/process': 'communications',
+    '/api/admin/queue-settings': 'communications',
+    '/api/admin/queue-settings/generate': 'communications',
+    '/api/test-smtp': 'communications',
+    '/api/test-sms': 'communications',
+    '/api/admin/communications/delivery-summary': 'communications',
+    '/api/admin/communications/retry-failed': 'communications'
+};
+
+if (path === '/api/webhook/stripe' &&
+    !isBackendModuleEnabled($app, 'ticketSales') &&
+    !isBackendModuleEnabled($app, 'donations')) {
+    throw new NotFoundError("Forbidden: Payment modules are disabled");
+}
+
+for (const route in routeModuleGuards) {
+    if (path === route || path.indexOf(route + '/') === 0) {
+        const module = routeModuleGuards[route];
+        if (!isBackendModuleEnabled($app, module)) {
+            throw new NotFoundError("Forbidden: Module " + module + " is disabled");
+        }
+    }
+}
+return e.next();`;
 
   const mainPbJs = `
 // PocketBase Backend Hooks - SOURCE GENERATED (DO NOT EDIT DIRECTLY)
@@ -1140,9 +1202,6 @@ if (typeof process === 'undefined') {
         })
     };
 }
-
-// --- GLOBAL UTILITIES FOR ROUTER MODULE GUARDS ---
-${globalModuleGuardUtilities}
 
 // --- RECORD HOOKS ---
 
@@ -1158,62 +1217,7 @@ ${renderRecordHook('onRecordAfterUpdateSuccess', 'auditions', auditionUpdateHook
 
 // --- CUSTOM ENDPOINTS ---
 
-routerUse((e) => {
-    const path = e.request.url.path;
-    const routeModuleGuards = {
-        '/api/generate-rsvp-tokens': 'rsvps',
-        '/api/rsvp-details': 'rsvps',
-        '/api/quick-rsvp': 'rsvps',
-        '/api/unsubscribe': 'rsvps',
-        '/api/admin/bulk-update-rsvps': 'rsvps',
-        '/api/singer/resolve-placeholders': 'rsvps',
-        '/api/singer/rsvp': 'rsvps',
-        '/api/admin/bulk-upsert-attendance': 'attendance',
-        '/api/generate-poll-tokens': 'polls',
-        '/api/poll-details': 'polls',
-        '/api/submit-poll-response': 'polls',
-        '/api/generate-player-token': 'musicLibrary',
-        '/api/player-playlist': 'musicLibrary',
-        '/api/singer/player-playlist': 'musicLibrary',
-        '/api/calendar/download': 'events',
-        '/api/calendar/feed': 'events',
-        '/api/singer/calendar-feed-url': 'events',
-        '/api/singer/calendar-feed-url/reset': 'events',
-        '/api/singer/seating-profiles': 'seating',
-        '/api/checkout/create-tickets-session': 'ticketSales',
-        '/api/checkout/create-bundle-session': 'ticketSales',
-        '/api/admin/refund-ticket': 'ticketSales',
-        '/api/admin/refund-bundle': 'ticketSales',
-        '/api/admin/resend-ticket-confirmation': 'ticketSales',
-        '/api/tickets/validate': 'ticketSales',
-        '/api/tickets/scan-context': 'ticketSales',
-        '/api/checkout/create-donation-session': 'donations',
-        '/api/admin/refund-donation': 'donations',
-        '/api/queue/process': 'communications',
-        '/api/admin/queue-settings': 'communications',
-        '/api/admin/queue-settings/generate': 'communications',
-        '/api/test-smtp': 'communications',
-        '/api/test-sms': 'communications',
-        '/api/admin/communications/delivery-summary': 'communications',
-        '/api/admin/communications/retry-failed': 'communications'
-    };
-
-    if (path === '/api/webhook/stripe' &&
-        !isBackendModuleEnabled($app, 'ticketSales') &&
-        !isBackendModuleEnabled($app, 'donations')) {
-        throw new NotFoundError("Forbidden: Payment modules are disabled");
-    }
-
-    for (const route in routeModuleGuards) {
-        if (path === route || path.indexOf(route + '/') === 0) {
-            const module = routeModuleGuards[route];
-            if (!isBackendModuleEnabled($app, module)) {
-                throw new NotFoundError("Forbidden: Module " + module + " is disabled");
-            }
-        }
-    }
-    return e.next();
-});
+${renderRouterMiddleware(moduleGuardMiddlewareBody)}
 
 ${renderRoute('GET', '/api/setup/status', 'return handleSetupStatus(e);')}
 ${renderRoute('GET', '/api/modules/state', 'return handlePublicModuleState(e);')}

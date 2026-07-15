@@ -62,6 +62,11 @@ function extractCronCallback(content: string, cronName: string): string {
   return extractCallbackAfterMarker(content, markerIndex, '\n});', cronName);
 }
 
+function extractRouterMiddlewareCallback(content: string): string {
+  const markerIndex = content.indexOf('routerUse(');
+  return extractCallbackAfterMarker(content, markerIndex, '\n});', 'router middleware');
+}
+
 function extractRecordHookCallback(
   content: string,
   hookName: string,
@@ -145,14 +150,15 @@ test('Generated main.pb.js integrity', () => {
   assert.ok(content.includes('onRecordAfterUpdateSuccess'), 'Should contain update hook');
   const routerMiddlewareIndex = content.indexOf('routerUse(');
   assert.notStrictEqual(routerMiddlewareIndex, -1, 'Should contain router middleware');
-  assert.notStrictEqual(
-    content.indexOf('function isBackendModuleEnabled('),
-    -1,
-    'Should define the module guard helper globally'
+  const routerMiddleware = extractRouterMiddlewareCallback(content);
+  assert.ok(
+    routerMiddleware.includes('function isBackendModuleEnabled('),
+    'The router middleware must contain its module guard helper in callback scope'
   );
   assert.ok(
-    content.indexOf('function isBackendModuleEnabled(') < routerMiddlewareIndex,
-    'The router middleware must see the global module guard helper'
+    routerMiddleware.indexOf('function isBackendModuleEnabled(') <
+      routerMiddleware.indexOf('!isBackendModuleEnabled('),
+    'The router middleware must declare the module guard helper before using it'
   );
   assert.ok(
     countRouteRegistrations(content, 'POST', '/api/queue/process') === 1,
@@ -252,7 +258,7 @@ test('Generated module-guard request hooks continue allowed requests', () => {
   }
 });
 
-test('Generated main.pb.js keeps endpoint bundles local and module guards global', () => {
+test('Generated main.pb.js keeps endpoint and middleware bundles callback-local', () => {
   const content = readGeneratedMain();
 
   assert.ok(
@@ -264,19 +270,28 @@ test('Generated main.pb.js keeps endpoint bundles local and module guards global
     'Generated file should not leak generator utility placeholders'
   );
   assert.strictEqual(
-    countOccurrences(content, 'CALLBACK-LOCAL UTILITIES'),
-    282,
-    'Generated file should contain exactly 282 callback-local utility regions'
+    countOccurrences(
+      content,
+      '// --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---'
+    ),
+    142,
+    'Generated file should contain exactly 142 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
   assert.ok(
-    filePrelude.includes('function isBackendModuleEnabled('),
-    'Generated file prelude should contain the global module guard helper'
+    !filePrelude.includes('function isBackendModuleEnabled('),
+    'Generated file prelude should not contain callback utilities'
   );
   assert.ok(
     !filePrelude.includes('function processEmailQueue'),
     'Generated file prelude should not contain unrelated endpoint helpers'
+  );
+
+  const routerMiddleware = extractRouterMiddlewareCallback(content);
+  assert.ok(
+    routerMiddleware.includes('function isBackendModuleEnabled('),
+    'Router middleware should contain its module guard helper'
   );
 
   const queueRoute = extractRouteCallback(content, '/api/queue/process');

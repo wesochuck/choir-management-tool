@@ -14,6 +14,8 @@ This directory contains the pure TypeScript source code for the PocketBase backe
 
 PocketHost requires backend callbacks (hooks, crons, routers) to be **self-contained**. To avoid massive manual code duplication while keeping the code maintainable and testable, we use a generator that inlines all shared helpers into every individual callback closure.
 
+Every callback registration, including `routerUse(...)` middleware, must be emitted through a generator renderer that calls `withUtilities(...)`. Do not add raw registration templates: file-level helpers are not reliably visible when PocketBase 0.36.9 executes a callback in its pooled Goja runtimes.
+
 ## Structure
 
 - `email/`: Shared utilities for text, JSON, rendering, and dispatch logic.
