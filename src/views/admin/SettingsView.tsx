@@ -12,6 +12,7 @@ import { FloatingSaveBar } from '../../components/admin/FloatingSaveBar';
 import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Button, Select, Input, CopyButton, Checkbox } from '../../components/ui';
 import { useSetup } from '../../contexts/SetupContext';
+import { getSetting } from '../../services/settings/core';
 
 interface HealthData {
   environment: {
@@ -413,6 +414,7 @@ export default function SettingsView() {
 
         <QueueWebhookSettings setMessage={setMessage} />
         <EnvironmentVerificationSettings />
+        <MaintenanceTaskStatus />
       </div>
 
       <FloatingSaveBar
@@ -605,6 +607,114 @@ function EnvironmentVerificationSettings() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <Button
+            type="button"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+            variant="secondary"
+            size="small"
+          >
+            {isRefetching ? 'Refreshing...' : 'Refresh Status'}
+          </Button>
+        </div>
+      </div>
+    </AppCard>
+  );
+}
+
+interface MaintenanceState {
+  lastRuns?: Record<string, string>;
+  running?: Record<string, { startedAt: string; expiresAt: string }>;
+}
+
+function MaintenanceTaskStatus() {
+  const [now, setNow] = useState(() => Date.now());
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
+    queryKey: ['maintenance', 'state'],
+    queryFn: async () => {
+      const setting = await getSetting<MaintenanceState>('maintenance_state');
+      return setting?.value || { lastRuns: {}, running: {} };
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  useEffect(() => {
+    setNow(Date.now());
+  }, [data]);
+
+  if (isLoading) {
+    return <div className="text-text-muted text-xs">Loading maintenance status...</div>;
+  }
+
+  if (isError || !data) {
+    return (
+      <AppCard title="Maintenance Webhook Status">
+        <div className="flex flex-col gap-2">
+          <p className="text-danger-text text-sm">Failed to load maintenance status.</p>
+          <Button type="button" onClick={() => refetch()} variant="secondary" size="small">
+            Retry
+          </Button>
+        </div>
+      </AppCard>
+    );
+  }
+
+  const { lastRuns = {}, running = {} } = data;
+  const tasks = [
+    'emailQueue',
+    'eventReminder',
+    'postEventReport',
+    'ticketBuyerReminder',
+    'cleanup',
+  ];
+
+  // Check if any task ran in the last 15 minutes to declare the webhook "up"
+  const lastRunTimes = Object.values(lastRuns).map((t) => new Date(t).getTime());
+  const mostRecentRun = lastRunTimes.length > 0 ? Math.max(...lastRunTimes) : 0;
+  const isHealthy = mostRecentRun > 0 && now - mostRecentRun < 15 * 60 * 1000;
+
+  return (
+    <AppCard title="Maintenance Webhook Status">
+      <div className="flex flex-col gap-4">
+        <p className="text-text-muted text-xs">
+          Monitors the background maintenance webhook, which should be called automatically by
+          PocketHost every 5 minutes.
+        </p>
+
+        <div className="flex items-center gap-2 rounded-md bg-slate-50 p-3 dark:bg-slate-900">
+          <div className="text-sm font-semibold">Overall Status:</div>
+          {isHealthy ? (
+            <span className="text-success-text flex items-center gap-1 font-semibold">
+              <span aria-hidden="true">✅</span> Active and Running
+            </span>
+          ) : (
+            <span className="text-danger-text flex items-center gap-1 font-semibold">
+              <span aria-hidden="true">⚠️</span> Possibly Inactive (no recent runs)
+            </span>
+          )}
+        </div>
+
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+          {tasks.map((task) => {
+            const lastRun = lastRuns[task];
+            const isRunning = !!running[task];
+            return (
+              <div key={task} className="flex items-center justify-between py-2 text-sm">
+                <div className="flex flex-col">
+                  <span className="text-text font-semibold">{task}</span>
+                  {isRunning && (
+                    <span className="text-primary-deep text-xs font-semibold">Running Now...</span>
+                  )}
+                </div>
+                <div className="text-text-muted text-xs">
+                  {lastRun ? new Date(lastRun).toLocaleString() : 'Never'}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="flex justify-end pt-2">
