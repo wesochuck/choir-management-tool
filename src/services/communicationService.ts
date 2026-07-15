@@ -40,8 +40,6 @@ export type {
   SentTaskStatusOptions,
   DeliveryState,
   FailureCategory,
-  DeliveryCounts,
-  DeliveryFailureDetail,
   DeliverySummary,
   DeliverySummaryResponse,
   RetryFailedResponse,
