@@ -10,6 +10,7 @@ import {
   hasActiveLock,
   tryAcquireTaskLock,
   releaseTaskLock,
+  saveMaintenanceTaskRun,
 } from './maintenanceState';
 import { runEmailQueueTask } from './emailQueueTask';
 import { runPostEventReportTask } from './postEventReportTask';
@@ -42,7 +43,11 @@ export function runMaintenance(app: PocketBaseApp): MaintenanceRunSummary {
   const now = new Date();
   const results: MaintenanceTaskResult[] = [];
 
-  results.push(runEmailQueueTask(app));
+  const initialEmailQueueResult = runEmailQueueTask(app);
+  results.push(initialEmailQueueResult);
+  if (initialEmailQueueResult.status === 'ran' && (initialEmailQueueResult.errors ?? 0) === 0) {
+    saveMaintenanceTaskRun(app, 'emailQueue', now.toISOString());
+  }
 
   const scheduledTasks: Array<{
     name: 'postEventReport' | 'ticketBuyerReminder' | 'cleanup' | 'eventReminder';
@@ -84,7 +89,11 @@ export function runMaintenance(app: PocketBaseApp): MaintenanceRunSummary {
 
   const anyQueued = results.some((r) => (r.queued ?? 0) > 0);
   if (anyQueued) {
-    results.push(runEmailQueueTask(app));
+    const finalEmailQueueResult = runEmailQueueTask(app);
+    results.push(finalEmailQueueResult);
+    if (finalEmailQueueResult.status === 'ran' && (finalEmailQueueResult.errors ?? 0) === 0) {
+      saveMaintenanceTaskRun(app, 'emailQueue', new Date().toISOString());
+    }
   }
 
   const finishedAt = new Date().toISOString();
