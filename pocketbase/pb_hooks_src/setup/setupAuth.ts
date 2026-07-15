@@ -36,11 +36,7 @@ export function isSetupSuperuser(e: PocketBaseRequestEvent): boolean {
 }
 
 export function isSetupAdmin(e: PocketBaseRequestEvent): boolean {
-  return !!(
-    e.auth &&
-    getAuthCollectionName(e.auth) === 'users' &&
-    e.auth.get('role') === 'admin'
-  );
+  return !!(e.auth && getAuthCollectionName(e.auth) === 'users' && e.auth.get('role') === 'admin');
 }
 
 export function isBackendModuleEnabled(app: PocketBaseApp, moduleId: string): boolean {
@@ -55,11 +51,4 @@ export function isBackendModuleEnabled(app: PocketBaseApp, moduleId: string): bo
     return false;
   }
   return false;
-}
-
-export function guardBackendModule(e: PocketBaseRequestEvent, moduleId: string): unknown {
-  if (!isBackendModuleEnabled($app, moduleId)) {
-    return e.json(404, { error: 'Not Found: Module ' + moduleId + ' is disabled' });
-  }
-  return null;
 }

@@ -1,4 +1,4 @@
-export interface SectionPreset {
+interface SectionPreset {
   code: string;
   name: string;
   color: string;
@@ -6,7 +6,7 @@ export interface SectionPreset {
   colorText: string;
 }
 
-export interface VoicePartPreset {
+interface VoicePartPreset {
   label: string;
   fullName: string;
   sectionCode: string;

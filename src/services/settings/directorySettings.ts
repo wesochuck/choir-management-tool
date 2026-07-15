@@ -4,7 +4,7 @@ export interface DirectorySettings {
   enabled: boolean;
 }
 
-export const DIRECTORY_SETTINGS_KEY = 'directorySettings';
+const DIRECTORY_SETTINGS_KEY = 'directorySettings';
 
 const DEFAULT_DIRECTORY_SETTINGS: DirectorySettings = {
   enabled: true,

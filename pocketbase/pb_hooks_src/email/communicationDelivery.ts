@@ -9,10 +9,10 @@ declare const $app: PocketBaseApp;
 // ---------------------------------------------------------------------------
 
 /** Maximum number of delivery records aggregated per summary request. */
-export const DELIVERY_SUMMARY_MAX_ROWS = 10_000;
+const DELIVERY_SUMMARY_MAX_ROWS = 10_000;
 
 /** Maximum number of per-recipient failure details returned to the frontend. */
-export const MAX_FAILURE_DETAILS = 20;
+const MAX_FAILURE_DETAILS = 20;
 
 // ---------------------------------------------------------------------------
 // Typed interfaces
@@ -34,7 +34,7 @@ export type FailureCategory =
   | 'provider-rejected'
   | 'unknown';
 
-export interface ChannelCounts {
+interface ChannelCounts {
   pending: number;
   processing: number;
   sent: number;
@@ -42,7 +42,7 @@ export interface ChannelCounts {
   total: number;
 }
 
-export interface SanitizedFailureDetail {
+interface SanitizedFailureDetail {
   maskedDestination: string;
   channel: 'email' | 'sms';
   category: FailureCategory;
@@ -256,12 +256,12 @@ const MAX_MESSAGE_IDS = 10;
  */
 function validatedMessageIds(body: Record<string, unknown>): string[] | null {
   if (!Array.isArray(body.messageIds)) return null;
-  const ids: string[] = [...new Set(body.messageIds as unknown[])];
+  const ids = [...new Set(body.messageIds as unknown[])];
   if (ids.length === 0 || ids.length > MAX_MESSAGE_IDS) return null;
   if (!ids.every((id) => typeof id === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(id))) {
     return null;
   }
-  return ids;
+  return ids as string[];
 }
 
 // ---------------------------------------------------------------------------

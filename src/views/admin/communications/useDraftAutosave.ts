@@ -14,7 +14,7 @@ export interface UseDraftAutosaveArgs {
   delayMs?: number;
 }
 
-export function fingerprintDraft(snapshot: SendMessageInput): string {
+function fingerprintDraft(snapshot: SendMessageInput): string {
   return JSON.stringify({
     subject: snapshot.subject,
     content: snapshot.content,

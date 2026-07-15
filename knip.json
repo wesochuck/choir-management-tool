@@ -3,7 +3,6 @@
   "project": ["src/**/*.{ts,tsx}", "pocketbase/pb_hooks_src/**/*.ts"],
   "ignore": [
     "pocketbase/pb_hooks_src/adminNotifications.ts",
-    "pocketbase/pb_hooks_src/attendanceFinalizer.ts",
     "pocketbase/pb_hooks_src/calendarEndpoint.ts",
     "pocketbase/pb_hooks_src/playerEndpoints.ts",
     "pocketbase/pb_hooks_src/singerSeatingEndpoint.ts",

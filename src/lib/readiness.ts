@@ -14,7 +14,7 @@ export interface ReadinessSnapshot {
   hasSingers: boolean;
 }
 
-export interface ReadinessItem {
+interface ReadinessItem {
   id: string;
   label: string;
   moduleId: ModuleId | null;
@@ -23,7 +23,7 @@ export interface ReadinessItem {
   evaluate: (snapshot: ReadinessSnapshot) => boolean;
 }
 
-export const READINESS_ITEMS: ReadinessItem[] = [
+const READINESS_ITEMS: ReadinessItem[] = [
   {
     id: 'admin-claimed',
     label: 'Claim administrator account',

@@ -86,7 +86,7 @@ export type FailureCategory =
   | 'timeout'
   | 'unknown';
 
-export interface DeliveryCounts {
+interface DeliveryCounts {
   total: number;
   pending: number;
   processing: number;
@@ -94,7 +94,7 @@ export interface DeliveryCounts {
   failed: number;
 }
 
-export interface DeliveryFailureDetail {
+interface DeliveryFailureDetail {
   maskedDestination: string;
   channel: 'email' | 'sms';
   attempts: number;
