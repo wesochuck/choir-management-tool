@@ -120,6 +120,11 @@ When responsive layouts render duplicate text, prefer `getAllBy*` queries.
 
 For React Query async rendering, allow the event loop to settle before asserting on fetched data.
 
+For React components, strictly adhere to Hook purity rules:
+
+- Do not call impure functions (like `Date.now()`) directly in the render body. Initialize them via `useState(() => Date.now())` or capture them in `useEffect`.
+- Never place hooks below early returns (e.g., `if (isLoading) return;`).
+
 ## 4. Styling, UI, and Components
 
 Use Tailwind utilities for layout, spacing, colors, sizing, typography, and minor adjustments. Avoid standalone component CSS unless Tailwind cannot express the requirement.
@@ -149,6 +154,12 @@ Dashboard and list empty states must include a call-to-action button. Creation a
 For new lazy-loaded route modules, use `lazyWithReload(...)` from `src/App.tsx`.
 
 When aligning `<Input>` and `<Select>` components horizontally, be aware that `<Input>` includes an invisible `py-[3px]` padding wrapper (6px total height difference) to accommodate focus rings. To align a `<Select>` perfectly with an `<Input>` inside a flex container, wrap the `<Select>` in `<div className="py-[3px]">`.
+
+When building UI components, adhere to the app's semantic theme:
+
+- Avoid raw `dark:bg-*` or `dark:text-*` classes. The app handles dark mode via semantic CSS variables (e.g., `bg-surface`, `bg-bg`, `text-text`, `text-text-muted`, `border-border`).
+- For dynamic status blocks or alerts, use explicit semantic color pairs (e.g., `bg-green-50 text-green-900` or `bg-red-50 text-red-900`).
+- Due to strict Tailwind linting (`tailwindcss/no-contradicting-classname`), never combine `border-color` utilities (like `border-slate-100`) and `divide-color` utilities (like `divide-slate-100`) on the same element.
 
 ## 5. Shoelace and Web Components
 
