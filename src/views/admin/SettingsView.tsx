@@ -684,14 +684,20 @@ function MaintenanceTaskStatus() {
           PocketHost every 5 minutes.
         </p>
 
-        <div className="flex items-center gap-2 rounded-md bg-slate-50 p-3 dark:bg-slate-900">
+        <div
+          className={`flex items-center gap-2 rounded-md border p-3 ${
+            isHealthy
+              ? 'border-green-200 bg-green-50 text-green-900'
+              : 'border-red-200 bg-red-50 text-red-900'
+          }`}
+        >
           <div className="text-sm font-semibold">Overall Status:</div>
           {isHealthy ? (
-            <span className="text-success-text flex items-center gap-1 font-semibold">
+            <span className="flex items-center gap-1 font-semibold">
               <span aria-hidden="true">✅</span> Active and Running
             </span>
           ) : (
-            <span className="text-danger-text flex items-center gap-1 font-semibold">
+            <span className="flex items-center gap-1 font-semibold">
               <span aria-hidden="true">⚠️</span> Possibly Inactive (no recent runs)
             </span>
           )}
