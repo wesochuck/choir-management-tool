@@ -13,6 +13,7 @@ import {
 } from '../../../lib/modules';
 import { saveModuleState } from '../../../services/moduleService';
 import { setupService } from '../../../services/setupService';
+import { FloatingSaveBar } from '../../../components/admin/FloatingSaveBar';
 
 interface ModuleSelectionStepProps {
   onSuccess: () => void;
@@ -36,6 +37,16 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
 
   const [loading, setLoading] = useState(false);
   const dialog = useDialog();
+
+  const isDirty = useMemo(() => {
+    if (!initialEnabled) return false;
+    const initialSet = new Set([...initialEnabled, ...requiredModules]);
+    if (enabled.size !== initialSet.size) return true;
+    for (const id of initialSet) {
+      if (!enabled.has(id)) return true;
+    }
+    return false;
+  }, [enabled, initialEnabled, requiredModules]);
 
   const sortedModuleIds = useMemo(() => {
     return [...MODULE_IDS].sort((a, b) => {
@@ -114,7 +125,7 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
+      <div className="space-y-4 pb-20">
         <p className="text-text-muted text-sm">
           Select the features you want to enable for your choir. Recommended modules are
           preselected.
@@ -127,19 +138,18 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
             const isChecked = enabled.has(id);
 
             return (
-              <div
+              <button
+                type="button"
                 key={id}
-                className={`flex items-start gap-3 rounded-xl border p-4 transition-all duration-200 ${
+                onClick={() => handleToggle(id, !isChecked)}
+                className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ${
                   isChecked
-                    ? 'border-emerald-200 bg-emerald-50/40 dark:border-emerald-800/40 dark:bg-emerald-950/10'
-                    : 'border-border bg-surface'
+                    ? 'border-emerald-300 bg-emerald-50/60 shadow-sm dark:border-emerald-700/60 dark:bg-emerald-900/20'
+                    : 'border-border bg-surface hover:shadow-sm'
                 }`}
               >
-                <div className="pt-0.5">
-                  <Checkbox
-                    checked={isChecked}
-                    onChange={(e) => handleToggle(id, e.target.checked)}
-                  />
+                <div className="pointer-events-none pt-0.5">
+                  <Checkbox checked={isChecked} tabIndex={-1} />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-text flex items-center gap-1.5 text-sm font-semibold">
@@ -154,13 +164,27 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
                     {def.description}
                   </span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      <SetupNavigation nextLabel="Save & Continue" loading={loading} />
+      {persistSetupProgress ? (
+        <SetupNavigation nextLabel="Save & Continue" loading={loading} />
+      ) : (
+        <FloatingSaveBar
+          isDirty={isDirty}
+          isSaving={loading}
+          onSave={() => {
+            const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+            void handleSubmit(fakeEvent);
+          }}
+          onDiscard={() => {
+            setEnabled(new Set([...(initialEnabled || []), ...requiredModules]));
+          }}
+        />
+      )}
     </form>
   );
 };
