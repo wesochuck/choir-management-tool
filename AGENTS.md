@@ -46,6 +46,9 @@ rtk npx vitest run path/to/file.test.ts
 
 # ESLint
 rtk node_modules/.bin/eslint --fix --no-warn-ignored --max-warnings 0
+
+# TypeScript Compilation (Run this when removing dead code to catch broken re-exports)
+rtk npx tsc -b --force
 ```
 
 Do not use `rtk npx eslint`; use the direct binary path above.
@@ -54,6 +57,7 @@ Before finishing, report:
 
 - What changed.
 - Which `rtk` checks were run.
+- Whether `tsc -b --force` was run after any dead code or export removal.
 - Which checks could not be run and why.
 - Whether generated files were avoided or regenerated correctly.
 - Whether unsafe TypeScript patterns were avoided.
@@ -315,6 +319,14 @@ Goja rules:
 - Avoid sorting by `created` or `updated` in hooks unless schema support is verified.
 - Parse numeric fields defensively.
 - In raw SQL passed to `app.db().newQuery(...)`, use dbx named parameters such as `{:maxAttempts}`.
+
+### Email Generation and Formatting
+
+All automated emails and message bodies must be generated using **Markdown** rather than raw HTML.
+
+- Do not use raw HTML tags or inline CSS (e.g., `<div style="...">`).
+- Do not manually append global headers or footers (like mailing addresses).
+- The background `queueProcessor` automatically runs all messages through a Markdown parser and wraps them in a unified master HTML layout (`compileMailjetHtml`). Outputting raw HTML causes layout duplication (such as double footers) and conflicts with the Markdown escaping pipeline.
 
 ### Auth and Errors
 
