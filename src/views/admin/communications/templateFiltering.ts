@@ -1,6 +1,20 @@
 import type { TemplateRecord } from '../../../services/communicationService';
 import type { CommunicationFilters } from '../../../services/communicationService';
 
+const BACKGROUND_TEMPLATES = [
+  'Ticket Confirmation',
+  'Bundle Ticket Confirmation',
+  'Donation Receipt',
+  'RSVP Confirmation',
+  'Audition Confirmation',
+  'Audition Scheduled',
+  'Audition Declined',
+  'Admin Notice: Ticket Sale',
+  'Admin Notice: Donation',
+  'Admin Notice: Refund',
+  'RSVP Decline Notice',
+];
+
 export function getValidTemplatesForAudience(
   templates: TemplateRecord[],
   filters: CommunicationFilters
@@ -11,6 +25,11 @@ export function getValidTemplatesForAudience(
   const hasTicketBuyers = audiences.includes('Ticket Buyers');
 
   return templates.filter((tpl) => {
+    // 0. Exclude background-only system templates
+    if (BACKGROUND_TEMPLATES.includes(tpl.title)) {
+      return false;
+    }
+
     const text = `${tpl.subject} ${tpl.content}`;
 
     // 1. Event Placeholders require an Event
