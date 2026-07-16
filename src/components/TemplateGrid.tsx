@@ -87,20 +87,27 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
           className="absolute top-4 left-4 z-10 size-4 cursor-pointer"
         />
         <span
-          className={`flex min-h-[120px] w-full flex-col rounded-lg border p-4 pl-10 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+          className={`flex min-h-24 w-full flex-col justify-center rounded-lg border p-4 pl-10 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
             isSelected
               ? 'border-primary bg-primary-light/30 ring-primary/20 ring-2'
               : 'border-border bg-bg hover:border-primary'
           }`}
         >
-          <span
-            className={`mb-2.5 flex items-center justify-between ${
-              isSelected ? 'text-primary-deep' : 'text-primary'
-            }`}
-          >
-            <IconComponent />
+          <span className="flex items-start justify-between gap-3">
             <span
-              className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
+              className={`flex min-w-0 items-center gap-2 ${
+                isSelected ? 'text-primary-deep' : 'text-primary'
+              }`}
+            >
+              <span className="shrink-0 leading-none">
+                <IconComponent />
+              </span>
+              <span className="text-text min-w-0 text-sm leading-snug font-semibold">
+                {template.title}
+              </span>
+            </span>
+            <span
+              className={`inline-flex shrink-0 items-center rounded px-2 py-0.5 text-xs font-semibold tracking-wider uppercase ${
                 isSelected
                   ? 'bg-primary/20 text-primary-deep'
                   : 'bg-primary-light text-primary-deep'
@@ -109,12 +116,11 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
               {isBlank ? 'blank' : template.channel}
             </span>
           </span>
-          <span className="text-text m-0 mb-1 text-sm font-semibold">{template.title}</span>
-          <span className="text-text-muted m-0 text-xs leading-relaxed">
+          <span className="text-text-muted mt-1.5 ml-6 text-xs leading-relaxed">
             {template.description}
           </span>
           {isSelected && (
-            <span className="text-text-muted mt-2 block text-xs sm:hidden">
+            <span className="text-text-muted mt-2 ml-6 block text-xs sm:hidden">
               {template.subjectLine || template.description}
             </span>
           )}
