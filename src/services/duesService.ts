@@ -14,17 +14,19 @@ export interface SeasonalDue extends RecordModel {
 export const duesService = {
   async getDuesForSeason(season: string) {
     if (!season) return [];
+    const safeSeason = season.replace(/"/g, '\\"');
     return await pb.collection('seasonalDues').getFullList<SeasonalDue>({
-      filter: pb.filter('season = {:season}', { season }),
+      filter: `season = "${safeSeason}"`,
     });
   },
 
   async updateDues(profileId: string, season: string, paid: boolean) {
     try {
+      const safeSeason = season.replace(/"/g, '\\"');
       const existing = await pb
         .collection('seasonalDues')
         .getFirstListItem<SeasonalDue>(
-          pb.filter('profile = {:profileId} && season = {:season}', { profileId, season })
+          pb.filter('profile = {:profileId}', { profileId }) + ` && season = "${safeSeason}"`
         );
       return await pb.collection('seasonalDues').update<SeasonalDue>(existing.id, { paid });
     } catch (err: unknown) {
