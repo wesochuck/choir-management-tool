@@ -3,21 +3,6 @@ import type React from 'react';
 import type { MessageTemplate } from '../types/Communication';
 import { Button, Input } from './ui';
 
-const CalendarIcon = () => <span aria-hidden="true">📅</span>;
-const DollarSignIcon = () => <span aria-hidden="true">💵</span>;
-const AlertTriangleIcon = () => <span aria-hidden="true">⚠️</span>;
-const MailIcon = () => <span aria-hidden="true">✉️</span>;
-const FileTextIcon = () => <span aria-hidden="true">📄</span>;
-
-const iconMap = {
-  rehearsal: CalendarIcon,
-  dues: DollarSignIcon,
-  weather: AlertTriangleIcon,
-  general: MailIcon,
-  blank: FileTextIcon,
-  attendance: CalendarIcon,
-};
-
 interface TemplateGridProps {
   templates: MessageTemplate[];
   selectedTemplateId: string;
@@ -70,7 +55,6 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
 
   const renderTemplateCard = (template: MessageTemplate) => {
     const isBlank = template.id === 'blank';
-    const IconComponent = isBlank ? FileTextIcon : iconMap[template.category] || MailIcon;
     const isSelected = template.id === selectedTemplateId;
 
     return (
@@ -87,7 +71,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
           className="absolute top-4 left-4 z-10 size-4 cursor-pointer"
         />
         <span
-          className={`flex min-h-24 w-full flex-col justify-center rounded-lg border p-4 pl-10 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+          className={`flex min-h-24 w-full flex-col justify-start rounded-lg border p-4 pl-10 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
             isSelected
               ? 'border-primary bg-primary-light/30 ring-primary/20 ring-2'
               : 'border-border bg-bg hover:border-primary'
@@ -99,9 +83,6 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
                 isSelected ? 'text-primary-deep' : 'text-primary'
               }`}
             >
-              <span className="shrink-0 leading-none">
-                <IconComponent />
-              </span>
               <span className="text-text min-w-0 text-sm leading-snug font-semibold">
                 {template.title}
               </span>
@@ -116,11 +97,11 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
               {isBlank ? 'blank' : template.channel}
             </span>
           </span>
-          <span className="text-text-muted mt-1.5 ml-6 text-xs leading-relaxed">
+          <span className="text-text-muted mt-1.5 text-xs leading-relaxed">
             {template.description}
           </span>
           {isSelected && (
-            <span className="text-text-muted mt-2 ml-6 block text-xs sm:hidden">
+            <span className="text-text-muted mt-2 block text-xs sm:hidden">
               {template.subjectLine || template.description}
             </span>
           )}
