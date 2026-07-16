@@ -21,6 +21,7 @@ import { AudienceStep } from './AudienceStep';
 import { TemplateStep } from './TemplateStep';
 import { ComposeMessageStep } from './ComposeMessageStep';
 import { ReviewStep } from './ReviewStep';
+import { getValidTemplatesForAudience } from './templateFiltering';
 
 interface ComposePanelProps {
   draft: UseCommunicationDraftReturn;
@@ -61,8 +62,10 @@ export function ComposePanel({
 
   useWizardStepNavigation(wizardStep, wizardRef);
 
+  const filteredTemplates = getValidTemplatesForAudience(templates, draft.filters);
+
   const templateSelection = useTemplateSelection({
-    templates,
+    templates: filteredTemplates,
     setSubject: draft.setSubject as (v: string) => void,
     setContent: draft.setContent as (v: string) => void,
     setMessageType: draft.setMessageType as (v: MessageType) => void,
@@ -115,7 +118,7 @@ export function ComposePanel({
 
       {wizardStep === 'TEMPLATE' && (
         <TemplateStep
-          templates={templates}
+          templates={filteredTemplates}
           templateSelection={templateSelection}
           onBack={() => setWizardStep('TARGETS')}
         />
