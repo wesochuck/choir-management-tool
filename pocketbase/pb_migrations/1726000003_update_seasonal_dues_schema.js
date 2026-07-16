@@ -10,6 +10,20 @@ migrate(
       app.delete(record);
     }
 
+    // Ensure profile is a properly registered RelationField pointing to profiles (pbc_3414089001)
+    collection.fields.removeByName('profile');
+    collection.fields.add(
+      new RelationField({
+        name: 'profile',
+        required: true,
+        presentable: false,
+        collectionId: 'pbc_3414089001',
+        cascadeDelete: true,
+        minSelect: 0,
+        maxSelect: 1,
+      })
+    );
+
     // Remove the old season text field
     collection.fields.removeByName('season');
 
