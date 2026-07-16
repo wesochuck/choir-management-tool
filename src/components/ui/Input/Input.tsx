@@ -154,6 +154,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             name,
             className: 'w-full',
             onSlInput: handleInput,
+            onSlChange: handleInput,
             onSlBlur: onBlur
               ? (ev: unknown) => onBlur(ev as React.FocusEvent<HTMLInputElement>)
               : undefined,

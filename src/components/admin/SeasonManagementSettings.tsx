@@ -144,6 +144,7 @@ export function SeasonManagementSettings() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         initialData={editingSeason}
+        seasons={seasons}
       />
     </AppCard>
   );
@@ -153,15 +154,17 @@ function SeasonFormModal({
   isOpen,
   onClose,
   initialData,
+  seasons,
 }: {
   isOpen: boolean;
   onClose: () => void;
   initialData: Season | null;
+  seasons: Season[] | undefined;
 }) {
   const queryClient = useQueryClient();
   const dialog = useDialog();
   const [name, setName] = useState('');
-  const [startDate, setStartDate] = useState('');
+  const [startDate, setStartDate] = useState(() => new Date().toLocaleDateString('en-CA'));
   const [endDate, setEndDate] = useState('');
   const [duesAmount, setDuesAmount] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -176,13 +179,46 @@ function SeasonFormModal({
 
   const handleClose = () => {
     setName('');
-    setStartDate('');
+    setStartDate(new Date().toLocaleDateString('en-CA'));
     setEndDate('');
     setDuesAmount('');
     onClose();
   };
 
   const handleSave = async () => {
+    if (startDate && endDate) {
+      if (new Date(endDate) < new Date(startDate)) {
+        dialog.showMessage({
+          title: 'Validation Error',
+          message: 'End date cannot be before start date.',
+          variant: 'danger',
+        });
+        return;
+      }
+
+      const newStart = new Date(startDate);
+      const newEnd = new Date(endDate);
+
+      const overlappingSeason = seasons?.find((s) => {
+        if (initialData && s.id === initialData.id) return false;
+        if (!s.startDate || !s.endDate) return false;
+
+        const sStart = new Date(s.startDate.substring(0, 10));
+        const sEnd = new Date(s.endDate.substring(0, 10));
+
+        return newStart <= sEnd && newEnd >= sStart;
+      });
+
+      if (overlappingSeason) {
+        dialog.showMessage({
+          title: 'Overlap Error',
+          message: `The selected dates overlap with the existing season: "${overlappingSeason.name}" (${new Date(overlappingSeason.startDate).toLocaleDateString()} to ${new Date(overlappingSeason.endDate).toLocaleDateString()}).`,
+          variant: 'danger',
+        });
+        return;
+      }
+    }
+
     try {
       setIsSaving(true);
       const data = {

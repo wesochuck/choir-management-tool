@@ -333,6 +333,7 @@ Goja rules:
 - Avoid sorting by `created` or `updated` in hooks unless schema support is verified.
 - Parse numeric fields defensively.
 - In raw SQL passed to `app.db().newQuery(...)`, use dbx named parameters such as `{:maxAttempts}`.
+- In Goja, a Go `nil` pointer returned from a struct method (e.g., `collection.fields.getByName(...)`) is wrapped as a truthy JS object. Never perform simple boolean checks on returned pointers. Always verify a property on the returned object (e.g. `!existing || !existing.name`).
 
 ### Email Generation and Formatting
 
