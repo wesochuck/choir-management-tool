@@ -68,7 +68,7 @@ export const TemplateGrid: React.FC<TemplateGridProps> = ({
           onClick={() => {
             if (isSelected) onSelect(template);
           }}
-          className="absolute top-4 left-4 z-10 size-4 cursor-pointer"
+          className="absolute top-[18px] left-4 z-10 size-4 cursor-pointer"
         />
         <span
           className={`flex min-h-24 w-full flex-col justify-start rounded-lg border p-4 pl-10 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
