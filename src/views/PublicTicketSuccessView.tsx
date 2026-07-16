@@ -131,10 +131,12 @@ export default function PublicTicketSuccessView() {
                 {purchase.quantity > 1 ? (purchase.expand?.bundle ? 'es' : 's') : ''}
               </strong>
             </div>
-            <div className="flex flex-row justify-between text-sm">
-              <span className="text-text-muted">Amount Paid:</span>
-              <strong>${(purchase.amountPaidCents / 100).toFixed(2)}</strong>
-            </div>
+            {!purchase.expand?.event?.isFreeRSVP && (
+              <div className="flex flex-row justify-between text-sm">
+                <span className="text-text-muted">Amount Paid:</span>
+                <strong>${(purchase.amountPaidCents / 100).toFixed(2)}</strong>
+              </div>
+            )}
             {purchase.expand?.bundle ? (
               <div className="border-border mt-1 flex flex-col gap-1 border-t pt-1">
                 <span className="text-text-muted text-xs">Season Ticket Pass</span>

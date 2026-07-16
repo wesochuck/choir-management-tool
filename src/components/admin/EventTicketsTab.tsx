@@ -154,57 +154,86 @@ export const EventTicketsTab: React.FC<EventTicketsTabProps> = ({
 
       {formData.isTicketingEnabled && (
         <div className="flex flex-col gap-6 pt-2">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-label">Advance Price ($)</label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="e.g. 15.00"
-                value={advancePriceInput}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setAdvancePriceInput(val);
-                  const parsed = parseFloat(val);
-                  if (val === '') {
-                    setFormData((prev) => ({ ...prev, advancePriceCents: undefined }));
-                  } else if (!isNaN(parsed)) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      advancePriceCents: Math.round(parsed * 100),
-                    }));
-                  }
-                }}
-              />
+          <label className="flex cursor-pointer flex-row items-center gap-2">
+            <input
+              type="checkbox"
+              checked={formData.isFreeRSVP || false}
+              onChange={(e) => setFormData({ ...formData, isFreeRSVP: e.target.checked })}
+              className="border-border text-primary focus:ring-primary size-4 rounded-sm focus:ring-offset-0"
+            />
+            <span className="text-text text-sm font-bold">Is Free RSVP Event (Bypass Stripe)</span>
+          </label>
+
+          {!formData.isFreeRSVP ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-label">Advance Price ($)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 15.00"
+                  value={advancePriceInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setAdvancePriceInput(val);
+                    const parsed = parseFloat(val);
+                    if (val === '') {
+                      setFormData((prev) => ({ ...prev, advancePriceCents: undefined }));
+                    } else if (!isNaN(parsed)) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        advancePriceCents: Math.round(parsed * 100),
+                      }));
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-label">Day-Of Price ($)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g. 20.00"
+                  value={dayOfPriceInput}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDayOfPriceInput(val);
+                    const parsed = parseFloat(val);
+                    if (val === '') {
+                      setFormData((prev) => ({ ...prev, dayOfPriceCents: undefined }));
+                    } else if (!isNaN(parsed)) {
+                      setFormData((prev) => ({
+                        ...prev,
+                        dayOfPriceCents: Math.round(parsed * 100),
+                      }));
+                    }
+                  }}
+                />
+                {dayOfLiveText && (
+                  <div className="text-primary mt-1 text-[0.7rem] font-bold tracking-tight">
+                    {dayOfLiveText}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-label">Day-Of Price ($)</label>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="e.g. 20.00"
-                value={dayOfPriceInput}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setDayOfPriceInput(val);
-                  const parsed = parseFloat(val);
-                  if (val === '') {
-                    setFormData((prev) => ({ ...prev, dayOfPriceCents: undefined }));
-                  } else if (!isNaN(parsed)) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      dayOfPriceCents: Math.round(parsed * 100),
-                    }));
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-label">Max Quantity Per RSVP</label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 2"
+                  value={formData.maxPerRSVP === undefined ? '' : formData.maxPerRSVP}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      maxPerRSVP: e.target.value === '' ? undefined : Number(e.target.value),
+                    })
                   }
-                }}
-              />
-              {dayOfLiveText && (
-                <div className="text-primary mt-1 text-[0.7rem] font-bold tracking-tight">
-                  {dayOfLiveText}
-                </div>
-              )}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1.5">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { pb } from '../lib/pocketbase';
 import { ticketService } from '../services/ticketService';
@@ -73,6 +73,10 @@ export default function PublicTicketPurchaseView() {
         </AppCard>
       </div>
     );
+  }
+
+  if (event.isFreeRSVP) {
+    return <Navigate to={`/rsvp/${event.id}`} replace />;
   }
 
   const nowFormatted = formatInTimezone(new Date(), timezone, {});

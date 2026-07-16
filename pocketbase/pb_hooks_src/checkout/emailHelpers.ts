@@ -95,6 +95,81 @@ export function enqueueTicketConfirmationEmail(options: {
   $app.save(mailRecord);
 }
 
+export function enqueueRsvpConfirmationEmail(options: {
+  purchase: PocketBaseRecord;
+  event: PocketBaseRecord;
+  recipientEmail?: string;
+  recipientName?: string;
+  stripeSessionId?: string;
+  resent?: boolean;
+}): void {
+  const timezone = getTimezoneSetting();
+  const choirName = getChoirNameSetting();
+  const baseUrl = getBaseUrl();
+
+  const ticketToken = generateSignedTicketToken(options.purchase.id);
+  const stripeSessionId =
+    options.stripeSessionId || String(options.purchase.get('stripeSessionId') || '');
+  const scanUrl = `${baseUrl}/admin/tickets/scan?token=${encodeURIComponent(ticketToken)}`;
+  const successUrl = `${baseUrl}/tickets/order/success?session_id=${encodeURIComponent(stripeSessionId)}`;
+  const qrSvgSrc = '';
+  const finalRecipientEmail =
+    options.recipientEmail || String(options.purchase.get('buyerEmail') || '');
+  const finalRecipientName =
+    options.recipientName || String(options.purchase.get('buyerName') || 'Buyer');
+
+  const eventTitle = String(options.event.get('title') || '');
+  const eventDateStr = formatInTimezone(
+    coercePocketBaseDate(options.event.get('date')) ?? new Date(''),
+    timezone,
+    {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }
+  );
+
+  const template = $app.findFirstRecordByFilter(
+    'messageTemplates',
+    "title = 'RSVP Confirmation' && isSystemTemplate = true"
+  );
+  let content = String(template.get('content') || '');
+  const rawSubject = String(template.get('subject') || '');
+  const subject = rawSubject.replace(/{eventTitle}/g, eventTitle);
+
+  content = content
+    .replace(/{buyerName}/g, finalRecipientName)
+    .replace(/{eventTitle}/g, eventTitle)
+    .replace(/{eventDate}/g, eventDateStr)
+    .replace(/{doorsOpenTime}/g, String(options.event.get('doorsOpenTime') || 'N/A'))
+    .replace(/{quantity}/g, String(options.purchase.get('quantity') || 0))
+    .replace(/{choirName}/g, choirName)
+    .replace(/{successUrl}/g, successUrl);
+
+  const emailQueueCollection = $app.findCollectionByNameOrId('emailQueue');
+  const mailRecord = new Record(emailQueueCollection, {
+    recipientId: 'buyer_' + stripeSessionId,
+    recipientEmail: finalRecipientEmail,
+    recipientName: finalRecipientName,
+    subject: subject,
+    rawContent: content,
+    status: 'Pending',
+    attempts: 0,
+    filters: JSON.stringify({
+      eventId: options.event.id,
+      ticketToken,
+      scanUrl,
+      qrSvgSrc,
+      successUrl,
+      type: 'Automated Confirmation',
+      resent: !!options.resent,
+    }),
+  });
+  $app.save(mailRecord);
+}
+
 export function enqueueBundleTicketConfirmationEmail(options: {
   purchase: PocketBaseRecord;
   bundle: PocketBaseRecord;

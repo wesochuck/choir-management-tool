@@ -69,6 +69,7 @@ const PublicUnsubscribeView = lazyWithReload(() => import('./views/PublicUnsubsc
 const PublicPlayerView = lazyWithReload(() => import('./views/PublicPlayerView'));
 const PublicTicketListView = lazyWithReload(() => import('./views/PublicTicketListView'));
 const PublicTicketPurchaseView = lazyWithReload(() => import('./views/PublicTicketPurchaseView'));
+const EventRSVPView = lazyWithReload(() => import('./views/EventRSVPView'));
 const PublicTicketSuccessView = lazyWithReload(() => import('./views/PublicTicketSuccessView'));
 const PublicBundlePurchaseView = lazyWithReload(() => import('./views/PublicBundlePurchaseView'));
 const PublicDonationView = lazyWithReload(() => import('./views/PublicDonationView'));
@@ -267,6 +268,14 @@ export default function App() {
                   <ModuleRoute module="ticketSales">
                     <PublicBundlePurchaseView />
                   </ModuleRoute>
+                }
+              />
+              <Route
+                path="/rsvp/:eventId"
+                element={
+                  <Suspense fallback={<AppLoader />}>
+                    <EventRSVPView />
+                  </Suspense>
                 }
               />
               <Route

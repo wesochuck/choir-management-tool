@@ -128,7 +128,7 @@ export default function PublicTicketListView() {
                 {events.map((event) => (
                   <Link
                     key={event.id}
-                    to={`/tickets/${event.id}`}
+                    to={event.isFreeRSVP ? `/rsvp/${event.id}` : `/tickets/${event.id}`}
                     className="border-border bg-surface hover:border-primary-deep flex flex-col items-center justify-between gap-4 rounded-xl border p-4 text-inherit no-underline shadow-sm transition-all duration-200 hover:shadow-md md:flex-row"
                   >
                     <div className="flex flex-1 flex-col gap-1">
@@ -152,7 +152,7 @@ export default function PublicTicketListView() {
                       </span>
                     </div>
                     <Button as="div" variant="primary" className="text-center whitespace-nowrap">
-                      Buy Tickets
+                      {event.isFreeRSVP ? 'RSVP Now' : 'Buy Tickets'}
                     </Button>
                   </Link>
                 ))}

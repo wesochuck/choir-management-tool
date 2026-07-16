@@ -37,6 +37,8 @@ export interface Event extends RecordModel {
   doorsOpenTime?: string;
   publicDetails?: string;
   eventGraphic?: string;
+  isFreeRSVP?: boolean;
+  maxPerRSVP?: number;
   isArchived?: boolean;
   enableAutomatedReminder?: boolean;
   reminderLeadTimeHours?: number;
@@ -89,7 +91,7 @@ export const eventService = {
       filter: 'isArchived != true && isTicketingEnabled = true && date >= @now',
       sort: 'date',
       fields:
-        'id,collectionId,collectionName,title,date,type,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+        'id,collectionId,collectionName,title,date,type,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,isFreeRSVP,maxPerRSVP,expand.venue',
       expand: 'venue',
     });
 
@@ -114,7 +116,7 @@ export const eventService = {
       }),
       {
         fields:
-          'id,collectionId,collectionName,title,date,type,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,expand.venue',
+          'id,collectionId,collectionName,title,date,type,venue,publicDetails,advancePriceCents,dayOfPriceCents,ticketCapacity,doorsOpenTime,eventGraphic,isTicketingEnabled,isFreeRSVP,maxPerRSVP,expand.venue',
         expand: 'venue',
       }
     );

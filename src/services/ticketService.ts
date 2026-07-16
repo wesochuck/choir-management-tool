@@ -82,6 +82,19 @@ export const ticketService = {
     );
   },
 
+  async createRsvpSession(
+    eventId: string,
+    quantity: number,
+    email: string,
+    name: string,
+    marketingOptIn: boolean
+  ): Promise<{ url: string; sessionId: string }> {
+    return await pb.send<{ url: string; sessionId: string }>('/api/checkout/rsvp', {
+      method: 'POST',
+      body: { eventId, quantity, email, name, marketingOptIn },
+    });
+  },
+
   async createBundleCheckoutSession(
     bundleId: string,
     quantity: number,

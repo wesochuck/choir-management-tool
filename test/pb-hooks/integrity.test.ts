@@ -183,7 +183,7 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    41,
+    42,
     'Generated main file should contain exactly 41 route registrations'
   );
   assert.strictEqual(
@@ -274,8 +274,8 @@ test('Generated main.pb.js keeps endpoint and middleware bundles callback-local'
       content,
       '// --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---'
     ),
-    142,
-    'Generated file should contain exactly 142 callback-local utility regions'
+    143,
+    'Generated file should contain exactly 143 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
