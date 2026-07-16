@@ -310,6 +310,9 @@ Migration rules:
 - Custom base collections need `created` and `updated` `AutodateField` fields.
 - Do not use reserved names such as `isSystem`.
 - Configure client-needed API rules explicitly.
+- Never pass `fields: [...]`, `listRule`, `viewRule`, `createRule`, `updateRule`, or `deleteRule` inside the options object passed to `new Collection({ ... })`. Goja ignores these constructor properties, setting rules to `null` (superuser-only) and skipping fields.
+- Always initialize new collections with basic identifiers only (`new Collection({ id, name, type })`), then explicitly assign rules (`collection.listRule = ...`) and explicitly append fields via `collection.fields.add(...)`.
+- When repairing collections affected by incomplete historical migrations, forward migrations must audit and explicitly backfill missing fields (via `collection.fields.getByName(...)` / `collection.fields.add(...)`), not just update API rules.
 
 Do not modify hosted or production data without credentials, environment configuration, and explicit user authorization.
 
@@ -477,3 +480,4 @@ When executing an implementation plan (e.g. `docs/superpowers/plans/...`), you m
 ### Robust API Rule Structure
 
 - When defining Admin-only API rules for collections, always prefix the role check with an explicit ID check to ensure safe evaluation (e.g., `@request.auth.id != "" && @request.auth.role = "admin"`). Do not rely solely on the role check.
+- When defining API rules that traverse relation fields (e.g., `profile.user = @request.auth.id`), do not wrap the relation traversal inside parentheses combined with logical operators (e.g., `(profile.user = @request.auth.id || ...)`). The PocketBase rule parser can fail to resolve the relation field and crash the server on startup with an "invalid left operand" error. Instead, keep relation checks at the top level without parentheses (e.g., `@request.auth.role = 'admin' || profile.user = @request.auth.id`).
