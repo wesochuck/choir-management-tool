@@ -6,6 +6,7 @@ const BACKGROUND_TEMPLATES = [
   'Bundle Ticket Confirmation',
   'Donation Receipt',
   'RSVP Confirmation',
+  'Free Ticket RSVP Confirmation',
   'Audition Confirmation',
   'Audition Scheduled',
   'Audition Declined',

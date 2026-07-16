@@ -133,7 +133,7 @@ export function enqueueRsvpConfirmationEmail(options: {
 
   const template = $app.findFirstRecordByFilter(
     'messageTemplates',
-    "title = 'RSVP Confirmation' && isSystemTemplate = true"
+    "title = 'Free Ticket RSVP Confirmation' && isSystemTemplate = true"
   );
   let content = String(template.get('content') || '');
   const rawSubject = String(template.get('subject') || '');
