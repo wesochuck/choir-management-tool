@@ -48,8 +48,7 @@ migrate(
     );
 
     // Update API Rules for robust evaluation
-    const readRule =
-      "@request.auth.id != '' && (profile.user = @request.auth.id || @request.auth.role = 'admin')";
+    const readRule = "@request.auth.role = 'admin' || profile.user = @request.auth.id";
     const writeRule = "@request.auth.id != '' && @request.auth.role = 'admin'";
     collection.listRule = readRule;
     collection.viewRule = readRule;
