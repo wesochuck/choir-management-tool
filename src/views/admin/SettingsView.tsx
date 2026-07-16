@@ -13,6 +13,7 @@ import { pluralizeLabel } from '../../lib/labelHelpers';
 import { Button, Select, Input, CopyButton, Checkbox } from '../../components/ui';
 import { useSetup } from '../../contexts/SetupContext';
 import { getSetting } from '../../services/settings/core';
+import { getStripeFeeSettings, saveStripeFeeSettings } from '../../services/settingsService';
 
 interface HealthData {
   environment: {
@@ -412,6 +413,7 @@ export default function SettingsView() {
           </div>
         </AppCard>
 
+        <StripeFeeSettingsBlock />
         <QueueWebhookSettings setMessage={setMessage} />
         <EnvironmentVerificationSettings />
         <MaintenanceTaskStatus />
@@ -424,6 +426,118 @@ export default function SettingsView() {
         onDiscard={handleGlobalDiscard}
       />
     </div>
+  );
+}
+
+function StripeFeeSettingsBlock() {
+  const dialog = useDialog();
+  const queryClient = useQueryClient();
+  const [percentage, setPercentage] = useState<number>(2.9);
+  const [fixedCents, setFixedCents] = useState<number>(30);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: queryKeys.appSettings.stripeFees || ['stripeFees'],
+    queryFn: getStripeFeeSettings,
+    staleTime: 5 * 60_000,
+  });
+
+  useEffect(() => {
+    if (settings) {
+      setPercentage(settings.percentage);
+      setFixedCents(settings.fixedCents);
+    }
+  }, [settings]);
+
+  const isDirty =
+    settings && (settings.percentage !== percentage || settings.fixedCents !== fixedCents);
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      await saveStripeFeeSettings({ percentage, fixedCents });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.appSettings.stripeFees || ['stripeFees'],
+      });
+      dialog.showToast('Stripe fee settings saved');
+    } catch (err: unknown) {
+      dialog.showMessage({
+        title: 'Error',
+        message: err instanceof Error ? err.message : 'Failed to save Stripe fee settings',
+        variant: 'danger',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const calculateExample = () => {
+    const base = 1000; // $10.00
+    const fee = Math.round(base * (percentage / 100)) + fixedCents;
+    const total = base + fee;
+    return {
+      baseStr: (base / 100).toFixed(2),
+      feeStr: (fee / 100).toFixed(2),
+      totalStr: (total / 100).toFixed(2),
+      percStr: ((base * (percentage / 100)) / 100).toFixed(2),
+      flatStr: (fixedCents / 100).toFixed(2),
+    };
+  };
+
+  const example = calculateExample();
+
+  if (isLoading) return <div className="text-text-muted text-xs">Loading Stripe settings...</div>;
+
+  return (
+    <AppCard title="Stripe Processing Fees">
+      <div className="flex flex-col gap-4">
+        <p className="text-text-muted text-xs">
+          Configure the Stripe processing fee to pass on to payers (for Dues, Tickets, Bundles).
+        </p>
+        <div className="flex max-w-lg gap-4">
+          <div className="flex flex-1 flex-col gap-2">
+            <label className="text-text text-xs font-semibold" htmlFor="stripe-fee-percentage">
+              Percentage (%)
+            </label>
+            <Input
+              id="stripe-fee-percentage"
+              type="number"
+              step="0.01"
+              min="0"
+              value={percentage}
+              onChange={(e) => setPercentage(parseFloat(e.target.value) || 0)}
+            />
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <label className="text-text text-xs font-semibold" htmlFor="stripe-fee-fixed">
+              Fixed Fee ($)
+            </label>
+            <Input
+              id="stripe-fee-fixed"
+              type="number"
+              step="0.01"
+              min="0"
+              value={(fixedCents / 100).toFixed(2)}
+              onChange={(e) => setFixedCents(Math.round((parseFloat(e.target.value) || 0) * 100))}
+            />
+          </div>
+        </div>
+
+        <div className="mt-2 rounded-md border border-slate-100 bg-slate-50 p-4 text-sm">
+          <strong>Example calculation on a $10.00 charge:</strong>
+          <br />${example.baseStr} + ${example.feeStr} fee (${example.percStr} ({percentage}%) + $
+          {example.flatStr} flat) = <strong>${example.totalStr} total</strong>
+        </div>
+
+        {isDirty && (
+          <div className="mt-2 flex items-center justify-end border-t border-slate-100 pt-4">
+            <Button type="button" onClick={handleSave} disabled={isSaving} size="small">
+              {isSaving ? 'Saving...' : 'Save Fee Settings'}
+            </Button>
+          </div>
+        )}
+      </div>
+    </AppCard>
   );
 }
 

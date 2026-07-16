@@ -4,7 +4,6 @@ export interface RosterSettings {
   defaultStatus: string;
   defaultSort: 'lastName' | 'voicePart';
   defaultRsvpSort?: 'lastName' | 'voicePart';
-  currentSeason?: string;
   statusAutomationEnabled?: boolean;
   statusAutomationMissThreshold?: number;
   statusAutomationRecoveryEnabled?: boolean;
@@ -15,7 +14,6 @@ const DEFAULT_ROSTER_SETTINGS: RosterSettings = {
   defaultStatus: '',
   defaultSort: 'lastName',
   defaultRsvpSort: 'lastName',
-  currentSeason: '',
   statusAutomationEnabled: true,
   statusAutomationMissThreshold: 3,
   statusAutomationRecoveryEnabled: true,

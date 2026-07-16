@@ -12,6 +12,7 @@ export const queryKeys = {
     directory: ['appSettings', 'directorySettings'] as const,
     performerLabel: ['appSettings', 'performer_label'] as const,
     emailProvider: ['appSettings', 'email_provider'] as const,
+    stripeFees: ['appSettings', 'stripe_fees'] as const,
   },
   venues: {
     all: ['venues'] as const,

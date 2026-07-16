@@ -48,7 +48,13 @@ export function useCommunicationLibrary() {
 
   const templatesQuery = useQuery({
     queryKey: queryKeys.communications.templates(),
-    queryFn: () => communicationService.getTemplates(),
+    queryFn: async () => {
+      const templates = await communicationService.getTemplates();
+      // Deduplicate by title to prevent showing duplicate seed data
+      return templates.filter(
+        (tpl, index, self) => index === self.findIndex((t) => t.title === tpl.title)
+      );
+    },
   });
 
   const commSettingsQuery = useQuery({

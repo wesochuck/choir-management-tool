@@ -90,3 +90,22 @@ export function getBaseUrl(): string {
   const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || '';
   return process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
 }
+
+export function getStripeFeeSettings(): { percentage: number; fixedCents: number } {
+  try {
+    const record = $app.findFirstRecordByFilter('appSettings', "key = 'stripe_fees'");
+    const val = parseJsonField<{ percentage?: number; fixedCents?: number }>(record.get('value'));
+    return {
+      percentage: val?.percentage !== undefined ? val.percentage : 2.9,
+      fixedCents: val?.fixedCents !== undefined ? val.fixedCents : 30,
+    };
+  } catch {
+    return { percentage: 2.9, fixedCents: 30 };
+  }
+}
+
+export function calculateStripeFee(baseAmountCents: number): number {
+  if (baseAmountCents <= 0) return 0;
+  const settings = getStripeFeeSettings();
+  return Math.round(baseAmountCents * (settings.percentage / 100)) + settings.fixedCents;
+}

@@ -1,7 +1,13 @@
 import { createCheckoutSession } from '../stripeService';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from '../email/emailTypes';
+import { parseJsonField } from '../email/hookJson';
+import {
+  getChoirNameSetting,
+  getBaseUrl,
+  getOrCreatePatronProfile,
+  calculateStripeFee,
+} from './checkoutHelpers';
 import { coercePocketBaseDate } from '../pocketbaseDate';
-import { getOrCreatePatronProfile } from './checkoutHelpers';
 
 declare const $app: PocketBaseApp;
 
@@ -122,7 +128,8 @@ export function handleCreateBundleSession(e: PocketBaseRequestEvent): unknown {
 
   const priceCents = Number(bundle.get('priceCents') || 0);
   const totalTicketsCents = priceCents * qty;
-  const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
+  // Calculate net Stripe fees using central setting
+  const feeCents = calculateStripeFee(totalTicketsCents);
 
   const meta = $app.settings()?.meta;
   const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || '';

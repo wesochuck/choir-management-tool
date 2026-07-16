@@ -686,24 +686,31 @@ export async function handleStripeWebhook(e: TicketingRequestEvent): Promise<unk
       }
     } else if (paymentType === 'dues') {
       const profileId = metadata.profileId;
-      const season = metadata.season;
+      const seasonId = metadata.seasonId;
+      const stripeSessionId = session.id || '';
 
-      if (profileId && season) {
+      if (profileId && seasonId && stripeSessionId) {
         try {
           let duesRecord: PocketBaseRecord;
           try {
             duesRecord = $app.findFirstRecordByFilter(
               'seasonalDues',
-              'profile = {:profileId} && season = {:season}',
-              { profileId, season }
+              'profile = {:profileId} && season = {:seasonId}',
+              { profileId, seasonId }
             );
             duesRecord.set('paid', true);
+            duesRecord.set('stripeSessionId', stripeSessionId);
+            duesRecord.set('amountPaidCents', Number(metadata.amountPaidCents || 0));
+            duesRecord.set('feeCents', Number(metadata.feeCents || 0));
           } catch {
             const duesColl = $app.findCollectionByNameOrId('pbc_seasonalDues_001');
             duesRecord = new Record(duesColl, {
               profile: profileId,
-              season: season,
+              season: seasonId,
               paid: true,
+              stripeSessionId: stripeSessionId,
+              amountPaidCents: Number(metadata.amountPaidCents || 0),
+              feeCents: Number(metadata.feeCents || 0),
             });
           }
           $app.save(duesRecord);

@@ -109,8 +109,6 @@ export default function RosterView() {
   const {
     configDefaultStatus,
     setConfigDefaultStatus,
-    configSeason,
-    setConfigSeason,
     configSections,
     setConfigSections,
     configVoiceParts,
@@ -212,7 +210,12 @@ export default function RosterView() {
               >
                 <span className="hidden md:inline">Import CSV</span>
               </Button>
-              <Button onClick={handleAdd} variant="primary" title={`Add ${performerLabel}`} icon={'➕'}>
+              <Button
+                onClick={handleAdd}
+                variant="primary"
+                title={`Add ${performerLabel}`}
+                icon={'➕'}
+              >
                 <span className="hidden md:inline">Add {performerLabel}</span>
               </Button>
             </>
@@ -361,8 +364,6 @@ export default function RosterView() {
           configMessage={configMessage}
           configDefaultStatus={configDefaultStatus}
           setConfigDefaultStatus={setConfigDefaultStatus}
-          configSeason={configSeason}
-          setConfigSeason={setConfigSeason}
           configAutomationEnabled={configAutomationEnabled}
           setConfigAutomationEnabled={setConfigAutomationEnabled}
           configAutomationMissThreshold={configAutomationMissThreshold}

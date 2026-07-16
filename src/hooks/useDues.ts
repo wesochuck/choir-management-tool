@@ -2,23 +2,24 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
 import { duesService, type SeasonalDue } from '../services/duesService';
-import { settingsService } from '../services/settingsService';
+import { seasonService } from '../services/seasonService';
 
 export function useDues() {
   const queryClient = useQueryClient();
 
   const seasonQuery = useQuery({
-    queryKey: queryKeys.settings.roster,
-    queryFn: () => settingsService.getRosterSettings(),
+    queryKey: ['activeSeason'],
+    queryFn: () => seasonService.getActiveSeason(),
     staleTime: 5 * 60_000,
   });
 
-  const currentSeason = seasonQuery.data?.currentSeason ?? '';
+  const activeSeason = seasonQuery.data;
+  const currentSeasonId = activeSeason?.id ?? '';
 
   const duesQuery = useQuery({
-    queryKey: queryKeys.dues.bySeason(currentSeason),
-    queryFn: () => duesService.getDuesForSeason(currentSeason),
-    enabled: !!currentSeason,
+    queryKey: queryKeys.dues.bySeason(currentSeasonId),
+    queryFn: () => duesService.getDuesForSeason(currentSeasonId),
+    enabled: !!currentSeasonId,
   });
 
   const duesMap = useMemo(() => {
@@ -32,13 +33,13 @@ export function useDues() {
 
   const toggleDuesMutation = useMutation({
     mutationFn: ({ profileId, paid }: { profileId: string; paid: boolean }) =>
-      duesService.updateDues(profileId, currentSeason, paid),
+      duesService.updateDues(profileId, currentSeasonId, paid),
     onMutate: async ({ profileId, paid }) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.dues.bySeason(currentSeason) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.dues.bySeason(currentSeasonId) });
       const previous = queryClient.getQueryData<SeasonalDue[]>(
-        queryKeys.dues.bySeason(currentSeason)
+        queryKeys.dues.bySeason(currentSeasonId)
       );
-      queryClient.setQueryData<SeasonalDue[]>(queryKeys.dues.bySeason(currentSeason), (old) => {
+      queryClient.setQueryData<SeasonalDue[]>(queryKeys.dues.bySeason(currentSeasonId), (old) => {
         if (!old) return old;
         return old.map((d) => (d.profile === profileId ? { ...d, paid } : d));
       });
@@ -46,24 +47,25 @@ export function useDues() {
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(queryKeys.dues.bySeason(currentSeason), context.previous);
+        queryClient.setQueryData(queryKeys.dues.bySeason(currentSeasonId), context.previous);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.dues.bySeason(currentSeason) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dues.bySeason(currentSeasonId) });
     },
   });
 
   const toggleDues = async (profileId: string, paid: boolean) => {
-    if (!currentSeason) return;
+    if (!currentSeasonId) return;
     await toggleDuesMutation.mutateAsync({ profileId, paid });
   };
 
   return {
-    currentSeason,
+    activeSeason,
+    currentSeason: currentSeasonId, // Backwards compat for UI labels
     duesMap,
     toggleDues,
-    isLoading: seasonQuery.isLoading || (!!currentSeason && duesQuery.isLoading),
+    isLoading: seasonQuery.isLoading || (!!currentSeasonId && duesQuery.isLoading),
     refresh: async () => {
       await seasonQuery.refetch();
       await duesQuery.refetch();

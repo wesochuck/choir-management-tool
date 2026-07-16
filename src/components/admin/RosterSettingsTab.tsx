@@ -11,8 +11,6 @@ interface RosterSettingsTabProps {
   configMessage: string;
   configDefaultStatus: string;
   setConfigDefaultStatus: (value: string) => void;
-  configSeason: string;
-  setConfigSeason: (value: string) => void;
   configAutomationEnabled: boolean;
   setConfigAutomationEnabled: (value: boolean) => void;
   configAutomationMissThreshold: number;
@@ -42,8 +40,6 @@ export function RosterSettingsTab({
   configMessage,
   configDefaultStatus,
   setConfigDefaultStatus,
-  configSeason,
-  setConfigSeason,
   configAutomationEnabled,
   setConfigAutomationEnabled,
   configAutomationMissThreshold,
@@ -94,7 +90,7 @@ export function RosterSettingsTab({
         setConfigMaxRehearsalMisses={setConfigMaxRehearsalMisses}
       />
 
-      <SeasonManagementSettings configSeason={configSeason} setConfigSeason={setConfigSeason} />
+      <SeasonManagementSettings />
 
       <SectionBucketEditor
         configSections={configSections}

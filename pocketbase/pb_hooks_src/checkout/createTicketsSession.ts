@@ -3,7 +3,12 @@ import { formatInTimezone } from '../email/hookText';
 import { createCheckoutSession } from '../stripeService';
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from '../email/emailTypes';
 import { coercePocketBaseDate } from '../pocketbaseDate';
-import { getOrCreatePatronProfile } from './checkoutHelpers';
+import {
+  getChoirNameSetting,
+  getBaseUrl,
+  getOrCreatePatronProfile,
+  calculateStripeFee,
+} from './checkoutHelpers';
 
 declare const $app: PocketBaseApp;
 
@@ -118,13 +123,11 @@ export function handleCreateTicketsSession(e: PocketBaseRequestEvent): unknown {
     return e.json(400, { error: 'Invalid ticket price configuration' });
   }
 
-  // Calculate net Stripe fees: 2.9% on total tickets price + 30 cents flat fee once per transaction
+  // Calculate net Stripe fees using central setting
   const totalTicketsCents = unitPriceCents * qty;
-  const feeCents = totalTicketsCents > 0 ? Math.round(totalTicketsCents * 0.029) + 30 : 0;
+  const feeCents = calculateStripeFee(totalTicketsCents);
 
-  const meta = $app.settings()?.meta;
-  const settingsAppUrl = meta?.appUrl || meta?.appURL || meta?.AppURL || '';
-  const appUrl = process.env.APP_URL || settingsAppUrl || 'http://localhost:5173';
+  const appUrl = getBaseUrl();
   const successUrl = `${appUrl}/tickets/order/success?session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${appUrl}/tickets/${eventId}`;
 

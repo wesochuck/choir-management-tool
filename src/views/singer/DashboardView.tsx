@@ -1,3 +1,4 @@
+import { pb } from '../../lib/pocketbase';
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
@@ -15,6 +16,8 @@ import { useDialog } from '../../contexts/DialogContext';
 import { resourceService } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
 import { Button, Modal } from '../../components/ui';
+import { duesService, type SeasonalDue } from '../../services/duesService';
+import { seasonService } from '../../services/seasonService';
 import { useChoirSettings } from '../../hooks/useDocumentTitle';
 import { useSetup } from '../../contexts/SetupContext';
 
@@ -99,6 +102,50 @@ export default function DashboardView() {
   const showDirectoryButton =
     enabledModules.has('directory') &&
     (directorySettingsQuery.data?.enabled !== false || user?.role === 'admin');
+
+  const activeSeasonQuery = useQuery({
+    queryKey: ['activeSeason'],
+    queryFn: () => seasonService.getActiveSeason(),
+    staleTime: 5 * 60_000,
+  });
+  const activeSeason = activeSeasonQuery.data;
+
+  const myDuesQuery = useQuery({
+    queryKey: queryKeys.dues.bySeason(activeSeason?.id ?? ''),
+    queryFn: async () => {
+      if (!activeSeason || !myProfile) return null;
+      try {
+        const record = await pb
+          .collection('seasonalDues')
+          .getFirstListItem<SeasonalDue>(
+            `profile = "${myProfile.id}" && season = "${activeSeason.id}"`
+          );
+        return record;
+      } catch {
+        return null; // Not found = unpaid
+      }
+    },
+    enabled: !!activeSeason && !!myProfile,
+  });
+
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+
+  const handlePayDues = async () => {
+    if (!myProfile || !activeSeason) return;
+    try {
+      setIsCheckoutLoading(true);
+      const cancelPath = window.location.pathname;
+      const url = await duesService.createCheckoutSession(
+        myProfile.id,
+        activeSeason.id,
+        cancelPath
+      );
+      window.location.href = url;
+    } catch (err: unknown) {
+      dialog.showToast(err instanceof Error ? err.message : 'Failed to start checkout');
+      setIsCheckoutLoading(false);
+    }
+  };
 
   useEffect(() => {
     setCurrentTime(Date.now());
@@ -364,6 +411,35 @@ export default function DashboardView() {
 
           {/* Right sidebar: Quick widgets */}
           <div className="flex flex-col gap-6">
+            {/* Pay Dues Widget */}
+            {activeSeason && (!myDuesQuery.data || !myDuesQuery.data.paid) && (
+              <AppCard
+                className="bg-primary/5 border-primary/20 rounded-lg border p-6 shadow-sm"
+                title="💳 Season Dues"
+              >
+                <div className="flex flex-col gap-3">
+                  <p className="text-text-muted text-sm leading-snug">
+                    Dues for the <strong>{activeSeason.name}</strong> season are currently being
+                    collected. Your payment status is:{' '}
+                    <strong className="text-danger-text">Unpaid</strong>.
+                  </p>
+                  <Button
+                    onClick={handlePayDues}
+                    variant="primary"
+                    className="w-full justify-center"
+                    disabled={isCheckoutLoading}
+                  >
+                    {isCheckoutLoading
+                      ? 'Starting Checkout...'
+                      : `Pay ${(activeSeason.duesAmountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })} via Card`}
+                  </Button>
+                  <p className="text-text-muted text-center text-xs">
+                    You can also pay in person with cash/check.
+                  </p>
+                </div>
+              </AppCard>
+            )}
+
             {/* Quick Polls Widget */}
             {activePolls.length > 0 && (
               <AppCard

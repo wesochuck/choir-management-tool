@@ -27,6 +27,10 @@ import {
 export type { CommunicationConfig } from './settings/communicationConfig';
 export { DEFAULT_COMMUNICATION_CONFIG, getCommunicationConfig, saveCommunicationConfig };
 
+import { getStripeFeeSettings, saveStripeFeeSettings } from './settings/stripeSettings';
+export type { StripeFeeSettings } from './settings/stripeSettings';
+export { getStripeFeeSettings, saveStripeFeeSettings };
+
 import { getRosterSettings, saveRosterSettings } from './settings/rosterSettings';
 export type { RosterSettings } from './settings/rosterSettings';
 export { getRosterSettings, saveRosterSettings };

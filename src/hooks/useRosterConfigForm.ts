@@ -12,7 +12,6 @@ import { calculateSettingsDirty } from '../lib/settings/dirtyCheck';
 
 export interface RosterConfigState {
   defaultStatus: string;
-  currentSeason: string;
   statusAutomationEnabled: boolean;
   statusAutomationMissThreshold: number;
   statusAutomationRecoveryEnabled: boolean;
@@ -90,7 +89,6 @@ export function useRosterConfigForm({
   void _refreshRoster;
   void _refreshVoiceParts;
   const [configDefaultStatus, setConfigDefaultStatus] = useState('');
-  const [configSeason, setConfigSeason] = useState('');
   const [configSections, setConfigSections] = useState<SectionDef[]>([]);
   const [configVoiceParts, setConfigVoiceParts] = useState<VoicePartDef[]>([]);
   const [configAutomationEnabled, setConfigAutomationEnabled] = useState(true);
@@ -121,7 +119,6 @@ export function useRosterConfigForm({
       await settingsService.saveRosterSettings({
         ...current,
         defaultStatus: configDefaultStatus,
-        currentSeason: configSeason,
         statusAutomationEnabled: configAutomationEnabled,
         statusAutomationMissThreshold: configAutomationMissThreshold,
         statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
@@ -140,7 +137,6 @@ export function useRosterConfigForm({
     if (initialConfigState) return;
 
     const loadedDefaultStatus = rosterSettings.defaultStatus || '';
-    const loadedSeason = rosterSettings.currentSeason || '';
     const loadedSections = voiceSettings.sections || [];
     const loadedVoiceParts = voiceSettings.voiceParts || [];
     const loadedAutomationEnabled = rosterSettings.statusAutomationEnabled ?? true;
@@ -149,7 +145,6 @@ export function useRosterConfigForm({
     const loadedMaxRehearsalMisses = rosterSettings.maxRehearsalMisses ?? 3;
 
     setConfigDefaultStatus(loadedDefaultStatus);
-    setConfigSeason(loadedSeason);
     setConfigSections(loadedSections);
     setConfigVoiceParts(loadedVoiceParts);
     setConfigAutomationEnabled(loadedAutomationEnabled);
@@ -159,7 +154,6 @@ export function useRosterConfigForm({
 
     setInitialConfigState({
       defaultStatus: loadedDefaultStatus,
-      currentSeason: loadedSeason,
       statusAutomationEnabled: loadedAutomationEnabled,
       statusAutomationMissThreshold: loadedAutomationMissThreshold,
       statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
@@ -181,7 +175,6 @@ export function useRosterConfigForm({
     if (!rosterSettings || !voiceSettings) return;
 
     const loadedDefaultStatus = rosterSettings.defaultStatus || '';
-    const loadedSeason = rosterSettings.currentSeason || '';
     const loadedSections = voiceSettings.sections || [];
     const loadedVoiceParts = voiceSettings.voiceParts || [];
     const loadedAutomationEnabled = rosterSettings.statusAutomationEnabled ?? true;
@@ -190,7 +183,6 @@ export function useRosterConfigForm({
     const loadedMaxRehearsalMisses = rosterSettings.maxRehearsalMisses ?? 3;
 
     setConfigDefaultStatus(loadedDefaultStatus);
-    setConfigSeason(loadedSeason);
     setConfigSections(loadedSections);
     setConfigVoiceParts(loadedVoiceParts);
     setConfigAutomationEnabled(loadedAutomationEnabled);
@@ -200,7 +192,6 @@ export function useRosterConfigForm({
 
     setInitialConfigState({
       defaultStatus: loadedDefaultStatus,
-      currentSeason: loadedSeason,
       statusAutomationEnabled: loadedAutomationEnabled,
       statusAutomationMissThreshold: loadedAutomationMissThreshold,
       statusAutomationRecoveryEnabled: loadedAutomationRecoveryEnabled,
@@ -218,7 +209,6 @@ export function useRosterConfigForm({
     if (!initialConfigState) return false;
     return calculateSettingsDirty(initialConfigState, {
       defaultStatus: configDefaultStatus,
-      currentSeason: configSeason,
       statusAutomationEnabled: configAutomationEnabled,
       statusAutomationMissThreshold: configAutomationMissThreshold,
       statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
@@ -229,7 +219,6 @@ export function useRosterConfigForm({
   }, [
     initialConfigState,
     configDefaultStatus,
-    configSeason,
     configAutomationEnabled,
     configAutomationMissThreshold,
     configAutomationRecoveryEnabled,
@@ -256,7 +245,6 @@ export function useRosterConfigForm({
       setConfigMessage('Configuration saved successfully.');
       setInitialConfigState({
         defaultStatus: configDefaultStatus,
-        currentSeason: configSeason,
         statusAutomationEnabled: configAutomationEnabled,
         statusAutomationMissThreshold: configAutomationMissThreshold,
         statusAutomationRecoveryEnabled: configAutomationRecoveryEnabled,
@@ -273,7 +261,6 @@ export function useRosterConfigForm({
   const handleConfigDiscard = () => {
     if (!initialConfigState) return;
     setConfigDefaultStatus(initialConfigState.defaultStatus);
-    setConfigSeason(initialConfigState.currentSeason);
     setConfigAutomationEnabled(initialConfigState.statusAutomationEnabled);
     setConfigAutomationMissThreshold(initialConfigState.statusAutomationMissThreshold);
     setConfigAutomationRecoveryEnabled(initialConfigState.statusAutomationRecoveryEnabled);
@@ -286,8 +273,6 @@ export function useRosterConfigForm({
   return {
     configDefaultStatus,
     setConfigDefaultStatus,
-    configSeason,
-    setConfigSeason,
     configSections,
     setConfigSections,
     configVoiceParts,

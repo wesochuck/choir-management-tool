@@ -44,7 +44,7 @@ export function getValidTemplatesForAudience(
 
     // 2. Member Placeholders require the Members audience
     const requiresMembers =
-      tpl.title === 'Dues Payment Notice' ||
+      tpl.title.toLowerCase().includes('dues') ||
       text.includes('{{RSVP_LINKS}}') ||
       text.includes('{{PLAYER_LINK}}') ||
       text.includes('{{POLL_LINK:');

@@ -174,6 +174,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'checkout/emailHelpers.ts',
       'checkout/createTicketsSession.ts',
       'checkout/createBundleSession.ts',
+      'checkout/createDuesSession.ts',
       'checkout/createRsvpSession.ts',
       'checkout/createDonationSession.ts',
       'checkout/stripeWebhook.ts',
@@ -194,6 +195,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'handleCreateDonationSession',
       'handleAdminRefundDonation',
       'handleAdminResendTicketConfirmation',
+      'handleCreateDuesSession',
     ],
     dependsOn: [
       'stripeService',
@@ -1160,6 +1162,7 @@ const routeModuleGuards = {
     '/api/singer/seating-profiles': 'seating',
     '/api/checkout/create-tickets-session': 'ticketSales',
     '/api/checkout/create-bundle-session': 'ticketSales',
+    '/api/checkout/create-dues-session': 'roster',
     '/api/checkout/rsvp': 'ticketSales',
     '/api/admin/refund-ticket': 'ticketSales',
     '/api/admin/refund-bundle': 'ticketSales',
@@ -1246,6 +1249,8 @@ ${renderRoute('POST', '/api/generate-player-token', 'return handleGeneratePlayer
 ${renderRoute('POST', '/api/checkout/create-tickets-session', 'return handleCreateTicketsSession(e);')}
 
 ${renderRoute('POST', '/api/checkout/create-bundle-session', 'return handleCreateBundleSession(e);')}
+
+${renderRoute('POST', '/api/checkout/create-dues-session', 'return handleCreateDuesSession(e);')}
 
 ${renderRoute('POST', '/api/checkout/rsvp', 'return handleCreateRsvpSession(e);')}
 

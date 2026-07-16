@@ -469,3 +469,11 @@ When executing an implementation plan (e.g. `docs/superpowers/plans/...`), you m
 
 - Verify every single file listed under "Create" or "Modify" has been handled.
 - Do not stop executing tasks just because the primary visual components appear complete; ensure all secondary files, contextual empty states, and related tests explicitly assigned in the map have been fully implemented.
+
+### Cloudflare WAF and Filters
+
+- When querying PocketBase collections with dynamic string values that may resemble SQL (like seasons with spaces), be aware that `pb.filter` uses single quotes which can trigger Cloudflare WAF 403 Forbidden errors. To safely bypass WAF rules, construct the filter manually using double quotes, ensuring proper escaping: `\`season = "${val.replace(/"/g, '\\"')}"\``.
+
+### Robust API Rule Structure
+
+- When defining Admin-only API rules for collections, always prefix the role check with an explicit ID check to ensure safe evaluation (e.g., `@request.auth.id != "" && @request.auth.role = "admin"`). Do not rely solely on the role check.
