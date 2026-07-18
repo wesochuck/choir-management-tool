@@ -35,12 +35,16 @@ export const seasonService = {
       .collection('seasons')
       .getFullList<Season>({ filter: 'isActive = true' });
 
+    const batch = pb.createBatch();
+
     for (const s of activeSeasons) {
       if (s.id !== seasonId) {
-        await pb.collection('seasons').update(s.id, { isActive: false });
+        batch.collection('seasons').update(s.id, { isActive: false });
       }
     }
-    await pb.collection('seasons').update(seasonId, { isActive: true });
+    batch.collection('seasons').update(seasonId, { isActive: true });
+
+    await batch.send();
   },
 
   async createSeason(data: Partial<Season>): Promise<Season> {
