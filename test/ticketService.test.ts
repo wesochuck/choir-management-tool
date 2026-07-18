@@ -75,12 +75,12 @@ test('ticketService.pollForPurchaseRecord finds record on first try', async (t) 
   const originalFilter = pb.filter;
   const mockRecord = { id: 'purchase_1' } as TicketPurchase;
 
-  const mockGetFullList = t.mock.fn(async () => [mockRecord]);
+  const mockGetFirstListItem = t.mock.fn(async () => mockRecord);
   const mockFilter = t.mock.fn(() => 'stripeSessionId = "session_1"');
 
   pb.collection = function (name: string) {
     if (name === 'ticketPurchases') {
-      return { getFullList: mockGetFullList } as unknown as ReturnType<typeof pb.collection>;
+      return { getFirstListItem: mockGetFirstListItem } as unknown as ReturnType<typeof pb.collection>;
     }
     return originalCollection.call(pb, name);
   };
@@ -89,15 +89,14 @@ test('ticketService.pollForPurchaseRecord finds record on first try', async (t) 
   try {
     const res = await ticketService.pollForPurchaseRecord('session_1', 3, 10);
     assert.deepEqual(res, mockRecord);
-    assert.equal(mockGetFullList.mock.callCount(), 1);
+    assert.equal(mockGetFirstListItem.mock.callCount(), 1);
     assert.equal(mockFilter.mock.callCount(), 1);
     const filterArgs = mockFilter.mock.calls[0].arguments as unknown[];
     assert.equal(filterArgs[0], 'stripeSessionId = {:sessionId}');
     assert.deepEqual(filterArgs[1], { sessionId: 'session_1' });
-    const getFullListArgs = mockGetFullList.mock.calls[0].arguments as unknown[];
-    assert.deepEqual(getFullListArgs[0], {
-      filter: 'stripeSessionId = "session_1"',
-      perPage: 1,
+    const getFirstListItemArgs = mockGetFirstListItem.mock.calls[0].arguments as unknown[];
+    assert.equal(getFirstListItemArgs[0], 'stripeSessionId = "session_1"');
+    assert.deepEqual(getFirstListItemArgs[1], {
       expand: 'event.venue,bundle',
     });
   } finally {
@@ -110,13 +109,13 @@ test('ticketService.pollForPurchaseRecord retries and eventually fails', async (
   const originalCollection = pb.collection;
   const originalFilter = pb.filter;
 
-  const mockGetFullList = t.mock.fn(async () => {
+  const mockGetFirstListItem = t.mock.fn(async () => {
     throw new Error('Not found');
   });
 
   pb.collection = function (name: string) {
     if (name === 'ticketPurchases') {
-      return { getFullList: mockGetFullList } as unknown as ReturnType<typeof pb.collection>;
+      return { getFirstListItem: mockGetFirstListItem } as unknown as ReturnType<typeof pb.collection>;
     }
     return originalCollection.call(pb, name);
   };
@@ -125,7 +124,7 @@ test('ticketService.pollForPurchaseRecord retries and eventually fails', async (
   try {
     const res = await ticketService.pollForPurchaseRecord('session_error', 2, 5);
     assert.equal(res, null);
-    assert.equal(mockGetFullList.mock.callCount(), 2);
+    assert.equal(mockGetFirstListItem.mock.callCount(), 2);
   } finally {
     pb.collection = originalCollection;
     pb.filter = originalFilter;
