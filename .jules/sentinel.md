@@ -1,4 +1,4 @@
-## 2025-02-26 - Prevent PocketBase Filter Injection
+## 2026-07-17 - Prevent PocketBase Filter Injection
 
 **Vulnerability:** Found a filter/NoSQL injection risk in `src/services/duesService.ts` where query strings for PocketBase were constructed using manual string concatenation and escaping (e.g., `` season = "${seasonId.replace(/"/g, '\\"')}" ``). This could allow a malicious user to craft a `seasonId` that breaks the filter boundary.
 **Learning:** Manual string escaping for database or API filters is error-prone and often insufficient against complex injection payloads. The project relies heavily on string-based filters for PocketBase, which were vulnerable before PocketBase added a parameterization helper.
