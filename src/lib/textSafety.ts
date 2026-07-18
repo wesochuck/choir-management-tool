@@ -91,3 +91,38 @@ export function sanitizeHtml(htmlStr: string): string {
   // frontend or relies on escapeHtml fallback, we stick to the existing behavior.
   return escapeHtml(htmlStr);
 }
+
+/**
+ * Strips all HTML tags securely while preserving HTML entities, returning safe raw text.
+ * Suitable for text snippets or plain-text summaries without formatting.
+ */
+export function stripHtml(htmlStr: string): string {
+  if (!htmlStr) return '';
+
+  // Use DOMPurify if available to completely remove all tags
+  if (typeof window !== 'undefined' && typeof window.DOMParser !== 'undefined') {
+    try {
+      const purify =
+        DOMPurify && typeof DOMPurify.sanitize === 'function'
+          ? DOMPurify
+          : (DOMPurify as unknown as (w: Window) => typeof DOMPurify)(window);
+
+      // RETURN_DOM allows us to extract the raw textContent to prevent double-escaping
+      // when the string is rendered normally in React (without dangerouslySetInnerHTML)
+      const cleanDom = purify.sanitize(htmlStr, {
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: [],
+        RETURN_DOM: true,
+      });
+      return cleanDom.textContent || '';
+    } catch (e) {
+      console.error('HTML stripping failed, falling back to regex', e);
+      // Without DOM, we just regex strip tags, but we should unescape basic entities if we can.
+      // For simplicity, we just strip tags. Double escaping in SSR fallback is acceptable.
+      return htmlStr.replace(/<[^>]*>?/gm, '');
+    }
+  }
+
+  // Fallback: simple regex to remove tags
+  return htmlStr.replace(/<[^>]*>?/gm, '');
+}
