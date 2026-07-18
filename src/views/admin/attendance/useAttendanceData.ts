@@ -220,13 +220,19 @@ export function useAttendanceData(
       return a.name.localeCompare(b.name);
     };
 
+    const groupedBySection: Record<string, AttendanceItemDef[]> = {};
+    for (const s of filteredSingers) {
+      const section = getSingerSection(s.voicePart, voiceParts, sections);
+      if (!groupedBySection[section]) {
+        groupedBySection[section] = [];
+      }
+      groupedBySection[section].push(s);
+    }
+
     const acc: Record<string, AttendanceItemDef[]> = {};
     SECTION_ORDER.forEach((section) => {
-      const matches = filteredSingers.filter(
-        (s) => getSingerSection(s.voicePart, voiceParts, sections) === section
-      );
-      if (matches.length > 0) {
-        acc[section] = [...matches].sort(compareSingers);
+      if (groupedBySection[section] && groupedBySection[section].length > 0) {
+        acc[section] = groupedBySection[section].sort(compareSingers);
       }
     });
     return acc;
