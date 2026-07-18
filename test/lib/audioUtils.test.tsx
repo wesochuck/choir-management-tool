@@ -113,6 +113,24 @@ describe('extractAudioDurationFromUrl', () => {
     assert.strictEqual(result, 154);
   });
 
+  it('resolves with 0 duration as null', async () => {
+    mockAudioEnvironment(0);
+    const result = await extractAudioDurationFromUrl('https://example.com/test.mp3');
+    assert.strictEqual(result, null);
+  });
+
+  it('resolves with NaN duration as null', async () => {
+    mockAudioEnvironment(NaN);
+    const result = await extractAudioDurationFromUrl('https://example.com/test.mp3');
+    assert.strictEqual(result, null);
+  });
+
+  it('resolves with Infinity duration as null', async () => {
+    mockAudioEnvironment(Infinity);
+    const result = await extractAudioDurationFromUrl('https://example.com/test.mp3');
+    assert.strictEqual(result, null);
+  });
+
   it('resolves null on error event', async () => {
     mockAudioEnvironment(120, true);
     const result = await extractAudioDurationFromUrl('https://example.com/test.mp3');
