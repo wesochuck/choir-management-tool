@@ -23,6 +23,15 @@ const ChoirNameContext = createContext<ChoirNameContextValue>({
   setPerformerLabel: () => {},
 });
 
+async function fetchChoirSettings() {
+  const [name, tz, label] = await Promise.all([
+    settingsService.getChoirName(),
+    settingsService.getTimezone(),
+    settingsService.getPerformerLabel(),
+  ]);
+  return { name, timezone: tz, performerLabel: label };
+}
+
 export function ChoirNameProvider({ children }: { children: ReactNode }) {
   const [choirName, setChoirName] = useState('');
   const [timezone, setTimezoneState] = useState('America/New_York');
@@ -30,14 +39,7 @@ export function ChoirNameProvider({ children }: { children: ReactNode }) {
 
   const { data, error } = useQuery({
     queryKey: queryKeys.choirSettings.all,
-    queryFn: async () => {
-      const [name, tz, label] = await Promise.all([
-        settingsService.getChoirName(),
-        settingsService.getTimezone(),
-        settingsService.getPerformerLabel(),
-      ]);
-      return { name, timezone: tz, performerLabel: label };
-    },
+    queryFn: fetchChoirSettings,
     staleTime: 5 * 60 * 1000,
   });
 
