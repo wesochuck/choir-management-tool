@@ -64,6 +64,13 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
 
+  const stopCameraStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
   // Detect mobile user agent on mount
   useEffect(() => {
     setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
@@ -80,10 +87,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   // Camera stream management
   useEffect(() => {
     if (!showCamera) {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
+      stopCameraStream();
       return;
     }
 
@@ -155,12 +159,9 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 
     return () => {
       active = false;
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
+      stopCameraStream();
     };
-  }, [showCamera, selectedDeviceId]);
+  }, [showCamera, selectedDeviceId, stopCameraStream]);
 
   // Unmount cleanup for object URLs
   useEffect(() => {
@@ -337,10 +338,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
             setPreview(nextPreviewUrl);
             setShowCrop(true);
 
-            if (streamRef.current) {
-              streamRef.current.getTracks().forEach((track) => track.stop());
-              streamRef.current = null;
-            }
+            stopCameraStream();
             setShowCamera(false);
           }
         },
@@ -351,10 +349,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   };
 
   const handleCancelCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
+    stopCameraStream();
     setShowCamera(false);
     setCameraError(null);
   };
@@ -405,7 +400,6 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       onSuccess?.(updated);
     } catch (err: unknown) {
       console.error('Failed to remove photo:', err);
-
       await dialog.showMessage({
         title: 'Could not remove photo',
         message: 'The profile photo could not be removed. Please try again.',
