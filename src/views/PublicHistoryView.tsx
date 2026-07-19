@@ -6,13 +6,8 @@ import { AppCard } from '../components/common/AppCard';
 import { PublicLayout } from '../components/common/PublicLayout';
 import { queryKeys } from '../lib/queryKeys';
 
-function PublicHistoryView() {
-  const settingsQuery = useQuery({
-    queryKey: queryKeys.publicLanding.settings,
-    queryFn: () => settingsService.getLandingSettings(),
-  });
-
-  if (settingsQuery.isLoading) {
+function PageStatus({ isLoading, isError, hasData }: { isLoading: boolean; isError: boolean; hasData: boolean }) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Spinner />
@@ -20,7 +15,7 @@ function PublicHistoryView() {
     );
   }
 
-  if (settingsQuery.isError || !settingsQuery.data) {
+  if (isError || !hasData) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-text-muted">{'Unable to load page content. Please try again later.'}</p>
@@ -28,7 +23,24 @@ function PublicHistoryView() {
     );
   }
 
-  const settings = settingsQuery.data;
+  return null;
+}
+
+function PublicHistoryView() {
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.publicLanding.settings,
+    queryFn: () => settingsService.getLandingSettings(),
+  });
+
+  const status = PageStatus({
+    isLoading: settingsQuery.isLoading,
+    isError: settingsQuery.isError,
+    hasData: !!settingsQuery.data,
+  });
+
+  if (status) return status;
+
+  const settings = settingsQuery.data!;
 
   return (
     <PublicLayout>
