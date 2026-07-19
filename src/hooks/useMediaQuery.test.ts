@@ -4,12 +4,20 @@ import assert from 'node:assert/strict';
 import { renderHook, act, cleanup } from '@testing-library/react';
 import { useMediaQuery } from './useMediaQuery';
 
+const originalMatchMedia = window.matchMedia;
+
 afterEach(() => {
   cleanup();
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: originalMatchMedia,
+  });
 });
 
 test('useMediaQuery returns false when matchMedia reports no match', () => {
   Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
     writable: true,
     value: (query: string) => ({
       matches: false,
@@ -29,6 +37,7 @@ test('useMediaQuery returns false when matchMedia reports no match', () => {
 
 test('useMediaQuery returns true when matchMedia reports a match', () => {
   Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
     writable: true,
     value: (query: string) => ({
       matches: true,
@@ -51,6 +60,7 @@ test('useMediaQuery updates when the media query change event fires', () => {
   let currentMatches = false;
 
   Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
     writable: true,
     value: (query: string) => ({
       get matches() {
@@ -81,22 +91,22 @@ test('useMediaQuery updates when the media query change event fires', () => {
 });
 
 test('useMediaQuery handles undefined window.matchMedia gracefully', () => {
-  const originalMatchMedia = window.matchMedia;
-
-  // @ts-expect-error - testing environment without matchMedia
-  window.matchMedia = undefined;
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: undefined,
+  });
 
   const { result } = renderHook(() => useMediaQuery('(max-width: 767px)'));
   assert.equal(result.current, false);
-
-  window.matchMedia = originalMatchMedia;
 });
 
 test('useMediaQuery fallback in handleChange when event is undefined', () => {
-  let changeHandler: ((event?: any) => void) | null = null;
+  let changeHandler: ((event?: MediaQueryListEvent) => void) | null = null;
   let currentMatches = false;
 
   Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
     writable: true,
     value: (query: string) => ({
       get matches() {
@@ -104,7 +114,7 @@ test('useMediaQuery fallback in handleChange when event is undefined', () => {
       },
       media: query,
       onchange: null,
-      addEventListener: (_: string, cb: (e: any) => void) => {
+      addEventListener: (_: string, cb: (event: MediaQueryListEvent) => void) => {
         changeHandler = cb;
       },
       removeEventListener: () => {
@@ -121,8 +131,7 @@ test('useMediaQuery fallback in handleChange when event is undefined', () => {
 
   currentMatches = true;
   act(() => {
-    // Call without matches property to trigger `event?.matches ?? mql.matches`
-    changeHandler?.({});
+    changeHandler?.({} as MediaQueryListEvent);
   });
   assert.equal(result.current, true);
 });
