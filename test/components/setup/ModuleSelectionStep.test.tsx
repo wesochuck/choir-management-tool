@@ -30,7 +30,7 @@ describe('ModuleSelectionStep', () => {
       </DialogProvider>
     );
 
-    fireEvent.click(screen.getByText('Save & Continue'));
+    fireEvent.submit(screen.getByText(/Select the features you want to enable/i).closest('form')!);
 
     await waitFor(() => assert.strictEqual(saveModules.mock.callCount(), 1));
     assert.strictEqual(saveProgress.mock.callCount(), 0);
@@ -51,7 +51,7 @@ describe('ModuleSelectionStep', () => {
       </DialogProvider>
     );
 
-    fireEvent.click(screen.getByText('Save & Continue'));
+    fireEvent.submit(screen.getByText(/Select the features you want to enable/i).closest('form')!);
 
     await waitFor(() => assert.strictEqual(saveModules.mock.callCount(), 1));
     assert.deepStrictEqual(saveModules.mock.calls[0].arguments[0], []);
