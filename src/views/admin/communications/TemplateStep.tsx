@@ -6,6 +6,10 @@ import { mapToMessageTemplate } from './templateMapping';
 import { WizardStepHeading } from './WizardStepHeading';
 import { WizardActionBar } from './WizardActionBar';
 
+function getPrimaryButtonLabel(selectedTemplateId: string): string {
+  return selectedTemplateId === 'blank' ? 'Use blank message' : 'Use template';
+}
+
 interface TemplateStepProps {
   templates: TemplateRecord[];
   templateSelection: {
@@ -49,7 +53,7 @@ export function TemplateStep({ templates, templateSelection, onBack }: TemplateS
           <span className="hidden sm:inline">Back</span>
         </Button>
         <Button variant="primary" onClick={handleUseTemplate}>
-          {selectedTemplateId === 'blank' ? 'Use blank message' : 'Use template'}
+          {getPrimaryButtonLabel(selectedTemplateId)}
         </Button>
       </WizardActionBar>
     </div>
