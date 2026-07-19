@@ -8,19 +8,23 @@ interface PublicBrandingWrapperProps {
   showLogo?: boolean;
 }
 
+function LoadingState() {
+  return (
+    <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-center">
+      <div
+        className="border-border border-t-primary size-10 animate-spin rounded-full border-4"
+        role="status"
+        aria-label="Loading"
+      />
+    </div>
+  );
+}
+
 export function PublicBrandingWrapper({ children, showLogo = true }: PublicBrandingWrapperProps) {
   const { data: useBranding = false, isLoading } = usePublicBranding();
 
   if (isLoading) {
-    return (
-      <div className="bg-bg flex min-h-screen w-screen flex-col items-center justify-center">
-        <div
-          className="border-border border-t-primary size-10 animate-spin rounded-full border-4"
-          role="status"
-          aria-label="Loading"
-        />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (useBranding) {
