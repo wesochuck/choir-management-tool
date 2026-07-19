@@ -43,27 +43,7 @@ pb.authStore.onChange(() => undefined, true);
 
 pb.afterSend = async (response, data) => {
   if (response.status === 400) {
-    console.error('[PB 400]', response.url, JSON.stringify(data, null, 2));
-    // Debug: log token payload to check auth context
-    try {
-      const token = pb.authStore.token;
-      if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.error(
-          '[PB AUTH]',
-          'collectionId:',
-          payload.collectionId,
-          'role:',
-          pb.authStore.record?.role,
-          'model:',
-          JSON.stringify(pb.authStore.record, null, 2)
-        );
-      } else {
-        console.error('[PB AUTH] No token in authStore');
-      }
-    } catch (e) {
-      console.error('[PB AUTH] decode error', e);
-    }
+    console.error('[PB 400]', response.url, data?.message ?? 'Bad request');
   }
 
   const isAuthError =
