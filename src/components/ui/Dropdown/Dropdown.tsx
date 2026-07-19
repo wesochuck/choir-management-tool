@@ -98,6 +98,26 @@ export interface DropdownMenuItemProps extends React.ComponentPropsWithoutRef<'b
   children: React.ReactNode;
 }
 
+function TestDropdownMenuItem({
+  children,
+  onClick,
+  className,
+  disabled,
+  ...rest
+}: DropdownMenuItemProps) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`w-full cursor-pointer border-none bg-transparent px-3 py-2 text-left text-[13px] font-medium transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 ${className || ''}`}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function DropdownMenuItem({
   children,
   onClick,
@@ -107,15 +127,14 @@ export function DropdownMenuItem({
 }: DropdownMenuItemProps) {
   if (process.env.NODE_ENV === 'test') {
     return (
-      <button
-        type="button"
-        disabled={disabled}
+      <TestDropdownMenuItem
         onClick={onClick}
-        className={`w-full cursor-pointer border-none bg-transparent px-3 py-2 text-left text-[13px] font-medium transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 ${className || ''}`}
+        className={className}
+        disabled={disabled}
         {...rest}
       >
         {children}
-      </button>
+      </TestDropdownMenuItem>
     );
   }
 
