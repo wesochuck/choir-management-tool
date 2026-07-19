@@ -1,10 +1,32 @@
 import { useMemo } from 'react';
-import type { Event } from '../services/eventService';
+import type { Event, SetListItem } from '../services/eventService';
 
 export interface PiecePerformanceEntry {
   count: number;
   dates: Date[];
   mostRecentDate: string | null;
+}
+
+function updatePiecePerformanceEntry(
+  map: Map<string, PiecePerformanceEntry>,
+  item: SetListItem,
+  eventDate: Date
+) {
+  if (!item.pieceId) return;
+
+  let entry = map.get(item.pieceId);
+  if (!entry) {
+    entry = { count: 0, dates: [], mostRecentDate: null };
+    map.set(item.pieceId, entry);
+  }
+
+  entry.count++;
+  entry.dates.push(eventDate);
+
+  const dateStr = eventDate.toISOString().split('T')[0];
+  if (!entry.mostRecentDate || dateStr > entry.mostRecentDate) {
+    entry.mostRecentDate = dateStr;
+  }
 }
 
 export function buildPiecePerformanceMap(events: Event[]): Map<string, PiecePerformanceEntry> {
@@ -18,21 +40,7 @@ export function buildPiecePerformanceMap(events: Event[]): Map<string, PiecePerf
     if (isNaN(eventDate.getTime())) continue;
 
     for (const item of event.setList) {
-      if (!item.pieceId) continue;
-
-      let entry = map.get(item.pieceId);
-      if (!entry) {
-        entry = { count: 0, dates: [], mostRecentDate: null };
-        map.set(item.pieceId, entry);
-      }
-
-      entry.count++;
-      entry.dates.push(eventDate);
-
-      const dateStr = eventDate.toISOString().split('T')[0];
-      if (!entry.mostRecentDate || dateStr > entry.mostRecentDate) {
-        entry.mostRecentDate = dateStr;
-      }
+      updatePiecePerformanceEntry(map, item, eventDate);
     }
   }
 
