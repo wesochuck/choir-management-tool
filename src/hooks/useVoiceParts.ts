@@ -1,7 +1,22 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../lib/queryKeys';
-import { getVoicePartsAndSections, type SectionDef } from '../services/settingsService';
+import { getVoicePartsAndSections, type SectionDef, type VoicePartDef } from '../services/settingsService';
+
+function filterSections(allSections: SectionDef[], includeAll?: boolean) {
+  if (includeAll) return allSections;
+  return allSections.filter((s) => !s.trackOnly);
+}
+
+function filterVoiceParts(
+  allVoiceParts: VoicePartDef[],
+  allSections: SectionDef[],
+  includeAll?: boolean
+) {
+  if (includeAll) return allVoiceParts;
+  const trackOnlySections = new Set(allSections.filter((s) => s.trackOnly).map((s) => s.code));
+  return allVoiceParts.filter((vp) => !trackOnlySections.has(vp.sectionCode));
+}
 
 export function useVoiceParts(options?: { includeAll?: boolean }) {
   const query = useQuery({
@@ -16,17 +31,16 @@ export function useVoiceParts(options?: { includeAll?: boolean }) {
     [query.data?.sections]
   );
 
-  const sections = useMemo(() => {
-    if (options?.includeAll) return allSections;
-    return allSections.filter((s) => !s.trackOnly);
-  }, [allSections, options?.includeAll]);
+  const sections = useMemo(
+    () => filterSections(allSections, options?.includeAll),
+    [allSections, options?.includeAll]
+  );
 
   // By default, exclude voice parts whose associated section is "Learning Track Only" (e.g. Soloists) from operational lists
-  const voiceParts = useMemo(() => {
-    if (options?.includeAll) return allVoiceParts;
-    const trackOnlySections = new Set(allSections.filter((s) => s.trackOnly).map((s) => s.code));
-    return allVoiceParts.filter((vp) => !trackOnlySections.has(vp.sectionCode));
-  }, [allVoiceParts, allSections, options?.includeAll]);
+  const voiceParts = useMemo(
+    () => filterVoiceParts(allVoiceParts, allSections, options?.includeAll),
+    [allVoiceParts, allSections, options?.includeAll]
+  );
 
   const labels = useMemo(() => voiceParts.map((vp) => vp.label), [voiceParts]);
 
