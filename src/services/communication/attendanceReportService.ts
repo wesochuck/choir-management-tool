@@ -61,6 +61,30 @@ export function renderManualAttendanceReportTemplate(params: {
     .replace(/{thresholdWarningsSection}/g, () => params.thresholdWarningsSection || '');
 }
 
+function isEligibleAdmin(profile: Profile): boolean {
+  const user = profile.expand?.user;
+  return (
+    user?.role === 'admin' &&
+    !!user.email &&
+    profile.globalStatus !== 'Inactive' &&
+    profile.receiveAttendanceReports !== false &&
+    profile.doNotEmail !== true
+  );
+}
+
+function toAdminRecipient(profile: Profile): CommunicationRecipient | [] {
+  const user = profile.expand?.user;
+  if (!user?.email) return [];
+  return {
+    id: profile.user || profile.id,
+    name: profile.name || user.name || user.email || 'Admin',
+    email: user.email,
+    phone: profile.phone || '',
+    voicePart: 'Admin',
+    globalStatus: 'Admin',
+  };
+}
+
 export async function resolveAttendanceReportRecipients(): Promise<CommunicationRecipient[]> {
   // Avoid filtering on expanded relation fields here; in production PocketBase returned
   // zero rows for user.role/user.email relation filters even when expand=user succeeded.
@@ -69,29 +93,7 @@ export async function resolveAttendanceReportRecipients(): Promise<Communication
     sort: 'name',
   });
 
-  return profiles
-    .filter((profile) => {
-      const user = profile.expand?.user;
-      return (
-        user?.role === 'admin' &&
-        !!user.email &&
-        profile.globalStatus !== 'Inactive' &&
-        profile.receiveAttendanceReports !== false &&
-        profile.doNotEmail !== true
-      );
-    })
-    .flatMap((profile) => {
-      const user = profile.expand?.user;
-      if (!user?.email) return [];
-      return {
-        id: profile.user || profile.id,
-        name: profile.name || user.name || user.email || 'Admin',
-        email: user.email,
-        phone: profile.phone || '',
-        voicePart: 'Admin',
-        globalStatus: 'Admin',
-      };
-    });
+  return profiles.filter(isEligibleAdmin).flatMap(toAdminRecipient);
 }
 
 export async function finalizeUnmarkedAttendanceForEvent(eventId: string): Promise<void> {
