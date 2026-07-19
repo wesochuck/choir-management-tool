@@ -161,7 +161,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       active = false;
       stopCameraStream();
     };
-  }, [showCamera, selectedDeviceId]);
+  }, [showCamera, selectedDeviceId, stopCameraStream]);
 
   // Unmount cleanup for object URLs
   useEffect(() => {
@@ -400,7 +400,6 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       onSuccess?.(updated);
     } catch (err: unknown) {
       console.error('Failed to remove photo:', err);
-
       await dialog.showMessage({
         title: 'Could not remove photo',
         message: 'The profile photo could not be removed. Please try again.',
