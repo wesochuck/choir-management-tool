@@ -116,6 +116,14 @@ export async function saveSeatingSettings(value: SeatingSettings) {
   return await upsertSetting('seating_config', value, true);
 }
 
+export function inferSectionCodeFromLabel(label: string): string {
+  if (/^(soprano|s)(\s*\d+)?$/i.test(label)) return 'S';
+  if (/^(alto|a)(\s*\d+)?$/i.test(label)) return 'A';
+  if (/^(tenor|t)(\s*\d+)?$/i.test(label)) return 'T';
+  if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(label)) return 'B';
+  return 'Other';
+}
+
 export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
   try {
     const setting = await getSetting<VoicePartSettings>('voiceParts');
@@ -128,12 +136,7 @@ export async function getVoicePartsAndSections(): Promise<VoicePartSettings> {
         voiceParts = voiceParts.map((vp) => {
           let code = vp.sectionCode;
           if (!code) {
-            const label = vp.label || '';
-            if (/^(soprano|s)(\s*\d+)?$/i.test(label)) code = 'S';
-            else if (/^(alto|a)(\s*\d+)?$/i.test(label)) code = 'A';
-            else if (/^(tenor|t)(\s*\d+)?$/i.test(label)) code = 'T';
-            else if (/^(bass|b|baritone|bar)(\s*\d+)?$/i.test(label)) code = 'B';
-            else code = 'Other';
+            code = inferSectionCodeFromLabel(vp.label || '');
           }
           detectedCodes.add(code);
           return { ...vp, sectionCode: code };
