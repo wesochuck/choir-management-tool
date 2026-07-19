@@ -69,6 +69,18 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     onClose();
   };
 
+  const validateDuration = (normalizedDuration: string) => {
+    if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
+      dialog.showMessage({
+        title: 'Invalid Duration',
+        message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
+        variant: 'danger',
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault?.();
     if (!item) return;
@@ -80,14 +92,7 @@ export const SetListItemEditModal: React.FC<SetListItemEditModalProps> = ({
     setValidationError(false);
 
     const normalizedDuration = duration.trim();
-    if (normalizedDuration && !isValidDurationString(normalizedDuration)) {
-      dialog.showMessage({
-        title: 'Invalid Duration',
-        message: 'Use a duration like 3:30, 1:05:00, 15, 15m, or 1h 5m.',
-        variant: 'danger',
-      });
-      return;
-    }
+    if (!validateDuration(normalizedDuration)) return;
 
     onSave({
       ...item,
