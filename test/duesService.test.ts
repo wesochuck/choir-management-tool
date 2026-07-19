@@ -4,9 +4,7 @@ import assert from 'node:assert';
 import { duesService } from '../src/services/duesService';
 import { pb } from '../src/lib/pocketbase';
 
-// We mock the `pb` object via Node's mock functions.
-// Since `pb` is imported directly into `duesService`, we need to mock its methods before tests run.
-
+// Mock the PocketBase surface while preserving the contract that pb.filter owns escaping.
 describe('duesService', () => {
   let mockCollection: {
     getFullList: any;
@@ -25,18 +23,9 @@ describe('duesService', () => {
       create: mock.fn(),
     };
 
-    // Use type casting to handle the mock
     const pbMock = pb as any;
     mock.method(pbMock, 'collection', () => mockCollection);
-    mock.method(pbMock, 'filter', (str: string, params: Record<string, string>) => {
-      let res = str;
-      if (params) {
-        for (const [k, v] of Object.entries(params)) {
-          res = res.replace(`{:${k}}`, `'${v}'`);
-        }
-      }
-      return res;
-    });
+    mock.method(pbMock, 'filter', () => '__parameterized_filter__');
   });
 
   describe('getDuesForSeason', () => {
@@ -46,7 +35,7 @@ describe('duesService', () => {
       assert.strictEqual((pb as any).collection.mock.callCount(), 0);
     });
 
-    it('queries seasonalDues for the given season', async () => {
+    it('queries seasonalDues with the PocketBase-generated filter', async () => {
       const mockDues = [{ id: '1', season: 'Fall 2026', paid: true }];
       mockCollection.getFullList.mock.mockImplementation(async () => mockDues);
 
@@ -54,8 +43,12 @@ describe('duesService', () => {
 
       assert.strictEqual((pb as any).collection.mock.calls[0].arguments[0], 'seasonalDues');
       assert.deepStrictEqual(mockCollection.getFullList.mock.calls[0].arguments[0], {
-        filter: "season = 'Fall 2026'",
+        filter: '__parameterized_filter__',
       });
+      assert.deepStrictEqual((pb as any).filter.mock.calls[0].arguments, [
+        'season = {:seasonId}',
+        { seasonId: 'Fall 2026' },
+      ]);
       assert.deepStrictEqual(result, mockDues);
     });
 
@@ -88,8 +81,12 @@ describe('duesService', () => {
 
       assert.strictEqual(
         mockCollection.getFirstListItem.mock.calls[0].arguments[0],
-        "profile = 'prof1' && season = 'Fall 2026'"
+        '__parameterized_filter__'
       );
+      assert.deepStrictEqual((pb as any).filter.mock.calls[0].arguments, [
+        'profile = {:profileId} && season = {:seasonId}',
+        { profileId: 'prof1', seasonId: 'Fall 2026' },
+      ]);
       assert.deepStrictEqual(mockCollection.update.mock.calls[0].arguments, [
         'existing_id',
         { paid: true },
