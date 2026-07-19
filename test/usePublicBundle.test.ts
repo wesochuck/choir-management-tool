@@ -69,12 +69,8 @@ test('usePublicBundle - fetches and returns bundle data on success', async (t) =
     const { result } = renderHook(() => usePublicBundle('b1'), { wrapper: createWrapper() });
 
     await waitFor(() => {
-      if (result.current.isSuccess) {
-        return;
-      }
-      if (result.current.isError) {
-        throw new Error('Query failed');
-      }
+      if (result.current.isSuccess) return;
+      if (result.current.isError) throw new Error('Query failed');
       throw new Error('Still loading');
     });
 
@@ -105,9 +101,7 @@ test('usePublicBundle - returns error on failure', async (t) => {
     const { result } = renderHook(() => usePublicBundle('invalid-id'), { wrapper: createWrapper() });
 
     await waitFor(() => {
-      if (result.current.isError) {
-        return;
-      }
+      if (result.current.isError) return;
       throw new Error('Still loading');
     });
 
@@ -119,14 +113,9 @@ test('usePublicBundle - returns error on failure', async (t) => {
   }
 });
 
-test('usePublicBundle - does not fetch if bundleId is undefined', async (t) => {
+test('usePublicBundle - does not fetch if bundleId is undefined', (t) => {
   const originalCollection = pb.collection;
-
-  let fetchCalled = false;
-  const mockGetOne = t.mock.fn(async () => {
-    fetchCalled = true;
-    return mockBundle;
-  });
+  const mockGetOne = t.mock.fn(async () => mockBundle);
 
   pb.collection = function (name: string) {
     if (name === 'ticketBundles') {
@@ -138,10 +127,7 @@ test('usePublicBundle - does not fetch if bundleId is undefined', async (t) => {
   try {
     const { result } = renderHook(() => usePublicBundle(undefined), { wrapper: createWrapper() });
 
-    // We will just verify it does not fetch after a small delay.
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    assert.equal(fetchCalled, false);
+    assert.equal(mockGetOne.mock.callCount(), 0);
     assert.equal(result.current.fetchStatus, 'idle');
     assert.equal(result.current.data, undefined);
   } finally {
