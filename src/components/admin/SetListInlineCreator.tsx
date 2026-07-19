@@ -38,20 +38,22 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
     enabled: showSuggestions,
   });
 
+  const resetForm = () => {
+    setQuery('');
+    setDuration('');
+    setShowSuggestions(false);
+  };
+
   const handleAddItem = (piece?: MusicPiece) => {
     try {
       if (piece) {
         onAddItem(createSetListItemFromMusicPiece(piece));
-        setQuery('');
-        setDuration('');
-        setShowSuggestions(false);
+        resetForm();
       } else {
         if (!query.trim()) return;
         if (type === 'song' && onCreateNewPiece) {
           onCreateNewPiece(query.trim());
-          setQuery('');
-          setDuration('');
-          setShowSuggestions(false);
+          resetForm();
         } else {
           onAddItem(
             createSetListItemFromCustomInput({
@@ -60,9 +62,7 @@ export const SetListInlineCreator: React.FC<SetListInlineCreatorProps> = ({
               duration: duration.trim() || undefined,
             })
           );
-          setQuery('');
-          setDuration('');
-          setShowSuggestions(false);
+          resetForm();
         }
       }
     } catch (err) {
