@@ -10,11 +10,26 @@ import TicketingOrdersTab from './ticketing/TicketingOrdersTab';
 import TicketingShareTab from './ticketing/TicketingShareTab';
 import TicketingConfirmationSettings from './ticketing/TicketingConfirmationSettings';
 
+type TicketingTab = 'willcall' | 'bundles' | 'orders' | 'share' | 'confirmation';
+
+function renderActiveTab(tab: TicketingTab) {
+  switch (tab) {
+    case 'willcall':
+      return <TicketingWillCallTab />;
+    case 'bundles':
+      return <TicketingBundlesTab />;
+    case 'orders':
+      return <TicketingOrdersTab />;
+    case 'share':
+      return <TicketingShareTab />;
+    case 'confirmation':
+      return <TicketingConfirmationSettings />;
+  }
+}
+
 export default function TicketingView() {
   useDocumentTitle('Ticketing');
-  const [activeTab, setActiveTab] = useState<
-    'willcall' | 'bundles' | 'orders' | 'share' | 'confirmation'
-  >('willcall');
+  const [activeTab, setActiveTab] = useState<TicketingTab>('willcall');
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -25,9 +40,7 @@ export default function TicketingView() {
           <AdminPageTabs
             ariaLabel="Ticketing sections"
             activeTab={activeTab}
-            onTabChange={(tab) =>
-              setActiveTab(tab as 'willcall' | 'bundles' | 'orders' | 'share' | 'confirmation')
-            }
+            onTabChange={(tab) => setActiveTab(tab as TicketingTab)}
             tabs={[
               { value: 'willcall', label: 'Concert Will Call' },
               { value: 'bundles', label: 'Season Bundles' },
@@ -44,11 +57,7 @@ export default function TicketingView() {
         }
       />
 
-      {activeTab === 'willcall' && <TicketingWillCallTab />}
-      {activeTab === 'bundles' && <TicketingBundlesTab />}
-      {activeTab === 'orders' && <TicketingOrdersTab />}
-      {activeTab === 'share' && <TicketingShareTab />}
-      {activeTab === 'confirmation' && <TicketingConfirmationSettings />}
+      {renderActiveTab(activeTab)}
     </div>
   );
 }
