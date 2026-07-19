@@ -18,7 +18,7 @@ export const duesService = {
   async getDuesForSeason(seasonId: string) {
     if (!seasonId) return [];
     return await pb.collection('seasonalDues').getFullList<SeasonalDue>({
-      filter: `season = "${seasonId.replace(/"/g, '\\"')}"`,
+      filter: pb.filter('season = {:seasonId}', { seasonId }),
     });
   },
 
@@ -27,7 +27,7 @@ export const duesService = {
       const existing = await pb
         .collection('seasonalDues')
         .getFirstListItem<SeasonalDue>(
-          `profile = "${profileId.replace(/"/g, '\\"')}" && season = "${seasonId.replace(/"/g, '\\"')}"`
+          pb.filter('profile = {:profileId} && season = {:seasonId}', { profileId, seasonId })
         );
       return await pb.collection('seasonalDues').update<SeasonalDue>(existing.id, { paid });
     } catch (err: unknown) {

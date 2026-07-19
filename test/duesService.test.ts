@@ -4,9 +4,7 @@ import assert from 'node:assert';
 import { duesService } from '../src/services/duesService';
 import { pb } from '../src/lib/pocketbase';
 
-// We mock the `pb` object via Node's mock functions. 
-// Since `pb` is imported directly into `duesService`, we need to mock its methods before tests run.
-
+// Mock the PocketBase surface while preserving the contract that pb.filter owns escaping.
 describe('duesService', () => {
   let mockCollection: {
     getFullList: any;
@@ -17,26 +15,17 @@ describe('duesService', () => {
 
   beforeEach(() => {
     mock.restoreAll();
-    
+
     mockCollection = {
       getFullList: mock.fn(),
       getFirstListItem: mock.fn(),
       update: mock.fn(),
       create: mock.fn(),
     };
-    
-    // Use type casting to handle the mock
+
     const pbMock = pb as any;
     mock.method(pbMock, 'collection', () => mockCollection);
-    mock.method(pbMock, 'filter', (str: string, params: Record<string, string>) => {
-      let res = str;
-      if (params) {
-        for (const [k, v] of Object.entries(params)) {
-          res = res.replace(`{:${k}}`, `'${v}'`);
-        }
-      }
-      return res;
-    });
+    mock.method(pbMock, 'filter', () => '__parameterized_filter__');
   });
 
   describe('getDuesForSeason', () => {
@@ -46,27 +35,40 @@ describe('duesService', () => {
       assert.strictEqual((pb as any).collection.mock.callCount(), 0);
     });
 
-    it('queries seasonalDues for the given season', async () => {
+    it('queries seasonalDues with the PocketBase-generated filter', async () => {
       const mockDues = [{ id: '1', season: 'Fall 2026', paid: true }];
       mockCollection.getFullList.mock.mockImplementation(async () => mockDues);
 
       const result = await duesService.getDuesForSeason('Fall 2026');
-      
+
       assert.strictEqual((pb as any).collection.mock.calls[0].arguments[0], 'seasonalDues');
       assert.deepStrictEqual(mockCollection.getFullList.mock.calls[0].arguments[0], {
-        filter: "season = 'Fall 2026'"
+        filter: '__parameterized_filter__',
       });
+      assert.deepStrictEqual((pb as any).filter.mock.calls[0].arguments, [
+        'season = {:seasonId}',
+        { seasonId: 'Fall 2026' },
+      ]);
       assert.deepStrictEqual(result, mockDues);
+    });
+
+    it('parameterizes injection-shaped season IDs with pb.filter', async () => {
+      const seasonId = 'season" || paid = true || season = "';
+      mockCollection.getFullList.mock.mockImplementation(async () => []);
+
+      await duesService.getDuesForSeason(seasonId);
+
+      assert.deepStrictEqual((pb as any).filter.mock.calls[0].arguments, [
+        'season = {:seasonId}',
+        { seasonId },
+      ]);
     });
 
     it('propagates errors from pb.collection().getFullList', async () => {
       const error = new Error('API Error');
       mockCollection.getFullList.mock.mockImplementation(async () => Promise.reject(error));
 
-      await assert.rejects(
-        () => duesService.getDuesForSeason('Fall 2026'),
-        /API Error/
-      );
+      await assert.rejects(() => duesService.getDuesForSeason('Fall 2026'), /API Error/);
     });
   });
 
@@ -79,17 +81,38 @@ describe('duesService', () => {
 
       assert.strictEqual(
         mockCollection.getFirstListItem.mock.calls[0].arguments[0],
-        "profile = 'prof1' && season = 'Fall 2026'"
+        '__parameterized_filter__'
       );
-      assert.deepStrictEqual(mockCollection.update.mock.calls[0].arguments, ['existing_id', { paid: true }]);
+      assert.deepStrictEqual((pb as any).filter.mock.calls[0].arguments, [
+        'profile = {:profileId} && season = {:seasonId}',
+        { profileId: 'prof1', seasonId: 'Fall 2026' },
+      ]);
+      assert.deepStrictEqual(mockCollection.update.mock.calls[0].arguments, [
+        'existing_id',
+        { paid: true },
+      ]);
       assert.strictEqual(mockCollection.create.mock.callCount(), 0);
       assert.deepStrictEqual(result, { id: 'existing_id', paid: true });
+    });
+
+    it('parameterizes profile and season IDs passed to getFirstListItem', async () => {
+      const profileId = 'profile" || paid = true || profile = "';
+      const seasonId = 'season" || paid = true || season = "';
+      mockCollection.getFirstListItem.mock.mockImplementation(async () => ({ id: 'existing_id' }));
+      mockCollection.update.mock.mockImplementation(async () => ({ id: 'existing_id', paid: true }));
+
+      await duesService.updateDues(profileId, seasonId, true);
+
+      assert.deepStrictEqual((pb as any).filter.mock.calls[0].arguments, [
+        'profile = {:profileId} && season = {:seasonId}',
+        { profileId, seasonId },
+      ]);
     });
 
     it('creates new record if existing not found (404)', async () => {
       const notFoundError = { status: 404 };
       mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject(notFoundError));
-      
+
       const createdRecord = { id: 'new_id', profile: 'prof1', season: 'Fall 2026', paid: true };
       mockCollection.create.mock.mockImplementation(async () => createdRecord);
 
@@ -99,7 +122,7 @@ describe('duesService', () => {
       assert.deepStrictEqual(mockCollection.create.mock.calls[0].arguments[0], {
         profile: 'prof1',
         season: 'Fall 2026',
-        paid: true
+        paid: true,
       });
       assert.strictEqual(mockCollection.update.mock.callCount(), 0);
       assert.deepStrictEqual(result, createdRecord);
@@ -109,11 +132,8 @@ describe('duesService', () => {
       const otherError = new Error('Server error');
       (otherError as any).status = 500;
       mockCollection.getFirstListItem.mock.mockImplementation(async () => Promise.reject(otherError));
-      
-      await assert.rejects(
-        () => duesService.updateDues('prof1', 'Fall 2026', true),
-        /Server error/
-      );
+
+      await assert.rejects(() => duesService.updateDues('prof1', 'Fall 2026', true), /Server error/);
       assert.strictEqual(mockCollection.create.mock.callCount(), 0);
     });
 
@@ -122,10 +142,7 @@ describe('duesService', () => {
       const updateError = new Error('Update failed');
       mockCollection.update.mock.mockImplementation(async () => Promise.reject(updateError));
 
-      await assert.rejects(
-        () => duesService.updateDues('prof1', 'Fall 2026', true),
-        /Update failed/
-      );
+      await assert.rejects(() => duesService.updateDues('prof1', 'Fall 2026', true), /Update failed/);
     });
 
     it('re-throws error if create fails after 404', async () => {
@@ -135,10 +152,7 @@ describe('duesService', () => {
       const createError = new Error('Create failed');
       mockCollection.create.mock.mockImplementation(async () => Promise.reject(createError));
 
-      await assert.rejects(
-        () => duesService.updateDues('prof1', 'Fall 2026', true),
-        /Create failed/
-      );
+      await assert.rejects(() => duesService.updateDues('prof1', 'Fall 2026', true), /Create failed/);
     });
 
     it('re-throws error if err is null', async () => {
