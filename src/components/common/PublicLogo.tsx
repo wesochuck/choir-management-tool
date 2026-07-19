@@ -5,7 +5,7 @@ interface PublicLogoProps {
   variant?: 'header' | 'default';
 }
 
-export default function PublicLogo({ variant = 'default' }: PublicLogoProps) {
+function useLogoUrl() {
   const [logoUrl, setLogoUrl] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
@@ -14,6 +14,12 @@ export default function PublicLogo({ variant = 'default' }: PublicLogoProps) {
       .then((url) => setLogoUrl(url))
       .catch(() => setLogoUrl(null));
   }, []);
+
+  return logoUrl;
+}
+
+export default function PublicLogo({ variant = 'default' }: PublicLogoProps) {
+  const logoUrl = useLogoUrl();
 
   if (logoUrl === undefined) {
     if (variant === 'header') {
