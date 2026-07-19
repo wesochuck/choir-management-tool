@@ -10,6 +10,14 @@ export interface FormFieldProps {
   children?: React.ReactNode;
 }
 
+function injectInvalidProp(children: React.ReactNode, error?: string): React.ReactNode {
+  if (error && isValidElement(children)) {
+    const child = children as ReactElement<{ invalid?: boolean }>;
+    return cloneElement(child, { invalid: true });
+  }
+  return children;
+}
+
 export function FormField({
   label,
   htmlFor,
@@ -18,12 +26,7 @@ export function FormField({
   required = false,
   children,
 }: FormFieldProps) {
-  let childElement = children;
-
-  if (error && isValidElement(childElement)) {
-    const child = childElement as ReactElement<{ invalid?: boolean }>;
-    childElement = cloneElement(child, { invalid: true });
-  }
+  const childElement = injectInvalidProp(children, error);
 
   return (
     <div className="flex flex-col gap-1">
