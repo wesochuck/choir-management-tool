@@ -9,14 +9,20 @@ interface SetlistWarningProps {
   content: string;
 }
 
+export function shouldShowSetlistWarning(selectedEvent: Event | null, content: string) {
+  if (!selectedEvent) return false;
+  if (selectedEvent.setListApproved !== false) return false;
+  if (!content.toLowerCase().includes('{setlist}')) return false;
+  return true;
+}
+
 export function SetlistWarning({ selectedEvent, content }: SetlistWarningProps) {
   const { performerLabel } = useChoirSettings();
   const { enabledModules } = useSetup();
   const setListsEnabled = enabledModules.has('setLists');
   const performerLabelPlural = pluralizeLabel(performerLabel);
-  if (!selectedEvent) return null;
-  if (selectedEvent.setListApproved !== false) return null;
-  if (!content.toLowerCase().includes('{setlist}')) return null;
+
+  if (!shouldShowSetlistWarning(selectedEvent, content)) return null;
 
   return (
     <div className="flex w-full items-start gap-3 rounded-lg border border-l-4 border-amber-100 border-l-amber-600 bg-amber-50 p-3 text-xs leading-normal text-amber-900 transition-transform duration-200 hover:translate-x-0.5">
