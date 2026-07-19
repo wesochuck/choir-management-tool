@@ -56,14 +56,8 @@ export default function SetListView() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleEdit = (item: SetListItem) => {
-    const displayRow = setList.itemsWithDetails.find((i) => i.id === item.id);
-    const pieceId = item.pieceId || displayRow?.resolvedPiece?.id;
-    if (pieceId) {
-      library.handleOpenPieceEditor(pieceId);
-    } else {
-      setItemEditing(item);
-      setIsItemEditModalOpen(true);
-    }
+    setItemEditing(item);
+    setIsItemEditModalOpen(true);
   };
 
   const handleSaveItem = async (updatedItem: SetListItem) => {
@@ -144,9 +138,10 @@ export default function SetListView() {
                 <div className="border-warning-border bg-warning-bg/70 text-warning-text rounded-r-md border-l-4 p-3 text-sm leading-relaxed">
                   <div className="mb-1 font-semibold">⚠️ Rehearsal Mode</div>
                   <p className="m-0">
-                    This rehearsal inherits its set list and ${performerLabel.toLowerCase()} visibility from the parent
-                    Performance: <strong>{setList.parentPerformance?.title || 'Concert'}</strong>.
-                    Direct edits here will not be visible on the {performerLabel} Dashboard.
+                    This rehearsal inherits its set list and ${performerLabel.toLowerCase()}{' '}
+                    visibility from the parent Performance:{' '}
+                    <strong>{setList.parentPerformance?.title || 'Concert'}</strong>. Direct edits
+                    here will not be visible on the {performerLabel} Dashboard.
                   </p>
                   {setList.parentPerformance && (
                     <Button

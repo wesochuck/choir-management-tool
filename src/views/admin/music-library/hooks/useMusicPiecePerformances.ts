@@ -10,12 +10,14 @@ import type { MusicPiece } from '../../../../services/musicLibraryService';
 
 export interface UseMusicPiecePerformancesParams {
   piece: MusicPiece | null;
+  allPieces?: MusicPiece[];
   isOpen: boolean;
   modalEvents: Event[];
 }
 
 export function useMusicPiecePerformances({
   piece,
+  allPieces,
   isOpen,
   modalEvents,
 }: UseMusicPiecePerformancesParams) {
@@ -52,9 +54,22 @@ export function useMusicPiecePerformances({
 
   useEffect(() => {
     if (piece) {
+      const relevantIds = new Set([piece.id]);
+      if (allPieces) {
+        if (!piece.parentId) {
+          allPieces.forEach((p) => {
+            if (p.parentId === piece.id) relevantIds.add(p.id);
+          });
+        } else {
+          relevantIds.add(piece.parentId);
+        }
+      }
+
       setSelectedPerformanceIds(
         modalEvents
-          .filter((evt) => evt.setList?.some((item) => item.pieceId === piece.id))
+          .filter((evt) =>
+            evt.setList?.some((item) => item.pieceId && relevantIds.has(item.pieceId))
+          )
           .map((evt) => evt.id)
       );
     } else {
@@ -64,7 +79,7 @@ export function useMusicPiecePerformances({
     setQuickTitle('');
     setQuickDate('');
     setQuickVenue('');
-  }, [piece, isOpen, modalEvents]);
+  }, [piece, allPieces, isOpen, modalEvents]);
 
   const quickAddPerformanceMutation = useMutation<Event, Error, Partial<Event>>({
     mutationFn: (data: Partial<Event>) => eventService.createEvent(data),
@@ -131,7 +146,19 @@ export function useMusicPiecePerformances({
     const isLinked = selectedPerformanceIds.includes(perfId);
     try {
       if (isLinked) {
-        const updatedSetList = (event.setList || []).filter((item) => item.pieceId !== piece?.id);
+        const relevantIds = new Set([piece?.id]);
+        if (piece && allPieces) {
+          if (!piece.parentId) {
+            allPieces.forEach((p) => {
+              if (p.parentId === piece.id) relevantIds.add(p.id);
+            });
+          } else {
+            relevantIds.add(piece.parentId);
+          }
+        }
+        const updatedSetList = (event.setList || []).filter(
+          (item) => !item.pieceId || !relevantIds.has(item.pieceId)
+        );
         await updateEventMutation.mutateAsync({ id: perfId, data: { setList: updatedSetList } });
         setSelectedPerformanceIds((prev) => prev.filter((id) => id !== perfId));
       } else if (piece) {

@@ -24,6 +24,9 @@ export default defineConfig({
             'test/useVoiceParts.test.ts',
             'test/attendanceRsvpSync.test.ts',
             'test/eventRosterTable.test.ts',
+            'test/usePublicBundle.test.ts',
+            'test/useEvents.test.ts',
+            'test/usePublicEvent.test.ts',
           ],
           globals: true,
           alias: {
@@ -43,6 +46,9 @@ export default defineConfig({
             'test/useVoiceParts.test.ts',
             'test/attendanceRsvpSync.test.ts',
             'test/eventRosterTable.test.ts',
+            'test/usePublicBundle.test.ts',
+            'test/useEvents.test.ts',
+            'test/usePublicEvent.test.ts',
           ],
           globals: true,
           alias: {

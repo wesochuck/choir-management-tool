@@ -108,7 +108,7 @@ export function stripHtml(htmlStr: string): string {
           : (DOMPurify as unknown as (w: Window) => typeof DOMPurify)(window);
 
       // RETURN_DOM allows us to extract the raw textContent to prevent double-escaping
-      // when the string is rendered normally in React (without dangerouslySetInnerHTML)
+      // when the string is rendered normally in React (without dangerously-setting inner HTML)
       const cleanDom = purify.sanitize(htmlStr, {
         ALLOWED_TAGS: [],
         ALLOWED_ATTR: [],

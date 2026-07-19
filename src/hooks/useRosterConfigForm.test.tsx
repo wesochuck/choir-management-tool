@@ -9,7 +9,6 @@ import * as settingsService from '../services/settingsService';
 
 const mockRosterSettings = {
   defaultStatus: 'Active',
-  currentSeason: '2026 Season',
   statusAutomationEnabled: true,
   statusAutomationMissThreshold: 3,
   statusAutomationRecoveryEnabled: true,
@@ -73,7 +72,6 @@ describe('useRosterConfigForm', () => {
 
     await waitFor(() => {
       assert.strictEqual(result.current.configDefaultStatus, 'Active');
-      assert.strictEqual(result.current.configSeason, '2026 Season');
       assert.strictEqual(result.current.configAutomationEnabled, true);
       assert.strictEqual(result.current.configAutomationMissThreshold, 3);
       assert.strictEqual(result.current.configAutomationRecoveryEnabled, true);
@@ -131,7 +129,6 @@ describe('useRosterConfigForm', () => {
 
     act(() => {
       result.current.setConfigDefaultStatus('Idle');
-      result.current.setConfigSeason('2027 Season');
     });
 
     assert.strictEqual(result.current.isConfigDirty, true);
@@ -141,7 +138,6 @@ describe('useRosterConfigForm', () => {
     });
 
     assert.strictEqual(result.current.configDefaultStatus, 'Active');
-    assert.strictEqual(result.current.configSeason, '2026 Season');
     assert.strictEqual(result.current.isConfigDirty, false);
   });
 

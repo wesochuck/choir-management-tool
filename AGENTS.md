@@ -17,6 +17,7 @@ Mandatory instructions for AI coding agents working in this repository.
 - Display the stored `'Idle'` status as `"On Break"` in the UI. Do not change the DB enum, API payloads, or CSV mapping.
 - Do not log secrets, `HMAC_SECRET`, or full signed tokens.
 - Avoid unbounded network fan-out. Use the helpers in `src/lib/networkSafety.ts`.
+- Prevent $O(N^2)$ bottlenecks. Never perform $O(N)$ linear scans (`.find()`, `.filter()`) inside tight loops or `Array.prototype.sort()` comparators. Use $O(1)$ lookup Maps instead.
 - For non-trivial changes, run relevant checks before finishing and summarize results.
 
 ## 2. Commands and Verification
@@ -124,6 +125,7 @@ For React components, strictly adhere to Hook purity rules:
 
 - Do not call impure functions (like `Date.now()`) directly in the render body. Initialize them via `useState(() => Date.now())` or capture them in `useEffect`.
 - Never place hooks below early returns (e.g., `if (isLoading) return;`).
+- Strictly adhere to `react-hooks/exhaustive-deps`. All variables and functions referenced from the component scope must be included in the dependency arrays for `useEffect`, `useMemo`, and `useCallback`. Omitting dependencies will fail Husky pre-commit checks.
 
 ## 4. Styling, UI, and Components
 
@@ -482,3 +484,11 @@ When executing an implementation plan (e.g. `docs/superpowers/plans/...`), you m
 
 - When defining Admin-only API rules for collections, always prefix the role check with an explicit ID check to ensure safe evaluation (e.g., `@request.auth.id != "" && @request.auth.role = "admin"`). Do not rely solely on the role check.
 - When defining API rules that traverse relation fields (e.g., `profile.user = @request.auth.id`), do not wrap the relation traversal inside parentheses combined with logical operators (e.g., `(profile.user = @request.auth.id || ...)`). The PocketBase rule parser can fail to resolve the relation field and crash the server on startup with an "invalid left operand" error. Instead, keep relation checks at the top level without parentheses (e.g., `@request.auth.role = 'admin' || profile.user = @request.auth.id`).
+
+## 13. Performance & Algorithmic Complexity
+
+Prevent $O(N^2)$ or worse algorithmic complexity bottlenecks, especially when rendering or sorting data in the UI.
+
+- **Sort Comparators**: `Array.prototype.sort()` executes its comparator $O(N \log N)$ times. Never place $O(N)$ operations like `array.find()`, `array.filter()`, or `array.some()` inside a sort comparator. This degrades performance to $O(N^2 \log N)$, causing severe UI latency on large datasets.
+- **Pre-computed Lookup Maps**: Before sorting or mapping over large collections where cross-referencing is required (e.g. resolving parent/child relationships, finding linked entities), pre-build an $O(1)$ `Map` or `Set` lookup table in $O(N)$ time. Pass this map into your helper functions.
+- **React Renders**: Do not repeatedly construct large lookup maps inside a component's render body without memoizing them via `useMemo`.

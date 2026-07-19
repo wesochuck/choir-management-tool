@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor, cleanup } from '@testing-library/react';
 import { useDues } from './useDues';
 import { duesService, type SeasonalDue } from '../services/duesService';
-import { settingsService } from '../services/settingsService';
+import { seasonService, type Season } from '../services/seasonService';
 
 const mockSeasonalDues: SeasonalDue[] = [
   {
@@ -51,9 +51,14 @@ afterEach(() => {
 test('useDues returns currentSeason and duesMap correctly', async () => {
   const { wrapper } = createHarness();
 
-  mock.method(settingsService, 'getRosterSettings', async () => ({
-    currentSeason: 'Fall 2023',
-  }));
+  mock.method(
+    seasonService,
+    'getActiveSeason',
+    async () =>
+      ({
+        id: 'Fall 2023',
+      }) as Season
+  );
 
   mock.method(duesService, 'getDuesForSeason', async (season: string) => {
     if (season === 'Fall 2023') return mockSeasonalDues;
@@ -75,9 +80,14 @@ test('useDues returns currentSeason and duesMap correctly', async () => {
 test('useDues returns empty duesMap if no data is returned', async () => {
   const { wrapper } = createHarness();
 
-  mock.method(settingsService, 'getRosterSettings', async () => ({
-    currentSeason: 'Spring 2024',
-  }));
+  mock.method(
+    seasonService,
+    'getActiveSeason',
+    async () =>
+      ({
+        id: 'Spring 2024',
+      }) as Season
+  );
 
   mock.method(duesService, 'getDuesForSeason', async () => []);
 
@@ -95,7 +105,7 @@ test('useDues handles loading states correctly', async () => {
   const { wrapper } = createHarness();
 
   // Never resolving promises to keep them in loading state
-  mock.method(settingsService, 'getRosterSettings', () => new Promise(() => {}));
+  mock.method(seasonService, 'getActiveSeason', () => new Promise(() => {}));
   mock.method(duesService, 'getDuesForSeason', () => new Promise(() => {}));
 
   const { result } = renderHook(() => useDues(), { wrapper });
@@ -106,9 +116,14 @@ test('useDues handles loading states correctly', async () => {
 test('useDues toggleDues updates mutation correctly', async () => {
   const { wrapper } = createHarness();
 
-  mock.method(settingsService, 'getRosterSettings', async () => ({
-    currentSeason: 'Fall 2023',
-  }));
+  mock.method(
+    seasonService,
+    'getActiveSeason',
+    async () =>
+      ({
+        id: 'Fall 2023',
+      }) as Season
+  );
 
   mock.method(duesService, 'getDuesForSeason', async () => mockSeasonalDues);
 
@@ -129,9 +144,7 @@ test('useDues toggleDues updates mutation correctly', async () => {
 test('useDues toggleDues skipping mutation if no currentSeason', async () => {
   const { wrapper } = createHarness();
 
-  mock.method(settingsService, 'getRosterSettings', async () => ({
-    currentSeason: '',
-  }));
+  mock.method(seasonService, 'getActiveSeason', async () => null);
 
   const updateDuesMock = mock.method(duesService, 'updateDues', async () => ({}));
 
@@ -149,11 +162,20 @@ test('useDues toggleDues skipping mutation if no currentSeason', async () => {
 test('useDues refresh re-fetches queries', async () => {
   const { wrapper } = createHarness();
 
-  const getRosterSettingsMock = mock.method(settingsService, 'getRosterSettings', async () => ({
-    currentSeason: 'Fall 2023',
-  }));
+  const getActiveSeasonMock = mock.method(
+    seasonService,
+    'getActiveSeason',
+    async () =>
+      ({
+        id: 'Fall 2023',
+      }) as Season
+  );
 
-  const getDuesForSeasonMock = mock.method(duesService, 'getDuesForSeason', async () => mockSeasonalDues);
+  const getDuesForSeasonMock = mock.method(
+    duesService,
+    'getDuesForSeason',
+    async () => mockSeasonalDues
+  );
 
   const { result } = renderHook(() => useDues(), { wrapper });
 
@@ -161,11 +183,11 @@ test('useDues refresh re-fetches queries', async () => {
     assert.equal(result.current.isLoading, false);
   });
 
-  assert.equal(getRosterSettingsMock.mock.callCount(), 1);
+  assert.equal(getActiveSeasonMock.mock.callCount(), 1);
   assert.equal(getDuesForSeasonMock.mock.callCount(), 1);
 
   await result.current.refresh();
 
-  assert.equal(getRosterSettingsMock.mock.callCount(), 2);
+  assert.equal(getActiveSeasonMock.mock.callCount(), 2);
   assert.equal(getDuesForSeasonMock.mock.callCount(), 2);
 });

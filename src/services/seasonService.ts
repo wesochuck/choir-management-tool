@@ -43,6 +43,7 @@ export const seasonService = {
 
     // PocketBase limits each batch to the configured maximum (100 in this project).
     // Keep the target activation last so every previous active season is disabled first.
+    // @allow-sequential-await
     for (let offset = 0; offset < updates.length; offset += MAX_BATCH_REQUESTS) {
       const batch = pb.createBatch();
       for (const update of updates.slice(offset, offset + MAX_BATCH_REQUESTS)) {

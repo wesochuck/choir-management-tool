@@ -29,15 +29,43 @@ export function getMostRecentPerformanceDate(
 export function getEffectiveMostRecentPerformanceDate(
   piece: MusicPiece,
   perfMap: Map<string, PiecePerformanceEntry>,
-  allPieces: MusicPiece[] = []
+  allPieces: MusicPiece[] = [],
+  parentToChildrenMap?: Map<string, MusicPiece[]>,
+  pieceByIdMap?: Map<string, MusicPiece>
 ): string | null {
   const ownDate = getMostRecentPerformanceDate(piece, perfMap);
-  if (ownDate) return ownDate;
 
-  if (!piece.parentId) return null;
+  let childDate: string | null = null;
+  if (!piece.parentId) {
+    const children = parentToChildrenMap
+      ? parentToChildrenMap.get(piece.id)
+      : allPieces.filter((c) => c.parentId === piece.id);
 
-  const parent = allPieces.find((candidate) => candidate.id === piece.parentId);
-  return parent ? getMostRecentPerformanceDate(parent, perfMap) : null;
+    if (children) {
+      for (const child of children) {
+        const d = getMostRecentPerformanceDate(child, perfMap);
+        if (d && (!childDate || d > childDate)) {
+          childDate = d;
+        }
+      }
+    }
+  }
+
+  let parentDate: string | null = null;
+  if (piece.parentId) {
+    const parent = pieceByIdMap
+      ? pieceByIdMap.get(piece.parentId)
+      : allPieces.find((candidate) => candidate.id === piece.parentId);
+    if (parent) {
+      parentDate = getMostRecentPerformanceDate(parent, perfMap);
+    }
+  }
+
+  const allDates = [ownDate, childDate, parentDate].filter((d): d is string => d !== null);
+  if (allDates.length === 0) return null;
+
+  allDates.sort();
+  return allDates[allDates.length - 1];
 }
 
 /**

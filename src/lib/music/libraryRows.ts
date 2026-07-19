@@ -6,6 +6,37 @@ import {
 } from './performanceHistory';
 import { parseDurationToSeconds } from './duration';
 
+export function getEffectivePerformanceCount(
+  piece: MusicPiece,
+  perfMap: Map<string, PiecePerformanceEntry>,
+  allPieces: MusicPiece[],
+  parentToChildrenMap?: Map<string, MusicPiece[]>,
+  pieceByIdMap?: Map<string, MusicPiece>
+): number {
+  let count = perfMap.get(piece.id)?.count ?? 0;
+
+  if (!piece.parentId) {
+    const children = parentToChildrenMap
+      ? parentToChildrenMap.get(piece.id)
+      : allPieces.filter((c) => c.parentId === piece.id);
+
+    if (children) {
+      for (const child of children) {
+        count += perfMap.get(child.id)?.count ?? 0;
+      }
+    }
+  } else {
+    const parent = pieceByIdMap
+      ? pieceByIdMap.get(piece.parentId)
+      : allPieces.find((p) => p.id === piece.parentId);
+
+    if (parent) {
+      count += perfMap.get(parent.id)?.count ?? 0;
+    }
+  }
+  return count;
+}
+
 export type MusicLibrarySortField =
   | 'title'
   | 'composer'
@@ -38,20 +69,26 @@ function getSortTitle(title: string, ignoreArticles: boolean): string {
   return title.replace(/^(?:a|an|the)\s+/i, '');
 }
 
-export function getTrackSortCount(piece: MusicPiece, allPieces: MusicPiece[]): number {
+export function getTrackSortCount(
+  piece: MusicPiece,
+  allPieces: MusicPiece[],
+  parentToChildrenMap?: Map<string, MusicPiece[]>
+): number {
   const directTracks = piece.audioTrackMapping
     ? Object.keys(piece.audioTrackMapping).filter((key) => piece.audioTrackMapping?.[key]).length
     : 0;
 
-  const movementTracks = allPieces
-    .filter((candidate) => candidate.parentId === piece.id)
-    .reduce((sum, movement) => {
-      const count = movement.audioTrackMapping
-        ? Object.keys(movement.audioTrackMapping).filter((key) => movement.audioTrackMapping?.[key])
-            .length
-        : 0;
-      return sum + count;
-    }, 0);
+  const children = parentToChildrenMap
+    ? parentToChildrenMap.get(piece.id) || []
+    : allPieces.filter((candidate) => candidate.parentId === piece.id);
+
+  const movementTracks = children.reduce((sum, movement) => {
+    const count = movement.audioTrackMapping
+      ? Object.keys(movement.audioTrackMapping).filter((key) => movement.audioTrackMapping?.[key])
+          .length
+      : 0;
+    return sum + count;
+  }, 0);
 
   return directTracks + movementTracks;
 }
@@ -79,6 +116,22 @@ export function buildVisibleMusicLibraryRows(
     sortDirection = 'asc',
     ignoreArticles = false,
   } = options;
+
+  // Pre-build O(1) lookup maps for parent/child hierarchies
+  const pieceByIdMap = new Map<string, MusicPiece>();
+  const parentToChildrenMap = new Map<string, MusicPiece[]>();
+
+  for (const p of pieces) {
+    pieceByIdMap.set(p.id, p);
+    if (p.parentId) {
+      let list = parentToChildrenMap.get(p.parentId);
+      if (!list) {
+        list = [];
+        parentToChildrenMap.set(p.parentId, list);
+      }
+      list.push(p);
+    }
+  }
 
   let result = [...pieces];
 
@@ -143,7 +196,13 @@ export function buildVisibleMusicLibraryRows(
   if (recencyFilter && recencyFilter !== 'all') {
     const referenceDate = now || new Date();
     result = result.filter((p) => {
-      const mostRecent = getEffectiveMostRecentPerformanceDate(p, perfMap, pieces);
+      const mostRecent = getEffectiveMostRecentPerformanceDate(
+        p,
+        perfMap,
+        pieces,
+        parentToChildrenMap,
+        pieceByIdMap
+      );
 
       if (recencyFilter === 'never') {
         return mostRecent === null;
@@ -214,8 +273,20 @@ export function buildVisibleMusicLibraryRows(
         return sortDirection === 'asc' ? comp : -comp;
       }
       case 'lastPerformed': {
-        const dateA = getEffectiveMostRecentPerformanceDate(a, perfMap, pieces);
-        const dateB = getEffectiveMostRecentPerformanceDate(b, perfMap, pieces);
+        const dateA = getEffectiveMostRecentPerformanceDate(
+          a,
+          perfMap,
+          pieces,
+          parentToChildrenMap,
+          pieceByIdMap
+        );
+        const dateB = getEffectiveMostRecentPerformanceDate(
+          b,
+          perfMap,
+          pieces,
+          parentToChildrenMap,
+          pieceByIdMap
+        );
         if (!dateA && !dateB) return 0;
         if (!dateA) return 1;
         if (!dateB) return -1;
@@ -223,13 +294,27 @@ export function buildVisibleMusicLibraryRows(
         return sortDirection === 'asc' ? comp : -comp;
       }
       case 'performances': {
-        const countA = perfMap.get(a.id)?.count ?? 0;
-        const countB = perfMap.get(b.id)?.count ?? 0;
+        const countA = getEffectivePerformanceCount(
+          a,
+          perfMap,
+          pieces,
+          parentToChildrenMap,
+          pieceByIdMap
+        );
+        const countB = getEffectivePerformanceCount(
+          b,
+          perfMap,
+          pieces,
+          parentToChildrenMap,
+          pieceByIdMap
+        );
         const comp = countA - countB;
         return sortDirection === 'asc' ? comp : -comp;
       }
       case 'tracks': {
-        const comp = getTrackSortCount(a, pieces) - getTrackSortCount(b, pieces);
+        const comp =
+          getTrackSortCount(a, pieces, parentToChildrenMap) -
+          getTrackSortCount(b, pieces, parentToChildrenMap);
         return sortDirection === 'asc' ? comp : -comp;
       }
       case 'title':
