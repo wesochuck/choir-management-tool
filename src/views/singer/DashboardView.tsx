@@ -11,7 +11,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { pollService } from '../../services/pollService';
 import { AppCard } from '../../components/common/AppCard';
 import { communicationService, type MessageRecord } from '../../services/communicationService';
-import { sanitizeHtml } from '../../lib/textSafety';
+import { sanitizeHtml, stripHtml } from '../../lib/textSafety';
 import { useDialog } from '../../contexts/DialogContext';
 import { resourceService } from '../../services/resourceService';
 import { settingsService } from '../../services/settingsService';
@@ -501,15 +501,9 @@ export default function DashboardView() {
                             {getFormattedDate(ann.created)}
                           </span>
                         </div>
-                        <div
-                          className="text-text-muted line-clamp-2 text-xs"
-                          dangerouslySetInnerHTML={{
-                            __html:
-                              sanitizeHtml(ann.content)
-                                .replace(/<[^>]*>/g, '')
-                                .slice(0, 100) + '...',
-                          }}
-                        />
+                        <div className="text-text-muted line-clamp-2 text-xs">
+                          {stripHtml(ann.content).slice(0, 100) + '...'}
+                        </div>
                       </div>
                     ))}
                   </div>
