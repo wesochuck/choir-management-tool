@@ -11,6 +11,8 @@ export interface Season {
   updated: string;
 }
 
+const MAX_BATCH_REQUESTS = 100;
+
 export const seasonService = {
   async getActiveSeason(): Promise<Season | null> {
     try {
@@ -30,17 +32,24 @@ export const seasonService = {
   },
 
   async toggleActiveSeason(seasonId: string): Promise<void> {
-    // PocketBase SDK doesn't have a bulk update, so we fetch all active and disable them
     const activeSeasons = await pb
       .collection('seasons')
       .getFullList<Season>({ filter: 'isActive = true' });
 
-    for (const s of activeSeasons) {
-      if (s.id !== seasonId) {
-        await pb.collection('seasons').update(s.id, { isActive: false });
+    const updates = activeSeasons
+      .filter((season) => season.id !== seasonId)
+      .map((season) => ({ id: season.id, isActive: false }));
+    updates.push({ id: seasonId, isActive: true });
+
+    // PocketBase limits each batch to the configured maximum (100 in this project).
+    // Keep the target activation last so every previous active season is disabled first.
+    for (let offset = 0; offset < updates.length; offset += MAX_BATCH_REQUESTS) {
+      const batch = pb.createBatch();
+      for (const update of updates.slice(offset, offset + MAX_BATCH_REQUESTS)) {
+        batch.collection('seasons').update(update.id, { isActive: update.isActive });
       }
+      await batch.send();
     }
-    await pb.collection('seasons').update(seasonId, { isActive: true });
   },
 
   async createSeason(data: Partial<Season>): Promise<Season> {
