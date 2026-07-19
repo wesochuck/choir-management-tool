@@ -119,13 +119,12 @@ export const ticketService = {
     // @allow-sequential-await - Sequential polling checks for Stripe fulfillment status.
     for (let i = 0; i < retries; i++) {
       try {
-        const list = await pb.collection('ticketPurchases').getFullList<TicketPurchase>({
-          filter: pb.filter('stripeSessionId = {:sessionId}', { sessionId }),
-          perPage: 1,
-          expand: 'event.venue,bundle',
-        });
-        const record = list[0];
-        if (record) return record;
+        return await pb.collection('ticketPurchases').getFirstListItem<TicketPurchase>(
+          pb.filter('stripeSessionId = {:sessionId}', { sessionId }),
+          {
+            expand: 'event.venue,bundle',
+          }
+        );
       } catch {
         // ignore and retry
       }
