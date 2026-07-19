@@ -19,25 +19,27 @@ const AuthContext = createContext<AuthContextType>({
 
 export { AuthContext };
 
+const persistUserPreferences = async (user: ChoirUser, newPrefs: Partial<UserPreferences>): Promise<ChoirUser> => {
+  const updatedPreferences = mergePreferences(user.preferences, newPrefs);
+
+  try {
+    return await pb.collection('users').update<ChoirUser>(user.id, {
+      preferences: updatedPreferences,
+    });
+  } catch (err: unknown) {
+    console.error('Failed to update preferences:', err);
+    throw err;
+  }
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<ChoirUser | null>(pb.authStore.model as ChoirUser | null);
   const [isLoading, setIsLoading] = useState(true);
 
   const updatePreferences = async (newPrefs: Partial<UserPreferences>) => {
     if (!user) return;
-
-    const updatedPreferences = mergePreferences(user.preferences, newPrefs);
-
-    try {
-      const updatedRecord = await pb.collection('users').update<ChoirUser>(user.id, {
-        preferences: updatedPreferences,
-      });
-
-      setUser(updatedRecord);
-    } catch (err: unknown) {
-      console.error('Failed to update preferences:', err);
-      throw err;
-    }
+    const updatedRecord = await persistUserPreferences(user, newPrefs);
+    setUser(updatedRecord);
   };
 
   const logout = useCallback(() => {
