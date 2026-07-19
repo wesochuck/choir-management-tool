@@ -5,9 +5,9 @@ import { stripHtml } from '../src/lib/textSafety';
 
 describe('stripHtml', () => {
   test('handles null, undefined, and empty strings', () => {
-    // @ts-ignore
+    // @ts-expect-error testing defensive runtime handling
     assert.equal(stripHtml(null), '');
-    // @ts-ignore
+    // @ts-expect-error testing defensive runtime handling
     assert.equal(stripHtml(undefined), '');
     assert.equal(stripHtml(''), '');
   });
@@ -31,5 +31,18 @@ describe('stripHtml', () => {
     assert.equal(stripHtml('<script>alert(1)</script>'), '');
     assert.equal(stripHtml('<a href="javascript:alert(1)">click here</a>'), 'click here');
     assert.equal(stripHtml('<img src=x onerror=alert(1)>'), '');
+  });
+
+  test('uses the non-DOM fallback without returning markup', () => {
+    const originalDOMParser = window.DOMParser;
+    // @ts-expect-error testing environments without DOMParser
+    window.DOMParser = undefined;
+
+    try {
+      assert.equal(stripHtml('<p>Hello <strong>World</strong></p>'), 'Hello World');
+      assert.equal(stripHtml('<img src=x onerror=alert(1)>Visible'), 'Visible');
+    } finally {
+      window.DOMParser = originalDOMParser;
+    }
   });
 });
