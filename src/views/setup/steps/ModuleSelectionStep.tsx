@@ -56,6 +56,31 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
     });
   }, []);
 
+  const handleDisable = (id: ModuleId) => {
+    const cascade = getDisableCascade(enabled, id);
+    if (cascade.length > 1) {
+      const others = cascade.filter((m) => m !== id).map((m) => MODULE_DEFINITIONS[m].label);
+      void dialog
+        .confirm({
+          title: 'Confirm Disabling Dependent Modules',
+          message: `Disabling this module will also disable the following dependent features:\n\n${others.join(', ')}\n\nDo you want to proceed?`,
+          confirmLabel: 'Disable All',
+          variant: 'warning',
+        })
+        .then((confirmed) => {
+          if (confirmed) {
+            const next = new Set(enabled);
+            cascade.forEach((m) => next.delete(m));
+            setEnabled(next);
+          }
+        });
+    } else {
+      const next = new Set(enabled);
+      next.delete(id);
+      setEnabled(next);
+    }
+  };
+
   const handleToggle = (id: ModuleId, checked: boolean) => {
     if (!checked && requiredModules.includes(id)) {
       void dialog.showMessage({
@@ -69,28 +94,7 @@ export const ModuleSelectionStep: React.FC<ModuleSelectionStepProps> = ({
       const next = enableModule(enabled, id);
       setEnabled(next);
     } else {
-      const cascade = getDisableCascade(enabled, id);
-      if (cascade.length > 1) {
-        const others = cascade.filter((m) => m !== id).map((m) => MODULE_DEFINITIONS[m].label);
-        void dialog
-          .confirm({
-            title: 'Confirm Disabling Dependent Modules',
-            message: `Disabling this module will also disable the following dependent features:\n\n${others.join(', ')}\n\nDo you want to proceed?`,
-            confirmLabel: 'Disable All',
-            variant: 'warning',
-          })
-          .then((confirmed) => {
-            if (confirmed) {
-              const next = new Set(enabled);
-              cascade.forEach((m) => next.delete(m));
-              setEnabled(next);
-            }
-          });
-      } else {
-        const next = new Set(enabled);
-        next.delete(id);
-        setEnabled(next);
-      }
+      handleDisable(id);
     }
   };
 
