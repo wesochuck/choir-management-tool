@@ -7,6 +7,34 @@ interface FloatingSaveBarProps {
   onDiscard: () => void;
 }
 
+function ActionButtons({
+  isSaving,
+  onDiscard,
+  onSave,
+}: {
+  isSaving: boolean;
+  onDiscard: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="flex gap-3">
+      <Button type="button" variant="outline" size="small" disabled={isSaving} onClick={onDiscard}>
+        Discard
+      </Button>
+      <Button
+        type="button"
+        variant="primary"
+        size="small"
+        disabled={isSaving}
+        onClick={onSave}
+        loading={isSaving}
+      >
+        Save Changes
+      </Button>
+    </div>
+  );
+}
+
 export function FloatingSaveBar({ isDirty, isSaving, onSave, onDiscard }: FloatingSaveBarProps) {
   if (!isDirty) return null;
 
@@ -17,27 +45,7 @@ export function FloatingSaveBar({ isDirty, isSaving, onSave, onDiscard }: Floati
           ⚠️ You have unsaved configuration changes.
         </span>
       </div>
-      <div className="flex gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="small"
-          disabled={isSaving}
-          onClick={onDiscard}
-        >
-          Discard
-        </Button>
-        <Button
-          type="button"
-          variant="primary"
-          size="small"
-          disabled={isSaving}
-          onClick={onSave}
-          loading={isSaving}
-        >
-          Save Changes
-        </Button>
-      </div>
+      <ActionButtons isSaving={isSaving} onDiscard={onDiscard} onSave={onSave} />
     </div>
   );
 }
