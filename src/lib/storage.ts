@@ -1,56 +1,27 @@
-const ENCRYPTION_PREFIX = 'ENC:1:';
-// Simple lightweight obfuscation wrapper, enough to prevent casual inspection
-const ENCRYPTION_KEY = 'vocal-chorus-app-local-storage-key-2024';
+const SENSITIVE_KEY_PATTERN = /(auth|token|session|secret|password|credential)/i;
 
-function encrypt(value: string): string {
-  try {
-    const encoded = encodeURIComponent(value);
-    let result = '';
-    for (let i = 0; i < encoded.length; i++) {
-      result += String.fromCharCode(
-        encoded.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length)
-      );
-    }
-    return ENCRYPTION_PREFIX + btoa(result);
-  } catch {
-    return value;
-  }
-}
-
-function decrypt(value: string): string {
-  if (!value.startsWith(ENCRYPTION_PREFIX)) {
-    return value;
-  }
-
-  try {
-    const encryptedPart = value.slice(ENCRYPTION_PREFIX.length);
-    const decoded = atob(encryptedPart);
-    let result = '';
-    for (let i = 0; i < decoded.length; i++) {
-      result += String.fromCharCode(
-        decoded.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length)
-      );
-    }
-    return decodeURIComponent(result);
-  } catch {
-    return value;
-  }
+function isSensitiveKey(key: string): boolean {
+  return SENSITIVE_KEY_PATTERN.test(key);
 }
 
 export const safeLocalStorage = {
   getItem: (key: string): string | null => {
+    if (isSensitiveKey(key)) return null;
+
     try {
-      const value = localStorage.getItem(key);
-      if (value === null) return null;
-      return decrypt(value);
+      return localStorage.getItem(key);
     } catch {
       return null;
     }
   },
   setItem: (key: string, value: string): void => {
+    if (isSensitiveKey(key)) {
+      console.warn(`Refusing to store sensitive value in localStorage: ${key}`);
+      return;
+    }
+
     try {
-      const encryptedValue = encrypt(value);
-      localStorage.setItem(key, encryptedValue);
+      localStorage.setItem(key, value);
     } catch {
       // Ignore write errors in private browsing/restricted modes
     }
