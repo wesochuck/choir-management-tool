@@ -364,7 +364,9 @@ export function handleCalendarFeed(e: PocketBaseRequestEvent): unknown {
     );
 
     // Fetch all rosters (RSVPs) for this profile
-    const rosters = app.findRecordsByFilter('eventRosters', `profile = '${profile.id}'`, '', 1000);
+    const rosters = app.findRecordsByFilter('eventRosters', 'profile = {:profileId}', '', 1000, 0, {
+      profileId: profile.id,
+    });
 
     // Map event ID to roster record
     const rosterMap: Record<string, unknown> = {};
