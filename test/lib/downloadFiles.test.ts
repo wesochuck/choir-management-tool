@@ -27,12 +27,20 @@ describe('downloadFiles utility helpers', () => {
         getFileExtensionFromUrl('https://example.com/test.m4a?param=value'),
         'm4a'
       );
+      assert.strictEqual(getFileExtensionFromUrl('https://example.com/test.m4v'), 'm4v');
+      assert.strictEqual(getFileExtensionFromUrl('https://example.com/test.gz'), 'gz');
+      assert.strictEqual(getFileExtensionFromUrl('https://example.com/test.m3u8'), 'm3u8');
+      assert.strictEqual(getFileExtensionFromUrl('https://example.com/file.name.tar.gz'), 'gz');
+      assert.strictEqual(getFileExtensionFromUrl('https://example.com/test.mp4#t=10'), 'mp4');
     });
 
     it('defaults to mp3 when URL is malformed or extension is missing', () => {
       assert.strictEqual(getFileExtensionFromUrl('https://example.com/no-extension'), 'mp3');
       assert.strictEqual(getFileExtensionFromUrl('invalid-url-here'), 'mp3');
       assert.strictEqual(getFileExtensionFromUrl(''), 'mp3');
+      assert.strictEqual(getFileExtensionFromUrl('https://example.com/test.c'), 'mp3');
+      assert.strictEqual(getFileExtensionFromUrl('https://example.com/test.abcdef'), 'mp3');
+      assert.strictEqual(getFileExtensionFromUrl('/relative/path/test.mp3'), 'mp3');
     });
   });
 
@@ -45,6 +53,16 @@ describe('downloadFiles utility helpers', () => {
         isFolder: false,
       };
       assert.strictEqual(getSafeDownloadFilename(track), 'Song With Illegal Characters.mp3');
+    });
+
+    it('filters out control characters', () => {
+      const track: PlayerMediaFile = {
+        id: '1a',
+        name: 'Track\x00With\x1FControl\nChars',
+        streamUrl: 'https://example.com/track.mp3',
+        isFolder: false,
+      };
+      assert.strictEqual(getSafeDownloadFilename(track), 'TrackWithControlChars.mp3');
     });
 
     it('collapses multiple whitespace characters', () => {
