@@ -56,8 +56,14 @@ export default function SetListView() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleEdit = (item: SetListItem) => {
-    setItemEditing(item);
-    setIsItemEditModalOpen(true);
+    const displayRow = setList.itemsWithDetails.find((i) => i.id === item.id);
+    const pieceId = item.pieceId || displayRow?.resolvedPiece?.id;
+    if (pieceId) {
+      library.handleOpenPieceEditor(pieceId);
+    } else {
+      setItemEditing(item);
+      setIsItemEditModalOpen(true);
+    }
   };
 
   const handleSaveItem = async (updatedItem: SetListItem) => {
