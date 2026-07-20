@@ -95,7 +95,7 @@ export function enqueueTicketConfirmationEmail(options: {
   $app.save(mailRecord);
 }
 
-export function enqueueRsvpConfirmationEmail(options: {
+export function enqueueCheckoutRsvpConfirmationEmail(options: {
   purchase: PocketBaseRecord;
   event: PocketBaseRecord;
   recipientEmail?: string;

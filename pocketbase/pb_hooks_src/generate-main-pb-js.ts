@@ -1,10 +1,33 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 const SRC_DIR = path.join(process.cwd(), 'pocketbase/pb_hooks_src');
 const OUTPUT_FILE = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
+
+function listHookSourceFiles(directory: string): string[] {
+  return fs
+    .readdirSync(directory, { withFileTypes: true })
+    .flatMap((entry) => {
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) return listHookSourceFiles(absolutePath);
+      return entry.isFile() && entry.name.endsWith('.ts') ? [absolutePath] : [];
+    })
+    .sort();
+}
+
+export function computeHookSourceFingerprint(): string {
+  const hash = crypto.createHash('sha256');
+  for (const absolutePath of listHookSourceFiles(SRC_DIR)) {
+    hash.update(path.relative(SRC_DIR, absolutePath));
+    hash.update('\0');
+    hash.update(fs.readFileSync(absolutePath));
+    hash.update('\0');
+  }
+  return hash.digest('hex').slice(0, 16);
+}
 
 export type UtilityBundleName =
   | 'hookJson'
@@ -16,29 +39,56 @@ export type UtilityBundleName =
   | 'attendanceReport'
   | 'messageHookRules'
   | 'queueProcessor'
-  | 'calendarEndpoint'
+  | 'calendarDownload'
+  | 'calendarFeed'
+  | 'calendarFeedUrl'
+  | 'calendarFeedReset'
   | 'singerSeatingEndpoint'
   | 'hmacTokens'
   | 'timezone'
   | 'rsvpValidation'
+  | 'rsvpHelpers'
   | 'adminNotifications'
   | 'attendanceFinalizer'
-  | 'playerEndpoints'
+  | 'playerGenerateToken'
+  | 'playerPlaylist'
+  | 'singerPlayerPlaylist'
   | 'stripeService'
   | 'pocketbaseDate'
-  | 'checkoutEndpoints'
+  | 'checkoutHelpers'
+  | 'checkoutEmailHelpers'
+  | 'checkoutCreateTickets'
+  | 'checkoutCreateBundle'
+  | 'checkoutCreateDues'
+  | 'checkoutCreateRsvp'
+  | 'checkoutCreateDonation'
+  | 'checkoutExpiration'
+  | 'checkoutStripeWebhook'
+  | 'checkoutAdminRefundTicket'
+  | 'checkoutAdminRefundBundle'
+  | 'checkoutAdminRefundDonation'
+  | 'checkoutAdminResendConfirmation'
   | 'ticketScanValidation'
   | 'financialNotifications'
   | 'maintenance'
   | 'brevoAdapter'
+  | 'setupState'
+  | 'setupAuth'
+  | 'setupStatus'
+  | 'setupModules'
+  | 'setupClaim'
+  | 'setupProgress'
+  | 'setupComplete'
+  | 'setupRecovery'
+  | 'setupHealth'
   | 'moduleGuard'
-  | 'setup'
   | 'communicationDelivery';
 
 export type UtilityBundle = {
   files: string[];
   symbols: string[];
   dependsOn?: UtilityBundleName[];
+  entrySymbols?: string[];
 };
 
 type CallbackOptions = {
@@ -108,14 +158,28 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     files: ['email/brevoAdapter.ts'],
     symbols: ['dispatchEmailViaBrevo', 'dispatchSmsViaBrevo'],
   },
-  calendarEndpoint: {
+  calendarDownload: {
     files: ['calendarEndpoint.ts'],
-    symbols: [
-      'handleCalendarDownload',
-      'handleCalendarFeed',
-      'handleCalendarFeedUrl',
-      'handleCalendarFeedReset',
-    ],
+    symbols: ['handleCalendarDownload'],
+    entrySymbols: ['handleCalendarDownload'],
+    dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens', 'pocketbaseDate'],
+  },
+  calendarFeed: {
+    files: ['calendarEndpoint.ts'],
+    symbols: ['handleCalendarFeed'],
+    entrySymbols: ['handleCalendarFeed'],
+    dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens', 'pocketbaseDate'],
+  },
+  calendarFeedUrl: {
+    files: ['calendarEndpoint.ts'],
+    symbols: ['handleCalendarFeedUrl'],
+    entrySymbols: ['handleCalendarFeedUrl'],
+    dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens', 'pocketbaseDate'],
+  },
+  calendarFeedReset: {
+    files: ['calendarEndpoint.ts'],
+    symbols: ['handleCalendarFeedReset'],
+    entrySymbols: ['handleCalendarFeedReset'],
     dependsOn: ['hookJson', 'hookText', 'timezone', 'hmacTokens', 'pocketbaseDate'],
   },
   singerSeatingEndpoint: {
@@ -141,9 +205,22 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     symbols: ['zonedInputValueToUtcLocal'],
     dependsOn: ['hookText'],
   },
-  playerEndpoints: {
+  playerGenerateToken: {
     files: ['playerEndpoints.ts'],
-    symbols: ['handleGeneratePlayerToken', 'handlePlayerPlaylist', 'handleSingerPlayerPlaylist'],
+    symbols: ['handleGeneratePlayerToken'],
+    entrySymbols: ['handleGeneratePlayerToken'],
+    dependsOn: ['hmacTokens', 'hookJson'],
+  },
+  playerPlaylist: {
+    files: ['playerEndpoints.ts'],
+    symbols: ['handlePlayerPlaylist'],
+    entrySymbols: ['handlePlayerPlaylist'],
+    dependsOn: ['hmacTokens', 'hookJson'],
+  },
+  singerPlayerPlaylist: {
+    files: ['playerEndpoints.ts'],
+    symbols: ['handleSingerPlayerPlaylist'],
+    entrySymbols: ['handleSingerPlayerPlaylist'],
     dependsOn: ['hmacTokens', 'hookJson'],
   },
   adminNotifications: {
@@ -159,6 +236,16 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     files: ['rsvpValidation.ts'],
     symbols: ['parsePocketBaseDate', 'validateSingerRsvpWindow', 'getRsvpWindowInfo'],
   },
+  rsvpHelpers: {
+    files: ['rsvp/rsvpHelpers.ts'],
+    symbols: [
+      'verifyEventRecipientToken',
+      'verifyUnsubscribeToken',
+      'buildVenueMap',
+      'enqueueRsvpConfirmationEmail',
+    ],
+    dependsOn: ['hookJson', 'hmacTokens', 'queueProcessor'],
+  },
 
   pocketbaseDate: {
     files: ['pocketbaseDate.ts'],
@@ -168,45 +255,89 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     files: ['stripeService.ts'],
     symbols: ['createCheckoutSession', 'retrieveCheckoutSession', 'refundPaymentIntent'],
   },
-  checkoutEndpoints: {
-    files: [
-      'checkout/checkoutHelpers.ts',
-      'checkout/emailHelpers.ts',
-      'checkout/createTicketsSession.ts',
-      'checkout/createBundleSession.ts',
-      'checkout/createDuesSession.ts',
-      'checkout/createRsvpSession.ts',
-      'checkout/createDonationSession.ts',
-      'checkout/stripeWebhook.ts',
-      'checkout/adminRefundTicket.ts',
-      'checkout/adminRefundBundle.ts',
-      'checkout/adminRefundDonation.ts',
-      'checkout/adminResendConfirmation.ts',
-    ],
+  checkoutHelpers: {
+    files: ['checkout/checkoutHelpers.ts'],
     symbols: [
-      'handleCreateTicketsSession',
+      'getOrCreatePatronProfile',
+      'getTimezoneSetting',
+      'getChoirNameSetting',
+      'getBaseUrl',
+      'getStripeFeeSettings',
+      'calculateStripeFee',
+    ],
+    dependsOn: ['hookJson'],
+  },
+  checkoutEmailHelpers: {
+    files: ['checkout/emailHelpers.ts'],
+    symbols: [
+      'enqueueTicketConfirmationEmail',
+      'enqueueCheckoutRsvpConfirmationEmail',
+      'enqueueBundleTicketConfirmationEmail',
+    ],
+    dependsOn: ['hookText', 'hmacTokens', 'pocketbaseDate', 'checkoutHelpers'],
+  },
+  checkoutCreateTickets: {
+    files: ['checkout/createTicketsSession.ts'],
+    symbols: ['handleCreateTicketsSession'],
+    dependsOn: ['hookJson', 'hookText', 'stripeService', 'pocketbaseDate', 'checkoutHelpers'],
+  },
+  checkoutCreateBundle: {
+    files: ['checkout/createBundleSession.ts'],
+    symbols: ['handleCreateBundleSession'],
+    dependsOn: ['stripeService', 'hookJson', 'checkoutHelpers', 'pocketbaseDate'],
+  },
+  checkoutCreateDues: {
+    files: ['checkout/createDuesSession.ts'],
+    symbols: ['handleCreateDuesSession'],
+    dependsOn: ['stripeService', 'checkoutHelpers'],
+  },
+  checkoutCreateRsvp: {
+    files: ['checkout/createRsvpSession.ts'],
+    symbols: ['handleCreateRsvpSession'],
+    dependsOn: ['pocketbaseDate', 'checkoutHelpers', 'checkoutEmailHelpers'],
+  },
+  checkoutCreateDonation: {
+    files: ['checkout/createDonationSession.ts'],
+    symbols: ['handleCreateDonationSession'],
+    dependsOn: ['hookJson', 'stripeService', 'checkoutHelpers'],
+  },
+  checkoutExpiration: {
+    files: ['checkout/expiration.ts'],
+    symbols: ['expirePendingPaymentRecord', 'expireStalePendingRecords'],
+  },
+  checkoutStripeWebhook: {
+    files: ['checkout/stripeWebhook.ts'],
+    symbols: [
       'handleStripeWebhook',
-      'expirePendingPaymentRecord',
-      'expireStalePendingRecords',
-      'handleAdminRefundTicket',
-      'handleCreateBundleSession',
-      'handleAdminRefundBundle',
-      'handleCreateRsvpSession',
-      'handleCreateDonationSession',
-      'handleAdminRefundDonation',
-      'handleAdminResendTicketConfirmation',
-      'handleCreateDuesSession',
+      'isStripePaymentModuleEnabled',
     ],
     dependsOn: [
-      'stripeService',
-      'hookText',
-      'timezone',
       'hookJson',
-      'hmacTokens',
-      'ticketScanValidation',
-      'pocketbaseDate',
+      'checkoutEmailHelpers',
+      'checkoutHelpers',
+      'checkoutExpiration',
       'financialNotifications',
     ],
+  },
+  checkoutAdminRefundTicket: {
+    files: ['checkout/adminRefundTicket.ts'],
+    symbols: ['handleAdminRefundTicket'],
+    dependsOn: ['stripeService'],
+  },
+  checkoutAdminRefundBundle: {
+    files: ['checkout/adminRefundBundle.ts'],
+    symbols: ['handleAdminRefundBundle'],
+    dependsOn: ['stripeService'],
+  },
+  checkoutAdminRefundDonation: {
+    files: ['checkout/adminRefundDonation.ts'],
+    symbols: ['handleAdminRefundDonation'],
+    dependsOn: ['stripeService'],
+  },
+  checkoutAdminResendConfirmation: {
+    files: ['checkout/adminResendConfirmation.ts'],
+    symbols: ['handleAdminResendTicketConfirmation'],
+    dependsOn: ['checkoutEmailHelpers'],
   },
   ticketScanValidation: {
     files: ['ticketScan/ticketValidation.ts'],
@@ -248,7 +379,7 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
     ],
     dependsOn: [
       'queueProcessor',
-      'checkoutEndpoints',
+      'checkoutExpiration',
       'hookJson',
       'hookText',
       'timezone',
@@ -261,32 +392,63 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
       'hookPlaceholders',
     ],
   },
-  setup: {
-    files: [
-      'setup/setupTypes.ts',
-      'setup/setupState.ts',
-      'setup/setupAuth.ts',
-      'setup/setupEndpoints.ts',
-    ],
-    symbols: [
-      'resolveSetupStatus',
-      'getSetupState',
-      'saveSetupState',
-      'isSetupSuperuser',
-      'isSetupAdmin',
-      'handleSetupStatus',
-      'handlePublicModuleState',
-      'handleSetupClaim',
-      'handleSetupProgress',
-      'handleSetupComplete',
-      'handleAdminRecovery',
-      'handleSetupHealth',
-    ],
+  setupState: {
+    files: ['setup/setupState.ts'],
+    symbols: ['resolveSetupStatus', 'getSetupState', 'saveSetupState'],
     dependsOn: ['hookJson'],
+  },
+  setupAuth: {
+    files: ['setup/setupAuth.ts'],
+    symbols: ['isSetupSuperuser', 'isSetupAdmin'],
+    entrySymbols: ['isSetupSuperuser', 'isSetupAdmin'],
+    dependsOn: ['hookJson'],
+  },
+  setupStatus: {
+    files: ['setup/setupEndpoints.ts'],
+    symbols: ['handleSetupStatus'],
+    entrySymbols: ['handleSetupStatus'],
+    dependsOn: ['setupState', 'setupAuth', 'hookJson'],
+  },
+  setupModules: {
+    files: ['setup/setupEndpoints.ts'],
+    symbols: ['handlePublicModuleState'],
+    entrySymbols: ['handlePublicModuleState'],
+    dependsOn: ['setupState', 'setupAuth', 'hookJson'],
+  },
+  setupClaim: {
+    files: ['setup/setupEndpoints.ts'],
+    symbols: ['handleSetupClaim'],
+    entrySymbols: ['handleSetupClaim'],
+    dependsOn: ['setupState', 'setupAuth', 'hookJson'],
+  },
+  setupProgress: {
+    files: ['setup/setupEndpoints.ts'],
+    symbols: ['handleSetupProgress'],
+    entrySymbols: ['handleSetupProgress'],
+    dependsOn: ['setupState', 'setupAuth', 'hookJson'],
+  },
+  setupComplete: {
+    files: ['setup/setupEndpoints.ts'],
+    symbols: ['handleSetupComplete'],
+    entrySymbols: ['handleSetupComplete'],
+    dependsOn: ['setupState', 'setupAuth', 'hookJson'],
+  },
+  setupRecovery: {
+    files: ['setup/setupEndpoints.ts'],
+    symbols: ['handleAdminRecovery'],
+    entrySymbols: ['handleAdminRecovery'],
+    dependsOn: ['setupState', 'setupAuth', 'hookJson'],
+  },
+  setupHealth: {
+    files: ['setup/setupEndpoints.ts'],
+    symbols: ['handleSetupHealth'],
+    entrySymbols: ['handleSetupHealth'],
+    dependsOn: ['setupState', 'setupAuth', 'hookJson'],
   },
   moduleGuard: {
     files: ['setup/setupAuth.ts'],
-    symbols: ['isBackendModuleEnabled', 'guardBackendModule'],
+    symbols: ['isBackendModuleEnabled'],
+    entrySymbols: ['isBackendModuleEnabled'],
     dependsOn: ['hookJson'],
   },
   communicationDelivery: {
@@ -297,6 +459,79 @@ export const UTILITY_BUNDLES: Record<UtilityBundleName, UtilityBundle> = {
 };
 
 const transpileCache = new Map<string, string>();
+
+function collectBindingNames(name: ts.BindingName): string[] {
+  if (ts.isIdentifier(name)) return [name.text];
+  return name.elements.flatMap((element) =>
+    ts.isOmittedExpression(element) ? [] : collectBindingNames(element.name)
+  );
+}
+
+function getRuntimeDeclarationNames(statement: ts.Statement): string[] {
+  if (
+    (ts.isFunctionDeclaration(statement) ||
+      ts.isClassDeclaration(statement) ||
+      ts.isEnumDeclaration(statement)) &&
+    statement.name
+  ) {
+    return [statement.name.text];
+  }
+  if (ts.isVariableStatement(statement)) {
+    return statement.declarationList.declarations.flatMap((declaration) =>
+      collectBindingNames(declaration.name)
+    );
+  }
+  return [];
+}
+
+export function sliceHookSourceByEntries(
+  source: string,
+  fileName: string,
+  entrySymbols: string[]
+): string {
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+  const declarationByName = new Map<string, ts.Statement>();
+  for (const statement of sourceFile.statements) {
+    for (const name of getRuntimeDeclarationNames(statement)) {
+      declarationByName.set(name, statement);
+    }
+  }
+
+  const missingEntries = entrySymbols.filter((entry) => !declarationByName.has(entry));
+  if (missingEntries.length > 0) {
+    throw new Error(`${fileName} does not declare entry symbols: ${missingEntries.join(', ')}`);
+  }
+
+  const selected = new Set<ts.Statement>();
+  const pending = [...entrySymbols];
+  while (pending.length > 0) {
+    const symbol = pending.pop();
+    if (!symbol) continue;
+    const statement = declarationByName.get(symbol);
+    if (!statement || selected.has(statement)) continue;
+    selected.add(statement);
+
+    const visit = (node: ts.Node): void => {
+      if (ts.isIdentifier(node)) {
+        const dependency = declarationByName.get(node.text);
+        if (dependency && !selected.has(dependency)) pending.push(node.text);
+      }
+      ts.forEachChild(node, visit);
+    };
+    ts.forEachChild(statement, visit);
+  }
+
+  return sourceFile.statements
+    .filter((statement) => selected.has(statement))
+    .map((statement) => statement.getFullText(sourceFile))
+    .join('\n');
+}
 
 function applyTextEdits(
   source: string,
@@ -362,7 +597,7 @@ export function transpileHookSource(source: string, fileName: string): string {
     compilerOptions: {
       target: ts.ScriptTarget.ES2017,
       module: ts.ModuleKind.None,
-      removeComments: false,
+      removeComments: true,
       importsNotUsedAsValues: ts.ImportsNotUsedAsValues.Remove,
       ignoreDeprecations: '6.0',
     },
@@ -379,13 +614,17 @@ export function transpileHookSource(source: string, fileName: string): string {
   return result.outputText.trim();
 }
 
-function getTranspiledFile(fileName: string): string {
-  const cached = transpileCache.get(fileName);
+function getTranspiledFile(fileName: string, entrySymbols?: string[]): string {
+  const cacheKey = `${fileName}\u0000${entrySymbols?.join(',') || '*'}`;
+  const cached = transpileCache.get(cacheKey);
   if (cached !== undefined) return cached;
 
   const source = fs.readFileSync(path.join(SRC_DIR, fileName), 'utf8');
-  const js = transpileHookSource(source, fileName);
-  transpileCache.set(fileName, js);
+  const selectedSource = entrySymbols
+    ? sliceHookSourceByEntries(source, fileName, entrySymbols)
+    : source;
+  const js = transpileHookSource(selectedSource, fileName);
+  transpileCache.set(cacheKey, js);
   return js;
 }
 
@@ -440,15 +679,26 @@ function renderUtilityPrelude(callbackText: string, options: CallbackOptions = {
   const bundles = detectBundles(callbackText, options);
   if (bundles.length === 0) return '';
 
-  const files = new Set<string>();
+  const files = new Map<string, Set<string> | null>();
   for (const bundleName of bundles) {
-    for (const file of UTILITY_BUNDLES[bundleName].files) {
-      files.add(file);
+    const bundle = UTILITY_BUNDLES[bundleName];
+    for (const file of bundle.files) {
+      if (!bundle.entrySymbols) {
+        files.set(file, null);
+        continue;
+      }
+      if (files.has(file) && files.get(file) === null) continue;
+      const entries = files.get(file) ?? new Set<string>();
+      for (const entry of bundle.entrySymbols) entries.add(entry);
+      files.set(file, entries);
     }
   }
 
-  const utilityJs = [...files]
-    .map((file) => `// --- Utility source: ${file} ---\n${getTranspiledFile(file)}`)
+  const utilityJs = [...files.entries()]
+    .map(([file, entries]) => {
+      const entrySymbols = entries ? [...entries] : undefined;
+      return `// --- Utility source: ${file} ---\n${getTranspiledFile(file, entrySymbols)}`;
+    })
     .join('\n\n');
   return `// --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---\n${utilityJs}\n// --- END CALLBACK-LOCAL UTILITIES ---`;
 }
@@ -556,7 +806,6 @@ function extractEnclosingArrowBody(source: string, position: number): string {
 
 function buildRsvpRoutes(): string {
   const files = [
-    'rsvp/rsvpHelpers.ts',
     'rsvp/generateRsvpTokens.ts',
     'rsvp/rsvpDetails.ts',
     'rsvp/quickRsvp.ts',
@@ -571,6 +820,7 @@ function buildRsvpRoutes(): string {
 }
 
 export function generate(): void {
+  const hookSourceFingerprint = computeHookSourceFingerprint();
   const createHookBody = `
 try {
     const record = e?.record;
@@ -1224,6 +1474,12 @@ ${renderRecordHook('onRecordAfterUpdateSuccess', 'auditions', auditionUpdateHook
 // --- CUSTOM ENDPOINTS ---
 
 ${renderRouterMiddleware(moduleGuardMiddlewareBody)}
+
+${renderRoute(
+  'GET',
+  '/api/hooks/health',
+  `return e.json(200, { ok: true, fingerprint: ${JSON.stringify(hookSourceFingerprint)} });`
+)}
 
 ${renderRoute('GET', '/api/setup/status', 'return handleSetupStatus(e);')}
 ${renderRoute('GET', '/api/modules/state', 'return handlePublicModuleState(e);')}

@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { access, mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -130,6 +130,48 @@ async function main() {
 
   try {
     await waitForHealth(baseUrl, child, () => output);
+
+    const generatedMain = await readFile(
+      path.join(repoRoot, 'pocketbase/pb_hooks/main.pb.js'),
+      'utf8'
+    );
+    const fingerprintMatch = generatedMain.match(/fingerprint: "([a-f0-9]{16})"/);
+    if (!fingerprintMatch) {
+      throw new Error('Generated hook bundle does not contain a source fingerprint.');
+    }
+
+    const hookHealthResponse = await fetch(`${baseUrl}/api/hooks/health`);
+    const hookHealthBody = await hookHealthResponse.json().catch(() => null);
+    if (
+      !hookHealthResponse.ok ||
+      hookHealthBody?.ok !== true ||
+      hookHealthBody?.fingerprint !== fingerprintMatch[1]
+    ) {
+      throw new Error(
+        [
+          'PocketBase did not load the expected generated hook bundle.',
+          `Expected fingerprint: ${fingerprintMatch[1]}`,
+          `Received: ${hookHealthResponse.status} ${JSON.stringify(hookHealthBody)}`,
+          sanitizeOutput(output),
+        ].join('\n')
+      );
+    }
+
+    const setupResponse = await fetch(`${baseUrl}/api/setup/status`);
+    const setupBody = await setupResponse.json().catch(() => null);
+    if (
+      !setupResponse.ok ||
+      typeof setupBody?.state !== 'string' ||
+      typeof setupBody?.initialized !== 'boolean'
+    ) {
+      throw new Error(
+        [
+          'Setup route did not execute its sliced callback-local helpers.',
+          `Received: ${setupResponse.status} ${JSON.stringify(setupBody)}`,
+          sanitizeOutput(output),
+        ].join('\n')
+      );
+    }
 
     const response = await fetch(`${baseUrl}/api/player-playlist`);
     const responseText = await response.text();

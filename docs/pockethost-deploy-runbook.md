@@ -49,16 +49,21 @@ Push to `main` triggers `.github/workflows/main.yml`:
 
 Required GitHub Actions secrets: `POCKETHOST_USERNAME`, `POCKETHOST_PASSWORD`.
 
-After the workflow finishes, **wake or restart the PocketHost instance**
-(see the AGENTS.md §4 hook-deploy rule). Cold-start can be slow on
-free-tier PocketHost; trigger a request to the admin UI or the relevant
-endpoint to force the wake-up.
+The workflow verifies `/api/hooks/health` after upload and compares the
+reported source fingerprint with the generated bundle it deployed. This
+prevents an old PocketBase process from making a deployment look healthy.
+If the verification step reports that PocketHost did not load the expected
+fingerprint, restart the instance and rerun the failed workflow. Cold-start
+can be slow on free-tier PocketHost.
 
 ## Verify the new code is live
 
 1. Open the PocketHost logs (or `pb_debug.log` if exposed) and confirm the
    expected hook startup line appears for the modified file.
 2. Smoke-test the affected flow against production:
+   - **Every hook deployment** — confirm the `Verify deployed PocketBase hook
+     fingerprint` workflow step passed. A JSON response from an older hook
+     bundle is not sufficient; the fingerprint must match.
    - **HMAC token changes** — request a known link (player link, RSVP link,
      ticket scan URL) and verify it parses via the same `parseSignedToken`
      contract. Tokens issued before the deploy were signed with whatever

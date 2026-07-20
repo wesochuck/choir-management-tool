@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import ts from 'typescript';
 import {
+  sliceHookSourceByEntries,
   transpileHookSource,
   UTILITY_BUNDLES,
   type UtilityBundleName,
@@ -183,8 +185,8 @@ test('Generated main.pb.js integrity', () => {
 
   assert.strictEqual(
     countOccurrences(content, 'routerAdd('),
-    43,
-    'Generated main file should contain exactly 41 route registrations'
+    44,
+    'Generated main file should contain exactly 44 route registrations'
   );
   assert.strictEqual(
     countOccurrences(content, 'cronAdd('),
@@ -203,6 +205,7 @@ test('Generated main.pb.js integrity', () => {
   );
 
   const requiredRoutes = [
+    ['GET', '/api/hooks/health'],
     ['POST', '/api/generate-rsvp-tokens'],
     ['POST', '/api/rsvp-details'],
     ['POST', '/api/quick-rsvp'],
@@ -229,6 +232,11 @@ test('Generated main.pb.js integrity', () => {
       `Generated main file should contain exactly one registration for ${method} ${routePath}`
     );
   }
+});
+
+test('Generated hook health route exposes a source fingerprint', () => {
+  const callback = extractRouteCallback(readGeneratedMain(), '/api/hooks/health');
+  assert.match(callback, /ok: true, fingerprint: "[a-f0-9]{16}"/);
 });
 
 test('Generated module-guard request hooks continue allowed requests', () => {
@@ -264,6 +272,11 @@ test('Generated module-guard request hooks continue allowed requests', () => {
           !registration.includes('Utility source: setup/setupEndpoints.ts'),
         `${hookName} module guard must not inline unrelated setup state or endpoint utilities`
       );
+      assert.ok(
+        !registration.includes('function isSetupAdmin(') &&
+          !registration.includes('function isSetupSuperuser('),
+        `${hookName} module guard must not inline setup authentication helpers`
+      );
     }
   }
 });
@@ -273,9 +286,84 @@ test('Generated main.pb.js stays within its callback-local size budget', () => {
   const generatedBytes = Buffer.byteLength(content, 'utf8');
 
   assert.ok(
-    generatedBytes <= 3_500_000,
-    `Generated main.pb.js is ${generatedBytes} bytes; expected at most 3500000 bytes. Check for overly broad utility bundles.`
+    generatedBytes <= 1_500_000,
+    `Generated main.pb.js is ${generatedBytes} bytes; expected at most 1500000 bytes. Check for overly broad utility bundles.`
   );
+});
+
+test('Generated checkout routes inline only their endpoint-specific source', () => {
+  const content = readGeneratedMain();
+  const checkoutRoutes = [
+    ['/api/checkout/create-tickets-session', 'checkout/createTicketsSession.ts'],
+    ['/api/checkout/create-bundle-session', 'checkout/createBundleSession.ts'],
+    ['/api/checkout/create-dues-session', 'checkout/createDuesSession.ts'],
+    ['/api/checkout/rsvp', 'checkout/createRsvpSession.ts'],
+    ['/api/checkout/create-donation-session', 'checkout/createDonationSession.ts'],
+    ['/api/webhook/stripe', 'checkout/stripeWebhook.ts'],
+    ['/api/admin/refund-ticket', 'checkout/adminRefundTicket.ts'],
+    ['/api/admin/refund-bundle', 'checkout/adminRefundBundle.ts'],
+    ['/api/admin/refund-donation', 'checkout/adminRefundDonation.ts'],
+    ['/api/admin/resend-ticket-confirmation', 'checkout/adminResendConfirmation.ts'],
+  ] as const;
+
+  for (const [routePath, expectedSource] of checkoutRoutes) {
+    const callback = extractRouteCallback(content, routePath);
+    assert.ok(
+      callback.includes(`Utility source: ${expectedSource}`),
+      `${routePath} should inline ${expectedSource}`
+    );
+
+    for (const [, otherSource] of checkoutRoutes) {
+      if (otherSource === expectedSource) continue;
+      assert.ok(
+        !callback.includes(`Utility source: ${otherSource}`),
+        `${routePath} should not inline unrelated endpoint source ${otherSource}`
+      );
+    }
+  }
+});
+
+test('Generated multi-handler routes contain only their selected entry handler', () => {
+  const content = readGeneratedMain();
+  const routeGroups = [
+    [
+      ['/api/setup/status', 'handleSetupStatus'],
+      ['/api/modules/state', 'handlePublicModuleState'],
+      ['/api/setup/claim', 'handleSetupClaim'],
+      ['/api/setup/progress', 'handleSetupProgress'],
+      ['/api/setup/complete', 'handleSetupComplete'],
+      ['/api/setup/recover-admin', 'handleAdminRecovery'],
+      ['/api/setup/health', 'handleSetupHealth'],
+    ],
+    [
+      ['/api/calendar/download', 'handleCalendarDownload'],
+      ['/api/calendar/feed', 'handleCalendarFeed'],
+      ['/api/singer/calendar-feed-url', 'handleCalendarFeedUrl'],
+      ['/api/singer/calendar-feed-url/reset', 'handleCalendarFeedReset'],
+    ],
+    [
+      ['/api/generate-player-token', 'handleGeneratePlayerToken'],
+      ['/api/player-playlist', 'handlePlayerPlaylist'],
+      ['/api/singer/player-playlist', 'handleSingerPlayerPlaylist'],
+    ],
+  ] as const;
+
+  for (const group of routeGroups) {
+    for (const [routePath, expectedHandler] of group) {
+      const callback = extractRouteCallback(content, routePath);
+      assert.ok(
+        callback.includes(`function ${expectedHandler}(`),
+        `${routePath} should inline ${expectedHandler}`
+      );
+      for (const [, otherHandler] of group) {
+        if (otherHandler === expectedHandler) continue;
+        assert.ok(
+          !callback.includes(`function ${otherHandler}(`),
+          `${routePath} should not inline unrelated handler ${otherHandler}`
+        );
+      }
+    }
+  }
 });
 
 test('Generated main.pb.js keeps endpoint and middleware bundles callback-local', () => {
@@ -294,8 +382,8 @@ test('Generated main.pb.js keeps endpoint and middleware bundles callback-local'
       content,
       '// --- CALLBACK-LOCAL UTILITIES (generated from detected bundles) ---'
     ),
-    144,
-    'Generated file should contain exactly 144 callback-local utility regions'
+    139,
+    'Generated file should contain exactly 139 callback-local utility regions'
   );
 
   const filePrelude = content.slice(0, content.indexOf('// --- RECORD HOOKS ---'));
@@ -617,6 +705,21 @@ export {
   assert.ok(!/exports\./.test(output), 'CommonJS export assignments should not be emitted');
 });
 
+test('Hook source entry slicing keeps transitive helpers and excludes unrelated handlers', () => {
+  const source = `
+const prefix = 'selected';
+function helper(value: string): string { return prefix + value; }
+export function selectedHandler(): string { return helper('-handler'); }
+export function unrelatedHandler(): string { return 'unrelated'; }
+`;
+
+  const sliced = sliceHookSourceByEntries(source, 'slice-test.ts', ['selectedHandler']);
+  assert.match(sliced, /const prefix/);
+  assert.match(sliced, /function helper/);
+  assert.match(sliced, /function selectedHandler/);
+  assert.doesNotMatch(sliced, /function unrelatedHandler/);
+});
+
 test('Generated main.pb.js has no unbalanced forEach in post_event_report task', () => {
   const mainPath = path.join(process.cwd(), 'pocketbase/pb_hooks/main.pb.js');
   const content = fs.readFileSync(mainPath, 'utf8');
@@ -805,41 +908,25 @@ test('Raw SQL queries in main.pb.js do not use raw colon parameter syntax', () =
 
 test('Generated main.pb.js contains no top-level function helper definitions outside callbacks', () => {
   const content = readGeneratedMain();
+  const sourceFile = ts.createSourceFile(
+    'main.pb.js',
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS
+  );
+  const topLevelFunctions = sourceFile.statements
+    .filter(ts.isFunctionDeclaration)
+    .map((statement) => {
+      const line = sourceFile.getLineAndCharacterOfPosition(statement.getStart(sourceFile)).line + 1;
+      return `${statement.name?.text || '<anonymous>'} at line ${line}`;
+    });
 
-  // Track whether we're inside a callback-local utility block.
-  // Functions declared inside these blocks are explicitly intended as
-  // callback-local inlines. Only flag function declarations at the
-  // true top level (braceDepth === 0, outside utility blocks).
-  let insideCallbackLocalBlock = false;
-  let braceDepth = 0;
-  const lines = content.split('\n');
-
-  lines.forEach((line, idx) => {
-    const trimmed = line.trim();
-
-    // Track callback-local utility block boundaries
-    if (trimmed.includes('// --- CALLBACK-LOCAL UTILITIES')) {
-      insideCallbackLocalBlock = true;
-    }
-    if (trimmed.includes('// --- END CALLBACK-LOCAL UTILITIES')) {
-      insideCallbackLocalBlock = false;
-    }
-
-    // Simple brace counting
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] === '{') braceDepth++;
-      if (line[i] === '}') braceDepth--;
-    }
-
-    // Only flag function declarations at braceDepth === 0 outside
-    // callback-local utility blocks. Functions inside utility blocks
-    // are always inside a callback wrapper by construction.
-    if (trimmed.startsWith('function ') && !insideCallbackLocalBlock && braceDepth === 0) {
-      assert.fail(
-        `CRITICAL: Found top-level function declaration at line ${idx + 1} of main.pb.js: "${trimmed}". Registered callbacks must contain all their helper utilities locally inside the callback wrapper to prevent ReferenceError issues on PocketHost.`
-      );
-    }
-  });
+  assert.deepStrictEqual(
+    topLevelFunctions,
+    [],
+    `Registered callbacks must contain all helper utilities locally. Found: ${topLevelFunctions.join(', ')}`
+  );
 });
 
 test('Static dependency declaration check - all relative imports must be declared in dependsOn', () => {

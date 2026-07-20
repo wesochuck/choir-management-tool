@@ -1,6 +1,6 @@
 import type { PocketBaseApp } from '../email/emailTypes';
 import type { MaintenanceTaskResult } from './maintenanceTypes';
-import { expireStalePendingRecords } from '../checkout/stripeWebhook';
+import { expireStalePendingRecords } from '../checkout/expiration';
 
 export function runCleanupTask(app: PocketBaseApp): MaintenanceTaskResult {
   const collections = ['ticketPurchases', 'donations'] as const;

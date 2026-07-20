@@ -1,7 +1,7 @@
 import type { PocketBaseApp, PocketBaseRequestEvent, PocketBaseRecord } from '../email/emailTypes';
 import { coercePocketBaseDate } from '../pocketbaseDate';
 import { getOrCreatePatronProfile } from './checkoutHelpers';
-import { enqueueRsvpConfirmationEmail } from './emailHelpers';
+import { enqueueCheckoutRsvpConfirmationEmail } from './emailHelpers';
 
 declare const $app: PocketBaseApp;
 
@@ -102,7 +102,7 @@ export function handleCreateRsvpSession(e: PocketBaseRequestEvent): unknown {
 
     $app.save(record);
 
-    enqueueRsvpConfirmationEmail({
+    enqueueCheckoutRsvpConfirmationEmail({
       purchase: record,
       event: event,
       stripeSessionId,

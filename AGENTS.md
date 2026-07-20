@@ -261,6 +261,14 @@ rtk npm run check:pb-hooks
 
 All generated PocketBase callback registrations (`routerAdd`, `routerUse`, cron, and record hooks) must go through a generator renderer that applies `withUtilities(...)`. Do not add raw callback registration templates to the generator; PocketBase's pooled Goja runtimes require every callback to contain its own helper closure.
 
+Treat generated-hook size limits as budgets. Do not raise a size limit merely to make tests pass. Increasing a generated-hook budget requires explicit user approval and a documented explanation of the increase.
+
+Utility bundles that reference a source file containing multiple runtime handlers must declare `entrySymbols`. Never inline an entire multi-handler source file into a callback. Broad shared bundles may contain only small leaf utilities; endpoint handlers, maintenance processors, webhook handlers, and queue processors must be included only in callbacks that invoke them.
+
+Generated-hook size checks must cover the aggregate size of every generated `*.pb.js` file, not only `main.pb.js`, and must enforce a per-registration callback limit. Keep a checked-in growth baseline so gradual increases require an intentional budget update. Size-test failures must report the largest callbacks, the most frequently duplicated utility sources, the current size, the budget, and the size delta.
+
+After changing `pocketbase/pb_hooks_src/` or its generator, report the total generated-hook bytes before and after, the size delta, the largest generated callback, and any utility source newly duplicated across callbacks.
+
 Every PocketBase record request hook must explicitly continue its allowed path with `return e.next()`. Falling through a request hook can terminate the request with status `0` and make existing records appear missing. Generated request hooks require generic integrity coverage for this continuation.
 
 For advisory hooks, wrap the full callback body in `try/catch`. Logging must be defensive.
