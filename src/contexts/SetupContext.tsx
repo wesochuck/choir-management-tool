@@ -9,6 +9,7 @@ import { pb } from '../lib/pocketbase';
 
 interface SetupContextValue {
   loading: boolean;
+  unavailable: boolean;
   status: PublicSetupStatus | undefined;
   enabledModules: Set<ModuleId>;
   refreshStatus: () => Promise<void>;
@@ -66,6 +67,7 @@ export const SetupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const value = useMemo(
     () => ({
       loading: statusQuery.isLoading || modulesQuery.isLoading,
+      unavailable: statusQuery.isError || modulesQuery.isError,
       status: statusQuery.data,
       enabledModules,
       refreshStatus,
@@ -74,8 +76,10 @@ export const SetupProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }),
     [
       statusQuery.isLoading,
+      statusQuery.isError,
       statusQuery.data,
       modulesQuery.isLoading,
+      modulesQuery.isError,
       enabledModules,
       refreshStatus,
       refreshModules,

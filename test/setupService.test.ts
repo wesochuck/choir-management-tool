@@ -12,12 +12,25 @@ describe('setupService', () => {
     const mockSend = mock.method(pb, 'send', async (path: string, options: { method?: string }) => {
       assert.strictEqual(path, '/api/setup/status');
       assert.strictEqual(options.method, 'GET');
-      return { state: 'unclaimed', initialized: false };
+      return { state: 'unclaimed', initialized: false, completedSections: [] };
     });
 
     const status = await setupService.getStatus();
-    assert.deepStrictEqual(status, { state: 'unclaimed', initialized: false });
+    assert.deepStrictEqual(status, {
+      state: 'unclaimed',
+      initialized: false,
+      completedSections: [],
+    });
     assert.strictEqual(mockSend.mock.callCount(), 1);
+  });
+
+  it('rejects a non-JSON setup response instead of treating it as a fresh install', async () => {
+    mock.method(pb, 'send', async () => '<!doctype html><html></html>');
+
+    await assert.rejects(
+      setupService.getStatus(),
+      /application server returned an invalid setup-status response/
+    );
   });
 
   it('claim sends POST request to claim endpoint', async () => {

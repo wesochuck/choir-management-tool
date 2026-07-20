@@ -34,9 +34,28 @@ export interface SetupHealthResult {
   emailValid: boolean;
 }
 
+const setupStatusNames = new Set(['unclaimed', 'in_progress', 'initialized', 'recovery_required']);
+
+function isPublicSetupStatus(value: unknown): value is PublicSetupStatus {
+  if (!value || typeof value !== 'object') return false;
+
+  const status = value as Record<string, unknown>;
+  return (
+    typeof status.state === 'string' &&
+    setupStatusNames.has(status.state) &&
+    typeof status.initialized === 'boolean' &&
+    Array.isArray(status.completedSections) &&
+    status.completedSections.every((section) => typeof section === 'string')
+  );
+}
+
 export const setupService = {
   async getStatus(): Promise<PublicSetupStatus> {
-    return pb.send<PublicSetupStatus>('/api/setup/status', { method: 'GET' });
+    const response = await pb.send<unknown>('/api/setup/status', { method: 'GET' });
+    if (!isPublicSetupStatus(response)) {
+      throw new Error('The application server returned an invalid setup-status response.');
+    }
+    return response;
   },
 
   async claim(payload: SetupClaimPayload): Promise<{ success: boolean }> {

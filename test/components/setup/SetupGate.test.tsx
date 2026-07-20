@@ -76,6 +76,33 @@ describe('SetupGate', () => {
     assert.equal(screen.queryByText('Dashboard Content'), null);
   });
 
+  it('shows a server error instead of setup when setup status cannot be loaded', async () => {
+    mock.method(setupService, 'getStatus', async () => {
+      throw new Error('Invalid setup response');
+    });
+    mock.method(moduleService, 'getPublicModuleState', async () => ({ version: 1, enabled: [] }));
+
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <SetupProvider>
+          <MemoryRouter initialEntries={['/dashboard']}>
+            <SetupGate>
+              <Routes>
+                <Route path="/setup" element={<div>Setup Page</div>} />
+                <Route path="/dashboard" element={<div>Dashboard Content</div>} />
+              </Routes>
+            </SetupGate>
+          </MemoryRouter>
+        </SetupProvider>
+      </QueryClientProvider>
+    );
+
+    await screen.findByText('Unable to load application configuration');
+    assert.equal(screen.queryByText('Setup Page'), null);
+    assert.equal(screen.queryByText('Dashboard Content'), null);
+    assert.ok(screen.getByRole('button', { name: 'Retry connection' }));
+  });
+
   it('allows rendering child component if initialized', async () => {
     mock.method(setupService, 'getStatus', async () => ({
       state: 'initialized',
