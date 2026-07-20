@@ -251,11 +251,31 @@ test('Generated module-guard request hooks continue allowed requests', () => {
     );
     for (const registration of guardedRegistrations) {
       assert.ok(
+        registration.includes('function isBackendModuleEnabled('),
+        `${hookName} module guard must contain its callback-local helper`
+      );
+      assert.ok(
         registration.includes('return e.next();'),
         `${hookName} module guard must continue the allowed request with return e.next()`
       );
+      assert.ok(
+        !registration.includes('Utility source: setup/setupTypes.ts') &&
+          !registration.includes('Utility source: setup/setupState.ts') &&
+          !registration.includes('Utility source: setup/setupEndpoints.ts'),
+        `${hookName} module guard must not inline unrelated setup state or endpoint utilities`
+      );
     }
   }
+});
+
+test('Generated main.pb.js stays within its callback-local size budget', () => {
+  const content = readGeneratedMain();
+  const generatedBytes = Buffer.byteLength(content, 'utf8');
+
+  assert.ok(
+    generatedBytes <= 3_500_000,
+    `Generated main.pb.js is ${generatedBytes} bytes; expected at most 3500000 bytes. Check for overly broad utility bundles.`
+  );
 });
 
 test('Generated main.pb.js keeps endpoint and middleware bundles callback-local', () => {

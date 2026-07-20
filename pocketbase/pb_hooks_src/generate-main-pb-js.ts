@@ -1131,7 +1131,7 @@ if (!isBackendModuleEnabled($app, ${JSON.stringify(module)})) {
     throw new NotFoundError("Forbidden: Module ${module} is disabled");
 }`;
           return renderRecordRequestHook(hookName, collection, body, {
-            forceBundles: ['setup'],
+            forceBundles: ['moduleGuard'],
           });
         })
         .join('\n\n');
